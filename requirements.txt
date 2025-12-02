@@ -1,0 +1,10 @@
+huggingface_hub
+django
+django-ninja
+torch
+transformers
+accelerate
+bitsandbytes
+langchain
+sentence-transformers
+faiss-cpu

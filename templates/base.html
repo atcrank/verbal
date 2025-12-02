@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<head></head>
+<body>
+Logged in as {{ user.username|default:"TBA" }}
+<form method="post" action="{% url 'logout' %}">
+    {% csrf_token %}
+    <input type="submit" value="Logout" >
+</form>
+{% block content %}{% endblock %}
+<ul>
+    <li><a href="/api/docs">API Overview Page</a></li>
+    <li><a href="{% url 'login' %}">Login Page</a></li>
+    <li><a href="{% url 'password_change' %}">Change Password Page</a></li>
+</ul>
+</body>
