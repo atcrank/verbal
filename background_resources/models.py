@@ -17,7 +17,7 @@ import os
 import re
 from uuid import uuid4
 from django.db import models
-from django.db.models.signals import pre_delete
+from django.db.models.signals import pre_delete, pre_save
 from django.dispatch import receiver
 
 # You will need to have these libraries installed:
@@ -43,8 +43,9 @@ class Document(models.Model):
     class IndexingStrategy(models.TextChoices):
         STANDARD = 'RAW', 'Standard (Match query to similar text)'
         CONCEPTUAL = 'SUM', 'Conceptual (Match query to pre-processed summary of source text)'
+        DICTIONARY = 'DIC', 'Match query elements to terms in glossary or dictionary and return definition'
+
         # Future proofing:
-        # DICTIONARY = 'DICT', 'Match query elements to terms in glossary or dictionary and return definition'
         # HYPOTHETICAL = 'HYP', 'Q&A Optimized'
 
     # The internal field name
@@ -60,6 +61,7 @@ class Document(models.Model):
     metadata = models.JSONField(null=True, blank=True, default=dict)
     chunk_size = models.IntegerField(default=1000)
     chunk_overlap = models.IntegerField(default=20)
+    currently_indexed = models.BooleanField(default=False)
 
     def __str__(self):
         return self.title
@@ -80,17 +82,9 @@ class Document(models.Model):
         self.metadata["content_hash"] = self.content_hash
         self.metadata["filename"] = self.file.name
         if updated_file:
-            self.rechunk()
-            self.metadata["chunking_scheme"] = f"{self.chunk_size}_{self.chunk_overlap}"
-        elif self.metadata.get("chunking_scheme") == f"{self.chunk_size}_{self.chunk_overlap}":
-            pass # do not rechunk - file, chuck_scheme have not changed
-        elif self.metadata.get("chunking_scheme") is None:
-            self.rechunk()
-            self.metadata["chunking_scheme"] = f"{self.chunk_size}_{self.chunk_overlap}"
-        else:
-            self.rechunk()
-            self.metadata["chunking_scheme"] = f"{self.chunk_size}_{self.chunk_overlap}"
-        # f.seek(0)
+            self.currently_indexed = False
+        if self.metadata.get("chunking_scheme", "") != f"{self.indexing_strategy}_{self.chunk_size}_{self.chunk_overlap}":
+            self.currently_indexed = False
         super().save()
 
     def is_likely_toc(text_chunk: str) -> bool:
@@ -119,10 +113,8 @@ class Document(models.Model):
 
         return False
 
-    def create_vectorstore_documents(self):
+    def convert_and_chunk_document(self):
         # ... inside the loop for docs_to_add ...
-        docs_to_load = None
-        loader = None
         raw_docs = []
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=self.chunk_size,
@@ -152,14 +144,16 @@ class Document(models.Model):
         else:
             print("Unsupported file type.")
         final_chunks = [chunk for chunk in text_splitter.split_documents(raw_docs)
-                        if not self.is_likely_toc(chunk.page_content)]
+                        if not self.__class__.is_likely_toc(chunk.page_content)]
         # add metadata including content_hash
         for vec_doc in final_chunks:
             vec_doc.metadata = self.metadata
-        return final_chunks
+        doc_ids = [str(uuid4()) for _ in range(len(final_chunks))]
+        return final_chunks, doc_ids
+
 
     @classmethod
-    def fill_vector_store(cls):
+    def load_vector_store(cls):
         all_db_docs = cls.objects.all()
         from llm_api.apps import service_registry
         rag_service = service_registry['rag_service']
@@ -167,7 +161,10 @@ class Document(models.Model):
         print("RAG hashes", rag_service.indexed_hashes)
         print("Doc hashes", [doc.content_hash for doc in all_db_docs])
         docs_to_add = [doc for doc in all_db_docs if doc.content_hash not in rag_service.indexed_hashes]
-        docs_missing = [hash for hash in rag_service.indexed_hashes if hash not in [doc.content_hash for doc in all_db_docs]]
+        docs_missing = [hash for hash in rag_service.indexed_hashes
+                        if hash not in
+                        [doc.content_hash for doc in all_db_docs]
+                        ]
         for hash in docs_missing:
             rag_service.indexed_hashes.remove(hash)
             rag_service.delete_document_from_vectorstore(hash)
@@ -178,27 +175,19 @@ class Document(models.Model):
             print("Vector store is already up to date.")
             return rag_service.db
 
-        print(f"Found {len(docs_to_add)} new or updated documents to add.")
+        print(f"Found {len(docs_to_add)} new or updated documents to add. {docs_to_add}")
 
         # --- 4. Process and collect new documents ---
         all_langchain_docs = []
 
-        for doc in docs_to_add:
-            # Add the content_hash to metadata for future checks
-            langchain_docs = doc.create_vectorstore_documents()
-            all_langchain_docs.extend(langchain_docs)
+        # for doc in docs_to_add:
+        #     # Add the content_hash to metadata for future checks
+        #     rag_service.ingest_document(doc)
 
         # --- 5. Add to the vector store and save ---
-        if all_langchain_docs:
-            # Add to the existing store
-            print("Adding new documents to existing vector store...")
-            uuids = [str(uuid4()) for _ in range(len(all_langchain_docs))]
-            rag_service.db.add_documents(all_langchain_docs, ids=uuids)
-
-            # Save the updated index back to disk
-            print(f"Saving updated vector store to '{VECTOR_STORE}'...")
-            rag_service.db.save_local(FILES)
-            print("Save complete.")
+        print(f"Saving updated vector store to '{VECTOR_STORE}'...")
+        rag_service.db.save_local(VECTOR_STORE)
+        print("Save complete.")
 
         return rag_service.db
 
@@ -212,11 +201,12 @@ class Document(models.Model):
         rag_service = service_registry['rag_service']
 
         # 1. Delete from vector store
-        rag_service.delete_document_from_vectorstore(self.content_hash)
+        if self.content_hash in rag_service.indexed_hashes:
+            rag_service.delete_document_from_vectorstore(self.content_hash)
         # 2. Rechunk and add to vector store
-        langchain_docs = self.create_vectorstore_documents()  # pages or chunks of file
-        uuids = [str(uuid4()) for _ in range(len(langchain_docs))]
-        rag_service.db.add_documents(langchain_docs, ids=uuids)
+        rag_service.ingest_document(self)
+        # uuids = [str(uuid4()) for _ in range(len(langchain_docs))]
+        # rag_service.db.add_documents(langchain_docs, ids=uuids)
 
     @classmethod
     def generate_summaries(cls, queryset):
@@ -243,9 +233,17 @@ def delete_document_files(sender, instance, **kwargs):
     if instance.file:
         instance.file.delete(save=False)  # 'save=False' prevents re-saving
 
+@receiver(pre_save, sender=Document)
+def pre_save_handler(sender, instance, **kwargs):
+    pass
 
 
 
+class VectorIndexExplorer(Document):
+    class Meta:
+        proxy = True
+        verbose_name = "Vector Index Explorer"
+        verbose_name_plural = "Vector Index Explorer"
 
 
 

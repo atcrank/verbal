@@ -1,0 +1,55 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<div id="content-main">
+    
+    <div class="module" style="display: flex; gap: 20px; padding: 15px; background: #f8f9fa; margin-bottom: 20px;">
+        <div>
+            <h2>{{ document_file_count }}</h2>
+            <p>Uploaded File Count</p>
+        </div>
+        <div>
+            <h2>{{ total_vectors }}</h2>
+            <p>Total Vectors</p>
+        </div>
+        <div>
+            <h2>{{ ingested_documents }}</h2>
+            <p>Ingested Files</p>
+        </div>
+        <div>
+            <h2>{{ total_chunks }}</h2>
+            <p>Total Chunks</p>
+        </div>
+        <div>
+            <h2>FAISS / LocalFileStore</h2>
+            <p>Backend Status: <strong>Active</strong></p>
+        </div>
+    </div>
+
+    <div class="module">
+        <form method="GET">
+            <input type="text" name="q" value="{{ query }}" placeholder="Test your vector search..." style="width: 70%; padding: 10px; font-size: 16px;">
+            <input type="submit" value="Search" class="default" style="padding: 10px 20px;">
+        </form>
+    </div>
+
+    {% if query %}
+        <h2>Results for "{{ query }}"</h2>
+        {% if results %}
+            {% for doc in results %}
+            <div class="module" style="padding: 15px; margin-bottom: 10px; border-left: 5px solid #79aec8;">
+                <h3 style="margin-top:0;">Source: {{ doc.metadata.filename }} (Page {{ doc.metadata.page }})</h3>
+                <p><em>Score/Strategy: {{ doc.metadata.indexing_strategy|default:"Unknown" }}</em></p>
+                <div style="background: white; padding: 10px; border: 1px solid #eee;">
+                    {{ doc.page_content|linebreaks }}
+                </div>
+                <p><small>ID: {{ doc.metadata.doc_id }}</small></p>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p>No matches found.</p>
+        {% endif %}
+    {% endif %}
+    
+</div>
+{% endblock %}

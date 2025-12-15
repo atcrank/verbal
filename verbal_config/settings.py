@@ -125,3 +125,4 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 FILES = BASE_DIR / 'background_resources/knowledge_sources/'
 VECTOR_STORE = BASE_DIR / 'background_resources/vector_store/'
+CHUNK_STORE = BASE_DIR / 'background_resources/vector_store/chunks/'

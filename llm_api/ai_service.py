@@ -50,14 +50,9 @@ class AIService:
         self.model_id = "microsoft/Phi-3-mini-4k-instruct" #"meta-llama/Meta-Llama-3.1-8B-Instruct"
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_id, token=token)
         # Load your main LLM
-
-
-
         if self.tokenizer.pad_token_id is None:
             self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
-
         # Ensure the model knows this too
-
         self.model = AutoModelForCausalLM.from_pretrained(
             self.model_id,
             # dtype=torch.bfloat16,
