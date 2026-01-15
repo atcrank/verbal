@@ -1,7 +1,9 @@
 ### Python template
 
 documents/**
-vector_store/**
+vector_store/
+
+*.zip
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -38,10 +38,10 @@
         {% if results %}
             {% for doc in results %}
             <div class="module" style="padding: 15px; margin-bottom: 10px; border-left: 5px solid #79aec8;">
-                <h3 style="margin-top:0;">Source: {{ doc.metadata.filename }} (Page {{ doc.metadata.page }})</h3>
+                <h3 style="margin-top:0;">Source: {{ doc.metadata.filename }} (Page {{ doc.metadata.page_number }}|{{doc.metadata.location_percent}}%)</h3>
                 <p><em>Score/Strategy: {{ doc.metadata.indexing_strategy|default:"Unknown" }}</em></p>
                 <div style="background: white; padding: 10px; border: 1px solid #eee;">
-                    {{ doc.page_content|linebreaks }}
+                    {{doc.metadata.original_term}}:{{ doc.page_content|linebreaks }}
                 </div>
                 <p><small>ID: {{ doc.metadata.doc_id }}</small></p>
             </div>

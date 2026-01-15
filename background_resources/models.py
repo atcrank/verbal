@@ -62,9 +62,24 @@ class Document(models.Model):
     chunk_size = models.IntegerField(default=1000)
     chunk_overlap = models.IntegerField(default=20)
     currently_indexed = models.BooleanField(default=False)
+    
+    extraction_regex = models.CharField(
+        max_length=512,
+        blank=True,
+        null=True,
+        help_text="Optional regex for extracting terms (group 1) and definitions (group 2). If provided, this overrides LLM extraction."
+    )
 
     def __str__(self):
         return self.title
+
+    def chunking_scheme(self):
+        return f"{self.indexing_strategy}_{self.chunk_size}_{self.chunk_overlap}"
+
+    def validate_current_index(self):
+        if self.currently_indexed:
+            return self.metadata.get("chunking_scheme", "") == self.chunking_scheme()
+        return self.currently_indexed
 
     def save(self):
         """Calculates the SHA256 hash of the uploaded file."""
@@ -83,32 +98,52 @@ class Document(models.Model):
         self.metadata["filename"] = self.file.name
         if updated_file:
             self.currently_indexed = False
-        if self.metadata.get("chunking_scheme", "") != f"{self.indexing_strategy}_{self.chunk_size}_{self.chunk_overlap}":
+
+        if self.metadata.get("chunking_scheme", "") != self.chunking_scheme():
             self.currently_indexed = False
+
         super().save()
 
+    @staticmethod
     def is_likely_toc(text_chunk: str) -> bool:
         lines = text_chunk.split('\n')
         if not lines:
             return False
 
-        # 1. Check for "dots" pattern (e.g., "Chapter 1 .......... 5")
+        # Filter empty lines to avoid skewing percentages
+        non_empty_lines = [line.strip() for line in lines if line.strip()]
+        if not non_empty_lines:
+            return False
+
+        # 1. "Dots" pattern: Looks for "...... 12" common in old school PDFs
+        # Added check that it must match at least 2 distinct lines to avoid a fluke
         dot_pattern = re.compile(r'\.{3,}\s*\d+$')
+        dot_matches = sum(1 for line in non_empty_lines if dot_pattern.search(line))
 
-        # 2. Check for lines ending in numbers (heuristic for page nums)
-        #    We check if > 30% of lines end with a number
-        lines_ending_in_number = sum(1 for line in lines if re.search(r'\s\d+$', line.strip()))
-
-        # 3. Keyword check (optional, can be risky if strictly applied)
-        has_toc_header = any("contents" in line.lower() for line in lines[:3])
-
-        # Decision logic
-        if has_toc_header and lines_ending_in_number > len(lines) * 0.2:
+        if dot_matches > 2:
             return True
 
-        # Strong signal: dots + numbers
-        dot_matches = sum(1 for line in lines if dot_pattern.search(line))
-        if dot_matches > 3:
+        # 2. Header Check: Look for variations of "Contents", "Index", "Figures"
+        # We limit this to the first 5 non-empty lines
+        header_pattern = re.compile(r'^\s*(table of|list of)?\s*(contents|index|figures|tables)\b', re.IGNORECASE)
+        has_structural_header = any(header_pattern.match(line) for line in non_empty_lines[:5])
+
+        # 3. Page Number Heuristic
+        # Refined Regex: \s\d{1,3}$
+        # Matches " 5", " 102". Ignores " 2024" (Year) or " 10000" (Data)
+        page_num_pattern = re.compile(r'\s\d{1,3}$')
+        lines_ending_in_page_num = sum(1 for line in non_empty_lines if page_num_pattern.search(line))
+
+        # Calculate ratio based on non-empty lines
+        ratio = lines_ending_in_page_num / len(non_empty_lines)
+
+        # Decision: Requires BOTH a header AND a pattern of numbers
+        if has_structural_header and ratio > 0.25:
+            return True
+
+        # Special Case: If NO header, but massive signal (e.g., > 60% of lines look like TOC), toss it.
+        # This catches TOCs that span multiple pages where the "Contents" header was on the previous page.
+        if ratio > 0.6:
             return True
 
         return False
@@ -132,22 +167,53 @@ class Document(models.Model):
             # PyPDFLoader returns 1 Document per page
             loader = PyPDFLoader(file_path)
             raw_docs = loader.load()
+            for doc in raw_docs:
+                if 'page' in doc.metadata:
+                    doc.metadata['page_number'] = doc.metadata['page'] + 1
 
         elif file_extension.lower() == '.docx':
-            # Docx2txtLoader usually returns 1 Document for the WHOLE file
+            # Docx2txtLoader usually returns 1 Document for the WHOLE file and pagination is not available
             loader = Docx2txtLoader(file_path)
             raw_docs = loader.load()
 
         elif file_extension.lower() == '.pptx':
             loader = UnstructuredPowerPointLoader(file_path)
             raw_docs = loader.load()
+            # Unstructured often provides 'page_number', but let's ensure it exists
+            for i, doc in enumerate(raw_docs):
+                if 'page_number' not in doc.metadata:
+                    doc.metadata['page_number'] = i + 1
         else:
             print("Unsupported file type.")
         final_chunks = [chunk for chunk in text_splitter.split_documents(raw_docs)
                         if not self.__class__.is_likely_toc(chunk.page_content)]
-        # add metadata including content_hash
-        for vec_doc in final_chunks:
-            vec_doc.metadata = self.metadata
+
+        total_chunks = len(final_chunks)
+        for index, vec_doc in enumerate(final_chunks):
+            # A. Merge Global Metadata (e.g., content_hash, filename)
+            # We copy to avoid mutating the class reference
+            global_meta = self.metadata.copy() if self.metadata else {}
+            vec_doc.metadata.update(global_meta)
+
+            # B. Calculate Relative Location (The "Universal" Metric)
+            # "chunk_index": 0, "total_chunks": 10
+            vec_doc.metadata["chunk_index"] = index
+            vec_doc.metadata["total_chunks"] = total_chunks
+
+            # "location_percent": 25 (integer for easy filtering/display)
+            if total_chunks > 0:
+                vec_doc.metadata["location_percent"] = int(((index + 1) / total_chunks) * 100)
+            else:
+                vec_doc.metadata["location_percent"] = 0
+
+            # C. Fallback for Page Numbers
+            # If a file format didn't provide a page number, we can use the location
+            # to give a rough estimate or simply default to 1.
+            if "page_number" not in vec_doc.metadata:
+                # Optional: Estimate page number for TXT if you didn't do the line-count trick
+                # vec_doc.metadata["page_number"] = 1
+                vec_doc.metadata["page_number"] = f"{vec_doc.metadata["location_percent"]}%"
+
         doc_ids = [str(uuid4()) for _ in range(len(final_chunks))]
         return final_chunks, doc_ids
 
@@ -205,15 +271,6 @@ class Document(models.Model):
             rag_service.delete_document_from_vectorstore(self.content_hash)
         # 2. Rechunk and add to vector store
         rag_service.ingest_document(self)
-        # uuids = [str(uuid4()) for _ in range(len(langchain_docs))]
-        # rag_service.db.add_documents(langchain_docs, ids=uuids)
-
-    @classmethod
-    def generate_summaries(cls, queryset):
-        print(cls, queryset)
-        from llm_api.apps import service_registry
-        rag_service = service_registry['rag_service']
-        rag_service.add_summaries(queryset)
 
 
 @receiver(pre_delete, sender=Document)
@@ -244,8 +301,3 @@ class VectorIndexExplorer(Document):
         proxy = True
         verbose_name = "Vector Index Explorer"
         verbose_name_plural = "Vector Index Explorer"
-
-
-
-
-

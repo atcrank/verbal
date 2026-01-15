@@ -11,20 +11,7 @@ class DocumentForm(forms.ModelForm):
         model = Document
         fields = "__all__"
 
-    # def clean(self):
-    #     cleaned_data = super().clean()
-    #     file_upload = cleaned_data.get("file")
-    #     hasher = hashlib.sha256()
-    #     f = file_upload.open('rb')
-    #     for chunk in iter(lambda: f.read(4096), b""):
-    #         hasher.update(chunk)
-    #     cleaned_data["content_hash"] = hasher.hexdigest()
-    #     print(cleaned_data)
-    #     self.cleaned_data = cleaned_data
-    #     print(self.cleaned_data)
-    #     return cleaned_data
-
-@admin.action(description="Make a short AI summary of the sections as a content-rich index for FAISS search.")
+@admin.action(description="Ingest document(s) according to its indexing strategy.")
 def process_document(modeladmin, request, queryset):
     from llm_api.apps import service_registry
     rag_service = service_registry['rag_service']
@@ -32,7 +19,7 @@ def process_document(modeladmin, request, queryset):
 
 
 class DocumentAdmin(admin.ModelAdmin):
-    fields = ("title", "file", "chunk_size", "chunk_overlap", "metadata", "indexing_strategy", "currently_indexed")
+    fields = ("title", "file", "chunk_size", "chunk_overlap", "metadata", "indexing_strategy", "extraction_regex", "currently_indexed")
     readonly_fields = ("metadata",)
     list_display = ("title", "file", "uploaded_at", "indexing_strategy", "metadata", "currently_indexed")
     search_fields = ("title", "file")
@@ -44,7 +31,6 @@ class DocumentAdmin(admin.ModelAdmin):
 
 
 from django.contrib import admin
-from django.db.models import Sum
 from django.shortcuts import render
 from .models import Document, VectorIndexExplorer
 from llm_api.api import service_registry  # Import your service
