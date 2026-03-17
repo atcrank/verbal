@@ -121,7 +121,24 @@ class PromptResponseLog(models.Model):
     class Meta:
         ordering = ['-created_at']
 
+class AIModel(models.Model):
+    """
+    Configuration for an LLM that can be loaded into the AI Service.
+    Only one model can be active at a time due to VRAM constraints.
+    """
+    name = models.CharField(max_length=255, help_text="Friendly name (e.g. 'Phi-3 Mini')")
+    hf_model_id = models.CharField(max_length=255, help_text="HuggingFace ID (e.g. 'microsoft/Phi-3-mini-4k-instruct')")
+    description = models.TextField(blank=True, help_text="Notes on capabilities, VRAM usage, etc.")
+    
+    # Configuration
+    load_in_4bit = models.BooleanField(default=True, help_text="Use 4-bit quantization (Recommended for 6GB VRAM)")
+    context_window = models.IntegerField(default=4096, help_text="Max tokens")
 
+    # State
+    is_active = models.BooleanField(default=False)
+    activated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="activated_models")
+    activated_at = models.DateTimeField(null=True, blank=True)
+    usage_intent = models.CharField(max_length=255, blank=True, help_text="Why was this model activated? (e.g. 'Benchmarking Regex')")
 
-
-
+    def __str__(self):
+        return f"{self.name} ({'ACTIVE' if self.is_active else 'Inactive'})"

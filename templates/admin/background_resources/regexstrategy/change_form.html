@@ -1,0 +1,143 @@
+{% extends "admin/change_form.html" %}
+
+{% block after_field_sets %}
+    <!-- Regex Assistant UI -->
+    <div class="module aligned" style="border: 1px solid #ccc; background: #f9f9f9; padding: 15px; margin-bottom: 20px;">
+        <h2>AI Regex Assistant</h2>
+
+        <div style="display: flex; gap: 20px;">
+            <!-- Generator Section -->
+            <div style="flex: 1;">
+                <h3>1. Generate Pattern</h3>
+                <p class="help">Describe the two parts you want to capture.</p>
+                <input type="text" id="desc-term" style="width: 100%; margin-bottom: 5px; padding: 5px;" placeholder="Group 1: Term (e.g. 'Alpha-Code')">
+                <input type="text" id="desc-def" style="width: 100%; margin-bottom: 10px; padding: 5px;" placeholder="Group 2: Definition (e.g. 'The first code...')">
+
+                <p class="help">Enter examples of text you want to match (one per line). Optional if description is clear.</p>
+                <textarea id="regex-examples" rows="4" style="width: 100%; margin-bottom: 10px;" placeholder="Example:&#10;Alpha-Code: Definition one&#10;Beta-Code: Definition two"></textarea>
+
+                <div style="display: flex; align-items: center;">
+                    <button type="button" id="btn-suggest" class="button" style="background: #417690; color: white;">✨ Suggest Regex</button>
+                    <span id="suggest-loading" style="display:none; margin-left: 10px;">Thinking...</span>
+                    <code id="suggest-result" style="margin-left: 10px; color: #c7254e; background-color: #f9f2f4; padding: 4px 6px; border-radius: 4px; display: none;"></code>
+                </div>
+            </div>
+
+            <!-- Preview Section -->
+            <div style="flex: 1;">
+                <h3>2. Test Pattern</h3>
+                <p class="help">Test the current regex against the first 5 chunks of the document, or select a specific chunk below.</p>
+                <button type="button" id="btn-preview" class="button">🔍 Test on Document</button>
+                <div id="preview-results" style="margin-top: 10px; background: white; padding: 10px; border: 1px solid #ddd; min-height: 80px; font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto;">
+                    Results will appear here...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const $ = django.jQuery;
+
+            // --- Suggest Logic ---
+            $('#btn-suggest').on('click', function() {
+                const examples = $('#regex-examples').val();
+                const description = $('#id_strategy_description').val() || "Extract terms and definitions";
+                const termDesc = $('#desc-term').val();
+                const defDesc = $('#desc-def').val();
+                const docId = $('#id_document').val()
+
+                if (!examples && !description) {
+                    alert("Please provide a description or examples.");
+                    return;
+                }
+
+                $('#suggest-loading').show();
+                $('#suggest-loading').text("Generating and Testing Candidates...")
+                $('#suggest-result').hide();
+
+                $.ajax({
+                    url: '/api/llm/admin/suggest_regex/',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        description: description,
+                        term_description: termDesc,
+                        definition_description: defDesc,
+                        examples: examples,
+                        document_id: docId ? parseInt(docId) : null,
+                    }),
+                    headers: {'X-CSRFToken': '{{ csrf_token }}'},
+                    success: function(data) {
+                        if (data.regex) {
+                            // Populate the Django form field
+                            $('#id_regex').val(data.regex);
+                            // Show in UI
+                            $('#suggest-result').text(data.regex + " (" + data.best_match_count + ") matches.").show();
+                        } else if (data.error) {
+                            $('#suggest-result').text(data.error).show();
+                        }
+                    },
+                    error: function(err) {
+                        alert("Error generating regex. Check console.");
+                        console.error(err);
+                    },
+                    complete: function() {
+                        $('#suggest-loading').hide();
+                    }
+                });
+            });
+
+            // --- Preview Logic ---
+            $('#btn-preview').on('click', function() {
+                const regex = $('#id_regex').val();
+                const docId = $('#id_document').val();
+                const selectedChunkId = $('input[name="selected_test_chunk"]:checked').val();
+
+                if (!regex || (!docId && !selectedChunkId)) {
+                    alert("Please select a document (or chunk) and ensure a regex is entered.");
+                    return;
+                }
+
+                $('#preview-results').html("<em>Loading document chunks...</em>");
+
+                $.ajax({
+                    url: '/api/llm/admin/preview_regex/',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        document_id: docId ? parseInt(docId) : null,
+                        chunk_id: selectedChunkId || null,
+                        regex: regex
+                    }),
+                    headers: {'X-CSRFToken': '{{ csrf_token }}'},
+                    success: function(data) {
+                        if (data.error) {
+                            $('#preview-results').html(`<span style="color:red">${data.error}</span>`);
+                        } else {
+                            let html = `<strong>Found ${data.count} matches in first 5 chunks.</strong><br/>`;
+                            if (data.matches.length > 0) {
+                                html += "<ul>";
+                                data.matches.forEach(m => {
+                                    const safeM = $('<div>').text(m).html();
+                                    html += `<li>${safeM}</li>`;
+                                });
+                                html += "</ul>";
+                            } else {
+                                html += "<br/>No matches found.<br/>";
+                            }
+                            // Show/Hide Source Text
+                            html += `<details style="margin-top:10px; cursor:pointer; border-top:1px solid #eee; padding-top:5px;"><summary style="color:#417690; font-weight:bold;">Show/Hide Source Text</summary><pre style="white-space: pre-wrap; color:#666; margin-top:5px;">${data.sample_text}</pre></details>`;
+
+                            $('#preview-results').html(html);
+                        }
+                    },
+                    error: function(err) {
+                        $('#preview-results').html("Error fetching preview.");
+                        console.error(err);
+                    }
+                });
+            });
+        });
+    </script>
+{% endblock %}

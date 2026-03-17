@@ -1,67 +1,120 @@
-from django.test import TestCase
-
-# Create your tests here.
-from django.test import TestCase, Client
+import os
+import shutil
+import json
+from pathlib import Path
+from django.test import TestCase, Client, override_settings
 from django.contrib.auth.models import User
-from unittest.mock import patch, MagicMock
-from .models import PromptResponseLog
+from django.conf import settings
+from django.core.files.uploadedfile import SimpleUploadedFile
 
+from llm_api.apps import service_registry
+from llm_api.models import PromptResponseLog
+from background_resources.models import Document, ReadingStrategy
 
-class LlmApiTests(TestCase):
+# Define test paths (Isolated from production)
+TEST_BASE_DIR = Path(settings.BASE_DIR) / "test_data_llm_api"
+TEST_VECTOR_STORE = TEST_BASE_DIR / "vector_store"
+TEST_CHUNK_STORE = TEST_BASE_DIR / "chunk_store"
+TEST_FILES_DIR = TEST_BASE_DIR / "files"
+
+class LlmApiIntegrationTests(TestCase):
+    """
+    Full Integration Tests for the LLM API.
+    Uses REAL services (AI, RAG, NLP) with no mocks.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        # 1. Override Settings to use test directories
+        cls.settings_override = override_settings(
+            VECTOR_STORE=TEST_VECTOR_STORE,
+            CHUNK_STORE=TEST_CHUNK_STORE,
+            FILES=TEST_FILES_DIR,
+            MEDIA_ROOT=TEST_FILES_DIR
+        )
+        cls.settings_override.enable()
+        super().setUpClass()
+
+        # 2. Create Test Directories
+        os.makedirs(TEST_VECTOR_STORE, exist_ok=True)
+        os.makedirs(TEST_CHUNK_STORE, exist_ok=True)
+        os.makedirs(TEST_FILES_DIR, exist_ok=True)
+
+        # 3. Initialize Real Services
+        print("\n>>> 🚀 INITIALIZING REAL SERVICES FOR API TEST <<<")
+        cls.ai_service = service_registry['ai_service']
+        cls.rag_service = service_registry['rag_service']
+        
+        # Force load models (Lazy loading would happen on first request, but we do it here for clarity)
+        if cls.ai_service.model is None:
+            cls.ai_service.load_models()
+            
+        # 4. Ingest Test Data for RAG
+        # We create a document so the RAG service has something to find.
+        content = "The capital of France is Paris. It is known for the Eiffel Tower and the Louvre Museum."
+        file_path = TEST_FILES_DIR / "france.txt"
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(content)
+            
+        with open(file_path, 'rb') as f:
+            django_file = SimpleUploadedFile(
+                name="france.txt",
+                content=f.read(),
+                content_type='text/plain'
+            )
+        
+        doc = Document.objects.create(
+            title="France Info", 
+            file=django_file,
+            chunk_size=500,
+            chunk_overlap=50
+        )
+        strategy = ReadingStrategy.objects.create(document=doc, strategy_description="Default")
+        strategy.read_document(cls.rag_service)
+
+    @classmethod
+    def tearDownClass(cls):
+        # Cleanup test data
+        if os.path.exists(TEST_BASE_DIR):
+            shutil.rmtree(TEST_BASE_DIR)
+        super().tearDownClass()
+        cls.settings_override.disable()
 
     def setUp(self):
-        # Create a test client and a test user
         self.client = Client()
-        self.user = User.objects.create_user(
-            username='testuser',
-            password='password123'
-        )
+        self.user = User.objects.create_user(username='testuser', password='password123')
         self.client.login(username='testuser', password='password123')
 
-    @patch('llm_api.api.rag_service')  # Mocks the RAG service import
-    @patch('llm_api.api.ai_service')  # Mocks the AI service import
-    def test_generate_response_endpoint(self, mock_ai_service, mock_rag_service):
+    def test_generate_response_with_real_rag(self):
         """
-        Test the /generate_response/ endpoint.
+        Test the /generate_response/ endpoint with the full stack.
+        Verifies that RAG retrieves the ingested document and the LLM generates a response.
         """
-        # --- 1. Setup Mocks ---
-        # Configure the mocks to return fake (but valid) data
-        mock_rag_service.get_context.return_value = "This is a RAG snippet."
-        mock_ai_service.generate_response.return_value = "This is the final AI response."
-        mock_ai_service.clean_response.return_value = "This is the final AI response."  # Mock the (fixed) clean_response
-
-        # --- 2. Make the API Call ---
-        # Define the payload for the POST request
         payload = {
-            "system_prompt": "You are a test bot.",
-            "user_prompt": "Hello",
+            "system_prompt": "You are a helpful assistant.",
+            "user_prompt": "What is the capital of France?",
             "max_new_tokens": 50
         }
 
         response = self.client.post("/api/llm/generate_response/", data=payload, content_type="application/json")
 
-        # --- 3. Assert Results ---
-        # Check that the response is successful (HTTP 200)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.content.decode('utf-8'), '{"cleaned_response": "This is the final AI response."}')
+        data = response.json()
+        
+        # 1. Verify Response Structure
+        self.assertIn("cleaned_response", data)
+        self.assertIn("conversation_id", data)
+        
+        ai_response = data["cleaned_response"]
+        print(f"\n🤖 Real AI Response: {ai_response}")
+        self.assertTrue(len(ai_response) > 0)
 
-        # Check that the AI service was called with the *augmented* prompt
-        expected_system_prompt = (
-            "You are a test bot.\n  "
-            "These extracts from a local collection of authoritative documents "
-            "should be used to help guide your answer:\n "
-            "This is a RAG snippet.  "
-        )
-        mock_ai_service.generate_response.assert_called_once()
-        print(mock_ai_service.generate_response.call_args)
-        called_args = mock_ai_service.generate_response.call_args[1]
-        self.assertEqual(called_args['messages'][0]['content'], expected_system_prompt)
-        self.assertEqual(called_args['messages'][1]['content'], "Hello")
-
-        # Check that the log was saved correctly
-        self.assertEqual(PromptResponseLog.objects.count(), 1)
-        log_entry = PromptResponseLog.objects.first()
-        self.assertEqual(log_entry.user, self.user)
-        self.assertEqual(log_entry.system_prompt, payload['system_prompt'])  # Check augmented prompt was saved
-        self.assertEqual(log_entry.rag_selections, "This is a RAG snippet.")
-        self.assertEqual(log_entry.generated_response, "This is the final AI response.")
+        # 2. Verify RAG Usage via Logs
+        # We check the database log to ensure the RAG service actually injected the context
+        log = PromptResponseLog.objects.last()
+        self.assertEqual(log.user, self.user)
+        
+        # The log should contain the text from our ingested file
+        print(f"📄 RAG Context Used: {log.rag_selections[:100]}...")
+        self.assertIn("France", log.rag_selections)
+        self.assertIn("Paris", log.rag_selections)

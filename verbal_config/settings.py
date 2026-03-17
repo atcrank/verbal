@@ -38,7 +38,9 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "background_resources.apps.BackgroundResourcesConfig",
-    "llm_api.apps.LlmApiConfig"
+    "benchmarking.apps.BenchmarkingConfig",
+    "llm_api.apps.LlmApiConfig",
+    "metacognition.apps.MetacognitionConfig",
 ]
 
 MIDDLEWARE = [
@@ -49,6 +51,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "llm_api.middleware.BackgroundModelLoaderMiddleware",
 ]
 
 ROOT_URLCONF = "verbal_config.urls"
@@ -126,3 +129,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 FILES = BASE_DIR / 'background_resources/knowledge_sources/'
 VECTOR_STORE = BASE_DIR / 'background_resources/vector_store/'
 CHUNK_STORE = BASE_DIR / 'background_resources/vector_store/chunks/'
+DEFINITION_STORE = BASE_DIR / 'background_resources/vector_store/definitions/'
+
+# LLM models that are solid condidates as per early 2026 for my development machine with only 6gb VRAM
+# LLM_MODEL_ID = "microsoft/Phi-3-mini-4k-instruct"
+# LLM_MODEL_ID = "Qwen/Qwen2.5-3B-Instruct"  # Highly recommended for 6GB VRAM
+# LLM_MODEL_ID = "google/gemma-2-2b-it"      # Very fast, lightweight
+# LLM_MODEL_ID = "mistralai/Mistral-7B-Instruct-v0.3" # Might be tight/slow
+# LLM_MODEL_ID = "meta-llama/Meta-Llama-3.1-8B-Instruct" # Likely to OOM on 6GB

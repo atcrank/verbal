@@ -125,5 +125,6 @@ def change_password(request, data: ChangePasswordIn):
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", api.urls),
+    path("benchmarking/", include("benchmarking.urls")),
     path("accounts/", include("django.contrib.auth.urls")),
 ]

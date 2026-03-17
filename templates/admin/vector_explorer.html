@@ -13,8 +13,8 @@
             <p>Total Vectors</p>
         </div>
         <div>
-            <h2>{{ ingested_documents }}</h2>
-            <p>Ingested Files</p>
+            <h2>{{ total_readings }}</h2>
+            <p>Total Readings of Files</p>
         </div>
         <div>
             <h2>{{ total_chunks }}</h2>
@@ -39,11 +39,16 @@
             {% for doc in results %}
             <div class="module" style="padding: 15px; margin-bottom: 10px; border-left: 5px solid #79aec8;">
                 <h3 style="margin-top:0;">Source: {{ doc.metadata.filename }} (Page {{ doc.metadata.page_number }}|{{doc.metadata.location_percent}}%)</h3>
-                <p><em>Score/Strategy: {{ doc.metadata.indexing_strategy|default:"Unknown" }}</em></p>
+                {% if doc.metadata.strat_type %}
+                    <p><em>Reading Strategy: {{ doc.metadata.strat_type }}, from Chunk {{ doc.metadata.read_from}}</em></p>
+                {% endif %}
                 <div style="background: white; padding: 10px; border: 1px solid #eee;">
-                    {{doc.metadata.original_term}}:{{ doc.page_content|linebreaks }}
+                    {% if doc.metadata.original_term %}
+                        <strong>{{doc.metadata.original_term}}</strong>: 
+                    {% endif %}
+                    {{ doc.page_content|linebreaks }}
                 </div>
-                <p><small>ID: {{ doc.metadata.doc_id }}</small></p>
+                <p><small>ID: {{ doc.metadata.chunk_id }}</small></p>
             </div>
             {% endfor %}
         {% else %}

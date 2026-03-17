@@ -1,26 +1,43 @@
 import os
-import uuid
+from uuid import uuid4
 import json
+import zipfile
 import pickle
 import re
+from django.conf import settings
+from django.db import models
+from django.utils import timezone
+
+# You will need to have these libraries installed:
+# pip install langchain langchain-community faiss-cpu sentence-transformers
+from langchain_text_splitters import CharacterTextSplitter, RecursiveCharacterTextSplitter
+from langchain.docstore.document import Document as LangchainDocument
+from langchain_community.document_loaders import (PyPDFLoader, Docx2txtLoader, UnstructuredPowerPointLoader, RecursiveUrlLoader, DirectoryLoader, BSHTMLLoader)
+from bs4 import BeautifulSoup as Soup
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain.storage import LocalFileStore, EncoderBackedStore
 from langchain.retrievers.multi_vector import MultiVectorRetriever
-from langchain.docstore.document import Document as LangchainDocument
 
-from verbal_config.settings import VECTOR_STORE, CHUNK_STORE
 from pydantic import BaseModel, Field
 from typing import Optional, List
 import outlines
+from typing import TYPE_CHECKING, List, Tuple
 
-class DocumentIngestion(BaseModel):
-    long_description: str = Field(max_length=1000)
-    condensed_summary: str = Field(max_length=300)
+from background_resources.models import (Document as DjangoDocument, 
+                                         RAGChunk as DjangoChunk,
+                                        StrategyChunkUsage,
+                                         ReadingStrategy as DjangoReadingStrategy,
+                                         RAGQueryLog, 
+                                         PromptStrategy, 
+                                         RegexStrategy, 
+                                         AbbreviationsReadingStrategy) 
+
+
+class DocumentHandles(BaseModel):
+    long_form: str = Field(max_length=1000)
+    short_form: str = Field(max_length=300)
     keywords: List[str] = Field(max_length=3)
-
-from pydantic import BaseModel, Field
-from typing import List
 
 class GlossaryItem(BaseModel):
     term: str = Field(..., description="The acronym or defined term")
@@ -33,7 +50,7 @@ class RAGService:
 
     db = None
     embeddings = None
-    indexed_hashes = None
+    hashes_indexed = {}
     store = None
     retriever = None
     chain = None
@@ -41,25 +58,31 @@ class RAGService:
     summary_generator = None
     glossary_generator = None
 
-    def __init__(self):
+    def __init__(self, vector_store_path=None, chunk_store_path=None):
+        self.vector_store_path = vector_store_path or settings.VECTOR_STORE
+        self.chunk_store_path = chunk_store_path or settings.CHUNK_STORE
+
         self.embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-        self.indexed_hashes = set()
-        self.raw_store = LocalFileStore(CHUNK_STORE)
+        self.reading_ids = set()  # reading_ids
+        self.raw_store = LocalFileStore(self.chunk_store_path)
         self.store = EncoderBackedStore(store=self.raw_store,
                                         key_encoder=lambda x: x, # Keys are already simple ID strings
                                         value_serializer=pickle.dumps, # Function to turn Document -> Bytes
                                         value_deserializer=pickle.loads # Function to turn Bytes -> Document
         )
-        self.id_key = "doc_id"
+        self.id_key = "chunk_id"
 
-        if os.path.exists(VECTOR_STORE) and os.path.isdir(VECTOR_STORE) and "index.faiss" in os.listdir(VECTOR_STORE):
+        if os.path.exists(self.vector_store_path) and os.path.isdir(self.vector_store_path) and "index.faiss" in os.listdir(self.vector_store_path):
             try:
-                print(f"Loading existing vector store from '{VECTOR_STORE}'...")
-                self.db = FAISS.load_local(VECTOR_STORE, self.embeddings, allow_dangerous_deserialization=True)
+                print(f"Loading existing vector store from '{self.vector_store_path}'...")
+                self.db = FAISS.load_local(self.vector_store_path, self.embeddings, allow_dangerous_deserialization=True)
                 for doc in self.db.docstore._dict.values():
-                    if 'content_hash' in doc.metadata:
-                        self.indexed_hashes.add(doc.metadata['content_hash'])
-                print(f"Found {len(self.indexed_hashes)} already indexed documents.")
+                    if 'indexed_hash' in doc.metadata:
+                        scheme = doc.metadata['indexed_hash']
+                        if scheme not in self.hashes_indexed:
+                            self.hashes_indexed[scheme] = []
+                        self.hashes_indexed[scheme].append(doc.metadata.get(self.id_key))
+                print(f"Found {len(self.hashes_indexed)} already indexed documents.")
             except Exception as e:
                 print(f"Could not load vector store. Maybe something is wrong with it. Error: {e}")
         else:   # create a blank vector_store as db
@@ -67,24 +90,33 @@ class RAGService:
             self.db = FAISS.from_texts(dummy_texts, self.embeddings)
             ids_to_delete = [self.db.index_to_docstore_id[0]]
             self.db.delete(ids_to_delete)
+            self.store.mdelete(ids_to_delete)
+        self.db.save_local(self.vector_store_path)
+
+        # initialise summary generator and glossary generator
+
         print(f"RAG Service db initialized. {self.db}")
         if not os.path.exists("index_dump.txt"):
             self.dump_index_to_file()
 
+    def save_db(self):
+        self.db.save_local(self.vector_store_path)
 
-    def save_store(self):
-        self.db.save_local(VECTOR_STORE)
+    def load_db(self):
+        self.db = FAISS.load_local(self.vector_store_path, self.embeddings, allow_dangerous_deserialization=True)
 
-    def load_store(self):
-        self.db = FAISS.load_local(VECTOR_STORE, self.embeddings, allow_dangerous_deserialization=True)
+    def delete_document_from_vectorstore(self, document):
+        reading_list = document.readingstrategy_set.all()
+        for reading in reading_list:
+            self.delete_reading_from_vectorstore(reading)
+        self.db.save_local(self.vector_store_path)
 
-    def delete_document_from_vectorstore(self, content_hash):
-        ids_to_delete = [
-                doc_id for doc_id, doc in self.db.docstore._dict.items()
-                if doc.metadata.get('content_hash') == content_hash
-            ]
-        self.db.delete(ids_to_delete)
-        print(f"Deleted document with id {content_hash}.")
+    def delete_reading_from_vectorstore(self, readingstrategy):
+        # Only delete chunks if they are not used by any OTHER reading strategy
+        # The post_delete signal on StrategyChunkUsage will handle the reference counting
+        # and delete the RAGChunk + Store content if orphaned.
+        readingstrategy.usages.all().delete()
+        print(f"Deleted readings of {readingstrategy.document.title}.")
 
     def get_direct_context(self, query, k=1):
         retrieved_docs = self.db.similarity_search(query, k=k, search_type="mmr")  # Get top result page
@@ -93,37 +125,43 @@ class RAGService:
         retrieved_context =  "Also, this is an arguably relevant excerpt from my document library:" + "\n".join(doc_cards)
         return retrieved_context
 
+    def get_chunk_from_store(self, chunk_id):
+        return self.store.mget([chunk_id])[0]
+
     def get_context(self, query: str, k: int = 4) -> List[LangchainDocument]:
         """
         Manually retrieves documents:
         1. Vector searches the query against the SUMMARIES/TERMS in self.db.
-        2. Uses the found 'doc_id's to fetch the FULL PARENT CHUNKS from self.store.
+        2. Uses the found 'chunk_id's to fetch the FULL PARENT CHUNKS from self.store.
         """
+
 
         # 1. Vector Search (Get the summaries/terms)
         # We fetch k*2 to handle cases where multiple summaries point to the same parent
-        sub_docs = self.db.similarity_search(query, k=k * 2)
+        matches = self.db.similarity_search(query, k=k*3)
+        print("Matches", matches)
 
-        if not sub_docs:
+        if not matches:
             return []
 
         # 2. Extract Unique Parent IDs
         parent_ids = []
         seen_ids = set()
 
-        for doc in sub_docs:
-            # The 'doc_id' we saved in ingest_document
-            p_id = doc.metadata.get("doc_id")
+        for doc in matches:
+            # The 'chunk_id' we saved in ingest_document
+            p_id = doc.metadata.get("chunk_id")
 
             if p_id and p_id not in seen_ids:
                 parent_ids.append(p_id)
                 seen_ids.add(p_id)
 
-            if len(parent_ids) >= k:
+            if len(parent_ids) >= k * 2:
                 break
 
         # 3. Retrieve Full Documents from the Store
         # This is where we use your store directly, bypassing the Retriever's bugs
+        final_docs = []
         try:
             # mget returns the objects directly (Documents), thanks to pickle.loads
             results = self.store.mget(parent_ids)
@@ -131,120 +169,283 @@ class RAGService:
             # Filter out any Nones (in case a key was missing)
             final_docs = [doc for doc in results if doc is not None]
 
-            print(f"Retrieved {len(final_docs)} full documents from {len(sub_docs)} vector hits.")
-            return final_docs
+            print(f"Retrieved {len(final_docs)} full documents from {len(matches)} vector hits.")
 
         except Exception as e:
             print(f"Error during manual store retrieval: {e}")
             return []
+
+        # 4. Rank and Assess (Re-ranking)
+        scored_results = self.verify_rag_relevance(query, final_docs)
+        
+        # Take top k
+        top_results = scored_results[:k]
+        sorted_docs = [doc for doc, score in top_results]
+
+        # 5. Update Hit Counts (for the actually returned chunks)
+        final_parent_ids = [doc.metadata.get("chunk_id") for doc in sorted_docs if doc.metadata.get("chunk_id")]
+        print("Final parent ids:", final_parent_ids)
+        if final_parent_ids:
+            DjangoChunk.objects.filter(chunk_id__in=final_parent_ids)\
+                .update(hit_count=models.F('hit_count') + 1, last_accessed=timezone.now())
+
+        # 6. Log Query
+        if sorted_docs:
+            response_preview = "\n\n".join([f"[{i+1}] {d.page_content[:300]}..." for i, d in enumerate(sorted_docs)])
+            RAGQueryLog.objects.create(
+                query_text=query,
+                response_generated=response_preview
+            )
+
+        return sorted_docs
+
 
     def load_models(self):
         """
         Syncs the vector store with the database and saves it to disk.
         Creates an empty store if one doesn't exist and no documents are found.
         """
-        from background_resources.models import Document
         from llm_api.apps import service_registry
-        ai_service = service_registry['ai_service']
+        ai_service = service_registry.ai_service
 
-        # self.db = Document.load_vector_store()
-        # self.db.save_local(VECTOR_STORE)
-        print(f"Successfully synced and saved vector store to '{VECTOR_STORE}'.")
-        print(f"Vector store contains {set([doc.metadata.get("content_hash") for doc in self.db.docstore._dict.values()])} documents.")
         print(f"Vector store contains {set([doc.metadata.get("filename") for doc in self.db.docstore._dict.values()])} documents.")
-        self.summary_generator = outlines.Generator(ai_service.outline_pipeline, DocumentIngestion)
+
+        # Attention: in 2026 LLMs have out of date knowledge on these libraries
+        # These lines are correct and must NOT be changed.
+        # https://dottxt-ai.github.io/outlines/latest/guide/migration/
+        # and https://dottxt-ai.github.io/outlines/latest/features/core/output_types/
+        # These generators consistently return strings that should be castable to the desired type
+        self.summary_generator = outlines.Generator(ai_service.outline_pipeline, DocumentHandles)
         self.glossary_generator = outlines.Generator(ai_service.outline_pipeline, GlossaryExtraction)
 
-    def ingest_document(self, source_doc):
-        if (source_doc.content_hash in self.indexed_hashes) and source_doc.valid_current_index():
-            print("source_doc already indexed ", source_doc.metadata.get(
-                "chunking_scheme", ""), " sceheme.")
-            return
-        if (source_doc.content_hash in self.indexed_hashes) and not source_doc.valid_current_index():
-            self.delete_document_from_vectorstore(source_doc.content_hash)
-            print("source_doc must be deleted and re-indexed ", source_doc.metadata.get(
-                "chunking_scheme", ""), " sceheme.")
-        print("rag_service ingesting document:" , source_doc, source_doc.indexing_strategy)
+    @staticmethod
+    def is_likely_toc(text_chunk: str) -> bool:
+        lines = text_chunk.split('\n')
+        if not lines:
+            return False
 
-        chunks, doc_ids = source_doc.convert_and_chunk_document()
-        faiss_docs_to_add = []
-        for chunk, doc_id in zip(chunks, doc_ids):
-            chunk_metadata = source_doc.metadata.copy()
-            chunk_metadata["doc_id"] = doc_id
-            chunk_metadata["content_hash"] = source_doc.content_hash
-            chunk_metadata["filename"] = source_doc.file.name
-            chunk_metadata["page_number"] = 0
-            chunk_metadata["chunking_scheme"] = source_doc.chunking_scheme()
-            self.store.mset([(doc_id, chunk)])
-            if source_doc.indexing_strategy == "RAW":
-                raw_doc = LangchainDocument(page_content=chunk.page_content, metadata={**chunk_metadata, "doc_id": doc_id})
-                faiss_docs_to_add.append(raw_doc)
-            elif source_doc.indexing_strategy == "SUM":
-                summary_text = self.get_chunk_summary(chunk.page_content)
-                if summary_text:
-                    summary_doc = LangchainDocument(page_content=summary_text,
-                                                    metadata={**chunk_metadata, "doc_id": doc_id})
-                    faiss_docs_to_add.append(summary_doc)
-            elif source_doc.indexing_strategy == "DIC":
-                definitions = self.get_glossary_terms(chunk.page_content, source_doc=source_doc)
-                for item in definitions:
-                    # 1. Create a NEW unique ID for this specific definition
-                    # We do NOT use the chunk_id, because we want to retrieve just this definition.
-                    def_id = str(uuid.uuid4())
-                    # 2. Store JUST THE DEFINITION in the ByteStore
-                    definition_doc = LangchainDocument(
-                        page_content=item.definition,
-                        metadata={
-                            **chunk_metadata,
-                            "type": "glossary_entry",
-                            "original_term": item.term
-                        }
-                    )
-                    self.store.mset([(def_id, definition_doc)])
+        # Filter empty lines to avoid skewing percentages
+        non_empty_lines = [line.strip() for line in lines if line.strip()]
+        if not non_empty_lines:
+            return False
 
-                    # 3. Vectorize JUST THE TERM in FAISS
-                    # Point it to the specific definition ID
-                    term_doc = LangchainDocument(
-                        page_content=item.term,
-                        metadata={"doc_id": def_id}
-                    )
-                    faiss_docs_to_add.append(term_doc)
-        self.db.add_documents(faiss_docs_to_add)
-        self.indexed_hashes.add(source_doc.content_hash)
-        source_doc.currently_indexed = True
-        source_doc.metadata["chunking_scheme"] = source_doc.chunking_scheme()
+        # 1. "Dots" pattern: Looks for "...... 12" common in old school PDFs
+        # Added check that it must match at least 2 distinct lines to avoid a fluke
+        dot_pattern = re.compile(r'\.{3,}\s*\d+$')
+        dot_matches = sum(1 for line in non_empty_lines if dot_pattern.search(line))
 
-        source_doc.save()
-        self.save_store()
+        if dot_matches > 2:
+            return True
+
+        # 2. Header Check: Look for variations of "Contents", "Index", "Figures"
+        # We limit this to the first 5 non-empty lines
+        header_pattern = re.compile(r'^\s*(table of|list of)?\s*(contents|index|figures|tables)\b', re.IGNORECASE)
+        has_structural_header = any(header_pattern.match(line) for line in non_empty_lines[:5])
+
+        # 3. Page Number Heuristic
+        # Refined Regex: \s\d{1,3}$
+        # Matches " 5", " 102". Ignores " 2024" (Year) or " 10000" (Data)
+        page_num_pattern = re.compile(r'\s\d{1,3}$')
+        lines_ending_in_page_num = sum(1 for line in non_empty_lines if page_num_pattern.search(line))
+
+        # Calculate ratio based on non-empty lines
+        ratio = lines_ending_in_page_num / len(non_empty_lines)
+
+        # Decision: Requires BOTH a header AND a pattern of numbers
+        if has_structural_header and ratio > 0.25:
+            return True
+
+        # Special Case: If NO header, but massive signal (e.g., > 60% of lines look like TOC), toss it.
+        # This catches TOCs that span multiple pages where the "Contents" header was on the previous page.
+        if ratio > 0.6:
+            return True
+
+        return False
+
+    def convert_chunk_store_document(self, document: DjangoDocument, chunk_size=None, chunk_overlap=None) -> Tuple[List[LangchainDocument], List[str]]:
+        # ... inside the loop for docs_to_add ...
+        
+        # Determine effective chunking parameters
+        eff_size = chunk_size if chunk_size is not None else document.chunk_size
+        eff_overlap = chunk_overlap if chunk_overlap is not None else document.chunk_overlap
+        
+        current_scheme = document.chunking_scheme(eff_size, eff_overlap)
+        
+        if current_scheme in self.hashes_indexed:
+            # Check if the chunks actually exist in the store (integrity check)
+            existing_ids = self.hashes_indexed[current_scheme]
+            if existing_ids and self.store.mget([existing_ids[0]])[0] is not None:
+                print(f"Reusing {len(existing_ids)} existing chunks for scheme {current_scheme}")
+                return [], existing_ids
+            else:
+                print(f"Scheme {current_scheme} found in index but chunks missing from store. Re-indexing.")
+
+        raw_docs = []
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=eff_size,
+            chunk_overlap=eff_overlap,
+            separators=["\n\n", "\n", " ", ""]) # Tries to split by paragraph, then line, then word)
+
+        file_path = document.file.path
+        _, file_extension = os.path.splitext(file_path)
+        if file_extension.lower() == '.txt':
+            with document.file.open('r') as f:
+                # Wrap raw text in a Document object to match Loader outputs
+                raw_docs = [LangchainDocument(page_content=f.read(), metadata={"source": file_path})]
+
+        elif file_extension.lower() == '.pdf':
+            # PyPDFLoader returns 1 Document per page
+            loader = PyPDFLoader(file_path)
+            raw_docs = loader.load()
+            for doc in raw_docs:
+                if 'page' in doc.metadata:
+                    doc.metadata['page_number'] = doc.metadata['page'] + 1
+
+        elif file_extension.lower() == '.docx':
+            # Docx2txtLoader usually returns 1 Document for the WHOLE file and pagination is not available
+            loader = Docx2txtLoader(file_path)
+            raw_docs = loader.load()
+
+        elif file_extension.lower() == '.pptx':
+            loader = UnstructuredPowerPointLoader(file_path)
+            raw_docs = loader.load()
+            # Unstructured often provides 'page_number', but let's ensure it exists
+            for i, doc in enumerate(raw_docs):
+                if 'page_number' not in doc.metadata:
+                    doc.metadata['page_number'] = i + 1
+
+        elif file_extension.lower() == '.zip':
+            # 1. Define Extraction Path: media/corpora/<hash>
+            extract_path = os.path.join(settings.MEDIA_ROOT, "corpora", document.indexed_hash)
+            
+            # 2. Unzip if not already there (Idempotency check)
+            if not os.path.exists(extract_path):
+                print(f"Unzipping corpus to {extract_path}...")
+                with zipfile.ZipFile(file_path, 'r') as zip_ref:
+                    zip_ref.extractall(extract_path)
+            
+            # 3. Load using DirectoryLoader (Iterates all HTML files)
+            # We use BSHTMLLoader to parse the HTML into text
+            loader = DirectoryLoader(
+                extract_path, 
+                glob="**/*.html", 
+                loader_cls=BSHTMLLoader,
+                loader_kwargs={"open_encoding": "utf-8"}
+            )
+            raw_docs = loader.load()
+
+        else:
+            print("Unsupported file type.")
+            
+        # Normalize line endings for all loaded docs to ensure splitters and regexes work safely
+        for doc in raw_docs:
+            doc.page_content = doc.page_content.replace('\r\n', '\n').replace('\r', '\n')
+
+        final_chunks = [chunk for chunk in text_splitter.split_documents(raw_docs)
+                        if not self.is_likely_toc(chunk.page_content)]
+
+        total_chunks = len(final_chunks)
+        for index, vec_doc in enumerate(final_chunks):
+            # A. Merge Global Metadata (e.g., indexed_hash, filename)
+            # We copy to avoid mutating the class reference
+            global_meta = document.metadata.copy() if document.metadata else {}
+            vec_doc.metadata.update(global_meta)
+
+            # B. Calculate Relative Location (The "Universal" Metric)
+            # "chunk_index": 0, "total_chunks": 10
+            vec_doc.metadata["chunk_index"] = index
+            vec_doc.metadata["total_chunks"] = total_chunks
+
+            # "location_percent": 25 (integer for easy filtering/display)
+            if total_chunks > 0:
+                vec_doc.metadata["location_percent"] = int(((index + 1) / total_chunks) * 100)
+            else:
+                vec_doc.metadata["location_percent"] = 0
+
+            # C. Fallback for Page Numbers
+            # If a file format didn't provide a page number, we can use the location
+            # to give a rough estimate or simply default to 1.
+            if "page_number" not in vec_doc.metadata:
+                # Optional: Estimate page number for TXT if you didn't do the line-count trick
+                # vec_doc.metadata["page_number"] = 1
+                vec_doc.metadata["page_number"] = f"{vec_doc.metadata['location_percent']}%"
+
+        chunk_ids = [str(uuid4()) for _ in range(len(final_chunks))]
+        #  PREPPED CHUNKS COMPLETE. Load them to
+        chunks = final_chunks
+        chunks_to_store = []
+        lc_docs_to_add = []
+
+        for i, (chunk, chunk_id) in enumerate(zip(chunks, chunk_ids)):
+            # Update the chunk's metadata in place so the Store copy gets the ID
+            chunk.metadata[self.id_key] = chunk_id
+            chunk.metadata["filename"] = document.file.name
+            chunk.metadata["chunk_number"] = f"{str(i + 1)}/{str(len(chunks))}"
+            chunk.metadata["indexed_hash"] = current_scheme
+            
+            chunks_to_store.append((chunk_id, chunk))
+
+            raw_doc = LangchainDocument(page_content=chunk.page_content,
+                                            metadata=chunk.metadata.copy())
+            lc_docs_to_add.append(raw_doc)
+        self.db.add_documents(lc_docs_to_add, ids=chunk_ids)
+        self.store.mset(chunks_to_store)
+        self.hashes_indexed[current_scheme] = chunk_ids
+        return chunks, chunk_ids
+
+    def complete_reading(self, reading_strategy: DjangoReadingStrategy|PromptStrategy|RegexStrategy| AbbreviationsReadingStrategy):
+        # Polymorphic call to the consolidated strategy method
+        reading_strategy.apply_strategy(self)
 
     def ingest_queryset_documents(self, queryset=None):
         """This is to be the top function for ingestion and assumes a queryset of our Django Document models.
-        It might be worthwhile in other examples to split the queryset by filtering on indexing_strategy,"""
+        It might be worthwhile in other examples to split the queryset by filtering on indexing_strategy"""
 
         if queryset is None:
             return
 
-        for source_doc in queryset:
-            self.ingest_document(source_doc)
+        for document in queryset:
+            # Ingest all types of strategies
+            self.ingest_queryset_reading_strategies(document.readingstrategy_set.all())
+            self.ingest_queryset_reading_strategies(document.promptstrategy_set.all())
+            self.ingest_queryset_reading_strategies(document.regexstrategy_set.all())
+            self.ingest_queryset_reading_strategies(document.abbreviationsreadingstrategy_set.all())
 
-        self.db.save_local(VECTOR_STORE)
+        self.db.save_local(self.vector_store_path)
+
+    def ingest_queryset_reading_strategies(self, queryset=None):
+        """This is to be the top function for ingestion and assumes a queryset of our Django ReadingStrategy models."""
+
+        if queryset is None:
+            return
+
+        for readingstrategy in queryset:
+            self.complete_reading(readingstrategy)
+
+        self.db.save_local(self.vector_store_path)
 
 
-    def get_chunk_summary(self, chunk):
+    def get_chunk_summary(self, chunk_text, custom_prompt=None):
+        """This function provides more diverse index options - you can use it to generate hypothetical questions answered in the chunk text, or a summary of the text, or any other response.  Significant danger of hallucination - instead of summaries, you could get the models general knowledge that the chunk "reminded it" of, which is unsourced and potentially false. You may also get summaries that are just wrong. There are also significant reliability issues - the summary output is a longform, a shortform and then keywords, but one or more may be empty, the longform can be shorter than the shortform and so on."""
+        task_prompt = """A longform response is at least several sentences, and covers many or all of the ideas in the chunk. A shortform response is a sentence or two, covering the key ideas. Keywords """
 
-        prompt = f"You are a data ingestion agent. Analyze the following document chunk. \n 1. If it is a Table of Contents, Index, or Copyright page, it is structural noise and no summary is needed.\n 2. Otherwise, write a short sentence describing the content of the chunk.\n Chunk: {chunk[:2000]}" # Truncate for speed if needed
+        if custom_prompt:
+            prompt = f"{custom_prompt}\n Chunk: {chunk_text[:2000]}"
+        else:
+            prompt = f"You are a data ingestion agent. Analyze the following document chunk. \n 1. If it is a Table of Contents, Index, or Copyright page, it is structural noise and no summary is needed.\n 2. A longform response is at least several sentences, and covers many or all of the ideas in the chunk. A shortform response is a sentence or two, covering the key ideas.\n Chunk: {chunk_text[:2000]}" # Truncate for speed if needed
 
-        # Outlines v1 returns the Pydantic object directly
-        summary = self.summary_generator(prompt, repetition_penalty=1.1, max_new_tokens=1500)
+        summary_string = self.summary_generator(prompt, max_new_tokens=1500)
+        try:
+            summary = DocumentHandles.model_validate_json(summary_string)
+        except:
+            summary = None
 
         if summary:
             print("Summary obj", summary)
-            if len(summary.long_description) < len(summary.condensed_summary):
-                summary_text = summary.long_description
-            else:
-                summary_text = summary.condensed_summary
-            return summary_text
-        return ""
+            if len(summary.long_form) < len(summary.short_form):
+                summary.long_form, summary.short_form = summary.short_form, summary.long_form
+            return summary
+        return DocumentHandles(long_form=chunk_text[:500], short_form=chunk_text[:100], keywords=["summarisation failed",])
 
     def is_hallucination(self, term: str, chunk_text: str) -> bool:
         """
@@ -275,31 +476,31 @@ class RAGService:
         # If the definition has ZERO meaningful words from the text, it's likely an external hallucination
         return len(meaningful_overlap) > 0
 
-    def get_glossary_terms(self, raw_text, source_doc=None):
-        # 0. Check for regex override
-        if source_doc and source_doc.extraction_regex:
-            try:
-                # Security Warning: User-supplied regexes can cause ReDoS (Regular Expression Denial of Service).
-                # Ensure that only trusted administrators can modify the extraction_regex field.
-                regex = re.compile(source_doc.extraction_regex)
-                matches = regex.findall(raw_text)
-                if matches:
-                    print(f"Using regex extraction for {source_doc.title}")
-                    valid_definitions = []
-                    for match in matches:
-                        # Expecting (term, definition) tuple from regex groups
-                        if len(match) >= 2:
-                            term = match[0].strip()
-                            definition = match[1].strip()
-                            valid_definitions.append(GlossaryItem(term=term, definition=definition))
-                    return valid_definitions
-            except re.error as e:
-                print(f"Invalid regex for {source_doc.title}: {e}")
-                # Fallback to LLM if regex fails? Or just log error?
-                pass
+    def get_glossary_terms(self, raw_text, regex):
+        try:
+            # Security Warning: User-supplied regexes can cause ReDoS (Regular Expression Denial of Service).
+            # Ensure that only trusted administrators can modify the extraction_regex field.
+            regex = re.compile(regex)
+            matches = regex.findall(raw_text)
+            if matches:
+                valid_definitions = []
+                for match in matches:
+                    # Expecting (term, definition) tuple from regex groups
+                    if len(match) >= 2:
+                        term = match[0].strip()
+                        definition = match[1].strip()
+                        valid_definitions.append(GlossaryItem(term=term, definition=definition))
 
-        # 1. Setup the Generator
-        # We ask for a LIST of items, so it handles multiple terms per page
+                glossary_extraction = valid_definitions
+                return glossary_extraction
+        except re.error as e:
+            print(f"Invalid regex {regex}: {e}")
+            # Fallback to LLM if regex fails? Or just log error?
+            pass
+
+        # GlossaryExtraction is a LIST of GlossaryEntry items, so it handles multiple terms per page
+    def glossary_generator(self, raw_text):
+        """This code attempts to use a Language Model to yield glossary terms and definitions. Slow and pretty unreliable."""
         generator = self.glossary_generator
 
         prompt = f"""
@@ -321,17 +522,20 @@ class RAGService:
         """
 
         # 2. Generate
-        # Outlines v1 returns the Pydantic object directly
         result = generator(
             prompt,
             max_new_tokens=1024,
-            repetition_penalty=1.1,
         )
+        try:
+            glossary_entries = GlossaryExtraction.model_validate_json(result)
+        except:
+            glossary_entries = None
+
         print("Glossary from chunks:", result)
 
-        if result:
+        if glossary_entries:
             valid_definitions = []
-            for item in result.items:
+            for item in glossary_entries.items:
                 if self.is_hallucination(item.term, raw_text):
                     print("Hallucination detected:", item.term, " not in", raw_text)
                 if not self.check_definition_grounding(item.definition, raw_text):
@@ -342,48 +546,40 @@ class RAGService:
             return valid_definitions
         return []
 
-    def parse_glossary_deterministic(self, source_doc):
-        """
-        Parses a glossary text block into a dictionary.
-        Handles 'Term: Definition' and 'Term - Definition'.
-        Ignores single-letter headers (A, B, C...).
-        """
-        glossary_dict = {}
-        text_content = ""
-        with source_doc.file.open(mode="r") as f:
-            text_content = f.read()
+    def verify_rag_relevance(self, user_query, retrieved_chunks):
+        from llm_api.apps import service_registry
+        nlp_service = service_registry['nlp_service']
 
-        # Split into lines
-        lines = text_content.split('\n')
+        # 1. Get core concepts from query
+        # Query: "How do I fix memory leaks?" -> {'fix', 'memory', 'leak'}
+        # Lowercase lemmas to ensure case-insensitive matching (e.g. "Water" vs "water")
+        query_lemmas = set([t.lower() for t in nlp_service.get_lemmatized_tokens(user_query)])
 
-        for line in lines:
-            line = line.strip()
-            if not line:
-                continue
+        scored_results = []
+        for chunk in retrieved_chunks:
+            # 2. Get concepts from the chunk
+            content_to_check = chunk.page_content
+            if chunk.metadata.get("original_term"):
+                content_to_check = chunk.metadata["original_term"] +": " + content_to_check
 
-            # 1. Skip Alphabetical Headers (e.g., "A", "B")
-            if len(line) == 1 and line.isalpha():
-                continue
+            chunk_lemmas = set([t.lower() for t in nlp_service.get_lemmatized_tokens(content_to_check)])
 
-            # 2. Check for Splitters (Colon or Dash)
-            # We look for the FIRST occurrence of ": " or " - "
-            # We use regex to be safe about spacing
-            match = re.search(r'(.+?)(?:\s*:\s*|\s+-\s+)(.+)', line)
+            # 3. Calculate overlap
+            # How many query words appear in this chunk?
+            overlap = len(query_lemmas.intersection(chunk_lemmas))
+            
+            # 4. Tie-breaker: Prefer definitions (chunks with 'original_term')
+            is_definition = 1 if chunk.metadata.get("original_term") else 0
+            
+            scored_results.append((chunk, overlap, is_definition))
 
-            if match:
-                term = match.group(1).strip()
-                definition = match.group(2).strip()
+        # Sort by overlap count (desc), then by is_definition (desc)
+        # We return (doc, score) tuples to match get_context expectations
+        sorted_results = sorted(scored_results, key=lambda x: (x[1], x[2]), reverse=True)
+        return [(item[0], item[1]) for item in sorted_results]
 
-                # Simple heuristic: Terms shouldn't be massive sentences.
-                # If the "Term" is > 10 words, it's likely just a sentence with a dash in it.
-                if len(term.split()) > 10:
-                    continue
 
-                glossary_dict[term] = definition
-
-        return glossary_dict
-
-    def dump_index_to_file(self, output_filename="index_dump.txt"):
+    def dump_index_to_file(self, output_filename="index_dump.txt", comparison_doc_id=None):
         """
         Writes the entire contents of the vector store + byte store to a text file.
         Format:
@@ -393,16 +589,21 @@ class RAGService:
         indexed_false_positives = []  # hallucinated entries
         indexed_misses = []           #  entries not found in index
 
-        d = Document.objects.get(content_hash="3c8a5cd8d24565ed37301cedec18da26f51bc447e094022755d934321794c8a2")
-        deterministic_glossary_dict = self.parse_glossary_deterministic(d)
-        with open("glossary_read_dump.txt", "w", encoding="utf-8") as f:
-            f.write(f"--- DUMP OF {len(deterministic_glossary_dict.keys())} Deterministic Glossary Dict ITEMS ---\n\n")
+        deterministic_glossary_dict = {}
+        if comparison_doc_id:
+            try:
+                d = Document.objects.get(id=comparison_doc_id)
+                deterministic_glossary_dict = self.parse_glossary_deterministic(d)
+                with open("glossary_read_dump.txt", "w", encoding="utf-8") as f:
+                    f.write(f"--- DUMP OF {len(deterministic_glossary_dict.keys())} Deterministic Glossary Dict ITEMS ---\n\n")
 
-            for i, (key, value) in enumerate(deterministic_glossary_dict.items()):
-                f.write(f"Entry #{i + 1}--------------------------------------------\n")
-                f.write(f"Index Key (Term): {key}")
-                f.write(f"\nDefinition: {value}\n")
-            print("dumped dict")
+                    for i, (key, value) in enumerate(deterministic_glossary_dict.items()):
+                        f.write(f"Entry #{i + 1}--------------------------------------------\n")
+                        f.write(f"Index Key (Term): {key}")
+                        f.write(f"\nDefinition: {value}\n")
+                print("dumped dict")
+            except Document.DoesNotExist:
+                print(f"Comparison document with ID {comparison_doc_id} not found.")
 
         print(f"Dumping index to {output_filename}...")
         index_docs = [doc for doc in self.db.docstore._dict.values()]
@@ -415,11 +616,11 @@ class RAGService:
                 search_term = index_doc.page_content.replace("\n", " ")
 
                 # The ID pointing to the full content
-                doc_id = index_doc.metadata.get("doc_id")
+                chunk_id = index_doc.metadata.get(self.id_key)
 
                 # Retrieve the full content (e.g. The Definition)
                 # We use the store directly
-                full_content_doc = self.store.mget([doc_id])[0]
+                full_content_doc = self.store.mget([chunk_id])[0]
 
                 if full_content_doc:
                     body_text = full_content_doc.page_content.strip()
@@ -442,11 +643,13 @@ class RAGService:
                 f.write("-" * 60 + "\n")
 
         print("Dumped vector_store.")
-        for key, value in deterministic_glossary_dict.items():
-            if index_dict.get(key) is None:
-                indexed_misses.append(key)
 
-        print(f"Found {len(indexed_misses)} misses / {len(deterministic_glossary_dict.keys())} and ")
-        print(f"{len(indexed_false_positives)} hallucinations / {len(index_dict)} total.")
-        print("Index Misses:", "\n-".join(indexed_misses))
-        print("Index Hallucinations:", "\n-".join(indexed_false_positives))
+        if deterministic_glossary_dict:
+            for key, value in deterministic_glossary_dict.items():
+                if index_dict.get(key) is None:
+                    indexed_misses.append(key)
+
+            print(f"Found {len(indexed_misses)} misses / {len(deterministic_glossary_dict.keys())} and ")
+            print(f"{len(indexed_false_positives)} hallucinations / {len(index_dict)} total.")
+            print("Index Misses:", "\n-".join(indexed_misses))
+            print("Index Hallucinations:", "\n-".join(indexed_false_positives))

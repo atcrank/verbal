@@ -16,3 +16,8 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "verbal_config.settings")
 
 application = get_asgi_application()
 application = ASGIStaticFilesHandler(application)
+
+# # Initialize AI services on startup
+# from llm_api.apps import service_registry
+# service_registry['ai_service'].load_models()
+# service_registry['rag_service'].load_models()

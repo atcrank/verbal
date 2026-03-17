@@ -1,0 +1,84 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<div style="padding: 20px;">
+    <h1>Investigation: {{ investigation.name }}</h1>
+    <p>{{ investigation.description }}</p>
+
+    <!-- Summary Card -->
+    <div class="module" style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+            <thead>
+                <tr style="background: #f8f9fa; text-align: left;">
+                    <th style="padding: 10px;">Experiment</th>
+                    <th style="padding: 10px;">RAG Recall</th>
+                    <th style="padding: 10px;">Semantic Sim</th>
+                    <th style="padding: 10px;">Faithfulness</th>
+                    <th style="padding: 10px;">Relevance</th>
+                    <th style="padding: 10px;">Config</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for run in runs %}
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 10px;"><strong>{{ run.experiment.name }}</strong><br><small>{{ run.timestamp|date:"Y-m-d H:i" }}</small></td>
+                    <td style="padding: 10px;">{{ run.average_rag_score|floatformat:2 }}</td>
+                    <td style="padding: 10px;">{{ run.average_semantic_score|floatformat:2 }}</td>
+                    <td style="padding: 10px;">{{ run.average_faithfulness|floatformat:2 }}</td>
+                    <td style="padding: 10px;">{{ run.average_relevance|floatformat:2 }}</td>
+                    <td style="padding: 10px; font-family: monospace; font-size: 0.8em;">
+                        {% for key, val in run.filtered_config.items %}
+                             <strong>{{ key }}</strong>: {{ val }}<br>
+                         {% empty %}
+                             <em style="color: #999;">Common Config</em>
+                         {% endfor %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <h2>Detailed Comparison</h2>
+    <div class="module" style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: #79aec8; color: white; text-align: left;">
+                    <th style="padding: 10px; width: 20%;">Scenario</th>
+                    {% for run in runs %}
+                    <th style="padding: 10px;">{{ run.experiment.name }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in table_rows %}
+                <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 10px; vertical-align: top; background: #f9f9f9;">
+                        <strong>Q: {{ row.scenario.question }}</strong><br>
+                        <small style="color: #666;">Ideal: {{ row.scenario.ideal_answer }}</small>
+                    </td>
+                    {% for cell in row.cells %}
+                    <td style="padding: 10px; vertical-align: top; border-left: 1px solid #eee;">
+                        {% if cell %}
+                            <div style="margin-bottom: 5px;">
+                                <span title="RAG Recall" style="background: #e0f7fa; padding: 2px 5px; border-radius: 3px; font-size: 0.8em;">R: {{ cell.rag_recall_score|floatformat:2 }}</span>
+                                <span title="Semantic" style="background: #fff3e0; padding: 2px 5px; border-radius: 3px; font-size: 0.8em;">S: {{ cell.semantic_score|floatformat:2 }}</span>
+                                <span title="Faithfulness" style="background: #e8f5e9; padding: 2px 5px; border-radius: 3px; font-size: 0.8em;">F: {{ cell.faithfulness_score|floatformat:2 }}</span>
+                            </div>
+                            <div style="font-size: 0.9em;">{{ cell.generated_response }}</div>
+                            <details style="margin-top: 5px;">
+                                <summary style="font-size: 0.8em; color: #999; cursor: pointer;">Context</summary>
+                                <div style="font-size: 0.8em; color: #666; white-space: pre-wrap;">{{ cell.raw_retrieved_text|truncatechars:300 }}</div>
+                            </details>
+                        {% else %}
+                            <span style="color: #ccc;">N/A</span>
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
