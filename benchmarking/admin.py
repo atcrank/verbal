@@ -51,8 +51,8 @@ class ScenarioGroupAdmin(admin.ModelAdmin):
 
 @admin.register(BenchmarkScenario)
 class BenchmarkScenarioAdmin(admin.ModelAdmin):
-    list_display = ('question', 'short_answer')
-    search_fields = ('question', 'ideal_answer')
+    list_display = ('question', 'short_answer', 'source_doc', 'source_chunk')
+    search_fields = ('question', 'ideal_answer', 'source_chunk__page_content')
     
     def short_answer(self, obj):
         return obj.ideal_answer[:50]

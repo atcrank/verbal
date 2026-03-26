@@ -49,6 +49,7 @@ class Document(models.Model):
 
     indexed_hash = models.TextField(null=True, blank=True, editable=False, unique=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
+    currently_indexed = models.BooleanField(default=False)
     metadata = models.JSONField(null=True, blank=True, default=dict)
     chunk_size = models.IntegerField(default=1000)
     chunk_overlap = models.IntegerField(default=20)
@@ -82,6 +83,7 @@ class Document(models.Model):
 
         self.metadata["indexed_hash"] = self.indexed_hash
         self.metadata["filename"] = self.file.name
+        
         if updated_file:
             self.currently_indexed = False
 
@@ -527,3 +529,6 @@ class RAGQueryLog(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     user_feedback_score = models.IntegerField(null=True, blank=True, help_text="1 to 5 or -1/1")
     response_generated = models.TextField()
+
+# TODO: there is an issue at least in the dev version - the database contains Document entries for the benchmarking examples,
+#  but the VectorIndex still contains content from Firefighting and Fire Prevention which was uploaded previously.

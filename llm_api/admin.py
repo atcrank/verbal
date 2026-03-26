@@ -57,8 +57,9 @@ class DialogAdmin(admin.ModelAdmin):
         model = PromptResponseLog
 
 class ConversationAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "start_time", "title")
-    search_fields = ("user", "system prompt")
+    list_display = ("id", "user", "start_time", "title", "blueprint")
+    search_fields = ("user__username", "title")
+    list_filter = ("blueprint",)
 
     class Meta:
         model = Conversation

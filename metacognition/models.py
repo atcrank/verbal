@@ -1,6 +1,43 @@
 from django.db import models
 
 
+class ModerationList(models.Model):
+    """
+    A reusable set of banned concepts/lemmas to be applied across blueprints.
+    """
+    name = models.CharField(max_length=255)
+    concepts = models.TextField(help_text="Comma-separated concepts (lemmas). E.g., 'arson, bomb, explosive'")
+
+    def __str__(self):
+        return self.name
+
+class ResponseSchema(models.Model):
+    """
+    A reusable output schema for LLM generation. 
+    Can be either a dynamic JSON schema or a reference to a hardcoded Pydantic model.
+    """
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    
+    SCHEMA_TYPES = [
+        ('json', 'JSON Schema'),
+        ('pydantic', 'Hardcoded Pydantic Model'),
+    ]
+    schema_type = models.CharField(max_length=20, choices=SCHEMA_TYPES, default='json')
+    
+    json_schema = models.TextField(
+        blank=True, 
+        help_text='Enter valid JSON Schema. Example for a simple string wrapper:\n{\n  "type": "object",\n  "properties": {\n    "result": {"type": "string"}\n  },\n  "required": ["result"]\n}'
+    )
+    
+    pydantic_model_name = models.CharField(
+        max_length=255, blank=True, 
+        help_text="Name of a registered model (e.g., 'Hydrant', 'Factor'). Must exist in llm_api.api.OUTPUT_TYPES."
+    )
+
+    def __str__(self):
+        return self.name
+
 class CognitiveBlueprint(models.Model):
     """
     A container for a specific cognitive strategy or thinking pattern.
@@ -8,6 +45,7 @@ class CognitiveBlueprint(models.Model):
     """
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, help_text="Describes when the Router should select this blueprint.")
+    moderation_lists = models.ManyToManyField(ModerationList, blank=True, help_text="Reusable moderation rules applied to all steps in this blueprint.")
 
     def __str__(self):
         return self.name
@@ -34,6 +72,9 @@ class ReasoningStep(models.Model):
     on_failure_step = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True,
                                         related_name='failure_sources',
                                         help_text="The step to route to if this step fails its evaluation criteria.")
+    # Constraints & Formatting
+    
+    output_schema = models.ForeignKey(ResponseSchema, on_delete=models.SET_NULL, null=True, blank=True, help_text="Select a structured output format for this step.")
 
     # Quality Control
     evaluation_criteria = models.TextField(blank=True,

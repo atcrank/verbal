@@ -28,7 +28,7 @@ from docx import Document as DocxDocument
 from pptx import Presentation
 
 from langchain_community.vectorstores import FAISS
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 
 
 TEST_BASE_DIR = Path(settings.BASE_DIR) / "test_data"

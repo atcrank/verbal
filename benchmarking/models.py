@@ -1,5 +1,5 @@
 from django.db import models
-from background_resources.models import Document
+from background_resources.models import Document, RAGChunk
 from llm_api.models import AIModel
 import itertools
 
@@ -31,6 +31,8 @@ class BenchmarkScenario(models.Model):
     ideal_answer = models.TextField(help_text="The ground truth answer for semantic comparison.")
     expected_keywords = models.JSONField(default=list,
                                          help_text="List of strings that SHOULD be in the retrieved context.")
+    source_doc = models.ForeignKey(Document, on_delete=models.CASCADE, null=True, blank=True)
+    source_chunk = models.ForeignKey(RAGChunk, on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self):
         return f"{self.question[:50]}"

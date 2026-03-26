@@ -1,682 +1,682 @@
 # Test Report: test_1_overrides
 
-**Date:** 2026-03-04 09:06:57.374616
-**Duration:** 0.7743 seconds
+**Date:** 2026-03-25 10:38:54.807386
+**Duration:** 0.6409 seconds
 ## Vector Store Contents
 Total Chunks: 135
 
-### Chunk ID: e269d136-8d54-47c7-b754-34270b17bd84
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 0, 'total_chunks': 23, 'location_percent': 4, 'page_number': '4%', 'chunk_id': 'e269d136-8d54-47c7-b754-34270b17bd84', 'chunk_number': '1/23'}
+### Chunk ID: 0c0edc1a-8eed-4564-8705-1b2cd83a051e
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 0, 'total_chunks': 23, 'location_percent': 4, 'page_number': '4%', 'chunk_id': '0c0edc1a-8eed-4564-8705-1b2cd83a051e', 'chunk_number': '1/23'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. ...
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. ...
 ---
-### Chunk ID: d924c015-0325-4818-a397-922dc216b495
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 1, 'total_chunks': 23, 'location_percent': 8, 'page_number': '8%', 'chunk_id': 'd924c015-0325-4818-a397-922dc216b495', 'chunk_number': '2/23'}
+### Chunk ID: 0d9cd25b-7e40-4dc1-be15-bf0da591737e
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 1, 'total_chunks': 23, 'location_percent': 8, 'page_number': '8%', 'chunk_id': '0d9cd25b-7e40-4dc1-be15-bf0da591737e', 'chunk_number': '2/23'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a ...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a ...
 ---
-### Chunk ID: b42c8c5b-f116-42f9-8791-4cec84be1b9e
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 2, 'total_chunks': 23, 'location_percent': 13, 'page_number': '13%', 'chunk_id': 'b42c8c5b-f116-42f9-8791-4cec84be1b9e', 'chunk_number': '3/23'}
+### Chunk ID: a174900f-61c3-472e-beb3-160fc3d78c10
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 2, 'total_chunks': 23, 'location_percent': 13, 'page_number': '13%', 'chunk_id': 'a174900f-61c3-472e-beb3-160fc3d78c10', 'chunk_number': '3/23'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. ...
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. ...
 ---
-### Chunk ID: 012cfbc4-a58a-4f67-a29f-9b38d37af501
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 3, 'total_chunks': 23, 'location_percent': 17, 'page_number': '17%', 'chunk_id': '012cfbc4-a58a-4f67-a29f-9b38d37af501', 'chunk_number': '4/23'}
+### Chunk ID: e1b0edb3-37ff-41b5-977e-999a17d77c07
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 3, 'total_chunks': 23, 'location_percent': 17, 'page_number': '17%', 'chunk_id': 'e1b0edb3-37ff-41b5-977e-999a17d77c07', 'chunk_number': '4/23'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a ...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a ...
 ---
-### Chunk ID: d0ead68f-d60f-4d62-bb8a-deaa83a19bc4
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 4, 'total_chunks': 23, 'location_percent': 21, 'page_number': '21%', 'chunk_id': 'd0ead68f-d60f-4d62-bb8a-deaa83a19bc4', 'chunk_number': '5/23'}
+### Chunk ID: 92b9f55c-e45f-44bb-b809-3b864d3e6c89
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 4, 'total_chunks': 23, 'location_percent': 21, 'page_number': '21%', 'chunk_id': '92b9f55c-e45f-44bb-b809-3b864d3e6c89', 'chunk_number': '5/23'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. ...
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. ...
 ---
-### Chunk ID: fa36461e-cfe0-4e67-8414-244883cf3a35
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 5, 'total_chunks': 23, 'location_percent': 26, 'page_number': '26%', 'chunk_id': 'fa36461e-cfe0-4e67-8414-244883cf3a35', 'chunk_number': '6/23'}
+### Chunk ID: 3e0d2055-27e6-4888-80bf-f722b3fe37da
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 5, 'total_chunks': 23, 'location_percent': 26, 'page_number': '26%', 'chunk_id': '3e0d2055-27e6-4888-80bf-f722b3fe37da', 'chunk_number': '6/23'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a ...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a ...
 ---
-### Chunk ID: d5565679-bd95-4aa7-b1f8-78aa52056f13
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 6, 'total_chunks': 23, 'location_percent': 30, 'page_number': '30%', 'chunk_id': 'd5565679-bd95-4aa7-b1f8-78aa52056f13', 'chunk_number': '7/23'}
+### Chunk ID: cd2d039f-2582-4b1f-92b3-3a23f59920a6
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 6, 'total_chunks': 23, 'location_percent': 30, 'page_number': '30%', 'chunk_id': 'cd2d039f-2582-4b1f-92b3-3a23f59920a6', 'chunk_number': '7/23'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. ...
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. ...
 ---
-### Chunk ID: 11ca0f72-dfa4-42e3-8e81-ce12f87cd402
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 7, 'total_chunks': 23, 'location_percent': 34, 'page_number': '34%', 'chunk_id': '11ca0f72-dfa4-42e3-8e81-ce12f87cd402', 'chunk_number': '8/23'}
+### Chunk ID: 7953abbb-5fc3-4c2c-9ccb-97e89130027d
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 7, 'total_chunks': 23, 'location_percent': 34, 'page_number': '34%', 'chunk_id': '7953abbb-5fc3-4c2c-9ccb-97e89130027d', 'chunk_number': '8/23'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a ...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a ...
 ---
-### Chunk ID: 82cb4c6c-ea7f-4e44-8bc3-960982d959ff
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 8, 'total_chunks': 23, 'location_percent': 39, 'page_number': '39%', 'chunk_id': '82cb4c6c-ea7f-4e44-8bc3-960982d959ff', 'chunk_number': '9/23'}
+### Chunk ID: 62deac52-9cab-4a2f-9c68-34ca3edb4ca7
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 8, 'total_chunks': 23, 'location_percent': 39, 'page_number': '39%', 'chunk_id': '62deac52-9cab-4a2f-9c68-34ca3edb4ca7', 'chunk_number': '9/23'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. ...
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. ...
 ---
-### Chunk ID: c7d6f7d7-0cee-4e23-9bfa-710284736049
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 9, 'total_chunks': 23, 'location_percent': 43, 'page_number': '43%', 'chunk_id': 'c7d6f7d7-0cee-4e23-9bfa-710284736049', 'chunk_number': '10/23'}
+### Chunk ID: 3c06f184-2b18-4588-ba46-6675ce6a2450
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 9, 'total_chunks': 23, 'location_percent': 43, 'page_number': '43%', 'chunk_id': '3c06f184-2b18-4588-ba46-6675ce6a2450', 'chunk_number': '10/23'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a ...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a ...
 ---
-### Chunk ID: 81cd81e1-0183-415c-997c-60e01d367352
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 10, 'total_chunks': 23, 'location_percent': 47, 'page_number': '47%', 'chunk_id': '81cd81e1-0183-415c-997c-60e01d367352', 'chunk_number': '11/23'}
+### Chunk ID: 6768a141-7580-4c1d-b903-4e1907669fa7
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 10, 'total_chunks': 23, 'location_percent': 47, 'page_number': '47%', 'chunk_id': '6768a141-7580-4c1d-b903-4e1907669fa7', 'chunk_number': '11/23'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. ...
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. ...
 ---
-### Chunk ID: 0cbd5cb6-577a-4561-bcac-68bb33341767
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 11, 'total_chunks': 23, 'location_percent': 52, 'page_number': '52%', 'chunk_id': '0cbd5cb6-577a-4561-bcac-68bb33341767', 'chunk_number': '12/23'}
+### Chunk ID: 3b8746f6-3132-474c-9cac-22f5ed72e9d7
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 11, 'total_chunks': 23, 'location_percent': 52, 'page_number': '52%', 'chunk_id': '3b8746f6-3132-474c-9cac-22f5ed72e9d7', 'chunk_number': '12/23'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a ...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a ...
 ---
-### Chunk ID: d687a74c-994d-42b1-98be-4955460aaac2
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 12, 'total_chunks': 23, 'location_percent': 56, 'page_number': '56%', 'chunk_id': 'd687a74c-994d-42b1-98be-4955460aaac2', 'chunk_number': '13/23'}
+### Chunk ID: 7d1384c7-52c8-4ac5-915b-1edbfcc42e19
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 12, 'total_chunks': 23, 'location_percent': 56, 'page_number': '56%', 'chunk_id': '7d1384c7-52c8-4ac5-915b-1edbfcc42e19', 'chunk_number': '13/23'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. ...
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. ...
 ---
-### Chunk ID: 7ec98069-4554-44d0-81bc-b7631527aca8
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 13, 'total_chunks': 23, 'location_percent': 60, 'page_number': '60%', 'chunk_id': '7ec98069-4554-44d0-81bc-b7631527aca8', 'chunk_number': '14/23'}
+### Chunk ID: 0cad9490-8e28-4010-bae7-31b42b079cf1
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 13, 'total_chunks': 23, 'location_percent': 60, 'page_number': '60%', 'chunk_id': '0cad9490-8e28-4010-bae7-31b42b079cf1', 'chunk_number': '14/23'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a ...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a ...
 ---
-### Chunk ID: f541bcc6-7ace-414a-9629-38c44f9167bd
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 14, 'total_chunks': 23, 'location_percent': 65, 'page_number': '65%', 'chunk_id': 'f541bcc6-7ace-414a-9629-38c44f9167bd', 'chunk_number': '15/23'}
+### Chunk ID: 0cec49fe-0ed9-47f3-b8b8-1f8f53058b62
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 14, 'total_chunks': 23, 'location_percent': 65, 'page_number': '65%', 'chunk_id': '0cec49fe-0ed9-47f3-b8b8-1f8f53058b62', 'chunk_number': '15/23'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. ...
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. ...
 ---
-### Chunk ID: 09b8bac1-86f6-4e65-b552-34e72193bedd
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 15, 'total_chunks': 23, 'location_percent': 69, 'page_number': '69%', 'chunk_id': '09b8bac1-86f6-4e65-b552-34e72193bedd', 'chunk_number': '16/23'}
+### Chunk ID: c2d8172b-b370-4e1f-8122-2e0cea6379bb
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 15, 'total_chunks': 23, 'location_percent': 69, 'page_number': '69%', 'chunk_id': 'c2d8172b-b370-4e1f-8122-2e0cea6379bb', 'chunk_number': '16/23'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a ...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a ...
 ---
-### Chunk ID: d2a138e6-1bfd-4dcb-b50b-e10613476750
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 16, 'total_chunks': 23, 'location_percent': 73, 'page_number': '73%', 'chunk_id': 'd2a138e6-1bfd-4dcb-b50b-e10613476750', 'chunk_number': '17/23'}
+### Chunk ID: c82beabf-e0f7-47e3-a9b3-c00d43814c50
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 16, 'total_chunks': 23, 'location_percent': 73, 'page_number': '73%', 'chunk_id': 'c82beabf-e0f7-47e3-a9b3-c00d43814c50', 'chunk_number': '17/23'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. ...
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. ...
 ---
-### Chunk ID: d759b672-d5ab-40f5-9038-7163b2d29914
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 17, 'total_chunks': 23, 'location_percent': 78, 'page_number': '78%', 'chunk_id': 'd759b672-d5ab-40f5-9038-7163b2d29914', 'chunk_number': '18/23'}
+### Chunk ID: cd19bd49-b4dc-49a5-a5cf-deb1ef0cee71
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 17, 'total_chunks': 23, 'location_percent': 78, 'page_number': '78%', 'chunk_id': 'cd19bd49-b4dc-49a5-a5cf-deb1ef0cee71', 'chunk_number': '18/23'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a ...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a ...
 ---
-### Chunk ID: cfb53747-bfd9-4dcd-818c-77878bdef390
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 18, 'total_chunks': 23, 'location_percent': 82, 'page_number': '82%', 'chunk_id': 'cfb53747-bfd9-4dcd-818c-77878bdef390', 'chunk_number': '19/23'}
+### Chunk ID: 5fb1d21b-9329-4db4-81b7-9786aa079002
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 18, 'total_chunks': 23, 'location_percent': 82, 'page_number': '82%', 'chunk_id': '5fb1d21b-9329-4db4-81b7-9786aa079002', 'chunk_number': '19/23'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. ...
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. ...
 ---
-### Chunk ID: a051376d-7ab8-4a65-9956-edf29db44813
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 19, 'total_chunks': 23, 'location_percent': 86, 'page_number': '86%', 'chunk_id': 'a051376d-7ab8-4a65-9956-edf29db44813', 'chunk_number': '20/23'}
+### Chunk ID: 190f8ea7-a865-49e1-8b6f-1de9f9dd7f0a
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 19, 'total_chunks': 23, 'location_percent': 86, 'page_number': '86%', 'chunk_id': '190f8ea7-a865-49e1-8b6f-1de9f9dd7f0a', 'chunk_number': '20/23'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a ...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a ...
 ---
-### Chunk ID: bd0dd51a-3488-4666-a260-f6ee266a489d
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 20, 'total_chunks': 23, 'location_percent': 91, 'page_number': '91%', 'chunk_id': 'bd0dd51a-3488-4666-a260-f6ee266a489d', 'chunk_number': '21/23'}
+### Chunk ID: b7ed03c8-2cf1-4631-b57a-cd353259b428
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 20, 'total_chunks': 23, 'location_percent': 91, 'page_number': '91%', 'chunk_id': 'b7ed03c8-2cf1-4631-b57a-cd353259b428', 'chunk_number': '21/23'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. ...
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. ...
 ---
-### Chunk ID: 04aa6756-995f-4194-8e89-b281fac3e5d6
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 21, 'total_chunks': 23, 'location_percent': 95, 'page_number': '95%', 'chunk_id': '04aa6756-995f-4194-8e89-b281fac3e5d6', 'chunk_number': '22/23'}
+### Chunk ID: c14cd27a-bc6d-485f-9eb6-08a03e3339c4
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 21, 'total_chunks': 23, 'location_percent': 95, 'page_number': '95%', 'chunk_id': 'c14cd27a-bc6d-485f-9eb6-08a03e3339c4', 'chunk_number': '22/23'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a ...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a ...
 ---
-### Chunk ID: 4216f0ff-2dc3-4b9f-aea7-410827b03728
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 22, 'total_chunks': 23, 'location_percent': 100, 'page_number': '100%', 'chunk_id': '4216f0ff-2dc3-4b9f-aea7-410827b03728', 'chunk_number': '23/23'}
+### Chunk ID: 5108eac5-b901-49ce-b05a-ac261cca19f6
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'filename': 'documents/long_doc.txt', 'chunk_index': 22, 'total_chunks': 23, 'location_percent': 100, 'page_number': '100%', 'chunk_id': '5108eac5-b901-49ce-b05a-ac261cca19f6', 'chunk_number': '23/23'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 7630c342-4a80-4ea6-bd1a-147e20b3cd40
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 0, 'total_chunks': 112, 'location_percent': 0, 'page_number': '0%', 'chunk_id': '7630c342-4a80-4ea6-bd1a-147e20b3cd40', 'chunk_number': '1/112'}
+### Chunk ID: f24f2e38-1546-4e17-8fa3-dc923eed7554
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 0, 'total_chunks': 112, 'location_percent': 0, 'page_number': '0%', 'chunk_id': 'f24f2e38-1546-4e17-8fa3-dc923eed7554', 'chunk_number': '1/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 0902a868-faf7-4b3e-b30f-5bff403f504e
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 1, 'total_chunks': 112, 'location_percent': 1, 'page_number': '1%', 'chunk_id': '0902a868-faf7-4b3e-b30f-5bff403f504e', 'chunk_number': '2/112'}
+### Chunk ID: 6ade509b-f110-4073-85f6-dc8e63a3c950
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 1, 'total_chunks': 112, 'location_percent': 1, 'page_number': '1%', 'chunk_id': '6ade509b-f110-4073-85f6-dc8e63a3c950', 'chunk_number': '2/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 7ead1cf5-3920-4dd3-b593-6708af3f30a1
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 2, 'total_chunks': 112, 'location_percent': 2, 'page_number': '2%', 'chunk_id': '7ead1cf5-3920-4dd3-b593-6708af3f30a1', 'chunk_number': '3/112'}
+### Chunk ID: 1702bf29-9c73-4024-8177-a05eb794d8d2
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 2, 'total_chunks': 112, 'location_percent': 2, 'page_number': '2%', 'chunk_id': '1702bf29-9c73-4024-8177-a05eb794d8d2', 'chunk_number': '3/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 3bec39fd-2720-4c59-8b59-93a39a5dc06b
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 3, 'total_chunks': 112, 'location_percent': 3, 'page_number': '3%', 'chunk_id': '3bec39fd-2720-4c59-8b59-93a39a5dc06b', 'chunk_number': '4/112'}
+### Chunk ID: ff084631-334a-4741-9703-a04dbba6e692
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 3, 'total_chunks': 112, 'location_percent': 3, 'page_number': '3%', 'chunk_id': 'ff084631-334a-4741-9703-a04dbba6e692', 'chunk_number': '4/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: bb9d3898-e6e6-48b8-8625-34f4ddab3ca1
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 4, 'total_chunks': 112, 'location_percent': 4, 'page_number': '4%', 'chunk_id': 'bb9d3898-e6e6-48b8-8625-34f4ddab3ca1', 'chunk_number': '5/112'}
+### Chunk ID: 05520f2a-c108-4cfd-81d1-25d5cc66df55
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 4, 'total_chunks': 112, 'location_percent': 4, 'page_number': '4%', 'chunk_id': '05520f2a-c108-4cfd-81d1-25d5cc66df55', 'chunk_number': '5/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 8387547a-e6a0-4a4d-bb60-0fd69c40b843
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 5, 'total_chunks': 112, 'location_percent': 5, 'page_number': '5%', 'chunk_id': '8387547a-e6a0-4a4d-bb60-0fd69c40b843', 'chunk_number': '6/112'}
+### Chunk ID: 01825d43-8710-49fd-bf8a-0f1c290f68ab
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 5, 'total_chunks': 112, 'location_percent': 5, 'page_number': '5%', 'chunk_id': '01825d43-8710-49fd-bf8a-0f1c290f68ab', 'chunk_number': '6/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 9b5acdc7-1890-4d56-bdef-5fcdcfe92706
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 6, 'total_chunks': 112, 'location_percent': 6, 'page_number': '6%', 'chunk_id': '9b5acdc7-1890-4d56-bdef-5fcdcfe92706', 'chunk_number': '7/112'}
+### Chunk ID: dd60ee7f-c67d-47c5-9ee1-dec3cf7d2e40
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 6, 'total_chunks': 112, 'location_percent': 6, 'page_number': '6%', 'chunk_id': 'dd60ee7f-c67d-47c5-9ee1-dec3cf7d2e40', 'chunk_number': '7/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: a3c4b821-8a19-4494-ab42-67e3265e4b69
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 7, 'total_chunks': 112, 'location_percent': 7, 'page_number': '7%', 'chunk_id': 'a3c4b821-8a19-4494-ab42-67e3265e4b69', 'chunk_number': '8/112'}
+### Chunk ID: 816fd505-dec7-4bed-b6de-8d457f8abfad
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 7, 'total_chunks': 112, 'location_percent': 7, 'page_number': '7%', 'chunk_id': '816fd505-dec7-4bed-b6de-8d457f8abfad', 'chunk_number': '8/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 93babfa4-3a6b-4852-8dc2-3c09346267a2
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 8, 'total_chunks': 112, 'location_percent': 8, 'page_number': '8%', 'chunk_id': '93babfa4-3a6b-4852-8dc2-3c09346267a2', 'chunk_number': '9/112'}
+### Chunk ID: cfa69835-130e-4919-8e5d-830e70cfe784
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 8, 'total_chunks': 112, 'location_percent': 8, 'page_number': '8%', 'chunk_id': 'cfa69835-130e-4919-8e5d-830e70cfe784', 'chunk_number': '9/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: b66d71bf-7b1a-4c22-9c40-c61aa262ebd7
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 9, 'total_chunks': 112, 'location_percent': 8, 'page_number': '8%', 'chunk_id': 'b66d71bf-7b1a-4c22-9c40-c61aa262ebd7', 'chunk_number': '10/112'}
+### Chunk ID: 1a7c60ba-fe49-491d-8fba-a31e0b50d761
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 9, 'total_chunks': 112, 'location_percent': 8, 'page_number': '8%', 'chunk_id': '1a7c60ba-fe49-491d-8fba-a31e0b50d761', 'chunk_number': '10/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 22b75632-bd4b-4f06-9324-c2d0a7f317aa
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 10, 'total_chunks': 112, 'location_percent': 9, 'page_number': '9%', 'chunk_id': '22b75632-bd4b-4f06-9324-c2d0a7f317aa', 'chunk_number': '11/112'}
+### Chunk ID: 48d4ddc0-3be8-40c7-b238-e72964f88714
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 10, 'total_chunks': 112, 'location_percent': 9, 'page_number': '9%', 'chunk_id': '48d4ddc0-3be8-40c7-b238-e72964f88714', 'chunk_number': '11/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: f9c28645-416a-48f4-bc22-67a058991bf8
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 11, 'total_chunks': 112, 'location_percent': 10, 'page_number': '10%', 'chunk_id': 'f9c28645-416a-48f4-bc22-67a058991bf8', 'chunk_number': '12/112'}
+### Chunk ID: f0f31959-4def-41a2-91cd-f51982853d85
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 11, 'total_chunks': 112, 'location_percent': 10, 'page_number': '10%', 'chunk_id': 'f0f31959-4def-41a2-91cd-f51982853d85', 'chunk_number': '12/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: faeba994-534b-49b4-bb08-aca3f9181424
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 12, 'total_chunks': 112, 'location_percent': 11, 'page_number': '11%', 'chunk_id': 'faeba994-534b-49b4-bb08-aca3f9181424', 'chunk_number': '13/112'}
+### Chunk ID: 2ceeb2b5-23fc-4efb-8ed5-fb1636ec376d
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 12, 'total_chunks': 112, 'location_percent': 11, 'page_number': '11%', 'chunk_id': '2ceeb2b5-23fc-4efb-8ed5-fb1636ec376d', 'chunk_number': '13/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: ae128c93-5b53-4848-ba1d-2d216d7bbcec
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 13, 'total_chunks': 112, 'location_percent': 12, 'page_number': '12%', 'chunk_id': 'ae128c93-5b53-4848-ba1d-2d216d7bbcec', 'chunk_number': '14/112'}
+### Chunk ID: 4f92a100-1cfb-4b60-961b-ec0cb853b688
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 13, 'total_chunks': 112, 'location_percent': 12, 'page_number': '12%', 'chunk_id': '4f92a100-1cfb-4b60-961b-ec0cb853b688', 'chunk_number': '14/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: e2fd2bc9-3f17-45d1-92df-b36c30838757
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 14, 'total_chunks': 112, 'location_percent': 13, 'page_number': '13%', 'chunk_id': 'e2fd2bc9-3f17-45d1-92df-b36c30838757', 'chunk_number': '15/112'}
+### Chunk ID: d9e56791-efc3-47be-a17f-9af3e490b408
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 14, 'total_chunks': 112, 'location_percent': 13, 'page_number': '13%', 'chunk_id': 'd9e56791-efc3-47be-a17f-9af3e490b408', 'chunk_number': '15/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 8022b51f-8d39-4585-8a2c-6a1f013e5cb8
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 15, 'total_chunks': 112, 'location_percent': 14, 'page_number': '14%', 'chunk_id': '8022b51f-8d39-4585-8a2c-6a1f013e5cb8', 'chunk_number': '16/112'}
+### Chunk ID: ba17157d-15b9-45ad-a31f-c8b1d2a5b840
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 15, 'total_chunks': 112, 'location_percent': 14, 'page_number': '14%', 'chunk_id': 'ba17157d-15b9-45ad-a31f-c8b1d2a5b840', 'chunk_number': '16/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 21ece94e-41ea-49b3-a5d4-d56b61b4dea2
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 16, 'total_chunks': 112, 'location_percent': 15, 'page_number': '15%', 'chunk_id': '21ece94e-41ea-49b3-a5d4-d56b61b4dea2', 'chunk_number': '17/112'}
+### Chunk ID: 3eddb3e4-b0b9-4f08-8f1a-a45f0cf7a32a
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 16, 'total_chunks': 112, 'location_percent': 15, 'page_number': '15%', 'chunk_id': '3eddb3e4-b0b9-4f08-8f1a-a45f0cf7a32a', 'chunk_number': '17/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 6b91d27e-a1bf-47f9-be91-4a433c3e2458
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 17, 'total_chunks': 112, 'location_percent': 16, 'page_number': '16%', 'chunk_id': '6b91d27e-a1bf-47f9-be91-4a433c3e2458', 'chunk_number': '18/112'}
+### Chunk ID: d88e58cf-a933-420a-9fe8-feabf9405540
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 17, 'total_chunks': 112, 'location_percent': 16, 'page_number': '16%', 'chunk_id': 'd88e58cf-a933-420a-9fe8-feabf9405540', 'chunk_number': '18/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 040b9580-2eb6-4fb2-9516-b75e5b844b56
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 18, 'total_chunks': 112, 'location_percent': 16, 'page_number': '16%', 'chunk_id': '040b9580-2eb6-4fb2-9516-b75e5b844b56', 'chunk_number': '19/112'}
+### Chunk ID: 56456a45-d6a8-4a82-a757-7aafd0a7d68d
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 18, 'total_chunks': 112, 'location_percent': 16, 'page_number': '16%', 'chunk_id': '56456a45-d6a8-4a82-a757-7aafd0a7d68d', 'chunk_number': '19/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: a7617ba1-c7e3-4405-b4d0-fa93873b695d
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 19, 'total_chunks': 112, 'location_percent': 17, 'page_number': '17%', 'chunk_id': 'a7617ba1-c7e3-4405-b4d0-fa93873b695d', 'chunk_number': '20/112'}
+### Chunk ID: 55bd2341-af02-4b0b-9041-d775b21c872d
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 19, 'total_chunks': 112, 'location_percent': 17, 'page_number': '17%', 'chunk_id': '55bd2341-af02-4b0b-9041-d775b21c872d', 'chunk_number': '20/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 5667729a-b8c8-4484-8073-52be51e6864e
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 20, 'total_chunks': 112, 'location_percent': 18, 'page_number': '18%', 'chunk_id': '5667729a-b8c8-4484-8073-52be51e6864e', 'chunk_number': '21/112'}
+### Chunk ID: 7378c1d9-878c-49e8-b1e4-e8e36b78314e
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 20, 'total_chunks': 112, 'location_percent': 18, 'page_number': '18%', 'chunk_id': '7378c1d9-878c-49e8-b1e4-e8e36b78314e', 'chunk_number': '21/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 44389b9c-f39a-40fd-99fb-6259a36e5bf9
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 21, 'total_chunks': 112, 'location_percent': 19, 'page_number': '19%', 'chunk_id': '44389b9c-f39a-40fd-99fb-6259a36e5bf9', 'chunk_number': '22/112'}
+### Chunk ID: ef5d55af-3237-4a52-bea4-09882640e3c8
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 21, 'total_chunks': 112, 'location_percent': 19, 'page_number': '19%', 'chunk_id': 'ef5d55af-3237-4a52-bea4-09882640e3c8', 'chunk_number': '22/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 1de63f19-7ac3-43f5-98bd-c5538c1d5e69
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 22, 'total_chunks': 112, 'location_percent': 20, 'page_number': '20%', 'chunk_id': '1de63f19-7ac3-43f5-98bd-c5538c1d5e69', 'chunk_number': '23/112'}
+### Chunk ID: 32a879ef-6b2e-49c4-8da1-e56fe5259756
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 22, 'total_chunks': 112, 'location_percent': 20, 'page_number': '20%', 'chunk_id': '32a879ef-6b2e-49c4-8da1-e56fe5259756', 'chunk_number': '23/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 07a225b2-2d53-42f4-bf85-5dbd86e81c80
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 23, 'total_chunks': 112, 'location_percent': 21, 'page_number': '21%', 'chunk_id': '07a225b2-2d53-42f4-bf85-5dbd86e81c80', 'chunk_number': '24/112'}
+### Chunk ID: 53d50911-c9a1-4175-a11b-7b3491a63c93
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 23, 'total_chunks': 112, 'location_percent': 21, 'page_number': '21%', 'chunk_id': '53d50911-c9a1-4175-a11b-7b3491a63c93', 'chunk_number': '24/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 76bb0fe5-4c7a-4a4f-b6d4-2002249c5658
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 24, 'total_chunks': 112, 'location_percent': 22, 'page_number': '22%', 'chunk_id': '76bb0fe5-4c7a-4a4f-b6d4-2002249c5658', 'chunk_number': '25/112'}
+### Chunk ID: 1cc1d0b3-c040-4510-9716-a51c36f38a48
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 24, 'total_chunks': 112, 'location_percent': 22, 'page_number': '22%', 'chunk_id': '1cc1d0b3-c040-4510-9716-a51c36f38a48', 'chunk_number': '25/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 0589e6d2-80cf-46b4-8681-02b07facf3f7
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 25, 'total_chunks': 112, 'location_percent': 23, 'page_number': '23%', 'chunk_id': '0589e6d2-80cf-46b4-8681-02b07facf3f7', 'chunk_number': '26/112'}
+### Chunk ID: 7fe32563-7d5d-41ab-86ac-a619eb2d8fb3
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 25, 'total_chunks': 112, 'location_percent': 23, 'page_number': '23%', 'chunk_id': '7fe32563-7d5d-41ab-86ac-a619eb2d8fb3', 'chunk_number': '26/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 530b0a8c-59e8-4fb8-bb7d-ebb409ff312d
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 26, 'total_chunks': 112, 'location_percent': 24, 'page_number': '24%', 'chunk_id': '530b0a8c-59e8-4fb8-bb7d-ebb409ff312d', 'chunk_number': '27/112'}
+### Chunk ID: 65fe9b77-9432-4660-89e9-b079fcbb6e54
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 26, 'total_chunks': 112, 'location_percent': 24, 'page_number': '24%', 'chunk_id': '65fe9b77-9432-4660-89e9-b079fcbb6e54', 'chunk_number': '27/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 2874d1ca-8b60-407e-acb8-0c407f858d91
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 27, 'total_chunks': 112, 'location_percent': 25, 'page_number': '25%', 'chunk_id': '2874d1ca-8b60-407e-acb8-0c407f858d91', 'chunk_number': '28/112'}
+### Chunk ID: 1094e887-b92a-4661-b2a0-fa1bea705681
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 27, 'total_chunks': 112, 'location_percent': 25, 'page_number': '25%', 'chunk_id': '1094e887-b92a-4661-b2a0-fa1bea705681', 'chunk_number': '28/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 52481eb9-cb6c-493a-bf1c-836075708389
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 28, 'total_chunks': 112, 'location_percent': 25, 'page_number': '25%', 'chunk_id': '52481eb9-cb6c-493a-bf1c-836075708389', 'chunk_number': '29/112'}
+### Chunk ID: 3f619a16-5888-4319-ac80-e80e1dec99c5
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 28, 'total_chunks': 112, 'location_percent': 25, 'page_number': '25%', 'chunk_id': '3f619a16-5888-4319-ac80-e80e1dec99c5', 'chunk_number': '29/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: ecb1d7e1-8b5a-4863-9edd-348e7cd7e58c
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 29, 'total_chunks': 112, 'location_percent': 26, 'page_number': '26%', 'chunk_id': 'ecb1d7e1-8b5a-4863-9edd-348e7cd7e58c', 'chunk_number': '30/112'}
+### Chunk ID: 9f082a0e-3c71-48ab-afe7-2368c9df136d
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 29, 'total_chunks': 112, 'location_percent': 26, 'page_number': '26%', 'chunk_id': '9f082a0e-3c71-48ab-afe7-2368c9df136d', 'chunk_number': '30/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: c1655234-c9bf-4f70-9956-fc11be6e1b81
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 30, 'total_chunks': 112, 'location_percent': 27, 'page_number': '27%', 'chunk_id': 'c1655234-c9bf-4f70-9956-fc11be6e1b81', 'chunk_number': '31/112'}
+### Chunk ID: 5363fc40-e729-455e-b412-7149032ee9f2
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 30, 'total_chunks': 112, 'location_percent': 27, 'page_number': '27%', 'chunk_id': '5363fc40-e729-455e-b412-7149032ee9f2', 'chunk_number': '31/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 6eaeea6f-3f7c-4495-8502-57388f05c9a0
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 31, 'total_chunks': 112, 'location_percent': 28, 'page_number': '28%', 'chunk_id': '6eaeea6f-3f7c-4495-8502-57388f05c9a0', 'chunk_number': '32/112'}
+### Chunk ID: 44e24028-2764-4e87-b6ef-61d51f29fa75
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 31, 'total_chunks': 112, 'location_percent': 28, 'page_number': '28%', 'chunk_id': '44e24028-2764-4e87-b6ef-61d51f29fa75', 'chunk_number': '32/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: bec06a9e-1b00-40c9-a6fb-c493d4749c26
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 32, 'total_chunks': 112, 'location_percent': 29, 'page_number': '29%', 'chunk_id': 'bec06a9e-1b00-40c9-a6fb-c493d4749c26', 'chunk_number': '33/112'}
+### Chunk ID: ec4a4487-31e8-45f7-a592-3695aadc730e
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 32, 'total_chunks': 112, 'location_percent': 29, 'page_number': '29%', 'chunk_id': 'ec4a4487-31e8-45f7-a592-3695aadc730e', 'chunk_number': '33/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 87d6d62e-e07c-43a3-ae7c-c3e1cfb4aaf8
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 33, 'total_chunks': 112, 'location_percent': 30, 'page_number': '30%', 'chunk_id': '87d6d62e-e07c-43a3-ae7c-c3e1cfb4aaf8', 'chunk_number': '34/112'}
+### Chunk ID: 1b9ebb68-dede-4034-9f51-00f2b53f4008
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 33, 'total_chunks': 112, 'location_percent': 30, 'page_number': '30%', 'chunk_id': '1b9ebb68-dede-4034-9f51-00f2b53f4008', 'chunk_number': '34/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 82eaeee3-f335-4e8b-8dd1-612f0bec9ef7
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 34, 'total_chunks': 112, 'location_percent': 31, 'page_number': '31%', 'chunk_id': '82eaeee3-f335-4e8b-8dd1-612f0bec9ef7', 'chunk_number': '35/112'}
+### Chunk ID: 15f9fdaf-f885-4faa-aa5e-f59479528b21
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 34, 'total_chunks': 112, 'location_percent': 31, 'page_number': '31%', 'chunk_id': '15f9fdaf-f885-4faa-aa5e-f59479528b21', 'chunk_number': '35/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: c9676d4b-bde7-472e-ae52-1c500db11d70
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 35, 'total_chunks': 112, 'location_percent': 32, 'page_number': '32%', 'chunk_id': 'c9676d4b-bde7-472e-ae52-1c500db11d70', 'chunk_number': '36/112'}
+### Chunk ID: c4578971-9296-40bf-ba4e-02ce7244eba4
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 35, 'total_chunks': 112, 'location_percent': 32, 'page_number': '32%', 'chunk_id': 'c4578971-9296-40bf-ba4e-02ce7244eba4', 'chunk_number': '36/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: a2bc8891-3ed9-4f34-97c7-cd26e77095dd
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 36, 'total_chunks': 112, 'location_percent': 33, 'page_number': '33%', 'chunk_id': 'a2bc8891-3ed9-4f34-97c7-cd26e77095dd', 'chunk_number': '37/112'}
+### Chunk ID: 2870b825-fa9a-4fd3-a51e-b905081d3a1d
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 36, 'total_chunks': 112, 'location_percent': 33, 'page_number': '33%', 'chunk_id': '2870b825-fa9a-4fd3-a51e-b905081d3a1d', 'chunk_number': '37/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 5a30f28a-30fb-4e19-84fc-3f8742381e0f
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 37, 'total_chunks': 112, 'location_percent': 33, 'page_number': '33%', 'chunk_id': '5a30f28a-30fb-4e19-84fc-3f8742381e0f', 'chunk_number': '38/112'}
+### Chunk ID: 257bd544-8ac3-4d65-a013-73d47ada6d4f
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 37, 'total_chunks': 112, 'location_percent': 33, 'page_number': '33%', 'chunk_id': '257bd544-8ac3-4d65-a013-73d47ada6d4f', 'chunk_number': '38/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: ac1fd71e-8ee3-460e-8425-1bbb60a3b672
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 38, 'total_chunks': 112, 'location_percent': 34, 'page_number': '34%', 'chunk_id': 'ac1fd71e-8ee3-460e-8425-1bbb60a3b672', 'chunk_number': '39/112'}
+### Chunk ID: 8a3c75a1-1621-4a10-a45c-b5ab17f9c980
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 38, 'total_chunks': 112, 'location_percent': 34, 'page_number': '34%', 'chunk_id': '8a3c75a1-1621-4a10-a45c-b5ab17f9c980', 'chunk_number': '39/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: df405e43-1cee-4171-b669-4646098bcd03
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 39, 'total_chunks': 112, 'location_percent': 35, 'page_number': '35%', 'chunk_id': 'df405e43-1cee-4171-b669-4646098bcd03', 'chunk_number': '40/112'}
+### Chunk ID: 973df82f-d714-4058-b4bf-c1938daa69b1
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 39, 'total_chunks': 112, 'location_percent': 35, 'page_number': '35%', 'chunk_id': '973df82f-d714-4058-b4bf-c1938daa69b1', 'chunk_number': '40/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 530efe29-28a9-4263-abe6-082d5cff15dd
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 40, 'total_chunks': 112, 'location_percent': 36, 'page_number': '36%', 'chunk_id': '530efe29-28a9-4263-abe6-082d5cff15dd', 'chunk_number': '41/112'}
+### Chunk ID: f401fc99-a4d3-4af9-beb2-87981dd2afa4
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 40, 'total_chunks': 112, 'location_percent': 36, 'page_number': '36%', 'chunk_id': 'f401fc99-a4d3-4af9-beb2-87981dd2afa4', 'chunk_number': '41/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 2ee3e229-0dc3-447a-9852-6cf117efba89
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 41, 'total_chunks': 112, 'location_percent': 37, 'page_number': '37%', 'chunk_id': '2ee3e229-0dc3-447a-9852-6cf117efba89', 'chunk_number': '42/112'}
+### Chunk ID: aa692c89-9de5-4dc1-b454-250b00657352
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 41, 'total_chunks': 112, 'location_percent': 37, 'page_number': '37%', 'chunk_id': 'aa692c89-9de5-4dc1-b454-250b00657352', 'chunk_number': '42/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 8c85316a-ecdd-478c-9004-30333cfbedb2
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 42, 'total_chunks': 112, 'location_percent': 38, 'page_number': '38%', 'chunk_id': '8c85316a-ecdd-478c-9004-30333cfbedb2', 'chunk_number': '43/112'}
+### Chunk ID: 5ae47afb-88f8-4632-82ca-c46bc1ee2268
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 42, 'total_chunks': 112, 'location_percent': 38, 'page_number': '38%', 'chunk_id': '5ae47afb-88f8-4632-82ca-c46bc1ee2268', 'chunk_number': '43/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 52ae1b49-61b8-41a8-81d7-cfad8bf714b6
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 43, 'total_chunks': 112, 'location_percent': 39, 'page_number': '39%', 'chunk_id': '52ae1b49-61b8-41a8-81d7-cfad8bf714b6', 'chunk_number': '44/112'}
+### Chunk ID: 5c17fdf8-50d3-45ee-9657-655dce04fb7b
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 43, 'total_chunks': 112, 'location_percent': 39, 'page_number': '39%', 'chunk_id': '5c17fdf8-50d3-45ee-9657-655dce04fb7b', 'chunk_number': '44/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 2a7e0497-f220-4f06-9815-ffc43f7e6304
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 44, 'total_chunks': 112, 'location_percent': 40, 'page_number': '40%', 'chunk_id': '2a7e0497-f220-4f06-9815-ffc43f7e6304', 'chunk_number': '45/112'}
+### Chunk ID: e8a52196-77ef-4a39-92fe-5d08a4327b37
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 44, 'total_chunks': 112, 'location_percent': 40, 'page_number': '40%', 'chunk_id': 'e8a52196-77ef-4a39-92fe-5d08a4327b37', 'chunk_number': '45/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: dc286d24-8265-43b9-bef7-9bb7aa7c9a03
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 45, 'total_chunks': 112, 'location_percent': 41, 'page_number': '41%', 'chunk_id': 'dc286d24-8265-43b9-bef7-9bb7aa7c9a03', 'chunk_number': '46/112'}
+### Chunk ID: a79e0582-8e9a-4383-9156-19977efa28da
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 45, 'total_chunks': 112, 'location_percent': 41, 'page_number': '41%', 'chunk_id': 'a79e0582-8e9a-4383-9156-19977efa28da', 'chunk_number': '46/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: f908c4f4-213a-4464-b0e5-47e2a1fb0ec5
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 46, 'total_chunks': 112, 'location_percent': 41, 'page_number': '41%', 'chunk_id': 'f908c4f4-213a-4464-b0e5-47e2a1fb0ec5', 'chunk_number': '47/112'}
+### Chunk ID: 1683f723-712c-4f66-9a6d-7fef7b31d94e
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 46, 'total_chunks': 112, 'location_percent': 41, 'page_number': '41%', 'chunk_id': '1683f723-712c-4f66-9a6d-7fef7b31d94e', 'chunk_number': '47/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: c50a4b1c-2222-457a-956a-11603f3c7868
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 47, 'total_chunks': 112, 'location_percent': 42, 'page_number': '42%', 'chunk_id': 'c50a4b1c-2222-457a-956a-11603f3c7868', 'chunk_number': '48/112'}
+### Chunk ID: 96973552-4512-47cd-82db-f7827c730067
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 47, 'total_chunks': 112, 'location_percent': 42, 'page_number': '42%', 'chunk_id': '96973552-4512-47cd-82db-f7827c730067', 'chunk_number': '48/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 37026ed2-a9c1-4972-aa56-f9090bf29fa7
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 48, 'total_chunks': 112, 'location_percent': 43, 'page_number': '43%', 'chunk_id': '37026ed2-a9c1-4972-aa56-f9090bf29fa7', 'chunk_number': '49/112'}
+### Chunk ID: de573cf1-d213-4fd7-84ca-b6d6f23ca00b
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 48, 'total_chunks': 112, 'location_percent': 43, 'page_number': '43%', 'chunk_id': 'de573cf1-d213-4fd7-84ca-b6d6f23ca00b', 'chunk_number': '49/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 09b631a8-df8c-4a6e-b715-a73b570a5e2c
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 49, 'total_chunks': 112, 'location_percent': 44, 'page_number': '44%', 'chunk_id': '09b631a8-df8c-4a6e-b715-a73b570a5e2c', 'chunk_number': '50/112'}
+### Chunk ID: d923a4c0-4089-4c42-9dfe-d048c724cc68
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 49, 'total_chunks': 112, 'location_percent': 44, 'page_number': '44%', 'chunk_id': 'd923a4c0-4089-4c42-9dfe-d048c724cc68', 'chunk_number': '50/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: cb2e155e-f354-4b24-8ad3-7e7b11007e97
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 50, 'total_chunks': 112, 'location_percent': 45, 'page_number': '45%', 'chunk_id': 'cb2e155e-f354-4b24-8ad3-7e7b11007e97', 'chunk_number': '51/112'}
+### Chunk ID: ac5813fa-c4f9-47df-b0ed-4f86c4d3446a
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 50, 'total_chunks': 112, 'location_percent': 45, 'page_number': '45%', 'chunk_id': 'ac5813fa-c4f9-47df-b0ed-4f86c4d3446a', 'chunk_number': '51/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: a4c26af3-1b8c-480e-a2be-4829e39a1b55
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 51, 'total_chunks': 112, 'location_percent': 46, 'page_number': '46%', 'chunk_id': 'a4c26af3-1b8c-480e-a2be-4829e39a1b55', 'chunk_number': '52/112'}
+### Chunk ID: 5d8ab505-3606-4cb4-a779-df993e9a042b
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 51, 'total_chunks': 112, 'location_percent': 46, 'page_number': '46%', 'chunk_id': '5d8ab505-3606-4cb4-a779-df993e9a042b', 'chunk_number': '52/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 7cf88d1c-0293-4912-a411-1989b439de34
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 52, 'total_chunks': 112, 'location_percent': 47, 'page_number': '47%', 'chunk_id': '7cf88d1c-0293-4912-a411-1989b439de34', 'chunk_number': '53/112'}
+### Chunk ID: 9964c238-59bc-447a-8338-f595c12ba701
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 52, 'total_chunks': 112, 'location_percent': 47, 'page_number': '47%', 'chunk_id': '9964c238-59bc-447a-8338-f595c12ba701', 'chunk_number': '53/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: b48f08ab-b8b2-45e7-9c8d-19d42b8db24b
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 53, 'total_chunks': 112, 'location_percent': 48, 'page_number': '48%', 'chunk_id': 'b48f08ab-b8b2-45e7-9c8d-19d42b8db24b', 'chunk_number': '54/112'}
+### Chunk ID: 8f6941fb-076e-4818-b5dc-2a6116881fb9
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 53, 'total_chunks': 112, 'location_percent': 48, 'page_number': '48%', 'chunk_id': '8f6941fb-076e-4818-b5dc-2a6116881fb9', 'chunk_number': '54/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: ab9ef088-b46b-47f6-adf6-7b56c3655127
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 54, 'total_chunks': 112, 'location_percent': 49, 'page_number': '49%', 'chunk_id': 'ab9ef088-b46b-47f6-adf6-7b56c3655127', 'chunk_number': '55/112'}
+### Chunk ID: 89f8265d-67d3-41c9-90bc-e69cdeebe5b9
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 54, 'total_chunks': 112, 'location_percent': 49, 'page_number': '49%', 'chunk_id': '89f8265d-67d3-41c9-90bc-e69cdeebe5b9', 'chunk_number': '55/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 7dd61e07-2507-455c-bf6f-bda45440d91b
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 55, 'total_chunks': 112, 'location_percent': 50, 'page_number': '50%', 'chunk_id': '7dd61e07-2507-455c-bf6f-bda45440d91b', 'chunk_number': '56/112'}
+### Chunk ID: 28c64493-df49-49ee-b2e0-ad1c2f4457c7
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 55, 'total_chunks': 112, 'location_percent': 50, 'page_number': '50%', 'chunk_id': '28c64493-df49-49ee-b2e0-ad1c2f4457c7', 'chunk_number': '56/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 85d05a1c-30f6-43a6-965c-202c7fecab1f
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 56, 'total_chunks': 112, 'location_percent': 50, 'page_number': '50%', 'chunk_id': '85d05a1c-30f6-43a6-965c-202c7fecab1f', 'chunk_number': '57/112'}
+### Chunk ID: 18e0bc7a-8ba6-4741-934c-2cd6b7fe3989
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 56, 'total_chunks': 112, 'location_percent': 50, 'page_number': '50%', 'chunk_id': '18e0bc7a-8ba6-4741-934c-2cd6b7fe3989', 'chunk_number': '57/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 874c1770-4267-4c8d-8fc4-e8877e4d0f03
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 57, 'total_chunks': 112, 'location_percent': 51, 'page_number': '51%', 'chunk_id': '874c1770-4267-4c8d-8fc4-e8877e4d0f03', 'chunk_number': '58/112'}
+### Chunk ID: 535c092c-e8f7-46fe-9f81-19cbb4d3882c
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 57, 'total_chunks': 112, 'location_percent': 51, 'page_number': '51%', 'chunk_id': '535c092c-e8f7-46fe-9f81-19cbb4d3882c', 'chunk_number': '58/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 2c7a091a-b25f-49a7-85f4-f998a1ce54bb
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 58, 'total_chunks': 112, 'location_percent': 52, 'page_number': '52%', 'chunk_id': '2c7a091a-b25f-49a7-85f4-f998a1ce54bb', 'chunk_number': '59/112'}
+### Chunk ID: ac0b180a-df79-4a2c-82da-8fdb719fef72
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 58, 'total_chunks': 112, 'location_percent': 52, 'page_number': '52%', 'chunk_id': 'ac0b180a-df79-4a2c-82da-8fdb719fef72', 'chunk_number': '59/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: b9e2bb2c-0015-4c12-ba2d-f54797ae5d95
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 59, 'total_chunks': 112, 'location_percent': 53, 'page_number': '53%', 'chunk_id': 'b9e2bb2c-0015-4c12-ba2d-f54797ae5d95', 'chunk_number': '60/112'}
+### Chunk ID: 82133a63-21ac-4187-a480-3429b9257ead
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 59, 'total_chunks': 112, 'location_percent': 53, 'page_number': '53%', 'chunk_id': '82133a63-21ac-4187-a480-3429b9257ead', 'chunk_number': '60/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 66d3b4f5-b3b5-46b1-af51-5db68c9681fd
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 60, 'total_chunks': 112, 'location_percent': 54, 'page_number': '54%', 'chunk_id': '66d3b4f5-b3b5-46b1-af51-5db68c9681fd', 'chunk_number': '61/112'}
+### Chunk ID: 9febd269-ed2f-4051-bd07-3cc73e946eca
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 60, 'total_chunks': 112, 'location_percent': 54, 'page_number': '54%', 'chunk_id': '9febd269-ed2f-4051-bd07-3cc73e946eca', 'chunk_number': '61/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 60c15669-2e2e-4e52-b078-30542cf5e62b
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 61, 'total_chunks': 112, 'location_percent': 55, 'page_number': '55%', 'chunk_id': '60c15669-2e2e-4e52-b078-30542cf5e62b', 'chunk_number': '62/112'}
+### Chunk ID: 55438a4b-8355-45c5-bf97-123af0ca524d
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 61, 'total_chunks': 112, 'location_percent': 55, 'page_number': '55%', 'chunk_id': '55438a4b-8355-45c5-bf97-123af0ca524d', 'chunk_number': '62/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: d597607f-09a8-424d-8195-cfb8d6fc53ca
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 62, 'total_chunks': 112, 'location_percent': 56, 'page_number': '56%', 'chunk_id': 'd597607f-09a8-424d-8195-cfb8d6fc53ca', 'chunk_number': '63/112'}
+### Chunk ID: e1c4d57a-fc6b-47b4-8199-4084f1204f81
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 62, 'total_chunks': 112, 'location_percent': 56, 'page_number': '56%', 'chunk_id': 'e1c4d57a-fc6b-47b4-8199-4084f1204f81', 'chunk_number': '63/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 0c2dc152-2cf9-4a0e-8eb7-f2eb85884ccb
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 63, 'total_chunks': 112, 'location_percent': 57, 'page_number': '57%', 'chunk_id': '0c2dc152-2cf9-4a0e-8eb7-f2eb85884ccb', 'chunk_number': '64/112'}
+### Chunk ID: 3c355488-9fdf-4638-bb82-ed4cae020ab9
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 63, 'total_chunks': 112, 'location_percent': 57, 'page_number': '57%', 'chunk_id': '3c355488-9fdf-4638-bb82-ed4cae020ab9', 'chunk_number': '64/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 16161166-3351-489d-91b3-57bb6f56f028
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 64, 'total_chunks': 112, 'location_percent': 58, 'page_number': '58%', 'chunk_id': '16161166-3351-489d-91b3-57bb6f56f028', 'chunk_number': '65/112'}
+### Chunk ID: 52fde491-1701-4bb5-943c-1d72663b660f
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 64, 'total_chunks': 112, 'location_percent': 58, 'page_number': '58%', 'chunk_id': '52fde491-1701-4bb5-943c-1d72663b660f', 'chunk_number': '65/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 8ae563bb-9a3c-475c-a54e-8133c69ca205
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 65, 'total_chunks': 112, 'location_percent': 58, 'page_number': '58%', 'chunk_id': '8ae563bb-9a3c-475c-a54e-8133c69ca205', 'chunk_number': '66/112'}
+### Chunk ID: 09fdf0ad-f33a-4275-8634-0c362c43d3c7
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 65, 'total_chunks': 112, 'location_percent': 58, 'page_number': '58%', 'chunk_id': '09fdf0ad-f33a-4275-8634-0c362c43d3c7', 'chunk_number': '66/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 8793bd87-d1a8-4085-a3da-f6920fb7f638
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 66, 'total_chunks': 112, 'location_percent': 59, 'page_number': '59%', 'chunk_id': '8793bd87-d1a8-4085-a3da-f6920fb7f638', 'chunk_number': '67/112'}
+### Chunk ID: b2f9ee6d-c8cc-40a8-928b-3ef27a9fa8ad
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 66, 'total_chunks': 112, 'location_percent': 59, 'page_number': '59%', 'chunk_id': 'b2f9ee6d-c8cc-40a8-928b-3ef27a9fa8ad', 'chunk_number': '67/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 1e3b35e4-503e-4ef8-8628-e2e86cb07c34
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 67, 'total_chunks': 112, 'location_percent': 60, 'page_number': '60%', 'chunk_id': '1e3b35e4-503e-4ef8-8628-e2e86cb07c34', 'chunk_number': '68/112'}
+### Chunk ID: 1d9d87a6-863f-42fa-8806-e188c0c03c8a
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 67, 'total_chunks': 112, 'location_percent': 60, 'page_number': '60%', 'chunk_id': '1d9d87a6-863f-42fa-8806-e188c0c03c8a', 'chunk_number': '68/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: a9324817-e546-49d0-8258-1596bc0926db
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 68, 'total_chunks': 112, 'location_percent': 61, 'page_number': '61%', 'chunk_id': 'a9324817-e546-49d0-8258-1596bc0926db', 'chunk_number': '69/112'}
+### Chunk ID: 40c42b57-7e60-42fe-a355-40b2f1977a0f
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 68, 'total_chunks': 112, 'location_percent': 61, 'page_number': '61%', 'chunk_id': '40c42b57-7e60-42fe-a355-40b2f1977a0f', 'chunk_number': '69/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 627f1ff3-7885-44d1-a4f5-5d452cba284b
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 69, 'total_chunks': 112, 'location_percent': 62, 'page_number': '62%', 'chunk_id': '627f1ff3-7885-44d1-a4f5-5d452cba284b', 'chunk_number': '70/112'}
+### Chunk ID: 4a1dc589-80f8-4da6-aeff-184790ca1bdc
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 69, 'total_chunks': 112, 'location_percent': 62, 'page_number': '62%', 'chunk_id': '4a1dc589-80f8-4da6-aeff-184790ca1bdc', 'chunk_number': '70/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: f69d8342-2d02-40cc-902a-201eee00e8e1
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 70, 'total_chunks': 112, 'location_percent': 63, 'page_number': '63%', 'chunk_id': 'f69d8342-2d02-40cc-902a-201eee00e8e1', 'chunk_number': '71/112'}
+### Chunk ID: 05215004-924c-4b2c-9395-39593c724343
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 70, 'total_chunks': 112, 'location_percent': 63, 'page_number': '63%', 'chunk_id': '05215004-924c-4b2c-9395-39593c724343', 'chunk_number': '71/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 33b3f59e-f06c-4a63-94ee-a3ee478b0ad4
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 71, 'total_chunks': 112, 'location_percent': 64, 'page_number': '64%', 'chunk_id': '33b3f59e-f06c-4a63-94ee-a3ee478b0ad4', 'chunk_number': '72/112'}
+### Chunk ID: a4a22d7d-5302-40e8-b109-2b32c75a0663
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 71, 'total_chunks': 112, 'location_percent': 64, 'page_number': '64%', 'chunk_id': 'a4a22d7d-5302-40e8-b109-2b32c75a0663', 'chunk_number': '72/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: a3c9b1a0-08d9-4bac-bbdf-e876ce6247e4
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 72, 'total_chunks': 112, 'location_percent': 65, 'page_number': '65%', 'chunk_id': 'a3c9b1a0-08d9-4bac-bbdf-e876ce6247e4', 'chunk_number': '73/112'}
+### Chunk ID: 3b6b1f13-94af-4a5f-a2a2-91ecd38ef350
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 72, 'total_chunks': 112, 'location_percent': 65, 'page_number': '65%', 'chunk_id': '3b6b1f13-94af-4a5f-a2a2-91ecd38ef350', 'chunk_number': '73/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: e78bdb28-b366-44d9-91e4-96db21fec9f5
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 73, 'total_chunks': 112, 'location_percent': 66, 'page_number': '66%', 'chunk_id': 'e78bdb28-b366-44d9-91e4-96db21fec9f5', 'chunk_number': '74/112'}
+### Chunk ID: 4c49b9b6-8940-4836-892c-e094aaef5322
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 73, 'total_chunks': 112, 'location_percent': 66, 'page_number': '66%', 'chunk_id': '4c49b9b6-8940-4836-892c-e094aaef5322', 'chunk_number': '74/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 9e29557b-251c-4b3e-8e67-4f9e3dc90302
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 74, 'total_chunks': 112, 'location_percent': 66, 'page_number': '66%', 'chunk_id': '9e29557b-251c-4b3e-8e67-4f9e3dc90302', 'chunk_number': '75/112'}
+### Chunk ID: 82fb7a86-8fe5-4432-98f0-76d83bec5c75
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 74, 'total_chunks': 112, 'location_percent': 66, 'page_number': '66%', 'chunk_id': '82fb7a86-8fe5-4432-98f0-76d83bec5c75', 'chunk_number': '75/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: c022088c-cb77-49c3-af58-24b5b98fb452
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 75, 'total_chunks': 112, 'location_percent': 67, 'page_number': '67%', 'chunk_id': 'c022088c-cb77-49c3-af58-24b5b98fb452', 'chunk_number': '76/112'}
+### Chunk ID: 8fd86acb-9d5a-49c5-a8c8-34936bd58fbb
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 75, 'total_chunks': 112, 'location_percent': 67, 'page_number': '67%', 'chunk_id': '8fd86acb-9d5a-49c5-a8c8-34936bd58fbb', 'chunk_number': '76/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 08b01406-0bd5-4d08-b0a4-b4f24c4034e0
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 76, 'total_chunks': 112, 'location_percent': 68, 'page_number': '68%', 'chunk_id': '08b01406-0bd5-4d08-b0a4-b4f24c4034e0', 'chunk_number': '77/112'}
+### Chunk ID: db643c44-6833-40d1-abdd-cfa31baa3f65
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 76, 'total_chunks': 112, 'location_percent': 68, 'page_number': '68%', 'chunk_id': 'db643c44-6833-40d1-abdd-cfa31baa3f65', 'chunk_number': '77/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 96e9a877-d550-4d0b-a812-f050dc74b109
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 77, 'total_chunks': 112, 'location_percent': 69, 'page_number': '69%', 'chunk_id': '96e9a877-d550-4d0b-a812-f050dc74b109', 'chunk_number': '78/112'}
+### Chunk ID: e3a9f79f-4b49-4a31-82b6-5cc2fa2d0138
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 77, 'total_chunks': 112, 'location_percent': 69, 'page_number': '69%', 'chunk_id': 'e3a9f79f-4b49-4a31-82b6-5cc2fa2d0138', 'chunk_number': '78/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 7ed0a630-8419-4d09-b696-b933589bc8da
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 78, 'total_chunks': 112, 'location_percent': 70, 'page_number': '70%', 'chunk_id': '7ed0a630-8419-4d09-b696-b933589bc8da', 'chunk_number': '79/112'}
+### Chunk ID: d29d9370-5568-4b6c-90c8-501fe8164543
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 78, 'total_chunks': 112, 'location_percent': 70, 'page_number': '70%', 'chunk_id': 'd29d9370-5568-4b6c-90c8-501fe8164543', 'chunk_number': '79/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 7d318097-3399-4e30-be83-6e688c4062f9
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 79, 'total_chunks': 112, 'location_percent': 71, 'page_number': '71%', 'chunk_id': '7d318097-3399-4e30-be83-6e688c4062f9', 'chunk_number': '80/112'}
+### Chunk ID: 614996c7-e412-4a94-ad3f-ef6a2da7e6e1
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 79, 'total_chunks': 112, 'location_percent': 71, 'page_number': '71%', 'chunk_id': '614996c7-e412-4a94-ad3f-ef6a2da7e6e1', 'chunk_number': '80/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 6e3d3b45-6d5f-4b70-bf40-0e7a0f836c3d
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 80, 'total_chunks': 112, 'location_percent': 72, 'page_number': '72%', 'chunk_id': '6e3d3b45-6d5f-4b70-bf40-0e7a0f836c3d', 'chunk_number': '81/112'}
+### Chunk ID: c7618b86-7070-4711-91e4-acbf761f9438
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 80, 'total_chunks': 112, 'location_percent': 72, 'page_number': '72%', 'chunk_id': 'c7618b86-7070-4711-91e4-acbf761f9438', 'chunk_number': '81/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 651fb164-5a7a-4128-8864-620a28a6812d
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 81, 'total_chunks': 112, 'location_percent': 73, 'page_number': '73%', 'chunk_id': '651fb164-5a7a-4128-8864-620a28a6812d', 'chunk_number': '82/112'}
+### Chunk ID: 9ce54e0a-140b-468d-b173-f636a4e5c4a9
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 81, 'total_chunks': 112, 'location_percent': 73, 'page_number': '73%', 'chunk_id': '9ce54e0a-140b-468d-b173-f636a4e5c4a9', 'chunk_number': '82/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: e83de102-02d0-4c8e-ad16-0b4c2c03aa11
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 82, 'total_chunks': 112, 'location_percent': 74, 'page_number': '74%', 'chunk_id': 'e83de102-02d0-4c8e-ad16-0b4c2c03aa11', 'chunk_number': '83/112'}
+### Chunk ID: 6442f768-ebcb-4500-8159-093dc59a4da1
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 82, 'total_chunks': 112, 'location_percent': 74, 'page_number': '74%', 'chunk_id': '6442f768-ebcb-4500-8159-093dc59a4da1', 'chunk_number': '83/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 158a4660-0044-4610-8bbb-cfdca76f28fe
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 83, 'total_chunks': 112, 'location_percent': 75, 'page_number': '75%', 'chunk_id': '158a4660-0044-4610-8bbb-cfdca76f28fe', 'chunk_number': '84/112'}
+### Chunk ID: c657f8ab-515b-4c8e-b383-c002d348f275
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 83, 'total_chunks': 112, 'location_percent': 75, 'page_number': '75%', 'chunk_id': 'c657f8ab-515b-4c8e-b383-c002d348f275', 'chunk_number': '84/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: b75669ee-f1ae-44a4-9c69-b9bdddbc19a5
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 84, 'total_chunks': 112, 'location_percent': 75, 'page_number': '75%', 'chunk_id': 'b75669ee-f1ae-44a4-9c69-b9bdddbc19a5', 'chunk_number': '85/112'}
+### Chunk ID: 1dac4fb1-6971-44b0-a6db-04a355b1ac5c
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 84, 'total_chunks': 112, 'location_percent': 75, 'page_number': '75%', 'chunk_id': '1dac4fb1-6971-44b0-a6db-04a355b1ac5c', 'chunk_number': '85/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: e25059d7-e244-4db2-9582-f3f8fe959bcd
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 85, 'total_chunks': 112, 'location_percent': 76, 'page_number': '76%', 'chunk_id': 'e25059d7-e244-4db2-9582-f3f8fe959bcd', 'chunk_number': '86/112'}
+### Chunk ID: b7a6ba52-4d26-4408-ba34-145ea26a360e
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 85, 'total_chunks': 112, 'location_percent': 76, 'page_number': '76%', 'chunk_id': 'b7a6ba52-4d26-4408-ba34-145ea26a360e', 'chunk_number': '86/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 53269ef7-eb6c-4402-b89f-1baa5f6f56d4
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 86, 'total_chunks': 112, 'location_percent': 77, 'page_number': '77%', 'chunk_id': '53269ef7-eb6c-4402-b89f-1baa5f6f56d4', 'chunk_number': '87/112'}
+### Chunk ID: d16052ca-6426-472d-98db-5fd5c30cf906
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 86, 'total_chunks': 112, 'location_percent': 77, 'page_number': '77%', 'chunk_id': 'd16052ca-6426-472d-98db-5fd5c30cf906', 'chunk_number': '87/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 22e20bd1-00a9-49ff-b16e-0874b45ea94a
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 87, 'total_chunks': 112, 'location_percent': 78, 'page_number': '78%', 'chunk_id': '22e20bd1-00a9-49ff-b16e-0874b45ea94a', 'chunk_number': '88/112'}
+### Chunk ID: b930c960-0bf2-4a72-b029-252034eacd9f
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 87, 'total_chunks': 112, 'location_percent': 78, 'page_number': '78%', 'chunk_id': 'b930c960-0bf2-4a72-b029-252034eacd9f', 'chunk_number': '88/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 4c090c30-3fb0-46e7-85b8-da2c18a0ae8f
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 88, 'total_chunks': 112, 'location_percent': 79, 'page_number': '79%', 'chunk_id': '4c090c30-3fb0-46e7-85b8-da2c18a0ae8f', 'chunk_number': '89/112'}
+### Chunk ID: c5b91e8c-199c-48d8-8038-07b98ef8c0a2
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 88, 'total_chunks': 112, 'location_percent': 79, 'page_number': '79%', 'chunk_id': 'c5b91e8c-199c-48d8-8038-07b98ef8c0a2', 'chunk_number': '89/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 6eb0bc38-36e4-40d3-9b11-1b10ad02830b
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 89, 'total_chunks': 112, 'location_percent': 80, 'page_number': '80%', 'chunk_id': '6eb0bc38-36e4-40d3-9b11-1b10ad02830b', 'chunk_number': '90/112'}
+### Chunk ID: 03ff8e7f-1087-412e-bc20-2404d527b03e
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 89, 'total_chunks': 112, 'location_percent': 80, 'page_number': '80%', 'chunk_id': '03ff8e7f-1087-412e-bc20-2404d527b03e', 'chunk_number': '90/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 1d9aaee8-a213-49d6-9476-ad67d7d406a0
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 90, 'total_chunks': 112, 'location_percent': 81, 'page_number': '81%', 'chunk_id': '1d9aaee8-a213-49d6-9476-ad67d7d406a0', 'chunk_number': '91/112'}
+### Chunk ID: 56b64183-ed39-4388-8a77-0b899b70b92a
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 90, 'total_chunks': 112, 'location_percent': 81, 'page_number': '81%', 'chunk_id': '56b64183-ed39-4388-8a77-0b899b70b92a', 'chunk_number': '91/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 2fc38275-e607-42d6-bebd-9aefa9806f0d
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 91, 'total_chunks': 112, 'location_percent': 82, 'page_number': '82%', 'chunk_id': '2fc38275-e607-42d6-bebd-9aefa9806f0d', 'chunk_number': '92/112'}
+### Chunk ID: 71948be7-822f-4c58-b366-95f3d19a37c7
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 91, 'total_chunks': 112, 'location_percent': 82, 'page_number': '82%', 'chunk_id': '71948be7-822f-4c58-b366-95f3d19a37c7', 'chunk_number': '92/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 4068bfd1-a337-4c78-a47e-11458c683376
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 92, 'total_chunks': 112, 'location_percent': 83, 'page_number': '83%', 'chunk_id': '4068bfd1-a337-4c78-a47e-11458c683376', 'chunk_number': '93/112'}
+### Chunk ID: 3486e998-9413-4112-9340-3b142d08713c
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 92, 'total_chunks': 112, 'location_percent': 83, 'page_number': '83%', 'chunk_id': '3486e998-9413-4112-9340-3b142d08713c', 'chunk_number': '93/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 9425d373-3976-4937-996e-e6ea29244b23
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 93, 'total_chunks': 112, 'location_percent': 83, 'page_number': '83%', 'chunk_id': '9425d373-3976-4937-996e-e6ea29244b23', 'chunk_number': '94/112'}
+### Chunk ID: 1c4fc4ba-533c-4712-8353-c4c650e8ee0b
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 93, 'total_chunks': 112, 'location_percent': 83, 'page_number': '83%', 'chunk_id': '1c4fc4ba-533c-4712-8353-c4c650e8ee0b', 'chunk_number': '94/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: a2f1b6c0-b6e5-428d-b948-314ed8b492f5
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 94, 'total_chunks': 112, 'location_percent': 84, 'page_number': '84%', 'chunk_id': 'a2f1b6c0-b6e5-428d-b948-314ed8b492f5', 'chunk_number': '95/112'}
+### Chunk ID: 15026a7a-e82a-4466-8183-051d6fe0791f
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 94, 'total_chunks': 112, 'location_percent': 84, 'page_number': '84%', 'chunk_id': '15026a7a-e82a-4466-8183-051d6fe0791f', 'chunk_number': '95/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 30328374-3929-422a-ba78-b48cc89f0106
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 95, 'total_chunks': 112, 'location_percent': 85, 'page_number': '85%', 'chunk_id': '30328374-3929-422a-ba78-b48cc89f0106', 'chunk_number': '96/112'}
+### Chunk ID: 2097fcd7-1a84-4555-8d27-7d7527c1c2e8
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 95, 'total_chunks': 112, 'location_percent': 85, 'page_number': '85%', 'chunk_id': '2097fcd7-1a84-4555-8d27-7d7527c1c2e8', 'chunk_number': '96/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 32612f29-d5b2-4aaf-bbdd-a357f9552abb
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 96, 'total_chunks': 112, 'location_percent': 86, 'page_number': '86%', 'chunk_id': '32612f29-d5b2-4aaf-bbdd-a357f9552abb', 'chunk_number': '97/112'}
+### Chunk ID: 04230a70-0efc-4e1a-a89c-6fdcfa85ea7e
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 96, 'total_chunks': 112, 'location_percent': 86, 'page_number': '86%', 'chunk_id': '04230a70-0efc-4e1a-a89c-6fdcfa85ea7e', 'chunk_number': '97/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 02427110-33d7-4009-80a9-b8b8f2235548
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 97, 'total_chunks': 112, 'location_percent': 87, 'page_number': '87%', 'chunk_id': '02427110-33d7-4009-80a9-b8b8f2235548', 'chunk_number': '98/112'}
+### Chunk ID: 07368b7e-ba92-42e6-a084-51a8f15c712e
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 97, 'total_chunks': 112, 'location_percent': 87, 'page_number': '87%', 'chunk_id': '07368b7e-ba92-42e6-a084-51a8f15c712e', 'chunk_number': '98/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 153bc2a4-888b-4298-8e00-2c60f5cc9fbb
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 98, 'total_chunks': 112, 'location_percent': 88, 'page_number': '88%', 'chunk_id': '153bc2a4-888b-4298-8e00-2c60f5cc9fbb', 'chunk_number': '99/112'}
+### Chunk ID: fcb0c844-499e-4029-ada3-2fe80862d608
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 98, 'total_chunks': 112, 'location_percent': 88, 'page_number': '88%', 'chunk_id': 'fcb0c844-499e-4029-ada3-2fe80862d608', 'chunk_number': '99/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 03600b08-8923-4826-a1b0-a02b5838a14d
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 99, 'total_chunks': 112, 'location_percent': 89, 'page_number': '89%', 'chunk_id': '03600b08-8923-4826-a1b0-a02b5838a14d', 'chunk_number': '100/112'}
+### Chunk ID: e848d621-9d97-4eef-843c-4225c73c685e
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 99, 'total_chunks': 112, 'location_percent': 89, 'page_number': '89%', 'chunk_id': 'e848d621-9d97-4eef-843c-4225c73c685e', 'chunk_number': '100/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 8b1ad553-af72-4522-9297-9a705782b9a2
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 100, 'total_chunks': 112, 'location_percent': 90, 'page_number': '90%', 'chunk_id': '8b1ad553-af72-4522-9297-9a705782b9a2', 'chunk_number': '101/112'}
+### Chunk ID: 7c463b20-64fa-4809-9636-0e6863e30606
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 100, 'total_chunks': 112, 'location_percent': 90, 'page_number': '90%', 'chunk_id': '7c463b20-64fa-4809-9636-0e6863e30606', 'chunk_number': '101/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 1df377ee-b624-4468-bc42-5b7c5f9e4403
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 101, 'total_chunks': 112, 'location_percent': 91, 'page_number': '91%', 'chunk_id': '1df377ee-b624-4468-bc42-5b7c5f9e4403', 'chunk_number': '102/112'}
+### Chunk ID: 68384cc7-9e94-48fc-83f5-1bc54093ec5f
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 101, 'total_chunks': 112, 'location_percent': 91, 'page_number': '91%', 'chunk_id': '68384cc7-9e94-48fc-83f5-1bc54093ec5f', 'chunk_number': '102/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 62c1a942-8b1a-4cea-89d4-86d972d09062
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 102, 'total_chunks': 112, 'location_percent': 91, 'page_number': '91%', 'chunk_id': '62c1a942-8b1a-4cea-89d4-86d972d09062', 'chunk_number': '103/112'}
+### Chunk ID: 5314161d-675d-4468-bd2b-4ed5a96c93f0
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 102, 'total_chunks': 112, 'location_percent': 91, 'page_number': '91%', 'chunk_id': '5314161d-675d-4468-bd2b-4ed5a96c93f0', 'chunk_number': '103/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 246638ac-fa3e-4f0b-8749-8a476a4e04bb
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 103, 'total_chunks': 112, 'location_percent': 92, 'page_number': '92%', 'chunk_id': '246638ac-fa3e-4f0b-8749-8a476a4e04bb', 'chunk_number': '104/112'}
+### Chunk ID: 79760a69-0a0f-4f27-97b7-fe2d76fe1071
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 103, 'total_chunks': 112, 'location_percent': 92, 'page_number': '92%', 'chunk_id': '79760a69-0a0f-4f27-97b7-fe2d76fe1071', 'chunk_number': '104/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: cfc1380c-7cd1-400d-b574-6affa54a95f2
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 104, 'total_chunks': 112, 'location_percent': 93, 'page_number': '93%', 'chunk_id': 'cfc1380c-7cd1-400d-b574-6affa54a95f2', 'chunk_number': '105/112'}
+### Chunk ID: 568719c2-ad49-499c-878d-646c0a9df34f
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 104, 'total_chunks': 112, 'location_percent': 93, 'page_number': '93%', 'chunk_id': '568719c2-ad49-499c-878d-646c0a9df34f', 'chunk_number': '105/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 070102ab-8695-419d-b794-5db723e204c5
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 105, 'total_chunks': 112, 'location_percent': 94, 'page_number': '94%', 'chunk_id': '070102ab-8695-419d-b794-5db723e204c5', 'chunk_number': '106/112'}
+### Chunk ID: 9cdb1537-60b8-47c8-be41-733f6eebcdec
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 105, 'total_chunks': 112, 'location_percent': 94, 'page_number': '94%', 'chunk_id': '9cdb1537-60b8-47c8-be41-733f6eebcdec', 'chunk_number': '106/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 38adcbf1-cc08-4ac5-bc29-cbe3369696c0
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 106, 'total_chunks': 112, 'location_percent': 95, 'page_number': '95%', 'chunk_id': '38adcbf1-cc08-4ac5-bc29-cbe3369696c0', 'chunk_number': '107/112'}
+### Chunk ID: 3a4c74b9-007c-4a3e-a69e-9814e3439a4f
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 106, 'total_chunks': 112, 'location_percent': 95, 'page_number': '95%', 'chunk_id': '3a4c74b9-007c-4a3e-a69e-9814e3439a4f', 'chunk_number': '107/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: ec393d8e-a58d-4652-911e-070e01915df9
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 107, 'total_chunks': 112, 'location_percent': 96, 'page_number': '96%', 'chunk_id': 'ec393d8e-a58d-4652-911e-070e01915df9', 'chunk_number': '108/112'}
+### Chunk ID: d309fe2d-584c-4f82-9cbd-030a8dd1bbfe
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 107, 'total_chunks': 112, 'location_percent': 96, 'page_number': '96%', 'chunk_id': 'd309fe2d-584c-4f82-9cbd-030a8dd1bbfe', 'chunk_number': '108/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: c801e1c6-a4e9-42fb-ae1a-7948cb7231a1
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 108, 'total_chunks': 112, 'location_percent': 97, 'page_number': '97%', 'chunk_id': 'c801e1c6-a4e9-42fb-ae1a-7948cb7231a1', 'chunk_number': '109/112'}
+### Chunk ID: d22792ba-0b01-4811-82f8-0331e2523390
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 108, 'total_chunks': 112, 'location_percent': 97, 'page_number': '97%', 'chunk_id': 'd22792ba-0b01-4811-82f8-0331e2523390', 'chunk_number': '109/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 7b49187d-fa10-450a-87f6-6682458e4b14
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 109, 'total_chunks': 112, 'location_percent': 98, 'page_number': '98%', 'chunk_id': '7b49187d-fa10-450a-87f6-6682458e4b14', 'chunk_number': '110/112'}
+### Chunk ID: bb37e4b5-f06d-4512-9ec3-5bd1a4316380
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 109, 'total_chunks': 112, 'location_percent': 98, 'page_number': '98%', 'chunk_id': 'bb37e4b5-f06d-4512-9ec3-5bd1a4316380', 'chunk_number': '110/112'}
 - **Vector Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: b8a164b7-dc30-437b-a6bf-e736b2643120
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 110, 'total_chunks': 112, 'location_percent': 99, 'page_number': '99%', 'chunk_id': 'b8a164b7-dc30-437b-a6bf-e736b2643120', 'chunk_number': '111/112'}
+### Chunk ID: b4c90d0a-91ed-451a-82a9-129b8c99a7c3
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 110, 'total_chunks': 112, 'location_percent': 99, 'page_number': '99%', 'chunk_id': 'b4c90d0a-91ed-451a-82a9-129b8c99a7c3', 'chunk_number': '111/112'}
 - **Vector Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 43e200dd-3f08-459c-9b40-a96071867bd4
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 111, 'total_chunks': 112, 'location_percent': 100, 'page_number': '100%', 'chunk_id': '43e200dd-3f08-459c-9b40-a96071867bd4', 'chunk_number': '112/112'}
+### Chunk ID: a6acb14b-816a-45fa-a0bf-0fca8cb281ea
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/long_doc.txt', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'filename': 'documents/long_doc.txt', 'chunk_index': 111, 'total_chunks': 112, 'location_percent': 100, 'page_number': '100%', 'chunk_id': 'a6acb14b-816a-45fa-a0bf-0fca8cb281ea', 'chunk_number': '112/112'}
 - **Vector Content:** sentence....
 - **Store Content:** sentence....
 ---

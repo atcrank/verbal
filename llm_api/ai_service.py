@@ -115,7 +115,45 @@ class AIService:
             torch.cuda.empty_cache()
         print("✅ VRAM cleared.")
 
-    def generate_response(self, messages, max_new_tokens, num_return_sequences=1, temperature=0.7   ):
+    def _extract_prompts(self, messages):
+        system_prompt = ""
+        user_prompt = ""
+        if isinstance(messages, str):
+            user_prompt = messages
+        elif isinstance(messages, list):
+            for m in messages:
+                if m.get("role") == "system" and not system_prompt:
+                    system_prompt = m.get("content", "")
+                elif m.get("role") == "user":
+                    user_prompt = m.get("content", "")
+        return system_prompt, user_prompt
+
+    def _log_generation(self, messages, generated_texts, log_kwargs=None):
+        if log_kwargs is None:
+            log_kwargs = {}
+        if log_kwargs.get("skip_log"):
+            return
+
+        system_prompt, user_prompt = self._extract_prompts(messages)
+        system_prompt = log_kwargs.get("system_prompt", system_prompt)
+        user_prompt = log_kwargs.get("user_prompt", user_prompt)
+
+        try:
+            from .models import PromptResponseLog  # Lazy import avoids circular dependency
+            for text in generated_texts:
+                text_to_save = text.model_dump_json(indent=2) if hasattr(text, 'model_dump_json') else str(text)
+                PromptResponseLog.objects.create(
+                    system_prompt=system_prompt,
+                    user_prompt=user_prompt,
+                    generated_response=text_to_save,
+                    user_id=log_kwargs.get("user_id"),
+                    conversation_id=log_kwargs.get("conversation_id"),
+                    rag_selections=log_kwargs.get("rag_selections", "")
+                )
+        except Exception as e:
+            print(f"Warning: Failed to log prompt response: {e}")
+
+    def generate_response(self, messages, max_new_tokens, num_return_sequences=1, temperature=0.7, log_kwargs=None):
         messages = self.summarize_conversation(messages)
         response = self.llm_pipeline(messages,
                                      do_sample=True,
@@ -126,16 +164,22 @@ class AIService:
                                      num_return_sequences=num_return_sequences,
                                      return_full_text=False)
         print(response)
+        
         if num_return_sequences > 1:
-            return [r['generated_text'] for r in response]
-        return [response[0]['generated_text']]
+            results = [r['generated_text'] for r in response]
+        else:
+            results = [response[0]['generated_text']]
+            
+        self._log_generation(messages, results, log_kwargs)
+        return results
 
 
     def generate_outline(self, messages,
                          response_schema=None,
                          max_new_tokens=500,
                          temperature=0.7,
-                         num_return_sequences=1):
+                         num_return_sequences=1,
+                         log_kwargs=None):
         # lazy_load outline pipeline
         print("Generate Outline Called", type(messages), response_schema)
         if response_schema is None:
@@ -153,12 +197,16 @@ class AIService:
         # https://dottxt-ai.github.io/outlines/latest/features/core/generator/
         generator = outlines.Generator(self.outline_pipeline, response_schema)
 
-        return generator(prompt,
+        result = generator(prompt,
                          do_sample=True,
                          max_new_tokens=max_new_tokens,
                          temperature=temperature,
                          # num_beams=num_return_sequences,
                          num_return_sequences=num_return_sequences)
+                         
+        results_list = result if isinstance(result, list) else [result]
+        self._log_generation(messages, results_list, log_kwargs)
+        return result
 
     def label_single(self, text, labels):
         # lazy load

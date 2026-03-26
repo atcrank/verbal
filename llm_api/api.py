@@ -69,7 +69,7 @@ def generate_response(request, payload: GenerateIn):
     messages = messages + conversation.as_messages() + [{"role": "user", "content": payload.user_prompt + "\n\nRelevant Context:\n" + rag_text}]
     max_new_tokens = payload.max_new_tokens
     print("Token Count:", service_registry.ai_service.count_conversation_tokens(messages))
-    [response] = service_registry.ai_service.generate_response(messages=messages, max_new_tokens=max_new_tokens)
+    [response] = service_registry.ai_service.generate_response(messages=messages, max_new_tokens=max_new_tokens, log_kwargs={"skip_log": True})
     cleaned_response = service_registry.ai_service.clean_response(response)
     system_prompt = messages[0]["content"]
     p = PromptResponseLog(system_prompt=system_prompt, user_prompt=payload.user_prompt,

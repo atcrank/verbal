@@ -50,6 +50,14 @@ class Conversation(models.Model):
     # You can auto-generate this title from the first user_prompt!
     title = models.CharField(max_length=255, blank=True, default="New Conversation")
     objects = ConversationManager()
+    
+    blueprint = models.ForeignKey(
+        'metacognition.CognitiveBlueprint',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="conversations",
+        help_text="The cognitive blueprint driving this conversation, if any."
+    )
 
     class Meta:
         ordering = ['-start_time']
@@ -101,7 +109,7 @@ class PromptResponseLog(models.Model):
         THUMB_DOWN = -1, 'Thumb Down'
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     system_prompt = models.TextField()
     user_prompt = models.TextField(blank=True, null=True)

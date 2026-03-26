@@ -141,6 +141,9 @@ class Command(BaseCommand):
                     expected_keywords=s_data['keywords']
                 )
                 group.scenarios.add(scenario)
+                
+        # VERY IMPORTANT: Save the in-memory FAISS index to disk!
+        rag_service.save_db()
 
         self.stdout.write(self.style.SUCCESS(f"✅ Standard Candle setup complete."))
         self.stdout.write(f"Corpus: '{corpus.name}'")

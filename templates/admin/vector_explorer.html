@@ -26,6 +26,49 @@
         </div>
     </div>
 
+    <!-- Data Integrity Audit Panel -->
+    <div class="module" style="padding: 15px; margin-bottom: 20px; {% if audit.orphans_in_faiss or audit.orphans_in_store %}background: #fff3e0; border-left: 5px solid #ff9800;{% else %}background: #e8f5e9; border-left: 5px solid #4caf50;{% endif %}">
+        <details {% if audit.orphans_in_faiss or audit.orphans_in_store or audit.missing_in_faiss or audit.unindexed_docs %}open{% endif %}>
+            <summary style="font-size: 1.2em; font-weight: bold; cursor: pointer; outline: none;">
+                Data Integrity Audit
+                {% if audit.orphans_in_faiss or audit.orphans_in_store or audit.missing_in_faiss or audit.unindexed_docs %}
+                    <span style="color: #ba2121; font-size: 0.8em; margin-left: 10px;">⚠️ Issues Detected</span>
+                {% else %}
+                    <span style="color: #2e7d32; font-size: 0.8em; margin-left: 10px;">✅ All Clear</span>
+                {% endif %}
+            </summary>
+            
+            <div style="margin-top: 15px;">
+                <ul style="margin-bottom: 15px;">
+                    <li><strong>Orphaned Vectors (FAISS):</strong> {{ audit.orphans_in_faiss|length }} <span style="color: #666; font-size: 0.9em;">(Exist in FAISS but missing from DB)</span></li>
+                    <li><strong>Orphaned Files (ByteStore):</strong> {{ audit.orphans_in_store|length }} <span style="color: #666; font-size: 0.9em;">(Exist in ByteStore but missing from DB)</span></li>
+                    <li><strong>Missing Vectors:</strong> {{ audit.missing_in_faiss|length }} <span style="color: #666; font-size: 0.9em;">(Exist in DB but missing from FAISS)</span></li>
+                </ul>
+
+                {% if audit.unindexed_docs %}
+                <div style="margin-bottom: 15px;">
+                    <strong>Unindexed Documents (Needs Ingestion):</strong>
+                    <ul style="margin-top: 5px; font-size: 0.9em; color: #444;">
+                        {% for doc in audit.unindexed_docs %}
+                            <li>{{ doc.title }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                {% if audit.orphans_in_faiss or audit.orphans_in_store %}
+                    <form method="POST">
+                        {% csrf_token %}
+                        <input type="hidden" name="clean_orphans" value="1">
+                        <input type="submit" class="button" style="background: #ba2121; color: white;" value="⚠️ Aggressively Clean Orphans">
+                    </form>
+                {% else %}
+                    <p style="color: #2e7d32; font-weight: bold; margin-bottom: 0;">✅ Database and Storage are perfectly synchronized.</p>
+                {% endif %}
+            </div>
+        </details>
+    </div>
+
     <div class="module">
         <form method="GET">
             <input type="text" name="q" value="{{ query }}" placeholder="Test your vector search..." style="width: 70%; padding: 10px; font-size: 16px;">

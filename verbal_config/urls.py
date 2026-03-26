@@ -21,9 +21,11 @@ from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from ninja import NinjaAPI
 from ninja.security import django_auth
 from llm_api.api import router as llm_router
+from metacognition import api as metacognition_api
 api = NinjaAPI(auth=django_auth)
 
 api.add_router("/llm/", llm_router)
+api.add_router("/meta/", metacognition_api.router)
 @api.post("/csrf")
 @ensure_csrf_cookie
 @csrf_exempt

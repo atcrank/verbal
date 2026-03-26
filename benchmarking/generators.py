@@ -1,7 +1,7 @@
 from benchmarking.models import ScenarioGroup, BenchmarkScenario
-from background_resources.models import ReadingStrategy
+from background_resources.models import ReadingStrategy, RAGChunk
 from llm_api.apps import service_registry
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 from typing import List, Literal
 import outlines
 
@@ -34,9 +34,8 @@ def generate_scenarios_for_document(document, stride=5, group_name=None, log_cal
     total_chunks = len(chunk_ids)
     log_callback(f"Found {total_chunks} chunks. Processing every {stride}th chunk.")
 
-    # Prepare Generator with sampling for creativity
-    sampler = outlines.samplers.multinomial(temperature=0.7)
-    generator = outlines.Generator(ai_service.outline_pipeline, SyntheticQABatch, sampler=sampler)
+    # Prepare Generator
+    generator = outlines.Generator(ai_service.outline_pipeline, SyntheticQABatch)
 
     scenarios = []
 
@@ -70,17 +69,28 @@ def generate_scenarios_for_document(document, stride=5, group_name=None, log_cal
         """
 
         try:
-            result = generator(prompt, max_new_tokens=1024)
-
-            for item in result.items:
-                scenarios.append(BenchmarkScenario(
-                    question=item.question,
-                    ideal_answer=item.answer,
-                    expected_keywords=item.keywords
-                ))
+            result = generator(prompt, max_new_tokens=1024, do_sample=True, temperature=0.7)
+            try:
+                batch = SyntheticQABatch.model_validate_json(result)
+                print(batch)
+            except ValidationError as e:
+                batch = None
+                print("Error on response validation:", e)
+            if batch:
+                # Fetch the actual Django DB object to link as a ForeignKey
+                rag_chunk = RAGChunk.objects.filter(chunk_id=chunk_id).first()
+                for item in batch.items:
+                    scenarios.append(BenchmarkScenario(
+                        question=item.question,
+                        ideal_answer=item.answer,
+                        expected_keywords=item.keywords,
+                        source_doc=document,
+                        source_chunk=rag_chunk
+                    ))
 
         except Exception as e:
-            log_callback(f"Failed to generate for chunk {i}: {e}")
+            import traceback
+            log_callback(f"Failed to generate for chunk {i}: {e}\n{traceback.format_exc()}")
 
     if scenarios:
         name = group_name or f"Synthetic - {document.title}"

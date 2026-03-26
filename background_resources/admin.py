@@ -228,6 +228,11 @@ class VectorIndexExplorerAdmin(admin.ModelAdmin):
         # 1. Initialize RAG Service (Consider caching this if slow)
         rag_service = service_registry['rag_service']
 
+        # Handle Aggressive Cleanup Request
+        if request.method == "POST" and "clean_orphans" in request.POST:
+            f_count, s_count = rag_service.clean_orphaned_store_data()
+            self.message_user(request, f"Aggressive Cleanup Complete: Removed {f_count} orphaned vectors and {s_count} orphaned byte-store files.", level=messages.SUCCESS)
+
         # 2. Handle Search
         query = request.GET.get('q', '')
         results = []
@@ -243,6 +248,9 @@ class VectorIndexExplorerAdmin(admin.ModelAdmin):
         total_readings = ReadingStrategy.objects.count()
         total_vectors = rag_service.db.index.ntotal
         total_chunks = len(rag_service.db.docstore._dict)
+        
+        # Run Data Integrity Audit
+        audit_results = rag_service.audit_stores()
 
         # 4. Prepare Context
         context = {
@@ -253,6 +261,7 @@ class VectorIndexExplorerAdmin(admin.ModelAdmin):
             'total_readings': total_readings,
             'total_vectors': total_vectors,
             'total_chunks': total_chunks,
+            'audit': audit_results,
             # Required for Admin visual structure:
             'opts': self.model._meta,
             'site_header': admin.site.site_header,

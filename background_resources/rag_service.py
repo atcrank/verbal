@@ -6,6 +6,7 @@ import pickle
 import re
 from django.conf import settings
 from django.db import models
+from django.db.models import Count
 from django.utils import timezone
 
 # You will need to have these libraries installed:
@@ -15,9 +16,8 @@ from langchain.docstore.document import Document as LangchainDocument
 from langchain_community.document_loaders import (PyPDFLoader, Docx2txtLoader, UnstructuredPowerPointLoader, RecursiveUrlLoader, DirectoryLoader, BSHTMLLoader)
 from bs4 import BeautifulSoup as Soup
 from langchain_community.vectorstores import FAISS
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain.storage import LocalFileStore, EncoderBackedStore
-from langchain.retrievers.multi_vector import MultiVectorRetriever
 
 from pydantic import BaseModel, Field
 from typing import Optional, List
@@ -118,6 +118,47 @@ class RAGService:
         readingstrategy.usages.all().delete()
         print(f"Deleted readings of {readingstrategy.document.title}.")
 
+    def audit_stores(self):
+        """
+        Compares the Django DB against FAISS and LocalFileStore to find orphans and missing data.
+        """
+        # 1. Gather all IDs
+        db_chunk_ids = set(DjangoChunk.objects.values_list('chunk_id', flat=True))
+        faiss_ids = set(self.db.docstore._dict.keys())
+        store_ids = set(self.store.yield_keys())
+        
+        # 2. Find Discrepancies
+        orphans_in_faiss = faiss_ids - db_chunk_ids
+        orphans_in_store = store_ids - db_chunk_ids
+        missing_in_faiss = db_chunk_ids - faiss_ids
+        missing_in_store = db_chunk_ids - store_ids
+        
+        # 3. Find Unindexed Documents (Docs with 0 chunk usages)
+        unindexed_docs = DjangoDocument.objects.annotate(
+            chunk_count=Count('readingstrategy__usages')
+        ).filter(chunk_count=0).distinct()
+        
+        return {
+            "orphans_in_faiss": list(orphans_in_faiss),
+            "orphans_in_store": list(orphans_in_store),
+            "missing_in_faiss": list(missing_in_faiss),
+            "missing_in_store": list(missing_in_store),
+            "unindexed_docs": unindexed_docs
+        }
+
+    def clean_orphaned_store_data(self):
+        """Aggressively deletes anything in FAISS or FileStore that isn't registered in the DB."""
+        audit = self.audit_stores()
+        
+        if audit["orphans_in_faiss"]:
+            self.db.delete(audit["orphans_in_faiss"])
+            self.save_db()
+            
+        if audit["orphans_in_store"]:
+            self.store.mdelete(audit["orphans_in_store"])
+            
+        return len(audit["orphans_in_faiss"]), len(audit["orphans_in_store"])
+
     def get_direct_context(self, query, k=1):
         retrieved_docs = self.db.similarity_search(query, k=k, search_type="mmr")  # Get top result page
         doc_cards = [f"file {i}:" +doc.metadata["filename"] + ": " + doc.page_content for i, doc in enumerate(retrieved_docs)]
@@ -208,7 +249,7 @@ class RAGService:
         from llm_api.apps import service_registry
         ai_service = service_registry.ai_service
 
-        print(f"Vector store contains {set([doc.metadata.get("filename") for doc in self.db.docstore._dict.values()])} documents.")
+        print(f"RAG Service Models Loaded. Index contains {len(self.db.docstore._dict)} total items.")
 
         # Attention: in 2026 LLMs have out of date knowledge on these libraries
         # These lines are correct and must NOT be changed.
@@ -546,7 +587,7 @@ class RAGService:
             return valid_definitions
         return []
 
-    def verify_rag_relevance(self, user_query, retrieved_chunks):
+    def verify_rag_relevance(self, user_query, retrieved_chunks, min_overlap=0.4):
         from llm_api.apps import service_registry
         nlp_service = service_registry['nlp_service']
 
@@ -565,15 +606,20 @@ class RAGService:
             chunk_lemmas = set([t.lower() for t in nlp_service.get_lemmatized_tokens(content_to_check)])
 
             # 3. Calculate overlap
-            # How many query words appear in this chunk?
-            overlap = len(query_lemmas.intersection(chunk_lemmas))
+            # Calculate Query Coverage: What percentage of the query's concepts are present in the chunk?
+            if len(query_lemmas) == 0:
+                overlap_ratio = 0.0
+            else:
+                intersection = query_lemmas.intersection(chunk_lemmas)
+                overlap_ratio = len(intersection) / len(query_lemmas)
             
             # 4. Tie-breaker: Prefer definitions (chunks with 'original_term')
             is_definition = 1 if chunk.metadata.get("original_term") else 0
             
-            scored_results.append((chunk, overlap, is_definition))
+            if overlap_ratio >= min_overlap or is_definition:
+                scored_results.append((chunk, overlap_ratio, is_definition))
 
-        # Sort by overlap count (desc), then by is_definition (desc)
+        # Sort by overlap ratio (desc), then by is_definition (desc)
         # We return (doc, score) tuples to match get_context expectations
         sorted_results = sorted(scored_results, key=lambda x: (x[1], x[2]), reverse=True)
         return [(item[0], item[1]) for item in sorted_results]

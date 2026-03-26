@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import CognitiveBlueprint, ReasoningStep
+from .models import CognitiveBlueprint, ReasoningStep, ModerationList
 
 
 class ReasoningStepInline(admin.StackedInline):
@@ -11,6 +11,7 @@ class ReasoningStepInline(admin.StackedInline):
         'name',
         'is_start_node',
         'system_prompt',
+        'output_schema',
         'evaluation_criteria',
         ('on_success_step', 'on_failure_step')
     )
