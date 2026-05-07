@@ -129,24 +129,43 @@ class PromptResponseLog(models.Model):
     class Meta:
         ordering = ['-created_at']
 
-class AIModel(models.Model):
-    """
-    Configuration for an LLM that can be loaded into the AI Service.
-    Only one model can be active at a time due to VRAM constraints.
-    """
-    name = models.CharField(max_length=255, help_text="Friendly name (e.g. 'Phi-3 Mini')")
-    hf_model_id = models.CharField(max_length=255, help_text="HuggingFace ID (e.g. 'microsoft/Phi-3-mini-4k-instruct')")
+class LocalAIModel(models.Model):
+    """Configuration for an LLM loaded natively into VRAM on the inference server."""
+    name = models.CharField(max_length=255, help_text="Friendly name (e.g. 'Qwen 2.5 3B')")
+    hf_model_id = models.CharField(max_length=255, help_text="HuggingFace ID")
     description = models.TextField(blank=True, help_text="Notes on capabilities, VRAM usage, etc.")
-    
-    # Configuration
     load_in_4bit = models.BooleanField(default=True, help_text="Use 4-bit quantization (Recommended for 6GB VRAM)")
     context_window = models.IntegerField(default=4096, help_text="Max tokens")
-
-    # State
-    is_active = models.BooleanField(default=False)
-    activated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="activated_models")
-    activated_at = models.DateTimeField(null=True, blank=True)
-    usage_intent = models.CharField(max_length=255, blank=True, help_text="Why was this model activated? (e.g. 'Benchmarking Regex')")
+    is_system_active = models.BooleanField(default=False, help_text="Is this currently loaded in the inference server VRAM?")
 
     def __str__(self):
-        return f"{self.name} ({'ACTIVE' if self.is_active else 'Inactive'})"
+        return f"{self.name} ({'LOADED' if self.is_system_active else 'Inactive'})"
+
+class ExternalAIModel(models.Model):
+    """Configuration for an external API like OpenAI or Anthropic."""
+    name = models.CharField(max_length=255, help_text="e.g. 'OpenAI GPT-4o'")
+    provider = models.CharField(max_length=50, default="openai")
+    api_url = models.URLField(default="https://api.openai.com/v1/chat/completions")
+    api_model_name = models.CharField(max_length=255, help_text="e.g. 'gpt-4o'")
+    context_window = models.IntegerField(default=128000)
+
+    def __str__(self):
+        return f"{self.name} ({self.provider})"
+
+class UserAPIKey(models.Model):
+    """Secure storage for user API keys. (Prototype: Plaintext)."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="api_keys")
+    provider = models.CharField(max_length=50, help_text="Must match ExternalAIModel provider (e.g., 'openai')")
+    api_key = models.CharField(max_length=255, help_text="Stored as plaintext. Consider django-fernet-fields for production.")
+
+    def __str__(self):
+        return f"{self.provider} key for {self.user.username}"
+
+class UserActiveModel(models.Model):
+    """User preference: Route generation to local GPU or external API."""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="ai_settings")
+    active_external = models.ForeignKey(ExternalAIModel, null=True, blank=True, on_delete=models.SET_NULL)
+    use_external = models.BooleanField(default=False, help_text="Route requests to external API instead of local GPU.")
+
+    def __str__(self):
+        return f"AI Settings for {self.user.username}"

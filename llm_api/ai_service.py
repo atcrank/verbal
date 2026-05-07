@@ -1,5 +1,7 @@
 import os
 import gc
+import json
+import requests
 from django.conf import settings
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline, BitsAndBytesConfig
 import outlines
@@ -8,6 +10,7 @@ import torch
 import spacy
 from pydantic import BaseModel
 import typing
+import threading
 nlp = spacy.blank("en")
 nlp.add_pipe("sentencizer")
 
@@ -28,6 +31,8 @@ class AIService:
     class DefaultOutlineResponse(BaseModel):
         response_content: str
 
+    role = getattr(settings, "VERBAL_ROLE", "standalone")
+    inference_url = getattr(settings, "INFERENCE_URL", "http://127.0.0.1:8001/api/llm")
     model_id = None
     model = None
     classifier = None
@@ -37,31 +42,26 @@ class AIService:
     embedding_model = None
     tokenizer = None
     default_outline_response = DefaultOutlineResponse
+    _generator_cache = {}
+    _lock = threading.RLock()  # "Reentrant thread lock"
+
 
 
     def load_models(self):
-        # This method is called only once at startup.
-        print("🚀 Loading AI models into memory...")
         token = os.getenv("HF_TOKEN")
-        quantization_config = BitsAndBytesConfig(
-            load_in_4bit=True,
-            bnb_4bit_quant_type="nf4",
-            bnb_4bit_use_double_quant=True,
-            bnb_4bit_compute_dtype=torch.float16
-        )
-        
+
         # 1. Determine Model ID
         # Try Database first
         self.model_id = None
         try:
-            from .models import AIModel
-            active_model = AIModel.objects.filter(is_active=True).first()
+            from .models import LocalAIModel
+            active_model = LocalAIModel.objects.filter(is_system_active=True).first()
             if active_model:
                 print(f"📂 Found active model in DB: {active_model.name} ({active_model.hf_model_id})")
                 self.model_id = active_model.hf_model_id
-                # We could also use active_model.load_in_4bit here to config quantization
+
         except Exception as e:
-            print(f"Warning: Could not fetch AIModel from DB (migrations might be pending): {e}")
+            print(f"Warning: Could not fetch LocalAIModel from DB (migrations might be pending): {e}")
 
         # Fallback to Settings
         if not self.model_id:
@@ -72,12 +72,34 @@ class AIService:
         # Load your main LLM
         if self.tokenizer.pad_token_id is None:
             self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
+        if self.role in ["web", "worker"]:
+            print(f"💻 Running in proxy mode (Role: {self.role}). Tokenizer loaded, bypassing heavy LLM load.")
+            
+            # Verify HTTP connection
+            try:
+                ping_url = f"{self.inference_url.rstrip('/')}/internal/ping/"
+                res = requests.get(ping_url, timeout=3.0)
+                res.raise_for_status()
+                print("✅ Successfully connected to inference server.")
+            except requests.exceptions.RequestException as e:
+                print(f"⚠️ WARNING: Cannot connect to inference server at {self.inference_url}. Ensure it is running! Error: {e}")
+            return
+
+        print("🚀 Loading Heavy AI models into VRAM...")
+        quantization_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_use_double_quant=True,
+            bnb_4bit_compute_dtype=torch.float16
+        )
+
         # Ensure the model knows this too
         self.model = AutoModelForCausalLM.from_pretrained(
             self.model_id,
             # dtype=torch.float16,
             device_map={"": 0},
             quantization_config=quantization_config,
+            low_cpu_mem_usage=True,
             token=token
         )
         self.model.config.pad_token_id = self.tokenizer.eos_token_id
@@ -106,6 +128,7 @@ class AIService:
         del self.model
         del self.llm_pipeline
         del self.outline_pipeline
+        self._generator_cache.clear()
         self.model = None
         self.llm_pipeline = None
         self.outline_pipeline = None
@@ -153,60 +176,259 @@ class AIService:
         except Exception as e:
             print(f"Warning: Failed to log prompt response: {e}")
 
-    def generate_response(self, messages, max_new_tokens, num_return_sequences=1, temperature=0.7, log_kwargs=None):
-        messages = self.summarize_conversation(messages)
-        response = self.llm_pipeline(messages,
-                                     do_sample=True,
-                                     top_p=0.95,
-                                     temperature=temperature,
-                                     max_new_tokens=max_new_tokens,
-                                     eos_token_id=self.terminators,
-                                     num_return_sequences=num_return_sequences,
-                                     return_full_text=False)
-        print(response)
+    def _execute_openai_standard_request(self, messages, max_new_tokens, temperature, num_return_sequences, response_schema=None, user=None):
+        """Unifies HTTP calls to either external (OpenAI) or internal proxy endpoints."""
+        api_url = f"{self.inference_url.rstrip('/')}/v1/chat/completions"
+        api_key = None
+        target_model = "local-model"
         
-        if num_return_sequences > 1:
-            results = [r['generated_text'] for r in response]
-        else:
-            results = [response[0]['generated_text']]
-            
-        self._log_generation(messages, results, log_kwargs)
-        return results
+        # 1. Inspect User Settings
+        if user and not getattr(user, 'is_anonymous', False):
+            try:
+                from .models import UserActiveModel, UserAPIKey
+                prefs = UserActiveModel.objects.get(user=user)
+                if prefs.use_external and prefs.active_external:
+                    api_url = prefs.active_external.api_url
+                    target_model = prefs.active_external.api_model_name
+                    key_obj = UserAPIKey.objects.filter(user=user, provider=prefs.active_external.provider).first()
+                    if key_obj:
+                        api_key = key_obj.api_key
+            except Exception:
+                pass
 
+        # 2. Build standard payload
+        payload = {
+            "model": target_model,
+            "messages": messages if isinstance(messages, list) else [{"role": "user", "content": messages}],
+            "temperature": temperature,
+            "max_tokens": max_new_tokens,
+            "n": num_return_sequences
+        }
+
+        if response_schema:
+            schema_json = None
+            if hasattr(response_schema, "model_json_schema"):
+                schema_json = response_schema.model_json_schema()
+            elif isinstance(response_schema, dict):
+                schema_json = response_schema
+            
+            if schema_json:
+                payload["response_format"] = {
+                    "type": "json_schema",
+                    "json_schema": {
+                        "name": getattr(response_schema, "__name__", "json_schema"),
+                        "schema": schema_json,
+                        "strict": True
+                    }
+                }
+
+        headers = {"Content-Type": "application/json"}
+        if api_key:
+            headers["Authorization"] = f"Bearer {api_key}"
+
+        try:
+            response = requests.post(api_url, headers=headers, json=payload)
+            response.raise_for_status()
+            data = response.json()
+            
+            # Parse OpenAI standard response
+            results = [choice["message"]["content"] for choice in data.get("choices", [])]
+            
+            # If we are the background worker, pause for a moment so Web UI requests can jump the queue!
+            if self.role == "worker":
+                import time
+                time.sleep(0.5)
+                
+            return results if num_return_sequences > 1 else results[0]
+
+        except requests.exceptions.RequestException as e:
+            raise ConnectionError(f"Failed to communicate with API at {api_url}: {e}")
+
+    def generate_response(self, messages, max_new_tokens=1024, num_return_sequences=1, temperature=0.7, log_kwargs=None, user=None):
+        # Determine if we must route via HTTP
+        needs_proxy = self.role in ["web", "worker"]
+        if user and not getattr(user, 'is_anonymous', False):
+            from .models import UserActiveModel
+            if UserActiveModel.objects.filter(user=user, use_external=True).exists():
+                needs_proxy = True
+
+        if needs_proxy:
+            results = self._execute_openai_standard_request(messages, max_new_tokens, temperature, num_return_sequences, user=user)
+            results_list = results if isinstance(results, list) else [results]
+            self._log_generation(messages, results_list, log_kwargs)
+            return results_list
+        with self._lock:
+            if self.llm_pipeline is None:
+                self.load_models()
+
+            messages = self.summarize_conversation(messages)
+            response = self.llm_pipeline(messages,
+                                         do_sample=True,
+                                         top_p=0.95,
+                                         temperature=temperature,
+                                         max_new_tokens=max_new_tokens,
+                                         eos_token_id=self.terminators,
+                                         num_return_sequences=num_return_sequences,
+                                         return_full_text=False)
+            print(response)
+
+            if num_return_sequences > 1:
+                results = [r['generated_text'] for r in response]
+            else:
+                results = [response[0]['generated_text']]
+
+            self._log_generation(messages, results, log_kwargs)
+            return results
+
+    def _get_schema_cache_key(self, response_schema):
+        """Helper to create a deterministic cache key for outline schemas."""
+        if response_schema is None:
+            return "default_outline_response"
+        if hasattr(response_schema, "model_json_schema"):
+            return response_schema.__name__
+        if isinstance(response_schema, dict):
+            return json.dumps(response_schema, sort_keys=True)
+        return str(response_schema)
+
+    def _generate_proxy_outline(self, messages, response_schema, max_new_tokens, temperature, num_return_sequences, user, log_kwargs):
+        """Handles HTTP proxy generation with self-healing retry logic."""
+        max_attempts = 2
+        for attempt in range(max_attempts):
+            current_n = num_return_sequences if attempt == 0 else max(2, num_return_sequences + 1)
+            try:
+                result_data = self._execute_openai_standard_request(
+                    messages, max_new_tokens, temperature, current_n, response_schema, user=user
+                )
+                
+                results_to_check = result_data if isinstance(result_data, list) else [result_data]
+                last_error = None
+                
+                for res in results_to_check:
+                    try:
+                        # Verify validity but discard the constructed object
+                        if response_schema and hasattr(response_schema, "model_validate"):
+                            if isinstance(res, str):
+                                response_schema.model_validate_json(res)
+                            else:
+                                response_schema.model_validate(res)
+                        elif isinstance(response_schema, dict) or response_schema is None:
+                            if isinstance(res, str):
+                                json.loads(res)
+                                
+                        # If we get here, it's valid!
+                        self._log_generation(messages, [res], log_kwargs)
+                        return res
+                    except Exception as ve:
+                        last_error = ve
+                        continue
+                        
+                raise ValueError(f"All generated sequences failed validation. Last error: {last_error}")
+
+            except Exception as e:
+                print(f"Error in proxy outline generation (Attempt {attempt+1}/{max_attempts}): {e}")
+                if attempt == max_attempts - 1:
+                    return {"error": "GenerationFailed", "details": str(e)}
+
+    def _generate_local_outline(self, messages, response_schema, max_new_tokens, temperature, num_return_sequences, log_kwargs):
+        """Handles local VRAM generation with FSM caching and retry logic."""
+        with self._lock:
+            if self.outline_pipeline is None:
+                self.load_models()
+                
+            cache_key = self._get_schema_cache_key(response_schema)
+            if cache_key not in self._generator_cache:
+                print(f"Building and Caching Outlines FSM for schema: {cache_key}")
+                actual_schema = response_schema
+                if actual_schema is None:
+                    actual_schema = self.default_outline_response
+                elif isinstance(actual_schema, dict):
+                    try:
+                        from outlines.types import JsonSchema
+                        try:
+                            actual_schema = JsonSchema(json.dumps(actual_schema))
+                        except Exception:
+                            actual_schema = JsonSchema(actual_schema)
+                    except ImportError:
+                        pass
+                
+                self._generator_cache[cache_key] = outlines.Generator(self.outline_pipeline, actual_schema)
+                
+            generator = self._generator_cache[cache_key]
+            
+            if isinstance(messages, list):
+                prompt = self.tokenizer.apply_chat_template(
+                    messages, tokenize=False, add_generation_prompt=True
+                )
+            else:
+                prompt = messages
+                
+            max_attempts = 2
+            for attempt in range(max_attempts):
+                current_n = num_return_sequences if attempt == 0 else max(2, num_return_sequences + 1)
+                
+                try:
+                    generator_kwargs = {
+                        "do_sample": True,
+                        "max_new_tokens": max_new_tokens,
+                        "temperature": temperature,
+                    }
+                    if current_n > 1:
+                        generator_kwargs["num_return_sequences"] = current_n
+        
+                    result = generator(prompt, **generator_kwargs)
+                    results_to_check = result if isinstance(result, list) else [result]
+                    last_error = None
+                    
+                    for res in results_to_check:
+                        try:
+                            # Verify validity but discard the constructed object
+                            if response_schema and hasattr(response_schema, "model_validate"):
+                                if isinstance(res, str):
+                                    response_schema.model_validate_json(res)
+                                else:
+                                    response_schema.model_validate(res)
+                            elif isinstance(res, str):
+                                json.loads(res)
+                                
+                            # Success!
+                            self._log_generation(messages, [res], log_kwargs)
+                            return res
+                        except Exception as ve:
+                            last_error = ve
+                            continue
+                            
+                    raise ValueError(f"All generated sequences failed validation. Last error: {last_error}")
+                    
+                except Exception as e:
+                    print(f"Error in local outline generation (Attempt {attempt+1}/{max_attempts}): {e}")
+                    if attempt == max_attempts - 1:
+                        return {"error": "GenerationFailed", "details": str(e)}
 
     def generate_outline(self, messages,
                          response_schema=None,
                          max_new_tokens=500,
                          temperature=0.7,
                          num_return_sequences=1,
-                         log_kwargs=None):
-        # lazy_load outline pipeline
-        print("Generate Outline Called", type(messages), response_schema)
-        if response_schema is None:
-            response_schema = self.default_outline_response
-        
-        if isinstance(messages, list):
-            prompt = self.tokenizer.apply_chat_template(
-                messages,
-                tokenize=False,
-                add_generation_prompt=True
+                         log_kwargs=None,
+                         user=None):
+        """Facade that routes generating requests between HTTP proxy and Local VRAM execution."""
+
+        needs_proxy = self.role in ["web", "worker"]
+        if user and not getattr(user, 'is_anonymous', False):
+            from .models import UserActiveModel
+            if UserActiveModel.objects.filter(user=user, use_external=True).exists():
+                needs_proxy = True
+
+        if needs_proxy:
+            return self._generate_proxy_outline(
+                messages, response_schema, max_new_tokens, temperature, 
+                num_return_sequences, user, log_kwargs
             )
         else:
-            prompt = messages
-
-        # https://dottxt-ai.github.io/outlines/latest/features/core/generator/
-        generator = outlines.Generator(self.outline_pipeline, response_schema)
-
-        result = generator(prompt,
-                         do_sample=True,
-                         max_new_tokens=max_new_tokens,
-                         temperature=temperature,
-                         # num_beams=num_return_sequences,
-                         num_return_sequences=num_return_sequences)
-                         
-        results_list = result if isinstance(result, list) else [result]
-        self._log_generation(messages, results_list, log_kwargs)
-        return result
+            return self._generate_local_outline(
+                messages, response_schema, max_new_tokens, temperature, 
+                num_return_sequences, log_kwargs
+            )
 
     def label_single(self, text, labels):
         # lazy load
@@ -249,7 +471,7 @@ class AIService:
 
     def count_conversation_tokens(self, messages: list) ->int:
         if not self.tokenizer:
-            raise ValueError("Tokenizer not loaded. Call load_models() first.")
+            self.load_models()
 
         try:
             # apply_chat_template is the only way to be 100% accurate

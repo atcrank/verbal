@@ -5,6 +5,7 @@ from django.contrib.contenttypes.admin import GenericTabularInline
 from django.contrib.contenttypes.forms import BaseGenericInlineFormSet
 from django.utils.html import format_html
 from llm_api.apps import service_registry  # Import your service
+from verbal_config.celery import app as celery_app
 from .models import (Document,
                      VectorIndexExplorer,
                      PromptStrategy,
@@ -13,34 +14,54 @@ from .models import (Document,
                      AbbreviationsReadingStrategy,
                      RAGChunk, StrategyChunkUsage,
                      )
+from .tasks import task_process_documents, task_process_reading_strategies
+from benchmarking.tasks import task_generate_benchmarks
 
-from benchmarking.generators import generate_scenarios_for_document
+
+def _check_celery_available(modeladmin, request):
+    """Helper to ensure the user has started the background worker."""
+    try:
+        if not celery_app.control.ping(timeout=1.0):
+            modeladmin.message_user(request, "Celery service not available (no workers running).", level=messages.ERROR)
+            return False
+        return True
+    except Exception:
+        modeladmin.message_user(request, "Celery service not available (Broker connection failed).", level=messages.ERROR)
+        return False
 
 @admin.action(description="Ingest document(s) according to its indexing strategy.")
 def process_document(modeladmin, request, queryset):
-    from llm_api.apps import service_registry
-    rag_service = service_registry['rag_service']
-    rag_service.ingest_queryset_documents(queryset)
+    if not _check_celery_available(modeladmin, request):
+        return
+    
+    doc_ids = list(queryset.values_list('id', flat=True))
+    task_process_documents.delay(doc_ids)
+    modeladmin.message_user(request, f"Queued ingestion for {len(doc_ids)} document(s).", level=messages.SUCCESS)
 
 
 @admin.action(description="Execute this Reading Strategy")
 def process_reading(modeladmin, request, queryset):
-    from llm_api.apps import service_registry
-    rag_service = service_registry['rag_service']
-    rag_service.ingest_queryset_reading_strategies(queryset)
+    if not _check_celery_available(modeladmin, request):
+        return
+        
+    strategy_ids = list(queryset.values_list('id', flat=True))
+    task_process_reading_strategies.delay(strategy_ids)
+    modeladmin.message_user(request, f"Queued {len(strategy_ids)} reading strateg(ies) for execution.", level=messages.SUCCESS)
 
 @admin.action(description="Generate Synthetic Benchmarks")
 def generate_benchmarks(modeladmin, request, queryset):
-    for doc in queryset:
-        try:
-            count = generate_scenarios_for_document(doc, stride=5) # Default stride
-            modeladmin.message_user(request, f"Generated {count} scenarios for {doc.title}.", level=messages.SUCCESS)
-        except Exception as e:
-            modeladmin.message_user(request, f"Error generating for {doc.title}: {e}", level=messages.ERROR)
+    if not _check_celery_available(modeladmin, request):
+        return
+        
+    doc_ids = list(queryset.values_list('id', flat=True))
+    task_generate_benchmarks.delay(doc_ids)
+    modeladmin.message_user(request, f"Queued benchmark generation for {len(doc_ids)} document(s).", level=messages.SUCCESS)
 
 class RAGChunkAdmin(admin.ModelAdmin):
 
     fields = ('chunk_id', 'text_content', 'hit_count', 'last_accessed', 'in_vector_index', 'in_byte_store')
+    list_filter = ('in_vector_index', 'in_byte_store')
+    search_fields = ('chunk_id', 'text_content')
     readonly_fields = ('hit_count', 'last_accessed')
     list_display = ('chunk_id', 'short_content', 'hit_count', 'last_accessed')
     # TODO: Verify that hit_count and last_accessed are not affected by admin saves, updates.
@@ -226,12 +247,12 @@ class VectorIndexExplorerAdmin(admin.ModelAdmin):
 
     def changelist_view(self, request, extra_context=None):
         # 1. Initialize RAG Service (Consider caching this if slow)
-        rag_service = service_registry['rag_service']
+        rag_service = service_registry.rag_service
 
         # Handle Aggressive Cleanup Request
         if request.method == "POST" and "clean_orphans" in request.POST:
-            f_count, s_count = rag_service.clean_orphaned_store_data()
-            self.message_user(request, f"Aggressive Cleanup Complete: Removed {f_count} orphaned vectors and {s_count} orphaned byte-store files.", level=messages.SUCCESS)
+            f_count, s_count, ghost_count = rag_service.clean_orphaned_store_data()
+            self.message_user(request, f"Aggressive Cleanup Complete: Removed {f_count} orphaned vectors, {s_count} orphaned byte-store files, and {ghost_count} DB ghost records.", level=messages.SUCCESS)
 
         # 2. Handle Search
         query = request.GET.get('q', '')
@@ -269,10 +290,7 @@ class VectorIndexExplorerAdmin(admin.ModelAdmin):
         }
 
         # 5. Render Custom Template
-        return render(request, "admin/vector_explorer.html", context)
-
-
-
+        return render(request, "admin/background_resources/vector_explorer.html", context)
 
 admin.site.register(Document, DocumentAdmin)
 admin.site.register(RAGChunk, RAGChunkAdmin)

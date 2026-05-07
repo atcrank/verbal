@@ -1,6 +1,6 @@
 from django.db import models
 from background_resources.models import Document, RAGChunk
-from llm_api.models import AIModel
+from llm_api.models import LocalAIModel, ExternalAIModel
 import itertools
 
 
@@ -81,7 +81,7 @@ class Experiment(models.Model):
     description = models.TextField()
     corpus = models.ForeignKey(BenchmarkCorpus, on_delete=models.CASCADE, blank=True, null=True)
     scenario_group = models.ForeignKey(ScenarioGroup, on_delete=models.CASCADE, blank=True, null=True)
-    selected_model = models.ForeignKey(AIModel, on_delete=models.SET_NULL, null=True, blank=True, help_text="Specific AI Model to use for this experiment.")
+    selected_model = models.ForeignKey(LocalAIModel, on_delete=models.SET_NULL, null=True, blank=True, help_text="Specific AI Model to use for this experiment.")
     # We store config as JSON so we can track chunk_sizes, prompts, models, etc.
     configuration = models.JSONField(default=dict, blank=True,
                                      help_text="Snapshot of settings: {'chunk_size': 500, 'model': 'gpt-4'}")

@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -41,6 +42,7 @@ INSTALLED_APPS = [
     "benchmarking.apps.BenchmarkingConfig",
     "llm_api.apps.LlmApiConfig",
     "metacognition.apps.MetacognitionConfig",
+    'grips.apps.GripsConfig',
 ]
 
 MIDDLEWARE = [
@@ -51,7 +53,6 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "llm_api.middleware.BackgroundModelLoaderMiddleware",
 ]
 
 ROOT_URLCONF = "verbal_config.urls"
@@ -137,3 +138,22 @@ DEFINITION_STORE = BASE_DIR / 'background_resources/vector_store/definitions/'
 # LLM_MODEL_ID = "google/gemma-2-2b-it"      # Very fast, lightweight
 # LLM_MODEL_ID = "mistralai/Mistral-7B-Instruct-v0.3" # Might be tight/slow
 # LLM_MODEL_ID = "meta-llama/Meta-Llama-3.1-8B-Instruct" # Likely to OOM on 6GB
+
+# ------------------------------------------------------------------------
+# MICROSERVICE / ROLE CONFIGURATION
+# ------------------------------------------------------------------------
+# Roles: 'standalone' (loads model), 'inference' (loads model), 'web' (HTTP client), 'worker' (HTTP client)
+VERBAL_ROLE = os.environ.get("VERBAL_ROLE", "standalone")
+
+# If acting as a web/worker client, where is the inference server?
+INFERENCE_URL = os.environ.get("INFERENCE_URL", "http://127.0.0.1:8001/api/llm")
+
+# ------------------------------------------------------------------------
+# CELERY & REDIS CONFIGURATION
+# ------------------------------------------------------------------------
+
+CELERY_BROKER_URL = "redis://localhost:6379/0"
+CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"

@@ -1,0 +1,46 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<div id="content-main">
+    <div class="module">
+        <h2>Worker Status</h2>
+        {% if worker_stats %}
+            {% for worker, stats in worker_stats.items %}
+                <div style="margin: 15px;">
+                    <h3 style="color: #417690;">Worker: {{ worker }}</h3>
+
+                    <h4>Active Tasks (Currently Executing)</h4>
+                    <ul style="margin-left: 20px;">
+                    {% for task in stats.active %}
+                        <li><strong>{{ task.name }}</strong> (ID: {{ task.id }})<br>
+                            <span style="color: #666; font-size: 0.9em;">Args: {{ task.args }} | Kwargs: {{ task.kwargs }}</span>
+                        </li>
+                    {% empty %}
+                        <li><em>No active tasks.</em></li>
+                    {% endfor %}
+                    </ul>
+
+                    <h4>Queued Tasks (Reserved)</h4>
+                    <ul style="margin-left: 20px;">
+                    {% for task in stats.queued %}
+                        <li><strong>{{ task.name }}</strong> (ID: {{ task.id }})</li>
+                    {% empty %}
+                        <li><em>No queued tasks.</em></li>
+                    {% endfor %}
+                    </ul>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p style="color: #ba2121; font-weight: bold; margin-left: 15px;">
+                No active Celery workers found, or the Redis broker is unreachable.<br>
+                Please run your <code>toggle_background_task_service.sh</code> script.
+            </p>
+        {% endif %}
+    </div>
+
+    <div class="module" style="margin-top: 30px;">
+        <h2>Recent Celery Logs (celery.log - Last 100 Lines)</h2>
+        <pre style="background: #1e1e1e; color: #4af626; padding: 15px; overflow-x: auto; font-family: monospace; border-radius: 4px; max-height: 600px; overflow-y: auto;">{{ log_content }}</pre>
+    </div>
+</div>
+{% endblock %}

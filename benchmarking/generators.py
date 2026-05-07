@@ -34,9 +34,6 @@ def generate_scenarios_for_document(document, stride=5, group_name=None, log_cal
     total_chunks = len(chunk_ids)
     log_callback(f"Found {total_chunks} chunks. Processing every {stride}th chunk.")
 
-    # Prepare Generator
-    generator = outlines.Generator(ai_service.outline_pipeline, SyntheticQABatch)
-
     scenarios = []
 
     for i in range(0, total_chunks, stride):
@@ -67,13 +64,24 @@ def generate_scenarios_for_document(document, stride=5, group_name=None, log_cal
         - The Ideal Answer (concise, derived from text)
         - Keywords (3-5 distinct words that are critical for retrieval)
         """
+        
+        messages = [{"role": "user", "content": prompt}]
 
         try:
-            result = generator(prompt, max_new_tokens=1024, do_sample=True, temperature=0.7)
+            batch = ai_service.generate_outline(
+                messages=messages,
+                response_schema=SyntheticQABatch,
+                max_new_tokens=1024,
+                temperature=0.7
+            )
             try:
-                batch = SyntheticQABatch.model_validate_json(result)
-                print(batch)
-            except ValidationError as e:
+                if isinstance(batch, dict):
+                    batch = SyntheticQABatch.model_validate(batch)
+                elif isinstance(batch, str):
+                    batch = SyntheticQABatch.model_validate_json(batch)
+                elif isinstance(batch, list):
+                    batch = batch[0]
+            except Exception as e:
                 batch = None
                 print("Error on response validation:", e)
             if batch:

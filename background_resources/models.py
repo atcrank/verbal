@@ -1,6 +1,3 @@
-
-
-
 # Create your models here.
 
 
@@ -101,7 +98,7 @@ def delete_document_files(sender, instance, **kwargs):
     """
     print(f"Pre-delete signal for {instance.title} (hash: {instance.indexed_hash})...")
     from llm_api.apps import service_registry
-    rag_service = service_registry['rag_service']
+    rag_service = service_registry.rag_service
 
     # 1. Delete the extracted corpus folder if it exists
     from django.conf import settings
@@ -467,7 +464,7 @@ class AbbreviationsReadingStrategy(AbstractHigherOrderStrategy):
 
     def extract_content(self, chunk, rag_service):
         from llm_api.apps import service_registry
-        nlp_service = service_registry['nlp_service']
+        nlp_service = service_registry.nlp_service
         
         model = nlp_service.get_abbreviation_model()
         doc = model(chunk.page_content)
@@ -493,7 +490,7 @@ def delete_single_chunk_vector(sender, instance, **kwargs):
     remove just that item from the vector store.
     """
     from llm_api.apps import service_registry
-    rag_service = service_registry['rag_service']
+    rag_service = service_registry.rag_service
     
     # instance is the StrategyChunkUsage that was just deleted.
     # We check if the underlying RAGChunk has any OTHER usages.

@@ -13,16 +13,14 @@ from django.utils import timezone
 # pip install langchain langchain-community faiss-cpu sentence-transformers
 from langchain_text_splitters import CharacterTextSplitter, RecursiveCharacterTextSplitter
 from langchain.docstore.document import Document as LangchainDocument
-from langchain_community.document_loaders import (PyPDFLoader, Docx2txtLoader, UnstructuredPowerPointLoader, RecursiveUrlLoader, DirectoryLoader, BSHTMLLoader)
+from langchain_community.document_loaders import (PyPDFLoader, Docx2txtLoader, UnstructuredPowerPointLoader, RecursiveUrlLoader, DirectoryLoader, BSHTMLLoader, NotebookLoader)
 from bs4 import BeautifulSoup as Soup
 from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain.storage import LocalFileStore, EncoderBackedStore
-
 from pydantic import BaseModel, Field
-from typing import Optional, List
 import outlines
-from typing import TYPE_CHECKING, List, Tuple
+from typing import TYPE_CHECKING, Optional, List, Tuple, Literal
 
 from background_resources.models import (Document as DjangoDocument, 
                                          RAGChunk as DjangoChunk,
@@ -32,6 +30,7 @@ from background_resources.models import (Document as DjangoDocument,
                                          PromptStrategy, 
                                          RegexStrategy, 
                                          AbbreviationsReadingStrategy) 
+
 
 
 class DocumentHandles(BaseModel):
@@ -46,6 +45,27 @@ class GlossaryItem(BaseModel):
 class GlossaryExtraction(BaseModel):
     items: List[GlossaryItem]
 
+
+class ActiveReadingEvaluation(BaseModel):
+    reasoning: str = Field(description="Analyze if the provided context chunks fully answer the user's query.")
+    context_status: Literal[
+        "SUFFICIENT",
+        "NEED_PREVIOUS_CHUNK",
+        "NEED_NEXT_CHUNK",
+        "IRRELEVANT"
+    ] = Field(description=(
+        "Action to take. "
+        "Pick 'SUFFICIENT' if the answer is found. "
+        "Pick 'NEED_PREVIOUS_CHUNK' or 'NEED_NEXT_CHUNK' if the context cuts off mid-sentence or lacks a referenced definition."
+        "Pick 'IRRELEVANT' if the provided context is completely unrelated to the query."
+    ))
+    draft_answer: str = Field(description="If SUFFICIENT, provide the answer. Otherwise, leave blank.")
+
+OUTPUT_TYPES = {"DocumentHandles": DocumentHandles,
+                "GlossaryItem": GlossaryItem,
+                "GlossaryExtraction": GlossaryExtraction,
+                "ActiveReadingEvaluation": ActiveReadingEvaluation}
+
 class RAGService:
 
     db = None
@@ -54,9 +74,6 @@ class RAGService:
     store = None
     retriever = None
     chain = None
-    outline_model = None
-    summary_generator = None
-    glossary_generator = None
 
     def __init__(self, vector_store_path=None, chunk_store_path=None):
         self.vector_store_path = vector_store_path or settings.VECTOR_STORE
@@ -123,32 +140,43 @@ class RAGService:
         Compares the Django DB against FAISS and LocalFileStore to find orphans and missing data.
         """
         # 1. Gather all IDs
-        db_chunk_ids = set(DjangoChunk.objects.values_list('chunk_id', flat=True))
+        db_vector_ids = set(DjangoChunk.objects.filter(in_vector_index=True).values_list('chunk_id', flat=True))
+        db_bytestore_ids = set(DjangoChunk.objects.filter(in_byte_store=True).values_list('chunk_id', flat=True))
         faiss_ids = set(self.db.docstore._dict.keys())
         store_ids = set(self.store.yield_keys())
         
         # 2. Find Discrepancies
-        orphans_in_faiss = faiss_ids - db_chunk_ids
-        orphans_in_store = store_ids - db_chunk_ids
-        missing_in_faiss = db_chunk_ids - faiss_ids
-        missing_in_store = db_chunk_ids - store_ids
+        orphans_in_faiss = faiss_ids - db_vector_ids
+        orphans_in_store = store_ids - db_bytestore_ids
+        missing_in_faiss = db_vector_ids - faiss_ids
+        missing_in_store = db_bytestore_ids - store_ids
         
         # 3. Find Unindexed Documents (Docs with 0 chunk usages)
         unindexed_docs = DjangoDocument.objects.annotate(
             chunk_count=Count('readingstrategy__usages')
         ).filter(chunk_count=0).distinct()
         
+        has_issues = any([
+            orphans_in_faiss, orphans_in_store, 
+            missing_in_faiss, missing_in_store
+        ])
+
         return {
             "orphans_in_faiss": list(orphans_in_faiss),
             "orphans_in_store": list(orphans_in_store),
             "missing_in_faiss": list(missing_in_faiss),
             "missing_in_store": list(missing_in_store),
-            "unindexed_docs": unindexed_docs
+            "unindexed_docs": unindexed_docs,
+            "has_issues": has_issues
         }
 
     def clean_orphaned_store_data(self):
-        """Aggressively deletes anything in FAISS or FileStore that isn't registered in the DB."""
+        """Aggressively deletes anything in FAISS or FileStore that isn't registered in the DB, and removes DB chunks with no vector/store data."""
         audit = self.audit_stores()
+        
+        f_count = len(audit["orphans_in_faiss"])
+        s_count = len(audit["orphans_in_store"])
+        db_ghost_count = len(audit["missing_in_faiss"]) + len(audit["missing_in_store"])
         
         if audit["orphans_in_faiss"]:
             self.db.delete(audit["orphans_in_faiss"])
@@ -157,7 +185,12 @@ class RAGService:
         if audit["orphans_in_store"]:
             self.store.mdelete(audit["orphans_in_store"])
             
-        return len(audit["orphans_in_faiss"]), len(audit["orphans_in_store"])
+        # Clean DB ghosts: Chunks that exist in DB but are missing their Vector or Byte Store representations
+        if audit["missing_in_faiss"] or audit["missing_in_store"]:
+            ghost_ids = set(audit["missing_in_faiss"]).union(set(audit["missing_in_store"]))
+            DjangoChunk.objects.filter(chunk_id__in=ghost_ids).delete()
+            
+        return f_count, s_count, db_ghost_count
 
     def get_direct_context(self, query, k=1):
         retrieved_docs = self.db.similarity_search(query, k=k, search_type="mmr")  # Get top result page
@@ -250,14 +283,6 @@ class RAGService:
         ai_service = service_registry.ai_service
 
         print(f"RAG Service Models Loaded. Index contains {len(self.db.docstore._dict)} total items.")
-
-        # Attention: in 2026 LLMs have out of date knowledge on these libraries
-        # These lines are correct and must NOT be changed.
-        # https://dottxt-ai.github.io/outlines/latest/guide/migration/
-        # and https://dottxt-ai.github.io/outlines/latest/features/core/output_types/
-        # These generators consistently return strings that should be castable to the desired type
-        self.summary_generator = outlines.Generator(ai_service.outline_pipeline, DocumentHandles)
-        self.glossary_generator = outlines.Generator(ai_service.outline_pipeline, GlossaryExtraction)
 
     @staticmethod
     def is_likely_toc(text_chunk: str) -> bool:
@@ -375,6 +400,19 @@ class RAGService:
             )
             raw_docs = loader.load()
 
+        elif file_extension.lower() == '.ipynb':
+            # Native parsing preserves code vs markdown cells perfectly for LLMs
+            loader = NotebookLoader(
+                file_path,
+                include_outputs=True,       # Includes cell outputs (prints, errors)
+                max_output_length=500,      # Truncates massive outputs (like giant matrices)
+                remove_newline=False
+            )
+            raw_docs = loader.load()
+            for i, doc in enumerate(raw_docs):
+                if 'page_number' not in doc.metadata:
+                    doc.metadata['page_number'] = i + 1
+
         else:
             print("Unsupported file type.")
             
@@ -446,6 +484,9 @@ class RAGService:
             return
 
         for document in queryset:
+            # Ensure a default chunking strategy exists before querying strategies
+            DjangoReadingStrategy.objects.get_or_create(document=document, strategy_description="Default Chunking")
+            
             # Ingest all types of strategies
             self.ingest_queryset_reading_strategies(document.readingstrategy_set.all())
             self.ingest_queryset_reading_strategies(document.promptstrategy_set.all())
@@ -468,17 +509,31 @@ class RAGService:
 
     def get_chunk_summary(self, chunk_text, custom_prompt=None):
         """This function provides more diverse index options - you can use it to generate hypothetical questions answered in the chunk text, or a summary of the text, or any other response.  Significant danger of hallucination - instead of summaries, you could get the models general knowledge that the chunk "reminded it" of, which is unsourced and potentially false. You may also get summaries that are just wrong. There are also significant reliability issues - the summary output is a longform, a shortform and then keywords, but one or more may be empty, the longform can be shorter than the shortform and so on."""
-        task_prompt = """A longform response is at least several sentences, and covers many or all of the ideas in the chunk. A shortform response is a sentence or two, covering the key ideas. Keywords """
 
         if custom_prompt:
             prompt = f"{custom_prompt}\n Chunk: {chunk_text[:2000]}"
         else:
             prompt = f"You are a data ingestion agent. Analyze the following document chunk. \n 1. If it is a Table of Contents, Index, or Copyright page, it is structural noise and no summary is needed.\n 2. A longform response is at least several sentences, and covers many or all of the ideas in the chunk. A shortform response is a sentence or two, covering the key ideas.\n Chunk: {chunk_text[:2000]}" # Truncate for speed if needed
 
-        summary_string = self.summary_generator(prompt, max_new_tokens=1500)
+        from llm_api.apps import service_registry
+        ai_service = service_registry.ai_service
+        
         try:
-            summary = DocumentHandles.model_validate_json(summary_string)
-        except:
+            summary_result = ai_service.generate_outline(
+                messages=prompt,
+                response_schema=DocumentHandles,
+                max_new_tokens=1500
+            )
+            if isinstance(summary_result, dict):
+                if "error" in summary_result:
+                    raise ValueError(summary_result["details"])
+                summary = DocumentHandles.model_validate(summary_result)
+            elif isinstance(summary_result, str):
+                summary = DocumentHandles.model_validate_json(summary_result)
+            else:
+                summary = summary_result
+        except Exception as e:
+            print(f"Error generating chunk summary: {e}")
             summary = None
 
         if summary:
@@ -542,7 +597,8 @@ class RAGService:
         # GlossaryExtraction is a LIST of GlossaryEntry items, so it handles multiple terms per page
     def glossary_generator(self, raw_text):
         """This code attempts to use a Language Model to yield glossary terms and definitions. Slow and pretty unreliable."""
-        generator = self.glossary_generator
+        from llm_api.apps import service_registry
+        ai_service = service_registry.ai_service
 
         prompt = f"""
         You are a strict data extraction engine. 
@@ -563,13 +619,22 @@ class RAGService:
         """
 
         # 2. Generate
-        result = generator(
-            prompt,
-            max_new_tokens=1024,
-        )
         try:
-            glossary_entries = GlossaryExtraction.model_validate_json(result)
-        except:
+            result = ai_service.generate_outline(
+                messages=prompt,
+                response_schema=GlossaryExtraction,
+                max_new_tokens=1024
+            )
+            if isinstance(result, dict):
+                if "error" in result:
+                    raise ValueError(result["details"])
+                glossary_entries = GlossaryExtraction.model_validate(result)
+            elif isinstance(result, str):
+                glossary_entries = GlossaryExtraction.model_validate_json(result)
+            else:
+                glossary_entries = result
+        except Exception as e:
+            print(f"Error generating glossary: {e}")
             glossary_entries = None
 
         print("Glossary from chunks:", result)

@@ -1,5 +1,25 @@
 from django.db import models
+from llm_api.api import OUTPUT_TYPES  as LLM_OUTPUT_TYPES
+from background_resources.rag_service import OUTPUT_TYPES as RAG_OUTPUT_TYPES
+from .actions import OUTPUT_TYPES as ACTION_OUTPUT_TYPES
 
+OUTPUT_TYPES = LLM_OUTPUT_TYPES | RAG_OUTPUT_TYPES | ACTION_OUTPUT_TYPES
+
+def get_schema_choices():
+    """
+    Returns a dynamically generated list of choices for the Django admin.
+    Using a callable prevents Django from creating new migration files
+    every time a schema is added to OUTPUT_TYPES.
+    """
+    choices = []
+    for key, value in OUTPUT_TYPES.items():
+        # Safely extract field names handling both Pydantic v1 and v2/Ninja
+        fields = getattr(value, 'model_fields', getattr(value, '__fields__', {}))
+        field_names = ", ".join(fields.keys())
+        display_name = f"{key} ({field_names})"
+        # Truncate if there are tons of fields so the dropdown isn't massive
+        choices.append((key, display_name[:97] + "..." if len(display_name) > 100 else display_name))
+    return choices
 
 class ModerationList(models.Model):
     """
@@ -16,6 +36,7 @@ class ResponseSchema(models.Model):
     A reusable output schema for LLM generation. 
     Can be either a dynamic JSON schema or a reference to a hardcoded Pydantic model.
     """
+
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     
@@ -31,8 +52,8 @@ class ResponseSchema(models.Model):
     )
     
     pydantic_model_name = models.CharField(
-        max_length=255, blank=True, 
-        help_text="Name of a registered model (e.g., 'Hydrant', 'Factor'). Must exist in llm_api.api.OUTPUT_TYPES."
+        max_length=255, blank=True, choices=get_schema_choices,
+        help_text="Name of a registered model (e.g. 'Factor'). Sourced from registered OUTPUT_TYPES."
     )
 
     def __str__(self):
@@ -72,6 +93,10 @@ class ReasoningStep(models.Model):
     on_failure_step = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True,
                                         related_name='failure_sources',
                                         help_text="The step to route to if this step fails its evaluation criteria.")
+    max_retries = models.IntegerField(default=3, help_text="Maximum times this step can loop before forcing a failure.")
+    
+    action_hook = models.CharField(max_length=255, blank=True, 
+                                   help_text="Optional: Name of a Python function to run after LLM generation (e.g., 'handle_active_reading').")
     # Constraints & Formatting
     
     output_schema = models.ForeignKey(ResponseSchema, on_delete=models.SET_NULL, null=True, blank=True, help_text="Select a structured output format for this step.")

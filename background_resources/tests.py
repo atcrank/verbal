@@ -5,7 +5,7 @@ import zipfile
 from pathlib import Path
 from datetime import datetime
 
-from django.test import TestCase
+from django.test import TestCase, tag
 from django.test.utils import override_settings
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -187,6 +187,7 @@ class BackgroundResourcesIntegrationTest(TestCase):
         
         print(f"\nReport generated: {report_path}")
 
+    @tag('e2e')
     def test_1_default_ingestion_and_overrides(self):
         """
         GOAL: Ingest document with default strategy, then ingest same document
@@ -236,6 +237,7 @@ class BackgroundResourcesIntegrationTest(TestCase):
 
         self._generate_report("test_1_overrides", time.perf_counter() - self.start_time)
 
+    @tag('e2e')
     def test_2_subclass_strategies(self):
         """
         GOAL: Create and exercise PromptStrategy, RegexStrategy, and AbbreviationsReadingStrategy.
@@ -305,6 +307,7 @@ class BackgroundResourcesIntegrationTest(TestCase):
 
         self._generate_report("test_2_strategies", time.perf_counter() - self.start_time)
 
+    @tag('e2e')
     def test_3_retrieval_and_stats(self):
         """
         GOAL: Confirm that Chunk hit_count and last_accessed fields are correctly updated.
@@ -347,6 +350,7 @@ class BackgroundResourcesIntegrationTest(TestCase):
 
         self._generate_report("test_3_stats", time.perf_counter() - self.start_time)
 
+    @tag('e2e')
     def test_4_file_loaders(self):
         """
         GOAL: Test ingestion of PDF, DOCX, PPTX, and ZIP (Corpora) files using the default ReadingStrategy.
@@ -400,6 +404,7 @@ class BackgroundResourcesIntegrationTest(TestCase):
 
         self._generate_report("test_4_loaders", time.perf_counter() - self.start_time)
 
+    @tag('e2e')
     def test_5_regex_precision(self):
         """
         GOAL: Verify that RegexStrategy extracts ONLY the definition line,
@@ -446,6 +451,7 @@ class BackgroundResourcesIntegrationTest(TestCase):
 
         self._generate_report("test_5_regex", time.perf_counter() - self.start_time)
 
+    @tag('e2e')
     def test_6_deletion_robustness(self):
         """
         GOAL: Verify that chunks are removed from the index/store ONLY when

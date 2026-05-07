@@ -1,7 +1,7 @@
 import os
 import shutil
 from pathlib import Path
-from django.test import TestCase, Client, override_settings
+from django.test import TestCase, Client, override_settings, tag
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
@@ -72,6 +72,7 @@ class BenchmarkingIntegrationTests(TestCase):
         doc = Document.objects.create(title=name, file=django_file, chunk_size=200, chunk_overlap=20)
         return doc
 
+    @tag('e2e')
     def test_1_create_standard_candle(self):
         """Ensure the management command successfully builds the data structures."""
         print("\n>>> Test 1: Create Standard Candle")
@@ -89,6 +90,7 @@ class BenchmarkingIntegrationTests(TestCase):
         self.assertEqual(experiment.corpus, corpus)
         self.assertEqual(experiment.scenario_group, group)
 
+    @tag('e2e')
     def test_2_run_fast_benchmark(self):
         """
         Ensure the runner executes correctly.
@@ -123,6 +125,7 @@ class BenchmarkingIntegrationTests(TestCase):
         self.assertIsNotNone(run_record.average_rag_score)
         self.assertIsNotNone(run_record.average_semantic_score)
 
+    @tag('e2e')
     def test_3_generate_synthetic_scenarios(self):
         """Ensure the LLM can generate valid JSON scenarios from a document."""
         print("\n>>> Test 3: Generate Synthetic Scenarios")
@@ -141,6 +144,7 @@ class BenchmarkingIntegrationTests(TestCase):
         self.assertTrue(len(scenario.question) > 5)
         self.assertTrue(len(scenario.expected_keywords) > 0)
 
+    @tag('e2e')
     def test_4_grid_experiment_creation(self):
         """Test the Investigation mathematical utility."""
         print("\n>>> Test 4: Grid Experiment Creation")
@@ -160,6 +164,7 @@ class BenchmarkingIntegrationTests(TestCase):
         self.assertEqual(len(experiments), 4)
         self.assertEqual(Experiment.objects.filter(investigation=inv).count(), 4)
 
+    @tag('e2e')
     def test_5_evaluation_score_clamping(self):
         """Verify Pydantic clamps LLM hallucinations to the 1-5 scale."""
         print("\n>>> Test 5: Evaluation Clamping")
@@ -169,6 +174,7 @@ class BenchmarkingIntegrationTests(TestCase):
         e2 = EvaluationScore(reasoning="Terrible.", score=-5)
         self.assertEqual(e2.score, 1, "Should clamp min to 1")
 
+    @tag('e2e')
     def test_6_dashboard_view(self):
         """Ensure the pivot logic in the dashboard doesn't crash."""
         print("\n>>> Test 6: Dashboard View Load")

@@ -2,7 +2,7 @@ import os
 import shutil
 import json
 from pathlib import Path
-from django.test import TestCase, Client, override_settings
+from django.test import TestCase, Client, override_settings, tag
 from django.contrib.auth.models import User
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -85,6 +85,7 @@ class LlmApiIntegrationTests(TestCase):
         self.user = User.objects.create_user(username='testuser', password='password123')
         self.client.login(username='testuser', password='password123')
 
+    @tag('e2e')
     def test_generate_response_with_real_rag(self):
         """
         Test the /generate_response/ endpoint with the full stack.

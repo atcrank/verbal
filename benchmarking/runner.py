@@ -52,6 +52,8 @@ def evaluate_metric(ai_service, prompt_template, num_sequences=5, **kwargs):
                 # Handle both Pydantic objects (normal) and JSON strings (fallback/legacy)
                 if isinstance(resp, str):
                     evaluation = EvaluationScore.model_validate_json(resp)
+                elif isinstance(resp, dict):
+                    evaluation = EvaluationScore.model_validate(resp)
                 else:
                     evaluation = resp
                 print(f"DEBUG EVAL | Score: {evaluation.score} | Reasoning: {evaluation.reasoning}")
@@ -319,8 +321,9 @@ def run_benchmark_suite(experiment, corpus, log_callback=None):
 
         run_record.save()
 
+        faith_str = f"{run_record.average_faithfulness:.2f}" if run_record.average_faithfulness is not None else "N/A"
         log_callback(
-            f"Run Complete. RAG: {run_record.average_rag_score:.2f} | Sem: {run_record.average_semantic_score:.2f} | Faith: {run_record.average_faithfulness:.2f}")
+            f"Run Complete. RAG: {run_record.average_rag_score:.2f} | Sem: {run_record.average_semantic_score:.2f} | Faith: {faith_str}")
         return run_record
 
     finally:

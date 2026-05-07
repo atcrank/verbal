@@ -10,7 +10,7 @@ from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from ninja.security import SessionAuth
 
-from .models import Conversation, PromptResponseLog
+from .models import Conversation, PromptResponseLog, LocalAIModel, ExternalAIModel, UserActiveModel, UserAPIKey
 
 from llm_api.apps import service_registry
 from background_resources.models import Document
@@ -69,7 +69,7 @@ def generate_response(request, payload: GenerateIn):
     messages = messages + conversation.as_messages() + [{"role": "user", "content": payload.user_prompt + "\n\nRelevant Context:\n" + rag_text}]
     max_new_tokens = payload.max_new_tokens
     print("Token Count:", service_registry.ai_service.count_conversation_tokens(messages))
-    [response] = service_registry.ai_service.generate_response(messages=messages, max_new_tokens=max_new_tokens, log_kwargs={"skip_log": True})
+    [response] = service_registry.ai_service.generate_response(messages=messages, max_new_tokens=max_new_tokens, log_kwargs={"skip_log": True}, user=request.auth)
     cleaned_response = service_registry.ai_service.clean_response(response)
     system_prompt = messages[0]["content"]
     p = PromptResponseLog(system_prompt=system_prompt, user_prompt=payload.user_prompt,
@@ -92,12 +92,17 @@ class OutlineQuery(Schema):
     user_query: str
     max_topics: int = 5
 
-@dataclass
-class Factor:
+class StateValue(BaseModel):
+    name: str = ""
+    definition: str = ""
+
+class StateSet(BaseModel):
+    state_values: typing.List[StateValue] = []
+
+class Factor(BaseModel):
     name: str
-    state1_name: str
-    state2_name: str
-    state3_name: str
+    state_options: StateSet
+
 
 # Pydantic example
 class Hydrant(BaseModel):
@@ -124,44 +129,11 @@ class Hydrant(BaseModel):
         return self
 
 from outlines.types import JsonSchema
-schema_string = {
-  "title": "Hydrant",
-  "type": "object",
-  "properties": {
-    "location_name": {
-      "type": "string",
-      "description": "name of the hydrant"
-    }
-  },
-  "required": [
-    "location_name"
-  ]
-}
-
-hydrant_json_def = JsonSchema(schema_string)
-
-print(hydrant_json_def)
 
 class OutlineIn(Schema):
     query: str
     schema_key: typing.Union[str, dict]
 
-# Use with caution: The model needs some token space to step to correctness
-extinguisher_types = typing.Literal["Foam", "Water", "Powder", "CO2"]
-
-# superior approach allowing tokens of output that serve as thoughts
-class CorrectExtinguishers(BaseModel):
-    reasoning: str
-    extinguisher_type: typing.Literal["Foam", "Water", "Powder", "CO2"]
-
-# Alt approach: amplified Literal.  This was not effective - still chooses water
-extinguisher_types2 = typing.Literal["Foam Extinguisher - for fat fires, oil and others", "Water Extinguisher - for wood and paper", "Powder Extinguisher - for intense fires", "CO2 Extinguisher - for extreme heat"]
-
-OUTPUT_TYPES = {"Factor": Factor,
-                "Hydrant": Hydrant,
-                "Extinguisher": extinguisher_types,
-                "CorrectExtinguisher": CorrectExtinguishers,
-                "Extinguisher2": extinguisher_types2}
 
 @router.post("/get_outline/")
 @ensure_csrf_cookie
@@ -176,9 +148,86 @@ def get_outline(request, payload: OutlineIn):
         except ValidationError:
             return JsonResponse({"error": "Schema key not known and JsonSchema invalid."})
     print("Get Outline called: types -", type(payload.query), output_type)
-    outline = service_registry.ai_service.generate_outline(payload.query, output_type)
+    outline = service_registry.ai_service.generate_outline(payload.query, output_type, user=request.auth)
     print("Outline", outline, type(outline))
     return JsonResponse({"outline": outline})
+
+
+# --- Standard OpenAI API Proxy Endpoints (No Auth) ---
+
+class OpenAIChatMessage(Schema):
+    role: str
+    content: str
+
+class OpenAIJsonSchema(Schema):
+    name: str
+    schema_dict: dict = Field(..., alias="schema")
+    strict: typing.Optional[bool] = False
+
+class OpenAIResponseFormat(Schema):
+    type: str
+    json_schema: typing.Optional[OpenAIJsonSchema] = None
+
+class OpenAIChatCompletionIn(Schema):
+    model: typing.Optional[str] = "local-model"
+    messages: typing.List[OpenAIChatMessage]
+    temperature: typing.Optional[float] = 0.7
+    max_tokens: typing.Optional[int] = 1024
+    n: typing.Optional[int] = 1
+    response_format: typing.Optional[OpenAIResponseFormat] = None
+
+OUTPUT_TYPES = {
+    "Factor": Factor,
+}
+
+@router.get("/internal/ping/", auth=None)
+@csrf_exempt
+def internal_ping(request):
+    from django.conf import settings
+    return JsonResponse({"status": "ok", "role": getattr(settings, "VERBAL_ROLE", "unknown")})
+
+@router.post("/v1/chat/completions", auth=None)
+@csrf_exempt
+def openai_chat_completions(request, payload: OpenAIChatCompletionIn):
+    messages = [{"role": m.role, "content": m.content} for m in payload.messages]
+    max_tokens = payload.max_tokens or 1024
+    
+    # Route structured output vs standard generation
+    if payload.response_format and payload.response_format.type == "json_schema":
+        schema_dict = payload.response_format.json_schema.schema_dict
+        
+        result = service_registry.ai_service.generate_outline(
+            messages=messages,
+            response_schema=schema_dict,
+            max_new_tokens=max_tokens,
+            temperature=payload.temperature,
+            num_return_sequences=payload.n,
+            log_kwargs={"skip_log": True}
+        )
+        
+        results_list = result if isinstance(result, list) else [result]
+        choices = []
+        for r in results_list:
+            if hasattr(r, 'model_dump'):
+                content = json.dumps(r.model_dump())
+            elif isinstance(r, dict):
+                content = json.dumps(r)
+            else:
+                # JsonSchema generations return strings directly
+                content = str(r)
+            choices.append({"message": {"role": "assistant", "content": content}})
+            
+        return JsonResponse({"choices": choices})
+    else:
+        results = service_registry.ai_service.generate_response(
+            messages=messages,
+            max_new_tokens=max_tokens,
+            temperature=payload.temperature,
+            num_return_sequences=payload.n,
+            log_kwargs={"skip_log": True}
+        )
+        choices = [{"message": {"role": "assistant", "content": str(r)}} for r in results]
+        return JsonResponse({"choices": choices})
 
 # --- Admin Helper Endpoints ---
 
@@ -241,7 +290,7 @@ def suggest_regex(request, payload: RegexSuggestIn):
     """
     
     messages = [{"role": "user", "content": prompt}]
-    
+    print("MESSAGES FOR REGEX:", messages)
     try:
         # Use the standard LLM pipeline which has do_sample=True for diversity
         responses = service_registry.ai_service.generate_outline(messages=messages, response_schema=RegexCandidate, max_new_tokens=2048, num_return_sequences=10)
@@ -249,11 +298,17 @@ def suggest_regex(request, payload: RegexSuggestIn):
         candidates = []
         print(responses)
         for raw_response in responses:
-            # Clean up markdown code blocks if present
-            clean_json = raw_response.replace("```json", "").replace("```", "").strip()
             try:
-                parsed_candidate = RegexCandidate.model_validate_json(clean_json)
-                candidates.append(parsed_candidate.pattern)
+                if isinstance(raw_response, dict) and "error" in raw_response:
+                    continue
+                if isinstance(raw_response, RegexCandidate):
+                    candidates.append(raw_response.pattern)
+                elif isinstance(raw_response, dict):
+                    candidates.append(RegexCandidate.model_validate(raw_response).pattern)
+                elif isinstance(raw_response, str):
+                    # Clean up markdown code blocks if present
+                    clean_json = raw_response.replace("```json", "").replace("```", "").strip()
+                    candidates.append(RegexCandidate.model_validate_json(clean_json).pattern)
             except Exception:
                 continue
         
@@ -453,10 +508,6 @@ def preview_prompt(request, payload: PromptPreviewIn):
         if not target_chunk:
             return JsonResponse({"error": "No text found. Select a document or a specific chunk."})
         
-        # Ensure models are loaded
-        if service_registry.rag_service.summary_generator is None:
-             service_registry.rag_service.load_models()
-
         result = service_registry.rag_service.get_chunk_summary(target_chunk.page_content, custom_prompt=payload.prompt)
         
         return JsonResponse({

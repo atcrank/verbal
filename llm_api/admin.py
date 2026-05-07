@@ -1,13 +1,11 @@
-from django.contrib import admin
-from .models import PromptResponseLog, Conversation
 # Register your models here.
 from django.contrib import admin, messages
 from django.utils import timezone
-from .models import Conversation, PromptResponseLog, AIModel
+from .models import Conversation, PromptResponseLog, LocalAIModel, ExternalAIModel, UserActiveModel, UserAPIKey
 from .apps import service_registry
 
 
-@admin.action(description="Activate this Model (Unloads current model)")
+@admin.action(description="Load this model into the Inference server")
 def activate_model(modeladmin, request, queryset):
     if queryset.count() != 1:
         modeladmin.message_user(request, "Please select exactly one model to activate.", level=messages.WARNING)
@@ -16,8 +14,8 @@ def activate_model(modeladmin, request, queryset):
     new_model = queryset.first()
 
     # 1. Update Database State
-    AIModel.objects.update(is_active=False)
-    new_model.is_active = True
+    LocalAIModel.objects.update(is_system_active=False)
+    new_model.is_system_active = True
     new_model.activated_by = request.user
     new_model.activated_at = timezone.now()
     # Optional: We could prompt for intent, but for now we just clear it or keep it?
@@ -33,17 +31,16 @@ def activate_model(modeladmin, request, queryset):
         # Revert active state if failed? Maybe risky if we are now in limbo.
 
 
-@admin.register(AIModel)
-class AIModelAdmin(admin.ModelAdmin):
-    list_display = ('name', 'is_active', 'activated_by', 'activated_at', 'usage_intent')
-    list_filter = ('is_active',)
+@admin.register(LocalAIModel)
+class LocalAIModelAdmin(admin.ModelAdmin):
+    list_display = ('name', 'hf_model_id', 'is_system_active')
     actions = [activate_model]
-    readonly_fields = ('activated_by', 'activated_at')
+    search_fields = ('name', 'hf_model_id')
 
     def save_model(self, request, obj, form, change):
         # If creating a new active model manually via checkbox
-        if obj.is_active:
-            AIModel.objects.exclude(pk=obj.pk).update(is_active=False)
+        if obj.is_system_active:
+            LocalAIModel.objects.exclude(pk=obj.pk).update(is_system_active=False)
             obj.activated_by = request.user
             obj.activated_at = timezone.now()
         super().save_model(request, obj, form, change)
@@ -64,6 +61,8 @@ class ConversationAdmin(admin.ModelAdmin):
     class Meta:
         model = Conversation
 
-
+admin.site.register(ExternalAIModel)
+admin.site.register(UserActiveModel)
+admin.site.register(UserAPIKey)
 admin.site.register(PromptResponseLog, DialogAdmin)
 admin.site.register(Conversation, ConversationAdmin)

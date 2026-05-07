@@ -1,5 +1,22 @@
 This project uses a Django backend with `django-ninja` to provide a RAG (Retrieval-Augmented Generation) API. The core logic is split between an `llm_api` app and a `rag_service`.
 
+
+### Quickstart Guide
+1. Clone repository to your workspace
+2. set up a virtual environment and install packages from requirements.txt.
+3. ensure docker is available on your system to provide redis for celery.
+4. quickstart option: rename db-dev.sqlite3 to db.sqlite3 to use prepopulated database.
+5. this server uses three instances with different modes:
+
+   a.  "web", a web server that handles Django UI, does not load the big models. 
+       >"sh start_web.sh"
+   b.  "inference", a single process monopolises the GPU with big models  
+       >"sh start_inference.sh"
+   c.  "worker", a solo celery worker using redis that handles queueing of tasks between the "web" and "inference" modes. 
+       >"sh toggle_background_task_service.sh"
+
+6.  check 127.0.0.1:8000/admin, and 127.0.0.1:8000/api/docs/
+
 ### 1. RAG Service & Document Handling
 The `rag_service` is responsible for managing and querying a knowledge base.
 
