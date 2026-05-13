@@ -39,6 +39,17 @@ def promote_to_ideal(modeladmin, request, queryset):
         count += 1
     modeladmin.message_user(request, f"Updated {count} scenarios with new ideal answers.", level=messages.SUCCESS)
 
+@admin.action(description="Constructor: Generate Full Config Matrix from this Experiment")
+def generate_matrix_action(modeladmin, request, queryset):
+    count = 0
+    for exp in queryset:
+        generated = exp.generate_comprehensive_matrix()
+        count += len(generated)
+    modeladmin.message_user(request, f"Successfully constructed {count} new experiment permutations!", level=messages.SUCCESS)
+
+# Add it to your ExperimentAdmin class:
+# actions = [generate_matrix_action, ...]
+
 @admin.register(BenchmarkCorpus)
 class BenchmarkCorpusAdmin(admin.ModelAdmin):
     filter_horizontal = ('documents',)
@@ -78,7 +89,7 @@ class InvestigationAdmin(admin.ModelAdmin):
 class ExperimentAdmin(admin.ModelAdmin):
     list_display = ('name', 'investigation', 'corpus', 'scenario_group', 'selected_model', 'iterations', 'created_at')
     list_filter = ('investigation', 'corpus')
-    actions = [run_experiment_benchmark]
+    actions = [run_experiment_benchmark, generate_matrix_action]
 
 class BenchmarkResultInline(admin.TabularInline):
     model = BenchmarkResult

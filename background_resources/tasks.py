@@ -13,3 +13,10 @@ def task_process_reading_strategies(strategy_ids):
     """Background task to execute reading strategies."""
     strategies = ReadingStrategy.objects.filter(id__in=strategy_ids)
     service_registry.rag_service.ingest_queryset_reading_strategies(strategies)
+
+@shared_task
+def task_process_grobid_reading_strategies(strategy_ids):
+    """Background task to execute Grobid section-aware reading strategies."""
+    from .models import GrobidReadingStrategy
+    strategies = GrobidReadingStrategy.objects.filter(id__in=strategy_ids)
+    service_registry.rag_service.ingest_queryset_reading_strategies(strategies)

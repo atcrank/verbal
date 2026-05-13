@@ -1,12 +1,9 @@
 from celery import shared_task
 from llm_api.apps import service_registry
 from background_resources.models import Document, RAGChunk
-from benchmarking.models import BenchmarkCorpus
 from .models import ConceptNode, Domain
 from pydantic import BaseModel, Field, field_validator
 from typing import List
-import outlines
-import json
 
 
 class StructuredClaim(BaseModel):

@@ -1,0 +1,10 @@
+{% extends "admin/app_index.html" %}
+
+{% block content_title %}
+    {{ block.super }}
+    <!-- Adds an app-specific link at the top of the App's admin overview page -->
+    <div style="background: #e8f5e9; padding: 10px; border-left: 5px solid #4caf50; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <strong>📖 API & Developer Guide:</strong>
+        Read the <a href="/docs/{{ app_label }}_app.html" target="_blank" style="font-weight: bold;">{{ app_label|title }} Documentation</a>.
+    </div>
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends "admin/change_form.html" %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    /* Target ONLY the first fieldset of the main form, avoiding inlines */
+    #reference_form > div > fieldset.module:first-of-type {
+        display: grid;
+        grid-template-columns: 35% 65%; /* 35% for transcription fields, 65% for PDF */
+        gap: 20px;
+        padding: 15px;
+        box-sizing: border-box;
+    }
+
+    /* Place all normal form rows in the left column */
+    #reference_form > div > fieldset.module:first-of-type > .form-row:not(.field-pdf_viewer) {
+        grid-column: 1;
+        border-bottom: 1px solid #eaeaea;
+        padding: 15px 0;
+    }
+
+    /* Place the PDF viewer in the right column, spanning all rows */
+    #reference_form > div > fieldset.module:first-of-type > .form-row.field-pdf_viewer {
+        grid-column: 2;
+        grid-row: 1 / span 10; /* Span across all implicit rows on the left */
+        border-bottom: none;
+        padding: 0;
+    }
+
+    /* Override Django's nested flex containers which shrink-wrap readonly fields */
+    .form-row.field-pdf_viewer div {
+        margin-left: 0 !important;
+        width: 100% !important;
+        display: block !important;
+    }
+
+    /* Hide the "Pdf viewer:" label */
+    .form-row.field-pdf_viewer label {
+        display: none !important;
+    }
+
+    /* Style the iframe to ensure it fills the column beautifully */
+    .form-row.field-pdf_viewer iframe {
+        width: 100%;
+        height: 800px !important; /* Matches the iframe definition, but ensures CSS priority */
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    /* Optimize input fields to fit the narrower left column */
+    #reference_form > div > fieldset.module:first-of-type .vTextField,
+    #reference_form > div > fieldset.module:first-of-type .vLargeTextField {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+    
+    /* Give the abstract field more vertical space for manual transcription */
+    .form-row.field-abstract textarea {
+        height: 250px;
+    }
+</style>
+{% endblock %}

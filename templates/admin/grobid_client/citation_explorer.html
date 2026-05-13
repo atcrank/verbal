@@ -1,0 +1,99 @@
+{% extends "admin/base_site.html" %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    .graph-container {
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        padding: 20px;
+        margin-top: 15px;
+        overflow-x: auto;
+    }
+    .tabs {
+        display: flex;
+        border-bottom: 2px solid #79aec8;
+        margin-bottom: 20px;
+    }
+    .tab {
+        padding: 10px 20px;
+        cursor: pointer;
+        background: #f8f9fa;
+        border: 1px solid #ccc;
+        border-bottom: none;
+        margin-right: 5px;
+        border-radius: 5px 5px 0 0;
+        font-weight: bold;
+        color: #444;
+    }
+    .tab.active {
+        background: #79aec8;
+        color: white;
+    }
+    .tab-content {
+        display: none;
+    }
+    .tab-content.active {
+        display: block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+
+    <div class="module" style="padding: 15px; background: #e8f5e9; border-left: 5px solid #4caf50; margin-bottom: 20px;">
+        <p style="margin: 0; font-size: 1.1em;">
+            This dashboard uses <strong>Mermaid.js</strong> to render the citation network dynamically.
+            It requires no heavy Python visualization libraries and the raw data below can be directly copied into markdown files.
+        </p>
+    </div>
+
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('standard')">Standard Citation Network</div>
+        <div class="tab" onclick="switchTab('timeline')">Timeline (Scaled by Year)</div>
+    </div>
+
+    <div id="standard" class="tab-content active">
+        <div class="graph-container">
+            <pre class="mermaid">
+{{ standard_graph|safe }}
+            </pre>
+        </div>
+         <details style="margin-top: 10px;">
+             <summary style="cursor: pointer; font-weight: bold; color: #417690;">Show Raw Mermaid Data (for copying)</summary>
+             <textarea style="width: 100%; height: 200px; margin-top: 10px; font-family: monospace; padding: 10px; border: 1px solid #ccc; border-radius: 4px;" readonly>{{ standard_graph }}</textarea>
+         </details>
+    </div>
+
+    <div id="timeline" class="tab-content">
+        <div class="graph-container">
+            <pre class="mermaid">
+{{ year_graph|safe }}
+            </pre>
+        </div>
+        <details style="margin-top: 10px;">
+             <summary style="cursor: pointer; font-weight: bold; color: #417690;">Show Raw Mermaid Data (for copying)</summary>
+             <textarea style="width: 100%; height: 200px; margin-top: 10px; font-family: monospace; padding: 10px; border: 1px solid #ccc; border-radius: 4px;" readonly>{{ year_graph }}</textarea>
+         </details>
+    </div>
+
+</div>
+
+<!-- Load Mermaid.js from CDN -->
+<script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: true, theme: 'default' });
+</script>
+
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+        event.target.classList.add('active');
+        document.getElementById(tabId).classList.add('active');
+    }
+</script>
+{% endblock %}

@@ -237,6 +237,49 @@ class ReadingStrategy(models.Model):
     def extract_content(self, chunk, rag_service):
         return []
 
+class GrobidReadingStrategy(models.Model):
+    """
+    Utilizes cached TEI XML from the Grobid client to generate Section-Aware chunks.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    document = models.ForeignKey(Document, on_delete=models.CASCADE)
+    strategy_description = models.CharField(max_length=255, default="Grobid Semantic Chunking")
+    
+    usages = GenericRelation('StrategyChunkUsage')
+    output_role = StrategyChunkUsage.Role.CLIPPED
+
+    def __str__(self):
+        return f"{self.document.title} - {self.strategy_description}"
+
+    def read_document(self, rag_service_inject):
+        chunks, chunk_ids = rag_service_inject.convert_chunk_store_document_grobid(self.document)
+        
+        if not chunks and chunk_ids:
+            chunks = rag_service_inject.store.mget(chunk_ids)
+        for chunk_id, chunk in zip(chunk_ids, chunks):
+            rag_chunk, _ = RAGChunk.objects.get_or_create(
+                chunk_id=chunk_id,
+                defaults={
+                    'text_content': chunk.page_content if chunk else "",
+                    'metadata': chunk.metadata if chunk else {},
+                    'in_vector_index': True,
+                    'in_byte_store': True
+                }
+            )
+            StrategyChunkUsage.objects.create(chunk=rag_chunk, content_object=self, role=StrategyChunkUsage.Role.CLIPPED)
+        print(f"{self.__class__.__name__}[{self.id}] logged {len(chunk_ids)} usages to db.")
+
+    def get_chunk_ids(self):
+        return self.usages.values_list('chunk__chunk_id', flat=True)
+
+    def apply_strategy(self, rag_service, force=False, source_chunks=None):
+        if force or self.usages.count() == 0:
+            self.read_document(rag_service_inject=rag_service)
+        return
+
+    def extract_content(self, chunk, rag_service):
+        return []
+
 
 class AbstractHigherOrderStrategy(models.Model):
     """
@@ -293,18 +336,24 @@ class AbstractHigherOrderStrategy(models.Model):
                 chunks = [c for c in chunks if c]
         
         else:
-            # Case: Default. Use the Default ReadingStrategy's chunks.
-            default_strat = ReadingStrategy.objects.filter(
-                document=self.document, 
-                strategy_description="Default Chunking"
-            ).first()
+            # Case: Default. Prefer Grobid Semantic Chunking if available, else standard Default.
+            default_strat = None
+            if hasattr(self.document, 'grobidreadingstrategy_set'):
+                default_strat = self.document.grobidreadingstrategy_set.first()
+                
+            if not default_strat or default_strat.usages.count() == 0:
+                default_strat = ReadingStrategy.objects.filter(
+                    document=self.document, 
+                    strategy_description="Default Chunking"
+                ).first()
             
-            if not default_strat:
-                # Auto-repair if missing
-                default_strat = ReadingStrategy.objects.create(document=self.document, strategy_description="Default Chunking")
-            
-            # Ensure default is populated
-            if default_strat.usages.count() == 0:
+                if not default_strat:
+                    default_strat = ReadingStrategy.objects.create(document=self.document, strategy_description="Default Chunking")
+                
+                if default_strat.usages.count() == 0:
+                    default_strat.read_document(rag_service_inject=rag_service)
+            elif default_strat.usages.count() == 0:
+                # Existing Grobid strategy, but hasn't been read yet
                 default_strat.read_document(rag_service_inject=rag_service)
             
             chunk_ids = default_strat.get_chunk_ids()

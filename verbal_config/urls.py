@@ -14,10 +14,13 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+import os
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
+from django.views.static import serve
+from django.conf import settings
 from ninja import NinjaAPI
 from ninja.security import django_auth
 from llm_api.api import router as llm_router
@@ -124,9 +127,15 @@ def change_password(request, data: ChangePasswordIn):
     return 403, {'errors': dict(form.errors)}
 
 
+DOCS_DIR = os.path.join(settings.BASE_DIR, 'documentation', 'build', 'html')
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", api.urls),
     path("benchmarking/", include("benchmarking.urls")),
     path("accounts/", include("django.contrib.auth.urls")),
+    
+    # Serve Sphinx Documentation
+    re_path(r'^docs/(?P<path>.*)$', serve, {'document_root': DOCS_DIR}),
+    path('docs/', serve, {'document_root': DOCS_DIR, 'path': 'index.html'}),
 ]

@@ -6,7 +6,7 @@ import outlines
 from dataclasses import dataclass, asdict
 from pydantic import BaseModel, Field, field_validator, model_validator, ValidationError
 from ninja import Router, Schema
-from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.http import HttpRequest, HttpResponse, JsonResponse, FileResponse
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from ninja.security import SessionAuth
 
@@ -228,6 +228,25 @@ def openai_chat_completions(request, payload: OpenAIChatCompletionIn):
         )
         choices = [{"message": {"role": "assistant", "content": str(r)}} for r in results]
         return JsonResponse({"choices": choices})
+
+# --- PDF Viewer Endpoint ---
+
+@router.get("/view_document/{doc_id}/", auth=None)
+def view_document_pdf(request, doc_id: int):
+    """
+    Serves a document's PDF file with the X-Frame-Options header set to SAMEORIGIN,
+    allowing it to be embedded in an iframe within the Django admin.
+    """
+    try:
+        doc = Document.objects.get(id=doc_id)
+        if doc.file and doc.file.name.lower().endswith('.pdf'):
+            response = FileResponse(doc.file.open('rb'), content_type='application/pdf')
+            response['X-Frame-Options'] = 'SAMEORIGIN'
+            return response
+        else:
+            return HttpResponse("Document has no associated PDF file.", status=404)
+    except Document.DoesNotExist:
+        return HttpResponse("Document not found.", status=404)
 
 # --- Admin Helper Endpoints ---
 

@@ -4,6 +4,7 @@ from django.contrib import admin, messages
 from django.contrib.contenttypes.admin import GenericTabularInline
 from django.contrib.contenttypes.forms import BaseGenericInlineFormSet
 from django.utils.html import format_html
+from django.urls import reverse
 from llm_api.apps import service_registry  # Import your service
 from verbal_config.celery import app as celery_app
 from .models import (Document,
@@ -11,11 +12,13 @@ from .models import (Document,
                      PromptStrategy,
                      RegexStrategy,
                      ReadingStrategy,
+                     GrobidReadingStrategy,
                      AbbreviationsReadingStrategy,
                      RAGChunk, StrategyChunkUsage,
                      )
-from .tasks import task_process_documents, task_process_reading_strategies
+from .tasks import task_process_documents, task_process_reading_strategies, task_process_grobid_reading_strategies
 from benchmarking.tasks import task_generate_benchmarks
+from grobid_client.tasks import task_extract_grobid_metadata
 
 
 def _check_celery_available(modeladmin, request):
@@ -48,6 +51,15 @@ def process_reading(modeladmin, request, queryset):
     task_process_reading_strategies.delay(strategy_ids)
     modeladmin.message_user(request, f"Queued {len(strategy_ids)} reading strateg(ies) for execution.", level=messages.SUCCESS)
 
+@admin.action(description="Execute this Grobid Semantic Strategy")
+def process_grobid_reading(modeladmin, request, queryset):
+    if not _check_celery_available(modeladmin, request):
+        return
+        
+    strategy_ids = list(queryset.values_list('id', flat=True))
+    task_process_grobid_reading_strategies.delay(strategy_ids)
+    modeladmin.message_user(request, f"Queued {len(strategy_ids)} Grobid reading strateg(ies) for execution.", level=messages.SUCCESS)
+
 @admin.action(description="Generate Synthetic Benchmarks")
 def generate_benchmarks(modeladmin, request, queryset):
     if not _check_celery_available(modeladmin, request):
@@ -56,6 +68,15 @@ def generate_benchmarks(modeladmin, request, queryset):
     doc_ids = list(queryset.values_list('id', flat=True))
     task_generate_benchmarks.delay(doc_ids)
     modeladmin.message_user(request, f"Queued benchmark generation for {len(doc_ids)} document(s).", level=messages.SUCCESS)
+
+@admin.action(description="Extract Grobid Metadata & Citations")
+def extract_grobid_metadata(modeladmin, request, queryset):
+    if not _check_celery_available(modeladmin, request):
+        return
+        
+    for doc in queryset:
+        task_extract_grobid_metadata.delay(doc.id)
+    modeladmin.message_user(request, f"Queued Grobid extraction for {queryset.count()} document(s).", level=messages.SUCCESS)
 
 class RAGChunkAdmin(admin.ModelAdmin):
 
@@ -108,12 +129,20 @@ class DefaultChunksFormSet(BaseGenericInlineFormSet):
         instance = kwargs.get('instance')
         # If we are editing an existing strategy (instance has a document)
         if instance and getattr(instance, 'document_id', None):
-            from .models import ReadingStrategy
-            # Find the default strategy for this document
-            default_strat = ReadingStrategy.objects.filter(
-                document_id=instance.document_id, 
-                strategy_description="Default Chunking"
+            from .models import ReadingStrategy, GrobidReadingStrategy
+            
+            # Prefer Grobid chunks in the UI preview if they exist
+            default_strat = GrobidReadingStrategy.objects.filter(
+                document_id=instance.document_id
             ).first()
+            
+            if not default_strat or default_strat.usages.count() == 0:
+                # Fallback to standard chunking
+                default_strat = ReadingStrategy.objects.filter(
+                    document_id=instance.document_id, 
+                    strategy_description="Default Chunking"
+                ).first()
+                
             if default_strat:
                 # Swap the instance so the inline loads the Default Strategy's chunks
                 kwargs['instance'] = default_strat
@@ -150,6 +179,21 @@ class ReadingStrategyInline(admin.TabularInline):
 
     class Meta:
         model = ReadingStrategy
+
+class GrobidReadingStrategyAdmin(admin.ModelAdmin):
+    fields = ('document', 'strategy_description')
+    list_display = ('document', 'strategy_description')
+    inlines = [StrategyChunkUsageInline,]
+    actions = [process_grobid_reading, ]
+
+    class Meta:
+        model = GrobidReadingStrategy
+
+class GrobidReadingStrategyInline(admin.TabularInline):
+    model = GrobidReadingStrategy
+    parent_model = Document
+    fields = ('document', 'strategy_description')
+    extra = 0
 
 
 class RegexStrategyAdmin(admin.ModelAdmin):
@@ -224,13 +268,20 @@ class DocumentForm(forms.ModelForm):
 
 
 class DocumentAdmin(admin.ModelAdmin):
-    fields = ("title", "file", "chunk_size", "chunk_overlap", "metadata")
-    readonly_fields = ("metadata",)
-    list_display = ("title", "file", "uploaded_at", "metadata")
+    fields = ("title", "file", "chunk_size", "chunk_overlap", "metadata", "reference_link")
+    readonly_fields = ("metadata", "reference_link")
+    list_display = ("title", "file", "uploaded_at", "metadata", "reference_link")
     search_fields = ("title", "file")
     form = DocumentForm
-    actions = [process_document, generate_benchmarks]
-    inlines = [ReadingStrategyInline, RegexStrategyInline, PromptStrategyInline, AbbreviationStrategyInline]
+    actions = [process_document, generate_benchmarks, extract_grobid_metadata]
+    inlines = [ReadingStrategyInline, GrobidReadingStrategyInline, RegexStrategyInline, PromptStrategyInline, AbbreviationStrategyInline]
+
+    def reference_link(self, obj):
+        if hasattr(obj, 'grobid_metadata') and obj.grobid_metadata:
+            url = reverse('admin:grobid_client_reference_change', args=[obj.grobid_metadata.id])
+            return format_html('<a href="{}">View Reference</a>', url)
+        return "-"
+    reference_link.short_description = "Grobid Reference"
 
     class Meta:
         model = Document
@@ -295,6 +346,7 @@ class VectorIndexExplorerAdmin(admin.ModelAdmin):
 admin.site.register(Document, DocumentAdmin)
 admin.site.register(RAGChunk, RAGChunkAdmin)
 admin.site.register(ReadingStrategy, ReadingStrategyAdmin)
+admin.site.register(GrobidReadingStrategy, GrobidReadingStrategyAdmin)
 admin.site.register(PromptStrategy, PromptStrategyAdmin)
 admin.site.register(RegexStrategy, RegexStrategyAdmin)
 admin.site.register(AbbreviationsReadingStrategy, AbbreviationsStrategyAdmin)
@@ -315,10 +367,11 @@ def get_app_list(self, request, app_label=None):
                 'Document': 1,
                 'Chunk': 2,
                 'ReadingStrategy': 3,
-                'PromptStrategy': 4,
-                'RegexStrategy': 5,
-                'AbbreviationsReadingStrategy': 6,
-                'VectorIndexExplorer': 7
+                'GrobidReadingStrategy': 3.5,
+                'PromptStrategy': 4.0,
+                'RegexStrategy': 5.0,
+                'AbbreviationsReadingStrategy': 6.0,
+                'VectorIndexExplorer': 7.0
             }
             app['models'].sort(key=lambda x: ordering.get(x['object_name'], 100))
 

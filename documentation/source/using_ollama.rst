@@ -69,7 +69,7 @@ Your ``ai_service.py`` is formatting the structured output exactly to the bleedi
         "type": "json_schema",
         "json_schema": {
             "name": "json_schema",
-            "schema": { ... },
+            "schema": { "schemaObject": "schemaObject" },
             "strict": true
         }
     }

@@ -9,6 +9,15 @@ services:
     restart: unless-stopped
     volumes:
       - redis_data:/data
+  grobid:
+    image: lfoppiano/grobid:0.8.0
+    container_name: verbal_grobid
+    ports:
+      - "8070:8070"
+    restart: unless-stopped
+    # Grobid can be memory-heavy when processing massive PDFs,
+    # but the container handles itself well alongside Ollama.
+  # ollama:
 
 volumes:
   redis_data:

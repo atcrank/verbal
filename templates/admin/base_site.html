@@ -1,0 +1,8 @@
+{% extends "admin/base.html" %}
+
+{% block nav-global %}
+    {{ block.super }}
+    <!-- Adds a global link to the Sphinx index at the top right of the Django Admin -->
+    <a href="/docs/index.html" target="_blank" style="color: #fff; margin-left: 15px; font-weight: bold; text-decoration: underline;">📖 View Documentation</a>
+
+{% endblock %}

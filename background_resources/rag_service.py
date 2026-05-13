@@ -26,6 +26,7 @@ from background_resources.models import (Document as DjangoDocument,
                                          RAGChunk as DjangoChunk,
                                         StrategyChunkUsage,
                                          ReadingStrategy as DjangoReadingStrategy,
+                                         GrobidReadingStrategy,
                                          RAGQueryLog, 
                                          PromptStrategy, 
                                          RegexStrategy, 
@@ -472,7 +473,73 @@ class RAGService:
         self.hashes_indexed[current_scheme] = chunk_ids
         return chunks, chunk_ids
 
-    def complete_reading(self, reading_strategy: DjangoReadingStrategy|PromptStrategy|RegexStrategy| AbbreviationsReadingStrategy):
+    def convert_chunk_store_document_grobid(self, document: DjangoDocument) -> Tuple[List[LangchainDocument], List[str]]:
+        """
+        Uses the cached TEI XML from the Grobid client to split the document cleanly by semantic sections.
+        """
+        current_scheme = f"{document.indexed_hash}-grobid_semantic"
+        
+        if current_scheme in self.hashes_indexed:
+            existing_ids = self.hashes_indexed[current_scheme]
+            if existing_ids and self.store.mget([existing_ids[0]])[0] is not None:
+                print(f"Reusing {len(existing_ids)} existing Grobid chunks for scheme {current_scheme}")
+                return [], existing_ids
+
+        if not hasattr(document, 'grobid_metadata') or not document.grobid_metadata or not document.grobid_metadata.tei_xml:
+            raise ValueError(f"Document '{document.title}' does not have cached Grobid TEI XML. Run Grobid extraction first.")
+
+        # Quality check: Reject files that Grobid failed to structure (e.g., PowerPoint PDFs)
+        ref = document.grobid_metadata
+        meaningful_fields = [
+            getattr(ref, 'authors', ''), getattr(ref, 'abstract', ''),
+            getattr(ref, 'journal', ''), getattr(ref, 'publisher', ''),
+            getattr(ref, 'year', ''), getattr(ref, 'publication_date', ''),
+            getattr(ref, 'volume', ''), getattr(ref, 'issue', ''),
+            getattr(ref, 'pages', ''), getattr(ref, 'doi', '')
+        ]
+        
+        # If ALL of these fields are empty/falsy, the Grobid extraction is deemed too low-quality
+        if not any(str(field).strip() for field in meaningful_fields if field is not None):
+            print(f"Skipping Grobid chunking for '{document.title}': No meaningful metadata extracted. Falling back to default splitters.")
+            return [], []
+
+        tei_xml = document.grobid_metadata.tei_xml
+        from grobid_client.tasks import grobid_tei_to_semantic_chunks
+        
+        final_chunks = grobid_tei_to_semantic_chunks(tei_xml, document_title=document.title)
+        
+        total_chunks = len(final_chunks)
+        for index, vec_doc in enumerate(final_chunks):
+            global_meta = document.metadata.copy() if document.metadata else {}
+            vec_doc.metadata.update(global_meta)
+            vec_doc.metadata["chunk_index"] = index
+            vec_doc.metadata["total_chunks"] = total_chunks
+            vec_doc.metadata["location_percent"] = int(((index + 1) / total_chunks) * 100) if total_chunks > 0 else 0
+            if "page_number" not in vec_doc.metadata:
+                vec_doc.metadata["page_number"] = f"{vec_doc.metadata['location_percent']}%"
+
+        chunk_ids = [str(uuid4()) for _ in range(len(final_chunks))]
+        
+        chunks_to_store = []
+        lc_docs_to_add = []
+
+        for i, (chunk, chunk_id) in enumerate(zip(final_chunks, chunk_ids)):
+            chunk.metadata[self.id_key] = chunk_id
+            chunk.metadata["filename"] = document.file.name
+            chunk.metadata["chunk_number"] = f"{str(i + 1)}/{str(len(final_chunks))}"
+            chunk.metadata["indexed_hash"] = current_scheme
+            
+            chunks_to_store.append((chunk_id, chunk))
+            lc_docs_to_add.append(LangchainDocument(page_content=chunk.page_content, metadata=chunk.metadata.copy()))
+            
+        if lc_docs_to_add:
+            self.db.add_documents(lc_docs_to_add, ids=chunk_ids)
+            self.store.mset(chunks_to_store)
+            self.hashes_indexed[current_scheme] = chunk_ids
+            
+        return final_chunks, chunk_ids
+
+    def complete_reading(self, reading_strategy: DjangoReadingStrategy|PromptStrategy|RegexStrategy| AbbreviationsReadingStrategy|GrobidReadingStrategy):
         # Polymorphic call to the consolidated strategy method
         reading_strategy.apply_strategy(self)
 
@@ -492,6 +559,7 @@ class RAGService:
             self.ingest_queryset_reading_strategies(document.promptstrategy_set.all())
             self.ingest_queryset_reading_strategies(document.regexstrategy_set.all())
             self.ingest_queryset_reading_strategies(document.abbreviationsreadingstrategy_set.all())
+            self.ingest_queryset_reading_strategies(document.grobidreadingstrategy_set.all())
 
         self.db.save_local(self.vector_store_path)
 

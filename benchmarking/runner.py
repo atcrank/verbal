@@ -1,5 +1,6 @@
 import time
 import os
+import re
 import shutil
 import tempfile
 import numpy as np
@@ -69,6 +70,175 @@ def evaluate_metric(ai_service, prompt_template, num_sequences=5, **kwargs):
         return -1.0, 0.0
 
 
+def _switch_active_model(experiment, log_callback):
+    """Switches the globally active AI model if the experiment demands it."""
+    if not experiment.selected_model:
+        return
+        
+    current_model_id = getattr(service_registry.ai_service, 'model_id', None)
+    target_model_id = experiment.selected_model.hf_model_id
+    
+    if current_model_id != target_model_id:
+        log_callback(f"⚠️ Switching AI Model to {experiment.selected_model.name}...")
+        from llm_api.models import LocalAIModel
+        LocalAIModel.objects.update(is_system_active=False)
+        experiment.selected_model.is_system_active = True
+        experiment.selected_model.save()
+        service_registry.reload_ai_service()
+        log_callback(f"✅ Model switched to {target_model_id}")
+
+
+def _ingest_test_corpus(corpus, rag_service, rag_strategy, chunk_size_override, chunk_overlap_override, log_callback):
+    """Handles the temporary RAG ingestion isolated by strategy."""
+    if rag_strategy == 'none':
+        log_callback("Skipping RAG ingestion because rag_strategy is set to 'none'.")
+        return
+
+    log_callback(f"Ingesting {corpus.documents.count()} documents from corpus '{corpus.name}'...")
+    for doc in corpus.documents.all():
+        strategies = []
+
+        if rag_strategy in ['all', 'default', 'basic']:
+            strategies += list(doc.readingstrategy_set.all())
+        if rag_strategy in ['all', 'grobid', 'semantic']:
+            strategies += list(doc.grobidreadingstrategy_set.all())
+        if rag_strategy in ['all', 'prompt']:
+            strategies += list(doc.promptstrategy_set.all())
+        if rag_strategy in ['all', 'regex']:
+            strategies += list(doc.regexstrategy_set.all())
+        if rag_strategy in ['all', 'abbreviations']:
+            strategies += list(doc.abbreviationsreadingstrategy_set.all())
+
+        if not strategies:
+            if chunk_size_override:
+                log_callback(f"  - Default Ingestion (Override size: {chunk_size_override})")
+            rag_service.convert_chunk_store_document(
+                doc, chunk_size=chunk_size_override, chunk_overlap=chunk_overlap_override
+            )
+        else:
+            base_chunks, _ = rag_service.convert_chunk_store_document(
+                doc, chunk_size=chunk_size_override, chunk_overlap=chunk_overlap_override
+            )
+
+            for strategy in strategies:
+                if chunk_size_override:
+                    strategy.chunk_size_override = chunk_size_override
+                if chunk_overlap_override:
+                    strategy.chunk_overlap_override = chunk_overlap_override
+
+                with transaction.atomic():
+                    strategy.apply_strategy(rag_service, force=True, source_chunks=base_chunks)
+                    transaction.set_rollback(True)
+
+    rag_service.save_db()
+
+
+def _clean_synthetic_question(question: str) -> str:
+    """Strips RAG-killing fluff from synthetically generated questions."""
+    return re.sub(
+        r'^(according to the (text|document|passage|article|excerpt)|based on the (text|document|passage|article|excerpt))[,:]?\s*',
+        '', question, flags=re.IGNORECASE
+    )
+
+
+def _calculate_semantic_similarity(embeddings, generated_text: str, ideal_answer: str) -> float:
+    """Calculates cosine similarity between two text strings using the RAG embedding model."""
+    if not ideal_answer:
+        return 0.0
+    vec_gen = embeddings.embed_query(generated_text)
+    vec_ideal = embeddings.embed_query(ideal_answer)
+    dot = np.dot(vec_gen, vec_ideal)
+    norm_g = np.linalg.norm(vec_gen)
+    norm_i = np.linalg.norm(vec_ideal)
+    if norm_g > 0 and norm_i > 0:
+        return float(dot / (norm_g * norm_i))
+    return 0.0
+
+
+def _evaluate_llm_metrics(ai_service, rag_strategy, rag_text_block, question, cleaned_response):
+    """Runs LLM-as-a-judge for Faithfulness and Relevance metrics."""
+    faith_score = -1.0
+    faith_success = 0.0
+    
+    if rag_strategy != 'none':
+        faith_prompt = """
+        You are a strict judge. Evaluate if the ANSWER is derived ONLY from the CONTEXT. 
+        Score 1 to 5. 
+        Score 5 for an answer supported entirely by the context, down to 1 if the model has answered without reference to the context. MAXIMUM SCORE IS 5.
+        CONTEXT: {context}
+        ANSWER: {answer}
+        """
+        faith_score, faith_success = evaluate_metric(
+            ai_service, faith_prompt, 
+            context=rag_text_block[:2000], answer=cleaned_response
+        )
+
+    rel_prompt = """
+    You are a strict judge. Evaluate if the ANSWER directly addresses the QUESTION.
+    Score 1 to 5.
+    Score 5 for an answer very specific to the question, down to 1 if the model has not answered the question correctly. MAXIMUM SCORE IS 5.
+    QUESTION: {question}
+    ANSWER: {answer}
+    """
+    rel_score, rel_success = evaluate_metric(
+        ai_service, rel_prompt, 
+        question=question, answer=cleaned_response
+    )
+    
+    return faith_score, faith_success, rel_score, rel_success
+
+
+def _generate_candidate_responses(ai_service, experiment, scenario, rag_text_block):
+    """Routes the generation step to the requested target (Direct, Blueprint, Grips)."""
+    config = experiment.configuration or {}
+    generation_target = config.get('generation_target', 'direct').lower()
+    iterations = experiment.iterations
+    
+    raw_responses = []
+
+    if generation_target == 'blueprint':
+        blueprint_id = config.get('blueprint_id')
+        if not blueprint_id:
+            return [f"Error: 'blueprint_id' missing in configuration."] * iterations
+        
+        from metacognition.tasks import run_blueprint
+        for _ in range(iterations):
+            # The Blueprint internally calls service_registry.rag_service.get_context().
+            # Because we patched service_registry in run_benchmark_suite, it will
+            # seamlessly query our temporary, strategy-isolated FAISS index!
+            result = run_blueprint(blueprint_id, scenario.question)
+            if "error" not in result:
+                raw_responses.append(result.get("final_response", ""))
+            else:
+                raw_responses.append(f"Blueprint Error: {result['error']}")
+
+    elif generation_target == 'grips':
+        # TODO: Integrate Grips context generation here
+        for _ in range(iterations):
+            raw_responses.append("Grips augmented generation not yet implemented.")
+
+    else:  # 'direct'
+        system_prompt = "You are a helpful assistant."
+        user_content = scenario.question
+        rag_strategy = config.get('rag_strategy', 'none').lower()
+        
+        if rag_strategy != 'none' and rag_text_block:
+            user_content += "\n\nRelevant Context:\n" + rag_text_block
+
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_content}
+        ]
+
+        raw_responses = ai_service.generate_response(
+            messages=messages,
+            max_new_tokens=300,
+            num_return_sequences=iterations
+        )
+        
+    return raw_responses
+
+
 def run_benchmark_suite(experiment, corpus, log_callback=None):
     """
     Executes a benchmark run for a given Experiment and Corpus.
@@ -77,19 +247,7 @@ def run_benchmark_suite(experiment, corpus, log_callback=None):
         def log_callback(msg): pass
 
     # 0. Context Switching (Model)
-    # If the experiment mandates a specific model, ensure it is loaded.
-    if experiment.selected_model:
-        current_model_id = getattr(service_registry.ai_service, 'model_id', None)
-        target_model_id = experiment.selected_model.hf_model_id
-        
-        if current_model_id != target_model_id:
-            log_callback(f"⚠️ Switching AI Model to {experiment.selected_model.name}...")
-            from llm_api.models import AIModel
-            AIModel.objects.update(is_active=False)
-            experiment.selected_model.is_active = True
-            experiment.selected_model.save()
-            service_registry.reload_ai_service()
-            log_callback(f"✅ Model switched to {target_model_id}")
+    _switch_active_model(experiment, log_callback)
 
     # 1. Setup Temporary RAG Environment
     temp_dir = tempfile.mkdtemp()
@@ -105,9 +263,15 @@ def run_benchmark_suite(experiment, corpus, log_callback=None):
     rag_service = RAGService(vector_store_path=temp_vector_store, chunk_store_path=temp_chunk_store)
     rag_service.load_models() # Initialize generators for PromptStrategy etc.
     ai_service = service_registry.ai_service
+    
+    # CRITICAL: Temporarily override the global RAG service so any Blueprints executed
+    # during this benchmark run hit the isolated, strategy-specific test corpus!
+    original_rag_service = service_registry._rag_service
+    service_registry._rag_service = rag_service
 
     # Capture Configuration Snapshot
     config_snapshot = experiment.configuration or {}
+    rag_strategy = config_snapshot.get('rag_strategy', config_snapshot.get('target_strategy', 'all')).lower()
     chunk_size_override = config_snapshot.get('chunk_size')
     chunk_overlap_override = config_snapshot.get('chunk_overlap')
 
@@ -119,7 +283,7 @@ def run_benchmark_suite(experiment, corpus, log_callback=None):
     config_snapshot['ai_model_id'] = getattr(ai_service, 'model_id', 'unknown')
     config_snapshot['chain_of_thought'] = getattr(ai_service, 'chain_of_thought', False)
 
-    # Update Experiment with latest config
+    # Update Experiment with the latest config
     experiment.configuration = config_snapshot
     experiment.save()
 
@@ -137,50 +301,8 @@ def run_benchmark_suite(experiment, corpus, log_callback=None):
         log_callback(f"No scenarios found for experiment '{experiment.name}'. Aborting.")
         return None
     
-    # 2. Ingest Corpus Documents into Temp Store
-    log_callback(f"Ingesting {corpus.documents.count()} documents from corpus '{corpus.name}'...")
-    
-    for doc in corpus.documents.all():
-        # Collect all strategies
-        strategies = list(doc.readingstrategy_set.all()) + \
-                     list(doc.promptstrategy_set.all()) + \
-                     list(doc.regexstrategy_set.all()) + \
-                     list(doc.abbreviationsreadingstrategy_set.all())
-        
-        # If no strategies defined, fallback to default raw ingestion
-        if not strategies:
-            if chunk_size_override:
-                log_callback(f"  - Default Ingestion (Override size: {chunk_size_override})")
-            rag_service.convert_chunk_store_document(
-                doc, 
-                chunk_size=chunk_size_override,
-                chunk_overlap=chunk_overlap_override
-            )
-        else:
-            # 1. Generate Base Chunks in Temp Store
-            # We generate them once per document to simulate the "Default Strategy"
-            # and pass them to all strategies.
-            base_chunks, _ = rag_service.convert_chunk_store_document(
-                doc,
-                chunk_size=chunk_size_override,
-                chunk_overlap=chunk_overlap_override
-            )
-            
-            for strategy in strategies:
-                # Apply overrides in memory (does not save to DB)
-                if chunk_size_override:
-                    strategy.chunk_size_override = chunk_size_override
-                if chunk_overlap_override:
-                    strategy.chunk_overlap_override = chunk_overlap_override
-                
-                # Execute strategy in isolation
-                # We use a transaction rollback to ensure the temporary Chunk records 
-                # created by apply_strategy do not persist in the main database.
-                with transaction.atomic():
-                    strategy.apply_strategy(rag_service, force=True, source_chunks=base_chunks)
-                    transaction.set_rollback(True)
-    
-    rag_service.save_db()
+    # 2. Ingest Corpus Documents into Temp Store 
+    _ingest_test_corpus(corpus, rag_service, rag_strategy, chunk_size_override, chunk_overlap_override, log_callback)
 
     try:
         # Create Run Record
@@ -209,30 +331,24 @@ def run_benchmark_suite(experiment, corpus, log_callback=None):
             start_time = time.perf_counter()
 
             # 1. Retrieval (Happens once per scenario)
-            rag_docs = rag_service.get_context(scenario.question)
-            rag_text_block = "\n\n".join([d.page_content for d in rag_docs])
-            
             # Metrics: Which strategy found these docs?
             strategy_hits = {}
-            for d in rag_docs:
-                stype = d.metadata.get('strat_type', 'Raw/Base')
-                strategy_hits[stype] = strategy_hits.get(stype, 0) + 1
+            clean_question = _clean_synthetic_question(scenario.question)
 
-            # 2. Generation (Mimic api.py logic)
-            formatted_rag = "\n\n".join(
-                [f"Source: {d.metadata.get('filename', 'Unknown')}\nContent: {d.page_content}" for d in rag_docs])
+            if rag_strategy != 'none':
+                rag_docs = rag_service.get_context(clean_question)
+                rag_text_block = "\n\n".join([d.page_content for d in rag_docs])
 
-            system_prompt = "You are a helpful assistant."
-            user_content = scenario.question + "\n\nRelevant Context:\n" + formatted_rag
+                # Metrics: Which strategy found these docs?
+                for d in rag_docs:
+                    stype = d.metadata.get('strat_type', 'Raw/Base')
+                    strategy_hits[stype] = strategy_hits.get(stype, 0) + 1
+            else:
+                rag_docs = []
+                rag_text_block = ""
 
-            messages = [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_content}
-            ]
-
-            raw_responses = ai_service.generate_response(messages=messages,
-                                                        max_new_tokens=300,
-                                                        num_return_sequences=experiment.iterations)
+            # 2. Generation
+            raw_responses = _generate_candidate_responses(ai_service, experiment, scenario, rag_text_block)
 
             # --- B. Scoring (RAG) ---
             # RAG Recall is calculated once per scenario since retrieval is constant
@@ -241,43 +357,26 @@ def run_benchmark_suite(experiment, corpus, log_callback=None):
             total_rag += rag_score
 
             for raw_response in raw_responses:
-                cleaned_response = ai_service.clean_response(raw_response)
+                generation_target = config_snapshot.get('generation_target', 'direct').lower()
+                if generation_target == 'direct':
+                    cleaned_response = ai_service.clean_response(raw_response)
+                else:
+                    # Blueprints output formatted strings; cleaning them strips necessary structure
+                    cleaned_response = raw_response
+                    
                 duration = time.perf_counter() - start_time
 
                 # --- C. Scoring (Semantic) ---
-                sem_score = 0.0
-                if scenario.ideal_answer:
-                    vec_gen = rag_service.embeddings.embed_query(cleaned_response)
-                    vec_ideal = rag_service.embeddings.embed_query(scenario.ideal_answer)
-                    dot = np.dot(vec_gen, vec_ideal)
-                    norm_g = np.linalg.norm(vec_gen)
-                    norm_i = np.linalg.norm(vec_ideal)
-                    if norm_g > 0 and norm_i > 0:
-                        sem_score = dot / (norm_g * norm_i)
+                sem_score = _calculate_semantic_similarity(rag_service.embeddings, cleaned_response, scenario.ideal_answer)
 
                 # --- D. Scoring (LLM-as-a-Judge) ---
-                # Faithfulness: Is the answer derived from the context?
-                faith_prompt = """
-                You are a strict judge. Evaluate if the ANSWER is derived ONLY from the CONTEXT. 
-                Score 1 to 5. 
-                Score 5 for an answer supported entirely by the context, down to 1 if the model has answered without reference to the context. MAXIMUM SCORE IS 5.
-                CONTEXT: {context}
-                ANSWER: {answer}
-                """
-                faith_score, faith_success = evaluate_metric(ai_service, faith_prompt, context=rag_text_block[:2000], answer=cleaned_response)
+                faith_score, faith_success, rel_score, rel_success = _evaluate_llm_metrics(
+                    ai_service, rag_strategy, rag_text_block, scenario.question, cleaned_response
+                )
+                
                 if faith_score != -1.0:
                     total_faith += faith_score
                     valid_faith_count += 1
-
-                # Relevance: Does the answer address the question?
-                rel_prompt = """
-                You are a strict judge. Evaluate if the ANSWER directly addresses the QUESTION.
-                Score 1 to 5.
-                Score 5 for an answer very specific to the question, down to 1 if the model has not answered the question correctly. MAXIMUM SCORE IS 5.
-                QUESTION: {question}
-                ANSWER: {answer}
-                """
-                rel_score, rel_success = evaluate_metric(ai_service, rel_prompt, question=scenario.question, answer=cleaned_response)
                 if rel_score != -1.0:
                     total_rel += rel_score
                     valid_rel_count += 1
@@ -290,7 +389,7 @@ def run_benchmark_suite(experiment, corpus, log_callback=None):
                 BenchmarkResult.objects.create(
                     run=run_record,
                     scenario=scenario,
-                    prompt_text=user_content,
+                    prompt_text=clean_question,
                     raw_retrieved_text=rag_text_block,
                     generated_response=cleaned_response,
                     duration_seconds=duration,
@@ -327,5 +426,7 @@ def run_benchmark_suite(experiment, corpus, log_callback=None):
         return run_record
 
     finally:
+        # Restore the global RAG service
+        service_registry._rag_service = original_rag_service
         # Cleanup Temp Directory
         shutil.rmtree(temp_dir)

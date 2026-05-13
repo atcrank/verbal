@@ -1,6 +1,7 @@
 from django.db import models
 from background_resources.models import Document, RAGChunk
 from llm_api.models import LocalAIModel, ExternalAIModel
+from django.utils.safestring import mark_safe
 import itertools
 
 
@@ -74,6 +75,17 @@ class Investigation(models.Model):
             experiments.append(exp)
         return experiments
 
+CONFIG_HELP_TEXT = mark_safe(
+    "Settings JSON. Valid options:<br>"
+    "<ul style='margin-left: 20px;'>"
+    "<li><b>rag_strategy</b>: 'none', 'default', 'grobid', 'prompt', 'regex', 'abbreviations', 'all'</li>"
+    "<li><b>chunk_size</b>: int (e.g., 1000)</li>"
+    "<li><b>chunk_overlap</b>: int (e.g., 200)</li>"
+    "<li><b>generation_target</b>: 'direct', 'blueprint', 'grips'</li>"
+    "<li><b>blueprint_id</b>: int (Required for 'blueprint' target)</li>"
+    "</ul>"
+)
+
 class Experiment(models.Model):
     """Defines the configuration being tested (The 'A' or 'B')."""
     investigation = models.ForeignKey(Investigation, on_delete=models.CASCADE, related_name='experiments', null=True, blank=True)
@@ -83,13 +95,48 @@ class Experiment(models.Model):
     scenario_group = models.ForeignKey(ScenarioGroup, on_delete=models.CASCADE, blank=True, null=True)
     selected_model = models.ForeignKey(LocalAIModel, on_delete=models.SET_NULL, null=True, blank=True, help_text="Specific AI Model to use for this experiment.")
     # We store config as JSON so we can track chunk_sizes, prompts, models, etc.
-    configuration = models.JSONField(default=dict, blank=True,
-                                     help_text="Snapshot of settings: {'chunk_size': 500, 'model': 'gpt-4'}")
+    configuration = models.JSONField(default=dict, blank=True, help_text=CONFIG_HELP_TEXT)
     iterations = models.IntegerField(default=1, help_text="Number of times to run each scenario in the experiment.")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.name
+
+    def generate_comprehensive_matrix(self):
+        """
+        Constructor that uses this Experiment as a template to generate a full suite 
+        of valid RAG options and chunk sizes for A/B testing.
+        """
+        if not self.investigation:
+            inv = Investigation.objects.create(name=f"Matrix based on {self.name}")
+            self.investigation = inv
+            self.save()
+            
+        base_config = self.configuration.copy()
+        # Remove keys we are about to grid-search to prevent collisions
+        base_config.pop("rag_strategy", None)
+        base_config.pop("chunk_size", None)
+        
+        param_grid = {
+            "rag_strategy": ["none", "default", "grobid", "regex", "abbreviations", "prompt", "all"],
+            "chunk_size": [500, 1000, 2000]
+        }
+        
+        experiments = self.investigation.create_grid_experiments(
+            base_name=f"Matrix ({self.name})",
+            corpus=self.corpus,
+            scenario_group=self.scenario_group,
+            base_config=base_config,
+            param_grid=param_grid
+        )
+        
+        # Ensure all generated experiments inherit the selected model and iterations
+        for exp in experiments:
+            exp.selected_model = self.selected_model
+            exp.iterations = self.iterations
+            exp.save()
+            
+        return experiments
 
 
 class BenchmarkRun(models.Model):

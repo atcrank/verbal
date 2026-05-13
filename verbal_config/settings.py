@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "llm_api.apps.LlmApiConfig",
     "metacognition.apps.MetacognitionConfig",
     'grips.apps.GripsConfig',
+    'grobid_client.apps.GrobidClientConfig',
 ]
 
 MIDDLEWARE = [
