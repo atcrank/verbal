@@ -213,9 +213,27 @@ def _generate_candidate_responses(ai_service, experiment, scenario, rag_text_blo
                 raw_responses.append(f"Blueprint Error: {result['error']}")
 
     elif generation_target == 'grips':
-        # TODO: Integrate Grips context generation here
+        system_prompt = "You are a domain expert. Answer strictly from the authoritative sources in the Domain Knowledge Graph."
+        user_content = scenario.question
+        
+        grips_service = service_registry.grips_service
+        domain_id = config.get("domain_id")
+        
+        # Fetch highly curated wiki concepts instead of raw document chunks
+        grips_docs = grips_service.get_grips_context(scenario.question, domain_id=domain_id, k=3)
+        
+        if grips_docs:
+            grips_context = "\n\n".join([f"Concept [{d.metadata.get('title')}]:\n{d.page_content}" for d in grips_docs])
+            user_content += "\n\nDomain Knowledge Graph:\n" + grips_context
+            
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_content}
+        ]
+        
         for _ in range(iterations):
-            raw_responses.append("Grips augmented generation not yet implemented.")
+            [response] = ai_service.generate_response(messages=messages, max_new_tokens=300, num_return_sequences=1)
+            raw_responses.append(response)
 
     else:  # 'direct'
         system_prompt = "You are a helpful assistant."

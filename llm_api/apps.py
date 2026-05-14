@@ -15,6 +15,7 @@ class LazyServiceRegistry:
         self._ai_service = None
         self._nlp_service = None
         self._rag_service = None
+        self._grips_service = None
 
     def _should_skip_loading(self):
         if len(sys.argv) > 1:
@@ -65,6 +66,21 @@ class LazyServiceRegistry:
                     rag_serv.load_models()
                     self._rag_service = rag_serv
         return self._rag_service
+
+    @property
+    def grips_service(self):
+        if self._should_skip_loading():
+            return None
+        
+        if self._grips_service is None:
+            with self._lock:
+                if self._grips_service is None:
+                    print("Initializing Grips Service...")
+                    from grips.services import GripsService
+                    grips_serv = GripsService()
+                    grips_serv.load_models()
+                    self._grips_service = grips_serv
+        return self._grips_service
 
     def reload_ai_service(self):
         """
