@@ -1,20 +1,23 @@
-from celery import shared_task
+import re
+from typing import List, Literal
+from django.utils import timezone
+from celery import shared_task, chord
+from pydantic import BaseModel, Field, field_validator
+
 from llm_api.apps import service_registry
 from background_resources.models import Document, RAGChunk
-from .models import ConceptNode, Domain
-from pydantic import BaseModel, Field, field_validator
-from typing import List
+from .models import ConceptNode, Domain, KnowledgeEdge
 
 
 class StructuredClaim(BaseModel):
+    predicate: Literal['DEPENDS_ON', 'INCLUDES', 'EXEMPLIFIES', 'RELATED_TO'] = Field(description="The relationship type (e.g. INCLUDES for part-whole, DEPENDS_ON for causal/prerequisite).")
     subject: str
-    predicate: str
     object: str
 
 class ConceptDraft(BaseModel):
     thought_process: str = Field(description="Think step-by-step to plan the entry. Identify and resolve ambiguities based on the title and focus hint.")
     narrative: str = Field(description="The dense, Markdown-formatted explanation unifying the concept.")
-    claims: List[StructuredClaim] = Field(description="Atomic, symbolically computable facts derived from the narrative.")
+    claims: List[StructuredClaim] = Field(description="Atomic facts using strict relational predicates.")
 
     @field_validator('narrative', mode='before')
     @classmethod
@@ -79,7 +82,7 @@ def generate_concept_narrative(self, concept_id: int):
        - Ensure proper use of Markdown headings (##, ###).
        - Stop generating when the topic is fully covered. Do not append simulated user prompts.
     3. Extract 3 to 5 definitive, atomic facts from your narrative into the `claims` list. 
-       - Example Claim: {{"subject": "Fire Engine", "predicate": "is used for", "object": "Vehicle Rescue"}}
+       - Example Claim: {{"predicate": "INCLUDES", "subject": "Fire Engine", "object": "Water Pump"}}
     """
 
     # 4. Generate the content.
@@ -110,21 +113,13 @@ def generate_concept_narrative(self, concept_id: int):
 
     return f"Successfully generated narrative for '{node.title}'."
 
-    # --- NEW CORPUS DIGESTION & LINTING PIPELINES ---
-
-
-from typing import List
-from pydantic import BaseModel, Field
-from background_resources.models import Document
-from django.utils import timezone
-from .models import KnowledgeEdge
-import re
-
+# --- NEW CORPUS DIGESTION & LINTING PIPELINES ---
 
 class SubConcept(BaseModel):
     title: str = Field(description="Name of the concept")
     focus_hint: str = Field(description="Context or intent for this concept")
     summary: str = Field(description="A brief summary of what the document says about this concept")
+    claims: List[StructuredClaim] = Field(default_factory=list, description="Structured claims relating this concept to others.")
 
 
 class DocumentDigest(BaseModel):
@@ -135,86 +130,94 @@ class BatchConceptExtraction(BaseModel):
     concept_nodes: List[SubConcept] = Field(description="Distinct concepts identified in this section of the document")
 
 
-@shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=True, retry_kwargs={'max_retries': 3})
-def task_digest_corpus_level_1(self, domain_id: int, document_id: int):
-    """Level 1: Overall summary for a document with concept nodes (Extended TOC)."""
+class ConceptRelationshipEvaluation(BaseModel):
+    reasoning: str = Field(description="Analyze the relationship between the two concepts.")
+    relationship_action: Literal["MERGE", "EDGE", "DISTINCT"] = Field(
+        description="MERGE if they describe the exact same core concept. EDGE if they are related but distinct. DISTINCT if unrelated."
+    )
+    edge_predicate: Literal['DEPENDS_ON', 'INCLUDES', 'EXEMPLIFIES', 'RELATED_TO'] = Field(
+        default="RELATED_TO", description="If EDGE, choose the relationship predicate."
+    )
+
+
+class UnifiedConceptDraft(BaseModel):
+    title: str = Field(description="Domain-level title for the unified concept.")
+    narrative: str = Field(
+        description="Unified encyclopedic explanation. MUST cite the source nodes using [[slug]] syntax.")
+    claims: List[StructuredClaim] = Field(default_factory=list,
+                                          description="Structured claims for the unified concept.")
+
+
+@shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=True, retry_kwargs={'max_retries': 2})
+def task_digest_corpus_level_1_batch(self, domain_name: str, doc_title: str, batch_text: str, is_first_batch: bool):
+    """MAP TASK: Processes a single batch of chunks. Runs independently in the queue."""
+    ai_service = service_registry.ai_service
+
+    if is_first_batch:
+        prompt = f"""
+         You are an expert ontologist and systems analyst. Digest the following opening section of a document into the domain of '{domain_name}'.
+         Provide an overall summary of the document based on this introduction, and extract its key concepts into a clear summary and explanation.
+
+         Document Title: {doc_title}
+
+         Content Section:
+         {batch_text}
+         """
+        result = ai_service.generate_outline(
+            messages=[{"role": "user", "content": prompt}],
+            response_schema=DocumentDigest,
+            max_new_tokens=2500
+        )
+        if isinstance(result, dict):
+            if "error" in result:
+                raise ValueError(f"Generation failed: {result['details']}")
+            return result  # Return raw dict for celery serialization
+        elif isinstance(result, str):
+            return DocumentDigest.model_validate_json(result).model_dump()
+        return result.model_dump()
+
+    else:
+        prompt = f"""
+         You are an expert ontologist. Extract the key concepts from this section of the document into the domain of '{domain_name}'.
+
+         Document Title: {doc_title}
+
+         Content Section:
+         {batch_text}
+         """
+        result = ai_service.generate_outline(
+            messages=[{"role": "user", "content": prompt}],
+            response_schema=BatchConceptExtraction,
+            max_new_tokens=1500
+        )
+        if isinstance(result, dict):
+            if "error" in result:
+                raise ValueError(f"Generation failed: {result['details']}")
+            return result
+        elif isinstance(result, str):
+            return BatchConceptExtraction.model_validate_json(result).model_dump()
+        return result.model_dump()
+
+
+@shared_task
+def task_digest_corpus_level_1_finalize(batch_results: List[dict], domain_id: int, document_id: int):
+    """REDUCE TASK: Gathers all out-of-order batch results and writes them to the DB."""
     try:
         domain = Domain.objects.get(id=domain_id)
         doc = Document.objects.get(id=document_id)
     except Exception as e:
         return f"Error loading domain/doc: {e}"
 
-    ai_service = service_registry.ai_service
-    rag_service = service_registry.rag_service
-
-    # Retrieve chunks (grab first ~15 chunks for the high-level digest to avoid token bloat)
-
-    chunks, existing_ids = rag_service.convert_chunk_store_document(doc)
-    print("existing_ids")
-
-    if not chunks and existing_ids:
-        chunks = RAGChunk.objects.filter(chunk_id__in=existing_ids)
-    
-    if not chunks:
-        return f"No chunks could be made or found for document {doc.title}"
-
-    batch_size = 15
     all_sub_concepts = []
     overall_summary = "No summary generated."
-    
-    print(f"Starting iterative Map-Reduce digest for '{doc.title}' ({len(chunks)} chunks)...")
+    new_node_ids = []
 
-    for i in range(0, len(chunks), batch_size):
-        batch_chunks = chunks[i:i + batch_size]
-        batch_text = "\n\n".join([c.page_content if hasattr(c, 'page_content') else c.text_content for c in batch_chunks])
-        
-        if i == 0:
-            # First Batch: Get the overall summary AND the first set of concepts
-            prompt = f"""
-            You are an expert ontologist and systems analyst. Digest the following opening section of a document into the domain of '{domain.name}'.
-            Provide an overall summary of the document based on this introduction, and extract its key concepts into a clear summary and explanation.
-            
-            Document Title: {doc.title}
-            
-            Content Section:
-            {batch_text}
-            """
-            result = ai_service.generate_outline(
-                messages=[{"role": "user", "content": prompt}],
-                response_schema=DocumentDigest,
-                max_new_tokens=2500
-            )
-            if isinstance(result, dict):
-                if "error" in result:
-                    overall_summary = f"Summary generation failed: {result['details']}"
-                    continue
-                result = DocumentDigest.model_validate(result)
-            elif isinstance(result, str):
-                result = DocumentDigest.model_validate_json(result)
-                
-            overall_summary = result.overall_summary
-            all_sub_concepts.extend(result.concept_nodes)
-            
-        else:
-            # Subsequent Batches: Only extract sub-concepts to save time/tokens
-            prompt = f"""
-            You are an expert ontologist. Extract the key concepts from this section of the document into the domain of '{domain.name}'.
-            
-            Document Title: {doc.title}
-            
-            Content Section:
-            {batch_text}
-            """
-            result = ai_service.generate_outline(messages=[{"role": "user", "content": prompt}], response_schema=BatchConceptExtraction, max_new_tokens=1500)
-            if isinstance(result, dict):
-                if "error" in result:
-                    print(f"Batch extraction failed: {result['details']}")
-                    continue
-                result = BatchConceptExtraction.model_validate(result)
-            elif isinstance(result, str):
-                result = BatchConceptExtraction.model_validate_json(result)
-                
-            all_sub_concepts.extend(result.concept_nodes)
+    # Reconstruct data from the mapped results
+    for result in batch_results:
+        if "overall_summary" in result:
+            overall_summary = result["overall_summary"]
+        if "concept_nodes" in result:
+            all_sub_concepts.extend(result["concept_nodes"])
 
     safe_title = re.sub(r'[^a-zA-Z0-9]', '-', doc.title.lower())[:50]
     root_node, _ = ConceptNode.objects.get_or_create(
@@ -227,17 +230,26 @@ def task_digest_corpus_level_1(self, domain_id: int, document_id: int):
             "needs_linting": True
         }
     )
-    print("Document concept_node created.")
 
-    for idx, concept in enumerate(all_sub_concepts):
-        safe_concept = re.sub(r'[^a-zA-Z0-9]', '-', concept.title.lower())[:50]
+    service_registry.grips_service.index_concept_node(root_node)
+    new_node_ids.append(root_node.id)
+
+    for idx, concept_dict in enumerate(all_sub_concepts):
+        # Parse dicts back into our schema logic if needed
+        title = concept_dict.get('title', 'Unknown')
+        focus_hint = concept_dict.get('focus_hint', '')
+        summary = concept_dict.get('summary', '')
+        claims = concept_dict.get('claims', [])
+
+        safe_concept = re.sub(r'[^a-zA-Z0-9]', '-', title.lower())[:50]
         child_node, _ = ConceptNode.objects.get_or_create(
             domain=domain,
             slug=f"doc-{doc.id}-c{idx}-{safe_concept}",
             defaults={
-                "title": concept.title,
-                "focus_hint": f"From Doc: {doc.title[:50]} - {concept.focus_hint}",
-                "narrative_content": concept.summary,
+                "title": title,
+                "focus_hint": f"From Doc: {doc.title[:50]} - {focus_hint}",
+                "narrative_content": summary,
+                "structured_claims": claims,
                 "needs_linting": True
             }
         )
@@ -247,9 +259,66 @@ def task_digest_corpus_level_1(self, domain_id: int, document_id: int):
             relationship_type='INCLUDES',
             defaults={"justification": "Level 1 Extended TOC Extraction"}
         )
-        print("created and linked sub-concepts.")
 
-    return f"Level 1 Digest complete for {domain.name}"
+        service_registry.grips_service.index_concept_node(child_node)
+        new_node_ids.append(child_node.id)
+
+    # Immediately trigger incremental consolidation for these new concepts
+    task_digest_corpus_level_2.delay(domain.id, new_node_ids)
+
+    return f"Level 1 Digest complete for {domain.name} / {doc.title}"
+
+
+@shared_task
+def task_digest_corpus_level_1(domain_id: int, document_id: int):
+    """MASTER TASK: Sets up the Map-Reduce chord for processing a document."""
+    try:
+        domain = Domain.objects.get(id=domain_id)
+        doc = Document.objects.get(id=document_id)
+    except Exception as e:
+        return f"Error loading domain/doc: {e}"
+
+    rag_service = service_registry.rag_service
+
+    chunks = []
+    existing_ids = []
+    if hasattr(doc, 'grobid_metadata') and doc.grobid_metadata and doc.grobid_metadata.tei_xml:
+        try:
+            chunks, existing_ids = rag_service.convert_chunk_store_document_grobid(doc)
+        except Exception as e:
+            print(f"Skipping Grobid chunking: {e}")
+
+    if not chunks and not existing_ids:
+        chunks, existing_ids = rag_service.convert_chunk_store_document(doc)
+
+        if not chunks and existing_ids:
+            chunks = rag_service.store.mget(existing_ids)
+            chunks = [c for c in chunks if c]
+
+        if not chunks:
+            return f"No chunks could be made or found for document {doc.title}"
+
+        batch_size = 15
+        batch_signatures = []
+
+        for i in range(0, len(chunks), batch_size):
+            batch_chunks = chunks[i:i + batch_size]
+            batch_text = "\n\n".join(
+                [c.page_content if hasattr(c, 'page_content') else c.text_content for c in batch_chunks])
+            is_first = (i == 0)
+
+            # Create a Celery Signature for the Map task
+            batch_signatures.append(
+                task_digest_corpus_level_1_batch.s(domain.name, doc.title, batch_text, is_first)
+            )
+
+        # Trigger the Map-Reduce Chord
+        # Executes all batch signatures independently, then passes results to finalize
+        chord(batch_signatures)(task_digest_corpus_level_1_finalize.s(domain_id, document_id))
+
+        return f"Map-Reduce Chord queued for {doc.title} ({len(batch_signatures)} batches)."
+        
+        
 
 
 class LintingReportSchema(BaseModel):
@@ -299,13 +368,176 @@ def task_lint_concept_node(self, node_id: int):
     return f"Linted '{node.title}': Valid={result.is_valid}"
 
 
-@shared_task
-def task_digest_corpus_level_2(domain_id: int):
-    # Placeholder for Level 2: Consolidate related ConceptNodes
-    # 1. Fetch all Level 1 nodes in the domain
-    # 2. Use LLM to group semantic duplicates
-    # 3. Merge narratives and update KnowledgeEdges
-    return "Level 2 Digest stub executed."
+@shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=True, retry_kwargs={'max_retries': 2})
+def task_digest_corpus_level_2(self, domain_id: int, new_node_ids: List[int] = None):
+    """
+    Level 2 Incremental Consolidation.
+    Finds semantic neighbors for newly ingested nodes and asks the LLM:
+    Are these identical (Merge), related (KnowledgeEdge), or distinct?
+    """
+    if not new_node_ids:
+        return "No new nodes to consolidate."
+
+    grips_service = service_registry.grips_service
+    ai_service = service_registry.ai_service
+
+    try:
+        domain = Domain.objects.get(id=domain_id)
+    except Domain.DoesNotExist:
+        return "Domain not found."
+
+    actions_taken = []
+
+    for node_id in new_node_ids:
+        try:
+            new_node = ConceptNode.objects.get(id=node_id)
+        except ConceptNode.DoesNotExist:
+            continue
+
+        # 1. Find neighbors in the FAISS index
+        search_text = f"Title: {new_node.title}\nContext: {new_node.focus_hint}\nNarrative: {new_node.narrative_content}"
+        neighbors_docs = grips_service.get_grips_context(search_text, domain_id=domain_id, k=4)
+
+        neighbor_ids = []
+        for d in neighbors_docs:
+            cid = d.metadata.get("concept_id")
+            if cid and cid != new_node.id and cid not in neighbor_ids:
+                neighbor_ids.append(cid)
+
+        for neighbor_id in neighbor_ids[:3]:
+            try:
+                neighbor_node = ConceptNode.objects.get(id=neighbor_id)
+            except ConceptNode.DoesNotExist:
+                continue
+
+            # Skip if an edge already exists between these two concepts
+            if KnowledgeEdge.objects.filter(source=new_node, target=neighbor_node).exists() or \
+                    KnowledgeEdge.objects.filter(source=neighbor_node, target=new_node).exists():
+                continue
+
+            # 2. Evaluate relationship
+            prompt = f"""
+                You are a Knowledge Graph Architect for the domain '{domain.name}'.
+                Evaluate the relationship between Concept A and Concept B.
+
+                Concept A (Slug: {new_node.slug}):
+                Title: {new_node.title}
+                Narrative: {new_node.narrative_content}
+
+                Concept B (Slug: {neighbor_node.slug}):
+                Title: {neighbor_node.title}
+                Narrative: {neighbor_node.narrative_content}
+
+                Do these represent the EXACT SAME overarching domain concept (MERGE)? 
+                Are they related but distinct (EDGE)? 
+                Or are they completely unrelated (DISTINCT)?
+                """
+
+            result = ai_service.generate_outline(
+                messages=[{"role": "user", "content": prompt}],
+                response_schema=ConceptRelationshipEvaluation,
+                max_new_tokens=1000
+            )
+
+            eval_obj = None
+            if isinstance(result, dict) and "error" not in result:
+                eval_obj = ConceptRelationshipEvaluation.model_validate(result)
+            elif isinstance(result, str):
+                try:
+                    eval_obj = ConceptRelationshipEvaluation.model_validate_json(result)
+                except Exception:
+                    continue
+            elif hasattr(result, 'relationship_action'):
+                eval_obj = result
+
+            if not eval_obj:
+                continue
+
+            # 3. Execute Graph Mutations
+            if eval_obj.relationship_action == "MERGE":
+                # Generate a unified, domain-level node
+                unify_prompt = f"""
+                 You are a domain expert unifying two related sub-concepts into a single, comprehensive Master Concept for the domain '{domain.name}'.
+                 Write a unified narrative that combines the details of both.
+                 CRITICAL: You MUST explicitly cite the original concepts inline using their exact slugs.
+                 For example: "Water hammer occurs when valves close quickly [[{new_node.slug}]], which damages pipes [[{neighbor_node.slug}]]."
+
+                 Concept 1 (Slug: {new_node.slug}):
+                 Title: {new_node.title}
+                 Narrative: {new_node.narrative_content}
+
+                 Concept 2 (Slug: {neighbor_node.slug}):
+                 Title: {neighbor_node.title}
+                 Narrative: {neighbor_node.narrative_content}
+                 """
+
+                uni_result = ai_service.generate_outline(
+                    messages=[{"role": "user", "content": unify_prompt}],
+                    response_schema=UnifiedConceptDraft,
+                    max_new_tokens=2000
+                )
+
+                uni_obj = None
+                if isinstance(uni_result, dict) and "error" not in uni_result:
+                    uni_obj = UnifiedConceptDraft.model_validate(uni_result)
+                elif isinstance(uni_result, str):
+                    try:
+                        uni_obj = UnifiedConceptDraft.model_validate_json(uni_result)
+                    except Exception:
+                        continue
+                elif hasattr(uni_result, 'narrative'):
+                    uni_obj = uni_result
+
+                if not uni_obj:
+                    continue
+
+                safe_title = re.sub(r'[^a-zA-Z0-9]', '-', uni_obj.title.lower())[:50]
+                unified_slug = f"unified-{new_node.id}-{safe_title}"
+
+                master_node, created = ConceptNode.objects.get_or_create(
+                    domain=domain,
+                    slug=unified_slug,
+                    defaults={
+                        "title": uni_obj.title,
+                        "focus_hint": "Domain-level consolidated concept",
+                        "narrative_content": uni_obj.narrative,
+                        "structured_claims": [claim.model_dump() for claim in uni_obj.claims],
+                        "needs_linting": True
+                    }
+                )
+
+                if not created:
+                    master_node.narrative_content += f"\n\nAdditional synthesis:\n{uni_obj.narrative}"
+                    master_node.needs_linting = True
+                    master_node.save()
+
+                # Create EXEMPLIFIES edges to establish that the Level 1 nodes are examples/sources of the Master node
+                KnowledgeEdge.objects.get_or_create(source=new_node, target=master_node,
+                                                    relationship_type='EXEMPLIFIES',
+                                                    defaults={"justification": "Merged into unified concept."})
+                KnowledgeEdge.objects.get_or_create(source=neighbor_node, target=master_node,
+                                                    relationship_type='EXEMPLIFIES',
+                                                    defaults={"justification": "Merged into unified concept."})
+
+                grips_service.index_concept_node(master_node)
+                actions_taken.append(f"Merged '{new_node.title}' & '{neighbor_node.title}' -> '{master_node.title}'")
+
+                # Break to avoid merging the exact same new_node into multiple redundant master nodes in one pass
+                break
+
+            elif eval_obj.relationship_action == "EDGE":
+                pred = eval_obj.edge_predicate if eval_obj.edge_predicate else "RELATED_TO"
+                KnowledgeEdge.objects.get_or_create(
+                    source=new_node,
+                    target=neighbor_node,
+                    relationship_type=pred,
+                    defaults={"justification": eval_obj.reasoning[:500]}
+                )
+                actions_taken.append(f"Edge: '{new_node.title}' [{pred}] '{neighbor_node.title}'")
+
+    summary = f"Level 2 Complete. Actions: {len(actions_taken)}. " + " | ".join(actions_taken[:5])
+    print(summary)
+    return summary
 
 
 @shared_task
