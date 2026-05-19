@@ -1,0 +1,1134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Quasi-Experimental Designs for Causal Inference</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher/>
+				<availability status="unknown"><licence/></availability>
+				<date type="published" when="2018-08-10">2018 August 10.</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author role="corresp">
+							<persName><forename type="first">Yongnam</forename><surname>Kim</surname></persName>
+							<email>yongnam.kim@wisc.edu</email>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Educational Psychology</orgName>
+								<orgName type="institution">University of Wisconsin-Madison</orgName>
+							</affiliation>
+							<affiliation key="aff1">
+								<orgName type="department">Department of Educational Psychology</orgName>
+								<orgName type="institution">University of Wisconsin-Madison</orgName>
+								<address>
+									<addrLine>859 Education Sciences, 1025 W Johnson Street</addrLine>
+									<postCode>53706-1796</postCode>
+									<settlement>Madison</settlement>
+									<region>WI</region>
+								</address>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Peter</forename><surname>Steiner</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Educational Psychology</orgName>
+								<orgName type="institution">University of Wisconsin-Madison</orgName>
+							</affiliation>
+						</author>
+						<title level="a" type="main">Quasi-Experimental Designs for Causal Inference</title>
+					</analytic>
+					<monogr>
+						<imprint>
+							<date type="published" when="2018-08-10">2018 August 10.</date>
+						</imprint>
+					</monogr>
+					<idno type="MD5">9827928C2210DB6F1762D96D7305B956</idno>
+					<idno type="DOI">10.1080/00461520.2016.1207177</idno>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<encodingDesc>
+			<appInfo>
+				<application version="0.8.0" ident="GROBID" when="2026-05-08T03:52+0000">
+					<desc>GROBID - A machine learning software for extracting information from scholarly documents</desc>
+					<ref target="https://github.com/kermitt2/grobid"/>
+				</application>
+			</appInfo>
+		</encodingDesc>
+		<profileDesc>
+			<abstract>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>When randomized experiments are infeasible, quasi-experimental designs can be exploited to evaluate causal treatment effects. The strongest quasi-experimental designs for causal inference are regression discontinuity designs, instrumental variable designs, matching and propensity score designs, and comparative interrupted time series designs. This article introduces for each design the basic rationale, discusses the assumptions required for identifying a causal effect, outlines methods for estimating the effect, and highlights potential validity threats and strategies for dealing with them. Causal estimands and identification results are formalized with the potential outcomes notations of the Rubin causal model.</p><p>Causal inference plays a central role in many social and behavioral sciences, including psychology and education. But drawing valid causal conclusions is challenging because they are warranted only if the study design meets a set of strong and frequently untestable assumptions. Thus, studies aiming at causal inference should employ designs and design elements that are able to rule out most plausible threats to validity. Randomized controlled trials (RCTs) are considered as the gold standard for causal inference because they rely on the fewest and weakest assumptions. But under certain conditions quasi-experimental designs that lack random assignment can also be as credible as RCTs <ref type="bibr" target="#b37">(Shadish, Cook, &amp; Campbell, 2002)</ref>. This article discusses four of the strongest quasi-experimental designs for identifying causal effects: regression discontinuity design, instrumental variable design, matching and propensity score designs, and the comparative interrupted time series design. For each design we outline the strategy and assumptions for identifying a causal effect, address estimation methods, and discuss practical issues and suggestions for strengthening the basic designs. To highlight the design differences, throughout the article we use a hypothetical example with the following causal research question: What is the effect of attending a summer science camp on students' science achievement?</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>POTENTIAL OUTCOMES AND RANDOMIZED CONTROLLED TRIAL</head><p>Before we discuss the four quasi-experimental designs, we introduce the potential outcomes notation of the Rubin causal model (RCM) and show how it is used in the context of an RCT. The RCM <ref type="bibr" target="#b17">(Holland, 1986)</ref> formalizes causal inference in terms of potential outcomes,</p></div>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+<div xmlns="http://www.tei-c.org/ns/1.0"><p>which allow us to precisely define causal quantities of interest and to explicate the assumptions required for identifying them. RCM considers a potential outcome for each possible treatment condition. For a dichotomous treatment variable (i.e., a treatment and control condition), each subject i has a potential treatment outcome Y i (1), which we would observe if subject i receives the treatment (Z i =1), and a potential control outcome Y i (0), which we would observe if subject i receives the control condition (Z i =0). The difference in the two potential outcomes, Y i (1)-Y i (0), represents the individual causal effect.</p><p>Suppose we want to evaluate the effect of attending a summer science camp on students' science achievement score. Then each student has two potential outcomes: a potential control score for not attending the science camp, and the potential treatment score for attending the camp. However, the individual causal effects of attending the camp cannot be inferred from data, because the two potential outcomes are never observed simultaneously. Instead, researchers typically focus on average causal effects. The average treatment effect (ATE) for the entire study population is defined as the difference in the expected potential outcomes, ATE = E[Y i (1)] -E[Y i (0)]. Similarly, we can also define the ATE for the treated subjects (ATT), ATT = E[Y i (1)</p><formula xml:id="formula_0">| Z i = 1] -E[Y(0) | Z i =1].</formula><p>Although the expectations of the potential outcomes are not directly observable because not all potential outcomes are observed, we nonetheless can identify ATE or ATT under some reasonable assumptions. In an RCT, random assignment establishes independence between the potential outcomes and the treatment status, which allows us to infer ATE. Suppose that students are randomly assigned to the science camp and that all students comply with the assigned condition. Then random assignment guarantees that the camp attendance indicator Z is independent of the potential achievement scores Y i (0) and Y i (1).</p><p>The independence assumption allows us to rewrite ATE in terms of observable expectations (i.e., with observed outcomes instead of potential outcomes). First, due to the independence (randomization), the unconditional expectations of the potential outcomes can be expressed as conditional expectations, E[Y i ( <ref type="formula">1</ref> This derivation also rests on the stable-unit-treatment-value assumption (SUTVA; <ref type="bibr" target="#b22">Imbens &amp; Rubin, 2015)</ref>. SUTVA is required to properly define the potential outcomes, that is, (a) the potential outcomes of a subject depend neither on the assignment mode nor on other subjects' treatment assignment, and (b) there is only one unique treatment and one unique control condition. Without further mentioning, we assume SUTVA for all quasiexperimental designs discussed in this article.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>REGRESSION DISCONTINUITY DESIGN</head><p>Due to ethical or budgetary reasons, random assignment is often infeasible in practice. Nonetheless, researchers may sometimes still retain full control over treatment assignment as in a regression discontinuity (RD) design where, based on a continuous assignment variable and a cutoff score, subjects are deterministically assigned to treatment conditions. Suppose that the science camp is a remedial program and only students whose grade point average (GPA) score is less than or equal to 2.0 are eligible to participate. Figure <ref type="figure" target="#fig_1">1</ref> shows a scatterplot of hypothetical data where the x-axis represents the assignment variable (GPA) and the y-axis the outcome (Science Score). All subjects with a GPA score below the cutoff attended the camp (circles), whereas all subjects scoring above the cutoff do not attend (squares). Because all low-achieving students are in the treatment group and all highachieving students in the control group, their respective GPA distributions do not overlap, not even at the cutoff. This lack of overlap complicates the identification of a causal effect because students in the treatment and control group are not comparable at all (i.e., they have a completely different distribution of the GPA scores).</p><p>One strategy of dealing with the lack of overlap is to rely on the linearity assumption of regression models and to extrapolate into areas of nonoverlap. However, if the linear models do not correctly specify the functional form, the resulting ATE estimate is biased. A safer strategy is to evaluate the treatment effect only at the cutoff score where treatment and control cases almost overlap, and thus functional form assumptions and extrapolation are almost no longer needed. Consider the treatment and control students that score right at the cutoff or just above it. Students with a GPA score of 2.0 participate in the science camp and students with a GPA score of 2.1 are in the control condition (the status quo condition or a different camp). The two groups of students are essentially equivalent because the difference in their GPA scores is negligibly small (2.1 -2.0 = .1) and likely due to random chance (measurement error) rather than a real difference in ability. Thus, in the very close neighborhood around the cutoff score, the RD design is equivalent to an RCT; therefore, the ATE at the cutoff (ATEC) is identified.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>CAUSAL ESTIMAND AND IDENTIFICATION</head><p>ATEC is defined as the difference in the expected potential treatment and control outcomes for the subjects scoring exactly at the cutoff:</p><formula xml:id="formula_1">ATEC = E[Y i (1) | A i =a c ] -E[Y i (0) | A i =a c ],</formula><p>where A denotes assignment variable and a c the cutoff score. Because we observe only treatment subjects and not control subjects right at the cutoff, we need two assumptions in order to identify ATEC <ref type="bibr" target="#b13">(Hahn, Todd, &amp; van Klaauw, 2001): (a)</ref> the conditional expectations of the potential treatment and control outcomes are continuous at the cutoff (continuity), and (b) all subjects comply with treatment assignment (full compliance).</p><p>The continuity assumption can be expressed in terms of limits as</p><formula xml:id="formula_2">lim a a C E[Y i (1) A i = a] = E[Y i (1) A i = a] = lim a a C E[Y i (1) A i = a] and lim a a C E[Y i (0) A i = a] = E[Y i (0) A i = a] = lim a a C E[Y i (0) A i = a]</formula><p>. Thus, we can rewrite ATEC as the difference in limits, ATEC = lim</p><formula xml:id="formula_3">a a C E[Y i (1) A i = a c ] -lim a a C E[Y i (0) A i = a c ],</formula><p>which solves the issue that no control subjects are observed directly at the cutoff. Then, by the full compliance assumption, the potential treatment and control outcomes can be replaced with the observed outcomes such that ATEC = lim</p><formula xml:id="formula_4">a a C E[Y i A i = a c ] -lim a a C E[Y i A i = a c</formula><p>] is identified at the cutoff (i.e., ATEC is now expressed in terms of observable quantities). The difference in the limits represents the discontinuity in the mean outcomes exactly at the cutoff (Figure <ref type="figure" target="#fig_1">1</ref>).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Estimating ATEC</head><p>ATEC can be estimated with parametric or nonparametric regression methods. First, consider the parametric regression of the outcome Y on the treatment Z, the cutoff-centered assignment variable Aa c , and their interaction:</p><formula xml:id="formula_5">Y = β 0 + β 1 Z + β 2 (A -a c ) + β 3 (Z × (A - a c )) + e.</formula><p>If the model correctly specifies the functional form, then β 1 is an unbiased estimator for ATEC. In practice, an appropriate model specification frequently involves also quadratic and cubic terms of the assignment variable plus their interactions with the treatment indicator.</p><p>To avoid overly strong functional form assumptions, semiparametric or nonparametric regression methods like generalized additive models or local linear kernel regression can be employed <ref type="bibr" target="#b21">(Imbens &amp; Lemieux, 2008)</ref>. These methods down-weight or even discard observations that are not in the close neighborhood around the cutoff. The R packages rdd <ref type="bibr" target="#b10">(Dimmery, 2013)</ref> and rdrobust <ref type="bibr">(Calonico, Cattaneo, &amp; Titiunik, 2015)</ref>, or the command rd in STATA <ref type="bibr" target="#b29">(Nichols, 2007)</ref> are useful for estimation and diagnostic purposes.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Practical Issues</head><p>A major validity threat for RD designs is the manipulation of the assignment score around the cutoff, which directly results in a violation of the continuity assumption <ref type="bibr" target="#b48">(Wong et al., 2012)</ref>. For instance, if a teacher knows the assignment score in advance and he wants all his students to attend the science camp, the teacher could falsely report a GPA score of 2.0 or below for the students whose actual GPA score exceeds the cutoff value.</p><p>Another validity threat is noncompliance, meaning that subjects assigned to the control condition may cross over to the treatment and subjects assigned to the treatment do not show up. An RD design with noncompliance is called a fuzzy RD design (instead of a sharp RD design with full compliance). A fuzzy RD design still allows us to identify the intention-totreat effect or the local average treatment effect at the cutoff (LATEC). The intention-to-treat effect refers to the effect of treatment assignment rather than the actual treatment receipt. LATEC estimates ATEC for the subjects who comply with treatment assignment. LATEC is identified if one uses the assignment status as an instrumental variable for treatment receipt (see the upcoming Instrumental Variable section).</p><p>Finally, generalizability and statistical power are often mentioned as major disadvantages of RD designs. Because RD designs identify the treatment effect only at the cutoff, ATEC estimates are not automatically generalizable to subjects scoring further away from the cutoff. Statistical power for detecting a significant effect is an issue because the lack of overlap on the assignment variable results in increased standard errors. With semi-or nonparametric regression methods, power further diminishes.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Strengthening RD Designs</head><p>To avoid systematic manipulations of the assignment variable, it is desirable to conceal the assignment rule from study participants and administrators. If the assignment rule is known to them, manipulations can hardly be ruled out, particularly when the stakes are high. Researchers can use the McCrary test <ref type="bibr" target="#b28">(McCrary, 2008)</ref> to check for potential manipulations. The test investigates whether there is a discontinuity in the distribution of the assignment variable right at the cutoff. Plotting baseline covariates against the assignment variable, and regressing the covariates on the assignment variable and the treatment indicator also help in detecting potential discontinuities at the cutoff.</p><p>The RD design's validity can be increased by combining the basic RD design with other designs. An example is the tie-breaking RD design, which uses two cutoff scores. Subjects scoring between the two cutoff scores are randomly assigned to treatment conditions, whereas subjects scoring outside the cutoff interval receive the treatment or control condition according to the RD assignment rule <ref type="bibr" target="#b6">(Black, Galdo &amp; Smith, 2007)</ref>. This design combines an RD design with an RCT and is advantageous with respect to the correct specification of the functional form, generalizability, and statistical power. Similar benefits can be obtained by adding pretest measures of the outcome or nonequivalent comparison groups <ref type="bibr" target="#b46">(Wing &amp; Cook, 2013)</ref>. <ref type="bibr" target="#b21">Imbens and Lemieux (2008)</ref> and <ref type="bibr" target="#b26">Lee and Lemieux (2010)</ref> provided comprehensive introductions to RD designs. Lee and Lemieux also summarized many applications from economics. <ref type="bibr" target="#b2">Angrist and Lavy (1999)</ref> applied the design to investigate the effect of class size on student achievement.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>INSTRUMENTAL VARIABLE DESIGN</head><p>In practice, researchers often have no or only partial control over treatment selection. In addition, they might also lack reliable knowledge of the selection process. Nonetheless, even with limited control and knowledge of the selection process it is still possible to identify a causal treatment effect if an instrumental variable (IV) is available. An IV is an exogenous variable that is related to the treatment but is completely unrelated to the outcome, except via treatment. An IV design requires researchers either to create an IV at the design stage (as in an encouragement design; see next) or to find an IV in the data set at hand or a related data base. Consider the science camp example, but instead of random or deterministic treatment assignment, students decide on their own or together with their parents whether to attend the camp. Many factors may determine the decision, for instance, students' science ability and motivation, parents' socioeconomic status, or the availability of public transportation for the daily commute to the camp. Whereas the first three variables are presumably also related to the science outcome, public transportation might be unrelated to the science score (except via camp attendance). Thus, the availability of public transportation may qualify as an IV. Figure <ref type="figure" target="#fig_2">2</ref> illustrates such IV design: Public transportation (IV) directly affects camp attendance but has no direct or indirect effect on science achievement (outcome) other than through camp attendance (treatment). The question mark represents unknown or unobserved confounders, that is, variables that simultaneously affect both camp attendance and science achievement. The IV design allows us to identify a causal effect even if some or all confounders are unknown or unobserved.</p><p>The strategy for identifying a causal effect is based on exploiting the variation in the treatment variable explained by IV. In Figure <ref type="figure" target="#fig_2">2</ref>, the total variation in the treatment consists of (a) the variation induced by the IV and (b) the variation induced by confounders (question mark) and other exogenous variables (not shown in the figure). The identification of the camp's effect requires us to isolate the treatment variation that is related to public transportation (IV), and then to use the isolated variation to investigate the camp's effect on the science score. Because we exploit the treatment variation exclusively induced by the IV but ignore the variation induced by unobserved or unknown confounders, the IV design identifies the ATE for the sub-population of compliers only. In our example, the compliers are the students who attend the camp because public transportation is available and do not attend because it is unavailable. For students whose parents always use their own car to drop them off and pick them up at the camp location, we cannot infer the causal effect, because their camp attendance is completely unrelated to the availability of public transportation.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Causal Estimand and Identification</head><p>The complier average treatment effect (CATE) is defined as the expected difference in potential outcomes for the sub-population of compliers:</p><formula xml:id="formula_6">CATE = E[Y i (1) | Complier] -E[Y i (0) | Complier] = τ C .</formula><p>Identification requires us to distinguish between four latent groups: compliers (C), who attend the camp if public transportation is available but do not attend if unavailable; alwaystakers (A), who always attend the camp regardless of whether or not public transportation is available; never-takers (N), who never attend the camp regardless of public transportation; and defiers (D), who do not attend if public transportation is available but attend if unavailable. Because group membership is unknown, it is impossible to directly infer CATE from the data of compliers. However, CATE is identified from the entire data set if (a) the IV is predictive of the treatment (predictive first stage), (b) the IV is unrelated to the outcome except via treatment (exclusion restriction), and (c) no defiers are present (monotonicity; <ref type="bibr" target="#b0">Angrist, Imbens, &amp; Rubin, 1996;</ref><ref type="bibr">see Steiner, Kim, Hall, &amp; Su, 2015</ref>, for a graphical explanation).</p><p>First, notice that the IV's effects on the treatment (γ) and the outcome (δ) are directly identified from the observed data because the IV's relation with the treatment and outcome is unconfounded. In our example (Figure <ref type="figure" target="#fig_2">2</ref>), γ denotes the effect of public transportation on camp attendance and δ the indirect effect of public transportation on the science score. Both effects can be written as weighted averages of the corresponding group-specific effects (γ C , γ A , γ N , γ D and δ C , δ A , δ N , δ D for compliers, always-takers, never-takers, and defiers, respectively): γ = p(C)γ C + p(A)γA + p(N)γ N + p(D)γ D and δ = p(C)δ C + p(A)δ A + p(N)δ N + p(D)δ D where p(.) represents the portion of the respective latent group in the population and p(C) + p(A) + p(N) + p(D) = 1. Because the treatment choice of alwaystakers and never-takers is entirely unaffected by the instrument, the IV's effect on the treatment is zero, γ A = γ N = .0, and together with the exclusion restriction, we also know δ A = δ N = 0, that is, the IV has no effect on the outcome. If no defiers are present, p(D) = 0 (monotonicity), then the IV's effects on the treatment and outcome simplify to γ = p(C)γC and δ = p(C)δC, respectively. Because δ C = γ C τ C and γ ≠ 0 (predictive first stage), the ratio of the observable IV effects, γ and δ, identifies CATE:</p><formula xml:id="formula_7">δ γ = p(C)γ C τ C p(C)γ C = τ C .</formula></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Estimating CATE</head><p>A two-stage least squares (2SLS) regression is typically used for estimating CATE. In the first stage, treatment Z is regressed on the IV, Z = β 0 + β 1 IV + e. The linear first-stage model applies with a dichotomous treatment variable (linear probability model). The second stage then regresses the outcome Y on the predicted values Z from the first stage model,</p><formula xml:id="formula_8">Y = π 0 + π 1 Z + r,</formula><p>where π 1 is the CATE estimator. The two stages are automatically performed by the 2SLS procedure, which also provides an appropriate standard error for the effect estimate. The STATA commands ivregress and ivreg2 <ref type="bibr" target="#b5">(Baum, Schaffer, &amp; Stillman, 2007)</ref> or the sem package in R <ref type="bibr" target="#b12">(Fox, 2006)</ref> perform the 2SLS regression.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Practical Issues</head><p>One challenge in implementing an IV design is to find a valid instrument that satisfies the assumptions just discussed. In particular, the exclusion restriction is untestable and frequently hard to defend in practice. In our example, if high-income families live in suburban areas with bad public transportation connections, then the availability of the public transportation is likely related to the science score via household income (or socioeconomic status). Although conditioning on the observed household income can transform public transportation into a conditional IV (see next), one can frequently come up with additional scenarios that explains why the IV is related to the outcome and thus violates the exclusion restriction.</p><p>Another issue arises from "weak" IVs that are only weakly related to treatment. Weak IVs cause efficiency problems <ref type="bibr" target="#b49">(Wooldridge, 2012)</ref>. If the availability of public transportation barely affects camp attendance because most parents give their children a ride anyway, the IV's effect on the treatment (γ) is close to zero. Because γ is the denominator in the CATE estimator, τ C = δ /γ , an imprecisely estimated γ results in a considerable over-or underestimation of CATE. Moreover, standard errors will be large.</p><p>One also needs to keep in mind that the substantive meaning of CATE depends on the chosen IV. Consider two slightly different IVs with respect to public transportation: the availability of (a) a bus service and (b) subway service. For the first IV, the complier population consists of students who choose to (not) attend the camp depending on the availability of a bus service. For the second IV, the complier population refers to the availability of a subway service. Because the two complier populations are very likely different from each other (students who are willing to take the subway might not be willing to take the bus), the corresponding CATEs refer to different subpopulations.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Strengthening IV Designs</head><p>Given the challenges in identifying a valid instrument from observed data, researchers should consider creating an IV at the design stage of a study. Although it might be impossible to directly assign subjects to treatment conditions, one might still be able to encourage participants to take the treatment. Subjects are randomly encouraged to sign up for treatment, but whether they actually comply with the encouragement is entirely their own decision <ref type="bibr" target="#b20">(Imai et al., 2011)</ref>. Random encouragement qualifies as an IV because it very likely meets the exclusion restriction. For example, instead of collecting data on public transportation, researchers may advertise and recommend the science camp in a letter to the parents of a randomly selected sample of students.</p><p>With observational data it is hard to identify a valid IV because covariates that strongly predict the treatment are usually also related to the outcome. However, these covariates can still qualify as an IV if they affect the outcome only indirectly via other observed variables. Such covariates can be used as conditional IVs, that is, they meet the IV requirements conditional on the observed variables <ref type="bibr" target="#b7">(Brito &amp; Pearl, 2002)</ref>. Assume the availability of public transportation (IV) is associated with the science score via household income. Then, controlling for the reliably measured household income in both stages of the 2SLS analysis blocks the IV's relation to the science score and turns public transportation into a conditional IV. However, controlling for a large set of variables does not guarantee that the exclusion restriction is more likely met. It may even result in more bias as compared to an IV analysis with fewer covariates <ref type="bibr" target="#b11">(Ding &amp; Miratrix, 2015;</ref><ref type="bibr">Steiner &amp; Kim, in press</ref>). The choice of a valid conditional IV requires researchers to carefully select the control variables based on subject-matter theory.</p><p>The seminal article by <ref type="bibr" target="#b0">Angrist et al. (1996)</ref> provides a thorough discussion of the IV design, and <ref type="bibr">Steiner, Kim, et al. (2015)</ref> proved the identification result using graphical models.</p><p>Excellent introductions to IV designs can be found in <ref type="bibr">Angrist and</ref><ref type="bibr">Pischke (2009, 2015)</ref>. <ref type="bibr" target="#b1">Angrist and Krueger (1992)</ref> is an example of a creative application of the design with birthday as the IV. For encouragement designs, see <ref type="bibr" target="#b18">Holland (1988)</ref> and <ref type="bibr" target="#b20">Imai et al. (2011)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>MATCHING AND PROPENSITY SCORE DESIGN</head><p>This section considers quasi-experimental designs in which researchers lack control over treatment selection but have good knowledge about the selection mechanism or at least the confounders that simultaneously determine the treatment selection and the outcome. Due to self or third-person selection of subjects into treatment, the resulting treatment and control groups typically differ in observed but also unobserved baseline covariates. If we have reliable measures of all confounding covariates, then matching or propensity score (PS) designs balance groups on observed baseline covariates and thus enable the identification of causal effects <ref type="bibr" target="#b22">(Imbens &amp; Rubin, 2015)</ref>. Regression analysis and the analysis of covariance can also remove the confounding bias, but because they rely on functional form assumptions and extrapolation we discuss only nonparametric matching and PS designs.</p><p>Suppose that students decide on their own whether to attend the science camp. Although many factors can affect students' decision, teachers with several years of experience of running the camp may know that selection is mostly driven by students' science ability, liking of science, and their parents' socioeconomic status. If all the selection-relevant factors that also affect the outcome are known, the question mark in Figure <ref type="figure" target="#fig_2">2</ref> can be replaced by the known confounding covariates.</p><p>Given the set of confounding covariates, causal inference with matching or PS designs is straightforward, at least theoretically. The basic one-to-one matching design matches each treatment subject to a control subject that is equivalent or at least very similar in observed covariates. To illustrate the idea of matching, consider a camp attendee with baseline measures of 80 on the science pre-test, 6 on liking science, and 50 on the socioeconomic status. Then a multivariate matching strategy tries to find a nonattendee with exactly the same or at least very similar baseline measures. If we succeed in finding close matches for all camp attendee, the matched samples of attendees and nonattendees will have almost identical covariate distributions.</p><p>Although multivariate matching works well when the number of confounders is small and the pool of control subjects is large relative to the number of treatment subjects, it is usually difficult to find close matches with a large set of covariates or a small pool of control subjects. Matching on the PS helps to overcome this issue because the PS is a univariate score computed from the observed covariates <ref type="bibr" target="#b34">(Rosenbaum &amp; Rubin, 1983</ref>). The PS is formally defined as the conditional probability of receiving the treatment given the set of observed covariates X: PS = Pr(Z = 1 | X).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Causal Estimand and Identification</head></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Matching and PS designs usually investigate ATE</head><formula xml:id="formula_9">= E[Y i (1)] -E[Y i (0)] or ATT = E[Y i (1) | Z i = 1] -E[Y i (0) | Z i = 1].</formula><p>Both causal effects are identified if (a) the potential outcomes are statistically independent of the treatment indicator given the set of observed confounders X, {Y(1), Y(0)}⊥Z | X (unconfoundedness; ⊥ denotes independence), and (b) the treatment probability is strictly between zero and one, 0 &lt; Pr(Z = 1 | X) &lt; 1 (positivity).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>By the positivity assumption we get E[Y</head><formula xml:id="formula_10">i (1)] = E X [E[Y i (1) | X]] and E[Y i (0)] = E X [E[Y i (0) | X]].</formula><p>If the unconfoundedness assumption holds, we can write the inner expectations as</p><formula xml:id="formula_11">E[Y i (1) | X] = E[Y i (1) | Z i =1; X] and E[Y i (0) | X] = E[Y i (0) | Z i = 0; X]. Finally, because</formula><p>the treatment (control) outcomes of the treatment (control) subjects are actually observed, ATE is identified because it can be expressed in terms of observable quantities:</p><formula xml:id="formula_12">ATE = E X [E[Y i | Z i = 1; X]] -E X [E[Y i | Z i = 0; X]].</formula><p>The same can be shown for ATT. The unconfoundedness and positivity assumption are frequently referred to jointly as the strong ignorability assumption. <ref type="bibr" target="#b34">Rosenbaum and Rubin (1983)</ref> proved that if the assignment is strongly ignorable given X, then it is also strongly ignorable given the PS alone.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Estimating ATE and ATT</head><p>Matching designs use a distance measure for matching each treatment subject to the closest control subject. The Mahalanobis distance is usually used for multivariate matching and the Euclidean distance on the logit of the PS for PS matching. Matching strategies differ with respect to the matching ratio (one-to-one or one-to-many), replacement of matched subjects (with or without replacement), use of a caliper (treatment subjects that do not have a control subject within a certain threshold remain unmatched), and the matching algorithm (greedy, genetic, or optimal matching; <ref type="bibr" target="#b36">Sekhon, 2011;</ref><ref type="bibr" target="#b40">Steiner &amp; Cook, 2013)</ref>. Because we try to find at least one control subject for each treatment subject, matching estimators typically estimate ATT. Once treatment and control subjects are matched, ATT is computed as the difference in the mean outcome of the treatment and control group. An alternative matching strategy that allows for estimating ATE is full matching, which stratifies all subjects into the maximum number of strata, where each stratum contains at least one treatment and one control subject <ref type="bibr" target="#b14">(Hansen, 2004)</ref>.</p><p>The PS can also be used for PS stratification and inverse-propensity weighting. PS stratification stratifies the treatment and control subjects into at least five strata and estimates the treatment effect within each stratum. ATE or ATT is then obtained as the weighted average of the stratum-specific treatment effects. Inverse-propensity weighting follows the same logic as inverse-probability weighting in survey research <ref type="bibr" target="#b19">(Horvitz &amp; Thompson, 1952)</ref> and requires the computation of weights that refer to either the overall population (ATE) or the population of treated subjects only (ATT). Given the inverse-propensity weights, ATE or ATT is usually estimated via weighted least squares regression.</p><p>Because the true PSs are unknown, they need to be estimated from the observed data. The most common method for estimating the PS is logistic regression, which regresses the binary treatment indicator Z on predictors of the observed covariates. The PS model is specified according to balance criteria (instead of goodness of fit criteria), that is, the estimated PSs should remove all baseline differences in observed covariates <ref type="bibr" target="#b22">(Imbens &amp; Rubin, 2015)</ref>. The predicted probabilities from the PS model represent the estimated PSs.</p><p>All three PS designs-matching, stratification, and weighting-can benefit from additional covariance adjustments in an outcome regression. That is, for the matched, stratified or weighted data, the outcome is regressed on the treatment indicator and the additional covariates. Combining the PS design with a covariance adjustment gives researchers two chances to remove the confounding bias, by correctly specifying either the PS model or the outcome model. These combined methods are said to be doubly robust because they are robust against either the misspecification of the PS model or the misspecification of the outcome model (Robins &amp; Rotnitzky, 1995). The R packages optmatch <ref type="bibr" target="#b15">(Hansen &amp; Klopfer, 2006)</ref> and MatchIt <ref type="bibr" target="#b16">(Ho et al., 2011)</ref> and the STATA command teffects, in particular teffects psmatch <ref type="bibr" target="#b39">(StataCorp, 2015)</ref>, can be useful for matching or PS analyses.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Practical Issues</head><p>The most challenging issue with matching and PS designs is the selection of covariates for establishing unconfoundedness. Ideally, subject-matter theory about the selection process and the outcome-generating model is used for selecting a set of covariates that removes all the confounding <ref type="bibr" target="#b30">(Pearl, 2009)</ref>. If strong subject-matter theories are not available, selecting the right covariates is difficult. In the hope to remove a major part of the confounding biasif not all of it-a frequently applied strategy is to match on as many covariates as possible. However, recent literature shows that thoughtless inclusion of covariates may increase rather than reduce the confounding bias <ref type="bibr" target="#b31">(Pearl, 2010;</ref><ref type="bibr">Steiner &amp; Kim, in press</ref>). The risk of increasing bias can be reduced if the observed covariates cover a broad range of heterogeneous construct domains, including at least one reliable pretest measure of the outcome <ref type="bibr" target="#b41">(Steiner, Cook, et al., 2015)</ref>. Besides having the right covariates, they also need to be reliably measured. The unreliable measurement of confounding covariates has a similar effect as the omission of a confounder: It results in a violation of the unconfoundedness assumption and thus in a biased effect estimate <ref type="bibr" target="#b42">(Steiner, Cook, &amp; Shadish, 2011;</ref><ref type="bibr">Steiner &amp; Kim, in press</ref>).</p><p>Even if the set of reliably measured covariates establishes unconfoundedness, we still need to correctly specify the functional form of the PS model. Although parametric models like logistic regression, including higher order terms, might frequently approximate the correct functional form, they still rely on the linearity assumption. The linearity assumption can be relaxed if one estimates the PS with statistical learning algorithms like classification trees, neural networks, or the LASSO <ref type="bibr" target="#b24">(Keller, Kim, &amp; Steiner, 2015;</ref><ref type="bibr" target="#b27">McCaffrey, Ridgeway, &amp; Morral, 2004)</ref>.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Strengthening Matching and PS Designs</head><p>The credibility of matching and PS designs heavily relies on the unconfoundedness assumption. Although empirically untestable, there are indirect ways for assessing unconfoundedness. First, unaffected (nonequivalent) outcomes that are known to be unaffected by the treatment can be used <ref type="bibr" target="#b37">(Shadish et al., 2002)</ref>. For instance, we may expect that attendance in the science camp does not significantly affect the reading score. Thus, if we observe a significant group difference in the reading score after the PS adjustment, bias due to unobserved confounders (e.g., general intelligence) is still likely. Second, adding a second but conceptually different control group allows for a similar test as with the unaffected outcome <ref type="bibr" target="#b33">(Rosenbaum, 2002)</ref>.</p><p>Because researchers rarely know whether the unconfoundedness assumption is actually met with the data at hand, it is important to assess the effect estimate's sensitivity to potentially unobserved confounders. Sensitivity analyses investigate how strongly an estimate's magnitude and significance changes if a confounder of a certain strength would have been omitted from the analyses. Causal conclusions are much more credible if the effect's direction, magnitude, and significance is rather insensitive to omitted confounders <ref type="bibr" target="#b33">(Rosenbaum, 2002)</ref>. However, despite the value of sensitivity analyses, they are not informative about whether hidden bias is actually present. <ref type="bibr" target="#b35">Schafer and Kang (2008)</ref> and <ref type="bibr" target="#b40">Steiner and Cook (2013)</ref> provided a comprehensive introduction. Rigorous formalization and technical details of PS designs can be found in <ref type="bibr" target="#b22">Imbens and Rubin (2015)</ref>. <ref type="bibr" target="#b33">Rosenbaum (2002)</ref> discussed many important design issues in these designs.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>COMPARATIVE INTERRUPTED TIME SERIES DESIGN</head><p>The designs discussed so far require researchers to have either full control over treatment assignment or reliable knowledge of the exogenous (IV) or endogenous part of the selection mechanism (i.e., the confounders). If none of these requirements are met, a comparative interrupted time series (CITS) design might be a viable alternative if (a) multiple measurements of the outcome (time series) are available for both the treatment and a comparison group and (b) the treatment group's time series has been interrupted by an intervention.</p><p>Suppose that all students of one class in a school (say, an advanced science class) attend the camp, whereas all students of another class in the same school do not attend. Also assume that monthly measures of science achievement before and after the science camp are available. Figure <ref type="figure">3</ref> illustrates such a scenario where the x-axis represents time in Months and the y-axis the Science Score (aggregated at the class level). The filled symbols indicate the treatment group (science camp), open symbols the comparison group (no science camp).</p><p>The science camp intervention divides both time series into a preintervention time series (circles) and a postintervention time series (squares). The changes in the levels and slopes of the pre-and postintervention regression lines represent the camp's impact but possibly also the effect of other events that co-occur with the intervention. The dashed lines extrapolate the preintervention growth curves into the postintervention period, and thus represent the counterfactual situation where the intervention but also other co-occurring events are absent.</p><p>The strength of a CITS design is its ability to discriminate between the intervention's effect and the effects of co-occurring events. Such events might be other potentially competing interventions (history effects) or changes in the measurement of the outcome (instrumentation), for instance. If the co-occurring events affect the treatment and comparison group to the same extent, then subtracting the changes in the comparison group's growth curve from the changes in the treatment group's growth curve provides a valid estimate of the intervention's impact. Because we investigate the difference in the changes (= differences) of the two growth curves, the CITS design is a special case of the difference-in-differences design <ref type="bibr" target="#b38">(Somers et al., 2013)</ref>.</p><p>Assume that a daily TV series about Albert Einstein was broadcast in the evenings of the science camp week and that students of both classes were exposed to the same extent to the TV series. It follows that the comparison group's change in the growth curve represents the TV series' impact. The comparison group's time series in Figure <ref type="figure">3</ref> indicates that the TV series might have had an immediate impact on the growth curve's level but almost no effect on the slope. On the other hand, the treatment group's change in the growth curve is due to both the science camp and the TV series. Thus, in differencing out the TV series' effect (estimated from the comparison group) we can identify the camp effect.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Causal Estimand and Identification</head><p>Let t c denote the time point of the intervention, then the intervention's effect on the treated (ATT) at a postintervention time point t ≥ t c is defined as</p><formula xml:id="formula_13">τ t = E[Y it T (1)] -E[Y it T (0)],</formula><p>where to the control and event function. In the absence of a comparison group, we can try to identify the impact of the intervention by comparing the observable postintervention outcomes to the extrapolated outcomes from the preintervention time series (dashed line in Figure <ref type="figure">3</ref>). Extrapolation is necessary because we do not observe any potential control outcomes in the postintervention period (only potential treatment outcomes are observed).</p><formula xml:id="formula_14">Y it T (</formula><p>Let f 0 T(t) denote the parametric extrapolation of the preintervention control function f 0</p><formula xml:id="formula_15">T (t),</formula><p>then the observable pre-post-intervention difference (PP T ) in the expected control outcome</p><formula xml:id="formula_16">is PP t T = f 0 T (t) + f E T (t) + f I T (t) -f 0 T(t) = f I T (t) + ( f 0 T (t) -f 0 T(t)) + f E T (t).</formula><p>Thus, in the absence of a comparison group, ATT is identified (i.e., PP t</p><formula xml:id="formula_17">T = f I T (t) = τ t ) only if the control function is correctly specified ( f 0 T (t) = f 0 T(t))</formula><p>and if no co-occurring events are present ( f E T (t) = 0).</p><p>The comparison group in a CITS design allows us to relax both of these identifying assumptions. In order to see this, we first define the expected control outcomes of the comparison group (C) as a sum of two time-dependent functions as before:</p><formula xml:id="formula_18">E[Y it C (0)] = f 0 C (t) + f E C (t).</formula><p>Then, in extrapolating the comparison group's preintervention function into the postintervention period, f 0 C(t), we can compute the pre-post-intervention difference for the comparison group:</p><formula xml:id="formula_19">PP t C = f 0 C (t) + f E C (t) -f 0 C(t) = f E C (t) + ( f 0 C (t) -f 0 C(t)) If the control function is correctly specified f 0 C (t) = f 0 C(t)</formula><p>, the effect of co-occurring events is</p><formula xml:id="formula_20">identified PP t C = f E C (t)</formula><p>. However, we do not necessarily need a correctly specified control function, because in a CITS design we focus on the difference in the treatment and comparison group's pre-post-intervention differences, that is,</p><formula xml:id="formula_21">PP t T -PP t C = f I T (t) + ( f 0 T (t) -f 0 T (t)) -( f 0 C (t) -f 0 C(t)) + f E T (t) -f E C (t) . Thus, ATT is identified, PP t T -PP t C = f I T (t) = τ t , if<label>(</label></formula><p>a) both control functions are either correctly specified or misspecified to the same additive extent such that ( f 0</p><formula xml:id="formula_22">T (t) -f 0 T(t)) = ( f 0 C (t) -f 0 C(t)) (no<label>differential</label></formula><p>misspecification) and (b) the effect of co-occurring events is identical in the treatment and comparison group, f E T (t) = f E C (t) (no differential event effects).</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Estimating ATT</head><p>CITS designs are typically analyzed with linear regression models that regress the outcome Y on the centered time variable (T -t c ), the intervention indicator Z (Z = 0 if t &lt; t c , otherwise Z = 1), the group indicator G (G = 1 for the treatment group and G = 0 for the control group), and the corresponding two-way and three-way interactions:</p><formula xml:id="formula_23">Y = β 0 + β 1 (T -t c ) + β 2 Z + β 3 G + β 4 (Z × (T -t c )) + β 5 (Z × G) + β 6 (G × (T -t c )) + β 7 (Z × G × (T -t c )) + e .</formula><p>Depending on the number of subjects in each group, fixed or random effects for the subjects are included as well (time fixed or random effect can also be considered). β 5 estimates the intervention's immediate effect at the onset of the intervention (change in intercept) and β 7 the intervention's effect on the growth rate (change in slope). The inclusion of dummy variables for each postintervention time point (plus their interaction with the intervention and group indicators) would allow for a direct estimation of the time-specific effects. If the time series are long enough (at least 100 time points), then a more careful modeling of the autocorrelation structure via time series models should be considered.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Practical Issues</head><p>Compared to other designs, CITS designs heavily rely on extrapolation and thus on functional form assumptions. Therefore, it is crucial that the functional forms of the pre-and postintervention time series (including their extrapolations) are correctly specified or at least not differentially misspecified. With short time series or measurement points that inadequately capture periodical variations, the correct specification of the functional form is very challenging. Another specification aspect concerns serial dependencies among the data points. Failing to model serial dependencies can bias effect estimates and their standard errors such that significance tests might be misleading. Accounting for serial dependencies requires autoregressive models (e.g., ARIMA models), but the time series should have at least 100 time points <ref type="bibr" target="#b45">(West, Biesanz, &amp; Pitts, 2000)</ref>. Standard fixed effects or random effects models deal at least partially with the dependence structure. Robust standard errors (e.g., Huber-White corrected ones) or the bootstrap can also be used to account for dependency structures.</p><p>Events that co-occur with the intervention of interest, like history or instrumentation effects, are a major threat to the time series designs that lack a comparison group <ref type="bibr" target="#b37">(Shadish et al., 2002)</ref>. CITS designs are rather robust to co-occurring events as long as the treatment and comparison groups are affected to the same additive extent. However, there is no guarantee that both groups are exposed to the same events and affected to the same extent. For example, if students who do not attend the camp are less likely to watch the TV series, its effect cannot be completely differenced out (unless the exposure to the TV series is measured). If one uses aggregated data like class or school averages of achievement scores, then differential compositional shifts over time can also invalidate the CITS design.</p><p>Compositional shifts occur due to dropouts or incoming subjects over time.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>Strengthening CITS Designs</head><p>If the treatment and comparison group's preintervention time series are very different (different levels and slopes), then the assumption that history or instrumentation threats affect both groups to the same additive extent may not hold. Matching treatment and comparison subjects prior to the analysis can increase the plausibility of this assumption.</p><p>Instead of using all nonparticipating students of the comparison class, we may select only those students who have a similar level and growth in the preintervention science scores as the students participating in the camp. We can also match on additional covariates like socioeconomic status or motivation levels. Multivariate or PS matching can be used for this purpose. If the two groups are similar, it is more likely that they are affected by co-occurring events to the same extent.</p><p>As with the matching and PS designs, using an unaffected outcome in CITS designs helps to probe the untestable assumptions <ref type="bibr" target="#b9">(Coryn &amp; Hobson, 2011;</ref><ref type="bibr" target="#b37">Shadish et al., 2002)</ref>. For instance, we might expect that attending the science camp does not affect students' reading scores but that some validity threats (e.g., attrition) operate on both the reading and science outcome. If we find a significant camp effect on the reading score, the validity of the CITS design for evaluating the camp's impact on the science score is in doubt.</p><p>Another strategy to avoid validity threats is to control the time point of the intervention if possible. Researchers can wait with the implementation of the treatment until they have enough preintervention measures for reliably estimating the functional form. They can also choose to intervene when threats to validity are less likely (avoiding the week of the TV series). Control over the intervention also allows researchers to introduce and remove the treatment in subsequent time intervals, maybe even with switching replications between two (or more) groups. If the treatment is effective, we expect that the pattern of the intervention scheme is directly reflected in the time series of the outcome (for more details, see <ref type="bibr" target="#b37">Shadish et al., 2002;</ref><ref type="bibr"></ref> for the literature on single case designs, see <ref type="bibr" target="#b23">Kazdin, 2011)</ref>.</p><p>A comprehensive introduction to CITS design can be found in <ref type="bibr" target="#b37">Shadish et al. (2002)</ref>, which also addresses many classical applications. For more technical details of its identification, refer to <ref type="bibr" target="#b25">Lechner (2011)</ref>. <ref type="bibr" target="#b47">Wong, Cook, and Steiner (2009)</ref> evaluated the effect of No Child Left Behind using a CITS design.</p></div>
+<div xmlns="http://www.tei-c.org/ns/1.0"><head>CONCLUDING REMARKS</head><p>This article discussed four of the strongest quasi-experimental designs for causal inference when randomized experiments are not feasible. For each design we highlighted the identification strategies and the required assumptions. In practice, it is crucial that the design assumptions are met, otherwise biased effect estimates result. Because most important assumptions like the exclusion restriction or the unconfoundedness assumption are not directly testable, researchers should always try to assess their plausibility via indirect tests and investigate the effect estimates' sensitivity to violations of these assumptions.</p><p>Our discussion of RD, IV, PS, and CITS designs made it also very clear that, in comparison to RCTs, quasi-experimental designs rely on more or stronger assumptions. With prefect control over treatment assignment and treatment implementation (as in an RCT), causal inference is warranted by a minimal set of assumptions. But with limited control over and knowledge about treatment assignment and implementation, stronger assumptions are required and causal effects might be identifiable only for local subpopulations. Nonetheless, observational data sometimes meet the assumptions of a quasi-experimental design, at least approximately, such that causal conclusions are credible. If so, the estimates of quasiexperimental designs-which exploit naturally occurring selection processes and real-world implementations of the treatment-are frequently better generalizable than the results from a controlled laboratory experiment. Thus, if external validity is a major concern, the results of randomized experiments should always be complemented by findings from valid quasiexperiments.   A hypothetical example of comparative interrupted time series design.</p></div><figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_0"><head></head><label></label><figDesc>)] = E[Y i (1) | Z i = 1] and E[Y i (0)] = E[Y i (0) | Z i = 0]Second, because the potential treatment outcomes are actually observed for the treated, we can replace the potential treatment outcome with the observed outcome such that E[Y i (1) | Z i = 1] = E[Y i | Z i = 1] and, analogously, E[Y i (0) | Z i = 0] = E[Y i | Z i = 0] Thus, the ATE is expressible in terms of observable quantities rather than potential outcomes, ATE =E[Y i (1)] -E[Y i (0)] = E[Y i | Z i = 1] -E[Y i | Z i =0], and we that say ATE is identified.</figDesc></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_1"><head>FIGURE 1 .</head><label>1</label><figDesc>FIGURE 1.A hypothetical example of regression discontinuity design. Note. GPA = grade point average.</figDesc><graphic coords="19,84.00,62.00,504.00,340.32" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_2"><head>FIGURE 2 .</head><label>2</label><figDesc>FIGURE 2. A diagram of an example of instrumental variable design.</figDesc><graphic coords="20,84.00,62.00,504.00,165.36" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" xml:id="fig_3"><head></head><label></label><figDesc>FIGURE 3.</figDesc><graphic coords="21,84.18,62.00,503.64,339.84" type="bitmap" /></figure>
+<figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head></head><label></label><figDesc>0) and Y itT (1) are the potential control and treatment outcomes of subject i in the treatment group (T) at time point t. The time series of the expected potential outcomes can be formalized as sum of nonparametric but additive time-dependent functions. The treatment group's expected potential control outcome can be represented as E[Y it    </figDesc><table><row><cell>T (t) + f E T (t), T (0)] = f 0 T (t) generates the expected potential control outcomes in where the control function f 0 absence of any interventions (I) or co-occurring events (E), and the event function f E T (t) adds</cell></row><row><cell>the effects of co-occurring events. Similarly, the expected potential treatment outcome can</cell></row><row><cell>be written as E[Y it T (1)] = f 0 T (t) + f E T (t) + f I T (t), which adds the intervention's effect τ t = f I T (t)</cell></row></table></figure>
+			<note xmlns="http://www.tei-c.org/ns/1.0" place="foot" xml:id="foot_0"><p>Educ Psychol. Author manuscript; available in PMC 2018 August 10.</p></note>
+		</body>
+		<back>
+			<div type="references">
+
+				<listBibl>
+
+<biblStruct xml:id="b0">
+	<analytic>
+		<title level="a" type="main">Identification of causal effects using instrumental variables</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">D</forename><surname>Angrist</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">W</forename><surname>Imbens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rubin</forename><surname>Db</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of the American Statistical Association</title>
+		<imprint>
+			<biblScope unit="volume">91</biblScope>
+			<biblScope unit="page" from="444" to="455" />
+			<date type="published" when="1996">1996</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b1">
+	<analytic>
+		<title level="a" type="main">The effect of age at school entry on educational attainment: An application of instrumental variables with moments from two samples</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">D</forename><surname>Angrist</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">B</forename><surname>Krueger</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of the American Statistical Association</title>
+		<imprint>
+			<biblScope unit="volume">87</biblScope>
+			<biblScope unit="page" from="328" to="336" />
+			<date type="published" when="1992">1992</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b2">
+	<analytic>
+		<title level="a" type="main">Using Maimonides&apos; rule to estimate the effect of class size on scholastic achievment</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">D</forename><surname>Angrist</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">V</forename><surname>Lavy</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Quarterly Journal of Economics</title>
+		<imprint>
+			<biblScope unit="volume">114</biblScope>
+			<biblScope unit="page" from="533" to="575" />
+			<date type="published" when="1999">1999</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b3">
+	<monogr>
+		<title level="m" type="main">Mostly harmless econometrics: An empiricist&apos;s companion</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">D</forename><surname>Angrist</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">S</forename><surname>Pischke</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<publisher>Princeton University Press</publisher>
+			<pubPlace>Princeton, NJ</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b4">
+	<monogr>
+		<title level="m" type="main">Mastering&apos;metrics: The path from cause to effect</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">D</forename><surname>Angrist</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">S</forename><surname>Pischke</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<publisher>Princeton University Press</publisher>
+			<pubPlace>Princeton, NJ</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b5">
+	<analytic>
+		<title level="a" type="main">Enhanced routines for instrumental variables/ generalized method of moments estimation and testing</title>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">F</forename><surname>Baum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">E</forename><surname>Schaffer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><surname>Stillman</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">The Stata Journal</title>
+		<imprint>
+			<biblScope unit="volume">7</biblScope>
+			<biblScope unit="page" from="465" to="506" />
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b6">
+	<monogr>
+		<title level="m" type="main">Evaluating the bias of the regression discontinuity design using experimental data</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Black</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Galdo</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">A</forename><surname>Smith</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2007">2007</date>
+			<publisher>University of Chicago</publisher>
+			<pubPlace>Chicago, IL</pubPlace>
+		</imprint>
+	</monogr>
+	<note>Working paper</note>
+</biblStruct>
+
+<biblStruct xml:id="b7">
+	<analytic>
+		<title level="a" type="main">Generalized instrumental variables</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Brito</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Pearl</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="s">Uncertainty in artificial intelligence</title>
+		<editor>
+			<persName><forename type="first">A</forename><surname>Darwiche</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">N</forename><surname>Friedman</surname></persName>
+		</editor>
+		<imprint>
+			<biblScope unit="page" from="85" to="93" />
+			<date type="published" when="2002">2002</date>
+			<publisher>Morgan Kaufmann</publisher>
+			<pubPlace>San Francisco, CA</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b8">
+	<analytic>
+		<title level="a" type="main">rdrobust: Robust data-driven statistical inference in regression-discontinuity designs</title>
+		<author>
+			<persName><forename type="first">S</forename><surname>Calonico</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">D</forename><surname>Cattaneo</surname></persName>
+		</author>
+		<ptr target="http://CRAN.R-project.org/package=rdrobust" />
+	</analytic>
+	<monogr>
+		<title level="j">&amp; Titiunik R</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+	<note>R package ver. 0.80</note>
+</biblStruct>
+
+<biblStruct xml:id="b9">
+	<monogr>
+		<title level="m" type="main">Using nonequivalent dependent variables to reduce internal validity threats in quasi-experiments: Rationale, history, and examples from practice. New Directions for Evaluation</title>
+		<author>
+			<persName><forename type="first">Cls</forename><surname>Coryn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><forename type="middle">A</forename><surname>Hobson</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+			<biblScope unit="volume">131</biblScope>
+			<biblScope unit="page" from="31" to="39" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b10">
+	<monogr>
+		<title level="m" type="main">rdd: Regression discontinuity estimation</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Dimmery</surname></persName>
+		</author>
+		<ptr target="http://CRAN.R-project.org/package=rdd" />
+		<imprint>
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+	<note>R package ver. 0.56</note>
+</biblStruct>
+
+<biblStruct xml:id="b11">
+	<analytic>
+		<title level="a" type="main">To adjust or not to adjust? Sensitivity analysis of M-bias and butterflybias</title>
+		<author>
+			<persName><forename type="first">P</forename><surname>Ding</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">W</forename><surname>Miratrix</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Causal Inference</title>
+		<imprint>
+			<biblScope unit="volume">3</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="41" to="57" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b12">
+	<analytic>
+		<title level="a" type="main">Structural equation modeling with the sem package in R</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Fox</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Structural Equation Modeling</title>
+		<imprint>
+			<biblScope unit="volume">13</biblScope>
+			<biblScope unit="page" from="465" to="486" />
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b13">
+	<analytic>
+		<title level="a" type="main">Identification and estimation of treatment effects with a regression-discontinuity design</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Hahn</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Todd</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><surname>Van Der Klaauw</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Econometrica</title>
+		<imprint>
+			<biblScope unit="volume">69</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="201" to="209" />
+			<date type="published" when="2001">2001</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b14">
+	<analytic>
+		<title level="a" type="main">Full matching in an observational study of coaching for the SAT</title>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">B</forename><surname>Hansen</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of the American Statistical Association</title>
+		<imprint>
+			<biblScope unit="volume">99</biblScope>
+			<biblScope unit="page" from="609" to="618" />
+			<date type="published" when="2004">2004</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b15">
+	<analytic>
+		<title level="a" type="main">Optimal full matching and related designs via network flows</title>
+		<author>
+			<persName><forename type="first">B</forename><forename type="middle">B</forename><surname>Hansen</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">O</forename><surname>Klopfer</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Computational and Graphical Statistics</title>
+		<imprint>
+			<biblScope unit="volume">15</biblScope>
+			<biblScope unit="page" from="609" to="627" />
+			<date type="published" when="2006">2006</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b16">
+	<analytic>
+		<title level="a" type="main">MatchIt: Nonparametric preprocessing for parametric causal inference</title>
+		<author>
+			<persName><forename type="first">D</forename><surname>Ho</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">K</forename><surname>Imai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>King</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">E</forename><forename type="middle">A</forename><surname>Stuart</surname></persName>
+		</author>
+		<ptr target="http://www.jstatsoft.org/v42/i08/" />
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Statistical Software</title>
+		<imprint>
+			<biblScope unit="volume">42</biblScope>
+			<biblScope unit="issue">8</biblScope>
+			<biblScope unit="page" from="1" to="28" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b17">
+	<analytic>
+		<title level="a" type="main">Statistics and causal inference</title>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">W</forename><surname>Holland</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of the American Statistical Association</title>
+		<imprint>
+			<biblScope unit="volume">81</biblScope>
+			<biblScope unit="page" from="945" to="960" />
+			<date type="published" when="1986">1986</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b18">
+	<monogr>
+		<title level="m" type="main">Causal inference, path analysis and recursive structural equations models</title>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">W</forename><surname>Holland</surname></persName>
+		</author>
+		<idno type="DOI">10.1002/j.2330-8516.1988.tb00270.x</idno>
+		<imprint>
+			<date type="published" when="1988">1988</date>
+		</imprint>
+	</monogr>
+	<note type="report_type">ETS Research Report Series</note>
+</biblStruct>
+
+<biblStruct xml:id="b19">
+	<analytic>
+		<title level="a" type="main">A generalization of sampling without replacement from a finite universe</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">G</forename><surname>Horvitz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">J</forename><surname>Thompson</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of the American Statistical Association</title>
+		<imprint>
+			<biblScope unit="volume">47</biblScope>
+			<biblScope unit="page" from="663" to="685" />
+			<date type="published" when="1952">1952</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b20">
+	<analytic>
+		<title level="a" type="main">Unpacking the black box of causality: Learning about causal mechanisms from experimental and observational studies</title>
+		<author>
+			<persName><forename type="first">K</forename><surname>Imai</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><surname>Keele</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Tingley</surname></persName>
+		</author>
+		<author>
+			<persName><surname>Yamamoto</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">American Political Science Review</title>
+		<imprint>
+			<biblScope unit="volume">105</biblScope>
+			<biblScope unit="page" from="765" to="789" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b21">
+	<analytic>
+		<title level="a" type="main">Regression discontinuity designs: A guide to practice</title>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">W</forename><surname>Imbens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lemieux</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Econometrics</title>
+		<imprint>
+			<biblScope unit="volume">142</biblScope>
+			<biblScope unit="page" from="615" to="635" />
+			<date type="published" when="2008">2008</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b22">
+	<monogr>
+		<title level="m" type="main">Causal inference in statistics, social, and biomedical sciences</title>
+		<author>
+			<persName><forename type="first">G</forename><forename type="middle">W</forename><surname>Imbens</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rubin</forename><surname>Db</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<publisher>Cambridge University Press</publisher>
+			<pubPlace>New York, NY</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b23">
+	<monogr>
+		<title level="m" type="main">Single-case research designs: Methods for clinical and applied settings</title>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">E</forename><surname>Kazdin</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2011">2011</date>
+			<publisher>Oxford University Press</publisher>
+			<pubPlace>New York, NY</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b24">
+	<analytic>
+		<title level="a" type="main">Neural networks for propensity score estimation: Simulation results and recommendations In van</title>
+		<author>
+			<persName><forename type="first">B</forename><surname>Keller</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">S</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Pm ;</forename><surname>Steiner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">L</forename><forename type="middle">A</forename><surname>Der Ark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">M</forename><surname>Bolt</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S-M</forename><surname>Chow</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">A</forename><surname>Douglas</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Quantitative psychology research</title>
+		<editor>
+			<persName><forename type="first">W-C</forename><surname>Wang</surname></persName>
+		</editor>
+		<meeting><address><addrLine>New York, NY</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2015">2015</date>
+			<biblScope unit="page" from="279" to="291" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b25">
+	<analytic>
+		<title level="a" type="main">The estimation of causal effects by difference-in-difference methods</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Lechner</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Foundations and Trends in Econometrics</title>
+		<imprint>
+			<biblScope unit="volume">4</biblScope>
+			<biblScope unit="page" from="165" to="224" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b26">
+	<analytic>
+		<title level="a" type="main">Regression discontinuity designs in economics</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">S</forename><surname>Lee</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><surname>Lemieux</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Economic Literature</title>
+		<imprint>
+			<biblScope unit="volume">48</biblScope>
+			<biblScope unit="page" from="281" to="355" />
+			<date type="published" when="2010">2010</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b27">
+	<analytic>
+		<title level="a" type="main">Propensity score estimation with boosted regression for evaluating causal effects in observational studies</title>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">F</forename><surname>Mccaffrey</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">G</forename><surname>Ridgeway</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><forename type="middle">R</forename><surname>Morral</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Psychological Methods</title>
+		<imprint>
+			<biblScope unit="volume">9</biblScope>
+			<biblScope unit="page" from="403" to="425" />
+			<date type="published" when="2004">2004. 15598095</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b28">
+	<analytic>
+		<title level="a" type="main">Manipulation of the running variable in the regression discontinuity design: A density test</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Mccrary</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Econometrics</title>
+		<imprint>
+			<biblScope unit="volume">142</biblScope>
+			<biblScope unit="page" from="698" to="714" />
+			<date type="published" when="2008">2008</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b29">
+	<monogr>
+		<title level="m" type="main">rd: Stata modules for regression discontinuity estimation</title>
+		<author>
+			<persName><forename type="first">A</forename><surname>Nichols</surname></persName>
+		</author>
+		<ptr target="http://ideas.repec.org/c/boc/bocode/s456888.html" />
+		<imprint>
+			<date type="published" when="2007">2007</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b30">
+	<monogr>
+		<author>
+			<persName><forename type="first">J</forename><surname>Pearl</surname></persName>
+		</author>
+		<title level="m">Causality: Models, reasoning, and inference</title>
+		<meeting><address><addrLine>New York, NY</addrLine></address></meeting>
+		<imprint>
+			<publisher>Cambridge University Press</publisher>
+			<date type="published" when="2009">2009</date>
+		</imprint>
+	</monogr>
+	<note>nd ed.</note>
+</biblStruct>
+
+<biblStruct xml:id="b31">
+	<analytic>
+		<title level="a" type="main">On a class of bias-amplifying variables that endanger effect estimates</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Pearl</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Proceedings of the Twenty-Sixth Conference on Uncertainty in Artificial Intelligence</title>
+		<meeting>the Twenty-Sixth Conference on Uncertainty in Artificial Intelligence<address><addrLine>Corvallis, OR</addrLine></address></meeting>
+		<imprint>
+			<publisher>Association for Uncertainty in Artificial Intelligence</publisher>
+			<date type="published" when="2010">2010</date>
+			<biblScope unit="page" from="425" to="432" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b32">
+	<analytic>
+		<title level="a" type="main">Semiparametric efficiency in multivariate regression models with missing data</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">M</forename><surname>Robins</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">A</forename><surname>Rotnitzky</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of the American Statistical Association</title>
+		<imprint>
+			<biblScope unit="volume">90</biblScope>
+			<biblScope unit="issue">429</biblScope>
+			<biblScope unit="page" from="122" to="129" />
+			<date type="published" when="1995">1995</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b33">
+	<monogr>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">R</forename><surname>Rosenbaum</surname></persName>
+		</author>
+		<title level="m">Observational studies</title>
+		<meeting><address><addrLine>New York, NY</addrLine></address></meeting>
+		<imprint>
+			<publisher>Springer</publisher>
+			<date type="published" when="2002">2002</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b34">
+	<analytic>
+		<title level="a" type="main">The central role of the propensity score in observational studies for causal effects</title>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">R</forename><surname>Rosenbaum</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Rubin</forename><surname>Db</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Biometrika</title>
+		<imprint>
+			<biblScope unit="volume">70</biblScope>
+			<biblScope unit="issue">1</biblScope>
+			<biblScope unit="page" from="41" to="55" />
+			<date type="published" when="1983">1983</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b35">
+	<analytic>
+		<title level="a" type="main">Average causal effects from nonrandomized studies: A practical guide and simulated example</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">L</forename><surname>Schafer</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><surname>Kang</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Psychological Methods</title>
+		<imprint>
+			<biblScope unit="volume">13</biblScope>
+			<biblScope unit="page" from="279" to="313" />
+			<date type="published" when="2008">2008. 19071996</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b36">
+	<analytic>
+		<title level="a" type="main">Multivariate and propensity score matching software with automated balance optimization: The matching package for R</title>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">S</forename><surname>Sekhon</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Statistical Software</title>
+		<imprint>
+			<biblScope unit="volume">42</biblScope>
+			<biblScope unit="issue">7</biblScope>
+			<biblScope unit="page" from="1" to="52" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b37">
+	<monogr>
+		<title level="m" type="main">Experimental and quasi-experimental designs for generalized causal inference</title>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">R</forename><surname>Shadish</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">D</forename><surname>Cook</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><forename type="middle">T</forename><surname>Campbell</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2002">2002</date>
+			<publisher>Houghton-Mifflin</publisher>
+			<pubPlace>Boston, MA</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b38">
+	<monogr>
+		<title level="m" type="main">The validity and precision of the comparative interrupted time series design and the difference-in-difference design in educational evaluation</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Somers</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><surname>Zhu</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">R</forename><surname>Jacob</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">H</forename><surname>Bloom</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2013">2013</date>
+			<publisher>MDRC</publisher>
+			<pubPlace>New York, NY</pubPlace>
+		</imprint>
+	</monogr>
+	<note>MDRC working paper in research methodology</note>
+</biblStruct>
+
+<biblStruct xml:id="b39">
+	<monogr>
+		<title level="m" type="main">Stata treatment-effects reference manual: Potential outcomes/counterfactual outcomes</title>
+		<author>
+			<persName><surname>Statacorp</surname></persName>
+		</author>
+		<ptr target="http://www.stata.com/manuals14/te.pdf" />
+		<imprint>
+			<date type="published" when="2015">2015</date>
+			<publisher>Stata Press</publisher>
+			<pubPlace>College Station, TX</pubPlace>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b40">
+	<analytic>
+		<title level="a" type="main">Matching and propensity scores</title>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">M</forename><surname>Steiner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Cook</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">The Oxford handbook of quantitative methods in psychology</title>
+		<editor>
+			<persName><forename type="first">T</forename><surname>Little</surname></persName>
+		</editor>
+		<meeting><address><addrLine>New York, NY</addrLine></address></meeting>
+		<imprint>
+			<publisher>Oxford University Press</publisher>
+			<date type="published" when="2013">2013</date>
+			<biblScope unit="volume">1</biblScope>
+			<biblScope unit="page" from="237" to="259" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b41">
+	<analytic>
+		<title level="a" type="main">Bias reduction in quasi-experiments with little selection theory but many covariates</title>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">M</forename><surname>Steiner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">D</forename><surname>Cook</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Li</forename><forename type="middle">W</forename><surname>Clark</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><forename type="middle">H</forename></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Research on Educational Effectiveness</title>
+		<imprint>
+			<biblScope unit="volume">8</biblScope>
+			<biblScope unit="page" from="552" to="576" />
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b42">
+	<analytic>
+		<title level="a" type="main">On the importance of reliable covariate measurement in selection bias adjustments using propensity scores</title>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">M</forename><surname>Steiner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">D</forename><surname>Cook</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">W</forename><forename type="middle">R</forename><surname>Shadish</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Educational and Behavioral Statistics</title>
+		<imprint>
+			<biblScope unit="volume">36</biblScope>
+			<biblScope unit="page" from="213" to="236" />
+			<date type="published" when="2011">2011</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b43">
+	<analytic>
+		<title level="a" type="main">The mechanics of omitted variable bias: Bias amplification and cancellation of offsetting biases</title>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">M</forename><surname>Steiner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Kim</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Causal Inference</title>
+		<imprint/>
+	</monogr>
+	<note>in press</note>
+</biblStruct>
+
+<biblStruct xml:id="b44">
+	<analytic>
+		<title level="a" type="main">Graphical models for quasi-experimental designs</title>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">M</forename><surname>Steiner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">Y</forename><surname>Kim</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><forename type="middle">E</forename><surname>Hall</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">D</forename><surname>Su</surname></persName>
+		</author>
+		<idno type="DOI">10.1177/0049124115582272</idno>
+	</analytic>
+	<monogr>
+		<title level="j">Sociological Methods &amp; Research. Advance online publication</title>
+		<imprint>
+			<date type="published" when="2015">2015</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b45">
+	<analytic>
+		<title level="a" type="main">Causal inference and generalization in field settings: Experimental and quasi-experimental designs</title>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">G</forename><surname>West</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">J</forename><forename type="middle">C</forename><surname>Biesanz</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">S</forename><forename type="middle">C</forename><surname>Pitts</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="m">Handbook of research methods in social and personality psychology</title>
+		<editor>
+			<persName><forename type="first">H</forename><forename type="middle">T</forename><surname>Reis</surname></persName>
+		</editor>
+		<editor>
+			<persName><forename type="first">C</forename><forename type="middle">M</forename><surname>Judd</surname></persName>
+		</editor>
+		<meeting><address><addrLine>New York, NY</addrLine></address></meeting>
+		<imprint>
+			<publisher>Cambridge University Press</publisher>
+			<date type="published" when="2000">2000</date>
+			<biblScope unit="page" from="40" to="84" />
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b46">
+	<analytic>
+		<title level="a" type="main">Strengthening the regression discontinuity design using additional design elements: A within-study comparison</title>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">D</forename><surname>Cook</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Journal of Policy Analysis and Management</title>
+		<imprint>
+			<biblScope unit="volume">32</biblScope>
+			<biblScope unit="page" from="853" to="877" />
+			<date type="published" when="2013">2013</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b47">
+	<monogr>
+		<title level="m" type="main">No Child Left Behind: An interim evaluation of its effects on learning using two interrupted time series each with its own non-equivalent comparison series</title>
+		<author>
+			<persName><forename type="first">M</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">D</forename><surname>Cook</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">M</forename><surname>Steiner</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2009">2009</date>
+			<pubPlace>Evanston, IL</pubPlace>
+		</imprint>
+		<respStmt>
+			<orgName>Institute for Policy Research, Northwestern University</orgName>
+		</respStmt>
+	</monogr>
+	<note type="report_type">Working Paper No. WP-09-11</note>
+</biblStruct>
+
+<biblStruct xml:id="b48">
+	<analytic>
+		<title level="a" type="main">Research designs for program evaluation</title>
+		<author>
+			<persName><forename type="first">V</forename><forename type="middle">C</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">C</forename><surname>Wing</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">P</forename><forename type="middle">M</forename><surname>Steiner</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">M</forename><surname>Wong</surname></persName>
+		</author>
+		<author>
+			<persName><forename type="first">T</forename><forename type="middle">D</forename><surname>Cook</surname></persName>
+		</author>
+	</analytic>
+	<monogr>
+		<title level="j">Handbook of Psychology</title>
+		<imprint>
+			<biblScope unit="volume">2</biblScope>
+			<biblScope unit="page" from="316" to="341" />
+			<date type="published" when="2012">2012</date>
+		</imprint>
+	</monogr>
+</biblStruct>
+
+<biblStruct xml:id="b49">
+	<monogr>
+		<title level="m" type="main">Introductory econometrics: A modern approach</title>
+		<author>
+			<persName><forename type="first">J</forename><surname>Wooldridge</surname></persName>
+		</author>
+		<imprint>
+			<date type="published" when="2012">2012</date>
+			<publisher>South-Western Cengage Learning</publisher>
+			<pubPlace>Mason, OH</pubPlace>
+		</imprint>
+	</monogr>
+	<note>th ed.</note>
+</biblStruct>
+
+				</listBibl>
+			</div>
+		</back>
+	</text>
+</TEI>
