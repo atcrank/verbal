@@ -136,10 +136,33 @@ class LocalAIModel(models.Model):
     description = models.TextField(blank=True, help_text="Notes on capabilities, VRAM usage, etc.")
     load_in_4bit = models.BooleanField(default=True, help_text="Use 4-bit quantization (Recommended for 6GB VRAM)")
     context_window = models.IntegerField(default=4096, help_text="Max tokens")
-    is_system_active = models.BooleanField(default=False, help_text="Is this currently loaded in the inference server VRAM?")
 
     def __str__(self):
-        return f"{self.name} ({'LOADED' if self.is_system_active else 'Inactive'})"
+        return f"{self.name}"
+
+
+class SystemConfiguration(models.Model):
+    """Singleton model for global system settings and VRAM management."""
+    active_local_model = models.ForeignKey(
+        LocalAIModel, on_delete=models.SET_NULL, null=True, blank=True,
+        help_text="The PyTorch model loaded into VRAM. Leave blank to exclusively use Ollama/External APIs."
+    )
+    system_tokenizer_id = models.CharField(
+        max_length=255, default="Qwen/Qwen2.5-3B-Instruct",
+        help_text="Loaded into CPU RAM to count tokens, even if local VRAM model is disabled."
+    )
+
+    def save(self, *args, **kwargs):
+        self.pk = 1  # Enforce singleton pattern
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def get_solo(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+        
+    def __str__(self):
+        return "Global System Configuration"
 
 class ExternalAIModel(models.Model):
     """Configuration for an external API like OpenAI or Anthropic."""

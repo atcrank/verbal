@@ -160,12 +160,28 @@ def digest_corpus_level_1_action(modeladmin, request, queryset):
                             level=messages.SUCCESS)
 
 
+@admin.action(description="Level 3 Digest: Synthesize Cross-Domain Joins")
+def digest_corpus_level_3_action(modeladmin, request, queryset):
+    """Admin action to trigger the Level 3 cross-domain digestion task."""
+    try:
+        if not celery_app.control.ping(timeout=1.0):
+            modeladmin.message_user(request, "Celery service not available.", level=messages.ERROR)
+            return
+    except Exception:
+        modeladmin.message_user(request, "Celery service not available.", level=messages.ERROR)
+        return
+
+    for domain in queryset:
+        task_digest_corpus_level_3.delay(domain.id)
+    modeladmin.message_user(request, f"Queued {queryset.count()} domain(s) for Level 3 cross-domain synthesis.", level=messages.SUCCESS)
+
+
 @admin.register(Domain)
 class DomainAdmin(admin.ModelAdmin):
     list_display = ('name', 'created_at', 'document_count')
     search_fields = ('name', 'description', 'style_guide')
     filter_horizontal = ('documents',)
-    actions = [digest_corpus_level_1_action]
+    actions = [digest_corpus_level_1_action, digest_corpus_level_3_action]
     
     def document_count(self, obj):
         return obj.documents.count()

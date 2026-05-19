@@ -554,6 +554,22 @@ class RAGService:
             # Ensure a default chunking strategy exists before querying strategies
             DjangoReadingStrategy.objects.get_or_create(document=document, strategy_description="Default Chunking")
             
+            # Auto-create Grobid Semantic Chunking strategy if meaningful TEI XML exists
+            if hasattr(document, 'grobid_metadata') and document.grobid_metadata and document.grobid_metadata.tei_xml:
+                ref = document.grobid_metadata
+                meaningful_fields = [
+                    getattr(ref, 'authors', ''), getattr(ref, 'abstract', ''),
+                    getattr(ref, 'journal', ''), getattr(ref, 'publisher', ''),
+                    getattr(ref, 'year', ''), getattr(ref, 'publication_date', ''),
+                    getattr(ref, 'volume', ''), getattr(ref, 'issue', ''),
+                    getattr(ref, 'pages', ''), getattr(ref, 'doi', '')
+                ]
+                if any(str(field).strip() for field in meaningful_fields if field is not None):
+                    GrobidReadingStrategy.objects.get_or_create(
+                        document=document,
+                        defaults={"strategy_description": "Grobid Semantic Chunking"}
+                    )
+
             # Ingest all types of strategies
             self.ingest_queryset_reading_strategies(document.readingstrategy_set.all())
             self.ingest_queryset_reading_strategies(document.promptstrategy_set.all())

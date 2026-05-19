@@ -17,7 +17,22 @@ services:
     restart: unless-stopped
     # Grobid can be memory-heavy when processing massive PDFs,
     # but the container handles itself well alongside Ollama.
-  # ollama:
+  ollama:
+    image: ollama/ollama
+    container_name: verbal_ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all # Use 'all' to pass all GPUs, or a number for a specific count
+              capabilities: [gpu]
 
 volumes:
   redis_data:
+  ollama_data:

@@ -1,68 +1,49 @@
-# Register your models here.
+# Register your models here.# llm_api/admin.py
 from django.contrib import admin, messages
-from django.utils import timezone
-from .models import Conversation, PromptResponseLog, LocalAIModel, ExternalAIModel, UserActiveModel, UserAPIKey
-from .apps import service_registry
+from .models import LocalAIModel, ExternalAIModel, UserActiveModel, UserAPIKey, SystemConfiguration, PromptResponseLog, Conversation
 
-
-@admin.action(description="Load this model into the Inference server")
-def activate_model(modeladmin, request, queryset):
+@admin.action(description="Load this Model into Inference Server VRAM")
+def activate_local_model(modeladmin, request, queryset):
     if queryset.count() != 1:
-        modeladmin.message_user(request, "Please select exactly one model to activate.", level=messages.WARNING)
+        modeladmin.message_user(request, "Please select exactly one model.", level=messages.WARNING)
         return
 
     new_model = queryset.first()
+    config = SystemConfiguration.get_solo()
+    config.active_local_model = new_model
+    config.save()
+    modeladmin.message_user(request, f"System configured to load {new_model.name} into VRAM.", level=messages.SUCCESS)
 
-    # 1. Update Database State
-    LocalAIModel.objects.update(is_system_active=False)
-    new_model.is_system_active = True
-    new_model.activated_by = request.user
-    new_model.activated_at = timezone.now()
-    # Optional: We could prompt for intent, but for now we just clear it or keep it?
-    # Let's verify if the admin form has a save override, but for an action, we just set it.
-    new_model.save()
-
-    # 2. Trigger Hot Reload
-    try:
-        service_registry.reload_ai_service()
-        modeladmin.message_user(request, f"Successfully loaded {new_model.name}.", level=messages.SUCCESS)
-    except Exception as e:
-        modeladmin.message_user(request, f"Error loading model: {e}", level=messages.ERROR)
-        # Revert active state if failed? Maybe risky if we are now in limbo.
-
+@admin.action(description="Unload all Local Models (Free VRAM for Ollama)")
+def unload_local_models(modeladmin, request, queryset):
+    config = SystemConfiguration.get_solo()
+    config.active_local_model = None
+    config.save()
+    modeladmin.message_user(request, "System configured to bypass local VRAM loading.", level=messages.SUCCESS)
 
 @admin.register(LocalAIModel)
 class LocalAIModelAdmin(admin.ModelAdmin):
-    list_display = ('name', 'hf_model_id', 'is_system_active')
-    actions = [activate_model]
+    list_display = ('name', 'hf_model_id')
     search_fields = ('name', 'hf_model_id')
+    actions = [activate_local_model, unload_local_models]
 
-    def save_model(self, request, obj, form, change):
-        # If creating a new active model manually via checkbox
-        if obj.is_system_active:
-            LocalAIModel.objects.exclude(pk=obj.pk).update(is_system_active=False)
-            obj.activated_by = request.user
-            obj.activated_at = timezone.now()
-        super().save_model(request, obj, form, change)
-
-
-class DialogAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "created_at", "user_prompt", "conversation_id")
-    search_fields = ("user", "system_prompt", "user_prompt", "generated_response", "rag_selections")
-
-    class Meta:
-        model = PromptResponseLog
-
+@admin.register(Conversation)
 class ConversationAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "start_time", "title", "blueprint")
-    search_fields = ("user__username", "title")
-    list_filter = ("blueprint",)
+    list_display = ('title', 'user', 'blueprint', 'start_time')
+    list_filter = ('start_time', 'blueprint', 'user')
+    search_fields = ('title', 'user__username')
+    readonly_fields = ('id', 'start_time')
+    autocomplete_fields = ('user', 'blueprint')
 
-    class Meta:
-        model = Conversation
+@admin.register(PromptResponseLog)
+class PromptResponseLogAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'conversation', 'user_feedback', 'created_at')
+    list_filter = ('user_feedback', 'created_at', 'user')
+    search_fields = ('user_prompt', 'generated_response', 'system_prompt', 'conversation__title', 'user__username')
+    readonly_fields = ('id', 'created_at')
+    autocomplete_fields = ('user', 'conversation')
 
+admin.site.register(SystemConfiguration)
 admin.site.register(ExternalAIModel)
 admin.site.register(UserActiveModel)
 admin.site.register(UserAPIKey)
-admin.site.register(PromptResponseLog, DialogAdmin)
-admin.site.register(Conversation, ConversationAdmin)

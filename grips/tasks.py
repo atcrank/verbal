@@ -147,6 +147,12 @@ class UnifiedConceptDraft(BaseModel):
     claims: List[StructuredClaim] = Field(default_factory=list,
                                           description="Structured claims for the unified concept.")
 
+class CrossDomainEvaluation(BaseModel):
+    reasoning: str = Field(description="Analyze if these concepts from different domains are fundamentally related or analogous.")
+    is_related: bool = Field(description="True if they share underlying principles, structures, or causal mechanisms.")
+    justification: str = Field(default="", description="If related, briefly describe the connection to use as the edge justification.")
+
+
 
 @shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=True, retry_kwargs={'max_retries': 2})
 def task_digest_corpus_level_1_batch(self, domain_name: str, doc_title: str, batch_text: str, is_first_batch: bool):
@@ -317,8 +323,6 @@ def task_digest_corpus_level_1(domain_id: int, document_id: int):
         chord(batch_signatures)(task_digest_corpus_level_1_finalize.s(domain_id, document_id))
 
         return f"Map-Reduce Chord queued for {doc.title} ({len(batch_signatures)} batches)."
-        
-        
 
 
 class LintingReportSchema(BaseModel):
@@ -540,10 +544,99 @@ def task_digest_corpus_level_2(self, domain_id: int, new_node_ids: List[int] = N
     return summary
 
 
+@shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=True, retry_kwargs={'max_retries': 2})
+def task_digest_corpus_level_3(self, domain_id: int):
+    """
+    Level 3: Cross-domain concept joins.
+    Looks for analogous concepts in OTHER domains to bridge silos.
+    """
+    from llm_api.apps import service_registry
+    
+    grips_service = service_registry.grips_service
+    ai_service = service_registry.ai_service
+
+    try:
+        domain = Domain.objects.get(id=domain_id)
+    except Domain.DoesNotExist:
+        return "Domain not found."
+
+    nodes = ConceptNode.objects.filter(domain=domain)
+    actions_taken = []
+
+    for node in nodes:
+        # Search all domains (domain_id=None) to find potential cross-domain analogies
+        search_text = f"Title: {node.title}\nContext: {node.focus_hint}\nNarrative: {node.narrative_content}"
+        neighbors_docs = grips_service.get_grips_context(search_text, domain_id=None, k=5)
+
+        for d in neighbors_docs:
+            match_domain_id = d.metadata.get("domain_id")
+            match_concept_id = d.metadata.get("concept_id")
+
+            # Skip if it's in the exact same domain, or we have a missing ID
+            if not match_concept_id or match_domain_id == domain.id:
+                continue
+
+            try:
+                neighbor_node = ConceptNode.objects.get(id=match_concept_id)
+            except ConceptNode.DoesNotExist:
+                continue
+
+            # Skip if already linked
+            if KnowledgeEdge.objects.filter(source=node, target=neighbor_node).exists() or \
+               KnowledgeEdge.objects.filter(source=neighbor_node, target=node).exists():
+                continue
+
+            prompt = f"""
+            You are a highly analytical Knowledge Graph Architect.
+            Evaluate these two concepts from DIFFERENT domains and determine if they are fundamentally analogous or share a deep structural relationship.
+
+            Domain A: {domain.name}
+            Concept A: {node.title}
+            Narrative: {node.narrative_content}
+
+            Domain B: {neighbor_node.domain.name}
+            Concept B: {neighbor_node.title}
+            Narrative: {neighbor_node.narrative_content}
+
+            Are these concepts structurally related or analogous across their domains?
+            """
+
+            result = ai_service.generate_outline(
+                messages=[{"role": "user", "content": prompt}],
+                response_schema=CrossDomainEvaluation,
+                max_new_tokens=1000
+            )
+
+            eval_obj = None
+            if isinstance(result, dict) and "error" not in result:
+                eval_obj = CrossDomainEvaluation.model_validate(result)
+            elif isinstance(result, str):
+                try: eval_obj = CrossDomainEvaluation.model_validate_json(result)
+                except Exception: continue
+            elif hasattr(result, 'is_related'):
+                eval_obj = result
+
+            if eval_obj and eval_obj.is_related:
+                KnowledgeEdge.objects.get_or_create(
+                    source=node, target=neighbor_node, relationship_type='RELATED_TO',
+                    defaults={"justification": f"[Cross-Domain Link] {eval_obj.justification[:400]}"}
+                )
+                actions_taken.append(f"Linked '{node.title}' to '{neighbor_node.title}'")
+
+    return f"Level 3 Complete. Created {len(actions_taken)} cross-domain edges."
+
 @shared_task
-def task_digest_corpus_level_3(domain_id: int):
-    # Placeholder for Level 3: Cross-domain concept joins
-    # 1. Look for orphan sub-concepts
-    # 2. Query other domains for semantic matches
-    # 3. Create RELATED_TO edges bridging domains
-    return "Level 3 Digest stub executed."
+def sweep_unlinted_concepts():
+    """
+    Periodic task to sweep for concepts that need linting.
+    """
+    # Batch to 20 at a time to keep the queue flowing nicely
+    nodes = ConceptNode.objects.filter(needs_linting=True).order_by('last_linted_at')[:20]
+    
+    if not nodes:
+        return "No concepts currently require linting."
+        
+    for node in nodes:
+        task_lint_concept_node.delay(node.id)
+        
+    return f"Queued {nodes.count()} concepts for automated linting."

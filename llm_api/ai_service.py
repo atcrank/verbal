@@ -2,8 +2,9 @@ import os
 import gc
 import json
 import requests
+import re
 from django.conf import settings
-from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline, BitsAndBytesConfig
+from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline, BitsAndBytesConfig, GenerationConfig
 import outlines
 
 import torch
@@ -50,25 +51,22 @@ class AIService:
     def load_models(self):
         token = os.getenv("HF_TOKEN")
 
-        # 1. Determine Model ID
-        # Try Database first
         self.model_id = None
+        tokenizer_id = "Qwen/Qwen2.5-3B-Instruct"
+        
         try:
-            from .models import LocalAIModel
-            active_model = LocalAIModel.objects.filter(is_system_active=True).first()
-            if active_model:
-                print(f"📂 Found active model in DB: {active_model.name} ({active_model.hf_model_id})")
-                self.model_id = active_model.hf_model_id
-
+            from .models import SystemConfiguration
+            config = SystemConfiguration.get_solo()
+            tokenizer_id = config.system_tokenizer_id
+            
+            if config.active_local_model:
+                self.model_id = config.active_local_model.hf_model_id
+                print(f"📂 System Config requests PyTorch load for: {self.model_id}")
         except Exception as e:
-            print(f"Warning: Could not fetch LocalAIModel from DB (migrations might be pending): {e}")
+            print(f"Warning: Could not fetch SystemConfiguration from DB: {e}")
 
-        # Fallback to Settings
-        if not self.model_id:
-            self.model_id = getattr(settings, "LLM_MODEL_ID", os.getenv("LLM_MODEL_ID", "microsoft/Phi-3-mini-4k-instruct"))
-            print(f"⚙️ Using default/settings model: {self.model_id}")
-
-        self.tokenizer = AutoTokenizer.from_pretrained(self.model_id, token=token)
+        print(f"⚙️ Loading CPU tokenizer: {tokenizer_id}")
+        self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_id, token=token)
         # Load your main LLM
         if self.tokenizer.pad_token_id is None:
             self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
@@ -83,6 +81,10 @@ class AIService:
                 print("✅ Successfully connected to inference server.")
             except requests.exceptions.RequestException as e:
                 print(f"⚠️ WARNING: Cannot connect to inference server at {self.inference_url}. Ensure it is running! Error: {e}")
+            return
+
+        if not self.model_id:
+            print("🛑 No Local AI Model selected in System Configuration. Bypassing PyTorch to save VRAM.")
             return
 
         print("🚀 Loading Heavy AI models into VRAM...")
@@ -244,42 +246,6 @@ class AIService:
         except requests.exceptions.RequestException as e:
             raise ConnectionError(f"Failed to communicate with API at {api_url}: {e}")
 
-    def generate_response(self, messages, max_new_tokens=1024, num_return_sequences=1, temperature=0.7, log_kwargs=None, user=None):
-        # Determine if we must route via HTTP
-        needs_proxy = self.role in ["web", "worker"]
-        if user and not getattr(user, 'is_anonymous', False):
-            from .models import UserActiveModel
-            if UserActiveModel.objects.filter(user=user, use_external=True).exists():
-                needs_proxy = True
-
-        if needs_proxy:
-            results = self._execute_openai_standard_request(messages, max_new_tokens, temperature, num_return_sequences, user=user)
-            results_list = results if isinstance(results, list) else [results]
-            self._log_generation(messages, results_list, log_kwargs)
-            return results_list
-        with self._lock:
-            if self.llm_pipeline is None:
-                self.load_models()
-
-            messages = self.summarize_conversation(messages)
-            response = self.llm_pipeline(messages,
-                                         do_sample=True,
-                                         top_p=0.95,
-                                         temperature=temperature,
-                                         max_new_tokens=max_new_tokens,
-                                         eos_token_id=self.terminators,
-                                         num_return_sequences=num_return_sequences,
-                                         return_full_text=False)
-            print(response)
-
-            if num_return_sequences > 1:
-                results = [r['generated_text'] for r in response]
-            else:
-                results = [response[0]['generated_text']]
-
-            self._log_generation(messages, results, log_kwargs)
-            return results
-
     def _get_schema_cache_key(self, response_schema):
         """Helper to create a deterministic cache key for outline schemas."""
         if response_schema is None:
@@ -290,119 +256,180 @@ class AIService:
             return json.dumps(response_schema, sort_keys=True)
         return str(response_schema)
 
-    def _generate_proxy_outline(self, messages, response_schema, max_new_tokens, temperature, num_return_sequences, user, log_kwargs):
-        """Handles HTTP proxy generation with self-healing retry logic."""
-        max_attempts = 2
-        for attempt in range(max_attempts):
-            current_n = num_return_sequences if attempt == 0 else max(2, num_return_sequences + 1)
-            try:
-                result_data = self._execute_openai_standard_request(
-                    messages, max_new_tokens, temperature, current_n, response_schema, user=user
-                )
-                
-                results_to_check = result_data if isinstance(result_data, list) else [result_data]
-                last_error = None
-                
-                for res in results_to_check:
-                    try:
-                        # Verify validity but discard the constructed object
-                        if response_schema and hasattr(response_schema, "model_validate"):
-                            if isinstance(res, str):
-                                response_schema.model_validate_json(res)
-                            else:
-                                response_schema.model_validate(res)
-                        elif isinstance(response_schema, dict) or response_schema is None:
-                            if isinstance(res, str):
-                                json.loads(res)
-                                
-                        # If we get here, it's valid!
-                        self._log_generation(messages, [res], log_kwargs)
-                        return res
-                    except Exception as ve:
-                        last_error = ve
-                        continue
-                        
-                raise ValueError(f"All generated sequences failed validation. Last error: {last_error}")
-
-            except Exception as e:
-                print(f"Error in proxy outline generation (Attempt {attempt+1}/{max_attempts}): {e}")
-                if attempt == max_attempts - 1:
-                    return {"error": "GenerationFailed", "details": str(e)}
-
-    def _generate_local_outline(self, messages, response_schema, max_new_tokens, temperature, num_return_sequences, log_kwargs):
-        """Handles local VRAM generation with FSM caching and retry logic."""
-        with self._lock:
-            if self.outline_pipeline is None:
-                self.load_models()
-                
-            cache_key = self._get_schema_cache_key(response_schema)
-            if cache_key not in self._generator_cache:
-                print(f"Building and Caching Outlines FSM for schema: {cache_key}")
-                actual_schema = response_schema
-                if actual_schema is None:
-                    actual_schema = self.default_outline_response
-                elif isinstance(actual_schema, dict):
-                    try:
-                        from outlines.types import JsonSchema
-                        try:
-                            actual_schema = JsonSchema(json.dumps(actual_schema))
-                        except Exception:
-                            actual_schema = JsonSchema(actual_schema)
-                    except ImportError:
-                        pass
-                
-                self._generator_cache[cache_key] = outlines.Generator(self.outline_pipeline, actual_schema)
-                
-            generator = self._generator_cache[cache_key]
+    def _perform_active_rag_search(self, term, searched_terms, working_messages):
+        """
+        Searches the Grips Knowledge Graph and standard RAG for a term, 
+        injecting the results back into the working_messages.
+        Returns True if a new search was performed, False if already searched.
+        """
+        if term in searched_terms:
+            print(f"⚠️ Active RAG: Already searched for '{term}'. Ignoring to prevent infinite loop.")
+            return False
             
-            if isinstance(messages, list):
-                prompt = self.tokenizer.apply_chat_template(
-                    messages, tokenize=False, add_generation_prompt=True
-                )
-            else:
-                prompt = messages
+        print(f"🔍 Active RAG Triggered: Halting validation to search Knowledge Graph and RAG for '{term}'...")
+        searched_terms.add(term)
+        
+        from llm_api.apps import service_registry
+        
+        context_parts = []
+        
+        # 1. Search Grips Knowledge Graph
+        grips_service = service_registry.grips_service
+        if grips_service:
+            try:
+                grips_docs = grips_service.get_grips_context(term, k=3)
+                if grips_docs:
+                    context_parts.append("\n\n".join([f"Concept [{d.metadata.get('title', 'Unknown')}]:\n{d.page_content}" for d in grips_docs]))
+            except Exception as e:
+                print(f"Grips search failed: {e}")
                 
-            max_attempts = 2
-            for attempt in range(max_attempts):
+        # 2. Search Standard RAG
+        rag_service = service_registry.rag_service
+        if rag_service:
+            try:
+                rag_docs = rag_service.get_context(term, k=3)
+                if rag_docs:
+                    context_parts.append("\n\n".join([f"Source: {d.metadata.get('filename', 'Unknown')}\nContent: {d.page_content}" for d in rag_docs]))
+            except Exception as e:
+                print(f"RAG search failed: {e}")
+                
+        context_str = "\n\n---\n\n".join(context_parts) if context_parts else "No specific concepts found."
+        
+        # Inject the result and prime the model to continue walking the graph
+        injection = f"\n\n[System Search Result for '{term}':\n{context_str}\nNote: You may use <SEARCH: new_term> to explore further.]\n"
+        
+        # Append safely to the last user message to preserve chat template structure
+        for i in range(len(working_messages)-1, -1, -1):
+            if working_messages[i]["role"] == "user":
+                working_messages[i] = working_messages[i].copy()
+                working_messages[i]["content"] += injection
+                break
+                
+        return True
+
+    def _get_valid_structured_result(self, raw_results, response_schema):
+        """Attempts to validate a list of results against a schema, returning the first valid one."""
+        last_error = None
+        for res in raw_results:
+            try:
+                # Verify validity but discard the constructed object
+                if response_schema and hasattr(response_schema, "model_validate"):
+                    if isinstance(res, str):
+                        response_schema.model_validate_json(res)
+                    else:
+                        response_schema.model_validate(res)
+                elif isinstance(response_schema, dict) or response_schema is None:
+                    if isinstance(res, str) and response_schema is not None:
+                        json.loads(res)
+                        
+                # Success!
+                return res
+            except Exception as ve:
+                last_error = ve
+                continue
+                
+        raise ValueError(f"All generated sequences failed validation. Last error: {last_error}")
+
+    def _execute_generation_with_retries(self, generate_callable, messages, response_schema, max_new_tokens, temperature, num_return_sequences, log_kwargs, is_structured):
+        """
+        Universal executor handling Validation, Retries, Multiples, and Active RAG (Self-Guidance).
+        Works identically for local/proxy and structured/unstructured generations.
+        """
+        working_messages = list(messages) if isinstance(messages, list) else [{"role": "user", "content": messages}]
+        max_search_hops = 4
+        max_validation_attempts = 2
+        searched_terms = set()
+        
+        for search_hop in range(max_search_hops):
+            did_search = False
+            
+            for attempt in range(max_validation_attempts):
                 current_n = num_return_sequences if attempt == 0 else max(2, num_return_sequences + 1)
                 
                 try:
-                    generator_kwargs = {
-                        "do_sample": True,
-                        "max_new_tokens": max_new_tokens,
-                        "temperature": temperature,
-                    }
-                    if current_n > 1:
-                        generator_kwargs["num_return_sequences"] = current_n
-        
-                    result = generator(prompt, **generator_kwargs)
-                    results_to_check = result if isinstance(result, list) else [result]
+                    raw_results = generate_callable(working_messages, max_new_tokens, temperature, current_n)
                     last_error = None
                     
-                    for res in results_to_check:
-                        try:
-                            # Verify validity but discard the constructed object
-                            if response_schema and hasattr(response_schema, "model_validate"):
-                                if isinstance(res, str):
-                                    response_schema.model_validate_json(res)
-                                else:
-                                    response_schema.model_validate(res)
-                            elif isinstance(res, str):
-                                json.loads(res)
-                                
-                            # Success!
-                            self._log_generation(messages, [res], log_kwargs)
-                            return res
-                        except Exception as ve:
-                            last_error = ve
-                            continue
-                            
-                    raise ValueError(f"All generated sequences failed validation. Last error: {last_error}")
+                    for res in raw_results:
+                        # 1. Active RAG Check: Look for <SEARCH: concept> anywhere in output
+                        search_match = re.search(r'<SEARCH:\s*([^>]+)>', str(res))
+                        if search_match:
+                            term = search_match.group(1).strip()
+                            did_search = self._perform_active_rag_search(term, searched_terms, working_messages)
+                            if did_search:
+                                break  # Break out of result inspection to restart generation with new context!
+                    
+                    if did_search:
+                        break  # Break attempt loop, proceed to next search_hop
+                        
+                    # 2. Return unstructured immediately if no search was triggered
+                    if not is_structured:
+                        self._log_generation(working_messages, raw_results, log_kwargs)
+                        return raw_results
+                        
+                    # 3. Validation Check for structured outputs
+                    valid_res = self._get_valid_structured_result(raw_results, response_schema)
+                    
+                    # Success! We log working_messages so the DB reflects the Active RAG injections
+                    self._log_generation(working_messages, [valid_res], log_kwargs)
+                    return valid_res
                     
                 except Exception as e:
-                    print(f"Error in local outline generation (Attempt {attempt+1}/{max_attempts}): {e}")
-                    if attempt == max_attempts - 1:
-                        return {"error": "GenerationFailed", "details": str(e)}
+                    if attempt == max_validation_attempts - 1 and not did_search:
+                        print(f"Error in generation (Attempt {attempt+1}/{max_validation_attempts}): {e}")
+                        if is_structured:
+                            return {"error": "GenerationFailed", "details": str(e)}
+                        else:
+                            return [f"GenerationFailed: {str(e)}"]
+                            
+        # Exhausted all search hops
+        if is_structured:
+            return {"error": "GenerationFailed", "details": "Exhausted Active RAG search hops."}
+        else:
+            return ["GenerationFailed: Exhausted Active RAG search hops."]
+
+    def generate_response(self, messages, max_new_tokens=1024, num_return_sequences=1, temperature=0.7, log_kwargs=None, user=None):
+        """Facade for standard chat completions."""
+        needs_proxy = self.role in ["web", "worker"]
+        if user and not getattr(user, 'is_anonymous', False):
+            from .models import UserActiveModel
+            if UserActiveModel.objects.filter(user=user, use_external=True).exists():
+                needs_proxy = True
+
+        if needs_proxy:
+            def proxy_callable(msgs, max_tok, temp, n):
+                res = self._execute_openai_standard_request(msgs, max_tok, temp, n, None, user=user)
+                return res if isinstance(res, list) else [res]
+            generate_callable = proxy_callable
+        else:
+            def local_callable(msgs, max_tok, temp, n):
+                with self._lock:
+                    if self.llm_pipeline is None:
+                        self.load_models()
+                    if self.llm_pipeline is None:
+                        raise RuntimeError("No Local AI Model is active in System Configuration, and no External API is configured for this user.")
+                    msgs_summary = self.summarize_conversation(msgs)
+                    
+                    import copy
+                    gen_config = copy.deepcopy(self.model.generation_config)
+                    gen_config.do_sample = True
+                    gen_config.top_p = 0.95
+                    gen_config.temperature = temp
+                    gen_config.max_new_tokens = max_tok
+                    gen_config.eos_token_id = self.terminators
+                    gen_config.num_return_sequences = n
+                    gen_config.max_length = None  # Suppresses the max_length precedence warning
+                    
+                    res = self.llm_pipeline(
+                        msgs_summary, generation_config=gen_config, return_full_text=False
+                    )
+                    return [r['generated_text'] for r in res]
+            generate_callable = local_callable
+
+        return self._execute_generation_with_retries(
+            generate_callable, messages, None, max_new_tokens, temperature, 
+            num_return_sequences, log_kwargs, is_structured=False
+        )
 
     def generate_outline(self, messages,
                          response_schema=None,
@@ -420,15 +447,42 @@ class AIService:
                 needs_proxy = True
 
         if needs_proxy:
-            return self._generate_proxy_outline(
-                messages, response_schema, max_new_tokens, temperature, 
-                num_return_sequences, user, log_kwargs
-            )
+            def proxy_callable(msgs, max_tok, temp, n):
+                res = self._execute_openai_standard_request(msgs, max_tok, temp, n, response_schema, user=user)
+                return res if isinstance(res, list) else [res]
+            generate_callable = proxy_callable
         else:
-            return self._generate_local_outline(
-                messages, response_schema, max_new_tokens, temperature, 
-                num_return_sequences, log_kwargs
-            )
+            with self._lock:
+                if self.outline_pipeline is None:
+                    self.load_models()
+                    
+                cache_key = self._get_schema_cache_key(response_schema)
+                if cache_key not in self._generator_cache:
+                    actual_schema = response_schema or self.default_outline_response
+                    if isinstance(actual_schema, dict):
+                        try:
+                            from outlines.types import JsonSchema
+                            try: actual_schema = JsonSchema(json.dumps(actual_schema))
+                            except Exception: actual_schema = JsonSchema(actual_schema)
+                        except ImportError: pass
+                    self._generator_cache[cache_key] = outlines.Generator(self.outline_pipeline, actual_schema)
+                generator = self._generator_cache[cache_key]
+                
+            def local_callable(msgs, max_tok, temp, n):
+                prompt = self.tokenizer.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True) if isinstance(msgs, list) else msgs
+                kwargs = {"do_sample": True, "max_new_tokens": max_tok, "temperature": temp, "max_length": None}
+                if n > 1: kwargs["num_return_sequences"] = n
+                with self._lock:
+                    if self.outline_pipeline is None:
+                        raise RuntimeError("No Local AI Model is active in System Configuration, and no External API is configured for this user.")
+                    res = generator(prompt, **kwargs)
+                return res if isinstance(res, list) else [res]
+            generate_callable = local_callable
+
+        return self._execute_generation_with_retries(
+            generate_callable, messages, response_schema, max_new_tokens, 
+            temperature, num_return_sequences, log_kwargs, is_structured=True
+        )
 
     def label_single(self, text, labels):
         # lazy load
@@ -449,25 +503,28 @@ class AIService:
 
 
     def clean_response(self, response_content):
-        assistant_response = response_content
+        assistant_response = str(response_content).strip()
+        # Globally remove known special tokens that may leak into generations
+        assistant_response = re.sub(r'<\|eot_id\|>|<eos>|<turn\|>|<\/s>', '', assistant_response, flags=re.IGNORECASE).strip()
+        
         print("Assistant response", assistant_response)
         doc = nlp(assistant_response)
         sentences = list(doc.sents)  # Convert the generator to a list
 
         if not sentences:
-            return []
+            return ""
 
         # Get the last detected sentence
         last_sentence = sentences[-1]
 
         # Check the very last token of the last sentence
         # If it's not punctuation, assume the sentence is a fragment.
-        if not last_sentence[-1].is_punct:
+        if not last_sentence[-1].is_punct and len(sentences) > 1:
             # Return all sentences except the last one
-            return "".join([sent.text.strip() for sent in sentences[:-1]])
+            return " ".join([sent.text.strip() for sent in sentences[:-1]])
         else:
             # All detected sentences seem complete
-            return "".join([sent.text.strip() for sent in sentences])
+            return " ".join([sent.text.strip() for sent in sentences])
 
     def count_conversation_tokens(self, messages: list) ->int:
         if not self.tokenizer:

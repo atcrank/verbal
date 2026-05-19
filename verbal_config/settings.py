@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "metacognition.apps.MetacognitionConfig",
     'grips.apps.GripsConfig',
     'grobid_client.apps.GrobidClientConfig',
+    'django_celery_beat',
 ]
 
 MIDDLEWARE = [
@@ -140,6 +141,12 @@ DEFINITION_STORE = BASE_DIR / 'background_resources/vector_store/definitions/'
 # LLM_MODEL_ID = "mistralai/Mistral-7B-Instruct-v0.3" # Might be tight/slow
 # LLM_MODEL_ID = "meta-llama/Meta-Llama-3.1-8B-Instruct" # Likely to OOM on 6GB
 
+# LLM models that are solid condidates as per early 2026 for a better machine with 16gb VRAM
+# Qwen 2.5 14B Instruct (Quantized): Highly Recommended. If you run this through Ollama (ollama run qwen2.5:14b), it will use 4-bit quantization and take up about 9GB of VRAM. It punches so far above its weight class that it rivals GPT-4o-mini in logic, coding, and JSON constraint adherence. It is the absolute champion of this tier.
+# Llama 3.1 8B Instruct (Unquantized): If you want to run natively in your inference Django instance without aggressive quantization, this is the way to go. It will take about 10GB of VRAM in FP16, leaving you 6GB for a massive KV-cache (meaning it can read entire RAG chunks simultaneously without breaking a sweat).
+
+#Mistral NeMo 12B: Co-developed by Nvidia, this model was practically designed for your GPU. It has a massive 128k context window natively and is explicitly trained for RAG retrieval tasks.
+
 # ------------------------------------------------------------------------
 # MICROSERVICE / ROLE CONFIGURATION
 # ------------------------------------------------------------------------
@@ -158,3 +165,4 @@ CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
