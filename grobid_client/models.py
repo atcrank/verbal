@@ -8,14 +8,14 @@ class Reference(models.Model):
 
     tei_xml = models.TextField(blank=True, null=True, help_text="Cached output from Grobid")
 
-    title = models.CharField(max_length=500, blank=True, null=True)
+    title = models.CharField(max_length=1000, blank=True, null=True)
     authors = models.TextField(blank=True, help_text="Comma separated list of parsed authors")
     abstract = models.TextField(blank=True)
     
     # Extended Grobid Bibliography Fields
-    journal = models.CharField(max_length=500, blank=True, null=True, help_text="Journal, conference, or publication name")
+    journal = models.CharField(max_length=1000, blank=True, null=True, help_text="Journal, conference, or publication name")
     publisher = models.CharField(max_length=255, blank=True, null=True)
-    year = models.CharField(max_length=20, blank=True, null=True)
+    year = models.CharField(max_length=200, blank=True, null=True)
     publication_date = models.CharField(max_length=50, blank=True, null=True)
     volume = models.CharField(max_length=50, blank=True, null=True)
     issue = models.CharField(max_length=50, blank=True, null=True)
@@ -25,6 +25,20 @@ class Reference(models.Model):
                                          help_text="Extended structured metadata from TEI XML")
 
     parsed_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        # Explicitly truncate strings to prevent PostgreSQL DataErrors during programmatic inserts
+        if self.title: self.title = self.title[:996] +"..."
+        if self.journal: self.journal = self.journal[:996] +"..."
+        if self.publisher: self.publisher = self.publisher[:251] + "..."
+        if self.year: self.year = self.year[:196] + "..."
+        if self.publication_date: self.publication_date = self.publication_date[:46] + "..."
+        if self.volume: self.volume = self.volume[:46] + "..."
+        if self.issue: self.issue = self.issue[:46] + "..."
+        if self.pages: self.pages = self.pages[:46] + "..."
+        if self.doi: self.doi = self.doi[:96] + "..."
+        
+        super().save(*args, **kwargs)
 
     def __str__(self):
         if self.title:

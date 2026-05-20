@@ -9,6 +9,17 @@ services:
     restart: unless-stopped
     volumes:
       - redis_data:/data
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: verbal_db
+    environment:
+      POSTGRES_USER: verbal_user
+      POSTGRES_PASSWORD: verbal_password
+      POSTGRES_DB: verbal_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
   grobid:
     image: lfoppiano/grobid:0.8.0
     container_name: verbal_grobid
@@ -36,3 +47,4 @@ services:
 volumes:
   redis_data:
   ollama_data:
+  postgres_data:

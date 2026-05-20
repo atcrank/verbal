@@ -36,7 +36,7 @@ class ConceptNode(models.Model):
     """The core 'Wiki Page' - a dense, cross-referenced knowledge element."""
     domain = models.ForeignKey(Domain, on_delete=models.CASCADE, related_name="concepts")
     title = models.CharField(max_length=255)
-    slug = models.SlugField(unique=True, help_text="Used for internal [[wiki-linking]]")
+    slug = models.SlugField(unique=True, max_length=255, help_text="Used for internal [[wiki-linking]]")
     focus_hint = models.CharField(
         max_length=500, 
         blank=True, 

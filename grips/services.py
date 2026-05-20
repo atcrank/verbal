@@ -2,7 +2,7 @@ import os
 import json
 from django.conf import settings
 from langchain_community.vectorstores import FAISS
-from langchain.docstore.document import Document as LangchainDocument
+from langchain_core.documents import Document as LangchainDocument
 from llm_api.apps import service_registry
 
 

@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from .models import CognitiveBlueprint, ReasoningStep, ResponseSchema
 from .tasks import run_blueprint
 from .actions import ActiveReadingEvaluation
-from langchain.docstore.document import Document as LangchainDocument
+from langchain_core.documents import Document as LangchainDocument
 
 
 class MetacognitionTraversalTests(TestCase):

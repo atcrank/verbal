@@ -12,12 +12,12 @@ from django.utils import timezone
 # You will need to have these libraries installed:
 # pip install langchain langchain-community faiss-cpu sentence-transformers
 from langchain_text_splitters import CharacterTextSplitter, RecursiveCharacterTextSplitter
-from langchain.docstore.document import Document as LangchainDocument
+from langchain_core.documents import Document as LangchainDocument
 from langchain_community.document_loaders import (PyPDFLoader, Docx2txtLoader, UnstructuredPowerPointLoader, RecursiveUrlLoader, DirectoryLoader, BSHTMLLoader, NotebookLoader)
 from bs4 import BeautifulSoup as Soup
 from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
-from langchain.storage import LocalFileStore, EncoderBackedStore
+from langchain_classic.storage import LocalFileStore, EncoderBackedStore
 from pydantic import BaseModel, Field
 import outlines
 from typing import TYPE_CHECKING, Optional, List, Tuple, Literal

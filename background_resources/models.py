@@ -24,7 +24,7 @@ from django.utils import timezone
 
 # You will need to have these libraries installed:
 # pip install langchain langchain-community faiss-cpu sentence-transformers
-from langchain.docstore.document import Document as LangchainDocument
+from langchain_core.documents import Document as LangchainDocument
 
 
 class Document(models.Model):
