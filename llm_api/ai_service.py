@@ -18,6 +18,18 @@ nlp.add_pipe("sentencizer")
 if torch.cuda.is_available():
     print("✅ Success! PyTorch can see the GPU.")
     device_count = torch.cuda.device_count()
+
+    # Get the compute capability of the primary GPU (device 0)
+    major, minor = torch.cuda.get_device_capability(0)
+
+    # Turing architecture (like 1660 Ti) is 7.5. Ampere (30-series) and newer are 8.0+.
+    # Flash Attention 2 is only well-supported on Compute Capability 8.0 and higher.
+    if major < 8:
+        print(f"⚠️ GPU with old compute capability ({major}.{minor}) detected. Disabling Flash Attention for compatibility.")
+        torch.backends.cuda.enable_flash_sdp(False)
+        torch.backends.cuda.enable_mem_efficient_sdp(False)
+        torch.backends.cuda.enable_math_sdp(True)  # Use the math kernel as a fallback
+
     print(f"CUDA Devices Available: {device_count}")
     for i in range(device_count):
         print(f"Device {i}: {torch.cuda.get_device_name(i)}")
