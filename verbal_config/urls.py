@@ -21,6 +21,7 @@ from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.views.static import serve
 from django.conf import settings
+from django.conf.urls.static import static
 from ninja import NinjaAPI
 from ninja.security import django_auth
 from llm_api.api import router as llm_router
@@ -134,8 +135,13 @@ urlpatterns = [
     path("api/", api.urls),
     path("benchmarking/", include("benchmarking.urls")),
     path("accounts/", include("django.contrib.auth.urls")),
+    path('demo/', include('demo_ui.urls')),
     
     # Serve Sphinx Documentation
     re_path(r'^docs/(?P<path>.*)$', serve, {'document_root': DOCS_DIR}),
     path('docs/', serve, {'document_root': DOCS_DIR, 'path': 'index.html'}),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

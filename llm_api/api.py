@@ -40,6 +40,8 @@ class GenerateIn(Schema):
     system_prompt: str = ""
     user_prompt: str = ""
     max_new_tokens: int = 1000
+    skip_rag: bool = False
+    skip_grips: bool = True
 
 @router.post("/generate_response/")
 @ensure_csrf_cookie
@@ -60,16 +62,21 @@ def generate_response(request, payload: GenerateIn):
         system_prompt = payload.system_prompt or "You are an expert experiment architect. Your task is to design a clear and efficient experiment design based on a user's description of what they want to find out. Output suggested factors in a list format."
         messages.append({"role": "system", "content": system_prompt})
 
-    # NB System prompt is ignored except at conversation creation time.
-    rag_docs = service_registry.rag_service.get_context(payload.user_prompt)
+    rag_text = ""
+    if not payload.skip_rag:
+        rag_docs = service_registry.rag_service.get_context(payload.user_prompt)
+        if rag_docs:
+            rag_text = "\n\nRelevant Context (RAG):\n" + "\n\n".join([f"Source: {d.metadata.get('filename', 'Unknown')}\nContent: {d.page_content}" for d in rag_docs])
+            
+    if not payload.skip_grips and service_registry.grips_service:
+        grips_docs = service_registry.grips_service.get_grips_context(payload.user_prompt)
+        if grips_docs:
+            rag_text += "\n\nRelevant Concepts (Knowledge Graph):\n" + "\n\n".join([f"[{d.metadata.get('title', 'Unknown')}]: {d.page_content}" for d in grips_docs])
     
-    # Format RAG documents into a string for the LLM
-    rag_text = "\n\n".join([f"Source: {d.metadata.get('filename', 'Unknown')}\nContent: {d.page_content}" for d in rag_docs])
-    
-    messages = messages + conversation.as_messages() + [{"role": "user", "content": payload.user_prompt + "\n\nRelevant Context:\n" + rag_text}]
+    messages = messages + conversation.as_messages() + [{"role": "user", "content": payload.user_prompt + rag_text}]
     max_new_tokens = payload.max_new_tokens
     print("Token Count:", service_registry.ai_service.count_conversation_tokens(messages))
-    [response] = service_registry.ai_service.generate_response(messages=messages, max_new_tokens=max_new_tokens, log_kwargs={"skip_log": True}, user=request.auth)
+    [response] = service_registry.ai_service.generate_response2(messages=messages, max_new_tokens=max_new_tokens, log_kwargs={"skip_log": True}, user=request.auth)
     cleaned_response = service_registry.ai_service.clean_response(response)
     system_prompt = messages[0]["content"]
     p = PromptResponseLog(system_prompt=system_prompt, user_prompt=payload.user_prompt,
@@ -80,13 +87,24 @@ def generate_response(request, payload: GenerateIn):
     return JsonResponse({"conversation_id": conversation_id, "cleaned_response": cleaned_response})
 
 
-@router.post("/get_rag_context/")
+@router.get("/get_rag_context/")
 @ensure_csrf_cookie
-def get_context(request, query:str ="", k:int =1):
+def get_rag_context(request, query: str = "", k: int = 4):
+    if not service_registry.rag_service:
+        return JsonResponse({"error": "RAG Service offline."})
     doc_segments = service_registry.rag_service.get_context(query, k=k)
     # Convert Langchain Documents to JSON-serializable dicts
     results = [{"page_content": d.page_content, "metadata": d.metadata} for d in doc_segments]
     return JsonResponse({"rag_context": results})
+
+@router.get("/get_grips_context/")
+@ensure_csrf_cookie
+def get_grips_context(request, query: str = "", k: int = 4):
+    if not getattr(service_registry, 'grips_service', None):
+        return JsonResponse({"error": "Grips Service offline."})
+    doc_segments = service_registry.grips_service.get_grips_context(query, k=k)
+    results = [{"page_content": d.page_content, "metadata": d.metadata} for d in doc_segments]
+    return JsonResponse({"grips_context": results})
 
 class OutlineQuery(Schema):
     user_query: str
@@ -128,8 +146,6 @@ class Hydrant(BaseModel):
             )
         return self
 
-from outlines.types import JsonSchema
-
 class OutlineIn(Schema):
     query: str
     schema_key: typing.Union[str, dict]
@@ -143,14 +159,13 @@ def get_outline(request, payload: OutlineIn):
         if output_type is None:
             return JsonResponse({"error": "Schema key not known."})
     elif type(payload.schema_key) == dict:
-        try:
-            output_type = JsonSchema(payload.schema_key)
-        except ValidationError:
-            return JsonResponse({"error": "Schema key not known and JsonSchema invalid."})
+        output_type = payload.schema_key
     print("Get Outline called: types -", type(payload.query), output_type)
     outline = service_registry.ai_service.generate_outline(payload.query, output_type, user=request.auth)
     print("Outline", outline, type(outline))
-    return JsonResponse({"outline": outline})
+    
+    outline_data = outline.model_dump() if hasattr(outline, 'model_dump') else outline
+    return JsonResponse({"outline": outline_data})
 
 
 # --- Standard OpenAI API Proxy Endpoints (No Auth) ---
@@ -176,8 +191,13 @@ class OpenAIChatCompletionIn(Schema):
     n: typing.Optional[int] = 1
     response_format: typing.Optional[OpenAIResponseFormat] = None
 
+class RegexCandidate(BaseModel):
+    reasoning: str = Field(description="Brief analysis of the text structure and strategy")
+    pattern: str = Field(..., min_length=1, description="The Python regex pattern")
+
 OUTPUT_TYPES = {
     "Factor": Factor,
+    "RegexCandidate": RegexCandidate,
 }
 
 @router.get("/internal/ping/", auth=None)
@@ -195,10 +215,40 @@ def openai_chat_completions(request, payload: OpenAIChatCompletionIn):
     # Route structured output vs standard generation
     if payload.response_format and payload.response_format.type == "json_schema":
         schema_dict = payload.response_format.json_schema.schema_dict
+        schema_name = payload.response_format.json_schema.name
+        
+        response_schema = schema_dict
+        
+        # Attempt to resolve the Pydantic class by name to enable native validation & FSM setup
+        if schema_name in OUTPUT_TYPES:
+            response_schema = OUTPUT_TYPES[schema_name]
+        else:
+            try:
+                from background_resources.rag_service import OUTPUT_TYPES as RAG_OUTPUT_TYPES
+                if schema_name in RAG_OUTPUT_TYPES:
+                    response_schema = RAG_OUTPUT_TYPES[schema_name]
+            except ImportError:
+                pass
+            
+            if response_schema == schema_dict:
+                try:
+                    import benchmarking.generators as bg
+                    if hasattr(bg, schema_name):
+                        response_schema = getattr(bg, schema_name)
+                except ImportError:
+                    pass
+            
+            if response_schema == schema_dict:
+                try:
+                    import metacognition.actions as ma
+                    if hasattr(ma, schema_name):
+                        response_schema = getattr(ma, schema_name)
+                except ImportError:
+                    pass
         
         result = service_registry.ai_service.generate_outline(
             messages=messages,
-            response_schema=schema_dict,
+            response_schema=response_schema,
             max_new_tokens=max_tokens,
             temperature=payload.temperature,
             num_return_sequences=payload.n,
@@ -219,7 +269,7 @@ def openai_chat_completions(request, payload: OpenAIChatCompletionIn):
             
         return JsonResponse({"choices": choices})
     else:
-        results = service_registry.ai_service.generate_response(
+        results = service_registry.ai_service.generate_response2(
             messages=messages,
             max_new_tokens=max_tokens,
             temperature=payload.temperature,

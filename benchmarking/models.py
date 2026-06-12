@@ -3,6 +3,7 @@ from background_resources.models import Document, RAGChunk
 from llm_api.models import LocalAIModel, ExternalAIModel
 from django.utils.safestring import mark_safe
 import itertools
+import pandas as pd
 
 
 class BenchmarkCorpus(models.Model):
@@ -43,6 +44,32 @@ class Investigation(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def to_dataframe(self):
+        """
+        Exports all benchmark results for this investigation into a flattened Pandas DataFrame.
+        Nested JSON keys automatically become columns (e.g., 'extra_metrics.hop_count').
+        """
+        results = BenchmarkResult.objects.filter(run__experiment__investigation=self).values(
+            'run__experiment__name',
+            'run__id',
+            'scenario__question',
+            'duration_seconds',
+            'rag_recall_score',
+            'semantic_score',
+            'faithfulness_score',
+            'relevance_score',
+            'extra_metrics'
+        )
+        
+        if not results:
+            return pd.DataFrame()
+            
+        df = pd.json_normalize(list(results))
+        
+        # Set a MultiIndex for elegant grouping and statistical aggregation
+        df.set_index(['run__experiment__name', 'scenario__question'], inplace=True)
+        return df
 
     def __str__(self):
         return self.name

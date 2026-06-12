@@ -31,28 +31,30 @@ class BenchmarkingIntegrationTests(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.settings_override = override_settings(
-            VECTOR_STORE=TEST_VECTOR_STORE,
-            CHUNK_STORE=TEST_CHUNK_STORE,
-            FILES=TEST_FILES_DIR,
-            MEDIA_ROOT=TEST_FILES_DIR
+            MEDIA_ROOT=TEST_FILES_DIR,
+            CELERY_TASK_ALWAYS_EAGER=True,
+            CELERY_TASK_EAGER_PROPAGATES=True,
         )
         cls.settings_override.enable()
         super().setUpClass()
-        
-        os.makedirs(TEST_VECTOR_STORE, exist_ok=True)
-        os.makedirs(TEST_CHUNK_STORE, exist_ok=True)
         os.makedirs(TEST_FILES_DIR, exist_ok=True)
 
-        print("\n>>> 🚀 INITIALIZING REAL SERVICES FOR BENCHMARK TESTS <<<")
+        print("\n>>> 🚀 INITIALIZING BENCHMARKING SERVICES (This may take time) <<<")
         cls.ai_service = service_registry.ai_service
         cls.rag_service = service_registry.rag_service
-        if cls.ai_service.model is None:
-            cls.ai_service.load_models()
+        cls.grips_service = service_registry.grips_service
 
     @classmethod
     def tearDownClass(cls):
         if os.path.exists(TEST_BASE_DIR):
             shutil.rmtree(TEST_BASE_DIR)
+
+        # CRITICAL: Disconnect SQLAlchemy pools to allow test DB to be dropped
+        if service_registry._rag_service:
+            service_registry._rag_service.disconnect()
+        if service_registry._grips_service:
+            service_registry._grips_service.disconnect()
+
         super().tearDownClass()
         cls.settings_override.disable()
 
@@ -60,7 +62,7 @@ class BenchmarkingIntegrationTests(TestCase):
         self.client = Client()
         self.admin_user = User.objects.create_superuser('admin', 'admin@example.com', 'password123')
 
-    def _create_dummy_document(self, name, content):
+    def _create_dummy_document(self, name, content, chunk_size=200):
         """Helper to create a fast, ingestable document."""
         file_path = TEST_FILES_DIR / name
         with open(file_path, "w", encoding="utf-8") as f:
@@ -69,7 +71,7 @@ class BenchmarkingIntegrationTests(TestCase):
         with open(file_path, 'rb') as f:
             django_file = SimpleUploadedFile(name=name, content=f.read(), content_type='text/plain')
             
-        doc = Document.objects.create(title=name, file=django_file, chunk_size=200, chunk_overlap=20)
+        doc = Document.objects.create(title=name, file=django_file, chunk_size=chunk_size, chunk_overlap=20)
         return doc
 
     @tag('e2e')
@@ -128,13 +130,21 @@ class BenchmarkingIntegrationTests(TestCase):
     @tag('e2e')
     def test_3_generate_synthetic_scenarios(self):
         """Ensure the LLM can generate valid JSON scenarios from a document."""
+        BenchmarkScenario.objects.all().delete()
         print("\n>>> Test 3: Generate Synthetic Scenarios")
-        content = "Water hammer is a pressure surge or wave caused when a fluid in motion is forced to stop or change direction suddenly."
-        doc = self._create_dummy_document("water_hammer.txt", content)
+        content = (
+            "Water hammer is a pressure surge or wave caused when a fluid in motion is forced to stop "
+            "or change direction suddenly. This phenomenon commonly occurs when a valve closes suddenly "
+            "at an end of a pipeline system, and a pressure wave propagates in the pipe. It is also "
+            "called hydraulic shock. This pressure wave can cause major problems, from noise and vibration "
+            "to pipe collapse. It is possible to reduce the effects of the water hammer pulses with "
+            "accumulators, expansion tanks, surge tanks, blowoff valves, and other features."
+        )
+        doc = self._create_dummy_document("water_hammer.txt", content, chunk_size=1000)
         
         # Call the generator
         count = generate_scenarios_for_document(doc, stride=1, group_name="Synthetic Test")
-        
+        print("Count is ", count)
         self.assertGreater(count, 0, "Should have generated at least one scenario.")
         group = ScenarioGroup.objects.get(name="Synthetic Test")
         self.assertEqual(group.scenarios.count(), count)

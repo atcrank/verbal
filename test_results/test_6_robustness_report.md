@@ -1,7 +1,7 @@
 # Test Report: test_6_robustness
 
-**Date:** 2026-05-19 15:41:55.856857
-**Duration:** 2.1050 seconds
+**Date:** 2026-06-04 13:16:28.053295
+**Duration:** 287.3217 seconds
 ## Vector Store Contents
 Total Chunks: 0
 

@@ -1,46 +1,23 @@
 # Test Report: test_2_strategies
 
-**Date:** 2026-05-19 15:41:35.486418
-**Duration:** 1.9176 seconds
+**Date:** 2026-06-04 13:11:00.344414
+**Duration:** 477.7419 seconds
 ## Vector Store Contents
-Total Chunks: 7
+Total Chunks: 4
 
-### Chunk ID: 49633fe3-4293-442f-b054-97e9057887b4
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/glossary.txt', 'indexed_hash': 'ca4bf18b4bd8ef7c3a9af10339d968a07c711a955dd3357a2b0b8b14a7cfd1b4-500_50', 'filename': 'documents/glossary.txt', 'chunk_index': 0, 'total_chunks': 1, 'location_percent': 100, 'page_number': '100%', 'chunk_id': '49633fe3-4293-442f-b054-97e9057887b4', 'chunk_number': '1/1'}
-- **Vector Content:** GLOSSARY
-        Alpha-Code: The first code in the sequence.
-        Beta-Code - The second code in the sequence....
-- **Store Content:** GLOSSARY
-        Alpha-Code: The first code in the sequence.
-        Beta-Code - The second code in the sequence....
+### Chunk ID: cf0c4b6c-77b8-4585-b1ad-fdd19bc7e2e8
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/glossary.txt', 'reading': 'b9e33059-ac09-4f16-bed7-44017c78d586', 'chunk_id': '9ba4bfba-74d4-4110-ada6-a5ddee988583', 'filename': 'documents/glossary.txt', 'read_from': '9910f7ac-ecb9-4406-8a29-23decdbf4911', 'strat_type': 'RegexStrategy', 'chunk_index': 0, 'page_number': '100%', 'chunk_number': '1/1', 'indexed_hash': 'ca4bf18b4bd8ef7c3a9af10339d968a07c711a955dd3357a2b0b8b14a7cfd1b4-500_50', 'total_chunks': 1, 'original_term': 'Alpha-Code', 'location_percent': 100}
+- **Store Content:** Alpha-Code...
 ---
-### Chunk ID: 80869646-1fde-456f-9cba-94dbc45a899e
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/glossary.txt', 'indexed_hash': 'ca4bf18b4bd8ef7c3a9af10339d968a07c711a955dd3357a2b0b8b14a7cfd1b4-500_50', 'filename': 'documents/glossary.txt', 'chunk_index': 0, 'total_chunks': 1, 'location_percent': 100, 'page_number': '100%', 'chunk_id': '0093f92f-8067-401a-97f2-37620b25371e', 'chunk_number': '1/1', 'original_term': 'Alpha-Code', 'reading': '0f262cf3-53bb-4e1d-85bb-9648c6d819d4', 'strat_type': 'RegexStrategy', 'read_from': '49633fe3-4293-442f-b054-97e9057887b4'}
-- **Vector Content:** Alpha-Code...
-- **Store Content:** Alpha-Code-The first code in the sequence....
+### Chunk ID: e92eaff9-7a13-4482-a309-8910cbfb2327
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/glossary.txt', 'reading': 'b9e33059-ac09-4f16-bed7-44017c78d586', 'chunk_id': 'ab580732-be5c-4bad-93a5-49d3b41cf181', 'filename': 'documents/glossary.txt', 'read_from': '9910f7ac-ecb9-4406-8a29-23decdbf4911', 'strat_type': 'RegexStrategy', 'chunk_index': 0, 'page_number': '100%', 'chunk_number': '1/1', 'indexed_hash': 'ca4bf18b4bd8ef7c3a9af10339d968a07c711a955dd3357a2b0b8b14a7cfd1b4-500_50', 'total_chunks': 1, 'original_term': 'Beta-Code', 'location_percent': 100}
+- **Store Content:** Beta-Code...
 ---
-### Chunk ID: 431f3356-a796-47d4-80e2-955cdac6d89a
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/glossary.txt', 'indexed_hash': 'ca4bf18b4bd8ef7c3a9af10339d968a07c711a955dd3357a2b0b8b14a7cfd1b4-500_50', 'filename': 'documents/glossary.txt', 'chunk_index': 0, 'total_chunks': 1, 'location_percent': 100, 'page_number': '100%', 'chunk_id': '1ea5898b-364a-4eb7-96bb-16692250708d', 'chunk_number': '1/1', 'original_term': 'Beta-Code', 'reading': '0f262cf3-53bb-4e1d-85bb-9648c6d819d4', 'strat_type': 'RegexStrategy', 'read_from': '49633fe3-4293-442f-b054-97e9057887b4'}
-- **Vector Content:** Beta-Code...
-- **Store Content:** Beta-Code-The second code in the sequence....
+### Chunk ID: 1d69f232-a93c-4861-87c9-961d5c3be795
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/abrv.txt', 'reading': '183159a7-c5a4-4895-bddf-9618e4dde092', 'chunk_id': '5e6dd7e6-7188-4327-9d0d-3ca575bb2b51', 'filename': 'documents/abrv.txt', 'read_from': '32e60713-d811-4120-af40-7f70c4f0177f', 'strat_type': 'AbbreviationsReadingStrategy', 'chunk_index': 0, 'page_number': '100%', 'chunk_number': '1/1', 'indexed_hash': '5621c7b3f1a41686825f563c6ab3a5a29537f4ea618643fd10dc99e035d20df2-500_50', 'total_chunks': 1, 'original_term': 'NASA', 'location_percent': 100}
+- **Store Content:** NASA...
 ---
-### Chunk ID: 1f05b804-df5b-48a0-8b71-496e0afde923
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/abrv.txt', 'indexed_hash': '5621c7b3f1a41686825f563c6ab3a5a29537f4ea618643fd10dc99e035d20df2-500_50', 'filename': 'documents/abrv.txt', 'chunk_index': 0, 'total_chunks': 1, 'location_percent': 100, 'page_number': '100%', 'chunk_id': '1f05b804-df5b-48a0-8b71-496e0afde923', 'chunk_number': '1/1'}
-- **Vector Content:** The National Aeronautics and Space Administration (NASA) explores space....
-- **Store Content:** The National Aeronautics and Space Administration (NASA) explores space....
----
-### Chunk ID: 746dd102-c561-4095-95ec-37e159df9fad
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/abrv.txt', 'indexed_hash': '5621c7b3f1a41686825f563c6ab3a5a29537f4ea618643fd10dc99e035d20df2-500_50', 'filename': 'documents/abrv.txt', 'chunk_index': 0, 'total_chunks': 1, 'location_percent': 100, 'page_number': '100%', 'chunk_id': '77102370-0ed3-4117-ba30-2519cc268a69', 'chunk_number': '1/1', 'original_term': 'NASA', 'reading': '62ec8202-4b72-4a23-bda3-31ed50140ef0', 'strat_type': 'AbbreviationsReadingStrategy', 'read_from': '1f05b804-df5b-48a0-8b71-496e0afde923'}
-- **Vector Content:** NASA...
-- **Store Content:** NASA:National Aeronautics and Space Administration...
----
-### Chunk ID: e08fee58-7560-4a01-b9fb-9ddc0d2c2ab8
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/prompt.txt', 'indexed_hash': 'ef537f25c895bfa782526529a9b63d97aa631564d5d789c2b765448c8635fb6c-500_50', 'filename': 'documents/prompt.txt', 'chunk_index': 0, 'total_chunks': 1, 'location_percent': 100, 'page_number': '100%', 'chunk_id': 'e08fee58-7560-4a01-b9fb-9ddc0d2c2ab8', 'chunk_number': '1/1'}
-- **Vector Content:** The quick brown fox jumps over the lazy dog....
-- **Store Content:** The quick brown fox jumps over the lazy dog....
----
-### Chunk ID: f899d99d-6ea3-4e55-a92a-00daaddd2165
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/prompt.txt', 'indexed_hash': 'ef537f25c895bfa782526529a9b63d97aa631564d5d789c2b765448c8635fb6c-500_50', 'filename': 'documents/prompt.txt', 'chunk_index': 0, 'total_chunks': 1, 'location_percent': 100, 'page_number': '100%', 'chunk_id': 'e08fee58-7560-4a01-b9fb-9ddc0d2c2ab8', 'chunk_number': '1/1', 'reading': '9e1503ea-ca0a-447f-a07b-6ba154794ffb', 'strat_type': 'PromptStrategy', 'read_from': 'e08fee58-7560-4a01-b9fb-9ddc0d2c2ab8'}
-- **Vector Content:** The quick brown fox jumps over the lazy dog....
-- **Store Content:** The quick brown fox jumps over the lazy dog....
+### Chunk ID: 171ba03f-8c35-4ab5-956d-6b6881a8e98a
+- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/prompt.txt', 'reading': '0201c2b5-d5a4-4c67-9a45-8efb07070da5', 'chunk_id': 'fe7df10c-e436-4b09-ab97-183af114f937', 'filename': 'documents/prompt.txt', 'read_from': 'fe7df10c-e436-4b09-ab97-183af114f937', 'strat_type': 'PromptStrategy', 'chunk_index': 0, 'page_number': '100%', 'chunk_number': '1/1', 'indexed_hash': 'ef537f25c895bfa782526529a9b63d97aa631564d5d789c2b765448c8635fb6c-500_50', 'total_chunks': 1, 'location_percent': 100}
+- **Store Content:** A pangram demonstrating all letters of the alphabet....
 ---

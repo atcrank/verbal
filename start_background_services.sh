@@ -3,7 +3,7 @@
 # --- Configuration ---
 OLLAMA_MODEL="qwen2.5:7b"
 
-echo "1/3: Starting Docker containers (Redis, Ollama, Grobid)..."
+echo "1/3: Starting Docker containers (Postgresql, Redis, Ollama, Grobid)..."
 docker compose up -d
 
 echo "2/3: Starting Celery worker..."

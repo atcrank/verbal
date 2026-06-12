@@ -1,6 +1,12 @@
+import os
+import shutil
 from django.db import models
+from django.conf import settings
 from django.contrib.auth.models import User
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 import uuid
+
 # Create your models here.
 class ConversationQuerySet(models.QuerySet):
     """
@@ -103,6 +109,24 @@ class Conversation(models.Model):
         return messages
 
 
+@receiver(post_delete, sender=Conversation)
+def delete_conversation_workspace(sender, instance, **kwargs):
+    """
+    Automatically wipes the physical Git workspace folder when a Conversation 
+    is deleted from the database to prevent disk space leaks.
+    """
+    if not instance.id:
+        return
+        
+    workspace_dir = os.path.join(settings.BASE_DIR, 'workspaces', str(instance.id))
+    
+    if os.path.exists(workspace_dir):
+        try:
+            shutil.rmtree(workspace_dir)
+            print(f"🗑️ Cleaned up workspace folder for deleted conversation {instance.id}")
+        except Exception as e:
+            print(f"⚠️ Failed to delete workspace {workspace_dir}: {e}")
+
 class PromptResponseLog(models.Model):
     class Feedback(models.IntegerChoices):
         THUMB_UP = 1, 'Thumb Up'
@@ -115,6 +139,9 @@ class PromptResponseLog(models.Model):
     user_prompt = models.TextField(blank=True, null=True)
     generated_response = models.TextField()
     rag_selections = models.TextField(blank=True, null=True)
+    git_commit_hash = models.CharField(max_length=40, blank=True, null=True)
+    parent_log = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='child_logs')
+
     user_feedback = models.SmallIntegerField(
         choices=Feedback.choices,
         null=True,  # null=True means 'no feedback given'
@@ -147,6 +174,13 @@ class SystemConfiguration(models.Model):
         LocalAIModel, on_delete=models.SET_NULL, null=True, blank=True,
         help_text="The PyTorch model loaded into VRAM. Leave blank to exclusively use Ollama/External APIs."
     )
+    active_ollama_model = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="The selected model currently running in the local Ollama container."
+    )
+
     system_tokenizer_id = models.CharField(
         max_length=255, default="Qwen/Qwen2.5-3B-Instruct",
         help_text="Loaded into CPU RAM to count tokens, even if local VRAM model is disabled."
@@ -158,11 +192,16 @@ class SystemConfiguration(models.Model):
 
     @classmethod
     def get_solo(cls):
-        obj, _ = cls.objects.get_or_create(pk=1)
-        return obj
+        try:
+            obj, _ = cls.objects.get_or_create(pk=1)
+            return obj
+        except Exception:
+            # Fails gracefully during initial DB migrations
+            return None
         
     def __str__(self):
         return "Global System Configuration"
+
 
 class ExternalAIModel(models.Model):
     """Configuration for an external API like OpenAI or Anthropic."""
@@ -192,3 +231,34 @@ class UserActiveModel(models.Model):
 
     def __str__(self):
         return f"AI Settings for {self.user.username}"
+
+
+from django.db.models.signals import pre_save, post_save
+from django.dispatch import receiver
+from .ollama_client import set_ollama_model_state
+
+
+@receiver(pre_save, sender=SystemConfiguration)
+def track_ollama_model_changes(sender, instance, **kwargs):
+    """Track the old model name so we know what to unload."""
+    if instance.pk:
+        old_instance = SystemConfiguration.objects.get(pk=instance.pk)
+        instance._old_ollama_model = old_instance.active_ollama_model
+    else:
+        instance._old_ollama_model = None
+
+
+@receiver(post_save, sender=SystemConfiguration)
+def manage_ollama_vram(sender, instance, **kwargs):
+    """Unload the old model and load the newly selected one."""
+    old_model = getattr(instance, '_old_ollama_model', None)
+    new_model = instance.active_ollama_model
+
+    if old_model != new_model:
+        # 1. Flush the previous model from VRAM
+        if old_model:
+            set_ollama_model_state(old_model, active=False)
+
+        # 2. Pre-load the new model into VRAM
+        if new_model:
+            set_ollama_model_state(new_model, active=True)

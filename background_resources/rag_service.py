@@ -1,8 +1,11 @@
 import os
+import torch
+if not hasattr(torch, "float8_e8m0fnu"):
+    setattr(torch, "float8_e8m0fnu", None)
+
 from uuid import uuid4
 import json
 import zipfile
-import pickle
 import re
 from django.conf import settings
 from django.db import models
@@ -10,16 +13,16 @@ from django.db.models import Count
 from django.utils import timezone
 
 # You will need to have these libraries installed:
-# pip install langchain langchain-community faiss-cpu sentence-transformers
+# pip install langchain langchain-community langchain-postgres sentence-transformers
 from langchain_text_splitters import CharacterTextSplitter, RecursiveCharacterTextSplitter
 from langchain_core.documents import Document as LangchainDocument
 from langchain_community.document_loaders import (PyPDFLoader, Docx2txtLoader, UnstructuredPowerPointLoader, RecursiveUrlLoader, DirectoryLoader, BSHTMLLoader, NotebookLoader)
 from bs4 import BeautifulSoup as Soup
-from langchain_community.vectorstores import FAISS
+from langchain_postgres import PGVector
 from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_classic.storage import LocalFileStore, EncoderBackedStore
 from pydantic import BaseModel, Field
 import outlines
+from sqlalchemy import create_engine
 from typing import TYPE_CHECKING, Optional, List, Tuple, Literal
 
 from background_resources.models import (Document as DjangoDocument, 
@@ -53,19 +56,54 @@ class ActiveReadingEvaluation(BaseModel):
         "SUFFICIENT",
         "NEED_PREVIOUS_CHUNK",
         "NEED_NEXT_CHUNK",
-        "IRRELEVANT"
+        "IRRELEVANT",
+        "NO_CONTENT_FOUND"
     ] = Field(description=(
         "Action to take. "
         "Pick 'SUFFICIENT' if the answer is found. "
         "Pick 'NEED_PREVIOUS_CHUNK' or 'NEED_NEXT_CHUNK' if the context cuts off mid-sentence or lacks a referenced definition."
-        "Pick 'IRRELEVANT' if the provided context is completely unrelated to the query."
+        "Pick 'IRRELEVANT' if the context is unrelated but a new search might help. "
+        "Pick 'NO_CONTENT_FOUND' if you have exhausted search options and cannot answer the question."
     ))
     draft_answer: str = Field(description="If SUFFICIENT, provide the answer. Otherwise, leave blank.")
+    new_search_query: str = Field(default="", description="If IRRELEVANT, provide a new, different keyword to search the database.")
 
 OUTPUT_TYPES = {"DocumentHandles": DocumentHandles,
                 "GlossaryItem": GlossaryItem,
                 "GlossaryExtraction": GlossaryExtraction,
                 "ActiveReadingEvaluation": ActiveReadingEvaluation}
+
+
+class DjangoChunkStore:
+    """Seamlessly replaces LocalFileStore by reading/writing directly to the RAGChunk Django model."""
+    def mget(self, keys):
+        # Coerce all keys to strings to prevent UUID object hash mismatch in dict lookups!
+        str_keys = [str(k) for k in keys]
+        print(str_keys)
+        chunks = DjangoChunk.objects.filter(chunk_id__in=str_keys)
+        chunk_dict = {str(c.chunk_id): LangchainDocument(page_content=c.text_content or "", metadata=c.metadata) for c in chunks}
+        print(chunk_dict)
+        chunk_list = [chunk_dict.get(k) for k in str_keys]
+        print(chunk_list)
+        return chunk_list
+
+    def mset(self, kv_pairs):
+        for k, v in kv_pairs:
+            DjangoChunk.objects.update_or_create(
+                chunk_id=str(k),
+                defaults={
+                    'text_content': v.page_content,
+                    'metadata': v.metadata,
+                    'in_byte_store': True
+                }
+            )
+            
+    def mdelete(self, keys):
+        str_keys = [str(k) for k in keys]
+        DjangoChunk.objects.filter(chunk_id__in=str_keys).update(in_byte_store=False)
+        
+    def yield_keys(self):
+        return [str(i) for i in DjangoChunk.objects.filter(in_byte_store=True).values_list('chunk_id', flat=True)]
 
 class RAGService:
 
@@ -76,40 +114,38 @@ class RAGService:
     retriever = None
     chain = None
 
-    def __init__(self, vector_store_path=None, chunk_store_path=None):
-        self.vector_store_path = vector_store_path or settings.VECTOR_STORE
-        self.chunk_store_path = chunk_store_path or settings.CHUNK_STORE
-
+    def __init__(self, collection_name="verbal_background_resources"):
+        self.collection_name = collection_name
         self.embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
         self.reading_ids = set()  # reading_ids
-        self.raw_store = LocalFileStore(self.chunk_store_path)
-        self.store = EncoderBackedStore(store=self.raw_store,
-                                        key_encoder=lambda x: x, # Keys are already simple ID strings
-                                        value_serializer=pickle.dumps, # Function to turn Document -> Bytes
-                                        value_deserializer=pickle.loads # Function to turn Bytes -> Document
-        )
+        self.store = DjangoChunkStore()
         self.id_key = "chunk_id"
 
-        if os.path.exists(self.vector_store_path) and os.path.isdir(self.vector_store_path) and "index.faiss" in os.listdir(self.vector_store_path):
-            try:
-                print(f"Loading existing vector store from '{self.vector_store_path}'...")
-                self.db = FAISS.load_local(self.vector_store_path, self.embeddings, allow_dangerous_deserialization=True)
-                for doc in self.db.docstore._dict.values():
-                    if 'indexed_hash' in doc.metadata:
-                        scheme = doc.metadata['indexed_hash']
-                        if scheme not in self.hashes_indexed:
-                            self.hashes_indexed[scheme] = []
-                        self.hashes_indexed[scheme].append(doc.metadata.get(self.id_key))
-                print(f"Found {len(self.hashes_indexed)} already indexed documents.")
-            except Exception as e:
-                print(f"Could not load vector store. Maybe something is wrong with it. Error: {e}")
-        else:   # create a blank vector_store as db
-            dummy_texts = ["This is a dummy document to initialize the vector store."]
-            self.db = FAISS.from_texts(dummy_texts, self.embeddings)
-            ids_to_delete = [self.db.index_to_docstore_id[0]]
-            self.db.delete(ids_to_delete)
-            self.store.mdelete(ids_to_delete)
-        self.db.save_local(self.vector_store_path)
+        # Build the SQLAlchemy connection string from Django's Postgres settings
+        db_config = settings.DATABASES['default']
+        user = db_config.get('USER', '')
+        password = db_config.get('PASSWORD', '')
+        host = db_config.get('HOST', '127.0.0.1')
+        port = db_config.get('PORT', '5432')
+        db_name = db_config.get('NAME', '')
+        self.connection_string = f"postgresql+psycopg://{user}:{password}@{host}:{port}/{db_name}"
+
+        self.engine = create_engine(self.connection_string)
+
+        self.db = PGVector(
+            embeddings=self.embeddings,
+            collection_name=self.collection_name,
+            connection=self.engine,
+            use_jsonb=True,
+        )
+        
+        # Pre-populate indexed hashes from Django
+        for chunk in DjangoChunk.objects.filter(in_vector_index=True):
+            scheme = chunk.metadata.get('indexed_hash')
+            if scheme:
+                if scheme not in self.hashes_indexed:
+                    self.hashes_indexed[scheme] = []
+                self.hashes_indexed[scheme].append(chunk.chunk_id)
 
         # initialise summary generator and glossary generator
 
@@ -118,16 +154,20 @@ class RAGService:
             self.dump_index_to_file()
 
     def save_db(self):
-        self.db.save_local(self.vector_store_path)
+        pass # Postgres persists automatically
 
     def load_db(self):
-        self.db = FAISS.load_local(self.vector_store_path, self.embeddings, allow_dangerous_deserialization=True)
+        pass # Postgres persists automatically
+
+    def disconnect(self):
+        """Closes SQLAlchemy connection pools to prevent database locks during test teardown."""
+        if hasattr(self, 'engine') and self.engine:
+            self.engine.dispose()
 
     def delete_document_from_vectorstore(self, document):
         reading_list = document.readingstrategy_set.all()
         for reading in reading_list:
             self.delete_reading_from_vectorstore(reading)
-        self.db.save_local(self.vector_store_path)
 
     def delete_reading_from_vectorstore(self, readingstrategy):
         # Only delete chunks if they are not used by any OTHER reading strategy
@@ -138,63 +178,19 @@ class RAGService:
 
     def audit_stores(self):
         """
-        Compares the Django DB against FAISS and LocalFileStore to find orphans and missing data.
+        Finds documents that have not been ingested.
         """
-        # 1. Gather all IDs
-        db_vector_ids = set(DjangoChunk.objects.filter(in_vector_index=True).values_list('chunk_id', flat=True))
-        db_bytestore_ids = set(DjangoChunk.objects.filter(in_byte_store=True).values_list('chunk_id', flat=True))
-        faiss_ids = set(self.db.docstore._dict.keys())
-        store_ids = set(self.store.yield_keys())
-        
-        # 2. Find Discrepancies
-        orphans_in_faiss = faiss_ids - db_vector_ids
-        orphans_in_store = store_ids - db_bytestore_ids
-        missing_in_faiss = db_vector_ids - faiss_ids
-        missing_in_store = db_bytestore_ids - store_ids
-        
-        # 3. Find Unindexed Documents (Docs with 0 chunk usages)
         unindexed_docs = DjangoDocument.objects.annotate(
             chunk_count=Count('readingstrategy__usages')
         ).filter(chunk_count=0).distinct()
         
-        has_issues = any([
-            orphans_in_faiss, orphans_in_store, 
-            missing_in_faiss, missing_in_store
-        ])
-
         return {
-            "orphans_in_faiss": list(orphans_in_faiss),
-            "orphans_in_store": list(orphans_in_store),
-            "missing_in_faiss": list(missing_in_faiss),
-            "missing_in_store": list(missing_in_store),
             "unindexed_docs": unindexed_docs,
-            "has_issues": has_issues
+            "has_issues": unindexed_docs.exists()
         }
 
-    def clean_orphaned_store_data(self):
-        """Aggressively deletes anything in FAISS or FileStore that isn't registered in the DB, and removes DB chunks with no vector/store data."""
-        audit = self.audit_stores()
-        
-        f_count = len(audit["orphans_in_faiss"])
-        s_count = len(audit["orphans_in_store"])
-        db_ghost_count = len(audit["missing_in_faiss"]) + len(audit["missing_in_store"])
-        
-        if audit["orphans_in_faiss"]:
-            self.db.delete(audit["orphans_in_faiss"])
-            self.save_db()
-            
-        if audit["orphans_in_store"]:
-            self.store.mdelete(audit["orphans_in_store"])
-            
-        # Clean DB ghosts: Chunks that exist in DB but are missing their Vector or Byte Store representations
-        if audit["missing_in_faiss"] or audit["missing_in_store"]:
-            ghost_ids = set(audit["missing_in_faiss"]).union(set(audit["missing_in_store"]))
-            DjangoChunk.objects.filter(chunk_id__in=ghost_ids).delete()
-            
-        return f_count, s_count, db_ghost_count
-
     def get_direct_context(self, query, k=1):
-        retrieved_docs = self.db.similarity_search(query, k=k, search_type="mmr")  # Get top result page
+        retrieved_docs = self.db.similarity_search(query, k=k)  # Get top result page
         doc_cards = [f"file {i}:" +doc.metadata["filename"] + ": " + doc.page_content for i, doc in enumerate(retrieved_docs)]
         print(f"Retrieved context: {doc_cards}")
         retrieved_context =  "Also, this is an arguably relevant excerpt from my document library:" + "\n".join(doc_cards)
@@ -205,66 +201,52 @@ class RAGService:
 
     def get_context(self, query: str, k: int = 4) -> List[LangchainDocument]:
         """
-        Manually retrieves documents:
-        1. Vector searches the query against the SUMMARIES/TERMS in self.db.
-        2. Uses the found 'chunk_id's to fetch the FULL PARENT CHUNKS from self.store.
+        Retrieves relevant documents by searching the vector index and fetching parent chunks.
         """
-
-
-        # 1. Vector Search (Get the summaries/terms)
-        # We fetch k*2 to handle cases where multiple summaries point to the same parent
-        matches = self.db.similarity_search(query, k=k*3)
-        print("Matches", matches)
+        matches = self.db.similarity_search(query, k=k*2)
 
         if not matches:
+            print("Matches: []")
             return []
+        print("Matches", matches, matches[0].metadata)
 
-        # 2. Extract Unique Parent IDs
         parent_ids = []
         seen_ids = set()
 
         for doc in matches:
-            # The 'chunk_id' we saved in ingest_document
-            p_id = doc.metadata.get("chunk_id")
+            meta = doc.metadata or {}
+            # Safely extract chunk_id from metadata or fallback to document ID
+            p_id = meta.get(self.id_key) or meta.get("id") or getattr(doc, 'id', None)
 
-            if p_id and p_id not in seen_ids:
-                parent_ids.append(p_id)
-                seen_ids.add(p_id)
+            if p_id:
+                p_id = str(p_id)
+                if p_id not in seen_ids:
+                    parent_ids.append(p_id)
+                    seen_ids.add(p_id)
 
             if len(parent_ids) >= k * 2:
                 break
+        print("ParentIDs", parent_ids)
 
-        # 3. Retrieve Full Documents from the Store
-        # This is where we use your store directly, bypassing the Retriever's bugs
         final_docs = []
-        try:
-            # mget returns the objects directly (Documents), thanks to pickle.loads
-            results = self.store.mget(parent_ids)
+        if parent_ids:
+            try:
+                results = self.store.mget(parent_ids)
+                final_docs = [doc for doc in results if doc is not None]
+            except Exception as e:
+                print(f"Error during manual store retrieval: {e}")
 
-            # Filter out any Nones (in case a key was missing)
-            final_docs = [doc for doc in results if doc is not None]
-
-            print(f"Retrieved {len(final_docs)} full documents from {len(matches)} vector hits.")
-
-        except Exception as e:
-            print(f"Error during manual store retrieval: {e}")
-            return []
-
-        # 4. Rank and Assess (Re-ranking)
         scored_results = self.verify_rag_relevance(query, final_docs)
         
-        # Take top k
         top_results = scored_results[:k]
         sorted_docs = [doc for doc, score in top_results]
 
-        # 5. Update Hit Counts (for the actually returned chunks)
-        final_parent_ids = [doc.metadata.get("chunk_id") for doc in sorted_docs if doc.metadata.get("chunk_id")]
-        print("Final parent ids:", final_parent_ids)
+        final_parent_ids = [str(doc.metadata.get(self.id_key)) for doc in sorted_docs if doc.metadata and doc.metadata.get(self.id_key)]
+        print("Final Parent IDs", final_parent_ids)
         if final_parent_ids:
             DjangoChunk.objects.filter(chunk_id__in=final_parent_ids)\
                 .update(hit_count=models.F('hit_count') + 1, last_accessed=timezone.now())
 
-        # 6. Log Query
         if sorted_docs:
             response_preview = "\n\n".join([f"[{i+1}] {d.page_content[:300]}..." for i, d in enumerate(sorted_docs)])
             RAGQueryLog.objects.create(
@@ -283,7 +265,7 @@ class RAGService:
         from llm_api.apps import service_registry
         ai_service = service_registry.ai_service
 
-        print(f"RAG Service Models Loaded. Index contains {len(self.db.docstore._dict)} total items.")
+        print(f"RAG Service Models Loaded.")
 
     @staticmethod
     def is_likely_toc(text_chunk: str) -> bool:
@@ -551,8 +533,9 @@ class RAGService:
             return
 
         for document in queryset:
-            # Ensure a default chunking strategy exists before querying strategies
-            DjangoReadingStrategy.objects.get_or_create(document=document, strategy_description="Default Chunking")
+            # Safely ensure a default chunking strategy exists without crashing on legacy duplicates
+            if not DjangoReadingStrategy.objects.filter(document=document, strategy_description="Default Chunking").exists():
+                DjangoReadingStrategy.objects.create(document=document, strategy_description="Default Chunking")
             
             # Auto-create Grobid Semantic Chunking strategy if meaningful TEI XML exists
             if hasattr(document, 'grobid_metadata') and document.grobid_metadata and document.grobid_metadata.tei_xml:
@@ -565,10 +548,12 @@ class RAGService:
                     getattr(ref, 'pages', ''), getattr(ref, 'doi', '')
                 ]
                 if any(str(field).strip() for field in meaningful_fields if field is not None):
-                    GrobidReadingStrategy.objects.get_or_create(
-                        document=document,
-                        defaults={"strategy_description": "Grobid Semantic Chunking"}
-                    )
+                    # Safely ensure Grobid strategy exists without crashing
+                    if not GrobidReadingStrategy.objects.filter(document=document, strategy_description="Grobid Semantic Chunking").exists():
+                        GrobidReadingStrategy.objects.create(
+                            document=document,
+                            strategy_description="Grobid Semantic Chunking"
+                        )
 
             # Ingest all types of strategies
             self.ingest_queryset_reading_strategies(document.readingstrategy_set.all())
@@ -577,7 +562,6 @@ class RAGService:
             self.ingest_queryset_reading_strategies(document.abbreviationsreadingstrategy_set.all())
             self.ingest_queryset_reading_strategies(document.grobidreadingstrategy_set.all())
 
-        self.db.save_local(self.vector_store_path)
 
     def ingest_queryset_reading_strategies(self, queryset=None):
         """This is to be the top function for ingestion and assumes a queryset of our Django ReadingStrategy models."""
@@ -587,8 +571,6 @@ class RAGService:
 
         for readingstrategy in queryset:
             self.complete_reading(readingstrategy)
-
-        self.db.save_local(self.vector_store_path)
 
 
     def get_chunk_summary(self, chunk_text, custom_prompt=None):
@@ -736,9 +718,9 @@ class RAGService:
             return valid_definitions
         return []
 
-    def verify_rag_relevance(self, user_query, retrieved_chunks, min_overlap=0.4):
+    def verify_rag_relevance(self, user_query, retrieved_chunks, min_overlap=0.0):
         from llm_api.apps import service_registry
-        nlp_service = service_registry['nlp_service']
+        nlp_service = service_registry.nlp_service
 
         # 1. Get core concepts from query
         # Query: "How do I fix memory leaks?" -> {'fix', 'memory', 'leak'}
@@ -746,7 +728,7 @@ class RAGService:
         query_lemmas = set([t.lower() for t in nlp_service.get_lemmatized_tokens(user_query)])
 
         scored_results = []
-        for chunk in retrieved_chunks:
+        for i, chunk in enumerate(retrieved_chunks):
             # 2. Get concepts from the chunk
             content_to_check = chunk.page_content
             if chunk.metadata.get("original_term"):
@@ -762,15 +744,24 @@ class RAGService:
                 intersection = query_lemmas.intersection(chunk_lemmas)
                 overlap_ratio = len(intersection) / len(query_lemmas)
             
-            # 4. Tie-breaker: Prefer definitions (chunks with 'original_term')
-            is_definition = 1 if chunk.metadata.get("original_term") else 0
+            # 4. Tie-breaker: Prefer definitions ONLY if they actually match the query context
+            is_relevant_definition = 0
+            original_term = chunk.metadata.get("original_term")
+            if original_term:
+                term_lemmas = set([t.lower() for t in nlp_service.get_lemmatized_tokens(original_term)])
+                # If the term shares words with the query, or the definition is a strong match
+                if term_lemmas.intersection(query_lemmas) or overlap_ratio > 0.5:
+                    is_relevant_definition = 1
             
-            if overlap_ratio >= min_overlap or is_definition:
-                scored_results.append((chunk, overlap_ratio, is_definition))
+            # By defaulting to 0.0, we stop punishing the semantic embedding model for finding synonyms!
+            if overlap_ratio >= min_overlap or is_relevant_definition:
+                scored_results.append((chunk, overlap_ratio, is_relevant_definition, i))
 
-        # Sort by overlap ratio (desc), then by is_definition (desc)
-        # We return (doc, score) tuples to match get_context expectations
-        sorted_results = sorted(scored_results, key=lambda x: (x[1], x[2]), reverse=True)
+        # HYBRID SEARCH SORTING:
+        # 1. Target Definition (Exact Glossary Hit)
+        # 2. Lexical Overlap (Safeguard against embedding hallucinations like Python code)
+        # 3. Original Semantic Rank (-x[3])
+        sorted_results = sorted(scored_results, key=lambda x: (x[2], x[1], -x[3]), reverse=True)
         return [(item[0], item[1]) for item in sorted_results]
 
 
@@ -801,21 +792,22 @@ class RAGService:
                 print(f"Comparison document with ID {comparison_doc_id} not found.")
 
         print(f"Dumping index to {output_filename}...")
-        index_docs = [doc for doc in self.db.docstore._dict.values()]
+        index_docs = DjangoChunk.objects.filter(in_vector_index=True)
         index_dict = {}
         with open(output_filename, "w", encoding="utf-8") as f:
-            f.write(f"--- DUMP OF {len(index_docs)} INDEXED ITEMS ---\n\n")
+            f.write(f"--- DUMP OF {index_docs.count()} INDEXED ITEMS ---\n\n")
 
             for i, index_doc in enumerate(index_docs):
                 # The text used for searching (e.g. The Glossary Term)
-                search_term = index_doc.page_content.replace("\n", " ")
+                search_term = (index_doc.text_content or "").replace("\n", " ")
 
                 # The ID pointing to the full content
-                chunk_id = index_doc.metadata.get(self.id_key)
+                chunk_id = index_doc.chunk_id
 
                 # Retrieve the full content (e.g. The Definition)
                 # We use the store directly
-                full_content_doc = self.store.mget([chunk_id])[0]
+                docs = self.store.mget([chunk_id])
+                full_content_doc = docs[0] if docs else None
 
                 if full_content_doc:
                     body_text = full_content_doc.page_content.strip()

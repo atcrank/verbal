@@ -4,10 +4,16 @@ import json
 import requests
 import re
 from django.conf import settings
-from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline, BitsAndBytesConfig, GenerationConfig
-import outlines
 
 import torch
+# Hotfix for transformers/torch compatibility bug with missing fp8 dtypes
+if not hasattr(torch, "float8_e8m0fnu"):
+    setattr(torch, "float8_e8m0fnu", None)
+
+from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline, BitsAndBytesConfig, GenerationConfig
+import outlines
+from outlines import models as outline_models
+
 import spacy
 from pydantic import BaseModel
 import typing
@@ -49,7 +55,6 @@ class AIService:
     model_id = None
     model = None
     classifier = None
-    llm_pipeline = None
     outline_pipeline = None
     terminators = None
     embedding_model = None
@@ -69,13 +74,19 @@ class AIService:
         try:
             from .models import SystemConfiguration
             config = SystemConfiguration.get_solo()
-            tokenizer_id = config.system_tokenizer_id
-            
-            if config.active_local_model:
-                self.model_id = config.active_local_model.hf_model_id
-                print(f"📂 System Config requests PyTorch load for: {self.model_id}")
+            if config:
+                tokenizer_id = config.system_tokenizer_id
+                
+                if config.active_local_model:
+                    self.model_id = config.active_local_model.hf_model_id
+                    print(f"📂 System Config requests PyTorch load for: {self.model_id}")
         except Exception as e:
             print(f"Warning: Could not fetch SystemConfiguration from DB: {e}")
+
+        # If a local model is active and we're not just a web worker, we MUST use its tokenizer
+        # Otherwise the generated token IDs will decode to garbage.
+        if self.model_id and self.role not in ["web", "worker"]:
+            tokenizer_id = self.model_id
 
         print(f"⚙️ Loading CPU tokenizer: {tokenizer_id}")
         self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_id, token=token)
@@ -99,13 +110,20 @@ class AIService:
             print("🛑 No Local AI Model selected in System Configuration. Bypassing PyTorch to save VRAM.")
             return
 
-        print("🚀 Loading Heavy AI models into VRAM...")
+        print("Loading Heavy AI models into VRAM...")
+
+        compute_dtype = torch.float16
+        if torch.cuda.is_available() and torch.cuda.is_bf16_supported():
+            compute_dtype = torch.bfloat16
+            print("Hardware supports bfloat16, using it for compute.")
+
         quantization_config = BitsAndBytesConfig(
             load_in_4bit=True,
             bnb_4bit_quant_type="nf4",
             bnb_4bit_use_double_quant=True,
-            bnb_4bit_compute_dtype=torch.float16
+            bnb_4bit_compute_dtype = compute_dtype
         )
+
 
         # Ensure the model knows this too
         self.model = AutoModelForCausalLM.from_pretrained(
@@ -116,23 +134,21 @@ class AIService:
             low_cpu_mem_usage=True,
             token=token
         )
-        self.model.config.pad_token_id = self.tokenizer.eos_token_id
 
-        self.llm_pipeline = pipeline(
-            "text-generation",
-            model=self.model,
-            tokenizer=self.tokenizer,
-            # Add your model loading params here (quantization, etc.)
-        )
-        print("✅ LLM pipeline loaded successfully.", type(self.llm_pipeline))
-        self.outline_pipeline = outlines.from_transformers(self.model, self.tokenizer)
+        self.model.config.pad_token_id = getattr(self.tokenizer, 'pad_token_id', self.tokenizer.eos_token_id)
+        print("✅ LLM model loaded successfully.", type(self.model))
+
+
+        self.outline_pipeline = outline_models.Transformers(self.model, self.tokenizer)
         print("✅ Outline llm wrapper loaded", type(self.outline_pipeline))
 
-        terminators = [
-            self.tokenizer.eos_token_id,
-            self.tokenizer.convert_tokens_to_ids("<|eot_id|>")
-        ]
-        self.terminators = [t for t in terminators if t is not None]
+        terminators = [self.tokenizer.eos_token_id]
+        for token_str in ["<|eot_id|>", "<|im_end|>"]:
+            tok_id = self.tokenizer.convert_tokens_to_ids(token_str)
+            if tok_id is not None and tok_id != getattr(self.tokenizer, 'unk_token_id', None):
+                terminators.append(tok_id)
+                
+        self.terminators = list(set(t for t in terminators if t is not None))
 
         print("✅ AI models loaded successfully.")
 
@@ -140,11 +156,9 @@ class AIService:
         """Frees VRAM for model switching."""
         print("🗑️ Unloading AI models...")
         del self.model
-        del self.llm_pipeline
         del self.outline_pipeline
         self._generator_cache.clear()
         self.model = None
-        self.llm_pipeline = None
         self.outline_pipeline = None
         
         gc.collect()
@@ -263,7 +277,7 @@ class AIService:
         if response_schema is None:
             return "default_outline_response"
         if hasattr(response_schema, "model_json_schema"):
-            return response_schema.__name__
+            return json.dumps(response_schema.model_json_schema(), sort_keys=True)
         if isinstance(response_schema, dict):
             return json.dumps(response_schema, sort_keys=True)
         return str(response_schema)
@@ -320,51 +334,86 @@ class AIService:
         return True
 
     def _get_valid_structured_result(self, raw_results, response_schema):
-        """Attempts to validate a list of results against a schema, returning the first valid one."""
+        """
+        Attempts to validate a list of results (generated via num_return_sequences > 1) against a schema.
+        
+        Returns the first valid result it finds, silently discarding the invalid ones in the batch.
+        This "shotgun" approach is often faster than running sequential single-generation retries.
+        """
+        if not raw_results:
+            raise ValueError("No results were generated to validate.")
+            
         last_error = None
         for res in raw_results:
             try:
-                # Verify validity but discard the constructed object
+                # Verify validity and return the constructed object!
                 if response_schema and hasattr(response_schema, "model_validate"):
                     if isinstance(res, str):
-                        response_schema.model_validate_json(res)
+                        return response_schema.model_validate_json(res)
                     else:
-                        response_schema.model_validate(res)
+                        if isinstance(res, response_schema):
+                            return res
+                        elif isinstance(res, dict):
+                            return response_schema.model_validate(res)
+                        elif hasattr(res, "model_dump"):
+                            return response_schema.model_validate(res.model_dump())
+                        else:
+                            return response_schema.model_validate(res)
                 elif isinstance(response_schema, dict) or response_schema is None:
                     if isinstance(res, str) and response_schema is not None:
-                        json.loads(res)
+                        return json.loads(res)
                         
-                # Success!
+                # Fallback Success (unstructured strings)
                 return res
             except Exception as ve:
                 last_error = ve
+                print(f"⚠️ Validation Error against schema:\n{ve}\nRaw Output was:\n{res}")
                 continue
                 
         raise ValueError(f"All generated sequences failed validation. Last error: {last_error}")
 
-    def _execute_generation_with_retries(self, generate_callable, messages, response_schema, max_new_tokens, temperature, num_return_sequences, log_kwargs, is_structured):
+    def _execute_generation_with_retries(self, generated_callable, messages, response_schema, max_new_tokens, temperature, num_return_sequences, log_kwargs, is_structured):
         """
         Universal executor handling Validation, Retries, Multiples, and Active RAG (Self-Guidance).
         Works identically for local/proxy and structured/unstructured generations.
+        
+        Architecture of the Execution Loops:
+        1. Outer Loop (Search Hops): Allows the LLM to halt generation, issue a <SEARCH: term> command,
+           and restart the generation with new context injected from the Knowledge Graph/RAG.
+        2. Inner Loop (Validation Attempts): If the generated output fails to match the required 
+           JSON/Pydantic schema, it retries. 
+        3. Candidate Batching (num_return_sequences): On retries, it automatically increases the 
+           batch size (`current_n`) to cast a wider net, increasing the probability of getting at 
+           least one valid response without needing further sequential loops.
         """
         working_messages = list(messages) if isinstance(messages, list) else [{"role": "user", "content": messages}]
         max_search_hops = 4
         max_validation_attempts = 2
         searched_terms = set()
         
+        last_error = None
+        
+        # OUTER LOOP: Active RAG Hops
+        # If the LLM generates a <SEARCH:...> tag, we break the inner loop, fetch new context, 
+        # append it to the messages, and start a new hop.
         for search_hop in range(max_search_hops):
             did_search = False
             
+            # INNER LOOP: Validation & Generation Retries
             for attempt in range(max_validation_attempts):
+                # If we fail the first attempt, increase the number of sequences generated simultaneously.
+                # Generating 2+ sequences in parallel takes barely more VRAM/Time than generating 1, 
+                # but drastically increases the odds that at least one passes Pydantic validation.
                 current_n = num_return_sequences if attempt == 0 else max(2, num_return_sequences + 1)
                 
                 try:
-                    raw_results = generate_callable(working_messages, max_new_tokens, temperature, current_n)
-                    last_error = None
+                    raw_results = generated_callable(working_messages, max_new_tokens, temperature, current_n)
+                    print(f"Raw results (Hop {search_hop+1}, Attempt {attempt+1}): {raw_results}")
                     
                     for res in raw_results:
                         # 1. Active RAG Check: Look for <SEARCH: concept> anywhere in output
-                        search_match = re.search(r'<SEARCH:\s*([^>]+)>', str(res))
+                        res_str = res if isinstance(res, str) else (res.model_dump_json() if hasattr(res, 'model_dump_json') else str(res))
+                        search_match = re.search(r'<SEARCH:\s*([^>]+)>', res_str)
                         if search_match:
                             term = search_match.group(1).strip()
                             did_search = self._perform_active_rag_search(term, searched_terms, working_messages)
@@ -380,28 +429,42 @@ class AIService:
                         return raw_results
                         
                     # 3. Validation Check for structured outputs
-                    valid_res = self._get_valid_structured_result(raw_results, response_schema)
-                    
-                    # Success! We log working_messages so the DB reflects the Active RAG injections
-                    self._log_generation(working_messages, [valid_res], log_kwargs)
-                    return valid_res
+                    try:
+                        valid_res = self._get_valid_structured_result(raw_results, response_schema)
+                        # Success! We log working_messages so the DB reflects the Active RAG injections
+                        self._log_generation(working_messages, [valid_res], log_kwargs)
+                        return valid_res
+                    except ValueError as ve:
+                        last_error = ve
+                        print(f"⚠️ Validation error (Attempt {attempt+1}/{max_validation_attempts}): {ve}")
+                        continue  # Schema failed. Let the inner loop try another generation attempt.
                     
                 except Exception as e:
-                    if attempt == max_validation_attempts - 1 and not did_search:
-                        print(f"Error in generation (Attempt {attempt+1}/{max_validation_attempts}): {e}")
-                        if is_structured:
-                            return {"error": "GenerationFailed", "details": str(e)}
-                        else:
-                            return [f"GenerationFailed: {str(e)}"]
+                    last_error = e
+                    print(f"⚠️ Generation error (Attempt {attempt+1}/{max_validation_attempts}): {e}")
+                    continue
+            
+            if did_search:
+                continue
+            
+            break  # Exhausted validation attempts without searching
                             
-        # Exhausted all search hops
+        # Exhausted all attempts or hops
+        error_msg = f"Generation failed after {max_validation_attempts} attempts. Last error: {str(last_error)}"
+        print(f"❌ {error_msg}")
         if is_structured:
-            return {"error": "GenerationFailed", "details": "Exhausted Active RAG search hops."}
+            return {"error": "GenerationFailed", "details": error_msg}
         else:
-            return ["GenerationFailed: Exhausted Active RAG search hops."]
+            return [f"GenerationFailed: {error_msg}"]
 
-    def generate_response(self, messages, max_new_tokens=1024, num_return_sequences=1, temperature=0.7, log_kwargs=None, user=None):
-        """Facade for standard chat completions."""
+    def generate_response2(self, messages, max_new_tokens=1024, num_return_sequences=1, temperature=0.7, log_kwargs=None, user=None):
+        """
+        Facade for standard unstructured chat completions.
+        
+        Delegates to `_execute_generation_with_retries` to handle proxy routing, local model 
+        VRAM loading, and Active RAG loops. `num_return_sequences` can be used to generate 
+        multiple alternative responses to the same prompt.
+        """
         needs_proxy = self.role in ["web", "worker"]
         if user and not getattr(user, 'is_anonymous', False):
             from .models import UserActiveModel
@@ -416,26 +479,36 @@ class AIService:
         else:
             def local_callable(msgs, max_tok, temp, n):
                 with self._lock:
-                    if self.llm_pipeline is None:
+                    if self.model is None:
                         self.load_models()
-                    if self.llm_pipeline is None:
+                    if self.model is None:
                         raise RuntimeError("No Local AI Model is active in System Configuration, and no External API is configured for this user.")
                     msgs_summary = self.summarize_conversation(msgs)
-                    
-                    import copy
-                    gen_config = copy.deepcopy(self.model.generation_config)
-                    gen_config.do_sample = True
-                    gen_config.top_p = 0.95
-                    gen_config.temperature = temp
-                    gen_config.max_new_tokens = max_tok
-                    gen_config.eos_token_id = self.terminators
-                    gen_config.num_return_sequences = n
-                    gen_config.max_length = None  # Suppresses the max_length precedence warning
-                    
-                    res = self.llm_pipeline(
-                        msgs_summary, generation_config=gen_config, return_full_text=False
+
+                    prompt = self.tokenizer.apply_chat_template(
+                        msgs_summary, tokenize=False, add_generation_prompt=True
                     )
-                    return [r['generated_text'] for r in res]
+
+                    inputs = self.tokenizer(prompt, return_tensors="pt").to(self.model.device)
+                    do_sample = temp > 0.0
+
+                    outputs = self.model.generate(
+                        **inputs,
+                        max_new_tokens=max_tok,
+                        temperature=temp if do_sample else None,
+                        top_p=0.95 if do_sample else None,
+                        do_sample=do_sample,
+                        eos_token_id=self.terminators,
+                        pad_token_id=self.tokenizer.pad_token_id,
+                        num_return_sequences=n,
+                        repetition_penalty=1.05
+                    )
+
+                    prompt_length = inputs["input_ids"].shape[1]
+                    generated_tokens = outputs[:, prompt_length:]
+                    results = self.tokenizer.batch_decode(generated_tokens, skip_special_tokens=True)
+
+                    return results
             generate_callable = local_callable
 
         return self._execute_generation_with_retries(
@@ -447,10 +520,25 @@ class AIService:
                          response_schema=None,
                          max_new_tokens=500,
                          temperature=0.7,
-                         num_return_sequences=1,
                          log_kwargs=None,
-                         user=None):
-        """Facade that routes generating requests between HTTP proxy and Local VRAM execution."""
+                         user=None,
+                         num_return_sequences=1):
+        """
+        Facade for structured generation (JSON/Pydantic) using the `outlines` library.
+        
+        Args:
+            messages: The conversation history or prompt.
+            response_schema: A Pydantic model or JSON dict defining the required output structure.
+                             The `outlines` library will mathematically constrain the LLM to this schema.
+            max_new_tokens: Limit on new token generation
+            temperature: scatter in generation
+            log_kwargs: keyword variables of any kind to pass through to logging functions
+            user: the session user resposnsible for the request
+            num_return_sequences: How many parallel candidates to generate in one inference pass.
+                                  Generating >1 increases the chance of passing strict Pydantic logic
+                                  validation (e.g., custom @model_validators) on the very first try.
+        """
+        print("Generate Outline Called", type(messages), response_schema)
 
         needs_proxy = self.role in ["web", "worker"]
         if user and not getattr(user, 'is_anonymous', False):
@@ -464,35 +552,35 @@ class AIService:
                 return res if isinstance(res, list) else [res]
             generate_callable = proxy_callable
         else:
-            with self._lock:
-                if self.outline_pipeline is None:
-                    self.load_models()
-                    
-                cache_key = self._get_schema_cache_key(response_schema)
-                if cache_key not in self._generator_cache:
-                    actual_schema = response_schema or self.default_outline_response
-                    if isinstance(actual_schema, dict):
-                        try:
-                            from outlines.types import JsonSchema
-                            try: actual_schema = JsonSchema(json.dumps(actual_schema))
-                            except Exception: actual_schema = JsonSchema(actual_schema)
-                        except ImportError: pass
-                    self._generator_cache[cache_key] = outlines.Generator(self.outline_pipeline, actual_schema)
-                generator = self._generator_cache[cache_key]
-                
             def local_callable(msgs, max_tok, temp, n):
-                prompt = self.tokenizer.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True) if isinstance(msgs, list) else msgs
-                kwargs = {"do_sample": True, "max_new_tokens": max_tok, "temperature": temp, "max_length": None}
-                if n > 1: kwargs["num_return_sequences"] = n
                 with self._lock:
                     if self.outline_pipeline is None:
-                        raise RuntimeError("No Local AI Model is active in System Configuration, and no External API is configured for this user.")
-                    res = generator(prompt, **kwargs)
-                return res if isinstance(res, list) else [res]
+                        self.load_models()
+                        
+                    if self.outline_pipeline is None:
+                        raise RuntimeError("No Local AI Model is active in System Configuration.")
+
+                    cache_key = self._get_schema_cache_key(response_schema)
+                    if cache_key not in self._generator_cache:
+                        actual_schema = response_schema or self.default_outline_response
+                        if isinstance(actual_schema, dict):
+                            schema_str = json.dumps(actual_schema)
+                            try:
+                                from outlines.types import JsonSchema
+                                actual_schema = JsonSchema(schema_str)
+                            except Exception:
+                                actual_schema = schema_str
+                        self._generator_cache[cache_key] = outlines.Generator(self.outline_pipeline, actual_schema)
+                    
+                    generator = self._generator_cache[cache_key]
+                    prompt = self.tokenizer.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True) if isinstance(msgs, list) else msgs
+                    
+                    output = generator(prompt, do_sample=True, max_new_tokens=max_tok, temperature=temp, num_return_sequences=n)
+                    return output if isinstance(output, list) else [output]
             generate_callable = local_callable
 
         return self._execute_generation_with_retries(
-            generate_callable, messages, response_schema, max_new_tokens, 
+            generate_callable, messages, response_schema, max_new_tokens,
             temperature, num_return_sequences, log_kwargs, is_structured=True
         )
 
@@ -532,11 +620,12 @@ class AIService:
         # Check the very last token of the last sentence
         # If it's not punctuation, assume the sentence is a fragment.
         if not last_sentence[-1].is_punct and len(sentences) > 1:
-            # Return all sentences except the last one
-            return " ".join([sent.text.strip() for sent in sentences[:-1]])
+            # Return original text up to the end of the second-to-last sentence to preserve formatting
+            end_char = sentences[-2].end_char
+            return assistant_response[:end_char].strip()
         else:
-            # All detected sentences seem complete
-            return " ".join([sent.text.strip() for sent in sentences])
+            # All detected sentences seem complete, preserve original formatting
+            return assistant_response
 
     def count_conversation_tokens(self, messages: list) ->int:
         if not self.tokenizer:
@@ -569,7 +658,7 @@ class AIService:
             summarize_these = messages[1:(len(messages)-1)//2] # for 13 msgs, get 1-6 for summarisation
             summarization_instruction = [{"role": "system", "content": "Summarize this following conversation to ensure the assistant remembers the most important aspects of the user's requests."}]
             # Unpack the list returned by generate_response
-            [summary_message] = self.generate_response(summarization_instruction + summarize_these, max_new_tokens=400)
+            [summary_message] = self.generate_response2(summarization_instruction + summarize_these, max_new_tokens=400)
             summary_message = self.clean_response(summary_message)
 
             system_prompt['content'] = system_prompt['content'] + "Summary:\n  " + summary_message + "\n"

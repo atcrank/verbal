@@ -3,7 +3,7 @@
   <component name="Black">
     <option name="sdkName" value="Python 3.13.5 WSL (Ubuntu): (/home/crank/coding/py313/bin/python)" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.13.5 WSL (Ubuntu): (/home/crank/coding/py313/bin/python)" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="WSL (Ubuntu0): (/home/crank/coding/py313/bin/python3.13)" project-jdk-type="Python SDK" />
   <component name="PyPackaging">
     <option name="earlyReleasesAsUpgrades" value="true" />
   </component>

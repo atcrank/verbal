@@ -37,6 +37,7 @@ class ConceptNodeAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('title',)}
     actions = [generate_narrative_action, task_lint_concept_node]
     readonly_fields = ('rendered_narrative',)
+    raw_id_fields = ('source_chunk', )
     
     fieldsets = (
         (None, {

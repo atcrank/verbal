@@ -4,7 +4,9 @@ from unittest.mock import patch
 from django.contrib.auth.models import User
 from .models import CognitiveBlueprint, ReasoningStep, ResponseSchema
 from .tasks import run_blueprint
-from .actions import ActiveReadingEvaluation
+from background_resources.rag_service import ActiveReadingEvaluation
+from .actions import ExecutionPlan, CheckParsingAction, CheckParsingArgs, TaskCompleteAction, TaskCompleteArgs
+
 from langchain_core.documents import Document as LangchainDocument
 
 
@@ -65,7 +67,7 @@ class MetacognitionTraversalTests(TestCase):
         self.active_step.on_failure_step = self.active_step
         self.active_step.save()
 
-    @patch('metacognition.tasks.service_registry.ai_service.generate_response')
+    @patch('metacognition.tasks.service_registry.ai_service.generate_response2')
     @patch('metacognition.tasks.service_registry.ai_service.clean_response')
     @patch('metacognition.tasks.service_registry.rag_service.get_context')
     @patch('metacognition.tasks.service_registry.nlp_service.get_lemmatized_tokens')
@@ -184,6 +186,48 @@ class MetacognitionTraversalTests(TestCase):
         self.assertTrue(monologue[-1].get("failed", False))
         self.assertIn("ABORTED: Max retries reached", monologue[-1]["output"])
 
+    @patch('metacognition.tasks.service_registry.ai_service.generate_outline')
+    @patch('metacognition.tasks.service_registry.rag_service.get_context')
+    @patch('metacognition.tasks.service_registry.nlp_service.get_lemmatized_tokens')
+    def test_execution_plan_and_success(self, mock_nlp, mock_rag, mock_outline):
+        """
+        Tests the action hook for execution plan with tools.
+        """
+        mock_nlp.return_value = ["dummy"]
+        mock_rag.return_value = [LangchainDocument(page_content="RAG result")]
+
+        schema = ResponseSchema.objects.create(
+            name="Plan_Eval",
+            schema_type="pydantic",
+            pydantic_model_name="ExecutionPlan"
+        )
+        plan_bp = CognitiveBlueprint.objects.create(name="Plan BP")
+        plan_step = ReasoningStep.objects.create(
+            blueprint=plan_bp, name="Plan step", is_start_node=True,
+            system_prompt="Make a plan",
+            output_schema=schema,
+            action_hook="handle_execution_plan",
+            max_retries=2
+        )
+        plan_step.on_failure_step = plan_step
+        plan_step.save()
+
+        mock_outline.side_effect = [
+            ExecutionPlan(
+                analysis="Need to syntax check code",
+                queue=[CheckParsingAction(tool="CHECK_PARSING", parameters=CheckParsingArgs(code="print('Hello World')"), expected_outcome="Valid syntax")]
+            ),
+            ExecutionPlan(
+                analysis="Parsed successfully",
+                queue=[TaskCompleteAction(tool="TASK_COMPLETE", parameters=TaskCompleteArgs(final_answer="The answer is test"), expected_outcome="Done")]
+            )
+        ]
+
+        result = run_blueprint(plan_bp.id, "Do this plan", user_id=self.user.id)
+
+        self.assertNotIn("error", result)
+        self.assertEqual(mock_outline.call_count, 2)
+        self.assertIn("The answer is test", result.get("final_response", ""))
 
 @tag('e2e')
 class MetacognitionE2ETests(TestCase):
@@ -192,6 +236,26 @@ class MetacognitionE2ETests(TestCase):
     These are slow and require the full system to be running.
     Run with: python manage.py test --tag=e2e
     """
+    @classmethod
+    def setUpClass(cls):
+        from django.test.utils import override_settings
+        cls.settings_override = override_settings(
+            CELERY_TASK_ALWAYS_EAGER=True,
+            CELERY_TASK_EAGER_PROPAGATES=True,
+        )
+        cls.settings_override.enable()
+        super().setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        from llm_api.apps import service_registry
+        if service_registry._rag_service:
+            service_registry._rag_service.disconnect()
+        if service_registry._grips_service:
+            service_registry._grips_service.disconnect()
+        super().tearDownClass()
+        cls.settings_override.disable()
+
     def setUp(self):
         # We can just re-use the setup from the mocked tests to create the DB objects
         self.mocked_tests = MetacognitionTraversalTests()

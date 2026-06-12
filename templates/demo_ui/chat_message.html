@@ -1,0 +1,24 @@
+<div class="chat-message user">
+    <div class="bubble">
+        {{ log.html_user_prompt|safe }}
+        {% if log.rag_selections %}
+        <details style="margin-top: 10px; font-size: 0.85rem; background: rgba(255,255,255,0.4); padding: 8px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.1);">
+            <summary style="cursor: pointer; font-weight: bold; color: var(--text-muted);">View Retrieved Context</summary>
+            <div style="margin-top: 8px; white-space: pre-wrap; word-wrap: break-word; font-family: monospace;">{{ log.rag_selections }}</div>
+        </details>
+        {% endif %}
+    </div>
+</div>
+{% if log.generated_response %}
+<div class="chat-message ai">
+    <div class="bubble">{{ log.html_response|safe }}</div>
+</div>
+{% endif %}
+
+<!-- HTMX Out-Of-Band Swap: This updates the hidden input in the form with the active conversation ID -->
+<input type="hidden" name="conversation_id" id="current-conversation-id" value="{{ conversation.id }}" hx-swap-oob="true">
+<!-- Update title in case this is the first message of a new conversation -->
+ <div id="active-conversation-header" hx-swap-oob="true" style="padding: 15px 20px; border-bottom: 1px solid var(--border); background-color: var(--bg-panel); font-weight: 600; color: var(--text-main); font-size: 1.1rem; min-height: 55px; flex-shrink: 0;">
+     {{ conversation.title|default:"New Conversation" }}
+ </div>
+<script>document.getElementById("chat-history").scrollTop = document.getElementById("chat-history").scrollHeight;</script>

@@ -116,7 +116,8 @@ def run_blueprint(blueprint_id: int, user_prompt: str, conversation_id: typing.O
         "retries_remaining": {},
         "route_to": None,
         "primary_rag_doc_meta": primary_meta,
-        "current_chunk_index": primary_meta.get("chunk_index", 0)
+        "current_chunk_index": primary_meta.get("chunk_index", 0),
+        "user_id": user_id
     }
 
     internal_monologue = []
@@ -160,7 +161,7 @@ def run_blueprint(blueprint_id: int, user_prompt: str, conversation_id: typing.O
             else:
                 cleaned_response = parse_structured_response(raw_output, current_step.output_schema)
         else:
-            [raw_response] = ai_service.generate_response(messages, max_new_tokens=800, log_kwargs=log_kwargs)
+            [raw_response] = ai_service.generate_response2(messages, max_new_tokens=800, log_kwargs=log_kwargs)
             cleaned_response = ai_service.clean_response(raw_response)
             raw_output = cleaned_response
         print("raw_output:", raw_output)

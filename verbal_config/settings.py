@@ -44,7 +44,9 @@ INSTALLED_APPS = [
     "metacognition.apps.MetacognitionConfig",
     'grips.apps.GripsConfig',
     'grobid_client.apps.GrobidClientConfig',
+    'demo_ui.apps.DemoUiConfig',
     'django_celery_beat',
+    'sandbox_manager.apps.SandboxManagerConfig',
 ]
 
 MIDDLEWARE = [
@@ -88,7 +90,7 @@ DATABASES = {
         "NAME": "verbal_db",
         "USER": "verbal_user",
         "PASSWORD": "verbal_password",
-        "HOST": "127.0.0.1",
+        "HOST": "localhost",
         "PORT": "5433",
     }
 }
@@ -129,7 +131,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = "static/"
-
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
@@ -172,3 +176,4 @@ CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+SANDBOX_URL="http://127.0.0.1:8002/execute"   # if django were dockerised, use docker dns "http://sandbox:8000/execute"

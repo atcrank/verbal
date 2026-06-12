@@ -1,5 +1,6 @@
 from django.shortcuts import render, get_object_or_404
 from django.contrib.admin.views.decorators import staff_member_required
+from django.http import HttpResponse
 from .models import Investigation, BenchmarkRun, BenchmarkResult
 
 
@@ -7,6 +8,13 @@ from .models import Investigation, BenchmarkRun, BenchmarkResult
 def investigation_dashboard(request, pk):
     investigation = get_object_or_404(Investigation, pk=pk)
     experiments = investigation.experiments.all()
+
+    # Handle CSV download request
+    if request.GET.get('download') == 'csv':
+        df = investigation.to_dataframe()
+        response = HttpResponse(df.to_csv(), content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="investigation_{investigation.pk}_results.csv"'
+        return response
 
     # Gather the LATEST run for each experiment
     runs = []
@@ -65,10 +73,21 @@ def investigation_dashboard(request, pk):
             row['cells'].append(run_results_map[run.id].get(scen.id))
         table_rows.append(row)
 
+    # Generate Dataframe Statistics
+    df = investigation.to_dataframe()
+    df_describe_html = ""
+    if not df.empty:
+        # Filter only numeric columns for description to avoid clutter
+        numeric_df = df.select_dtypes(include='number')
+        if not numeric_df.empty:
+            # Add some basic styling classes to the Pandas HTML output
+            df_describe_html = numeric_df.describe().to_html(classes="table", border=0)
+
     context = {
         'investigation': investigation,
         'runs': runs,
         'table_rows': table_rows,
+        'df_describe_html': df_describe_html,
     }
     return render(request, 'benchmarking/dashboard.html', context)
 

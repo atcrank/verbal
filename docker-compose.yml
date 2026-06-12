@@ -43,8 +43,31 @@ services:
             - driver: nvidia
               count: all # Use 'all' to pass all GPUs, or a number for a specific count
               capabilities: [gpu]
+  sandbox:
+    container_name: verbal_sandbox
+    build:
+      context: ./sandbox
+      args:
+        - PIP_INDEX_URL=${PIP_INDEX_URL:-}
+        - PIP_TRUSTED_HOST=${PIP_TRUSTED_HOST:-}
+    volumes:
+      # Map the Django workspaces folder directly into the sandbox
+      - ./workspaces:/workspace
+    ports:
+      - "8002:8000"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+    networks:
+      - internal_network
 
 volumes:
   redis_data:
   ollama_data:
   postgres_data:
+
+networks:
+  internal_network:
+    driver: bridge

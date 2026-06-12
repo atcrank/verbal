@@ -17,6 +17,7 @@ class StructuredClaim(BaseModel):
 class ConceptDraft(BaseModel):
     thought_process: str = Field(description="Think step-by-step to plan the entry. Identify and resolve ambiguities based on the title and focus hint.")
     narrative: str = Field(description="The dense, Markdown-formatted explanation unifying the concept.")
+    source_chunk_id: str = Field(default="", description="The specific CHUNK ID from the text ")
     claims: List[StructuredClaim] = Field(description="Atomic facts using strict relational predicates.")
 
     @field_validator('narrative', mode='before')

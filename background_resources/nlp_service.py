@@ -2,14 +2,12 @@ import re
 import spacy
 from spacy.language import Language
 from scispacy.abbreviation import AbbreviationDetector
-import contextualSpellCheck
 from spellchecker import SpellChecker
 
 class NLPService:
 
     primary_nlp = None
     abbreviation_model = None
-    contextual_spellcheck_model = None
     basic_spellcheck_model = None
     domain_terms = ["term1", "term2", "term3"]
 
@@ -35,17 +33,6 @@ class NLPService:
                 self.abbreviation_model.add_pipe("abbreviation_detector")
         return self.abbreviation_model
 
-    def get_contextual_spellcheck_model(self):
-        if self.contextual_spellcheck_model is None:
-            print("Loading Spacy Model (this should happen once)...")
-            # Load the base model
-            self.contextual_spellcheck_model = spacy.load("en_core_web_sm")
-
-            # Add the Abbreviation Detector
-            # (We add it to the pipe once during load)
-            if "contextual spellchecker" not in self.contextual_spellcheck_model.pipe_names:
-               contextualSpellCheck.add_to_pipe(self.contextual_spellcheck_model)
-        return self.contextual_spellcheck_model
 
     def get_basic_spellchecker(self):
         if self.basic_spellcheck_model is None:
@@ -70,19 +57,6 @@ class NLPService:
             abrv.text: abrv._.long_form.text
             for abrv in doc._.abbreviations
         }
-
-
-    def contextual_spellcheck(self, text: str) -> str:
-        """
-        Contextual spell-checker uses a Bert model and may substitute a more likely word rather than the closest word with corrected spelling.
-        The advantage is that the wrong word is likely to be detected (e.g. steal as a misspelling of steel)
-        """
-        if self.contextual_spellcheck_model is None:
-            self.get_contextual_spellcheck_model()
-            
-        doc = self.contextual_spellcheck_model(text)
-        return doc._.outcome_spell_checked
-
 
 
     def basic_spellcheck(self, text: str) -> str:

@@ -1,7 +1,7 @@
 from django.db import models
 from llm_api.api import OUTPUT_TYPES  as LLM_OUTPUT_TYPES
 from background_resources.rag_service import OUTPUT_TYPES as RAG_OUTPUT_TYPES
-from .actions import OUTPUT_TYPES as ACTION_OUTPUT_TYPES
+from .actions import OUTPUT_TYPES as ACTION_OUTPUT_TYPES, ACTION_REGISTRY
 
 OUTPUT_TYPES = LLM_OUTPUT_TYPES | RAG_OUTPUT_TYPES | ACTION_OUTPUT_TYPES
 
@@ -20,6 +20,17 @@ def get_schema_choices():
         # Truncate if there are tons of fields so the dropdown isn't massive
         choices.append((key, display_name[:97] + "..." if len(display_name) > 100 else display_name))
     return choices
+print("Schema_choices", get_schema_choices())
+
+def get_action_choices():
+    """
+    Returns a dynamically generated list of choices for the Action Hook dropdown.
+    """
+    choices = [("", "--- No Action Hook ---")]
+    for key in ACTION_REGISTRY.keys():
+        choices.append((key, key))
+    return choices
+print("Action_choices", get_action_choices())
 
 class ModerationList(models.Model):
     """
@@ -84,7 +95,7 @@ class ReasoningStep(models.Model):
                                         help_text="Check this if this is the first step in the blueprint.")
 
     # The core instruction for this specific step
-    system_prompt = models.TextField(help_text="The prompt driving this step of the thought process.")
+    system_prompt = models.TextField(help_text="The prompt driving this step. For a pre-written plan, instruct the LLM to output a specific sequence of tools in the ExecutionPlan.")
 
     # The Routing / Graph Edges
     on_success_step = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True,
@@ -93,10 +104,14 @@ class ReasoningStep(models.Model):
     on_failure_step = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True,
                                         related_name='failure_sources',
                                         help_text="The step to route to if this step fails its evaluation criteria.")
+                                        
+    sub_blueprint = models.ForeignKey(CognitiveBlueprint, on_delete=models.SET_NULL, null=True, blank=True,
+                                      related_name='invoked_by_steps',
+                                      help_text="Optional: Execute another blueprint as a sub-routine before moving to the next step.")                                        
     max_retries = models.IntegerField(default=3, help_text="Maximum times this step can loop before forcing a failure.")
     
-    action_hook = models.CharField(max_length=255, blank=True, 
-                                   help_text="Optional: Name of a Python function to run after LLM generation (e.g., 'handle_active_reading').")
+    action_hook = models.CharField(max_length=255, blank=True, choices=get_action_choices,
+                                   help_text="Optional: Name of a Python Action Hook to intercept and execute tools from the LLM's output.")
     # Constraints & Formatting
     
     output_schema = models.ForeignKey(ResponseSchema, on_delete=models.SET_NULL, null=True, blank=True, help_text="Select a structured output format for this step.")

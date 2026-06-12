@@ -300,10 +300,13 @@ class VectorIndexExplorerAdmin(admin.ModelAdmin):
         # 1. Initialize RAG Service (Consider caching this if slow)
         rag_service = service_registry.rag_service
 
-        # Handle Aggressive Cleanup Request
-        if request.method == "POST" and "clean_orphans" in request.POST:
-            f_count, s_count, ghost_count = rag_service.clean_orphaned_store_data()
-            self.message_user(request, f"Aggressive Cleanup Complete: Removed {f_count} orphaned vectors, {s_count} orphaned byte-store files, and {ghost_count} DB ghost records.", level=messages.SUCCESS)
+        if request.method == "POST" and "flush_vectors" in request.POST:
+            try:
+                rag_service.db.delete_collection()
+            except Exception:
+                pass
+            RAGChunk.objects.all().delete()
+            self.message_user(request, "Vector index flushed and all RAG chunks deleted. Please re-ingest your documents.", level=messages.SUCCESS)
 
         # 2. Handle Search
         query = request.GET.get('q', '')
@@ -318,8 +321,8 @@ class VectorIndexExplorerAdmin(admin.ModelAdmin):
         # 3. Gather Stats
         document_file_count = Document.objects.count()
         total_readings = ReadingStrategy.objects.count()
-        total_vectors = rag_service.db.index.ntotal
-        total_chunks = len(rag_service.db.docstore._dict)
+        total_vectors = RAGChunk.objects.filter(in_vector_index=True).count()
+        total_chunks = RAGChunk.objects.filter(in_byte_store=True).count()
         
         # Run Data Integrity Audit
         audit_results = rag_service.audit_stores()

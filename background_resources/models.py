@@ -532,42 +532,29 @@ class ZeroShotLabelReadingStrategy(AbstractHigherOrderStrategy):
     prompt = models.TextField(default="Generate a label for each of these chunks based on the context provided.")
     label_options = models.JSONField(default=dict)
 
+@receiver(pre_delete, sender=RAGChunk)
+def delete_ragchunk_vector(sender, instance, **kwargs):
+     """When a RAGChunk is deleted, explicitly remove its vector from PGVector."""
+     from llm_api.apps import service_registry
+     rag_service = service_registry.rag_service
+     if rag_service and instance.in_vector_index:
+         try:
+             rag_service.db.delete([instance.chunk_id])
+         except Exception:
+             pass
+
+
 @receiver(post_delete, sender=StrategyChunkUsage)
-def delete_single_chunk_vector(sender, instance, **kwargs):
-    """
-    Individual cleanup: When a specific Chunk row is deleted (e.g. via Admin inline),
-    remove just that item from the vector store.
-    """
-    from llm_api.apps import service_registry
-    rag_service = service_registry.rag_service
-    
-    # instance is the StrategyChunkUsage that was just deleted.
-    # We check if the underlying RAGChunk has any OTHER usages.
+def cleanup_orphaned_ragchunks(sender, instance, **kwargs):
     try:
-        rag_chunk = instance.chunk
+        rag_chunk = RAGChunk.objects.get(pk=instance.chunk_id)
+        if not rag_chunk.usages.exists():
+            rag_chunk.delete()  # This will trigger the pre_delete signal above!
+
     except RAGChunk.DoesNotExist:
-        # Chunk already deleted (likely by a cascade or previous signal), nothing to do.
-        print(f"RAGChunk DID NOT EXIST FOR {instance}")
-        return
-    
-    if not rag_chunk.usages.exists():
-        print(f"Cleaning up orphaned chunk {rag_chunk.chunk_id}...")
-        try:
-            if rag_chunk.in_vector_index:
-                # Check if it's actually in the index before trying to delete to avoid errors
-                if rag_chunk.chunk_id in rag_service.db.docstore._dict:
-                    rag_service.db.delete([rag_chunk.chunk_id])
-            
-            if rag_chunk.in_byte_store:
-                rag_service.store.mdelete([rag_chunk.chunk_id])
-            
-            rag_service.save_db()
-            
-            # Finally delete the registry entry
-            rag_chunk.delete()
-            
-        except Exception as e:
-            print(f"Error deleting chunk {rag_chunk.chunk_id}: {e}")
+        pass
+
+
 
 class RAGQueryLog(models.Model):
     """Stores queries and feedback to calculate system quality"""

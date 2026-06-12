@@ -3,6 +3,8 @@ from django.urls import reverse
 from django.utils.html import format_html
 from django.templatetags.static import static
 from llm_api.models import LocalAIModel
+from django.db.models.signals import pre_delete
+from django.dispatch import receiver
 
 
 class Domain(models.Model):
@@ -42,6 +44,7 @@ class ConceptNode(models.Model):
         blank=True, 
         help_text="Optional hint to disambiguate the topic for the AI (e.g., 'Focus purely on physical extrication, not vehicle deployment')."
     )
+    source_chunk = models.ForeignKey('background_resources.RAGChunk', on_delete=models.SET_NULL, null=True, blank=True, related_name='sourced_concepts', help_text="The Primary RAGChunk which is summarised in this concept.")
 
     # Human/Model readable narrative
     narrative_content = models.TextField(
@@ -76,6 +79,16 @@ class ConceptNode(models.Model):
         # Placeholder path. Once you build a frontend view, change this to use reverse()
         return f"/wiki/concepts/{self.slug}/"
 
+@receiver(pre_delete, sender=ConceptNode)
+def delete_concept_vector(sender, instance, **kwargs):
+     """When a ConceptNode is deleted, ensure its vector is removed from PGVector."""
+     from llm_api.apps import service_registry
+     grips_service = service_registry.grips_service
+     if grips_service:
+         try:
+             grips_service.db.delete([str(instance.id)])
+         except Exception:
+             pass
 
 class KnowledgeEdge(models.Model):
     """Defines exact, computable relationships between ConceptNodes."""

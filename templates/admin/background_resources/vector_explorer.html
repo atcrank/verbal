@@ -21,8 +21,8 @@
             <p>Total Chunks</p>
         </div>
         <div>
-            <h2>FAISS / LocalFileStore</h2>
-            <p>Backend Status: <strong>Active</strong></p>
+            <h2>PostgreSQL / PGVector</h2>
+            <p>Backend Status: <strong>Native</strong></p>
         </div>
     </div>
 
@@ -39,13 +39,6 @@
             </summary>
             
             <div style="margin-top: 15px;">
-                <ul style="margin-bottom: 15px;">
-                    <li><strong>Orphaned Vectors (FAISS):</strong> {{ audit.orphans_in_faiss|length }} <span style="color: #666; font-size: 0.9em;">(Exist in FAISS but missing from DB)</span></li>
-                    <li><strong>Orphaned Files (ByteStore):</strong> {{ audit.orphans_in_store|length }} <span style="color: #666; font-size: 0.9em;">(Exist in ByteStore but missing from DB)</span></li>
-                    <li><strong>Missing Vectors:</strong> {{ audit.missing_in_faiss|length }} <span style="color: #666; font-size: 0.9em;">(Exist in DB but missing from FAISS)</span></li>
-                    <li><strong>Missing Vectors:</strong> {{ audit.missing_in_store|length }} <span style="color: #666; font-size: 0.9em;">(Exist in DB but missing from the FAISS byte store)</span></li>
-                </ul>
-
                 {% if audit.unindexed_docs %}
                 <div style="margin-bottom: 15px;">
                     <strong>Unindexed Documents (Needs Ingestion):</strong>
@@ -57,15 +50,15 @@
                 </div>
                 {% endif %}
 
-                {% if audit.has_issues %}
-                    <form method="POST">
-                        {% csrf_token %}
-                        <input type="hidden" name="clean_orphans" value="1">
-                        <input type="submit" class="button" style="background: #ba2121; color: white;" value="⚠️ Aggressively Clean Orphans">
-                    </form>
-                {% else %}
+                {% if not audit.has_issues %}
                     <p style="color: #2e7d32; font-weight: bold; margin-bottom: 0;">✅ Database and Storage are perfectly synchronized.</p>
                 {% endif %}
+
+                <form method="POST" style="margin-top: 20px;">
+                    {% csrf_token %}
+                    <input type="hidden" name="flush_vectors" value="1">
+                    <input type="submit" class="button" style="background: #ba2121; color: white; cursor: pointer;" value="⚠️ DANGER: Flush Vector Collection & All Chunks" onclick="return confirm('Are you sure? This will permanently delete ALL vectors and chunks. You will need to re-ingest your documents.');">
+                </form>
             </div>
         </details>
     </div>

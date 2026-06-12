@@ -207,10 +207,18 @@ def _generate_candidate_responses(ai_service, experiment, scenario, rag_text_blo
             # Because we patched service_registry in run_benchmark_suite, it will
             # seamlessly query our temporary, strategy-isolated FAISS index!
             result = run_blueprint(blueprint_id, scenario.question)
+
+            # Save Basis Data (The complete agent trajectory)
+            # This allows deferred analysis (like computing hop counts and error rates) 
+            # directly in Pandas using df['extra_metrics.internal_monologue'].apply(...)
+            traj_data = {}
+            if "internal_monologue" in result:
+                traj_data["internal_monologue"] = result["internal_monologue"]
+
             if "error" not in result:
-                raw_responses.append(result.get("final_response", ""))
+                raw_responses.append((result.get("final_response", ""), traj_data))
             else:
-                raw_responses.append(f"Blueprint Error: {result['error']}")
+                raw_responses.append((f"Blueprint Error: {result['error']}", traj_data))
 
     elif generation_target == 'grips':
         system_prompt = "You are a domain expert. Answer strictly from the authoritative sources in the Domain Knowledge Graph."
@@ -232,8 +240,8 @@ def _generate_candidate_responses(ai_service, experiment, scenario, rag_text_blo
         ]
         
         for _ in range(iterations):
-            [response] = ai_service.generate_response(messages=messages, max_new_tokens=300, num_return_sequences=1)
-            raw_responses.append(response)
+            [response] = ai_service.generate_response2(messages=messages, max_new_tokens=300, num_return_sequences=1)
+            raw_responses.append((response, {}))
 
     else:  # 'direct'
         system_prompt = "You are a helpful assistant."
@@ -248,11 +256,12 @@ def _generate_candidate_responses(ai_service, experiment, scenario, rag_text_blo
             {"role": "user", "content": user_content}
         ]
 
-        raw_responses = ai_service.generate_response(
+        responses_strs = ai_service.generate_response2(
             messages=messages,
             max_new_tokens=300,
             num_return_sequences=iterations
         )
+        raw_responses = [(resp, {}) for resp in responses_strs]
         
     return raw_responses
 
@@ -273,12 +282,14 @@ def run_benchmark_suite(experiment, corpus, log_callback=None):
     temp_chunk_store = os.path.join(temp_dir, 'chunk_store')
     os.makedirs(temp_vector_store, exist_ok=True)
     os.makedirs(temp_chunk_store, exist_ok=True)
+    from uuid import uuid4
+    temp_collection_name = f"verbal_benchmark_{uuid4().hex}"
 
     log_callback(f"Initializing Temporary RAG Service in {temp_dir}...")
     
     # Initialize fresh RAG service with temp paths
     # Note: This re-loads the embedding model which adds some overhead but ensures isolation
-    rag_service = RAGService(vector_store_path=temp_vector_store, chunk_store_path=temp_chunk_store)
+    rag_service = RAGService(collection_name=temp_collection_name)
     rag_service.load_models() # Initialize generators for PromptStrategy etc.
     ai_service = service_registry.ai_service
     
@@ -375,12 +386,18 @@ def run_benchmark_suite(experiment, corpus, log_callback=None):
             total_rag += rag_score
 
             for raw_response in raw_responses:
+                traj_metrics = {}
+                if isinstance(raw_response, tuple):
+                    raw_response_str, traj_metrics = raw_response
+                else:
+                    raw_response_str = raw_response
+
                 generation_target = config_snapshot.get('generation_target', 'direct').lower()
                 if generation_target == 'direct':
-                    cleaned_response = ai_service.clean_response(raw_response)
+                    cleaned_response = ai_service.clean_response(raw_response_str)
                 else:
                     # Blueprints output formatted strings; cleaning them strips necessary structure
-                    cleaned_response = raw_response
+                    cleaned_response = raw_response_str
                     
                 duration = time.perf_counter() - start_time
 
@@ -415,7 +432,9 @@ def run_benchmark_suite(experiment, corpus, log_callback=None):
                     semantic_score=sem_score,
                     faithfulness_score=faith_score if faith_score != -1.0 else None,
                     relevance_score=rel_score if rel_score != -1.0 else None,
-                    extra_metrics={"strategy_hits": strategy_hits, "eval_success_rate": (faith_success + rel_success) / 2.0}
+                    extra_metrics={"strategy_hits": strategy_hits, 
+                                   "eval_success_rate": (faith_success + rel_success) / 2.0,
+                                   **traj_metrics}
                 )
 
                 total_sem += sem_score
@@ -447,4 +466,5 @@ def run_benchmark_suite(experiment, corpus, log_callback=None):
         # Restore the global RAG service
         service_registry._rag_service = original_rag_service
         # Cleanup Temp Directory
-        shutil.rmtree(temp_dir)
+        rag_service.db.delete_collection()
+        rag_service.disconnect()

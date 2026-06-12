@@ -1,6 +1,8 @@
 # Register your models here.# llm_api/admin.py
 from django.contrib import admin, messages
+from django import forms
 from .models import LocalAIModel, ExternalAIModel, UserActiveModel, UserAPIKey, SystemConfiguration, PromptResponseLog, Conversation
+from .ollama_client import get_available_ollama_models
 
 @admin.action(description="Load this Model into Inference Server VRAM")
 def activate_local_model(modeladmin, request, queryset):
@@ -43,7 +45,31 @@ class PromptResponseLogAdmin(admin.ModelAdmin):
     readonly_fields = ('id', 'created_at')
     autocomplete_fields = ('user', 'conversation')
 
-admin.site.register(SystemConfiguration)
+
+class SystemConfigurationForm(forms.ModelForm):
+    class Meta:
+        model = SystemConfiguration
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # 1. Fetch available models from Ollama
+        available_models = get_available_ollama_models()
+
+        # 2. Format as Django choices
+        choices = [('', '--- None / External Only ---')] + [(m, m) for m in available_models]
+
+        # 3. Apply the dynamic choices to the CharField
+        if 'active_ollama_model' in self.fields:
+            self.fields['active_ollama_model'].widget = forms.Select(choices=choices)
+
+
+@admin.register(SystemConfiguration)
+class SystemConfigurationAdmin(admin.ModelAdmin):
+    form = SystemConfigurationForm
+
+
 admin.site.register(ExternalAIModel)
 admin.site.register(UserActiveModel)
 admin.site.register(UserAPIKey)

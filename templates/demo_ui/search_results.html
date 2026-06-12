@@ -1,0 +1,24 @@
+{% if not rag_results and not grips_results %}
+    <div class="conv-date" style="text-align: center; margin-top: 20px;">No results found for "{{ query }}".</div>
+{% else %}
+
+    {% if grips_results %}
+        <h4 style="margin-bottom: 10px; font-size: 0.9rem; color: var(--primary);">Domain Concepts (Grips)</h4>
+        {% for doc in grips_results %}
+        <div class="search-card">
+            <div class="search-card-title">{{ doc.metadata.title|default:"Concept" }}</div>
+            <div class="search-card-body">{{ doc.page_content|truncatechars:120 }}</div>
+        </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if rag_results %}
+        <h4 style="margin-top: 15px; margin-bottom: 10px; font-size: 0.9rem; color: var(--text-main);">Source Documents</h4>
+        {% for doc in rag_results %}
+        <div class="search-card">
+            <div class="search-card-title">{{ doc.metadata.filename|default:"Document" }} ({{ doc.metadata.page_number|default:"-" }})</div>
+            <div class="search-card-body">{{ doc.page_content|truncatechars:120 }}</div>
+        </div>
+        {% endfor %}
+    {% endif %}
+{% endif %}

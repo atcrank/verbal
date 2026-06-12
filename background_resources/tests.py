@@ -27,13 +27,11 @@ from reportlab.pdfgen import canvas
 from docx import Document as DocxDocument
 from pptx import Presentation
 
-from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_postgres import PGVector
 
 
 TEST_BASE_DIR = Path(settings.BASE_DIR) / "test_data"
-TEST_VECTOR_STORE = TEST_BASE_DIR / "vector_store"
-TEST_CHUNK_STORE = TEST_BASE_DIR / "chunk_store"
 TEST_FILES_DIR = TEST_BASE_DIR / "files"
 TEST_RESULTS_DIR = Path(settings.BASE_DIR) / "test_results"
 
@@ -98,16 +96,14 @@ class BackgroundResourcesIntegrationTest(TestCase):
         # Manually apply settings override for the duration of the class
         # This ensures setUpClass (and the service registry) sees the test paths
         cls.settings_override = override_settings(
-            VECTOR_STORE=TEST_VECTOR_STORE,
-            CHUNK_STORE=TEST_CHUNK_STORE,
             FILES=TEST_FILES_DIR,
-            MEDIA_ROOT=TEST_FILES_DIR
+            MEDIA_ROOT=TEST_FILES_DIR,
+            CELERY_TASK_ALWAYS_EAGER=True,
+            CELERY_TASK_EAGER_PROPAGATES=True,
         )
         cls.settings_override.enable()
         super().setUpClass()
         # Create test directories
-        os.makedirs(TEST_VECTOR_STORE, exist_ok=True)
-        os.makedirs(TEST_CHUNK_STORE, exist_ok=True)
         os.makedirs(TEST_FILES_DIR, exist_ok=True)
         os.makedirs(TEST_RESULTS_DIR, exist_ok=True)
 
@@ -125,16 +121,32 @@ class BackgroundResourcesIntegrationTest(TestCase):
         # Cleanup test data
         if os.path.exists(TEST_BASE_DIR):
             shutil.rmtree(TEST_BASE_DIR)
+            
+        # Sever SQLAlchemy connection pools to prevent "database accessed by other users" error
+        if hasattr(cls, 'rag_service'):
+            cls.rag_service.disconnect()
+            
         super().tearDownClass()
         cls.settings_override.disable()
 
     def setUp(self):
-        # Reset the RAG service DB for a clean state per test
-        embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-        self.rag_service.db = FAISS.from_texts(["init"], embeddings)
-        init_id = list(self.rag_service.db.docstore._dict.keys())[0]
-        self.rag_service.db.delete([init_id])
+        import uuid
+        from background_resources.rag_service import RAGService
+        
+        # Isolate the vector collection for this specific test
+        self.test_collection = f"verbal_test_{uuid.uuid4().hex}"
+        self.rag_service = RAGService(collection_name=self.test_collection)
+        
+        # Patch the global registry so Django tasks/signals use the test service
+        self.original_rag = service_registry._rag_service
+        service_registry._rag_service = self.rag_service
+        
         self.start_time = 0
+        
+    def tearDown(self):
+        self.rag_service.db.delete_collection()
+        self.rag_service.disconnect()
+        service_registry._rag_service = self.original_rag
 
     def _create_document_obj(self, file_path):
         """Helper to create a Django Document object from a file path."""
@@ -157,7 +169,7 @@ class BackgroundResourcesIntegrationTest(TestCase):
         """Generates a markdown report of what is in the vector store."""
         report_path = TEST_RESULTS_DIR / f"{test_name}_report.md"
         
-        vs_docs = self.rag_service.db.docstore._dict
+        vs_docs = RAGChunk.objects.filter(in_vector_index=True)
         
         with open(report_path, "w", encoding="utf-8") as f:
             f.write(f"# Test Report: {test_name}\n\n")
@@ -165,24 +177,12 @@ class BackgroundResourcesIntegrationTest(TestCase):
             f.write(f"**Duration:** {duration:.4f} seconds\n")
             
             f.write("## Vector Store Contents\n")
-            f.write(f"Total Chunks: {len(vs_docs)}\n\n")
+            f.write(f"Total Chunks: {vs_docs.count()}\n\n")
             
-            for chunk_id, doc in vs_docs.items():
-                # Try to fetch full content from store if available
-                store_id = doc.metadata.get("chunk_id") or doc.metadata.get("doc_id")
-                full_content = "[Content in Vector Only]"
-                if store_id:
-                    try:
-                        stored_doc = self.rag_service.store.mget([store_id])[0]
-                        if stored_doc:
-                            full_content = stored_doc.page_content
-                    except:
-                        pass
-
-                f.write(f"### Chunk ID: {chunk_id}\n")
+            for doc in vs_docs:
+                f.write(f"### Chunk ID: {doc.chunk_id}\n")
                 f.write(f"- **Metadata:** {doc.metadata}\n")
-                f.write(f"- **Vector Content:** {doc.page_content[:200]}...\n")
-                f.write(f"- **Store Content:** {full_content[:200]}...\n")
+                f.write(f"- **Store Content:** {doc.text_content[:200]}...\n")
                 f.write("---\n")
         
         print(f"\nReport generated: {report_path}")
@@ -264,8 +264,7 @@ class BackgroundResourcesIntegrationTest(TestCase):
         
         # Verify: Check if "Alpha-Code" is in the vector store (as a term)
         # and the definition is in the store.
-        vs_docs = self.rag_service.db.docstore._dict
-        found_term = any("Alpha-Code" in d.page_content for d in vs_docs.values())
+        found_term = RAGChunk.objects.filter(in_vector_index=True, text_content__icontains="Alpha-Code").exists()
         self.assertTrue(found_term, "RegexStrategy should index the Term")
 
         # --- B. Abbreviations Strategy ---
@@ -281,8 +280,7 @@ class BackgroundResourcesIntegrationTest(TestCase):
         abrv_strat.apply_strategy(self.rag_service)
 
         # Verify: Spacy should find NASA
-        vs_docs = self.rag_service.db.docstore._dict
-        found_nasa = any("NASA" in d.page_content for d in vs_docs.values())
+        found_nasa = RAGChunk.objects.filter(in_vector_index=True, text_content__icontains="NASA").exists()
         self.assertTrue(found_nasa, "AbbreviationsStrategy should index 'NASA'")
 
         # --- C. Prompt Strategy (Real AI) ---

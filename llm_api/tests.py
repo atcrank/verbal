@@ -30,7 +30,9 @@ class LlmApiIntegrationTests(TestCase):
             VECTOR_STORE=TEST_VECTOR_STORE,
             CHUNK_STORE=TEST_CHUNK_STORE,
             FILES=TEST_FILES_DIR,
-            MEDIA_ROOT=TEST_FILES_DIR
+            MEDIA_ROOT=TEST_FILES_DIR,
+            CELERY_TASK_ALWAYS_EAGER=True,
+            CELERY_TASK_EAGER_PROPAGATES=True,
         )
         cls.settings_override.enable()
         super().setUpClass()
@@ -77,6 +79,10 @@ class LlmApiIntegrationTests(TestCase):
         # Cleanup test data
         if os.path.exists(TEST_BASE_DIR):
             shutil.rmtree(TEST_BASE_DIR)
+            # Sever SQLAlchemy connection pools
+        if hasattr(cls, 'rag_service'):
+            cls.rag_service.disconnect()
+
         super().tearDownClass()
         cls.settings_override.disable()
 

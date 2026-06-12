@@ -7,13 +7,17 @@ class ReasoningStepInline(admin.StackedInline):
     extra = 1
     fk_name = 'blueprint'
     # Using StackedInline because the prompt text fields are large
-    fields = (
-        'name',
-        'is_start_node',
-        'system_prompt',
-        'output_schema',
-        'evaluation_criteria',
-        ('on_success_step', 'on_failure_step')
+    fieldsets = (
+        (None, {
+            'fields': (
+                ('name', 'is_start_node'),
+                'system_prompt',
+                ('output_schema', 'action_hook'),
+                'evaluation_criteria',
+                ('on_success_step', 'on_failure_step'),
+                'max_retries'
+            )
+        }),
     )
 
 
