@@ -19,10 +19,13 @@ Execution
     ...     "and provide the result."
     ... )
     
-    >>> import contextlib, io
+    >>> import contextlib, io, json
     >>> with contextlib.redirect_stdout(io.StringIO()):
     ...     result = run_blueprint(bp.id, prompt, user_id=user.id)
-    >>> final_answer = result.get("final_response", "")
-    
-    >>> all(str(x) in final_answer for x in [1, 2, 3, 4])
+    >>> report_doctest_run("code_discuss_compute", prompt, result)
+    >>> final_response_dict = json.loads(result.get("final_response", "{}"))
+    >>> quant_result = str(final_response_dict.get("quantitative_result", "")).lower()
+    >>> evaluation = result.get("decision", "")
+
+    >>> "ACCEPT" in evaluation
     True

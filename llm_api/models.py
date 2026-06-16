@@ -1,11 +1,13 @@
 import os
 import shutil
+import uuid
+import typing
 from django.db import models
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
-import uuid
+
 
 # Create your models here.
 class ConversationQuerySet(models.QuerySet):
@@ -82,9 +84,8 @@ class Conversation(models.Model):
         system_prompt_count = 0
         # self.logs.all() will use the prefetched data.
         # The 'ordering' on PromptResponseLog.Meta ensures they are correct.
-        print("generating messages")
-        for log in self.logs.all():
-            print("log", log)
+        # Reverse the list to ensure chronological order (oldest to newest)
+        for log in reversed(list(self.logs.all())):
             if log.system_prompt and system_prompt_count == 0:
                 messages.append({
                     "role": "system",
@@ -107,6 +108,60 @@ class Conversation(models.Model):
                 })
 
         return messages
+
+    def get_workspace_dir(self):
+        """Returns the absolute path to this conversation's dedicated workspace."""
+        return os.path.join(settings.BASE_DIR, 'workspaces', str(self.id))
+
+    def get_workspace_files(self) -> str:
+        """Produces a directory listing of the workspace."""
+        workspace_dir = self.get_workspace_dir()
+        if not os.path.exists(workspace_dir):
+            return "(workspace does not exist)"
+            
+        import stat
+        entries = []
+        for root, dirs, files in os.walk(workspace_dir):
+            if '.git' in dirs:
+                dirs.remove('.git')  # Hide version control internals
+            for name in files:
+                file_path = os.path.join(root, name)
+                rel_path = os.path.relpath(file_path, workspace_dir)
+                try:
+                    info = os.stat(file_path)
+                    mode = stat.filemode(info.st_mode)
+                    size = info.st_size
+                    entries.append(f"{mode} {size:>8} bytes  {rel_path}")
+                except OSError:
+                    pass
+        return "\n".join(entries) if entries else "(empty workspace)"
+
+    def get_git_history(self) -> str:
+        """Produces a summary of the Git commit history for this workspace."""
+        workspace_dir = self.get_workspace_dir()
+        if not os.path.exists(os.path.join(workspace_dir, '.git')):
+            return "No git history."
+            
+        import subprocess
+        try:
+            result = subprocess.run(["git", "log", "--oneline", "--decorate", "--all", "-n", "10"], cwd=workspace_dir, capture_output=True, text=True, check=True)
+            return result.stdout.strip() or "No commits yet."
+        except Exception as e:
+            return f"Git history error: {str(e)}"
+            
+    def get_file_at_commit(self, filename: str, commit_hash: str) -> typing.Optional[str]:
+        """Extracts the file content from a specific git commit hash."""
+        workspace_dir = self.get_workspace_dir()
+        if not os.path.exists(workspace_dir):
+            return None
+            
+        import subprocess
+        try:
+            safe_filename = filename.replace("\\", "/").lstrip("/")
+            result = subprocess.run(["git", "show", f"{commit_hash}:{safe_filename}"], cwd=workspace_dir, capture_output=True, text=True, check=True)
+            return result.stdout
+        except Exception:
+            return None
 
 
 @receiver(post_delete, sender=Conversation)

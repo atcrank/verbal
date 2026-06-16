@@ -153,6 +153,39 @@ class RAGService:
         if not os.path.exists("index_dump.txt"):
             self.dump_index_to_file()
 
+    def force_reindex_all(self):
+        """Resets the vector index status and re-indexes all chunks. Useful for test fixture loads."""
+        DjangoChunk.objects.all().update(in_vector_index=False)
+        self.hashes_indexed = {}
+        self.index_unindexed_chunks()
+
+    def index_unindexed_chunks(self):
+        """Indexes any RAGChunks in Postgres that are not yet in the PGVector index."""
+        unindexed = DjangoChunk.objects.filter(in_vector_index=False)
+        if not unindexed.exists():
+            return
+            
+        lc_docs_to_add = []
+        chunk_ids = []
+        
+        for chunk in unindexed:
+            raw_doc = LangchainDocument(page_content=chunk.text_content or "", metadata=chunk.metadata)
+            lc_docs_to_add.append(raw_doc)
+            chunk_ids.append(str(chunk.chunk_id))
+            
+            scheme = chunk.metadata.get('indexed_hash')
+            if scheme:
+                if scheme not in self.hashes_indexed:
+                    self.hashes_indexed[scheme] = []
+                if str(chunk.chunk_id) not in self.hashes_indexed[scheme]:
+                    self.hashes_indexed[scheme].append(str(chunk.chunk_id))
+                    
+        if lc_docs_to_add:
+            print(f"Indexing {len(lc_docs_to_add)} chunks into PGVector...")
+            self.db.add_documents(lc_docs_to_add, ids=chunk_ids)
+            unindexed.update(in_vector_index=True)
+            print("Indexing complete.")
+
     def save_db(self):
         pass # Postgres persists automatically
 
@@ -446,13 +479,11 @@ class RAGService:
             chunk.metadata["indexed_hash"] = current_scheme
             
             chunks_to_store.append((chunk_id, chunk))
-
-            raw_doc = LangchainDocument(page_content=chunk.page_content,
-                                            metadata=chunk.metadata.copy())
-            lc_docs_to_add.append(raw_doc)
-        self.db.add_documents(lc_docs_to_add, ids=chunk_ids)
+            
         self.store.mset(chunks_to_store)
         self.hashes_indexed[current_scheme] = chunk_ids
+        
+        self.index_unindexed_chunks()
         return chunks, chunk_ids
 
     def convert_chunk_store_document_grobid(self, document: DjangoDocument) -> Tuple[List[LangchainDocument], List[str]]:
@@ -512,12 +543,11 @@ class RAGService:
             chunk.metadata["indexed_hash"] = current_scheme
             
             chunks_to_store.append((chunk_id, chunk))
-            lc_docs_to_add.append(LangchainDocument(page_content=chunk.page_content, metadata=chunk.metadata.copy()))
             
-        if lc_docs_to_add:
-            self.db.add_documents(lc_docs_to_add, ids=chunk_ids)
+        if chunks_to_store:
             self.store.mset(chunks_to_store)
             self.hashes_indexed[current_scheme] = chunk_ids
+            self.index_unindexed_chunks()
             
         return final_chunks, chunk_ids
 

@@ -41,3 +41,22 @@ exclude_patterns = []
 
 html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
+
+# -- Auto-generate stubs for external RST files ------------------------------
+import glob
+
+# Get the directory where conf.py lives (documentation/source)
+source_dir = os.path.dirname(os.path.abspath(__file__))
+
+# The real files live in verbal/metacognition/metacognition_trials
+trials_source_dir = os.path.abspath(os.path.join(source_dir, '../../metacognition/metacognition_trials'))
+
+# We want to create stubs in documentation/source/metacognition_trials
+trials_dest_dir = os.path.join(source_dir, 'metacognition_trials')
+os.makedirs(trials_dest_dir, exist_ok=True)
+
+for trial_file in glob.glob(os.path.join(trials_source_dir, '*.rst')):
+    filename = os.path.basename(trial_file)
+    stub_path = os.path.join(trials_dest_dir, filename)
+    with open(stub_path, 'w', encoding='utf-8') as f:
+        f.write(f".. include:: ../../../metacognition/metacognition_trials/{filename}\n")

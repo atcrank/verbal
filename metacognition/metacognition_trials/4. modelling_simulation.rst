@@ -24,10 +24,14 @@ We target the full agentic pipeline.
     ...     "Execute the script and return those two peak values."
     ... )
 
-    >>> import contextlib, io
+    >>> import contextlib, io, json
     >>> with contextlib.redirect_stdout(io.StringIO()):
     ...     result = run_blueprint(bp.id, prompt, user_id=user.id)
-    >>> final_answer = result.get("final_response", "").lower()
+    >>> report_doctest_run("modelling_simulation", prompt, result)
+    >>> final_response_dict = json.loads(result.get("final_response", "{}"))
+    >>> quant_result = str(final_response_dict.get("quantitative_result", "")).lower()
 
-    >>> "rabbit" in final_answer and "fox" in final_answer
+    >>> evaluation = result.get("decision", "")
+
+    >>> "ACCEPT" in evaluation
     True

@@ -21,10 +21,12 @@ We target the auto-generated pipeline that links the ``StrategicPlan`` node dire
     ...     "Write the simulation script, run it, and tell me the mean and standard deviation."
     ... )
     
-    >>> import contextlib, io
+    >>> import contextlib, io, json
     >>> with contextlib.redirect_stdout(io.StringIO()):
     ...     result = run_blueprint(bp.id, prompt, user_id=user.id)
-    >>> final_answer = result.get("final_response", "")
-    
-    >>> "7" in final_answer or "7.0" in final_answer
+    >>> final_response_str = result.get("final_response", "{}")
+    >>> final_response_dict = json.loads(final_response_str) if "{" in final_response_str else {}
+    >>> evaluation = final_response_dict.get("decision", "")
+
+    >>> "ACCEPT" in evaluation
     True

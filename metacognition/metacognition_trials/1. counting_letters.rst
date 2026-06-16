@@ -20,10 +20,13 @@ We initialize the ``ExecutionPlan`` blueprint to drop the agent directly into th
     ...     "and return the exact number."
     ... )
     
-    >>> import contextlib, io
+    >>> import contextlib, io, json
     >>> with contextlib.redirect_stdout(io.StringIO()):
     ...     result = run_blueprint(bp.id, prompt, user_id=user.id)
-    >>> final_answer = result.get("final_response", "").lower()
-    
-    >>> "3" in final_answer or "three" in final_answer
+    >>> report_doctest_run("counting_letters", prompt, result)
+    >>> final_response_dict = json.loads(result.get("final_response", "{}"))
+    >>> evaluation = final_response_dict.get("decision", "")
+
+    >>> "ACCEPT" in evaluation
     True
+

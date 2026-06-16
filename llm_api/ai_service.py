@@ -575,8 +575,11 @@ class AIService:
                     generator = self._generator_cache[cache_key]
                     prompt = self.tokenizer.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True) if isinstance(msgs, list) else msgs
                     
-                    output = generator(prompt, do_sample=True, max_new_tokens=max_tok, temperature=temp, num_return_sequences=n)
-                    return output if isinstance(output, list) else [output]
+                    # outlines does not take huggingface generate kwargs natively. 
+                    outputs = []
+                    for _ in range(n):
+                        outputs.append(generator(prompt, max_new_tokens=max_tok, temperature=temp))
+                    return outputs
             generate_callable = local_callable
 
         return self._execute_generation_with_retries(
@@ -619,13 +622,9 @@ class AIService:
 
         # Check the very last token of the last sentence
         # If it's not punctuation, assume the sentence is a fragment.
-        if not last_sentence[-1].is_punct and len(sentences) > 1:
-            # Return original text up to the end of the second-to-last sentence to preserve formatting
-            end_char = sentences[-2].end_char
-            return assistant_response[:end_char].strip()
-        else:
-            # All detected sentences seem complete, preserve original formatting
-            return assistant_response
+            # (Removed: Stripping the last sentence blindly destroys generated python
+            # code or JSON blocks that naturally don't end in punctuation).
+        return assistant_response
 
     def count_conversation_tokens(self, messages: list) ->int:
         if not self.tokenizer:

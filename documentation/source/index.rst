@@ -20,6 +20,7 @@ Verbal is what is presently known as a "harness", a set of tools to help a human
    benchmarking_app
    grips_app
    metacognition_app
+   demo_ui_app
 
 .. toctree::
    :maxdepth: 2

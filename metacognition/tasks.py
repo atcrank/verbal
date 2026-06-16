@@ -117,7 +117,8 @@ def run_blueprint(blueprint_id: int, user_prompt: str, conversation_id: typing.O
         "route_to": None,
         "primary_rag_doc_meta": primary_meta,
         "current_chunk_index": primary_meta.get("chunk_index", 0),
-        "user_id": user_id
+        "user_id": user_id,
+        "conversation_id": str(conversation.id)
     }
 
     internal_monologue = []
@@ -157,7 +158,7 @@ def run_blueprint(blueprint_id: int, user_prompt: str, conversation_id: typing.O
                 
             if isinstance(raw_output, dict) and "error" in raw_output:
                 generation_failed = True
-                cleaned_response = f"[GENERATION FAILED: {raw_output.get('details', '')}]"
+                cleaned_response = f"[GENERATION FAILED: {raw_output.get('error', 'Error')} - {raw_output.get('details', '')}]"
             else:
                 cleaned_response = parse_structured_response(raw_output, current_step.output_schema)
         else:

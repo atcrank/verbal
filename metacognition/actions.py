@@ -153,9 +153,12 @@ class ResultCritique(BaseModel):
     Following Nodes: None
     Failure Nodes: StrategicPlan
     """
+    quantitative_result: str = Field(
+        description="Briefly restate the answer or summarize the conclusion that answers the original user prompt.")
     reasoning: str = Field(description="Analyze the quantitative results. Do they make logical sense in the context of the real-world problem?")
     decision: Literal["ACCEPT", "REJECT"] = Field(description="ACCEPT if the results are robust. REJECT if the model needs to be refined or re-calculated.")
     feedback_for_planner: Optional[str] = Field(default="", description="If REJECT, provide specific instructions on what the Strategic Planner must change in the next iteration.")
+
 
 def handle_result_critique(state: dict, llm_output: ResultCritique) -> dict:
     if llm_output.decision == "ACCEPT":
@@ -194,6 +197,10 @@ def _get_schema_description(schema) -> str:
 class CheckParsingArgs(BaseModel):
     code: str = Field(description="The Python code to syntax-check.")
 
+class MakeDirArgs(BaseModel):
+    directory: str = Field(description="A sensible directory name for a new folder to create because it is needed for this plan.")
+    parent_directory: str = Field(description="The relative path of the folder the new folder should be in. Do NOT use absolute paths or directories.")
+
 class WriteFileArgs(BaseModel):
     filepath: str = Field(description="A simple filename (e.g., 'script.py'). Do NOT use absolute paths or directories.")
     content: str = Field(description="The complete Python file content to write. CRITICAL: Use simple print() statements to output results. Avoid multi-line strings and escaped newlines (\\n).")
@@ -213,6 +220,11 @@ class TaskCompleteArgs(BaseModel):
 class CheckParsingAction(BaseModel):
     tool: Literal["CHECK_PARSING"]
     parameters: CheckParsingArgs
+    expected_outcome: str = Field(description="What this tool MUST achieve.")
+
+class MakeDirAction(BaseModel):
+    tool: Literal["CREATE_FOLDER"]
+    parameters: MakeDirArgs
     expected_outcome: str = Field(description="What this tool MUST achieve.")
 
 class WriteFileAction(BaseModel):
@@ -243,6 +255,7 @@ class TaskCompleteAction(BaseModel):
 ActionItemType = Annotated[
     Union[
         CheckParsingAction,
+        MakeDirAction,
         WriteFileAction,
         ReadFileAction,
         ListFilesAction,
@@ -295,18 +308,57 @@ def _commit_workspace(workspace_dir: str, message: str) -> str:
     result = subprocess.run(["git", "rev-parse", "HEAD"], cwd=workspace_dir, capture_output=True, text=True)
     return result.stdout.strip()
 
-def _tool_write_file(params: WriteFileArgs, workspace_dir: str) -> str:
+def _tool_create_folder(params: MakeDirArgs, workspace_dir: str, conversation_id: str = None) -> str:
+    safe_parent = params.parent_directory.lstrip("/\\") if params.parent_directory not in [".", ""] else ""
+    safe_dir = params.directory.lstrip("/\\")
+    target_path = os.path.abspath(os.path.join(workspace_dir, safe_parent, safe_dir))
+    
+    if not target_path.startswith(os.path.abspath(workspace_dir)):
+        return f"\n\n[CREATE_FOLDER Error]\nCannot create directories outside of workspace."
+        
+    try:
+        os.makedirs(target_path, exist_ok=True)
+        commit_hash = _commit_workspace(workspace_dir, f"LLM created directory {os.path.join(safe_parent, safe_dir)}")
+        
+        if conversation_id:
+            from llm_api.models import PromptResponseLog
+            log = PromptResponseLog.objects.filter(conversation_id=conversation_id).first()
+            if log:
+                log.git_commit_hash = commit_hash
+                log.save(update_fields=['git_commit_hash'])
+                
+        return f"\n\n[CREATE_FOLDER Success]\nDirectory '{safe_dir}' successfully created.\nWorkspace saved at commit: {commit_hash[:7]}"
+    except Exception as e:
+        return f"\n\n[CREATE_FOLDER Error]\nFailed to create directory: {str(e)}"
+
+def _tool_write_file(params: WriteFileArgs, workspace_dir: str, conversation_id: str = None) -> str:
     safe_filepath = params.filepath.lstrip("/\\")
     file_path = os.path.abspath(os.path.join(workspace_dir, safe_filepath))
     # Prevent directory traversal attacks
     if not os.path.abspath(file_path).startswith(os.path.abspath(workspace_dir)):
         return f"\n\n[WRITE_FILE Error]\nCannot write outside of workspace directory."
-        
+
+    target_dir = os.path.dirname(file_path)
+
+    # Strict Enforcement: If the target directory does not exist, fail immediately.
+    if target_dir and not os.path.exists(target_dir):
+        return f"""error: Action Failed: The directory '{target_dir}' does not exist. 
+                You must use the CREATE_FOLDER action to build the directory structure 
+                before attempting to write files into it."""
+
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
     with open(file_path, "w", encoding="utf-8") as f:
         f.write(params.content)
     
     commit_hash = _commit_workspace(workspace_dir, f"LLM wrote {params.filepath}")
+    
+    if conversation_id:
+        from llm_api.models import PromptResponseLog
+        log = PromptResponseLog.objects.filter(conversation_id=conversation_id).first()
+        if log:
+            log.git_commit_hash = commit_hash
+            log.save(update_fields=['git_commit_hash'])
+            
     return f"\n\n[WRITE_FILE Success]\nWrote {len(params.content)} characters to {params.filepath}.\nWorkspace saved at commit: {commit_hash[:7]}"
 
 def _tool_read_file(params: ReadFileArgs, workspace_dir: str) -> str:
@@ -403,8 +455,10 @@ def handle_execution_plan(state: dict, llm_output: ExecutionPlan) -> dict:
                 
             elif action.tool == "CHECK_PARSING":
                 plan_results += _tool_check_parsing(action.parameters)
+            elif action.tool == "CREATE_FOLDER":
+                plan_results += _tool_create_folder(action.parameters, workspace_dir, state.get("conversation_id"))
             elif action.tool == "WRITE_FILE":
-                plan_results += _tool_write_file(action.parameters, workspace_dir)
+                plan_results += _tool_write_file(action.parameters, workspace_dir, state.get("conversation_id"))
             elif action.tool == "READ_FILE":
                 plan_results += _tool_read_file(action.parameters, workspace_dir)
             elif action.tool == "LIST_FILES":
