@@ -2,7 +2,7 @@ import json
 import typing
 from celery import shared_task
 from .models import CognitiveBlueprint, OUTPUT_TYPES
-from llm_api.models import Conversation
+from llm_api.models import Conversation, PromptResponseLog
 from llm_api.apps import service_registry
 from .actions import ACTION_REGISTRY
 
@@ -69,7 +69,11 @@ def task_run_blueprint_async(blueprint_id: int, user_prompt: str, conversation_i
     """Asynchronous wrapper for running a blueprint via Celery."""
     return run_blueprint(blueprint_id, user_prompt, conversation_id, user_id)
 
-def run_blueprint(blueprint_id: int, user_prompt: str, conversation_id: typing.Optional[str] = None, user_id: typing.Optional[int] = None):
+def run_blueprint(blueprint_id: int, 
+                  user_prompt: str, 
+                  conversation_id: typing.Optional[str] = None, 
+                  user_id: typing.Optional[int] = None,
+                  parent_log_id: typing.Optional[str] = None):
     try:
         blueprint = CognitiveBlueprint.objects.get(id=blueprint_id)
     except CognitiveBlueprint.DoesNotExist:
@@ -83,19 +87,23 @@ def run_blueprint(blueprint_id: int, user_prompt: str, conversation_id: typing.O
     if conversation_id:
         try:
             conversation = Conversation.objects.get(id=conversation_id)
-            if not conversation.blueprint:
-                conversation.blueprint = blueprint
-                conversation.save()
         except Conversation.DoesNotExist:
             return {"error": "Conversation not found.", "status": 404}
     else:
         conversation = Conversation.objects.create(
             user_id=user_id,
-            title=user_prompt.split(".")[0][:50] + "...",
-            blueprint=blueprint
+            title=user_prompt.split(".")[0][:50] + "..."
         )
 
-    log_kwargs = {"conversation_id": str(conversation.id), "user_id": user_id}
+    # Determine initial parent_log for the tree
+    parent_log = None
+    if parent_log_id:
+        parent_log = PromptResponseLog.objects.filter(id=parent_log_id).first()
+    elif conversation_id:
+        parent_log = PromptResponseLog.objects.filter(conversation_id=conversation_id).order_by('-created_at').first()
+        
+    # Skip automatic logging so we can manually build the timeline tree
+    log_kwargs = {"skip_log": True}
 
     # 1. Fetch RAG Context
     rag_service = service_registry.rag_service
@@ -122,7 +130,6 @@ def run_blueprint(blueprint_id: int, user_prompt: str, conversation_id: typing.O
     }
 
     internal_monologue = []
-    log_kwargs["rag_selections"] = rag_text
 
     # 3. Traverse the State Machine
     step_count = 0
@@ -167,7 +174,19 @@ def run_blueprint(blueprint_id: int, user_prompt: str, conversation_id: typing.O
             raw_output = cleaned_response
         print("raw_output:", raw_output)
 
-        log_kwargs["rag_selections"] = ""
+        # Save this cognitive step to the database to ensure contemplation steps are persisted
+        new_log = PromptResponseLog.objects.create(
+            conversation_id=conversation.id,
+            user_id=user_id,
+            system_prompt=current_step.system_prompt,
+            user_prompt=state["working_prompt"],
+            generated_response=cleaned_response,
+            rag_selections=rag_text if step_count == 0 else "",  # Only attach RAG to first step
+            parent_log=parent_log,
+            blueprint_id=blueprint.id
+        )
+        # Update parent_log so the NEXT step in the loop becomes a child of THIS step
+        parent_log = new_log
 
         if generation_failed:
             print(f"Generation failure detected in step {current_step.name}")

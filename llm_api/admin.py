@@ -31,11 +31,11 @@ class LocalAIModelAdmin(admin.ModelAdmin):
 
 @admin.register(Conversation)
 class ConversationAdmin(admin.ModelAdmin):
-    list_display = ('title', 'user', 'blueprint', 'start_time')
-    list_filter = ('start_time', 'blueprint', 'user')
+    list_display = ('title', 'user', 'start_time')
+    list_filter = ('start_time', 'user')
     search_fields = ('title', 'user__username')
     readonly_fields = ('id', 'start_time')
-    autocomplete_fields = ('user', 'blueprint')
+    autocomplete_fields = ('user', )
 
 @admin.register(PromptResponseLog)
 class PromptResponseLogAdmin(admin.ModelAdmin):

@@ -83,6 +83,17 @@ class LlmApiIntegrationTests(TestCase):
         if hasattr(cls, 'rag_service'):
             cls.rag_service.disconnect()
 
+        # CRITICAL: Free PyTorch VRAM to prevent OOM across test suites
+        if hasattr(cls, 'ai_service'):
+            cls.ai_service.model = None
+            cls.ai_service.tokenizer = None
+            if hasattr(cls.ai_service, '_generator_cache'):
+                cls.ai_service._generator_cache.clear()
+            import gc
+            import torch
+            gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
         super().tearDownClass()
         cls.settings_override.disable()
 

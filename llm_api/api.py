@@ -42,6 +42,7 @@ class GenerateIn(Schema):
     max_new_tokens: int = 1000
     skip_rag: bool = False
     skip_grips: bool = True
+    parent_log_id: typing.Optional[str] = None
 
 @router.post("/generate_response/")
 @ensure_csrf_cookie
@@ -62,6 +63,13 @@ def generate_response(request, payload: GenerateIn):
         system_prompt = payload.system_prompt or "You are an expert experiment architect. Your task is to design a clear and efficient experiment design based on a user's description of what they want to find out. Output suggested factors in a list format."
         messages.append({"role": "system", "content": system_prompt})
 
+    # Determine the parent log for the tree
+    parent_log = None
+    if payload.parent_log_id:
+        parent_log = PromptResponseLog.objects.filter(id=payload.parent_log_id).first()
+    elif conversation_id:
+        parent_log = PromptResponseLog.objects.filter(conversation_id=conversation_id).order_by('-created_at').first()
+
     rag_text = ""
     if not payload.skip_rag:
         rag_docs = service_registry.rag_service.get_context(payload.user_prompt)
@@ -73,7 +81,7 @@ def generate_response(request, payload: GenerateIn):
         if grips_docs:
             rag_text += "\n\nRelevant Concepts (Knowledge Graph):\n" + "\n\n".join([f"[{d.metadata.get('title', 'Unknown')}]: {d.page_content}" for d in grips_docs])
     
-    messages = messages + conversation.as_messages() + [{"role": "user", "content": payload.user_prompt + rag_text}]
+    messages = messages + conversation.as_messages(leaf_log_id=payload.parent_log_id) + [{"role": "user", "content": payload.user_prompt + rag_text}]
     max_new_tokens = payload.max_new_tokens
     print("Token Count:", service_registry.ai_service.count_conversation_tokens(messages))
     [response] = service_registry.ai_service.generate_response2(messages=messages, max_new_tokens=max_new_tokens, log_kwargs={"skip_log": True}, user=request.auth)
@@ -81,7 +89,8 @@ def generate_response(request, payload: GenerateIn):
     system_prompt = messages[0]["content"]
     p = PromptResponseLog(system_prompt=system_prompt, user_prompt=payload.user_prompt,
                           rag_selections=rag_text, conversation_id=conversation_id,
-                          generated_response=cleaned_response, user_id=request.auth.id)
+                          generated_response=cleaned_response, user_id=request.auth.id,
+                          parent_log=parent_log)
     p.save()
 
     return JsonResponse({"conversation_id": conversation_id, "cleaned_response": cleaned_response})
@@ -105,6 +114,43 @@ def get_grips_context(request, query: str = "", k: int = 4):
     doc_segments = service_registry.grips_service.get_grips_context(query, k=k)
     results = [{"page_content": d.page_content, "metadata": d.metadata} for d in doc_segments]
     return JsonResponse({"grips_context": results})
+
+@router.get("/conversation/{conversation_id}/workspace/")
+@ensure_csrf_cookie
+def get_workspace_info(request, conversation_id: str):
+    """Returns the file listing and git history for a conversation's workspace."""
+    try:
+        conversation = Conversation.objects.get(id=conversation_id)
+        if conversation.user_id != request.auth.id:
+            return JsonResponse({"error": "Not authorized to access this workspace."}, status=403)
+        
+        return JsonResponse({
+            "files": conversation.get_workspace_files(),
+            "git_history": conversation.get_git_history()
+        })
+    except Conversation.DoesNotExist:
+        return JsonResponse({"error": "Conversation not found."}, status=404)
+
+@router.get("/conversation/{conversation_id}/workspace/file/")
+@ensure_csrf_cookie
+def get_workspace_file(request, conversation_id: str, filename: str, commit_hash: str = "HEAD"):
+    """Extracts the content of a file from the workspace at a specific git commit."""
+    try:
+        conversation = Conversation.objects.get(id=conversation_id)
+        if conversation.user_id != request.auth.id:
+            return JsonResponse({"error": "Not authorized to access this workspace."}, status=403)
+        
+        content = conversation.get_file_at_commit(filename, commit_hash)
+        if content is None:
+            return JsonResponse({"error": "File or commit not found in workspace."}, status=404)
+            
+        return JsonResponse({
+            "filename": filename,
+            "commit_hash": commit_hash,
+            "content": content
+        })
+    except Conversation.DoesNotExist:
+        return JsonResponse({"error": "Conversation not found."}, status=404)
 
 class OutlineQuery(Schema):
     user_query: str

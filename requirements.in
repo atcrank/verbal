@@ -3,6 +3,7 @@ django>=5.2
 django-ninja
 celery
 django-celery-beat
+django-cryptography-5
 redis
 psycopg[binary,pool]
 watchdog

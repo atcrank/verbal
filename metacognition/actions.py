@@ -430,10 +430,18 @@ def _tool_execute_script(params: ExecuteScriptArgs, workspace_dir: str) -> str:
         data = resp.json()
         
         output = f"\n\n[EXECUTE_SCRIPT Result]\nStatus: {data.get('status')}\nReturn Code: {data.get('returncode')}\n"
+        
+        def _truncate_output(text: str, max_length: int = 1500) -> str:
+            """Protects the LLM context window by truncating massive console outputs."""
+            if not text or len(text) <= max_length:
+                return text
+            half = max_length // 2
+            return text[:half] + f"\n\n... [TRUNCATED {len(text) - max_length} CHARACTERS TO SAVE TOKENS] ...\n\n" + text[-half:]
+
         if data.get('stdout'):
-            output += f"\n--- STDOUT ---\n{data.get('stdout').strip()}"
+            output += f"\n--- STDOUT ---\n{_truncate_output(data.get('stdout').strip())}"
         if data.get('stderr'):
-            output += f"\n--- STDERR ---\n{data.get('stderr').strip()}"
+            output += f"\n--- STDERR ---\n{_truncate_output(data.get('stderr').strip())}"
             
         return output
     except Exception as e:

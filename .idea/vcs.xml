@@ -2,36 +2,14 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/workspaces/0d57acaf-208e-4c49-96a1-e3d5c330c1c8" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/workspaces/0f65098e-cf63-4bc4-8731-178988ed7baf" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/workspaces/0faf30be-24cc-48a7-9263-7903863eff85" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/workspaces/150d93c3-43b4-4bd4-ad01-82f115f00c9c" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/workspaces/2a063fc7-c0e3-49d0-a47c-d51e30204ce6" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/workspaces/3bb6cd80-d8ee-4567-a64a-5baef6d162cb" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/workspaces/510683dc-bea5-49cc-8f9d-91826711efb2" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/workspaces/6f1d29d3-2d91-4a11-9fa5-3f7906f6f931" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/workspaces/735ee975-f6b5-4d7c-9b4c-878b2c392fa1" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/workspaces/81c8f48c-5ce7-4fcc-a92a-33f2848ced86" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/workspaces/82fe72d1-0f05-4722-9c4f-17576cc6dd50" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/workspaces/83211d4e-4a48-45e7-bfe2-ae2a83e9593d" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/workspaces/8dcf5578-8e0e-4ea5-b09d-ff05480a0d40" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/workspaces/8dd5953d-3a25-441c-be47-f63116700c4d" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/workspaces/9ae96354-5453-4089-8ace-357383f62c80" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/workspaces/ac196543-3015-40fa-821c-102d170e58ef" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/workspaces/bacd4172-c613-4452-93ad-732dec914bb6" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/workspaces/bb7cab8d-8779-4eb5-9fef-f57d89a79c2b" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/workspaces/be90421a-ccf7-46ea-8ab6-946a38f92b67" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/workspaces/c0b226bb-99b9-49cf-b075-a023e1f10012" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/workspaces/c1893041-fc09-4ff8-9cd5-2f35e35cbb48" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/workspaces/e1d82880-e3fa-4cf5-b225-9f9b43908ec3" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/workspaces/e1e4455e-ae76-47a0-b97c-949f45623323" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/workspaces/e9a8d84f-c1af-471a-98d0-2a3c07b23383" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/workspaces/ed252b1e-b758-4690-8340-8a23d276ef8c" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/workspaces/f13156c0-8c69-4199-aa8d-763c4778f31f" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/workspaces/f2490869-7020-4f86-ae1d-a398e4e940da" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/workspaces/fa8aa1ac-eeb5-41c2-af02-a92b7381ec91" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/workspaces/fd5bdaa8-a0c6-4a75-bf7d-001e43f34058" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/workspaces/fe83eeab-3d37-415f-a452-f9068c6054a9" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/workspaces/temp_workspace" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/workspaces/3c5468ff-7fed-4d82-9c2f-c1e5b90c0434" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/workspaces/506f15c8-6277-4462-ae7b-08ec39737c6b" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/workspaces/549e950c-58ae-4366-9af1-84074624e3c9" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/workspaces/8be2eba0-4ab0-4dd6-b83a-81ead6de5423" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/workspaces/b42f4842-3cb6-4f0b-9a47-542c9694041d" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/workspaces/b8019200-d5fa-454d-96dc-1c77acb3652c" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/workspaces/d1ee43de-7fe8-469c-b059-fafb97033130" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/workspaces/e46ef9c3-ce51-4f4e-9d94-0faee8073bb1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/workspaces/fc0e9905-8d28-40bb-8a0d-5b9e6ee0f6a1" vcs="Git" />
   </component>
 </project>

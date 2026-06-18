@@ -3,6 +3,7 @@ import shutil
 import uuid
 import typing
 from django.db import models
+from django_cryptography.fields import encrypt
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db.models.signals import post_delete
@@ -59,13 +60,7 @@ class Conversation(models.Model):
     title = models.CharField(max_length=255, blank=True, default="New Conversation")
     objects = ConversationManager()
     
-    blueprint = models.ForeignKey(
-        'metacognition.CognitiveBlueprint',
-        on_delete=models.SET_NULL,
-        null=True, blank=True,
-        related_name="conversations",
-        help_text="The cognitive blueprint driving this conversation, if any."
-    )
+
 
     class Meta:
         ordering = ['-start_time']
@@ -73,19 +68,33 @@ class Conversation(models.Model):
     def __str__(self):
         return f"Conversation with {self.user.username} (started {self.start_time.strftime('%Y-%m-%d')})"
 
-    def as_messages(self):
+    def as_messages(self, leaf_log_id=None):
         """
-        Returns the conversation history as an LLM-ready "messages" list.
-
-        This method relies on the `logs` having been prefetched
-        (using .with_message_logs()) to be efficient.
+         Traces the path from the specified leaf_log_id back to the root.
+         If no leaf is provided, it defaults to the most recently created log.
         """
         messages = []
         system_prompt_count = 0
         # self.logs.all() will use the prefetched data.
         # The 'ordering' on PromptResponseLog.Meta ensures they are correct.
         # Reverse the list to ensure chronological order (oldest to newest)
-        for log in reversed(list(self.logs.all())):
+
+        # Pre-build a dictionary to traverse the tree in memory without hitting the DB
+        log_dict = {log.id: log for log in self.logs.all()}
+
+        if leaf_log_id and leaf_log_id in log_dict:
+            current_log = log_dict[leaf_log_id]
+        else:
+            # Default to the most recent log as the active leaf
+            current_log = self.logs.order_by('-created_at').first()
+
+        path = []
+        while current_log:
+            path.append(current_log)
+            current_log = log_dict.get(current_log.parent_log_id)
+
+        # Reverse the path so it goes root -> leaf
+        for log in reversed(path):
             if log.system_prompt and system_prompt_count == 0:
                 messages.append({
                     "role": "system",
@@ -208,6 +217,13 @@ class PromptResponseLog(models.Model):
         on_delete=models.CASCADE,
         related_name="logs"  # Lets you do conversation.logs.all()
     )
+    blueprint = models.ForeignKey(
+        'metacognition.CognitiveBlueprint',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="conversations",
+        help_text="The cognitive blueprint driving this conversation, if any."
+    )
     class Meta:
         ordering = ['-created_at']
 
@@ -250,8 +266,9 @@ class SystemConfiguration(models.Model):
         try:
             obj, _ = cls.objects.get_or_create(pk=1)
             return obj
-        except Exception:
+        except Exception as e:
             # Fails gracefully during initial DB migrations
+            print(f"Warning: SystemConfiguration.get_solo() failed: {e}")
             return None
         
     def __str__(self):
@@ -273,7 +290,7 @@ class UserAPIKey(models.Model):
     """Secure storage for user API keys. (Prototype: Plaintext)."""
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="api_keys")
     provider = models.CharField(max_length=50, help_text="Must match ExternalAIModel provider (e.g., 'openai')")
-    api_key = models.CharField(max_length=255, help_text="Stored as plaintext. Consider django-fernet-fields for production.")
+    api_key = encrypt(models.CharField(max_length=255))
 
     def __str__(self):
         return f"{self.provider} key for {self.user.username}"
@@ -297,8 +314,11 @@ from .ollama_client import set_ollama_model_state
 def track_ollama_model_changes(sender, instance, **kwargs):
     """Track the old model name so we know what to unload."""
     if instance.pk:
-        old_instance = SystemConfiguration.objects.get(pk=instance.pk)
-        instance._old_ollama_model = old_instance.active_ollama_model
+        try:
+            old_instance = SystemConfiguration.objects.get(pk=instance.pk)
+            instance._old_ollama_model = old_instance.active_ollama_model
+        except SystemConfiguration.DoesNotExist:
+            instance._old_ollama_model = None
     else:
         instance._old_ollama_model = None
 

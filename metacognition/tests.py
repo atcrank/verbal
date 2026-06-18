@@ -229,6 +229,15 @@ class MetacognitionTraversalTests(TestCase):
         self.assertEqual(mock_outline.call_count, 2)
         self.assertIn("The answer is test", result.get("final_response", ""))
 
+    @classmethod
+    def tearDownClass(cls):
+        from llm_api.apps import service_registry
+        if getattr(service_registry, '_rag_service', None):
+            service_registry._rag_service.disconnect()
+        if getattr(service_registry, '_grips_service', None):
+            service_registry._grips_service.disconnect()
+        super().tearDownClass()
+
 @tag('e2e')
 class MetacognitionE2ETests(TestCase):
     """
@@ -246,15 +255,43 @@ class MetacognitionE2ETests(TestCase):
         cls.settings_override.enable()
         super().setUpClass()
 
+        from llm_api.apps import service_registry
+        cls.ai_service = service_registry.ai_service
+
+        from django.contrib.auth.models import User
+        from llm_api.models import ExternalAIModel, UserActiveModel
+
+        cls.test_system_user, _ = User.objects.get_or_create(username='test_system_user')
+        ext_api, _ = ExternalAIModel.objects.get_or_create(
+            name="Live Inference Server",
+            provider="openai",
+            api_url="http://127.0.0.1:8001/api/llm/v1/chat/completions",
+            api_model_name="local-model"
+        )
+        UserActiveModel.objects.update_or_create(
+            user=cls.test_system_user,
+            defaults={"active_external": ext_api, "use_external": True}
+        )
+
+        cls.original_outline = cls.ai_service.generate_outline
+        cls.original_resp = cls.ai_service.generate_response2
+
+        cls.ai_service.generate_outline = lambda *args, **kwargs: cls.original_outline(*args, **{**kwargs,
+                                                                                                 'user': cls.test_system_user})
+        cls.ai_service.generate_response2 = lambda *args, **kwargs: cls.original_resp(*args, **{**kwargs, 'user': cls.test_system_user})
+
     @classmethod
     def tearDownClass(cls):
         from llm_api.apps import service_registry
-        if service_registry._rag_service:
+        if getattr(service_registry, '_rag_service', None):
             service_registry._rag_service.disconnect()
-        if service_registry._grips_service:
+        if getattr(service_registry, '_grips_service', None):
             service_registry._grips_service.disconnect()
+        if hasattr(cls, 'original_outline'):
+            cls.ai_service.generate_outline = cls.original_outline
+            cls.ai_service.generate_response2 = cls.original_resp
         super().tearDownClass()
-        cls.settings_override.disable()
+
 
     def setUp(self):
         # We can just re-use the setup from the mocked tests to create the DB objects
@@ -270,5 +307,8 @@ class MetacognitionE2ETests(TestCase):
         result = run_blueprint(self.mocked_tests.idea_bp.id, "What are the pros and cons of using Django?", user_id=self.mocked_tests.user.id)
         
         self.assertNotIn("error", result, f"E2E run failed with an error: {result.get('error')}")
-        self.assertEqual(len(result.get("internal_monologue", [])), 3, "E2E run should have produced a 3-step monologue.")
+        monologue = result.get("internal_monologue", [])
+        self.assertEqual(len(monologue), 3, "E2E run should have produced a 3-step monologue.")
+        for step in monologue:
+            self.assertNotIn("Generation failed", str(step.get("output", "")))
         print("✅ E2E test for IDEA protocol passed.")

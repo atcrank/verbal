@@ -39,8 +39,32 @@ class BenchmarkingIntegrationTests(TestCase):
         super().setUpClass()
         os.makedirs(TEST_FILES_DIR, exist_ok=True)
 
-        print("\n>>> 🚀 INITIALIZING BENCHMARKING SERVICES (This may take time) <<<")
+        print("\n>>> 🚀 USING LIVE INFERENCE SERVER FOR BENCHMARKING <<<")
         cls.ai_service = service_registry.ai_service
+        
+        # Configure External API to point to the live local server
+        from django.contrib.auth.models import User
+        from llm_api.models import ExternalAIModel, UserActiveModel
+        
+        cls.test_system_user, _ = User.objects.get_or_create(username='test_system_user')
+        ext_api, _ = ExternalAIModel.objects.get_or_create(
+            name="Live Inference Server",
+            provider="openai",
+            api_url="http://127.0.0.1:8001/api/llm/v1/chat/completions",
+            api_model_name="local-model"
+        )
+        UserActiveModel.objects.update_or_create(
+            user=cls.test_system_user,
+            defaults={"active_external": ext_api, "use_external": True}
+        )
+        
+        # Force all LLM calls to use the external API config
+        cls.original_outline = cls.ai_service.generate_outline
+        cls.original_resp = cls.ai_service.generate_response2
+        
+        cls.ai_service.generate_outline = lambda *args, **kwargs: cls.original_outline(*args, **{**kwargs, 'user': cls.test_system_user})
+        cls.ai_service.generate_response2 = lambda *args, **kwargs: cls.original_resp(*args, **{**kwargs, 'user': cls.test_system_user})
+
         cls.rag_service = service_registry.rag_service
         cls.grips_service = service_registry.grips_service
 
@@ -54,6 +78,11 @@ class BenchmarkingIntegrationTests(TestCase):
             service_registry._rag_service.disconnect()
         if service_registry._grips_service:
             service_registry._grips_service.disconnect()
+
+        # Restore original ai_service methods
+        if hasattr(cls, 'original_outline'):
+            cls.ai_service.generate_outline = cls.original_outline
+            cls.ai_service.generate_response2 = cls.original_resp
 
         super().tearDownClass()
         cls.settings_override.disable()
