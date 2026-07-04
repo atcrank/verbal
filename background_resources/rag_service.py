@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import os
 import torch
 if not hasattr(torch, "float8_e8m0fnu"):
@@ -50,28 +53,9 @@ class GlossaryExtraction(BaseModel):
     items: List[GlossaryItem]
 
 
-class ActiveReadingEvaluation(BaseModel):
-    reasoning: str = Field(description="Analyze if the provided context chunks fully answer the user's query.")
-    context_status: Literal[
-        "SUFFICIENT",
-        "NEED_PREVIOUS_CHUNK",
-        "NEED_NEXT_CHUNK",
-        "IRRELEVANT",
-        "NO_CONTENT_FOUND"
-    ] = Field(description=(
-        "Action to take. "
-        "Pick 'SUFFICIENT' if the answer is found. "
-        "Pick 'NEED_PREVIOUS_CHUNK' or 'NEED_NEXT_CHUNK' if the context cuts off mid-sentence or lacks a referenced definition."
-        "Pick 'IRRELEVANT' if the context is unrelated but a new search might help. "
-        "Pick 'NO_CONTENT_FOUND' if you have exhausted search options and cannot answer the question."
-    ))
-    draft_answer: str = Field(description="If SUFFICIENT, provide the answer. Otherwise, leave blank.")
-    new_search_query: str = Field(default="", description="If IRRELEVANT, provide a new, different keyword to search the database.")
-
 OUTPUT_TYPES = {"DocumentHandles": DocumentHandles,
                 "GlossaryItem": GlossaryItem,
-                "GlossaryExtraction": GlossaryExtraction,
-                "ActiveReadingEvaluation": ActiveReadingEvaluation}
+                "GlossaryExtraction": GlossaryExtraction}
 
 
 class DjangoChunkStore:
@@ -79,12 +63,12 @@ class DjangoChunkStore:
     def mget(self, keys):
         # Coerce all keys to strings to prevent UUID object hash mismatch in dict lookups!
         str_keys = [str(k) for k in keys]
-        print(str_keys)
+        logger.info(str_keys)
         chunks = DjangoChunk.objects.filter(chunk_id__in=str_keys)
         chunk_dict = {str(c.chunk_id): LangchainDocument(page_content=c.text_content or "", metadata=c.metadata) for c in chunks}
-        print(chunk_dict)
+        logger.info(chunk_dict)
         chunk_list = [chunk_dict.get(k) for k in str_keys]
-        print(chunk_list)
+        logger.info(chunk_list)
         return chunk_list
 
     def mset(self, kv_pairs):
@@ -149,7 +133,7 @@ class RAGService:
 
         # initialise summary generator and glossary generator
 
-        print(f"RAG Service db initialized. {self.db}")
+        logger.info(f'RAG Service db initialized. {self.db}')
         if not os.path.exists("index_dump.txt"):
             self.dump_index_to_file()
 
@@ -181,10 +165,16 @@ class RAGService:
                     self.hashes_indexed[scheme].append(str(chunk.chunk_id))
                     
         if lc_docs_to_add:
-            print(f"Indexing {len(lc_docs_to_add)} chunks into PGVector...")
-            self.db.add_documents(lc_docs_to_add, ids=chunk_ids)
+            logger.info(f'Indexing {len(lc_docs_to_add)} chunks into PGVector in batches...')
+            batch_size = 500
+            for i in range(0, len(lc_docs_to_add), batch_size):
+                batch_docs = lc_docs_to_add[i:i + batch_size]
+                batch_ids = chunk_ids[i:i + batch_size]
+                logger.info(f'Indexing batch {i // batch_size + 1} of {len(lc_docs_to_add) // batch_size + 1}...')
+                self.db.add_documents(batch_docs, ids=batch_ids)
+                
             unindexed.update(in_vector_index=True)
-            print("Indexing complete.")
+            logger.info('Indexing complete.')
 
     def save_db(self):
         pass # Postgres persists automatically
@@ -207,7 +197,7 @@ class RAGService:
         # The post_delete signal on StrategyChunkUsage will handle the reference counting
         # and delete the RAGChunk + Store content if orphaned.
         readingstrategy.usages.all().delete()
-        print(f"Deleted readings of {readingstrategy.document.title}.")
+        logger.info(f'Deleted readings of {readingstrategy.document.title}.')
 
     def audit_stores(self):
         """
@@ -225,7 +215,7 @@ class RAGService:
     def get_direct_context(self, query, k=1):
         retrieved_docs = self.db.similarity_search(query, k=k)  # Get top result page
         doc_cards = [f"file {i}:" +doc.metadata["filename"] + ": " + doc.page_content for i, doc in enumerate(retrieved_docs)]
-        print(f"Retrieved context: {doc_cards}")
+        logger.info(f'Retrieved context: {doc_cards}')
         retrieved_context =  "Also, this is an arguably relevant excerpt from my document library:" + "\n".join(doc_cards)
         return retrieved_context
 
@@ -239,9 +229,9 @@ class RAGService:
         matches = self.db.similarity_search(query, k=k*2)
 
         if not matches:
-            print("Matches: []")
+            logger.info('Matches: []')
             return []
-        print("Matches", matches, matches[0].metadata)
+        logger.info(" ".join([str(x) for x in ['Matches', matches, matches[0].metadata]]))
 
         parent_ids = []
         seen_ids = set()
@@ -259,7 +249,7 @@ class RAGService:
 
             if len(parent_ids) >= k * 2:
                 break
-        print("ParentIDs", parent_ids)
+        logger.info(" ".join([str(x) for x in ['ParentIDs', parent_ids]]))
 
         final_docs = []
         if parent_ids:
@@ -267,7 +257,7 @@ class RAGService:
                 results = self.store.mget(parent_ids)
                 final_docs = [doc for doc in results if doc is not None]
             except Exception as e:
-                print(f"Error during manual store retrieval: {e}")
+                logger.info(f'Error during manual store retrieval: {e}')
 
         scored_results = self.verify_rag_relevance(query, final_docs)
         
@@ -275,7 +265,7 @@ class RAGService:
         sorted_docs = [doc for doc, score in top_results]
 
         final_parent_ids = [str(doc.metadata.get(self.id_key)) for doc in sorted_docs if doc.metadata and doc.metadata.get(self.id_key)]
-        print("Final Parent IDs", final_parent_ids)
+        logger.info(" ".join([str(x) for x in ['Final Parent IDs', final_parent_ids]]))
         if final_parent_ids:
             DjangoChunk.objects.filter(chunk_id__in=final_parent_ids)\
                 .update(hit_count=models.F('hit_count') + 1, last_accessed=timezone.now())
@@ -298,7 +288,7 @@ class RAGService:
         from llm_api.apps import service_registry
         ai_service = service_registry.ai_service
 
-        print(f"RAG Service Models Loaded.")
+        logger.info(f'RAG Service Models Loaded.')
 
     @staticmethod
     def is_likely_toc(text_chunk: str) -> bool:
@@ -357,10 +347,10 @@ class RAGService:
             # Check if the chunks actually exist in the store (integrity check)
             existing_ids = self.hashes_indexed[current_scheme]
             if existing_ids and self.store.mget([existing_ids[0]])[0] is not None:
-                print(f"Reusing {len(existing_ids)} existing chunks for scheme {current_scheme}")
+                logger.info(f'Reusing {len(existing_ids)} existing chunks for scheme {current_scheme}')
                 return [], existing_ids
             else:
-                print(f"Scheme {current_scheme} found in index but chunks missing from store. Re-indexing.")
+                logger.info(f'Scheme {current_scheme} found in index but chunks missing from store. Re-indexing.')
 
         raw_docs = []
         text_splitter = RecursiveCharacterTextSplitter(
@@ -370,7 +360,7 @@ class RAGService:
 
         file_path = document.file.path
         _, file_extension = os.path.splitext(file_path)
-        if file_extension.lower() == '.txt':
+        if file_extension.lower() in ['.txt', '.md']:
             with document.file.open('r') as f:
                 # Wrap raw text in a Document object to match Loader outputs
                 raw_docs = [LangchainDocument(page_content=f.read(), metadata={"source": file_path})]
@@ -402,7 +392,7 @@ class RAGService:
             
             # 2. Unzip if not already there (Idempotency check)
             if not os.path.exists(extract_path):
-                print(f"Unzipping corpus to {extract_path}...")
+                logger.info(f'Unzipping corpus to {extract_path}...')
                 with zipfile.ZipFile(file_path, 'r') as zip_ref:
                     zip_ref.extractall(extract_path)
             
@@ -430,7 +420,7 @@ class RAGService:
                     doc.metadata['page_number'] = i + 1
 
         else:
-            print("Unsupported file type.")
+            logger.info('Unsupported file type.')
             
         # Normalize line endings for all loaded docs to ensure splitters and regexes work safely
         for doc in raw_docs:
@@ -495,7 +485,7 @@ class RAGService:
         if current_scheme in self.hashes_indexed:
             existing_ids = self.hashes_indexed[current_scheme]
             if existing_ids and self.store.mget([existing_ids[0]])[0] is not None:
-                print(f"Reusing {len(existing_ids)} existing Grobid chunks for scheme {current_scheme}")
+                logger.info(f'Reusing {len(existing_ids)} existing Grobid chunks for scheme {current_scheme}')
                 return [], existing_ids
 
         if not hasattr(document, 'grobid_metadata') or not document.grobid_metadata or not document.grobid_metadata.tei_xml:
@@ -513,7 +503,7 @@ class RAGService:
         
         # If ALL of these fields are empty/falsy, the Grobid extraction is deemed too low-quality
         if not any(str(field).strip() for field in meaningful_fields if field is not None):
-            print(f"Skipping Grobid chunking for '{document.title}': No meaningful metadata extracted. Falling back to default splitters.")
+            logger.info(f"Skipping Grobid chunking for '{document.title}': No meaningful metadata extracted. Falling back to default splitters.")
             return [], []
 
         tei_xml = document.grobid_metadata.tei_xml
@@ -629,11 +619,11 @@ class RAGService:
             else:
                 summary = summary_result
         except Exception as e:
-            print(f"Error generating chunk summary: {e}")
+            logger.info(f'Error generating chunk summary: {e}')
             summary = None
 
         if summary:
-            print("Summary obj", summary)
+            logger.info(" ".join([str(x) for x in ['Summary obj', summary]]))
             if len(summary.long_form) < len(summary.short_form):
                 summary.long_form, summary.short_form = summary.short_form, summary.long_form
             return summary
@@ -686,7 +676,7 @@ class RAGService:
                 glossary_extraction = valid_definitions
                 return glossary_extraction
         except re.error as e:
-            print(f"Invalid regex {regex}: {e}")
+            logger.info(f'Invalid regex {regex}: {e}')
             # Fallback to LLM if regex fails? Or just log error?
             pass
 
@@ -730,25 +720,25 @@ class RAGService:
             else:
                 glossary_entries = result
         except Exception as e:
-            print(f"Error generating glossary: {e}")
+            logger.info(f'Error generating glossary: {e}')
             glossary_entries = None
 
-        print("Glossary from chunks:", result)
+        logger.info(" ".join([str(x) for x in ['Glossary from chunks:', result]]))
 
         if glossary_entries:
             valid_definitions = []
             for item in glossary_entries.items:
                 if self.is_hallucination(item.term, raw_text):
-                    print("Hallucination detected:", item.term, " not in", raw_text)
+                    logger.info(" ".join([str(x) for x in ['Hallucination detected:', item.term, ' not in', raw_text]]))
                 if not self.check_definition_grounding(item.definition, raw_text):
-                    print("Definition not grounding:", item.definition, " not found in", raw_text)
+                    logger.info(" ".join([str(x) for x in ['Definition not grounding:', item.definition, ' not found in', raw_text]]))
                 if not self.is_hallucination(item.term, raw_text) and self.check_definition_grounding(item.definition, raw_text):
                     valid_definitions.append(item)
 
             return valid_definitions
         return []
 
-    def verify_rag_relevance(self, user_query, retrieved_chunks, min_overlap=0.0):
+    def verify_rag_relevance(self, user_query, retrieved_chunks, min_overlap=0.1):
         from llm_api.apps import service_registry
         nlp_service = service_registry.nlp_service
 
@@ -772,7 +762,14 @@ class RAGService:
                 overlap_ratio = 0.0
             else:
                 intersection = query_lemmas.intersection(chunk_lemmas)
-                overlap_ratio = len(intersection) / len(query_lemmas)
+                base_overlap = len(intersection) / len(query_lemmas)
+                
+                # Length Penalty (Information Density):
+                # Discount overlap score for excessively long chunks.
+                # Chunks under 100 lemmas get no penalty.
+                # A 1000-lemma chunk is penalized heavily (100/1000 = 0.1).
+                length_penalty = min(1.0, 100.0 / max(1, len(chunk_lemmas)))
+                overlap_ratio = base_overlap * length_penalty
             
             # 4. Tie-breaker: Prefer definitions ONLY if they actually match the query context
             is_relevant_definition = 0
@@ -817,11 +814,11 @@ class RAGService:
                         f.write(f"Entry #{i + 1}--------------------------------------------\n")
                         f.write(f"Index Key (Term): {key}")
                         f.write(f"\nDefinition: {value}\n")
-                print("dumped dict")
+                logger.info('dumped dict')
             except Document.DoesNotExist:
-                print(f"Comparison document with ID {comparison_doc_id} not found.")
+                logger.info(f'Comparison document with ID {comparison_doc_id} not found.')
 
-        print(f"Dumping index to {output_filename}...")
+        logger.info(f'Dumping index to {output_filename}...')
         index_docs = DjangoChunk.objects.filter(in_vector_index=True)
         index_dict = {}
         with open(output_filename, "w", encoding="utf-8") as f:
@@ -859,14 +856,14 @@ class RAGService:
                 f.write(f"Source:           {source} (Page {page})\n")
                 f.write("-" * 60 + "\n")
 
-        print("Dumped vector_store.")
+        logger.info('Dumped vector_store.')
 
         if deterministic_glossary_dict:
             for key, value in deterministic_glossary_dict.items():
                 if index_dict.get(key) is None:
                     indexed_misses.append(key)
 
-            print(f"Found {len(indexed_misses)} misses / {len(deterministic_glossary_dict.keys())} and ")
-            print(f"{len(indexed_false_positives)} hallucinations / {len(index_dict)} total.")
-            print("Index Misses:", "\n-".join(indexed_misses))
-            print("Index Hallucinations:", "\n-".join(indexed_false_positives))
+            logger.info(f'Found {len(indexed_misses)} misses / {len(deterministic_glossary_dict.keys())} and ')
+            logger.info(f'{len(indexed_false_positives)} hallucinations / {len(index_dict)} total.')
+            logger.info(" ".join([str(x) for x in ['Index Misses:', '\n-'.join(indexed_misses)]]))
+            logger.info(" ".join([str(x) for x in ['Index Hallucinations:', '\n-'.join(indexed_false_positives)]]))

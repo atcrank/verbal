@@ -1,0 +1,47 @@
+Scenario 3: The Grill-Me Loop
+=============================
+
+This test simulates a multi-turn conversation where the user provides an ambiguous request.
+The agent uses the "Pipeline: Grill Me" blueprint to ask clarifying questions sequentially,
+terminating only when it has sufficient clarity to summarize the requirements.
+
+Execution
+---------
+We initialize the ``Grill Me`` blueprint and pass an array of simulated user replies.
+
+    >>> from metacognition.tasks import run_blueprint
+    >>> from metacognition.models import CognitiveBlueprint
+    >>> from django.contrib.auth.models import User
+    >>> import uuid
+    >>> user, _ = User.objects.get_or_create(username="test_user")
+    >>> bp = CognitiveBlueprint.objects.filter(name="Grill me!").first()
+
+    
+    >>> prompts = [
+    ...     "I need to build a simulation model of an economy.",
+    ...     "Yes, there are actors like producers and consumers, and they exchange goods.",
+    ...     "That's enough"
+    ... ]
+    
+    >>> import contextlib, io, sys
+    >>> cid = None
+    >>> last_result = None
+    
+    >>> # We redirect stdout to capture any background prints from the tools
+    >>> with contextlib.redirect_stdout(io.StringIO()) as captured_out:
+    ...     for prompt in prompts:
+    ...         last_result = run_blueprint(bp.id, prompt, conversation_id=cid, user_id=user.id)
+    ...         cid = last_result.get("conversation_id")
+    ...         # LangGraph preserves state automatically in the DjangoCheckpointer!
+    
+    >>> if last_result:
+    ...     last_result["stdout"] = captured_out.getvalue()
+    ...     report_doctest_run("3. grill_me_loop", prompts, last_result)
+    
+    >>> assert "error" not in last_result, f"Execution failed: {last_result.get('error')}"
+    >>> assert len(last_result.get("internal_monologue", [])) > 0, "Monologue was empty!"
+    
+    >>> # Verify the execution loop finished gracefully
+    >>> print(f"- multi-turn complete: {1 if last_result else 0}/1")
+    - multi-turn complete: 1/1
+

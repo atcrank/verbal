@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import time
 import os
 import re
@@ -57,7 +60,7 @@ def evaluate_metric(ai_service, prompt_template, num_sequences=5, **kwargs):
                     evaluation = EvaluationScore.model_validate(resp)
                 else:
                     evaluation = resp
-                print(f"DEBUG EVAL | Score: {evaluation.score} | Reasoning: {evaluation.reasoning}")
+                logger.info(f'DEBUG EVAL | Score: {evaluation.score} | Reasoning: {evaluation.reasoning}')
                 valid_scores.append((evaluation.score - 1) / 4.0)
             except Exception:
                 continue
@@ -66,7 +69,7 @@ def evaluate_metric(ai_service, prompt_template, num_sequences=5, **kwargs):
         avg_score = sum(valid_scores) / len(valid_scores) if valid_scores else -1.0
         return avg_score, success_rate
     except Exception as e:
-        print(f"Evaluation completely failed: {e}. Prompt preview: {prompt[:100]}...")
+        logger.info(f'Evaluation completely failed: {e}. Prompt preview: {prompt[:100]}...')
         return -1.0, 0.0
 
 

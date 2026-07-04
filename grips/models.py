@@ -3,7 +3,7 @@ from django.urls import reverse
 from django.utils.html import format_html
 from django.templatetags.static import static
 from llm_api.models import LocalAIModel
-from django.db.models.signals import pre_delete
+from django.db.models.signals import pre_delete, post_save
 from django.dispatch import receiver
 
 
@@ -90,6 +90,13 @@ def delete_concept_vector(sender, instance, **kwargs):
          except Exception:
              pass
 
+@receiver(post_save, sender=ConceptNode)
+def index_concept_vector(sender, instance, created, **kwargs):
+    """When a ConceptNode is saved, asynchronously index it into PGVector."""
+    from grips.tasks import task_index_concept_node
+    # Delay to celery so we don't block the web request
+    task_index_concept_node.delay(instance.id)
+
 class KnowledgeEdge(models.Model):
     """Defines exact, computable relationships between ConceptNodes."""
 
@@ -119,34 +126,7 @@ class KnowledgeEdge(models.Model):
         return f"{self.source.slug} --[{self.relationship_type}]--> {self.target.slug}"
 
 
-class PromptRecipies(models.Model):
-    """
-    Specific prompt ingredients and harness designs optimized for this domain.
-    If the model consulting the wiki is large, this tells it *how* to use the data.
-    """
-    domain = models.ForeignKey(Domain, on_delete=models.CASCADE, related_name="harnesses")
-    name = models.CharField(max_length=255)
-    system_prompt_template = models.TextField(
-        help_text="Template injecting Domain context. Use {{ concepts }} to inject retrieved ConceptNodes."
-    )
-    recommended_model = models.ForeignKey(
-        LocalAIModel,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        help_text="The model this harness was optimized for."
-    )
 
-    needs_linting = models.BooleanField(default=True,
-                                        help_text="Flagged when updated so the background linter can verify it.")
-    last_linted_at = models.DateTimeField(null=True, blank=True)
-    linting_report = models.JSONField(default=dict, blank=True)
-
-    def __str__(self):
-        return f"{self.name} ({self.domain.name})"
-        
-    def get_admin_url(self):
-        return reverse("admin:grips_promptrecipies_change", args=[self.id])
 
 
 class CeleryStatus(models.Model):

@@ -1,0 +1,15 @@
+{% if not concepts %}
+    <div class="conv-date" style="text-align: center; margin-top: 20px;">No concepts found for "{{ query }}".</div>
+{% else %}
+    <div style="margin-bottom: 10px; font-size: 0.9rem; color: var(--text-main);">Found {{ concepts|length }} Concepts</div>
+    {% for node in concepts %}
+        <div class="search-card" style="border-left: 3px solid var(--primary); margin-bottom: 10px;" draggable="true" ondragstart="event.dataTransfer.setData('application/json', JSON.stringify({model: 'ConceptNode', id: '{{ node.slug }}', content: '{{ node.narrative_content|escapejs }}', preview: '{{ node.title|escapejs }}'}))">
+            <div class="search-card-title" style="color: var(--primary);">✨ {{ node.title }}</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Domain: {{ node.domain.name|default:"Uncategorized" }}</div>
+            <details style="margin-top: 8px;">
+                <summary class="search-card-body" style="cursor: pointer; outline: none;">{{ node.narrative_content|truncatechars:100 }}</summary>
+                <div style="margin-top: 8px; padding-left: 14px; font-size: 0.85rem; color: var(--text-main); white-space: pre-wrap; word-break: break-word;">{{ node.narrative_content }}</div>
+            </details>
+        </div>
+    {% endfor %}
+{% endif %}

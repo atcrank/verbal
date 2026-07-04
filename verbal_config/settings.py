@@ -16,17 +16,18 @@ import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+from dotenv import load_dotenv
+load_dotenv(BASE_DIR / ".env")
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
+VERBAL_ENV = os.environ.get("VERBAL_ENV", "dev")
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-di_unz7h49exp@-(oyl0i2v8i-7%-zr@8c@ejl%!%f6b=-vh8-"
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "django-insecure-di_unz7h49exp@-(oyl0i2v8i-7%-zr@8c@ejl%!%f6b=-vh8-")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = VERBAL_ENV == "dev"
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
 
 # Application definition
@@ -84,14 +85,12 @@ WSGI_APPLICATION = "verbal_config.wsgi.application"
 
 DATABASES = {
     "default": {
-        #"ENGINE": "django.db.backends.sqlite3",
-        #"NAME": BASE_DIR / "db.sqlite3",
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "verbal_db",
-        "USER": "verbal_user",
-        "PASSWORD": "verbal_password",
-        "HOST": "localhost",
-        "PORT": "5433",
+        "ENGINE": os.environ.get("DB_ENGINE", "django.db.backends.postgresql"),
+        "NAME": os.environ.get("DB_NAME", "verbal_db"),
+        "USER": os.environ.get("DB_USER", "verbal_user"),
+        "PASSWORD": os.environ.get("DB_PASSWORD", "verbal_password"),
+        "HOST": os.environ.get("DB_HOST", "localhost"),
+        "PORT": os.environ.get("DB_PORT", "5433"),
     }
 }
 
@@ -134,6 +133,9 @@ STATIC_URL = "static/"
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
+# Test runner
+TEST_RUNNER = 'verbal.test_runner.ForceTeardownTestRunner'
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
@@ -177,3 +179,65 @@ CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 SANDBOX_URL="http://127.0.0.1:8002/execute"   # if django were dockerised, use docker dns "http://sandbox:8000/execute"
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "[{levelname}] {asctime} {name}: {message}",
+            "style": "{",
+        },
+        "simple": {
+            "format": "[{levelname}] {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "llm_api": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "metacognition": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "demo_ui": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "background_resources": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "benchmarking": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "grips": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+}

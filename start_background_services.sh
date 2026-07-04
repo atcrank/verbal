@@ -7,7 +7,7 @@ echo "1/3: Starting Docker containers (Postgresql, Redis, Ollama, Grobid)..."
 docker compose up -d
 
 echo "2/3: Starting Celery worker..."
-source ../py313/bin/activate
+source ../../py313/bin/activate
 export VERBAL_ROLE=worker
 
 # Idempotent check: Only start watchmedo/celery if it isn't already running

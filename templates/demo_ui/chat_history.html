@@ -12,7 +12,12 @@
     </div>
     {% if log.generated_response %}
     <div class="chat-message ai">
-        <div class="bubble">{{ log.html_response|safe }}</div>
+        <div class="bubble">
+            {{ log.html_response|safe }}
+            <div style="margin-top: 10px; font-size: 0.75rem; color: var(--text-muted); text-align: right;">
+                Tokens: Input ({{ log.input_tokens }}), Output ({{ log.output_tokens }})
+            </div>
+        </div>
     </div>
     {% endif %}
 {% empty %}

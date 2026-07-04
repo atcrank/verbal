@@ -4,14 +4,19 @@
         {% if log.rag_selections %}
         <details style="margin-top: 10px; font-size: 0.85rem; background: rgba(255,255,255,0.4); padding: 8px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.1);">
             <summary style="cursor: pointer; font-weight: bold; color: var(--text-muted);">View Retrieved Context</summary>
-            <div style="margin-top: 8px; white-space: pre-wrap; word-wrap: break-word; font-family: monospace;">{{ log.rag_selections }}</div>
+            <div style="margin-top: 8px; white-space: pre-wrap; word-wrap: break-word; font-family: monospace;">{{ log.html_rag_selections|default:log.rag_selections }}</div>
         </details>
         {% endif %}
     </div>
 </div>
 {% if log.generated_response %}
 <div class="chat-message ai">
-    <div class="bubble">{{ log.html_response|safe }}</div>
+    <div class="bubble">
+        {{ log.html_response|safe }}
+        <div style="margin-top: 10px; font-size: 0.75rem; color: var(--text-muted); text-align: right;">
+            Tokens: Input ({{ log.input_tokens }}), Output ({{ log.output_tokens }})
+        </div>
+    </div>
 </div>
 {% endif %}
 

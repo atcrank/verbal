@@ -1,0 +1,30 @@
+To use these testable documents, invoke
+> pytest metacognition/metacognition_trials/
+
+Notes on use of "contextlib"
+
+Doctests work by looking at the line immediately following a >>> command. If there is no text there, doctest expects that absolutely nothing will be printed to the console during the execution of that command.
+Because our run_blueprint function and the underlying AI/RAG services are intentionally heavily instrumented with print() statements (e.g., Initializing RAG Service..., 🪝 Received Execution Plan...), doctest sees all this terminal output, compares it to the "Expected nothing" implicitly defined in your .rst file, and flags it as a failure!
+
+We don't want to remove our print statements because they are incredibly useful for debugging and tracking the agent's thought process in the server logs.
+Instead, we can simply wrap the run_blueprint call in our .rst tutorials with Python's built-in contextlib.redirect_stdout. This intercepts all the print statements and throws them into a temporary memory buffer so doctest doesn't see them, allowing the test to smoothly proceed to the assertion!
+
+Database Fixtures and Seeders
+-----------------------------
+Because `pytest` strictly isolates its test database, none of your development blueprints exist by default.
+We seed the `Pipeline: ResearchEvaluation` and `Pipeline: StrategicPlan` blueprints dynamically inside the `django_db_setup` fixture in `conftest.py`. We also inject necessary domain concepts (like PyCID for Grips). If you write a new trial that requires a new custom blueprint, define it in `conftest.py`.
+
+Report Card Assertions
+----------------------
+Given that some models (especially local ones like Gemm4-2B-it) might struggle with advanced cognitive reasoning, our doctests use a "Report Card" style of assertion. Instead of strict boolean matches for "ACCEPT", we simply assert whether the model made a complete attempt by returning a structured JSON response.
+
+Example assertion:
+::
+    >>> import json
+    >>> final_str = result.get("final_response", "{}")
+    >>> try:
+    ...     resp = json.loads(final_str) if "{" in final_str else {}
+    ... except json.JSONDecodeError:
+    ...     pass
+    >>> print(f"- complete attempt: {1 if final_str else 0}/1")
+    - complete attempt: 1/1

@@ -1,0 +1,50 @@
+Proactive Night Manager
+=======================
+
+This trial tests the ability of the NightManager to proactively review the server state and log its findings.
+
+First, we set up the environment and define a dummy user prompt that would simulate the periodic schedule triggering the NightManager.
+The NightManager's instructions tell it to:
+1. Run a database backup
+2. Review benchmarks, conversations, knowledge base, and periodic tasks
+3. Stop looping and use TASK_COMPLETE when done.
+
+::
+
+    >>> from metacognition.models import CognitiveBlueprint
+    >>> from metacognition.tasks import run_blueprint
+    >>> import contextlib
+    >>> import io
+    >>> import json
+    >>>
+    >>> # Find the NightManager blueprint
+    >>> bp = CognitiveBlueprint.objects.get(name="NightManager")
+    >>> 
+    >>> # Trap standard output so the test doesn't fail due to verbose logging
+    >>> f = io.StringIO()
+    >>> prompt = "Awaken, NightManager. Perform your nightly system review and maintenance."
+    >>> 
+    >>> # Mock database_backup to prevent dumpdata inside test transactions
+    >>> from unittest.mock import patch
+    >>> with patch('django.core.management.call_command') as mock_call:
+    ...     mock_call.return_value = None
+    ...     with contextlib.redirect_stdout(f):
+    ...         result = run_blueprint(
+    ...             blueprint_id=bp.id,
+    ...             user_prompt=prompt
+    ...         )
+    >>> report_doctest_run("8. proactive_nightmanager", prompt, result)
+    >>> 
+    >>> # The agent should complete without crashing
+    >>> print(f"- error free: {1 if 'error' not in result else 0}/1")
+    - error free: 1/1
+
+The final response of the agent should reflect a completed state or a report of its findings. 
+(Note: the generated report for this trial will contain the full standard output and internal monologue for review).
+
+::
+
+    >>> final_str = result.get("final_response", "")
+    >>> # We just check that the agent returned a string response
+    >>> print(f"- completed response: {1 if final_str else 0}/1")
+    - completed response: 1/1

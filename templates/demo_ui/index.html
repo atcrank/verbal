@@ -1,6 +1,7 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Verbal | Study Design Assistant</title>
@@ -11,84 +12,316 @@
     <!-- HTMX for seamless interactions -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 </head>
+
 <body>
 
-<div class="app-container">
+    <div class="app-container">
 
-    <!-- LEFT SIDEBAR: Conversations -->
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            Conversations
-            <button class="primary" style="padding: 4px 8px; float: right; font-size: 0.8rem;" onclick="document.getElementById('current-conversation-id').value=''; document.getElementById('chat-history').innerHTML='<div class=\'empty-state\' style=\'text-align: center; margin-top: 20px; color: var(--text-muted);\'>Started a new conversation.</div>'; document.getElementById('active-conversation-header').innerText='New Conversation';">+ New</button>
-        </div>
-        <div class="sidebar-content" id="conversation-list">
-            {% for conv in conversations %}
-                <div class="conv-item"
-                     hx-get="{% url 'demo_ui:get_conversation' conv.id %}"
-                     hx-target="#chat-history"
-                     hx-swap="innerHTML">
+        <!-- LEFT SIDEBAR: Conversations -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                Conversations
+                <button class="primary" style="padding: 4px 8px; float: right; font-size: 0.8rem;"
+                    onclick="document.getElementById('current-conversation-id').value=''; document.getElementById('chat-history').innerHTML='<div class=\'empty-state\' style=\'text-align: center; margin-top: 20px; color: var(--text-muted);\'>Started a new conversation.</div>'; document.getElementById('active-conversation-header').innerText='New Conversation';">+
+                    New</button>
+            </div>
+            <div class="sidebar-content" id="conversation-list">
+                {% for conv in conversations %}
+                {% with preview=conv.title|default:"New Conversation"|escapejs %}
+                <div class="conv-item" draggable="true"
+                    ondragstart="event.dataTransfer.setData('application/json', JSON.stringify({model: 'Conversation', id: '{{ conv.id }}', content: 'Conversation id {{ conv.id }}', preview: {{preview}}))"
+                    {% endwith %} hx-get="{% url 'demo_ui:get_conversation' conv.id %}" hx-target="#chat-history"
+                    hx-swap="innerHTML">
                     <div class="conv-title">{{ conv.title|default:"New Conversation" }}</div>
                     <div class="conv-date">{{ conv.start_time|date:"M j, Y - g:i a" }}</div>
                 </div>
-            {% empty %}
+                {% empty %}
                 <div class="conv-date" style="text-align: center; margin-top: 20px;">No recent conversations.</div>
-            {% endfor %}
-        </div>
-    </aside>
-    <!-- MAIN AREA: Chat & Input -->
-    <main class="chat-container">
-        <!-- Active Conversation Header -->
-         <div id="active-conversation-header" style="padding: 15px 20px; border-bottom: 1px solid var(--border); background-color: var(--bg-panel); font-weight: 600; color: var(--text-main); font-size: 1.1rem; min-height: 55px; flex-shrink: 0;">
-             Select a conversation or start a new one
-         </div>
-
-        <div class="chat-history" id="chat-history">
-            <!-- Chat bubbles will load here via HTMX -->
-            <div style="text-align: center; margin-top: auto; margin-bottom: auto; color: var(--text-muted);">
-                Select a conversation or start a new one to begin.
+                {% endfor %}
             </div>
-        </div>
+        </aside>
+        
+        <!-- Left Resizer -->
+        <div class="resizer" id="resizer-left"></div>
 
-        <div class="chat-input-area">
-            <form id="chat-form" class="input-wrapper" 
-                  hx-post="{% url 'demo_ui:send_message' %}" 
-                  hx-target="#chat-history" 
-                  hx-swap="beforeend"
-                  hx-on::after-request="if(event.detail.successful) this.reset()">
-                {% csrf_token %}
-                <input type="hidden" name="conversation_id" id="current-conversation-id" value="">
-                <textarea name="user_prompt" rows="3" placeholder="Describe your study, ask for factors, or request advice..." required></textarea>
+        <!-- MAIN AREA: Chat & Input -->
+        <main class="chat-container">
+            <!-- Active Conversation Header -->
+            <div id="active-conversation-header"
+                style="padding: 15px 20px; border-bottom: 1px solid var(--border); background-color: var(--bg-panel); font-weight: 600; color: var(--text-main); font-size: 1.1rem; min-height: 55px; flex-shrink: 0;">
+                Select a conversation or start a new one
+            </div>
 
-                <div class="controls-row">
-                    <select name="blueprint_id">
-                        <option value="">Standard Chat (No Blueprint)</option>
-                        {% for bp in blueprints %}
-                            <option value="{{ bp.id }}">{{ bp.name }}</option>
-                        {% endfor %}
-                    </select>
-                    <button type="submit" class="primary">
-                        <span class="htmx-indicator">⏳</span>
-                        Send
-                    </button>
+            <div class="chat-history" id="chat-history">
+                <!-- Chat bubbles will load here via HTMX -->
+                <div style="text-align: center; margin-top: auto; margin-bottom: auto; color: var(--text-muted);">
+                    Select a conversation or start a new one to begin.
                 </div>
-            </form>
-        </div>
-    </main>
+            </div>
 
-    <!-- RIGHT SIDEBAR: RAG / Grips Context -->
-    <aside class="sidebar sidebar-right">
-        <div class="sidebar-header">
-            <input type="text" name="q" placeholder="Search Knowledge Base..." style="width: 100%;"
-                   hx-get="{% url 'demo_ui:search_knowledge_base' %}"
-                   hx-trigger="keyup changed delay:500ms, search"
-                   hx-target="#context-results">
-        </div>
-        <div class="sidebar-content" id="context-results">
-            <div class="conv-date" style="text-align: center; margin-top: 20px;">Search results will appear here.</div>
-        </div>
-    </aside>
+            <div class="chat-input-area">
+                <form id="chat-form" class="input-wrapper" hx-post="{% url 'demo_ui:send_message' %}"
+                    hx-target="#chat-history" hx-swap="beforeend"
+                    hx-on::after-request="if(event.detail.successful && event.target.id === 'chat-form') this.reset()">
+                    {% csrf_token %}
+                    <input type="hidden" name="conversation_id" id="current-conversation-id" value="">
+                    <input type="hidden" name="included_context" id="included-context" value="[]">
 
-</div>
+                    <div id="context-chips-container"
+                        style="display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 5px;"></div>
+
+                    <textarea name="user_prompt" rows="3"
+                        placeholder="Describe your study, ask for factors, or request advice... (Drop context here)"
+                        required hx-get="{% url 'demo_ui:search_knowledge_base' %}"
+                        hx-trigger="keyup changed delay:800ms" hx-target="#search-results-container" hx-swap="innerHTML"></textarea>
+
+                    <div class="controls-row">
+                        <select name="blueprint_id">
+                            <option value="">Standard Chat (No Blueprint)</option>
+                            {% for bp in blueprints %}
+                            <option value="{{ bp.id }}">{{ bp.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="primary">
+                            <span class="htmx-indicator">⏳</span>
+                            Send
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </main>
+
+        <!-- Right Resizer -->
+        <div class="resizer" id="resizer-right"></div>
+
+        <!-- RIGHT SIDEBAR: RAG / Grips Context & Ingestion -->
+        <aside class="sidebar sidebar-right">
+            <!-- TABS HEADER -->
+            <div class="tabs-header">
+                <button class="tab-button active" onclick="switchTab('rag-tab', this)">RAG & Docs</button>
+                <button class="tab-button" onclick="switchTab('grips-tab', this)">Grips Explorer</button>
+            </div>
+
+            <!-- RAG TAB CONTENT -->
+            <div id="rag-tab" class="tab-content active">
+                <div style="flex-shrink: 0;">
+                    <input type="text" name="q" placeholder="Search RAG Knowledge Base..." style="width: 100%;"
+                        hx-get="{% url 'demo_ui:search_knowledge_base' %}" hx-trigger="keyup changed delay:500ms, search"
+                        hx-target="#search-results-container" hx-swap="innerHTML">
+                </div>
+                
+                <!-- Search Results -->
+                <details open>
+                    <summary style="font-weight: 600; margin-bottom: 10px; font-size: 0.95rem; cursor: pointer; outline: none;">Search Results</summary>
+                    <div id="search-results-container" style="margin-left: 14px;">
+                        <div class="conv-date" style="text-align: center; margin-top: 10px;">Search results will appear here.</div>
+                    </div>
+                </details>
+
+                <hr style="border: 0; border-top: 1px solid var(--border); margin: 0;">
+
+                <!-- Document Upload Form -->
+                <details class="upload-section">
+                    <summary style="font-weight: 600; margin-bottom: 10px; font-size: 0.95rem; cursor: pointer; outline: none;">Upload Document to RAG</summary>
+                    <form id="upload-form" hx-post="{% url 'demo_ui:upload_document' %}"
+                        hx-encoding="multipart/form-data" hx-target="#upload-status" hx-swap="innerHTML"
+                        hx-on::after-request="if(event.detail.successful) { this.reset(); htmx.trigger('#uploaded-docs-list', 'refreshDocs'); }">
+                        {% csrf_token %}
+                        <div style="display: flex; flex-direction: column; gap: 8px; margin-left: 14px;">
+                            <input type="text" name="title" placeholder="Document Title" required
+                                style="width: 100%; font-size: 0.85rem; padding: 6px 10px;">
+                            <input type="text" name="author" placeholder="Author (optional)"
+                                style="width: 100%; font-size: 0.85rem; padding: 6px 10px;">
+                            <input type="file" name="file" required
+                                style="font-size: 0.8rem; border: none; padding: 0;">
+                            <button type="submit" class="primary"
+                                style="font-size: 0.85rem; padding: 6px 12px; align-self: flex-start;">
+                                Send to RAG
+                            </button>
+                        </div>
+                    </form>
+                    <div id="upload-status" style="margin-left: 14px; margin-top: 8px; font-size: 0.8rem;"></div>
+                </details>
+
+                <hr style="border: 0; border-top: 1px solid var(--border); margin: 0;">
+
+                <!-- Uploaded Documents List -->
+                <details class="docs-list-section" open>
+                    <summary
+                        style="font-weight: 600; margin-bottom: 10px; font-size: 0.95rem; display: flex; justify-content: space-between; align-items: center; cursor: pointer; outline: none;">
+                        <span>Recent Documents</span>
+                        <button class="primary"
+                            style="padding: 2px 6px; font-size: 0.75rem; background-color: transparent; color: var(--text-main); border: 1px solid var(--border);"
+                            hx-get="{% url 'demo_ui:list_documents' %}" hx-target="#uploaded-docs-list"
+                            hx-trigger="click, refreshDocs from:body"
+                            onclick="event.stopPropagation();">🔄</button>
+                    </summary>
+                    <div id="uploaded-docs-list" hx-get="{% url 'demo_ui:list_documents' %}"
+                        hx-trigger="load, refreshDocs from:body" style="margin-left: 14px;">
+                        <div style="text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 10px;">
+                            Loading documents...</div>
+                    </div>
+                </details>
+
+                <hr style="border: 0; border-top: 1px solid var(--border); margin: 0;">
+
+                <!-- Workspace Output Files -->
+                <div class="workspace-files-section">
+                    <div style="font-weight: 600; margin-bottom: 10px; font-size: 0.95rem;">Workspace Output Files</div>
+                    <div id="workspace-files-container">
+                        <div style="text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 10px;">
+                            Select a conversation to see generated files.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GRIPS EXPLORER TAB CONTENT -->
+            <div id="grips-tab" class="tab-content">
+                <div style="flex-shrink: 0;">
+                    <input type="text" name="q" placeholder="Search Concepts..." style="width: 100%;"
+                        hx-get="{% url 'demo_ui:grips_explorer_tab' %}" hx-trigger="keyup changed delay:500ms, search, load"
+                        hx-target="#grips-explorer-container" hx-swap="innerHTML">
+                </div>
+                
+                <div id="grips-explorer-container" style="flex: 1; overflow-y: auto;">
+                    <div style="text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 10px;">
+                        Loading Grips Knowledge Base...
+                    </div>
+                </div>
+            </div>
+
+        </aside>
+
+    </div>
+    <script>
+        let includedContexts = [];
+
+        function updateContextInput() {
+            document.getElementById('included-context').value = JSON.stringify(includedContexts);
+            renderChips();
+        }
+
+        function renderChips() {
+            const container = document.getElementById('context-chips-container');
+            container.innerHTML = '';
+            includedContexts.forEach((ctx, index) => {
+                const chip = document.createElement('div');
+                chip.className = 'context-chip';
+                chip.style = 'background: var(--primary); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; display: flex; align-items: center; gap: 5px; cursor: default;';
+                chip.innerHTML = `<span>${ctx.model}: ${ctx.preview.substring(0, 30)}...</span> <button type="button" style="background: none; border: none; color: white; cursor: pointer; font-size: 1rem; line-height: 1;" onclick="removeContext(${index})">&times;</button>`;
+                container.appendChild(chip);
+            });
+        }
+
+        window.removeContext = function (index) {
+            includedContexts.splice(index, 1);
+            updateContextInput();
+        }
+
+        // Clear chips after successful send
+        document.body.addEventListener('htmx:afterRequest', function (e) {
+            if (e.detail.successful && e.target.id === 'chat-form') {
+                includedContexts = [];
+                updateContextInput();
+            }
+        });
+
+        // Drag and Drop Logic
+        const dropZone = document.querySelector('.input-wrapper');
+        dropZone.addEventListener('dragover', e => {
+            e.preventDefault();
+            dropZone.style.border = '2px dashed var(--primary)';
+        });
+        dropZone.addEventListener('dragleave', e => {
+            e.preventDefault();
+            dropZone.style.border = '';
+        });
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropZone.style.border = '';
+            const dataStr = e.dataTransfer.getData('application/json');
+            if (dataStr) {
+                try {
+                    const data = JSON.parse(dataStr);
+                    if (!includedContexts.find(c => c.id === data.id && c.model === data.model)) {
+                        includedContexts.push(data);
+                        updateContextInput();
+                    }
+                } catch (err) {
+                    console.error("Invalid drop data", err);
+                }
+            }
+        });
+        
+        // Tab switching logic
+        function switchTab(tabId, btn) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            btn.classList.add('active');
+        }
+
+        // Resizable Columns Logic
+        const resizerLeft = document.getElementById('resizer-left');
+        const resizerRight = document.getElementById('resizer-right');
+        
+        let isResizingLeft = false;
+        let isResizingRight = false;
+        
+        // Restore saved widths
+        const savedLeft = localStorage.getItem('leftColWidth');
+        const savedRight = localStorage.getItem('rightColWidth');
+        if (savedLeft) document.documentElement.style.setProperty('--left-col-width', savedLeft);
+        if (savedRight) document.documentElement.style.setProperty('--right-col-width', savedRight);
+
+        resizerLeft.addEventListener('mousedown', function(e) {
+            isResizingLeft = true;
+            document.body.style.cursor = 'col-resize';
+            resizerLeft.classList.add('dragging');
+        });
+
+        resizerRight.addEventListener('mousedown', function(e) {
+            isResizingRight = true;
+            document.body.style.cursor = 'col-resize';
+            resizerRight.classList.add('dragging');
+        });
+
+        document.addEventListener('mousemove', function(e) {
+            if (!isResizingLeft && !isResizingRight) return;
+            
+            // Constrain minimum widths to 200px
+            if (isResizingLeft) {
+                let newWidth = e.clientX;
+                if (newWidth < 150) newWidth = 150;
+                if (newWidth > document.body.clientWidth - 400) newWidth = document.body.clientWidth - 400; // prevent crushing center
+                
+                document.documentElement.style.setProperty('--left-col-width', newWidth + 'px');
+                localStorage.setItem('leftColWidth', newWidth + 'px');
+            } 
+            else if (isResizingRight) {
+                let newWidth = document.body.clientWidth - e.clientX;
+                if (newWidth < 200) newWidth = 200;
+                if (newWidth > document.body.clientWidth - 400) newWidth = document.body.clientWidth - 400; // prevent crushing center
+                
+                document.documentElement.style.setProperty('--right-col-width', newWidth + 'px');
+                localStorage.setItem('rightColWidth', newWidth + 'px');
+            }
+        });
+
+        document.addEventListener('mouseup', function(e) {
+            if (isResizingLeft) {
+                isResizingLeft = false;
+                resizerLeft.classList.remove('dragging');
+            }
+            if (isResizingRight) {
+                isResizingRight = false;
+                resizerRight.classList.remove('dragging');
+            }
+            document.body.style.cursor = '';
+        });
+
+    </script>
 </body>
+
 </html>
- ]
+]

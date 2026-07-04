@@ -55,10 +55,16 @@ services:
       - ./workspaces:/workspace
     ports:
       - "8002:8000"
+    environment:
+      # Restricts OpenBLAS (used by numpy/scipy) from pre-allocating massive thread pools 
+      # based on the host's physical CPU cores. This prevents it from instantly exhausting
+      # its virtual memory space when running inside a heavily restricted container.
+      - OPENBLAS_NUM_THREADS=1
     deploy:
       resources:
         limits:
           cpus: '1.0'
+          # Physical memory limit. If the script actually *uses* >1G RAM, Docker will OOM kill it.
           memory: 1G
     networks:
       - internal_network

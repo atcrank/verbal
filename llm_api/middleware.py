@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import threading
 from llm_api.apps import service_registry
 
@@ -20,7 +23,7 @@ class BackgroundModelLoaderMiddleware:
                 if not BackgroundModelLoaderMiddleware._loading_triggered:
                     BackgroundModelLoaderMiddleware._loading_triggered = True
                     # Start loading in a separate thread to avoid blocking the response
-                    print("BackgroundModelLoaderMiddleware: Starting background model load...")
+                    logger.info('BackgroundModelLoaderMiddleware: Starting background model load...')
                     thread = threading.Thread(target=self._load_services, daemon=True)
                     thread.start()
 
@@ -32,6 +35,6 @@ class BackgroundModelLoaderMiddleware:
             # Accessing rag_service will also trigger ai_service because of dependencies.
             _ = service_registry.rag_service
             _ = service_registry.nlp_service
-            print("BackgroundModelLoaderMiddleware: Models loaded successfully in background.")
+            logger.info('BackgroundModelLoaderMiddleware: Models loaded successfully in background.')
         except Exception as e:
-            print(f"BackgroundModelLoaderMiddleware: Error loading models: {e}")
+            logger.info(f'BackgroundModelLoaderMiddleware: Error loading models: {e}')

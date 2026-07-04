@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import pytest
 import sys
 import requests
@@ -27,8 +30,11 @@ def django_db_setup(django_db_setup, django_db_blocker):
             from llm_api.apps import service_registry
             rag_service = service_registry.rag_service
             rag_service.force_reindex_all()
+            
+            from metacognition.seed import seed_all
+            seed_all()
         except Exception as e:
-            print(f"\n⚠️ Could not load test_data.json fixture: {e}")
+            logger.info(f'\n⚠️ Could not load test_data.json fixture or seed data: {e}')
 
 
 @pytest.fixture(autouse=True)
@@ -50,7 +56,7 @@ def pytest_sessionstart(session):
         # We expect a 405 Method Not Allowed or 400 Bad Request if the server is up and listening.
         requests.get("http://localhost:8000/api/llm/v1/chat/completions", timeout=2)
     except requests.exceptions.ConnectionError:
-        print("\n❌ CRITICAL: The local inference server is NOT running. Please start it.\n")
+        logger.info('\n❌ CRITICAL: The local inference server is NOT running. Please start it.\n')
         sys.exit(1)
 
 def _report_doctest_run(test_name, prompt, result):
@@ -64,10 +70,15 @@ def _report_doctest_run(test_name, prompt, result):
         f.write(f"========================================\n\n")
         f.write(f"Date: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
         
-        f.write("Prompt\n------\n\n::\n\n")
-        for line in prompt.splitlines():
-            f.write(f"    {line}\n")
-        f.write("\n")
+        f.write("Conversation Prompts\n--------------------\n\n::\n\n")
+        
+        prompts = prompt if isinstance(prompt, list) else [prompt]
+        for i, p in enumerate(prompts):
+            f.write(f"    [Turn {i+1}]:\n")
+            for line in p.splitlines():
+                f.write(f"    {line}\n")
+            f.write("\n")
+
 
         # 1. NEW: Print the captured stdout from the sandbox and actions
         stdout = result.get("stdout", "")
@@ -77,33 +88,38 @@ def _report_doctest_run(test_name, prompt, result):
                 f.write(f"    {line}\n")
             f.write("\n")
 
-        # 2. NEW: Fetch the actual conversation messages from the DB
+        # 2. Refactored: Reconstruct the execution trace purely from LangGraph's state
         f.write("Execution Trace\n---------------\n\n")
+        monologue = result.get("internal_monologue", [])
         cid = result.get("conversation_id")
-        messages = []
-        if cid:
-            conv = Conversation.objects.filter(id=cid).first()
-            if conv:
-                messages = conv.as_messages()
 
-        if messages:
-            step = 1
-            f.write(f"Step {step}\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\n")
-            for msg in messages:
-                role = msg.get("role", "unknown").capitalize()
-                content = msg.get("content", "")
+        if monologue:
+            for i, step_entry in enumerate(monologue):
+                step_num = i + 1
+                f.write(f"Step {step_num}\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\n")
 
-                # Print the Role as a bold header
-                f.write(f"**{role}**:\n\n::\n\n")
-                for line in str(content).splitlines():
+                if "system_prompt" in step_entry:
+                    f.write("**System**:\n\n::\n\n")
+                    for line in str(step_entry["system_prompt"]).splitlines():
+                        f.write(f"    {line}\n")
+                    f.write("\n")
+
+                if "user_prompt" in step_entry:
+                    f.write("**User**:\n\n::\n\n")
+                    for line in str(step_entry["user_prompt"]).splitlines():
+                        f.write(f"    {line}\n")
+                    f.write("\n")
+
+                f.write("**Assistant**:\n\n::\n\n")
+                for line in str(step_entry.get("output", "")).splitlines():
                     f.write(f"    {line}\n")
                 f.write("\n")
 
-                # When the assistant responds, the cognitive turn is over.
-                # Start a new step for the next user/assistant interaction.
-                if role.lower() == "assistant" and msg != messages[-1]:
-                    step += 1
-                    f.write(f"Step {step}\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\n")
+                if "tool_result" in step_entry and step_entry["tool_result"]:
+                    f.write("**Tool Output**:\n\n::\n\n")
+                    for line in str(step_entry["tool_result"]).splitlines():
+                        f.write(f"    {line}\n")
+                    f.write("\n")
         else:
             f.write("No granular steps recorded in result.\n\n")
 

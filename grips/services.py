@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import os
 import json
 from django.conf import settings
@@ -77,5 +80,5 @@ class GripsService:
             filter_dict = {"domain_id": domain_id} if domain_id else None
             return self.db.similarity_search(query, k=k, filter=filter_dict)
         except Exception as e:
-            print(f"Error retrieving Grips context: {e}")
+            logger.info(f'Error retrieving Grips context: {e}')
             return []

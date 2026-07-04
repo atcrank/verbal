@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import re
 import spacy
 from spacy.language import Language
@@ -13,7 +16,7 @@ class NLPService:
 
     def get_primary_nlp(self):
         if self.primary_nlp is None:
-            print("Loading Spacy Model (this should happen once)...")
+            logger.info('Loading Spacy Model (this should happen once)...')
             # Load the base model
             self.primary_nlp = spacy.load("en_core_web_sm")
         return self.primary_nlp
@@ -23,7 +26,7 @@ class NLPService:
         """Lazy-loads the heavy Spacy model."""
 
         if self.abbreviation_model is None:
-            print("Loading Spacy Model (this should happen once)...")
+            logger.info('Loading Spacy Model (this should happen once)...')
             # Load the base model
             self.abbreviation_model = spacy.load("en_core_web_sm")
 
@@ -96,3 +99,49 @@ class NLPService:
             
         doc = self.primary_nlp(text)
         return [token.lemma_ for token in doc if not token.is_stop]
+
+    _intent_matcher = None
+    _cached_domains = set()
+
+    def get_intent_matcher(self):
+        if self._intent_matcher is None:
+            if self.primary_nlp is None:
+                self.get_primary_nlp()
+            from spacy.matcher import PhraseMatcher
+            self._intent_matcher = PhraseMatcher(self.primary_nlp.vocab, attr="LOWER")
+            research_phrases = ["look up", "search for", "find documents", "according to the library", "what does the text say", "search the knowledge base"]
+            patterns = [self.primary_nlp.make_doc(phrase) for phrase in research_phrases]
+            self._intent_matcher.add("RESEARCH_INTENT", patterns)
+            
+            try:
+                from grips.models import Domain
+                domains = list(Domain.objects.values_list('name', flat=True))
+                if domains:
+                    domain_patterns = [self.primary_nlp.make_doc(d) for d in domains]
+                    self._intent_matcher.add("DOMAIN_MENTION", domain_patterns)
+                    self._cached_domains = set(domains)
+            except Exception as e:
+                logger.error(f"Error loading domains for intent matcher: {e}")
+        else:
+            try:
+                from grips.models import Domain
+                current_domains = set(Domain.objects.values_list('name', flat=True))
+                new_domains = current_domains - self._cached_domains
+                if new_domains:
+                    domain_patterns = [self.primary_nlp.make_doc(d) for d in new_domains]
+                    self._intent_matcher.add(f"DOMAIN_MENTION_UPDATE", domain_patterns)
+                    self._cached_domains.update(new_domains)
+            except Exception:
+                pass
+                
+        return self._intent_matcher
+
+    def requires_research(self, text: str) -> bool:
+        """
+        Determines if the prompt expresses an intent to search OR mentions a known Domain.
+        """
+        if self.primary_nlp is None:
+            self.get_primary_nlp()
+        doc = self.primary_nlp(text)
+        matcher = self.get_intent_matcher()
+        return len(matcher(doc)) > 0

@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import re
 from typing import List, Literal
 from django.utils import timezone
@@ -293,7 +296,7 @@ def task_digest_corpus_level_1(domain_id: int, document_id: int):
         try:
             chunks, existing_ids = rag_service.convert_chunk_store_document_grobid(doc)
         except Exception as e:
-            print(f"Skipping Grobid chunking: {e}")
+            logger.info(f'Skipping Grobid chunking: {e}')
 
     if not chunks and not existing_ids:
         chunks, existing_ids = rag_service.convert_chunk_store_document(doc)
@@ -334,8 +337,8 @@ class LintingReportSchema(BaseModel):
     suggested_fixes: str = Field(description="Suggested rewrites to fix issues")
 
 
-@shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=True, retry_kwargs={'max_retries': 3})
-def task_lint_concept_node(self, node_id: int):
+@shared_task(autoretry_for=(Exception,), retry_backoff=True, retry_kwargs={'max_retries': 3})
+def task_lint_concept_node(node_id: int):
     """Evaluates a ConceptNode against the Domain's style guide and flags contradictions."""
     try:
         node = ConceptNode.objects.get(id=node_id)
@@ -373,15 +376,18 @@ def task_lint_concept_node(self, node_id: int):
     return f"Linted '{node.title}': Valid={result.is_valid}"
 
 
-@shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=True, retry_kwargs={'max_retries': 2})
-def task_digest_corpus_level_2(self, domain_id: int, new_node_ids: List[int] = None):
+@shared_task(autoretry_for=(Exception,), retry_backoff=True, retry_kwargs={'max_retries': 2})
+def task_digest_corpus_level_2(domain_id: int, new_node_ids: List[int] = None):
     """
     Level 2 Incremental Consolidation.
     Finds semantic neighbors for newly ingested nodes and asks the LLM:
     Are these identical (Merge), related (KnowledgeEdge), or distinct?
     """
     if not new_node_ids:
-        return "No new nodes to consolidate."
+        # Fetch all nodes in the domain if none provided (e.g. from admin trigger)
+        new_node_ids = list(ConceptNode.objects.filter(domain_id=domain_id).values_list('id', flat=True))
+        if not new_node_ids:
+            return "No nodes to consolidate."
 
     grips_service = service_registry.grips_service
     ai_service = service_registry.ai_service
@@ -541,7 +547,7 @@ def task_digest_corpus_level_2(self, domain_id: int, new_node_ids: List[int] = N
                 actions_taken.append(f"Edge: '{new_node.title}' [{pred}] '{neighbor_node.title}'")
 
     summary = f"Level 2 Complete. Actions: {len(actions_taken)}. " + " | ".join(actions_taken[:5])
-    print(summary)
+    logger.info(summary)
     return summary
 
 
@@ -641,3 +647,51 @@ def sweep_unlinted_concepts():
         task_lint_concept_node.delay(node.id)
         
     return f"Queued {nodes.count()} concepts for automated linting."
+
+@shared_task
+def sweep_dirty_edges():
+    """
+    Periodic task to sweep for edges that contain placeholder scaffold text ('Concept A')
+    and trigger the Metacognition LintGripsEdge blueprint.
+    """
+    from metacognition.models import CognitiveBlueprint
+    from metacognition.tasks import task_run_blueprint_async
+    
+    dirty_edges = KnowledgeEdge.objects.filter(justification__icontains='Concept A')[:20]
+    
+    if not dirty_edges:
+        return "No dirty edges currently require linting."
+        
+    try:
+        bp = CognitiveBlueprint.objects.get(name="LintGripsEdge")
+    except CognitiveBlueprint.DoesNotExist:
+        return "LintGripsEdge blueprint not found."
+        
+    for edge in dirty_edges:
+        task_prompt = (
+            f"Rewrite this justification:\n\n{edge.justification}\n\n"
+            f"The edge is between '{edge.source.title}' and '{edge.target.title}'.\n"
+            f"Edge ID: {edge.id}"
+        )
+        task_run_blueprint_async.delay(bp.id, task_prompt, None, None)
+        
+    return f"Triggered linting blueprint for {dirty_edges.count()} dirty edges."
+
+
+
+@shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=True, retry_kwargs={'max_retries': 3})
+def task_index_concept_node(self, node_id: int):
+    """
+    Asynchronously indexes a ConceptNode into PGVector for semantic search.
+    Hooked to ConceptNode post_save signal.
+    """
+    try:
+        node = ConceptNode.objects.get(id=node_id)
+    except ConceptNode.DoesNotExist:
+        return f"Node {node_id} not found for indexing."
+
+    from llm_api.apps import service_registry
+    if service_registry.grips_service:
+        service_registry.grips_service.index_concept_node(node)
+        return f"Indexed '{node.title}' (ID: {node_id})"
+    return "Grips service not initialized."

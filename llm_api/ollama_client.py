@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import requests
 
 # Matches the service name and port in your docker-compose.yml
@@ -13,7 +16,7 @@ def get_available_ollama_models():
         models = response.json().get("models", [])
         return [m["name"] for m in models]
     except requests.exceptions.RequestException as e:
-        print(f"⚠️ Could not connect to Ollama to fetch models: {e}")
+        logger.info(f'⚠️ Could not connect to Ollama to fetch models: {e}')
         return []
 
 
@@ -35,6 +38,6 @@ def set_ollama_model_state(model_name: str, active: bool):
         # without needing to send an actual generation prompt.
         requests.post(f"{OLLAMA_BASE_URL}/api/generate", json=payload, timeout=5.0)
         action = "Loaded" if active else "Unloaded"
-        print(f"✅ {action} {model_name} in Ollama VRAM.")
+        logger.info(f'✅ {action} {model_name} in Ollama VRAM.')
     except requests.exceptions.RequestException as e:
-        print(f"⚠️ Failed to manage Ollama model {model_name}: {e}")
+        logger.info(f'⚠️ Failed to manage Ollama model {model_name}: {e}')

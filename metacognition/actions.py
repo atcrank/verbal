@@ -5,8 +5,6 @@ from typing import Literal, List, Optional, Union, Annotated, get_args, get_orig
 from pydantic import BaseModel, Field
 from django.conf import settings
 from llm_api.apps import service_registry
-from background_resources.rag_service import ActiveReadingEvaluation
-
 
 
 # ==========================================
@@ -447,17 +445,40 @@ def _tool_execute_script(params: ExecuteScriptArgs, workspace_dir: str) -> str:
     except Exception as e:
         return f"\n\n[EXECUTE_SCRIPT Alert]\nFailed to execute script. Sandbox error: {str(e)}"
 
-def handle_execution_plan(state: dict, llm_output: ExecutionPlan) -> dict:
-    print(f"🪝 Received Execution Plan with {len(llm_output.queue)} steps.")
+def handle_execution_plan(state: dict, params: dict) -> dict:
+    queue = params.get("queue", [])
+    analysis = params.get("analysis", "")
+    print(f"🪝 Received Execution Plan with {len(queue)} steps.")
+    print(f"DEBUG QUEUE: {repr(queue)}")
     
     plan_results = ""
     workspace_dir = _get_workspace_dir(state.get("conversation_id"))
     
-    for action in llm_output.queue:
+    from collections import namedtuple
+    ActionParam = namedtuple('ActionParam', ['tool', 'parameters', 'expected_outcome'])
+    
+    # Parse queue elements if they are dicts
+    parsed_queue = []
+    for action in queue:
+        if isinstance(action, dict):
+            class DictToObject:
+                def __init__(self, d):
+                    for k, v in d.items():
+                        if isinstance(v, dict):
+                            setattr(self, k, DictToObject(v))
+                        else:
+                            setattr(self, k, v)
+                def get(self, k, default=None):
+                    return getattr(self, k, default)
+            parsed_queue.append(DictToObject(action))
+        else:
+            parsed_queue.append(action)
+            
+    for action in parsed_queue:
         print(f"  -> Executing tool: {action.tool}")
         try:
             if action.tool == "TASK_COMPLETE" and action.parameters.final_answer:
-                state["working_prompt"] += f"\n\n[TASK COMPLETE]\n{action.parameters.final_answer}\n"
+                state["working_prompt"] = state.get("working_prompt", "") + f"\n\n[TASK COMPLETE]\n{action.parameters.final_answer}\n"
                 state["route_to"] = "SUCCESS"
                 return state
                 
@@ -489,53 +510,134 @@ def handle_execution_plan(state: dict, llm_output: ExecutionPlan) -> dict:
     state["route_to"] = "SELF" # Loop back to LLM to re-evaluate or execute more steps
     return state
 
-def handle_active_reading(state: dict, llm_output: ActiveReadingEvaluation) -> dict:
-    context_status = getattr(llm_output, 'context_status', None)
-
-    if context_status in ["NEED_PREVIOUS_CHUNK", "NEED_NEXT_CHUNK"]:
-        rag_service = service_registry.rag_service
-        rag_docs_meta = state.get("primary_rag_doc_meta", {})
-        indexed_hash = rag_docs_meta.get("indexed_hash")
-
-        if indexed_hash:
-            current_index = state.get("current_chunk_index", rag_docs_meta.get("chunk_index", 0))
-            target_index = current_index - 1 if context_status == "NEED_PREVIOUS_CHUNK" else current_index + 1
-
-            chunk_ids = rag_service.hashes_indexed.get(indexed_hash, [])
-            all_chunks = rag_service.store.mget(chunk_ids)
-            target_chunk = next((c for c in all_chunks if c and c.metadata.get("chunk_index") == target_index), None)
-
-            if target_chunk:
-                new_context = f"\n\n--- ADDITIONAL FETCHED CONTEXT (Chunk {target_index}) ---\nSource: {target_chunk.metadata.get('filename', 'Unknown')}\nContent: {target_chunk.page_content}\n"
-                state["working_prompt"] += new_context
-                state["current_chunk_index"] = target_index
-                state["route_to"] = "SELF"
-                return state
-
-        state["route_to"] = "FAILURE"
-    elif context_status == "SUFFICIENT":
-        if llm_output.draft_answer:
-            state["working_prompt"] += f"\n\n--- DRAFT ANSWER ---\n{llm_output.draft_answer}\n"
-        state["route_to"] = "SUCCESS"
-    else:
-        state["route_to"] = "FAILURE"
-    return state
 
 # ==========================================
 # EXPORTS
 # ==========================================
-ACTION_REGISTRY = {
-    "handle_active_reading": handle_active_reading,
-    "handle_difficult_prompt": handle_difficult_prompt,
-    "handle_research": handle_research,
-    "handle_execution_plan": handle_execution_plan,
-    "handle_result_critique": handle_result_critique,
-}
+class PromptVariant(BaseModel):
+    """
+    A proposed fine-tuning of an existing system prompt to address specific failures.
+    """
+    reasoning: str = Field(description="Analyze the provided failure logs and the original system prompt. Why did the LLM fail to follow the instructions or achieve the goal?")
+
+def create_prompt_variant(state: dict, llm_output: PromptVariant) -> dict:
+    state["working_prompt"] += f"\n\n[SYSTEM: NightManager proposed variant based on reasoning: {llm_output.reasoning}]\n"
+    state["route_to"] = "SUCCESS"
+    return state
+
+
+class TaskItem(BaseModel):
+    goal: str = Field(description="The goal of this task item.")
+    delegated_blueprint: str | None = Field(None, description="Optional blueprint name to delegate this task to.")
+
+class TaskQueue(BaseModel):
+    queue: list[TaskItem] = Field(description="A list of task items to process sequentially.")
+
+def initialize_task_queue(state: dict, llm_output: TaskQueue) -> dict:
+    state.setdefault("scratch", {})["task_queue"] = [t.model_dump() for t in llm_output.queue]
+    state["route_to"] = "SUCCESS"
+    return state
+
+def process_task_queue(state: dict, llm_output) -> dict:
+    task_queue = state.get("scratch", {}).get("task_queue", [])
+    if not task_queue:
+        state["route_to"] = "SUCCESS"
+        return state
+    
+    current_task = task_queue.pop(0)
+    state["scratch"]["task_queue"] = task_queue
+    
+    goal = current_task.get("goal")
+    delegated = current_task.get("delegated_blueprint")
+    
+    state["working_prompt"] += f"\n\n--- NEXT TASK ---\nGoal: {goal}\n"
+    if delegated:
+        from .models import CognitiveBlueprint
+        from .tasks import run_blueprint
+        try:
+            bp = CognitiveBlueprint.objects.get(name=delegated)
+            res = run_blueprint(bp.id, goal, conversation_id=state.get("conversation_id"), user_id=state.get("user_id"))
+            sub_resp = res.get("final_response", "")
+            state["working_prompt"] += f"\n[SYSTEM: Delegated Blueprint '{delegated}' Completed. Output:\n{sub_resp}\n]\n"
+        except Exception as e:
+            state["working_prompt"] += f"\n[SYSTEM: Failed to delegate to '{delegated}': {e}]\n"
+            
+    state["route_to"] = "SELF"
+    return state
+
+def python_sandbox(code: str, **kwargs) -> dict:
+    """
+    Executes Python code in a secure sandbox.
+    """
+    import requests
+    from django.conf import settings
+    
+    sandbox_url = getattr(settings, "SANDBOX_URL", "http://sandbox:8000/execute")
+    try:
+        resp = requests.post(sandbox_url, json={"code": code, "timeout": 30}, timeout=35)
+        if resp.status_code == 200:
+            result = resp.json()
+            out = result.get("output", "")
+            err = result.get("error", "")
+            rc = result.get("return_code", 0)
+            if rc != 0 or err:
+                return {
+                    "working_prompt": f"\n\n[SYSTEM: Sandbox Execution Failed (RC={rc}).\nError:\n{err}\nOutput:\n{out}\n]\n",
+                    "route_to": "SELF"
+                }
+            else:
+                return {
+                    "working_prompt": f"\n\n[SYSTEM: Sandbox Execution Succeeded.\nOutput:\n{out}\n]\n",
+                    "route_to": "SUCCESS"
+                }
+        else:
+            return {
+                "working_prompt": f"\n\n[SYSTEM: Sandbox API returned status {resp.status_code}: {resp.text}]\n",
+                "route_to": "SELF"
+            }
+    except Exception as e:
+        return {
+            "working_prompt": f"\n\n[SYSTEM: Sandbox API Request Failed: {e}]\n",
+            "route_to": "SELF"
+        }
+
+class EdgeLintResult(BaseModel):
+    """
+    Evaluates and rewrites a KnowledgeEdge justification to be human-readable.
+    
+    Step Prompt: You are a meticulous editor. Review the existing relationship justification between two concepts. Rewrite it so that it NEVER uses placeholder terms like 'Concept A' or 'Concept B'. Instead, use the actual titles of the concepts. Ensure the justification sounds natural, professional, and clear for a human reader. You MUST also return the edge_id provided in the prompt.
+    Evaluation Prompt: Returns an EdgeLintResult object containing the improved justification and the original edge_id.
+    """
+    edge_id: int = Field(description="The ID of the edge being linted, exactly as provided in the prompt.")
+    improved_justification: str = Field(description="The rewritten, human-readable justification.")
+
+def handle_edge_lint_tool(state: dict, params: dict) -> str:
+    from grips.models import KnowledgeEdge
+    
+    edge_id = params.get("edge_id")
+    improved_justification = params.get("improved_justification")
+    
+    if not edge_id or not improved_justification:
+        return "Error - Missing edge_id or improved_justification."
+        
+    try:
+        edge = KnowledgeEdge.objects.get(id=edge_id)
+        edge.justification = improved_justification
+        edge.save(update_fields=['justification'])
+        return f"Successfully linted edge {edge_id}."
+    except KnowledgeEdge.DoesNotExist:
+        return f"Error - Edge {edge_id} not found."
+
+
+# ACTION_REGISTRY has been deprecated and replaced by ToolDefinition.
 OUTPUT_TYPES = {"ResearchEvaluation": ResearchEvaluation,
                 "DifficultPromptEvaluation": DifficultPromptEvaluation,
                 "StrategicPlan": StrategicPlan,
                 "ExecutionPlan": ExecutionPlan,
-                "ResultCritique": ResultCritique}
+                "ResultCritique": ResultCritique,
+                "PromptVariant": PromptVariant,
+                "TaskQueue": TaskQueue,
+                "EdgeLintResult": EdgeLintResult}
 
 # Inject the detailed schema description into the system prompt for the ExecutionPlan
 enhanced_prompt = (

@@ -15,7 +15,6 @@ class Migration(migrations.Migration):
             name="action_hook",
             field=models.CharField(
                 blank=True,
-                choices=metacognition.models.get_action_choices,
                 help_text="Optional: Name of a Python Action Hook to intercept and execute tools from the LLM's output.",
                 max_length=255,
             ),

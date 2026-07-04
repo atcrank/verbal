@@ -1,3 +1,4 @@
 export VERBAL_ROLE=inference
-. ../py313/bin/activate
+. .env.example
+. ${PYENV_ACTIVATE}
 python manage.py runserver 8001

@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 """
 DEPRECATED - THIS FILE NOT IN SERVICE
 see folder metacognition_trials for further detail
@@ -56,7 +59,7 @@ class MetacognitiveTrial:
         from .models import CognitiveBlueprint
         from .tasks import run_blueprint
         
-        print(f"\n{'='*60}\n🚀 RUNNING TRIAL: {self.id} - {self.name}\n{'='*60}")
+        logger.info(f"\n{'=' * 60}\n🚀 RUNNING TRIAL: {self.id} - {self.name}\n{'=' * 60}")
         
         # We explicitly target the ExecutionPlan blueprint to force tool usage
         try:
@@ -71,19 +74,19 @@ class MetacognitiveTrial:
         )
         
         final_response = result.get("final_response", "")
-        print(f"\n✅ FINAL RESPONSE:\n{final_response}\n")
+        logger.info(f'\n✅ FINAL RESPONSE:\n{final_response}\n')
         
         if "error" in result:
-            print(f"❌ CRITICAL FAILURE: {result['error']}")
+            logger.info(f"❌ CRITICAL FAILURE: {result['error']}")
             return result
             
         # Simple heuristic validation
         missing = [exp for expected in self.expected_strings for exp in [expected] if exp.lower() not in final_response.lower()]
         if missing:
-            print(f"⚠️ WARNING: Missing expected strings in final response: {missing}")
+            logger.info(f'⚠️ WARNING: Missing expected strings in final response: {missing}')
             result["trial_passed"] = False
         else:
-            print("🏆 TRIAL PASSED: All expected strings found in output.")
+            logger.info('🏆 TRIAL PASSED: All expected strings found in output.')
             result["trial_passed"] = True
             
         return result

@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import os
 import shutil
 import uuid
@@ -74,33 +77,38 @@ class Conversation(models.Model):
          If no leaf is provided, it defaults to the most recently created log.
         """
         messages = []
-        system_prompt_count = 0
-        # self.logs.all() will use the prefetched data.
-        # The 'ordering' on PromptResponseLog.Meta ensures they are correct.
-        # Reverse the list to ensure chronological order (oldest to newest)
+        logs = list(self.logs.order_by('created_at'))
+        if not logs:
+            return messages
 
-        # Pre-build a dictionary to traverse the tree in memory without hitting the DB
-        log_dict = {log.id: log for log in self.logs.all()}
-
-        if leaf_log_id and leaf_log_id in log_dict:
-            current_log = log_dict[leaf_log_id]
-        else:
-            # Default to the most recent log as the active leaf
-            current_log = self.logs.order_by('-created_at').first()
-
+        # Check if the tree is linked
+        is_linked = any(log.parent_log_id for log in logs)
+        
         path = []
-        while current_log:
-            path.append(current_log)
-            current_log = log_dict.get(current_log.parent_log_id)
+        if is_linked:
+            log_dict = {log.id: log for log in logs}
+            if leaf_log_id and leaf_log_id in log_dict:
+                current_log = log_dict[leaf_log_id]
+            else:
+                # Default to the most recent log as the active leaf
+                current_log = logs[-1]
+            
+            while current_log:
+                path.append(current_log)
+                current_log = log_dict.get(current_log.parent_log_id)
+            path.reverse()
+        else:
+            path = logs  # Fallback to chronological order
 
-        # Reverse the path so it goes root -> leaf
-        for log in reversed(path):
-            if log.system_prompt and system_prompt_count == 0:
-                messages.append({
-                    "role": "system",
-                    "content": log.system_prompt
-                })
-                system_prompt_count += 1
+        for log in path:
+            if log.system_prompt:
+                # Only append if it's different from the last system prompt
+                # (prevents cluttering when looping in the same step)
+                if not messages or messages[-1].get("role") != "system" or messages[-1].get("content") != log.system_prompt:
+                    messages.append({
+                        "role": "system",
+                        "content": log.system_prompt
+                    })
 
             # This reconstructs the chat history turn-by-turn
             if log.user_prompt:
@@ -187,9 +195,9 @@ def delete_conversation_workspace(sender, instance, **kwargs):
     if os.path.exists(workspace_dir):
         try:
             shutil.rmtree(workspace_dir)
-            print(f"🗑️ Cleaned up workspace folder for deleted conversation {instance.id}")
+            logger.info(f'🗑️ Cleaned up workspace folder for deleted conversation {instance.id}')
         except Exception as e:
-            print(f"⚠️ Failed to delete workspace {workspace_dir}: {e}")
+            logger.info(f'⚠️ Failed to delete workspace {workspace_dir}: {e}')
 
 class PromptResponseLog(models.Model):
     class Feedback(models.IntegerChoices):
@@ -202,9 +210,21 @@ class PromptResponseLog(models.Model):
     system_prompt = models.TextField()
     user_prompt = models.TextField(blank=True, null=True)
     generated_response = models.TextField()
-    rag_selections = models.TextField(blank=True, null=True)
+    rag_selections = models.JSONField(blank=True, null=True, default=list)
     git_commit_hash = models.CharField(max_length=40, blank=True, null=True)
     parent_log = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='child_logs')
+    input_tokens = models.IntegerField(default=0, help_text="Number of tokens in the prompt")
+    output_tokens = models.IntegerField(default=0, help_text="Number of tokens in the generated response")
+
+    # Telemetry for NightManager Performance Tracking
+    reasoning_step = models.ForeignKey('metacognition.ReasoningStep', on_delete=models.SET_NULL, null=True, blank=True, related_name="prompt_logs")
+    
+    class StepStatus(models.TextChoices):
+        SUCCESS = 'SUCCESS', 'Success'
+        RETRY = 'RETRY', 'Retry (Self)'
+        FAILURE = 'FAILURE', 'Failure (Re-plan)'
+        
+    step_status = models.CharField(max_length=20, choices=StepStatus.choices, null=True, blank=True)
 
     user_feedback = models.SmallIntegerField(
         choices=Feedback.choices,
@@ -226,6 +246,12 @@ class PromptResponseLog(models.Model):
     )
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['conversation']),
+            # A GinIndex speeds up JSON containment queries e.g., contains '[{"id": "xxx"}]'
+            # Note: Requires django.contrib.postgres in INSTALLED_APPS
+            # GinIndex(fields=['rag_selections'])
+        ]
 
 class LocalAIModel(models.Model):
     """Configuration for an LLM loaded natively into VRAM on the inference server."""
@@ -268,7 +294,7 @@ class SystemConfiguration(models.Model):
             return obj
         except Exception as e:
             # Fails gracefully during initial DB migrations
-            print(f"Warning: SystemConfiguration.get_solo() failed: {e}")
+            logger.info(f'Warning: SystemConfiguration.get_solo() failed: {e}')
             return None
         
     def __str__(self):

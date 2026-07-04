@@ -1,0 +1,39 @@
+========================================
+Trial 6: Large Output Handling
+========================================
+
+This test verifies the agent's ability to handle large data without crashing the context window
+and outputting an analysis based on a generated dataset.
+
+    >>> import contextlib, io, sys
+    >>> import uuid
+    >>> from llm_api.models import User
+    >>> from metacognition.models import CognitiveBlueprint
+    >>> from metacognition.tasks import run_blueprint
+    >>> from conftest import _report_doctest_run
+    
+    >>> user, _ = User.objects.get_or_create(username="test_user")
+    >>> bp = CognitiveBlueprint.objects.filter(name__startswith="Pipeline: Escalation of Effort").first()
+    >>> cid = str(uuid.uuid4())
+    >>> from llm_api.models import Conversation
+    >>> _ = Conversation.objects.create(id=cid, user=user)
+    
+    >>> prompt = (
+    ...     "Write a Python script to generate a synthetic dataset (employees.csv) of 1000 fictional "
+    ...     "employees (Name, Department, Salary, Performance Score) and save it. "
+    ...     "Then, use a second script to read this CSV and output a statistical summary (mean salary per department). "
+    ...     "Finally, provide a verbal interpretation of those statistics."
+    ... )
+    
+    >>> with contextlib.redirect_stdout(io.StringIO()) as captured_out:
+    ...     result = run_blueprint(bp.id, prompt, conversation_id=cid, user_id=user.id)
+    
+    >>> if result:
+    ...     result["stdout"] = captured_out.getvalue()
+    ...     _report_doctest_run("6. large_output", [prompt], result)
+    
+    >>> assert "error" not in result, f"Execution failed: {result.get('error')}"
+    >>> assert result.get("final_response") != "No output.", "No response generated."
+    >>> assert "ABORTED" not in result.get("final_response", ""), f"Execution aborted: {result.get('final_response')}"
+    >>> # Ensure the agent didn't just dump all 1000 names into the final response
+    >>> assert len(result.get("final_response", "")) < 5000, "Response is too large, agent dumped the raw data."

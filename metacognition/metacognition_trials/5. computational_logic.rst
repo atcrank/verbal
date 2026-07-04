@@ -1,0 +1,41 @@
+========================================
+Trial 5: Computational Logic (PyAgrum)
+========================================
+
+This test verifies the agent's ability to construct and solve a strategic influence diagram 
+using the `pyAgrum` library inside the sandbox environment.
+
+    >>> import contextlib, io, sys
+    >>> import uuid
+    >>> from llm_api.models import User
+    >>> from metacognition.models import CognitiveBlueprint
+    >>> from metacognition.tasks import run_blueprint
+    >>> from conftest import _report_doctest_run
+    
+    >>> user, _ = User.objects.get_or_create(username="test_user")
+    >>> bp = CognitiveBlueprint.objects.filter(name__startswith="Pipeline: Escalation of Effort").first()
+    >>> cid = str(uuid.uuid4())
+    >>> from llm_api.models import Conversation
+    >>> _ = Conversation.objects.create(id=cid, user=user)
+    
+    >>> prompt = (
+    ...     "A company is deciding whether to launch a new product. "
+    ...     "The market demand can be 'High' or 'Low' with 50% probability each. "
+    ...     "The decision is to 'Launch' or 'NotLaunch'. "
+    ...     "If they launch and demand is High, the profit is $100. "
+    ...     "If they launch and demand is Low, the profit is $-50. "
+    ...     "If they don't launch, the profit is $0 regardless. "
+    ...     "Please build an Influence Diagram to find the optimal decision policy and expected utility."
+    ... )
+    
+    >>> with contextlib.redirect_stdout(io.StringIO()) as captured_out:
+    ...     result = run_blueprint(bp.id, prompt, conversation_id=cid, user_id=user.id)
+    
+    >>> if result:
+    ...     result["stdout"] = captured_out.getvalue()
+    ...     _report_doctest_run("5. computational_logic", [prompt], result)
+    
+    >>> assert "error" not in result, f"Execution failed: {result.get('error')}"
+    >>> assert result.get("final_response") != "No output.", "No response generated."
+    >>> assert "ABORTED" not in result.get("final_response", ""), f"Execution aborted: {result.get('final_response')}"
+

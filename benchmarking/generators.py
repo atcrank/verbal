@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from benchmarking.models import ScenarioGroup, BenchmarkScenario
 from background_resources.models import ReadingStrategy, RAGChunk
 from llm_api.apps import service_registry
@@ -83,7 +86,7 @@ def generate_scenarios_for_document(document, stride=5, group_name=None, log_cal
                 max_new_tokens=1024,
                 temperature=0.7
             )
-            print("batch", batch)
+            logger.info(" ".join([str(x) for x in ['batch', batch]]))
             try:
                 if isinstance(batch, dict):
                     batch = SyntheticQABatch.model_validate(batch)
@@ -93,7 +96,7 @@ def generate_scenarios_for_document(document, stride=5, group_name=None, log_cal
                     batch = batch[0]
             except Exception as e:
                 batch = None
-                print("Error on response validation:", e)
+                logger.info(" ".join([str(x) for x in ['Error on response validation:', e]]))
             if batch:
                 # Fetch the actual Django DB object to link as a ForeignKey
 

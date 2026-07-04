@@ -17,6 +17,7 @@ pytest-django
 transformers>=4.48.0
 sentence-transformers
 outlines>=1.3.0
+openai
 torch
 accelerate
 bitsandbytes
@@ -29,6 +30,8 @@ langchain-core
 langchain-community
 langchain-huggingface
 langchain-postgres
+langgraph
+
 beautifulsoup4
 pypdf
 docx2txt

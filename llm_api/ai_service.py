@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import os
 import gc
 import json
@@ -22,7 +25,7 @@ nlp = spacy.blank("en")
 nlp.add_pipe("sentencizer")
 
 if torch.cuda.is_available():
-    print("✅ Success! PyTorch can see the GPU.")
+    logger.info('✅ Success! PyTorch can see the GPU.')
     device_count = torch.cuda.device_count()
 
     # Get the compute capability of the primary GPU (device 0)
@@ -31,18 +34,18 @@ if torch.cuda.is_available():
     # Turing architecture (like 1660 Ti) is 7.5. Ampere (30-series) and newer are 8.0+.
     # Flash Attention 2 is only well-supported on Compute Capability 8.0 and higher.
     if major < 8:
-        print(f"⚠️ GPU with old compute capability ({major}.{minor}) detected. Disabling Flash Attention for compatibility.")
+        logger.info(f'⚠️ GPU with old compute capability ({major}.{minor}) detected. Disabling Flash Attention for compatibility.')
         torch.backends.cuda.enable_flash_sdp(False)
         torch.backends.cuda.enable_mem_efficient_sdp(False)
         torch.backends.cuda.enable_math_sdp(True)  # Use the math kernel as a fallback
 
-    print(f"CUDA Devices Available: {device_count}")
+    logger.info(f'CUDA Devices Available: {device_count}')
     for i in range(device_count):
-        print(f"Device {i}: {torch.cuda.get_device_name(i)}")
+        logger.info(f'Device {i}: {torch.cuda.get_device_name(i)}')
     # This shows the CUDA version PyTorch was built with
-    print(f"PyTorch was built with CUDA version: {torch.version.cuda}")
+    logger.info(f'PyTorch was built with CUDA version: {torch.version.cuda}')
 else:
-    print("❌ Failure. PyTorch cannot see the GPU.")
+    logger.info('❌ Failure. PyTorch cannot see the GPU.')
 
 
 class AIService:
@@ -79,43 +82,43 @@ class AIService:
                 
                 if config.active_local_model:
                     self.model_id = config.active_local_model.hf_model_id
-                    print(f"📂 System Config requests PyTorch load for: {self.model_id}")
+                    logger.info(f'📂 System Config requests PyTorch load for: {self.model_id}')
         except Exception as e:
-            print(f"Warning: Could not fetch SystemConfiguration from DB: {e}")
+            logger.info(f'Warning: Could not fetch SystemConfiguration from DB: {e}')
 
         # If a local model is active and we're not just a web worker, we MUST use its tokenizer
         # Otherwise the generated token IDs will decode to garbage.
         if self.model_id and self.role not in ["web", "worker"]:
             tokenizer_id = self.model_id
 
-        print(f"⚙️ Loading CPU tokenizer: {tokenizer_id}")
+        logger.info(f'⚙️ Loading CPU tokenizer: {tokenizer_id}')
         self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_id, token=token)
         # Load your main LLM
         if self.tokenizer.pad_token_id is None:
             self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
         if self.role in ["web", "worker"]:
-            print(f"💻 Running in proxy mode (Role: {self.role}). Tokenizer loaded, bypassing heavy LLM load.")
+            logger.info(f'💻 Running in proxy mode (Role: {self.role}). Tokenizer loaded, bypassing heavy LLM load.')
             
             # Verify HTTP connection
             try:
                 ping_url = f"{self.inference_url.rstrip('/')}/internal/ping/"
                 res = requests.get(ping_url, timeout=3.0)
                 res.raise_for_status()
-                print("✅ Successfully connected to inference server.")
+                logger.info('✅ Successfully connected to inference server.')
             except requests.exceptions.RequestException as e:
-                print(f"⚠️ WARNING: Cannot connect to inference server at {self.inference_url}. Ensure it is running! Error: {e}")
+                logger.info(f'⚠️ WARNING: Cannot connect to inference server at {self.inference_url}. Ensure it is running! Error: {e}')
             return
 
         if not self.model_id:
-            print("🛑 No Local AI Model selected in System Configuration. Bypassing PyTorch to save VRAM.")
+            logger.info('🛑 No Local AI Model selected in System Configuration. Bypassing PyTorch to save VRAM.')
             return
 
-        print("Loading Heavy AI models into VRAM...")
+        logger.info('Loading Heavy AI models into VRAM...')
 
         compute_dtype = torch.float16
         if torch.cuda.is_available() and torch.cuda.is_bf16_supported():
             compute_dtype = torch.bfloat16
-            print("Hardware supports bfloat16, using it for compute.")
+            logger.info('Hardware supports bfloat16, using it for compute.')
 
         quantization_config = BitsAndBytesConfig(
             load_in_4bit=True,
@@ -136,11 +139,11 @@ class AIService:
         )
 
         self.model.config.pad_token_id = getattr(self.tokenizer, 'pad_token_id', self.tokenizer.eos_token_id)
-        print("✅ LLM model loaded successfully.", type(self.model))
+        logger.info(" ".join([str(x) for x in ['✅ LLM model loaded successfully.', type(self.model)]]))
 
 
         self.outline_pipeline = outline_models.Transformers(self.model, self.tokenizer)
-        print("✅ Outline llm wrapper loaded", type(self.outline_pipeline))
+        logger.info(" ".join([str(x) for x in ['✅ Outline llm wrapper loaded', type(self.outline_pipeline)]]))
 
         terminators = [self.tokenizer.eos_token_id]
         for token_str in ["<|eot_id|>", "<|im_end|>"]:
@@ -150,11 +153,11 @@ class AIService:
                 
         self.terminators = list(set(t for t in terminators if t is not None))
 
-        print("✅ AI models loaded successfully.")
+        logger.info('✅ AI models loaded successfully.')
 
     def unload_models(self):
         """Frees VRAM for model switching."""
-        print("🗑️ Unloading AI models...")
+        logger.info('🗑️ Unloading AI models...')
         del self.model
         del self.outline_pipeline
         self._generator_cache.clear()
@@ -164,20 +167,22 @@ class AIService:
         gc.collect()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
-        print("✅ VRAM cleared.")
+        logger.info('✅ VRAM cleared.')
 
     def _extract_prompts(self, messages):
         system_prompt = ""
         user_prompt = ""
-        if isinstance(messages, str):
-            user_prompt = messages
-        elif isinstance(messages, list):
-            for m in messages:
-                if m.get("role") == "system" and not system_prompt:
-                    system_prompt = m.get("content", "")
-                elif m.get("role") == "user":
-                    user_prompt = m.get("content", "")
-        return system_prompt, user_prompt
+        for m in messages:
+            if getattr(m, 'role', '') == 'system' or getattr(m, 'type', '') == 'system':
+                system_prompt += getattr(m, 'content', '') + "\n"
+            elif getattr(m, 'role', '') == 'user' or getattr(m, 'type', '') == 'human':
+                user_prompt += getattr(m, 'content', '') + "\n"
+            elif isinstance(m, dict):
+                if m.get('role') == 'system':
+                    system_prompt += m.get('content', '') + "\n"
+                elif m.get('role') in ['user', 'human']:
+                    user_prompt += m.get('content', '') + "\n"
+        return system_prompt.strip(), user_prompt.strip()
 
     def _log_generation(self, messages, generated_texts, log_kwargs=None):
         if log_kwargs is None:
@@ -191,20 +196,31 @@ class AIService:
 
         try:
             from .models import PromptResponseLog  # Lazy import avoids circular dependency
+            
+            input_tokens = self.count_conversation_tokens(messages)
+            
             for text in generated_texts:
                 text_to_save = text.model_dump_json(indent=2) if hasattr(text, 'model_dump_json') else str(text)
-                PromptResponseLog.objects.create(
+                
+                output_tokens = self.count_conversation_tokens([{"role": "assistant", "content": text_to_save}])
+                
+                log = PromptResponseLog.objects.create(
                     system_prompt=system_prompt,
                     user_prompt=user_prompt,
                     generated_response=text_to_save,
                     user_id=log_kwargs.get("user_id"),
                     conversation_id=log_kwargs.get("conversation_id"),
-                    rag_selections=log_kwargs.get("rag_selections", "")
+                    rag_selections=log_kwargs.get("rag_selections", ""),
+                    input_tokens=input_tokens,
+                    output_tokens=output_tokens,
+                    reasoning_step_id=log_kwargs.get("reasoning_step_id")
                 )
+                if "log_ids" in log_kwargs:
+                    log_kwargs["log_ids"].append(log.id)
         except Exception as e:
-            print(f"Warning: Failed to log prompt response: {e}")
+            logger.info(f'Warning: Failed to log prompt response: {e}')
 
-    def _execute_openai_standard_request(self, messages, max_new_tokens, temperature, num_return_sequences, response_schema=None, user=None):
+    def _execute_openai_standard_request(self, messages, max_new_tokens, temperature, num_return_sequences, response_schema=None, user=None, tools=None):
         """Unifies HTTP calls to either external (OpenAI) or internal proxy endpoints."""
         api_url = f"{self.inference_url.rstrip('/')}/v1/chat/completions"
         api_key = None
@@ -233,6 +249,9 @@ class AIService:
             "n": num_return_sequences
         }
 
+        if tools:
+            payload["tools"] = tools
+
         if response_schema:
             schema_json = None
             if hasattr(response_schema, "model_json_schema"):
@@ -260,7 +279,26 @@ class AIService:
             data = response.json()
             
             # Parse OpenAI standard response
-            results = [choice["message"]["content"] for choice in data.get("choices", [])]
+            results = []
+            for choice in data.get("choices", []):
+                msg = choice.get("message", {})
+                content = msg.get("content") or ""
+                if "tool_calls" in msg:
+                    import json
+                    try:
+                        tool_calls = []
+                        for i, tc in enumerate(msg["tool_calls"]):
+                            fn = tc.get("function", {})
+                            args_str = fn.get("arguments", "{}")
+                            tool_calls.append({
+                                "name": fn.get("name"),
+                                "args": json.loads(args_str),
+                                "id": tc.get("id", f"call_{i}")
+                            })
+                        content = f"<tool_calls>{json.dumps(tool_calls)}</tool_calls>"
+                    except Exception as e:
+                        logger.error(f"Failed to parse tool_calls from OpenAI API: {e}")
+                results.append(content)
             
             # If we are the background worker, pause for a moment so Web UI requests can jump the queue!
             if self.role == "worker":
@@ -289,10 +327,10 @@ class AIService:
         Returns True if a new search was performed, False if already searched.
         """
         if term in searched_terms:
-            print(f"⚠️ Active RAG: Already searched for '{term}'. Ignoring to prevent infinite loop.")
+            logger.info(f"⚠️ Active RAG: Already searched for '{term}'. Ignoring to prevent infinite loop.")
             return False
             
-        print(f"🔍 Active RAG Triggered: Halting validation to search Knowledge Graph and RAG for '{term}'...")
+        logger.info(f"🔍 Active RAG Triggered: Halting validation to search Knowledge Graph and RAG for '{term}'...")
         searched_terms.add(term)
         
         from llm_api.apps import service_registry
@@ -307,7 +345,7 @@ class AIService:
                 if grips_docs:
                     context_parts.append("\n\n".join([f"Concept [{d.metadata.get('title', 'Unknown')}]:\n{d.page_content}" for d in grips_docs]))
             except Exception as e:
-                print(f"Grips search failed: {e}")
+                logger.info(f'Grips search failed: {e}')
                 
         # 2. Search Standard RAG
         rag_service = service_registry.rag_service
@@ -317,7 +355,7 @@ class AIService:
                 if rag_docs:
                     context_parts.append("\n\n".join([f"Source: {d.metadata.get('filename', 'Unknown')}\nContent: {d.page_content}" for d in rag_docs]))
             except Exception as e:
-                print(f"RAG search failed: {e}")
+                logger.info(f'RAG search failed: {e}')
                 
         context_str = "\n\n---\n\n".join(context_parts) if context_parts else "No specific concepts found."
         
@@ -367,7 +405,7 @@ class AIService:
                 return res
             except Exception as ve:
                 last_error = ve
-                print(f"⚠️ Validation Error against schema:\n{ve}\nRaw Output was:\n{res}")
+                logger.info(f'⚠️ Validation Error against schema:\n{ve}\nRaw Output was:\n{res}')
                 continue
                 
         raise ValueError(f"All generated sequences failed validation. Last error: {last_error}")
@@ -408,7 +446,7 @@ class AIService:
                 
                 try:
                     raw_results = generated_callable(working_messages, max_new_tokens, temperature, current_n)
-                    print(f"Raw results (Hop {search_hop+1}, Attempt {attempt+1}): {raw_results}")
+                    logger.info(f'Raw results (Hop {search_hop + 1}, Attempt {attempt + 1}): {raw_results}')
                     
                     for res in raw_results:
                         # 1. Active RAG Check: Look for <SEARCH: concept> anywhere in output
@@ -436,12 +474,12 @@ class AIService:
                         return valid_res
                     except ValueError as ve:
                         last_error = ve
-                        print(f"⚠️ Validation error (Attempt {attempt+1}/{max_validation_attempts}): {ve}")
+                        logger.info(f'⚠️ Validation error (Attempt {attempt + 1}/{max_validation_attempts}): {ve}')
                         continue  # Schema failed. Let the inner loop try another generation attempt.
                     
                 except Exception as e:
                     last_error = e
-                    print(f"⚠️ Generation error (Attempt {attempt+1}/{max_validation_attempts}): {e}")
+                    logger.info(f'⚠️ Generation error (Attempt {attempt + 1}/{max_validation_attempts}): {e}')
                     continue
             
             if did_search:
@@ -451,13 +489,17 @@ class AIService:
                             
         # Exhausted all attempts or hops
         error_msg = f"Generation failed after {max_validation_attempts} attempts. Last error: {str(last_error)}"
-        print(f"❌ {error_msg}")
+        logger.info(f'❌ {error_msg}')
         if is_structured:
-            return {"error": "GenerationFailed", "details": error_msg}
+            err_result = {"error": "GenerationFailed", "details": error_msg}
+            self._log_generation(working_messages, [err_result], log_kwargs)
+            return err_result
         else:
-            return [f"GenerationFailed: {error_msg}"]
+            err_result = f"GenerationFailed: {error_msg}"
+            self._log_generation(working_messages, [err_result], log_kwargs)
+            return [err_result]
 
-    def generate_response2(self, messages, max_new_tokens=1024, num_return_sequences=1, temperature=0.7, log_kwargs=None, user=None):
+    def generate_response2(self, messages, max_new_tokens=1024, num_return_sequences=1, temperature=0.7, log_kwargs=None, user=None, tools=None):
         """
         Facade for standard unstructured chat completions.
         
@@ -473,7 +515,7 @@ class AIService:
 
         if needs_proxy:
             def proxy_callable(msgs, max_tok, temp, n):
-                res = self._execute_openai_standard_request(msgs, max_tok, temp, n, None, user=user)
+                res = self._execute_openai_standard_request(msgs, max_tok, temp, n, None, user=user, tools=tools)
                 return res if isinstance(res, list) else [res]
             generate_callable = proxy_callable
         else:
@@ -538,7 +580,7 @@ class AIService:
                                   Generating >1 increases the chance of passing strict Pydantic logic
                                   validation (e.g., custom @model_validators) on the very first try.
         """
-        print("Generate Outline Called", type(messages), response_schema)
+        logger.info(" ".join([str(x) for x in ['Generate Outline Called', type(messages), response_schema]]))
 
         needs_proxy = self.role in ["web", "worker"]
         if user and not getattr(user, 'is_anonymous', False):
@@ -597,7 +639,7 @@ class AIService:
                     device=0
                 )
             except Exception:
-                print("GPU not found, falling back to CPU. This will be slow.")
+                logger.info('GPU not found, falling back to CPU. This will be slow.')
                 self.classifier = pipeline(
                     "zero-shot-classification",
                     model="facebook/bart-large-mnli",
@@ -610,7 +652,7 @@ class AIService:
         # Globally remove known special tokens that may leak into generations
         assistant_response = re.sub(r'<\|eot_id\|>|<eos>|<turn\|>|<\/s>', '', assistant_response, flags=re.IGNORECASE).strip()
         
-        print("Assistant response", assistant_response)
+        logger.info(" ".join([str(x) for x in ['Assistant response', assistant_response]]))
         doc = nlp(assistant_response)
         sentences = list(doc.sents)  # Convert the generator to a list
 
@@ -641,7 +683,7 @@ class AIService:
         except NotImplementedError:
             # A fallback for older models without a chat template.
             # This is a *rough estimate* and will be inaccurate.
-            print("Warning: No chat template; falling back to naive token count.")
+            logger.info('Warning: No chat template; falling back to naive token count.')
             total_tokens = 0
             for msg in messages:
                 # This misses role tokens, so it will under-count.

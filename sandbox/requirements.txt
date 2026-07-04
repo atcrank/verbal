@@ -4,4 +4,4 @@ numpy
 pandas
 networkx
 pgmpy
-pycid
+pyAgrum

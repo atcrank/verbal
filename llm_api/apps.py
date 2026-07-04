@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from django.apps import AppConfig
 
 import sys
@@ -33,10 +36,10 @@ class LazyServiceRegistry:
             if config and config.active_ollama_model:
                 # If a local PyTorch model is active, unload Ollama to free VRAM. Otherwise, load it.
                 active = not bool(config.active_local_model)
-                print(f"SYNC: Setting Ollama model '{config.active_ollama_model}' active state to: {active}")
+                logger.info(f"SYNC: Setting Ollama model '{config.active_ollama_model}' active state to: {active}")
                 set_ollama_model_state(config.active_ollama_model, active=active)
         except Exception as e:
-            print(f"SYNC: Skipping Ollama startup sync due to error: {e}")
+            logger.info(f'SYNC: Skipping Ollama startup sync due to error: {e}')
 
     @property
     def ai_service(self):
@@ -47,7 +50,7 @@ class LazyServiceRegistry:
             with self._lock:
                 if self._ai_service is None:
                     self._sync_ollama_state()
-                    print("Initializing AI Service...")
+                    logger.info('Initializing AI Service...')
                     from .ai_service import AIService
                     ai_serv = AIService()
                     ai_serv.load_models()
@@ -62,7 +65,7 @@ class LazyServiceRegistry:
         if self._nlp_service is None:
             with self._lock:
                 if self._nlp_service is None:
-                    print("Initializing NLP Service...")
+                    logger.info('Initializing NLP Service...')
                     from background_resources.nlp_service import NLPService
                     self._nlp_service = NLPService()
         return self._nlp_service
@@ -75,7 +78,7 @@ class LazyServiceRegistry:
         if self._rag_service is None:
             with self._lock:
                 if self._rag_service is None:
-                    print("Initializing RAG Service...")
+                    logger.info('Initializing RAG Service...')
                     from background_resources.rag_service import RAGService
                     rag_serv = RAGService()
                     rag_serv.load_models()
@@ -90,7 +93,7 @@ class LazyServiceRegistry:
         if self._grips_service is None:
             with self._lock:
                 if self._grips_service is None:
-                    print("Initializing Grips Service...")
+                    logger.info('Initializing Grips Service...')
                     from grips.services import GripsService
                     grips_serv = GripsService()
                     grips_serv.load_models()

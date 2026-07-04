@@ -1,3 +1,7 @@
+import os
+import logging
+logger = logging.getLogger(__name__)
+
 import json
 from django.shortcuts import render, HttpResponse, get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -5,6 +9,7 @@ from django.utils.safestring import mark_safe
 from llm_api.models import Conversation, PromptResponseLog
 from metacognition.models import CognitiveBlueprint
 from llm_api.apps import service_registry
+from grips.models import ConceptNode, Domain, KnowledgeEdge
 
 try:
     import markdown
@@ -31,13 +36,20 @@ def _prepare_log_for_display(log):
     # 2. Format User Prompt (Add linebreaks so paragraphs display correctly)
     from django.utils.html import linebreaks
     log.html_user_prompt = mark_safe(linebreaks(log.user_prompt or ""))
+    
+    # 3. Format RAG selections if they are JSON
+    if log.rag_selections and isinstance(log.rag_selections, list):
+        log.html_rag_selections = mark_safe(f"<pre style='font-size: 0.75rem; white-space: pre-wrap;'>{json.dumps(log.rag_selections, indent=2)}</pre>")
+    else:
+        log.html_rag_selections = log.rag_selections
+        
     return log
 
 @login_required
 def index(request):
     """Renders the main Demo UI shell."""
-    conversations = Conversation.objects.filter(user=request.user)
-    blueprints = CognitiveBlueprint.objects.all()
+    conversations = Conversation.objects.filter(user=request.user).exclude(user__username="NightManager")
+    blueprints = CognitiveBlueprint.objects.exclude(name__startswith="NightManager").exclude(name="The Architect")
     
     return render(request, 'demo_ui/index.html', {
         'conversations': conversations,
@@ -47,7 +59,7 @@ def index(request):
 @login_required
 def search_knowledge_base(request):
     """HTMX endpoint to perform a unified search across RAG and Grips."""
-    query = request.GET.get('q', '').strip()
+    query = request.GET.get('q', request.GET.get('user_prompt', '')).strip()
     
     if not query:
         return HttpResponse('<div class="conv-date" style="text-align: center; margin-top: 20px;">Search results will appear here.</div>')
@@ -61,20 +73,76 @@ def search_knowledge_base(request):
     # Search Grips Knowledge Graph
     if grips_service:
         try:
-            grips_results = grips_service.get_grips_context(query, k=3)
+            # We want both the Document and the score to sort unified
+            grips_docs_and_scores = grips_service.db.similarity_search_with_score(query, k=4)
         except Exception as e:
-            print(f"Grips Search error: {e}")
+            logger.info(f'Grips Search error: {e}')
+            grips_docs_and_scores = []
 
     # Search Document Chunks
     if rag_service:
         try:
-            rag_results = rag_service.get_context(query, k=3)
+            rag_docs_and_scores = rag_service.store.similarity_search_with_score(query, k=5)
         except Exception as e:
-            print(f"RAG Search error: {e}")
+            logger.info(f'RAG Search error: {e}')
+            rag_docs_and_scores = []
+
+    # Unify results and apply lineage boost
+    unified_results = []
+    
+    # 1. Gather all returned RAG chunk IDs (Note: Langchain stores the FAISS/PGVector ID or metadata ID)
+    # We will use the metadata 'id' for RAG chunks, which corresponds to the PGVector ID
+    rag_ids_in_results = {str(d.metadata.get('id', '')) for d, score in rag_docs_and_scores if d.metadata.get('id')}
+    
+    from grips.models import ConceptNode
+    
+    for doc, score in grips_docs_and_scores:
+        concept_id = doc.metadata.get('concept_id')
+        boosted_score = score
+        source_chunk_id = None
+        source_doc_name = None
+        
+        if concept_id:
+            try:
+                node = ConceptNode.objects.get(id=concept_id)
+                if node.source_chunk:
+                    source_chunk_id = str(node.source_chunk.id)
+                    source_doc_name = node.source_chunk.metadata.get('filename', 'Unknown Document')
+                    # Lineage Boost: if this Grip's source chunk is ALSO in the RAG results, boost it highly
+                    # PGVector uses distance (lower is better), so we subtract to boost
+                    if source_chunk_id in rag_ids_in_results:
+                        boosted_score = boosted_score * 0.8  # Make distance smaller
+            except Exception:
+                pass
+                
+        unified_results.append({
+            'type': 'grip',
+            'doc': doc,
+            'original_score': score,
+            'boosted_score': boosted_score,
+            'source_chunk_id': source_chunk_id,
+            'source_doc_name': source_doc_name
+        })
+        
+    for doc, score in rag_docs_and_scores:
+        chunk_id = str(doc.metadata.get('id', ''))
+        boosted_score = score
+        # Lineage Boost: if this RAG chunk spawned a Grip that is in our results, boost it highly
+        if any(r['source_chunk_id'] == chunk_id for r in unified_results if r['type'] == 'grip'):
+            boosted_score = boosted_score * 0.8 # Make distance smaller
+            
+        unified_results.append({
+            'type': 'rag',
+            'doc': doc,
+            'original_score': score,
+            'boosted_score': boosted_score
+        })
+        
+    # Sort by boosted score (lower distance is better)
+    unified_results.sort(key=lambda x: x['boosted_score'])
 
     return render(request, 'demo_ui/search_results.html', {
-        'rag_results': rag_results,
-        'grips_results': grips_results,
+        'unified_results': unified_results,
         'query': query
     })
 
@@ -89,10 +157,19 @@ def get_conversation(request, conversation_id):
     for log in logs:
         _prepare_log_for_display(log)
 
-    return render(request, 'demo_ui/chat_history.html', {
+    response_html = render(request, 'demo_ui/chat_history.html', {
         'conversation': conversation,
         'logs': logs
-    })
+    }).content.decode('utf-8')
+    
+    # Append workspace files OOB swap
+    files = _get_workspace_files_list(conversation)
+    files_html = render(request, 'demo_ui/workspace_files.html', {
+        'files': files,
+        'conversation_id': str(conversation.id)
+    }).content.decode('utf-8')
+
+    return HttpResponse(response_html + "\n" + files_html)
 
 @login_required
 def send_message(request):
@@ -128,32 +205,228 @@ def send_message(request):
         if not cleaned_response and 'error' in result:
             cleaned_response = f"**Blueprint Error:** {result['error']}"
             
+        input_tokens = service_registry.ai_service.count_conversation_tokens([{"role": "user", "content": user_prompt}])
+        output_tokens = service_registry.ai_service.count_conversation_tokens([{"role": "assistant", "content": cleaned_response}])
+        
         log = PromptResponseLog.objects.create(
             system_prompt="[Blueprint Execution]", 
             user_prompt=user_prompt,
             conversation=conversation,
             generated_response=cleaned_response, 
-            user=request.user
+            user=request.user,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens
         )
     else:
         messages = conversation.as_messages()
         if not messages:
             messages.append({"role": "system", "content": "You are a helpful study design assistant."})
             
-        rag_docs = service_registry.rag_service.get_context(user_prompt)
-        rag_text = "\n\n".join([f"Source: {d.metadata.get('filename', 'Unknown')}\nContent: {d.page_content}" for d in rag_docs])
+        included_context_json = request.POST.get('included_context', '[]')
+        try:
+            included_context = json.loads(included_context_json)
+        except Exception:
+            included_context = []
+            
+        rag_selections = []
+        rag_text = ""
         
-        messages_for_llm = messages + [{"role": "user", "content": user_prompt + "\n\nRelevant Context:\n" + rag_text}]
+        for item in included_context:
+            model_type = item.get("model")
+            item_id = item.get("id")
+            
+            if model_type == "RAGChunk" and service_registry.rag_service:
+                docs = service_registry.rag_service.store.mget([item_id])
+                if docs and docs[0]:
+                    d = docs[0]
+                    rag_selections.append({"model": "RAGChunk", "id": item_id, "preview": d.page_content[:150] + "..."})
+                    rag_text += f"\nSource: {d.metadata.get('filename', 'Unknown')}\nContent: {d.page_content}\n"
+                    
+            elif model_type == "ConceptNode":
+                content = item.get("content", "Concept content unavailable")
+                rag_selections.append({"model": "ConceptNode", "id": item_id, "preview": content[:150] + "..."})
+                rag_text += f"\nConcept:\n{content}\n"
+                
+            elif model_type == "Document" and service_registry.rag_service:
+                # If they dropped a whole document, maybe just add a reference to it
+                content = item.get("content", "Document dropped")
+                rag_selections.append({"model": "Document", "id": item_id, "preview": content})
+                rag_text += f"\nReference Document: {content}\n"
+                
+            elif model_type == "Conversation":
+                content = item.get("content", "Conversation dropped")
+                rag_selections.append({"model": "Conversation", "id": item_id, "preview": content})
+                rag_text += f"\nPrevious Conversation Reference: {content}\n"
         
+        if rag_text:
+            messages_for_llm = messages + [{"role": "user", "content": user_prompt + "\n\nRelevant Context:\n" + rag_text}]
+        else:
+            messages_for_llm = messages + [{"role": "user", "content": user_prompt}]
+        
+        input_tokens = service_registry.ai_service.count_conversation_tokens(messages_for_llm)
         [response] = service_registry.ai_service.generate_response2(messages=messages_for_llm, max_new_tokens=1000, log_kwargs={"skip_log": True}, user=request.user)
         cleaned_response = service_registry.ai_service.clean_response(response)
         
+        output_tokens = service_registry.ai_service.count_conversation_tokens([{"role": "assistant", "content": cleaned_response}])
+        
         log = PromptResponseLog.objects.create(
-            system_prompt=messages[0]["content"], user_prompt=user_prompt, rag_selections=rag_text, 
-            conversation=conversation, generated_response=cleaned_response, user=request.user
+            system_prompt=messages[0]["content"], user_prompt=user_prompt, rag_selections=rag_selections, 
+            conversation=conversation, generated_response=cleaned_response, user=request.user,
+            input_tokens=input_tokens, output_tokens=output_tokens
         )
         
     # 3. Render formatting
     _prepare_log_for_display(log)
 
-    return render(request, 'demo_ui/chat_message.html', {'log': log, 'conversation': conversation})
+    response_html = render(request, 'demo_ui/chat_message.html', {'log': log, 'conversation': conversation}).content.decode('utf-8')
+    
+    # Append workspace files OOB swap
+    files = _get_workspace_files_list(conversation)
+    files_html = render(request, 'demo_ui/workspace_files.html', {
+        'files': files,
+        'conversation_id': str(conversation.id)
+    }).content.decode('utf-8')
+
+    return HttpResponse(response_html + "\n" + files_html)
+
+
+from django.views.decorators.http import require_POST
+from background_resources.models import Document
+from background_resources.tasks import task_process_documents
+
+@login_required
+@require_POST
+def upload_document(request):
+    """HTMX endpoint to upload a document and trigger background RAG processing."""
+    title = request.POST.get('title', '').strip()
+    author = request.POST.get('author', '').strip() or None
+    uploaded_file = request.FILES.get('file')
+
+    if not title or not uploaded_file:
+        return HttpResponse('<span style="color: #ea5322; font-weight: 500;">Title and file are required.</span>', status=400)
+
+    try:
+        # Create Document instance
+        doc = Document.objects.create(
+            title=title,
+            author=author,
+            file=uploaded_file
+        )
+        
+        # Trigger Celery task asynchronously
+        task_process_documents.delay([doc.id])
+        
+        return HttpResponse('<span style="color: #2ecc71; font-weight: 500;">✓ Ingestion started.</span>')
+    except Exception as e:
+        logger.exception("Failed to upload document")
+        return HttpResponse(f'<span style="color: #ea5322; font-weight: 500;">Upload failed: {str(e)}</span>', status=500)
+
+
+@login_required
+def list_documents(request):
+    """HTMX endpoint to render the recent uploaded documents list."""
+    documents = list(Document.objects.all().order_by('-uploaded_at')[:15])
+    
+    # Workaround: since backend ingestion never sets currently_indexed to True,
+    # we dynamically check if any reading strategies have chunk usages in the DB.
+    for doc in documents:
+        doc.currently_indexed = doc.readingstrategy_set.filter(usages__isnull=False).exists()
+        
+    return render(request, 'demo_ui/document_list.html', {'documents': documents})
+
+
+from django.http import FileResponse, Http404, HttpResponseForbidden
+from django.utils import timezone
+
+def _get_workspace_files_list(conversation):
+    """Retrieves file details (names, sizes, mtimes) inside conversation workspace."""
+    workspace_dir = conversation.get_workspace_dir()
+    if not os.path.exists(workspace_dir):
+        return []
+    
+    file_list = []
+    for root, dirs, files in os.walk(workspace_dir):
+        if '.git' in dirs:
+            dirs.remove('.git')  # Hide version control internals
+        for name in files:
+            file_path = os.path.join(root, name)
+            rel_path = os.path.relpath(file_path, workspace_dir)
+            try:
+                info = os.stat(file_path)
+                size_kb = round(info.st_size / 1024, 2)
+                file_list.append({
+                    'name': rel_path,
+                    'size': f"{size_kb} KB" if size_kb > 0 else f"{info.st_size} bytes",
+                    'modified': timezone.datetime.fromtimestamp(info.st_mtime, tz=timezone.get_current_timezone())
+                })
+            except OSError:
+                pass
+    # Sort files alphabetically by name
+    file_list.sort(key=lambda x: x['name'])
+    return file_list
+
+
+@login_required
+def download_file(request, conversation_id, filename):
+    """Secure endpoint to download a generated file from a conversation workspace."""
+    conversation = get_object_or_404(Conversation, id=conversation_id, user=request.user)
+    workspace_dir = os.path.abspath(conversation.get_workspace_dir())
+    
+    if not os.path.exists(workspace_dir):
+        raise Http404("Workspace directory not found")
+        
+    # Safe path resolution to prevent directory traversal
+    file_path = os.path.abspath(os.path.join(workspace_dir, filename))
+    if not file_path.startswith(workspace_dir):
+        return HttpResponseForbidden("Access denied: path traversal attempt detected.")
+        
+    if not os.path.exists(file_path) or os.path.isdir(file_path):
+        raise Http404("Requested file not found")
+        
+    return FileResponse(open(file_path, 'rb'), as_attachment=True, filename=os.path.basename(file_path))
+
+
+@login_required
+def grips_explorer_tab(request):
+    """HTMX endpoint to render the Grips Explorer."""
+    query = request.GET.get('q', '').strip()
+    
+    if query:
+        # Search ConceptNodes
+        # Simplistic substring search on title or narrative_content
+        concepts = ConceptNode.objects.filter(title__icontains=query) | ConceptNode.objects.filter(narrative_content__icontains=query)
+        concepts = concepts.select_related('domain').order_by('domain__name', 'title')[:50]
+        
+        return render(request, 'demo_ui/grips_search_results.html', {
+            'concepts': concepts,
+            'query': query
+        })
+    else:
+        # Show Hierarchy Overview
+        domains = Domain.objects.prefetch_related('concepts').all()
+        # For a true hierarchy we might just show domains, and then root concepts
+        domain_data = []
+        for d in domains:
+            # We want true root nodes: concepts with no incoming INCLUDES edges.
+            roots = d.concepts.filter(incoming_edges__isnull=True).order_by('title')
+            domain_data.append({
+                'domain': d,
+                'concepts': roots
+            })
+            
+        return render(request, 'demo_ui/grips_hierarchy.html', {
+            'domain_data': domain_data
+        })
+
+
+@login_required
+def grips_concept_children(request, concept_id):
+    """HTMX endpoint to lazily load children of a ConceptNode in the hierarchy."""
+    node = get_object_or_404(ConceptNode, id=concept_id)
+    # Find all children where this node is the source of an INCLUDES edge
+    children_edges = node.outgoing_edges.filter(relationship_type='INCLUDES').select_related('target')
+    children = [edge.target for edge in children_edges]
+    
+    return render(request, 'demo_ui/grips_hierarchy_children.html', {
+        'children': children
+    })

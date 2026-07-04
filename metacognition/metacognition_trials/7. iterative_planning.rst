@@ -1,0 +1,36 @@
+========================================
+Trial 7: Iterative Planning (Task Decomposer)
+========================================
+
+This test verifies the agent's ability to iteratively plan and execute a dynamic JSON queue of tasks, 
+specifically verifying that it processes each task sequentially without trailing off.
+
+    >>> import contextlib, io, sys
+    >>> import uuid
+    >>> from llm_api.models import User
+    >>> from metacognition.models import CognitiveBlueprint
+    >>> from metacognition.tasks import run_blueprint
+    >>> from conftest import _report_doctest_run
+    
+    >>> user, _ = User.objects.get_or_create(username="test_user")
+    >>> bp = CognitiveBlueprint.objects.filter(name__startswith="Pipeline: Task Decomposer").first()
+    >>> cid = str(uuid.uuid4())
+    >>> from llm_api.models import Conversation
+    >>> _ = Conversation.objects.create(id=cid, user=user)
+    
+    >>> prompt = (
+    ...     "We need to analyze our Django project. Task 1: List all models in `metacognition/models.py`. "
+    ...     "Task 2: List all functions in `metacognition/actions.py`. "
+    ...     "Task 3: Provide a brief summary of how they relate."
+    ... )
+    
+    >>> with contextlib.redirect_stdout(io.StringIO()) as captured_out:
+    ...     result = run_blueprint(bp.id, prompt, conversation_id=cid, user_id=user.id)
+    
+    >>> if result:
+    ...     result["stdout"] = captured_out.getvalue()
+    ...     _report_doctest_run("7. iterative_planning", [prompt], result)
+    
+    >>> assert "error" not in result, f"Execution failed: {result.get('error')}"
+    >>> assert result.get("final_response") != "No output.", "No response generated."
+    >>> assert "ABORTED" not in result.get("final_response", ""), f"Execution aborted: {result.get('final_response')}"

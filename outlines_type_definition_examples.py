@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from outlines.types import JsonSchema
 schema_string = {
   "title": "Hydrant",
@@ -15,7 +18,7 @@ schema_string = {
 
 hydrant_json_def = JsonSchema(schema_string)
 
-print(hydrant_json_def)
+logger.info(hydrant_json_def)
 
 schema_string = {
   "title": "Hydrant",
@@ -33,4 +36,4 @@ schema_string = {
 
 hydrant_json_def = JsonSchema(schema_string)
 
-print(hydrant_json_def)
+logger.info(hydrant_json_def)

@@ -1,0 +1,94 @@
+========================================
+Doctest Report: 7. iterative_planning
+========================================
+
+Date: 2026-06-26 14:29:48
+
+Conversation Prompts
+--------------------
+
+::
+
+    [Turn 1]:
+    We need to analyze our Django project. Task 1: List all models in `metacognition/models.py`. Task 2: List all functions in `metacognition/actions.py`. Task 3: Provide a brief summary of how they relate.
+
+Execution Trace
+---------------
+
+Step 1
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**System**:
+
+::
+
+    Break the user's complex request into a strict programmatic JSON queue of sub-tasks. If a sub-task is massive, you may flag it for nested blueprint delegation.
+
+**Assistant**:
+
+::
+
+    {
+      "task_queue": [
+        {
+          "task_id": "T1",
+          "description": "List all models in `metacognition/models.py`.",
+          "instructions": "Parse the file `metacognition/models.py` and extract all Django model classes (i.e., classes that inherit from `models.Model` or are defined with `class MyModel(models.Model):`). Return a list of model class names along with their full paths (e.g., `metacognition.models.MyModel`).",
+          "status": "pending",
+          "notes": "Ensure only actual model classes are included; skip abstract base classes or non-models like forms or serializers unless explicitly defined as models."
+        },
+        {
+          "task_id": "T2",
+          "description": "List all functions in `metacognition/actions.py`.",
+          "instructions": "Parse the file `metacognition/actions.py` and extract all top-level function definitions (i.e., functions defined without being inside a class or a nested scope). Return a list of function names along with their full paths (e.g., `metacognition.actions.some_function`).",
+          "status": "pending",
+          "notes": "Include both built-in and custom functions; exclude methods inside classes unless specified otherwise. Consider functions that perform business logic, data processing, or utility operations."
+        },
+        {
+          "task_id": "T3",
+          "description": "Provide a brief summary of how the models and actions relate.",
+          "instructions": "Based on the lists generated from T1 and T2, provide a concise, high-level explanation of the relationship between the models and actions. Answer questions such as:\n- Do actions operate on specific models?\n- Are actions creating, updating, or querying model instances?\n- Is there a clear data flow from models to actions or vice versa?\n- Are actions used to manipulate data stored in the models?\n\nSummarize in 4–6 sentences, written in natural language, avoiding technical jargon where possible.",
+          "status": "pending",
+          "dependencies": ["T1", "T2"],
+          "notes": "The summary should reflect architectural coherence — e.g., 'Actions handle business logic that modifies or queries data in the models.'"
+        }
+      ],
+      "next_steps": "Once all sub-tasks are completed, the final output will be a structured report containing:\n1. The list of models from T1.\n2. The list of functions from T2.\n3. A clear, concise summary of their interrelation.\n\nPlease ensure the code parsing is done accurately and that no model or function is missed or misclassified."
+    }
+
+Final Response
+--------------
+
+::
+
+    {
+      "task_queue": [
+        {
+          "task_id": "T1",
+          "description": "List all models in `metacognition/models.py`.",
+          "instructions": "Parse the file `metacognition/models.py` and extract all Django model classes (i.e., classes that inherit from `models.Model` or are defined with `class MyModel(models.Model):`). Return a list of model class names along with their full paths (e.g., `metacognition.models.MyModel`).",
+          "status": "pending",
+          "notes": "Ensure only actual model classes are included; skip abstract base classes or non-models like forms or serializers unless explicitly defined as models."
+        },
+        {
+          "task_id": "T2",
+          "description": "List all functions in `metacognition/actions.py`.",
+          "instructions": "Parse the file `metacognition/actions.py` and extract all top-level function definitions (i.e., functions defined without being inside a class or a nested scope). Return a list of function names along with their full paths (e.g., `metacognition.actions.some_function`).",
+          "status": "pending",
+          "notes": "Include both built-in and custom functions; exclude methods inside classes unless specified otherwise. Consider functions that perform business logic, data processing, or utility operations."
+        },
+        {
+          "task_id": "T3",
+          "description": "Provide a brief summary of how the models and actions relate.",
+          "instructions": "Based on the lists generated from T1 and T2, provide a concise, high-level explanation of the relationship between the models and actions. Answer questions such as:\n- Do actions operate on specific models?\n- Are actions creating, updating, or querying model instances?\n- Is there a clear data flow from models to actions or vice versa?\n- Are actions used to manipulate data stored in the models?\n\nSummarize in 4–6 sentences, written in natural language, avoiding technical jargon where possible.",
+          "status": "pending",
+          "dependencies": ["T1", "T2"],
+          "notes": "The summary should reflect architectural coherence — e.g., 'Actions handle business logic that modifies or queries data in the models.'"
+        }
+      ],
+      "next_steps": "Once all sub-tasks are completed, the final output will be a structured report containing:\n1. The list of models from T1.\n2. The list of functions from T2.\n3. A clear, concise summary of their interrelation.\n\nPlease ensure the code parsing is done accurately and that no model or function is missed or misclassified."
+    }
+
+Generated Workspace Files
+-------------------------
+

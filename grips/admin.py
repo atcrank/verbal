@@ -4,8 +4,8 @@ from django.urls import path
 from django.template.response import TemplateResponse
 from django.contrib import admin, messages
 from django.utils.safestring import mark_safe
-from .models import Domain, ConceptNode, KnowledgeEdge, PromptRecipies, CeleryStatus
-from .tasks import generate_concept_narrative, task_lint_concept_node
+from .models import Domain, ConceptNode, KnowledgeEdge, CeleryStatus
+from .tasks import generate_concept_narrative, task_lint_concept_node, task_digest_corpus_level_1, task_digest_corpus_level_2, task_digest_corpus_level_3
 from verbal_config.celery import app as celery_app
 
 
@@ -35,7 +35,7 @@ class ConceptNodeAdmin(admin.ModelAdmin):
     list_filter = ('domain', 'needs_linting')
     search_fields = ('title', 'slug', 'focus_hint', 'narrative_content')
     prepopulated_fields = {'slug': ('title',)}
-    actions = [generate_narrative_action, task_lint_concept_node]
+    actions = [generate_narrative_action, 'lint_concepts_action']
     readonly_fields = ('rendered_narrative',)
     raw_id_fields = ('source_chunk', )
     
@@ -74,12 +74,7 @@ class KnowledgeEdgeAdmin(admin.ModelAdmin):
     autocomplete_fields = ('source', 'target')
 
 
-@admin.register(PromptRecipies)
-class PromptRecipeAdmin(admin.ModelAdmin):
-    list_display = ('name', 'domain', 'recommended_model', 'needs_linting', 'last_linted_at')
-    list_filter = ('domain', 'needs_linting', 'recommended_model')
-    search_fields = ('name', 'system_prompt_template')
-    autocomplete_fields = ('domain', 'recommended_model')
+
 
 
 @admin.register(CeleryStatus)
@@ -161,6 +156,22 @@ def digest_corpus_level_1_action(modeladmin, request, queryset):
                             level=messages.SUCCESS)
 
 
+@admin.action(description="Level 2 Digest: In-Domain Synthesis (Unify Overlaps)")
+def digest_corpus_level_2_action(modeladmin, request, queryset):
+    """Admin action to trigger Level 2 synthesis for selected domains."""
+    try:
+        if not celery_app.control.ping(timeout=1.0):
+            modeladmin.message_user(request, "Celery service not available.", level=messages.ERROR)
+            return
+    except Exception:
+        modeladmin.message_user(request, "Celery service not available.", level=messages.ERROR)
+        return
+
+    for domain in queryset:
+        task_digest_corpus_level_2.delay(domain.id)
+    modeladmin.message_user(request, f"Queued {queryset.count()} domain(s) for Level 2 in-domain synthesis.", level=messages.SUCCESS)
+
+
 @admin.action(description="Level 3 Digest: Synthesize Cross-Domain Joins")
 def digest_corpus_level_3_action(modeladmin, request, queryset):
     """Admin action to trigger the Level 3 cross-domain digestion task."""
@@ -182,7 +193,7 @@ class DomainAdmin(admin.ModelAdmin):
     list_display = ('name', 'created_at', 'document_count')
     search_fields = ('name', 'description', 'style_guide')
     filter_horizontal = ('documents',)
-    actions = [digest_corpus_level_1_action, digest_corpus_level_3_action]
+    actions = [digest_corpus_level_1_action, digest_corpus_level_2_action, digest_corpus_level_3_action]
     
     def document_count(self, obj):
         return obj.documents.count()

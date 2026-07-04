@@ -17,9 +17,14 @@ def set_limits():
     Executed in the child process just before the script runs.
     Enforces strict OS-level resource limits.
     """
-    # 1. Memory Limit: 512 MB
-    MEM_LIMIT = 512 * 1024 * 1024
-    resource.setrlimit(resource.RLIMIT_AS, (MEM_LIMIT, MEM_LIMIT))
+    # 1. Memory Limit
+    # NOTE: We do NOT use RLIMIT_AS (Virtual Memory Limit) here because libraries 
+    # like NumPy/OpenBLAS attempt to reserve massive amounts of virtual memory 
+    # for thread pools at startup, which causes immediate false-positive crashes 
+    # (e.g. "OpenBLAS error: Memory allocation still failed").
+    # Instead, we rely entirely on the Docker container's physical memory cgroup limit 
+    # (e.g., 1G in docker-compose.yml) which safely kills the process if it actually 
+    # *uses* too much physical RAM.
 
     # 2. File Write Limit: 50 MB max per file
     FILE_LIMIT = 50 * 1024 * 1024

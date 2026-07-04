@@ -1,7 +1,10 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from django.db import models
 from llm_api.api import OUTPUT_TYPES  as LLM_OUTPUT_TYPES
 from background_resources.rag_service import OUTPUT_TYPES as RAG_OUTPUT_TYPES
-from .actions import OUTPUT_TYPES as ACTION_OUTPUT_TYPES, ACTION_REGISTRY
+from .actions import OUTPUT_TYPES as ACTION_OUTPUT_TYPES
 
 OUTPUT_TYPES = LLM_OUTPUT_TYPES | RAG_OUTPUT_TYPES | ACTION_OUTPUT_TYPES
 
@@ -20,17 +23,7 @@ def get_schema_choices():
         # Truncate if there are tons of fields so the dropdown isn't massive
         choices.append((key, display_name[:97] + "..." if len(display_name) > 100 else display_name))
     return choices
-print("Schema_choices", get_schema_choices())
-
-def get_action_choices():
-    """
-    Returns a dynamically generated list of choices for the Action Hook dropdown.
-    """
-    choices = [("", "--- No Action Hook ---")]
-    for key in ACTION_REGISTRY.keys():
-        choices.append((key, key))
-    return choices
-print("Action_choices", get_action_choices())
+logger.info(" ".join([str(x) for x in ['Schema_choices', get_schema_choices()]]))
 
 class ModerationList(models.Model):
     """
@@ -107,11 +100,15 @@ class ReasoningStep(models.Model):
                                         
     sub_blueprint = models.ForeignKey(CognitiveBlueprint, on_delete=models.SET_NULL, null=True, blank=True,
                                       related_name='invoked_by_steps',
-                                      help_text="Optional: Execute another blueprint as a sub-routine before moving to the next step.")                                        
+                                      help_text="Optional: Execute another blueprint as a sub-routine before moving to the next step.")
+    parallel_steps = models.ManyToManyField('self', blank=True, symmetrical=False,
+                                            related_name='parallel_sources',
+                                            help_text="Optional: Execute these steps in parallel (fan-out) upon success.")
     max_retries = models.IntegerField(default=3, help_text="Maximum times this step can loop before forcing a failure.")
     
-    action_hook = models.CharField(max_length=255, blank=True, choices=get_action_choices,
-                                   help_text="Optional: Name of a Python Action Hook to intercept and execute tools from the LLM's output.")
+    available_tools = models.ManyToManyField('ToolDefinition', blank=True, related_name='reasoning_steps',
+                                             help_text="Tools available to the LLM during this step.")
+    
     # Constraints & Formatting
     
     output_schema = models.ForeignKey(ResponseSchema, on_delete=models.SET_NULL, null=True, blank=True, help_text="Select a structured output format for this step.")
@@ -120,8 +117,87 @@ class ReasoningStep(models.Model):
     evaluation_criteria = models.TextField(blank=True,
                                            help_text="Optional: What defines a 'success' for this step? Used by the LLM-as-a-judge to decide whether to follow the success or failure edge.")
 
+    # Speciation & Evolutionary Tracking
+    parent_step = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='variants',
+                                    help_text="The ancestral ReasoningStep this variant evolved from.")
+    variant_intent = models.CharField(max_length=255, blank=True,
+                                      help_text="What this speciated variant is optimized for (e.g. 'Spatial Execution').")
+    performance_score = models.FloatField(default=0.0, help_text="Calculated periodically by the NightManager (e.g. success rate discount).")
+    selection_weight = models.FloatField(default=1.0, help_text="Weight used for A/B testing or RL multi-armed bandit variant selection.")
+
     class Meta:
         ordering = ['id']  # Basic ordering, though the actual execution order is defined by the graph edges
 
     def __str__(self):
         return f"{self.blueprint.name} - {self.name}"
+
+from django.contrib.auth.models import User
+
+class ToolDefinition(models.Model):
+    """A tool that can be invoked by an agent node."""
+    name = models.CharField(max_length=255, unique=True)  # e.g. "search_knowledge"
+    description = models.TextField()  # Used in LLM tool descriptions
+    
+    TOOL_TYPES = [
+        ('builtin', 'Built-in Python Function'),
+        ('api', 'HTTP API Call'),
+        ('blueprint', 'Execute Sub-Blueprint'),
+        ('django_action', 'Django ORM Action'),
+    ]
+    tool_type = models.CharField(max_length=20, choices=TOOL_TYPES)
+    
+    # For 'builtin': dotted path to the Python function
+    # e.g. "metacognition.actions.handle_research"
+    python_path = models.CharField(max_length=500, blank=True)
+    
+    # For 'api': the URL template
+    api_url = models.URLField(blank=True)
+    
+    # For 'blueprint': FK to the sub-blueprint
+    sub_blueprint = models.ForeignKey('CognitiveBlueprint', null=True, blank=True, on_delete=models.SET_NULL, related_name="tool_definitions")
+    
+    # The Pydantic schema for the tool's input parameters (stored as JSON Schema)
+    input_schema = models.TextField(blank=True, help_text="JSON Schema for tool parameters")
+    
+    # The Pydantic schema for the tool's output (stored as JSON Schema)
+    output_schema = models.TextField(blank=True, help_text="JSON Schema for tool return value")
+    
+    # Governance
+    is_active = models.BooleanField(default=True)
+    requires_approval = models.BooleanField(default=False, help_text="If true, triggers human-in-the-loop before execution")
+    is_promoted = models.BooleanField(default=False, help_text="If true, this tool has been promoted to production and is fully available.")
+    created_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.name} ({self.get_tool_type_display()})"
+    
+    def get_callable(self):
+        """Resolves the Python function from the dotted path."""
+        import importlib
+        if self.tool_type == 'builtin' and self.python_path:
+            module_path, func_name = self.python_path.rsplit('.', 1)
+            module = importlib.import_module(module_path)
+            return getattr(module, func_name)
+        return None
+
+class AgentCheckpoint(models.Model):
+    """
+    Django implementation of LangGraph BaseCheckpointSaver storage.
+    """
+    thread_id = models.CharField(max_length=255, db_index=True)
+    checkpoint_id = models.CharField(max_length=255, db_index=True)
+    parent_id = models.CharField(max_length=255, blank=True, null=True)
+    
+    # Stored as serialized JSON representations
+    state_json = models.JSONField(default=dict)
+    metadata_json = models.JSONField(default=dict)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = (('thread_id', 'checkpoint_id'),)
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Checkpoint {self.checkpoint_id} for Thread {self.thread_id}"

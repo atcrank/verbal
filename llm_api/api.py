@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import asyncio
 import typing
 import json
@@ -31,8 +34,8 @@ def create_messages(conversation, system_prompt=None, user_prompt=None, rags=Non
         },
         {"role": "user", "content": user_prompt},
     ]
-    print("Messages", messages)
-    print(next_messages)
+    logger.info(" ".join([str(x) for x in ['Messages', messages]]))
+    logger.info(next_messages)
     return messages + next_messages
 
 class GenerateIn(Schema):
@@ -43,6 +46,7 @@ class GenerateIn(Schema):
     skip_rag: bool = False
     skip_grips: bool = True
     parent_log_id: typing.Optional[str] = None
+    uncertainty_mode: int = 1  # 1: ask, 2: search, 3: guess
 
 @router.post("/generate_response/")
 @ensure_csrf_cookie
@@ -71,26 +75,63 @@ def generate_response(request, payload: GenerateIn):
         parent_log = PromptResponseLog.objects.filter(conversation_id=conversation_id).order_by('-created_at').first()
 
     rag_text = ""
+    rag_selections = []
+    
+    requires_research = True
     if not payload.skip_rag:
+        try:
+            from background_resources.nlp_service import NLPService
+            requires_research = NLPService().requires_research(payload.user_prompt)
+        except Exception as e:
+            logger.error(f"Error checking requires_research: {e}")
+            
+    if not payload.skip_rag and requires_research:
         rag_docs = service_registry.rag_service.get_context(payload.user_prompt)
         if rag_docs:
             rag_text = "\n\nRelevant Context (RAG):\n" + "\n\n".join([f"Source: {d.metadata.get('filename', 'Unknown')}\nContent: {d.page_content}" for d in rag_docs])
+            for d in rag_docs:
+                rag_selections.append({
+                    "model": "RAGChunk",
+                    "id": str(d.metadata.get('chunk_id', d.metadata.get('id', ''))),
+                    "preview": d.page_content[:150] + "..."
+                })
             
-    if not payload.skip_grips and service_registry.grips_service:
+    if not payload.skip_grips and getattr(service_registry, 'grips_service', None):
         grips_docs = service_registry.grips_service.get_grips_context(payload.user_prompt)
         if grips_docs:
             rag_text += "\n\nRelevant Concepts (Knowledge Graph):\n" + "\n\n".join([f"[{d.metadata.get('title', 'Unknown')}]: {d.page_content}" for d in grips_docs])
+            for d in grips_docs:
+                rag_selections.append({
+                    "model": "ConceptNode",
+                    "id": str(d.metadata.get('id', '')),
+                    "preview": d.page_content[:150] + "..."
+                })
     
     messages = messages + conversation.as_messages(leaf_log_id=payload.parent_log_id) + [{"role": "user", "content": payload.user_prompt + rag_text}]
     max_new_tokens = payload.max_new_tokens
-    print("Token Count:", service_registry.ai_service.count_conversation_tokens(messages))
+    
+    # Inject uncertainty handling into the system prompt (messages[0])
+    if messages and messages[0].get("role") == "system":
+        if payload.uncertainty_mode == 1:
+            messages[0]["content"] += "\nIf you lack information to answer confidently based on the provided context, state what you know and explicitly ask the user if they would like you to search the knowledge base for specific concepts."
+        elif payload.uncertainty_mode == 2:
+            messages[0]["content"] += "\nIf you lack information, output <SEARCH: term> to halt and query the database."
+        elif payload.uncertainty_mode == 3:
+            messages[0]["content"] += "\nDo not ask for more information. Use your best judgment and infer the answer."
+    
+    input_tokens = service_registry.ai_service.count_conversation_tokens(messages)
+    logger.info(" ".join([str(x) for x in ['Token Count:', input_tokens]]))
+    
     [response] = service_registry.ai_service.generate_response2(messages=messages, max_new_tokens=max_new_tokens, log_kwargs={"skip_log": True}, user=request.auth)
     cleaned_response = service_registry.ai_service.clean_response(response)
+    
+    output_tokens = service_registry.ai_service.count_conversation_tokens([{"role": "assistant", "content": cleaned_response}])
+    
     system_prompt = messages[0]["content"]
     p = PromptResponseLog(system_prompt=system_prompt, user_prompt=payload.user_prompt,
-                          rag_selections=rag_text, conversation_id=conversation_id,
+                          rag_selections=rag_selections, conversation_id=conversation_id,
                           generated_response=cleaned_response, user_id=request.auth.id,
-                          parent_log=parent_log)
+                          parent_log=parent_log, input_tokens=input_tokens, output_tokens=output_tokens)
     p.save()
 
     return JsonResponse({"conversation_id": conversation_id, "cleaned_response": cleaned_response})
@@ -206,9 +247,9 @@ def get_outline(request, payload: OutlineIn):
             return JsonResponse({"error": "Schema key not known."})
     elif type(payload.schema_key) == dict:
         output_type = payload.schema_key
-    print("Get Outline called: types -", type(payload.query), output_type)
+    logger.info(" ".join([str(x) for x in ['Get Outline called: types -', type(payload.query), output_type]]))
     outline = service_registry.ai_service.generate_outline(payload.query, output_type, user=request.auth)
-    print("Outline", outline, type(outline))
+    logger.info(" ".join([str(x) for x in ['Outline', outline, type(outline)]]))
     
     outline_data = outline.model_dump() if hasattr(outline, 'model_dump') else outline
     return JsonResponse({"outline": outline_data})
@@ -405,13 +446,13 @@ def suggest_regex(request, payload: RegexSuggestIn):
     """
     
     messages = [{"role": "user", "content": prompt}]
-    print("MESSAGES FOR REGEX:", messages)
+    logger.info(" ".join([str(x) for x in ['MESSAGES FOR REGEX:', messages]]))
     try:
         # Use the standard LLM pipeline which has do_sample=True for diversity
         responses = service_registry.ai_service.generate_outline(messages=messages, response_schema=RegexCandidate, max_new_tokens=2048, num_return_sequences=10)
         
         candidates = []
-        print(responses)
+        logger.info(responses)
         for raw_response in responses:
             try:
                 if isinstance(raw_response, dict) and "error" in raw_response:
@@ -447,7 +488,7 @@ def suggest_regex(request, payload: RegexSuggestIn):
     best_score = -1
     
     scored_candidates = []
-    print(candidates)
+    logger.info(candidates)
     for pattern in candidates:
         try:
             # Compile with MULTILINE automatically to be forgiving
@@ -477,7 +518,7 @@ def suggest_regex(request, payload: RegexSuggestIn):
                 
         except re.error:
             continue
-    print("scored candidates", scored_candidates)
+    logger.info(" ".join([str(x) for x in ['scored candidates', scored_candidates]]))
     if best_regex:
         return JsonResponse({"regex": best_regex, "candidates_evaluated": len(candidates), "best_match_count": best_score})
     

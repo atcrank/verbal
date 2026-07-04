@@ -1,0 +1,24 @@
+<div id="workspace-files-container" hx-swap-oob="true">
+    {% for file in files %}
+        <div class="search-card" style="margin-bottom: 8px; padding: 10px; border-radius: 6px; border: 1px solid var(--border); background-color: var(--bg-panel); font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+            <div style="word-break: break-all; min-width: 0; flex: 1;">
+                <div style="font-weight: 500; color: var(--text-main); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+                    {{ file.name }}
+                </div>
+                <div style="color: var(--text-muted); font-size: 0.75rem; margin-top: 2px;">
+                    Size: {{ file.size }} | Modified: {{ file.modified|date:"M j, g:i a" }}
+                </div>
+            </div>
+            <a href="{% url 'demo_ui:download_file' conversation_id=conversation_id filename=file.name %}" 
+               class="primary" 
+               style="text-decoration: none; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; background-color: var(--primary); color: white; display: inline-block; white-space: nowrap;"
+               download>
+                Download
+            </a>
+        </div>
+    {% empty %}
+        <div style="text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 10px;">
+            No output files generated yet.
+        </div>
+    {% endfor %}
+</div>

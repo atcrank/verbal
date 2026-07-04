@@ -12,7 +12,7 @@ class ReasoningStepInline(admin.StackedInline):
             'fields': (
                 ('name', 'is_start_node'),
                 'system_prompt',
-                ('output_schema', 'action_hook'),
+                ('output_schema', 'available_tools'),
                 'evaluation_criteria',
                 ('on_success_step', 'on_failure_step'),
                 'max_retries'

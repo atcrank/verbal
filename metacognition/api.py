@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import os
 import subprocess
 import typing
@@ -40,11 +43,11 @@ def execute_blueprint(request, payload: BlueprintRunIn):
                     # Use -f (force) to ensure any uncommitted artifacts from the 
                     # abandoned timeline (like __pycache__ or sandbox outputs) are overwritten
                     subprocess.run(["git", "checkout", "-f", parent_log.git_commit_hash], cwd=workspace_dir, check=True, capture_output=True)
-                    print(f"Rewound workspace {workspace_dir} to commit {parent_log.git_commit_hash[:7]}")
+                    logger.info(f'Rewound workspace {workspace_dir} to commit {parent_log.git_commit_hash[:7]}')
         except (PromptResponseLog.DoesNotExist, Conversation.DoesNotExist):
             pass
         except subprocess.CalledProcessError as e:
-            print(f"Failed to rewind workspace: {e.stderr}")
+            logger.info(f'Failed to rewind workspace: {e.stderr}')
 
     result = run_blueprint(
         blueprint_id=payload.blueprint_id,

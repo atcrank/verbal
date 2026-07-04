@@ -1,4 +1,5 @@
 export VERBAL_ROLE=web
-. ../py313/bin/activate
+. .env.example
+. ${PYENV_ACTIVATE}
 python manage.py runserver 8000
 

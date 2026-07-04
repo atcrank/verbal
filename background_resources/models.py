@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 # Create your models here.
 
 
@@ -96,7 +99,7 @@ def delete_document_files(sender, instance, **kwargs):
     Signal to delete files from FAISS and file storage
     *before* the Document object is deleted from the database.
     """
-    print(f"Pre-delete signal for {instance.title} (hash: {instance.indexed_hash})...")
+    logger.info(f'Pre-delete signal for {instance.title} (hash: {instance.indexed_hash})...')
     from llm_api.apps import service_registry
     rag_service = service_registry.rag_service
 
@@ -105,7 +108,7 @@ def delete_document_files(sender, instance, **kwargs):
     corpus_path = os.path.join(settings.MEDIA_ROOT, "corpora", instance.indexed_hash)
     if os.path.exists(corpus_path):
         shutil.rmtree(corpus_path)
-        print(f"Deleted corpus at {corpus_path}")
+        logger.info(f'Deleted corpus at {corpus_path}')
 
     # 2. Delete the actual file (e.g., the PDF/TXT/ZIP) from storage
     if instance.file:
@@ -213,7 +216,7 @@ class ReadingStrategy(models.Model):
             )
             StrategyChunkUsage.objects.create(chunk=rag_chunk, content_object=self,
                                               role=StrategyChunkUsage.Role.CLIPPED)
-        print(f"{self.__class__.__name__}[{self.id}] logged {len(chunk_ids)} usages to db.")
+        logger.info(f'{self.__class__.__name__}[{self.id}] logged {len(chunk_ids)} usages to db.')
 
 
     def get_chunk_ids(self):
@@ -267,7 +270,7 @@ class GrobidReadingStrategy(models.Model):
                 }
             )
             StrategyChunkUsage.objects.create(chunk=rag_chunk, content_object=self, role=StrategyChunkUsage.Role.CLIPPED)
-        print(f"{self.__class__.__name__}[{self.id}] logged {len(chunk_ids)} usages to db.")
+        logger.info(f'{self.__class__.__name__}[{self.id}] logged {len(chunk_ids)} usages to db.')
 
     def get_chunk_ids(self):
         return self.usages.values_list('chunk__chunk_id', flat=True)

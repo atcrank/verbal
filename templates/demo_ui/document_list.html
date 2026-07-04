@@ -1,0 +1,32 @@
+{% for doc in documents %}
+<div class="search-card" draggable="true" ondragstart="event.dataTransfer.setData('application/json', JSON.stringify({model: 'Document', id: '{{ doc.id }}', content: '{{ doc.title|escapejs }}', preview: '{{ doc.title|escapejs }}'}))" style="margin-bottom: 8px; padding: 10px; border-radius: 6px; border: 1px solid var(--border); background-color: var(--bg-panel); font-size: 0.85rem;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+        <div style="font-weight: 600; color: var(--text-main); word-break: break-all;">
+            {{ doc.title }}
+        </div>
+        {% if doc.currently_indexed %}
+            <div style="flex-shrink: 0; font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; font-weight: 500; background-color: rgba(46, 204, 113, 0.1); color: #2ecc71;">
+        {% else %}
+            <div style="flex-shrink: 0; font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; font-weight: 500; background-color: rgba(241, 196, 15, 0.1); color: #f1c40f;">
+        {% endif %}
+            {% if doc.currently_indexed %}
+                🟢 Indexed
+            {% else %}
+                🟡 Processing
+            {% endif %}
+            </div>
+    </div>
+    
+    <div style="color: var(--text-muted); font-size: 0.75rem; margin-top: 5px;">
+        File: {{ doc.file.name|cut:"documents/" }}
+        {% if doc.author %}
+            <br>Author: {{ doc.author }}
+        {% endif %}
+        <br>Uploaded: {{ doc.uploaded_at|date:"M j, Y - g:i a" }}
+    </div>
+</div>
+{% empty %}
+<div style="text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 15px 10px;">
+    No documents ingested yet.
+</div>
+{% endfor %}
