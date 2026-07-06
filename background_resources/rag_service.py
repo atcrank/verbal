@@ -222,21 +222,31 @@ class RAGService:
     def get_chunk_from_store(self, chunk_id):
         return self.store.mget([chunk_id])[0]
 
-    def get_context(self, query: str, k: int = 4) -> List[LangchainDocument]:
+    def get_context(self, query: str, k: int = 4, max_distance: float = 1.5) -> List[LangchainDocument]:
         """
         Retrieves relevant documents by searching the vector index and fetching parent chunks.
-        """
-        matches = self.db.similarity_search(query, k=k*2)
 
-        if not matches:
+        Uses PGVector distance (lower = better). Results beyond max_distance are
+        dropped before the lexical relevance check to eliminate noise.
+        """
+        docs_and_scores = self.db.similarity_search_with_score(query, k=k*2)
+
+        if not docs_and_scores:
             logger.info('Matches: []')
             return []
-        logger.info(" ".join([str(x) for x in ['Matches', matches, matches[0].metadata]]))
+
+        # Gate out results that exceed the distance threshold (Finding 1.1)
+        matches = [(doc, score) for doc, score in docs_and_scores if score <= max_distance]
+        if not matches:
+            logger.info(f'All {len(docs_and_scores)} results exceeded max_distance={max_distance}')
+            return []
+
+        logger.info(f'Matches: {len(matches)}/{len(docs_and_scores)} passed distance gate (max={max_distance})')
 
         parent_ids = []
         seen_ids = set()
 
-        for doc in matches:
+        for doc, _score in matches:
             meta = doc.metadata or {}
             # Safely extract chunk_id from metadata or fallback to document ID
             p_id = meta.get(self.id_key) or meta.get("id") or getattr(doc, 'id', None)

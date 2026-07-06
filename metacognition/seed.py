@@ -1,4 +1,127 @@
+import json
 from django.apps import apps
+
+
+# =============================================================================
+# Tool Input Schemas
+# Each schema tells the LLM exactly what parameters a tool expects.
+# Without these, the compiler emits an empty {"type": "object", "properties": {}}
+# and the LLM invents plausible but wrong parameters (Finding 2.1).
+# =============================================================================
+
+TOOL_SCHEMAS = {
+    "list_available_tools": {
+        "type": "object",
+        "properties": {},
+    },
+    "create_tool": {
+        "type": "object",
+        "properties": {
+            "name": {"type": "string", "description": "Unique name for the new tool."},
+            "description": {"type": "string", "description": "What the tool does."},
+            "tool_type": {"type": "string", "enum": ["builtin", "api", "blueprint", "django_action"], "description": "The type of tool."},
+            "python_path": {"type": "string", "description": "Dotted Python path to the callable (for builtin type)."},
+            "input_schema": {"type": "string", "description": "JSON Schema string for the tool's input parameters."},
+        },
+        "required": ["name", "description", "tool_type"],
+    },
+    "list_blueprints": {
+        "type": "object",
+        "properties": {},
+    },
+    "create_blueprint": {
+        "type": "object",
+        "properties": {
+            "name": {"type": "string", "description": "Name for the new blueprint."},
+            "description": {"type": "string", "description": "Description of what the blueprint does."},
+            "steps": {
+                "type": "array",
+                "description": "List of step definitions, each with 'name', 'system_prompt', and optional 'schema_name'.",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "name": {"type": "string"},
+                        "system_prompt": {"type": "string"},
+                        "schema_name": {"type": "string"},
+                    },
+                    "required": ["name", "system_prompt"],
+                },
+            },
+        },
+        "required": ["name", "description"],
+    },
+    "review_benchmark_results": {
+        "type": "object",
+        "properties": {
+            "experiment_id": {"type": "integer", "description": "Optional ID of a specific experiment. Omit to see the 5 most recent runs."},
+        },
+    },
+    "create_benchmark_scenario": {
+        "type": "object",
+        "properties": {
+            "question": {"type": "string", "description": "The benchmark question."},
+            "ideal_answer": {"type": "string", "description": "The ground-truth answer for semantic comparison."},
+            "expected_keywords": {"type": "string", "description": "Comma-separated keywords that should appear in retrieved context."},
+            "group_name": {"type": "string", "description": "Name of the ScenarioGroup to add this scenario to."},
+        },
+        "required": ["question", "ideal_answer"],
+    },
+    "document_reader": {
+        "type": "object",
+        "properties": {
+            "action": {
+                "type": "string",
+                "enum": ["search_document", "fetch_chunk", "fetch_whole_document"],
+                "description": "The operation to perform.",
+            },
+            "query": {"type": "string", "description": "Search query (required when action is 'search_document')."},
+            "target_id": {"type": "string", "description": "Chunk ID or document filename (required for fetch operations)."},
+            "doc_range": {
+                "type": "array",
+                "items": {"type": "integer"},
+                "description": "Range of surrounding chunks to fetch, e.g. [-2, 2].",
+            },
+        },
+        "required": ["action"],
+    },
+    "delegate_task": {
+        "type": "object",
+        "properties": {
+            "blueprint_name": {"type": "string", "description": "Name of the blueprint to delegate to."},
+            "task_prompt": {"type": "string", "description": "The prompt/goal to pass to the delegated blueprint."},
+        },
+        "required": ["blueprint_name", "task_prompt"],
+    },
+    "run_benchmark": {
+        "type": "object",
+        "properties": {
+            "scenario_group": {"type": "string", "description": "Name of the ScenarioGroup to benchmark."},
+        },
+        "required": ["scenario_group"],
+    },
+    "django_shell_script": {
+        "type": "object",
+        "properties": {
+            "script_content": {"type": "string", "description": "Python code to execute in the Django environment. Do NOT use .delete() — use is_active=False instead."},
+        },
+        "required": ["script_content"],
+    },
+    "system_janitor": {
+        "type": "object",
+        "properties": {},
+    },
+    "database_backup": {
+        "type": "object",
+        "properties": {},
+    },
+    "TASK_COMPLETE": {
+        "type": "object",
+        "properties": {
+            "final_answer": {"type": "string", "description": "Summary of what was accomplished. Signals the agent is done."},
+        },
+    },
+}
+
 
 def seed_tools(ToolDefinition):
     ACTION_REGISTRY = {
@@ -8,7 +131,7 @@ def seed_tools(ToolDefinition):
         "handle_result_critique": "metacognition.actions.handle_result_critique",
         "python_sandbox": "metacognition.actions.python_sandbox",
     }
-    
+
     for name, python_path in ACTION_REGISTRY.items():
         ToolDefinition.objects.get_or_create(
             name=name,
@@ -20,7 +143,7 @@ def seed_tools(ToolDefinition):
                 'is_promoted': True,
             }
         )
-        
+
     meta_tools = [
         ("list_available_tools", "Returns a summary of all active ToolDefinitions.", "builtin", "metacognition.meta_tools.list_available_tools"),
         ("create_tool", "Creates a new ToolDefinition in the database.", "builtin", "metacognition.meta_tools.create_tool"),
@@ -28,21 +151,25 @@ def seed_tools(ToolDefinition):
         ("create_blueprint", "Creates a new CognitiveBlueprint with linked ReasoningSteps.", "builtin", "metacognition.meta_tools.create_blueprint"),
         ("review_benchmark_results", "Fetches and summarises benchmark results for analysis.", "builtin", "metacognition.meta_tools.review_benchmark_results"),
         ("create_benchmark_scenario", "Creates a new BenchmarkScenario from the agent's analysis.", "builtin", "metacognition.meta_tools.create_benchmark_scenario"),
-        ("document_reader", "Unified tool for navigating and fetching documents from the RAG database.", "builtin", "metacognition.meta_tools.document_reader"),
+        ("document_reader", "Unified tool for navigating and fetching documents from the RAG database. You MUST specify the 'action' parameter.", "builtin", "metacognition.meta_tools.document_reader"),
         ("delegate_task", "Delegates a sub-task to another blueprint via Celery.", "builtin", "metacognition.meta_tools.delegate_task"),
         ("run_benchmark", "Triggers a benchmarking test for a group of scenarios.", "builtin", "metacognition.meta_tools.run_benchmark"),
-        ("django_shell_script", "Executes raw Python code in the host Django environment.", "builtin", "metacognition.meta_tools.django_shell_script"),
+        ("django_shell_script", "Executes raw Python code in the host Django environment. Pass code via 'script_content' parameter.", "builtin", "metacognition.meta_tools.django_shell_script"),
         ("system_janitor", "Deletes empty workspace directories.", "builtin", "metacognition.meta_tools.system_janitor"),
         ("database_backup", "Takes a JSON backup of the Django DB.", "builtin", "metacognition.meta_tools.database_backup"),
+        # Finding 2.2: TASK_COMPLETE must be a real registered tool with python_path
+        ("TASK_COMPLETE", "Signals that the agent has finished all planned work. Use this when done.", "builtin", "metacognition.meta_tools.TASK_COMPLETE"),
     ]
 
     for name, desc, ttype, path in meta_tools:
-        ToolDefinition.objects.get_or_create(
+        schema = TOOL_SCHEMAS.get(name)
+        ToolDefinition.objects.update_or_create(
             name=name,
             defaults={
                 'description': desc,
                 'tool_type': ttype,
                 'python_path': path,
+                'input_schema': json.dumps(schema) if schema else '',
                 'is_active': True,
                 'is_promoted': True,
             }
@@ -115,14 +242,18 @@ def seed_nightmanager(CognitiveBlueprint, ReasoningStep, ResponseSchema, ToolDef
     
     # Assign tools to the NightManager
     tools = [
+        "database_backup",
+        "system_janitor",
+        "review_benchmark_results",
+        "list_blueprints",
+        "list_available_tools",
+        "create_benchmark_scenario",
         "run_benchmark",
         "delegate_task",
         "document_reader",
         "django_shell_script",
-        "system_janitor",
-        "database_backup",
         "handle_execution_plan",
-        "TASK_COMPLETE"
+        "TASK_COMPLETE",
     ]
     for tool_name in tools:
         tool, _ = ToolDefinition.objects.get_or_create(name=tool_name)
