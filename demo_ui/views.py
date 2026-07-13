@@ -64,82 +64,38 @@ def search_knowledge_base(request):
     if not query:
         return HttpResponse('<div class="conv-date" style="text-align: center; margin-top: 20px;">Search results will appear here.</div>')
 
-    rag_service = service_registry.rag_service
-    grips_service = service_registry.grips_service
+    from background_resources.retrieval import unified_retrieve
+    
+    retrieval_results = unified_retrieve(
+        query=query,
+        rag_service=service_registry.rag_service,
+        grips_service=service_registry.grips_service,
+        rag_k=5,
+        grips_k=4,
+    )
 
-    rag_results = []
-    grips_results = []
-
-    # Search Grips Knowledge Graph
-    if grips_service:
-        try:
-            # We want both the Document and the score to sort unified
-            grips_docs_and_scores = grips_service.db.similarity_search_with_score(query, k=4)
-        except Exception as e:
-            logger.info(f'Grips Search error: {e}')
-            grips_docs_and_scores = []
-
-    # Search Document Chunks
-    if rag_service:
-        try:
-            rag_docs_and_scores = rag_service.store.similarity_search_with_score(query, k=5)
-        except Exception as e:
-            logger.info(f'RAG Search error: {e}')
-            rag_docs_and_scores = []
-
-    # Unify results and apply lineage boost
     unified_results = []
     
-    # 1. Gather all returned RAG chunk IDs (Note: Langchain stores the FAISS/PGVector ID or metadata ID)
-    # We will use the metadata 'id' for RAG chunks, which corresponds to the PGVector ID
-    rag_ids_in_results = {str(d.metadata.get('id', '')) for d, score in rag_docs_and_scores if d.metadata.get('id')}
-    
-    from grips.models import ConceptNode
-    
-    for doc, score in grips_docs_and_scores:
-        concept_id = doc.metadata.get('concept_id')
-        boosted_score = score
-        source_chunk_id = None
-        source_doc_name = None
-        
-        if concept_id:
-            try:
-                node = ConceptNode.objects.get(id=concept_id)
-                if node.source_chunk:
-                    source_chunk_id = str(node.source_chunk.id)
-                    source_doc_name = node.source_chunk.metadata.get('filename', 'Unknown Document')
-                    # Lineage Boost: if this Grip's source chunk is ALSO in the RAG results, boost it highly
-                    # PGVector uses distance (lower is better), so we subtract to boost
-                    if source_chunk_id in rag_ids_in_results:
-                        boosted_score = boosted_score * 0.8  # Make distance smaller
-            except Exception:
-                pass
-                
-        unified_results.append({
-            'type': 'grip',
-            'doc': doc,
-            'original_score': score,
-            'boosted_score': boosted_score,
-            'source_chunk_id': source_chunk_id,
-            'source_doc_name': source_doc_name
-        })
-        
-    for doc, score in rag_docs_and_scores:
-        chunk_id = str(doc.metadata.get('id', ''))
-        boosted_score = score
-        # Lineage Boost: if this RAG chunk spawned a Grip that is in our results, boost it highly
-        if any(r['source_chunk_id'] == chunk_id for r in unified_results if r['type'] == 'grip'):
-            boosted_score = boosted_score * 0.8 # Make distance smaller
-            
-        unified_results.append({
-            'type': 'rag',
-            'doc': doc,
-            'original_score': score,
-            'boosted_score': boosted_score
-        })
-        
-    # Sort by boosted score (lower distance is better)
-    unified_results.sort(key=lambda x: x['boosted_score'])
+    for r in retrieval_results:
+        if r.source == "grips":
+            source_doc_name = None
+            if r.source_chunk_id:
+                try:
+                    from background_resources.models import RAGChunk
+                    chunk = RAGChunk.objects.get(id=r.source_chunk_id)
+                    source_doc_name = chunk.metadata.get('filename', 'Unknown Document')
+                except Exception:
+                    pass
+            unified_results.append({
+                'type': 'grip',
+                'doc': r.doc,
+                'source_doc_name': source_doc_name
+            })
+        else:
+            unified_results.append({
+                'type': 'rag',
+                'doc': r.doc
+            })
 
     return render(request, 'demo_ui/search_results.html', {
         'unified_results': unified_results,
