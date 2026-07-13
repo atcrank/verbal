@@ -71,19 +71,34 @@ class Conversation(models.Model):
     def __str__(self):
         return f"Conversation with {self.user.username} (started {self.start_time.strftime('%Y-%m-%d')})"
 
-    def as_messages(self, leaf_log_id=None):
+    def as_messages(self, leaf_log_id=None, max_logs: int | None = None):
         """
-         Traces the path from the specified leaf_log_id back to the root.
-         If no leaf is provided, it defaults to the most recently created log.
+        Reconstructs the conversation as a list of message dicts.
+
+        Traces the path from the specified leaf_log_id back to the root.
+        If no leaf is provided, it defaults to the most recently created log.
+
+        When max_logs is set, only the most recent N logs are included in the
+        returned messages, with the original system prompt preserved and a
+        condensation note inserted. This prevents unbounded context growth
+        for long-running conversations.
+
+        If max_logs is None, a default is derived from the active model's
+        context_window (roughly context_window / 200 tokens per log pair,
+        capped at 50). Pass max_logs=0 to disable limiting.
         """
         messages = []
         logs = list(self.logs.order_by('created_at'))
         if not logs:
             return messages
 
+        # Resolve max_logs default from model context window
+        if max_logs is None:
+            max_logs = self._default_max_logs()
+
         # Check if the tree is linked
         is_linked = any(log.parent_log_id for log in logs)
-        
+
         path = []
         if is_linked:
             log_dict = {log.id: log for log in logs}
@@ -92,7 +107,7 @@ class Conversation(models.Model):
             else:
                 # Default to the most recent log as the active leaf
                 current_log = logs[-1]
-            
+
             while current_log:
                 path.append(current_log)
                 current_log = log_dict.get(current_log.parent_log_id)
@@ -100,7 +115,16 @@ class Conversation(models.Model):
         else:
             path = logs  # Fallback to chronological order
 
-        for log in path:
+        # Apply log window limit
+        condensed_count = 0
+        original_system_prompt = None
+        if max_logs > 0 and len(path) > max_logs:
+            # Preserve the system prompt from the earliest log
+            original_system_prompt = path[0].system_prompt
+            condensed_count = len(path) - max_logs
+            path = path[-max_logs:]
+
+        for i, log in enumerate(path):
             if log.system_prompt:
                 # Only append if it's different from the last system prompt
                 # (prevents cluttering when looping in the same step)
@@ -109,6 +133,18 @@ class Conversation(models.Model):
                         "role": "system",
                         "content": log.system_prompt
                     })
+
+            # Insert condensation note after restoring the system prompt
+            if i == 0 and condensed_count > 0:
+                if original_system_prompt and (not messages or messages[-1].get("content") != original_system_prompt):
+                    messages.insert(0, {
+                        "role": "system",
+                        "content": original_system_prompt
+                    })
+                messages.append({
+                    "role": "system",
+                    "content": f"[Context note: {condensed_count} earlier conversation turns were omitted to fit the context window. The conversation continues from this point.]"
+                })
 
             # This reconstructs the chat history turn-by-turn
             if log.user_prompt:
@@ -125,6 +161,27 @@ class Conversation(models.Model):
                 })
 
         return messages
+
+    def _default_max_logs(self) -> int:
+        """
+        Derives a sensible max_logs from the active model's context_window.
+
+        Heuristic: each log pair (user + assistant) averages ~200 tokens.
+        We reserve 30% of the context window for the new prompt + generation,
+        so usable_tokens = context_window * 0.7, and max_logs ≈ usable / 200.
+        Clamped to [6, 50].
+        """
+        try:
+            from llm_api.models import SystemConfiguration
+            config = SystemConfiguration.get_solo()
+            if config and config.active_local_model:
+                context_window = config.active_local_model.context_window
+            else:
+                context_window = 8000  # Conservative default
+            usable = int(context_window * 0.7)
+            return max(6, min(50, usable // 200))
+        except Exception:
+            return 20  # Safe fallback
 
     def get_workspace_dir(self):
         """Returns the absolute path to this conversation's dedicated workspace."""

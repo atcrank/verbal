@@ -690,18 +690,73 @@ class AIService:
                 total_tokens += len(self.tokenizer.encode(msg['content']))
             return total_tokens
 
-    def summarize_conversation(self, messages: list) -> str:
-        total_tokens = self.count_conversation_tokens(messages)
-        if total_tokens < 4000:
-            return messages
-        else:
-            system_prompt = messages[0]
-            summarize_these = messages[1:(len(messages)-1)//2] # for 13 msgs, get 1-6 for summarisation
-            summarization_instruction = [{"role": "system", "content": "Summarize this following conversation to ensure the assistant remembers the most important aspects of the user's requests."}]
-            # Unpack the list returned by generate_response
-            [summary_message] = self.generate_response2(summarization_instruction + summarize_these, max_new_tokens=400)
-            summary_message = self.clean_response(summary_message)
+    def summarize_conversation(self, messages: list) -> list:
+        """
+        Condenses conversation history to fit within the active model's context window.
 
-            system_prompt['content'] = system_prompt['content'] + "Summary:\n  " + summary_message + "\n"
-            new_messages = [system_prompt] + messages[((len(messages)-1)//2) - 1:]
-            return new_messages
+        Keeps the system prompt and recent messages intact. If the total token
+        count exceeds 70% of the context window, older middle messages are
+        summarized by the LLM and injected as a condensed system note.
+
+        Returns the (possibly condensed) message list — always a list.
+        """
+        total_tokens = self.count_conversation_tokens(messages)
+
+        # Read context limit from the active model configuration
+        try:
+            from llm_api.models import SystemConfiguration
+            config = SystemConfiguration.get_solo()
+            if config and config.active_local_model:
+                context_limit = int(config.active_local_model.context_window * 0.7)
+            else:
+                context_limit = 3000  # Conservative fallback
+        except Exception:
+            context_limit = 3000
+
+        if total_tokens < context_limit or len(messages) <= 3:
+            return messages
+
+        # Partition: system prompt | middle (to summarize) | recent (to keep)
+        system_prompt = messages[0] if messages[0].get("role") == "system" else None
+        keep_recent = 4  # Keep the last 4 messages verbatim
+        start_idx = 1 if system_prompt else 0
+
+        if len(messages) - start_idx <= keep_recent:
+            return messages  # Not enough to condense
+
+        summarize_these = messages[start_idx:-keep_recent]
+        recent = messages[-keep_recent:]
+
+        summarization_instruction = [{
+            "role": "system",
+            "content": (
+                "Condense the following conversation into a brief summary that preserves: "
+                "(1) the user's core goals and requirements, "
+                "(2) key decisions and conclusions reached, "
+                "(3) any unresolved questions or pending tasks. "
+                "Be concise — this summary replaces the original messages to save context space."
+            )
+        }]
+
+        try:
+            [summary_response] = self.generate_response2(
+                summarization_instruction + summarize_these,
+                max_new_tokens=400
+            )
+            summary_text = self.clean_response(summary_response)
+        except Exception as e:
+            logger.warning(f"Summarization failed, truncating instead: {e}")
+            summary_text = f"[{len(summarize_these)} earlier messages were omitted to fit the context window.]"
+
+        summary_msg = {
+            "role": "system",
+            "content": f"Summary of earlier conversation:\n{summary_text}"
+        }
+
+        condensed = []
+        if system_prompt:
+            condensed.append(system_prompt)
+        condensed.append(summary_msg)
+        condensed.extend(recent)
+
+        return condensed
