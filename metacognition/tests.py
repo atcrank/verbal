@@ -513,3 +513,168 @@ CognitiveBlueprint.objects.all().delete()
         backup_dir = os.path.join(settings.BASE_DIR, "backups")
         files = os.listdir(backup_dir)
         self.assertTrue(any(f.startswith("db_backup_") and f.endswith(".json") for f in files))
+
+
+class BlueprintEvolutionTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='evolveuser', password='password123')
+        self.bp = CognitiveBlueprint.objects.create(name="Evolvable BP")
+        self.step_a = ReasoningStep.objects.create(
+            blueprint=self.bp, name="Step A", is_start_node=True, system_prompt="Prompt A"
+        )
+        self.step_b = ReasoningStep.objects.create(
+            blueprint=self.bp, name="Step B", system_prompt="Prompt B"
+        )
+        self.step_a.on_success_step = self.step_b
+        self.step_a.save()
+
+    def test_resolve_active_steps_no_variants(self):
+        from metacognition.compiler import resolve_active_steps
+        resolved = resolve_active_steps(self.bp)
+        self.assertEqual(len(resolved), 2)
+        self.assertEqual(resolved[self.step_a.id].id, self.step_a.id)
+        self.assertEqual(resolved[self.step_b.id].id, self.step_b.id)
+
+    def test_resolve_active_steps_selects_active_leaf(self):
+        from metacognition.compiler import resolve_active_steps
+        # Retire root step A (or keep it active, but let's test with variant overrides)
+        self.step_a.is_active = False
+        self.step_a.save()
+        
+        variant_1 = self.step_a.create_variant(
+            variant_intent="V1", is_active=True, selection_weight=3.0
+        )
+        variant_2 = self.step_a.create_variant(
+            variant_intent="V2", is_active=True, selection_weight=7.0
+        )
+        
+        v1_count = 0
+        v2_count = 0
+        for _ in range(100):
+            resolved = resolve_active_steps(self.bp)
+            selected = resolved[self.step_a.id]
+            if selected.id == variant_1.id:
+                v1_count += 1
+            elif selected.id == variant_2.id:
+                v2_count += 1
+                
+        self.assertGreater(v2_count, 0)
+        self.assertGreater(v1_count, 0)
+        self.assertGreater(v2_count, v1_count)
+
+    def test_resolve_active_steps_excludes_inactive(self):
+        from metacognition.compiler import resolve_active_steps
+        self.step_a.is_active = False
+        self.step_a.save()
+        
+        variant_1 = self.step_a.create_variant(
+            variant_intent="V1", is_active=True, selection_weight=5.0
+        )
+        variant_2 = self.step_a.create_variant(
+            variant_intent="V2", is_active=False, selection_weight=5.0
+        )
+        
+        for _ in range(20):
+            resolved = resolve_active_steps(self.bp)
+            selected = resolved[self.step_a.id]
+            self.assertEqual(selected.id, variant_1.id)
+
+    @patch('metacognition.tasks.service_registry.ai_service.generate_response2')
+    def test_edge_remapping_through_variants(self, mock_generate):
+        mock_generate.return_value = ["Success result"]
+        # Create a variant of step B (which is step_a's success target)
+        self.step_b.is_active = False
+        self.step_b.save()
+        variant_b = self.step_b.create_variant(
+            variant_intent="V_B", is_active=True, system_prompt="Variant B Prompt"
+        )
+        
+        from metacognition.compiler import compile_graph_from_blueprint
+        graph = compile_graph_from_blueprint(self.bp)
+        
+        # Verify graph compilation works and start node exists
+        self.assertIsNotNone(graph)
+        
+        # Invoke the graph. It should run step A, evaluate success (no criteria so default to SUCCESS),
+        # then route to B's canonical ID, executing variant_b!
+        from metacognition.state import AgentState
+        from langchain_core.messages import HumanMessage
+        
+        state = AgentState(
+            working_memory=[HumanMessage(content="Hello")],
+            rag_context="",
+            route_to=None,
+            resume_to=None,
+            conversation_id="test-remap-1",
+            user_id=self.user.id,
+            step_count=0,
+            max_steps=5,
+            retries_remaining={},
+            internal_monologue=[],
+            scratch={},
+            token_budget_remaining=8000
+        )
+        
+        config = {"configurable": {"thread_id": "test-remap-1"}}
+        final_state = graph.invoke(state, config)
+        
+        monologue = final_state.get("internal_monologue", [])
+        self.assertEqual(len(monologue), 2)
+        self.assertEqual(monologue[0]["step_name"], "Step A")
+        self.assertEqual(monologue[1]["step_name"], "Step B")
+        self.assertEqual(monologue[1]["system_prompt"], "Variant B Prompt")
+
+    def test_create_variant_sets_pending_review(self):
+        variant = self.step_a.create_variant(
+            variant_intent="Intent review",
+            is_pending_review=True,
+            proposed_by="system"
+        )
+        self.assertTrue(variant.is_pending_review)
+        self.assertEqual(variant.proposed_by, "system")
+        self.assertEqual(variant.parent_step.id, self.step_a.id)
+
+    def test_blueprint_parent_lineage(self):
+        # Test clone sets parent
+        from metacognition.admin import clone_blueprint
+        class DummyRequest:
+            pass
+        
+        # Set performance scores on steps to check family_success_probability
+        self.step_a.performance_score = 0.8
+        self.step_a.save()
+        self.step_b.performance_score = 0.9
+        self.step_b.save()
+        
+        self.assertAlmostEqual(self.bp.family_success_probability, 0.72)
+        
+        class DummyAdmin:
+            def message_user(self, *args, **kwargs):
+                pass
+        
+        clone_blueprint(DummyAdmin(), DummyRequest(), CognitiveBlueprint.objects.filter(id=self.bp.id))
+        
+        cloned = CognitiveBlueprint.objects.filter(name="Copy of Evolvable BP").first()
+        self.assertIsNotNone(cloned)
+        self.assertEqual(cloned.parent.id, self.bp.id)
+        # Cloned blueprint step scores initially 0.0, so family success is None
+        self.assertIsNone(cloned.family_success_probability)
+
+    def test_summarizer_truncates_memory(self):
+        from metacognition.summarizer import summarize_if_needed
+        from langchain_core.messages import SystemMessage, HumanMessage
+        
+        sys_msg = SystemMessage(content="System prompt")
+        messages = [sys_msg] + [HumanMessage(content=f"User msg {i}") for i in range(15)]
+        
+        state = {
+            "working_memory": messages,
+            "token_budget_remaining": 20 # Low budget to force truncation
+        }
+        
+        result = summarize_if_needed(state)
+        self.assertIn("working_memory", result)
+        new_memory = result["working_memory"]
+        self.assertLess(len(new_memory), len(messages))
+        self.assertEqual(new_memory[0].content, "System prompt")
+        self.assertEqual(new_memory[-1].content, "User msg 14")

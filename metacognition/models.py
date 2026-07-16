@@ -85,9 +85,29 @@ class CognitiveBlueprint(models.Model):
     """
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, help_text="Describes when the Router should select this blueprint.")
+    parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, 
+                                related_name='descendants',
+                                help_text="The Blueprint this was cloned from, for lineage tracking.")
     moderation_lists = models.ManyToManyField(ModerationList, blank=True, help_text="Reusable moderation rules applied to all steps in this blueprint.")
     is_autonomous = models.BooleanField(default=False, help_text="If True, self-routing on failure (route_to=SELF) is handled automatically rather than pausing for user input.")
     is_canonical = models.BooleanField(default=False, help_text="If True, this object is maintained by seed.py and cannot be mutated.")
+
+    @property
+    def family_success_probability(self):
+        from metacognition.compiler import resolve_active_steps
+        try:
+            resolved = resolve_active_steps(self)
+        except Exception:
+            return None
+        if not resolved:
+            return None
+        scores = [step.performance_score for step in resolved.values()]
+        if all(s == 0.0 for s in scores):
+            return None
+        prod = 1.0
+        for s in scores:
+            prod *= s
+        return prod
 
     def save(self, *args, force_canonical_update=False, **kwargs):
         if self.pk and self.is_canonical and not force_canonical_update and not is_lock_bypassed():
@@ -97,6 +117,17 @@ class CognitiveBlueprint(models.Model):
     def __str__(self):
         return self.name
 
+
+class ReasoningStepQuerySet(models.QuerySet):
+    def active_for_blueprint(self, blueprint):
+        return self.filter(is_active=True, blueprint=blueprint)
+
+class ReasoningStepManager(models.Manager):
+    def get_queryset(self):
+        return ReasoningStepQuerySet(self.model, using=self._db)
+
+    def active_for_blueprint(self, blueprint):
+        return self.get_queryset().active_for_blueprint(blueprint)
 
 class ReasoningStep(models.Model):
     """
@@ -112,6 +143,14 @@ class ReasoningStep(models.Model):
     is_canonical = models.BooleanField(default=False, help_text="If True, this object is maintained by seed.py and cannot be mutated.")
     is_active = models.BooleanField(default=True, help_text="Set to False to soft-delete a bad leaf node variant while retaining it for historical tracking.")
     lora_adapter = models.ForeignKey('llm_api.LoRAAdapter', on_delete=models.SET_NULL, null=True, blank=True, help_text="Optional specialized LoRA weights to load when running this specific step.")
+
+    is_pending_review = models.BooleanField(default=False, 
+        help_text="Set by NightManager when proposing a new variant for human review.")
+    proposed_by = models.CharField(max_length=20, choices=[('system', 'System'), ('user', 'User')], 
+        default='user')
+    proposed_at = models.DateTimeField(null=True, blank=True)
+
+    objects = ReasoningStepManager()
 
     # The core instruction for this specific step
     system_prompt = models.TextField(help_text="The prompt driving this step. For a pre-written plan, instruct the LLM to output a specific sequence of tools in the ExecutionPlan.")
@@ -171,6 +210,7 @@ class ReasoningStep(models.Model):
         new_step.parent_step = self
         new_step.is_canonical = False
         new_step.variant_intent = variant_intent
+        new_step.performance_score = 0.0
         
         for key, value in overrides.items():
             setattr(new_step, key, value)

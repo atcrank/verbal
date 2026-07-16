@@ -5,48 +5,30 @@ logger = logging.getLogger(__name__)
 
 def summarize_if_needed(state: dict) -> dict:
     """
-    Node function that checks the token budget of the working memory.
-    If the budget is exceeded, it uses the AI service to summarize
-    older messages and condense them, retaining the system prompt and
-    the most recent messages.
+    Truncates working_memory to fit within token budget.
+    Keeps: system message (first) + last N messages that fit.
     """
-    working_memory = state.get("working_memory", [])
-    budget = state.get("token_budget_remaining")
+    budget = state.get("token_budget_remaining", 8000)
+    if budget >= 500:
+        return {}  # No action needed
     
-    # Not enough messages to summarize
-    if len(working_memory) <= 3:
-        return {"working_memory": working_memory}
-        
-    # In a real implementation, we would count tokens here
-    # For V1, we'll implement a simple sliding window heuristic
-    # If we have more than 10 messages, summarize the middle ones
+    working_memory = list(state.get("working_memory", []))
+    if len(working_memory) <= 2:
+        return {}  # Nothing to truncate
     
-    if len(working_memory) > 10:
-        logger.info(f"Summarizing working memory: {len(working_memory)} messages")
-        
-        system_msgs = [m for m in working_memory if isinstance(m, SystemMessage)]
-        recent_msgs = working_memory[-4:]
-        
-        # Extract the middle messages to summarize
-        middle_msgs = [m for m in working_memory if m not in system_msgs and m not in recent_msgs]
-        
-        if not middle_msgs:
-            return {"working_memory": working_memory}
-            
-        # In a full implementation, we'd call the LLM here to summarize middle_msgs
-        # For now, we'll just compress them into a system note to save tokens immediately
-        # while keeping the structural framework.
-        
-        summary_text = f"[System Note: {len(middle_msgs)} older messages were condensed to save memory. They contained prior reasoning steps and context.]"
-        summary_msg = SystemMessage(content=summary_text)
-        
-        new_memory = system_msgs + [summary_msg] + recent_msgs
-        
-        # We don't return the mutated list directly if we are using the add_messages reducer
-        # However, LangGraph's add_messages requires returning the full list if we want to 
-        # overwrite or remove messages (by using RemoveMessage or specific IDs).
-        # A simpler approach for the prototype is to just replace the whole list in state.
-        
-        return {"working_memory": new_memory}
-        
-    return {"working_memory": working_memory}
+    # Keep system message + at least the last user message
+    system_msg = working_memory[0] if working_memory else None
+    remaining = working_memory[1:]
+    
+    # Estimate tokens per message, keep from the end
+    kept = []
+    token_estimate = 0
+    for msg in reversed(remaining):
+        msg_tokens = int(len(str(getattr(msg, 'content', '')).split()) * 1.3)
+        if token_estimate + msg_tokens > budget * 0.7:  # Leave 30% headroom
+            break
+        kept.insert(0, msg)
+        token_estimate += msg_tokens
+    
+    new_memory = ([system_msg] if system_msg else []) + kept
+    return {"working_memory": new_memory}

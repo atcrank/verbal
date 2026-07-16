@@ -5,8 +5,8 @@ from langchain_core.messages import BaseMessage
 # Reducer functions
 def add_messages(left: list[BaseMessage], right: list[BaseMessage]) -> list[BaseMessage]:
     """Reducer for working memory: appends new messages."""
-    # LangGraph's native add_messages handles ID deduplication,
-    # but a simple list concatenation works if we don't supply message IDs
+    if right and getattr(right[0], 'content', '') == '__OVERWRITE_WORKING_MEMORY__':
+        return right[1:]
     return left + right
 
 def update_monologue(left: list[Dict], right: list[Dict]) -> list[Dict]:

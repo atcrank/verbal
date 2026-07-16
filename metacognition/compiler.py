@@ -16,6 +16,47 @@ from .summarizer import summarize_if_needed
 logger = logging.getLogger(__name__)
 
 
+def _find_lineage_root(step: ReasoningStep) -> ReasoningStep:
+    """Walk parent_step chain to find the canonical root."""
+    current = step
+    seen = set()
+    while current.parent_step and current.parent_step.id not in seen:
+        seen.add(current.id)
+        current = current.parent_step
+    return current
+
+
+def resolve_active_steps(blueprint: CognitiveBlueprint) -> Dict[int, ReasoningStep]:
+    """
+    Selects the active variant for each step lineage in a blueprint.
+    Returns {canonical_step_id: selected_ReasoningStep}.
+    """
+    import random
+    active_steps = ReasoningStep.objects.active_for_blueprint(blueprint)
+    
+    # Group by lineage root
+    lineage_groups = {}  # root_id -> [variants]
+    standalone = {}      # steps with no lineage
+    
+    for step in active_steps:
+        root = _find_lineage_root(step)
+        if root.id == step.id and not step.variants.filter(is_active=True).exists():
+            # This step IS the root AND has no active variants — it's standalone
+            standalone[step.id] = step
+        else:
+            lineage_groups.setdefault(root.id, []).append(step)
+            
+    resolved = dict(standalone)
+    for root_id, variants in lineage_groups.items():
+        weights = [max(v.selection_weight, 0.01) for v in variants]  # floor to avoid zero weights
+        [selected] = random.choices(variants, weights=weights, k=1)
+        resolved[root_id] = selected
+        logger.info(f"Variant selection for lineage {root_id}: selected '{selected.name}' "
+                    f"(weight={selected.selection_weight}, id={selected.id})")
+                    
+    return resolved
+
+
 def _make_step_node(step: ReasoningStep):
     """
     Creates a node function closure for a given ReasoningStep.
@@ -36,6 +77,7 @@ def _make_step_node(step: ReasoningStep):
         current_budget = state.get("token_budget_remaining")
         working_memory = list(state.get("working_memory", []))
         
+        summarizer_triggered = False
         if current_budget is not None:
             # Estimate word count
             word_count = sum(len(str(m.content).split()) for m in working_memory if hasattr(m, 'content'))
@@ -45,12 +87,14 @@ def _make_step_node(step: ReasoningStep):
             # Update state dict to pass to summarizer if it triggers
             temp_state = dict(state)
             temp_state["token_budget_remaining"] = current_budget
+            temp_state["working_memory"] = working_memory
             
             if current_budget < 500: # Threshold to trigger summarizer
                 from metacognition.summarizer import summarize_if_needed
                 summary_updates = summarize_if_needed(temp_state)
                 if "working_memory" in summary_updates:
-                    logger.warning("Summarizer triggered, but working_memory rewriting requires LangGraph RemoveMessage (not implemented in V1).")
+                    working_memory = summary_updates["working_memory"]
+                    summarizer_triggered = True
         else:
             # Initialize if not set
             current_budget = 8000
@@ -85,7 +129,6 @@ def _make_step_node(step: ReasoningStep):
         sys_msg = SystemMessage(content=system_prompt)
         
         # Ensure we don't duplicate the system prompt if it's already the first message
-        working_memory = list(state.get("working_memory", []))
         messages = working_memory
         
         if not messages or not isinstance(messages[0], SystemMessage):
@@ -312,15 +355,21 @@ def _make_step_node(step: ReasoningStep):
                 route_to = "SUCCESS" if evaluation_passed else "FAILURE"
                 
             # Intercept FAILURE if it loops back to itself, change to USER_INPUT_REQUIRED unless autonomous
-            if route_to == "FAILURE" and step.on_failure_step and step.on_failure_step.id == step.id:
+            if route_to == "FAILURE" and step.on_failure_step and _find_lineage_root(step.on_failure_step).id == _find_lineage_root(step).id:
                 if step.blueprint.is_autonomous:
                     route_to = "SELF"
                 else:
                     route_to = "USER_INPUT_REQUIRED"
-                    resume_to = f"step_{step.id}"
+                    resume_to = f"step_{_find_lineage_root(step).id}"
                 
         # Update state
         new_messages = [AIMessage(content=str(result))] + additional_messages
+        
+        if summarizer_triggered:
+            sentinel = SystemMessage(content='__OVERWRITE_WORKING_MEMORY__')
+            final_memory = [sentinel] + working_memory + new_messages
+        else:
+            final_memory = new_messages
         
         # Telemetry: Update the PromptResponseLog with the step's final status
         if log_kwargs.get("log_ids"):
@@ -335,7 +384,7 @@ def _make_step_node(step: ReasoningStep):
         
         
         return {
-            "working_memory": new_messages,  # Reducer will append this
+            "working_memory": final_memory,  # Reducer will append or overwrite
             "route_to": route_to,
             "resume_to": resume_to,
             "step_count": step_count,
@@ -348,7 +397,6 @@ def _make_step_node(step: ReasoningStep):
     return step_node
 
 
-
 def _make_router(step: ReasoningStep, all_steps: Dict[int, ReasoningStep]):
     """
     Creates a router function for conditional edges based on state["route_to"].
@@ -356,8 +404,10 @@ def _make_router(step: ReasoningStep, all_steps: Dict[int, ReasoningStep]):
     def router(state: AgentState) -> List[str] | str:
         route = state.get("route_to")
         
+        canonical_self_id = _find_lineage_root(step).id
+        
         if route == "SELF":
-            return f"step_{step.id}"
+            return f"step_{canonical_self_id}"
             
         elif route == "USER_INPUT_REQUIRED":
             return "interrupt_node"
@@ -366,15 +416,15 @@ def _make_router(step: ReasoningStep, all_steps: Dict[int, ReasoningStep]):
             # Handle Fan-Out
             parallel_targets = step.parallel_steps.all()
             if parallel_targets.exists():
-                return [Send(f"step_{p.id}", state) for p in parallel_targets]
+                return [Send(f"step_{_find_lineage_root(p).id}", state) for p in parallel_targets]
                 
             if step.on_success_step:
-                return f"step_{step.on_success_step.id}"
+                return f"step_{_find_lineage_root(step.on_success_step).id}"
             return END
             
         elif route == "FAILURE":
             if step.on_failure_step:
-                return f"step_{step.on_failure_step.id}"
+                return f"step_{_find_lineage_root(step.on_failure_step).id}"
             return END
             
         # Default fallback
@@ -387,23 +437,18 @@ def compile_graph_from_blueprint(blueprint: CognitiveBlueprint) -> CompiledState
     """
     Reads Django models and emits a LangGraph StateGraph.
     """
-    steps = {s.id: s for s in blueprint.steps.all()}
+    resolved = resolve_active_steps(blueprint)
+    steps = resolved  # {canonical_id: selected_variant}
     if not steps:
         raise ValueError(f"Blueprint {blueprint.name} has no steps.")
         
     builder = StateGraph(AgentState)
     
     # Add nodes
-    for step_id, step in steps.items():
-        node_name = f"step_{step_id}"
+    for canonical_id, step in steps.items():
+        node_name = f"step_{canonical_id}"
         builder.add_node(node_name, _make_step_node(step))
         
-    # Add summarizer as a general pre-processing node
-    # Since LangGraph edges go from node to node, we could inject the summarizer
-    # before every step. For simplicity, we'll just add it as a node that the router
-    # could potentially route through, or we can just call it inside _make_step_node.
-    # To keep the graph pure, calling it inside the step_node is actually cleaner for V1.
-    
     # Add dummy interrupt node
     def interrupt_node_func(state: AgentState) -> dict:
         # When graph resumes, we route to wherever resume_to pointed.
@@ -417,11 +462,12 @@ def compile_graph_from_blueprint(blueprint: CognitiveBlueprint) -> CompiledState
         # Fallback to the first created step
         start_step = blueprint.steps.order_by('id').first()
         
-    builder.set_entry_point(f"step_{start_step.id}")
+    start_canonical_id = _find_lineage_root(start_step).id
+    builder.set_entry_point(f"step_{start_canonical_id}")
     
     # Add edges
-    for step_id, step in steps.items():
-        node_name = f"step_{step_id}"
+    for canonical_id, step in steps.items():
+        node_name = f"step_{canonical_id}"
         
         builder.add_conditional_edges(
             node_name,
