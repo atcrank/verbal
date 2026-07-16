@@ -23,9 +23,34 @@ class ScenarioGroup(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     scenarios = models.ManyToManyField('BenchmarkScenario', related_name='groups', blank=True)
+    updated_at = models.DateTimeField(auto_now=True, help_text="Automatically updates when modified.")
 
     def __str__(self):
         return self.name
+
+class FineTuningDataset(models.Model):
+    """A physical export of a ScenarioGroup (e.g. JSONL) used for training."""
+    name = models.CharField(max_length=255)
+    scenario_group = models.ForeignKey(ScenarioGroup, on_delete=models.SET_NULL, null=True, blank=True, related_name="datasets")
+    file_path = models.CharField(max_length=500, help_text="Absolute path to the exported .jsonl file")
+    created_at = models.DateTimeField(auto_now_add=True)
+    format = models.CharField(max_length=50, default="sharegpt", choices=[("sharegpt", "ShareGPT"), ("openai", "OpenAI")])
+
+    # Calculated Metrics
+    example_count = models.IntegerField(default=0, help_text="Number of scenarios in dataset")
+    total_tokens = models.IntegerField(default=0, help_text="Estimated total tokens")
+    semantic_diversity_score = models.FloatField(null=True, blank=True, help_text="Average cosine distance between examples (0.0 to 1.0). Higher is better.")
+    estimated_training_minutes = models.IntegerField(default=0, help_text="Estimated training time on typical GPU")
+
+    @property
+    def is_stale(self):
+        """Returns True if the parent ScenarioGroup has been updated since this dataset was created."""
+        if self.scenario_group and self.scenario_group.updated_at:
+            return self.scenario_group.updated_at > self.created_at
+        return False
+
+    def __str__(self):
+        return f"{self.name} ({self.format})"
 
 class BenchmarkScenario(models.Model):
     """A single test case: Question + Expected Truth."""

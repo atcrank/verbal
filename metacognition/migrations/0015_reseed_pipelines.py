@@ -13,5 +13,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(run_seed_all, reverse_code=migrations.RunPython.noop),
+        migrations.RunPython(migrations.RunPython.noop, reverse_code=migrations.RunPython.noop),
     ]

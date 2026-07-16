@@ -45,6 +45,8 @@ The final response of the agent should reflect a completed state or a report of 
 ::
 
     >>> final_str = result.get("final_response", "")
-    >>> # We just check that the agent returned a string response
-    >>> print(f"- completed response: {1 if final_str else 0}/1")
+    >>> monologue = result.get("internal_monologue", [])
+    >>> # Check that the agent returned a string response and didn't abort loop
+    >>> aborted = any(entry.get("failed", False) and "ABORTED:" in entry.get("output", "") for entry in monologue)
+    >>> print(f"- completed response: {1 if final_str and not aborted else 0}/1")
     - completed response: 1/1

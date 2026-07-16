@@ -80,7 +80,11 @@ class AIService:
             if config:
                 tokenizer_id = config.system_tokenizer_id
                 
-                if config.active_local_model:
+                if config.hosting_backend == 'vllm':
+                    logger.info('📂 System Config: vLLM is enabled. Bypassing PyTorch load.')
+                elif config.hosting_backend == 'ollama':
+                    logger.info('📂 System Config: Ollama is enabled. Bypassing PyTorch load.')
+                elif config.hosting_backend == 'pytorch' and config.active_local_model:
                     self.model_id = config.active_local_model.hf_model_id
                     logger.info(f'📂 System Config requests PyTorch load for: {self.model_id}')
         except Exception as e:
@@ -169,6 +173,35 @@ class AIService:
             torch.cuda.empty_cache()
         logger.info('✅ VRAM cleared.')
 
+    def set_active_adapter(self, adapter_path: str = None, adapter_name: str = None):
+        """Swaps the active LoRA adapter on the loaded PyTorch model."""
+        if not self.model or self.role in ["web", "worker"]:
+            return
+            
+        if not adapter_path and not adapter_name:
+            # Disable adapter if none is requested
+            if hasattr(self.model, "disable_adapters"):
+                self.model.disable_adapters()
+            return
+            
+        # If model doesn't support PEFT natively, it might need to be wrapped.
+        # But bitsandbytes models loaded via AutoModelForCausalLM usually support load_adapter if peft is installed.
+        if not hasattr(self.model, "load_adapter"):
+            logger.error("Model does not support PEFT adapters natively. Ensure 'peft' is installed.")
+            return
+            
+        try:
+            # If it's already loaded, just set it
+            if hasattr(self.model, "active_adapters") and adapter_name in self.model.peft_config:
+                self.model.set_adapter(adapter_name)
+            else:
+                # Load from disk/hub
+                self.model.load_adapter(adapter_path, adapter_name=adapter_name)
+                self.model.set_adapter(adapter_name)
+            logger.info(f"✅ Successfully activated LoRA adapter: {adapter_name}")
+        except Exception as e:
+            logger.error(f"Failed to load adapter {adapter_name} from {adapter_path}: {e}")
+
     def _extract_prompts(self, messages):
         system_prompt = ""
         user_prompt = ""
@@ -200,7 +233,13 @@ class AIService:
             input_tokens = self.count_conversation_tokens(messages)
             
             for text in generated_texts:
-                text_to_save = text.model_dump_json(indent=2) if hasattr(text, 'model_dump_json') else str(text)
+                if hasattr(text, 'model_dump_json'):
+                    text_to_save = text.model_dump_json(indent=2)
+                elif isinstance(text, (list, dict)):
+                    import json
+                    text_to_save = json.dumps(text, indent=2)
+                else:
+                    text_to_save = str(text)
                 
                 output_tokens = self.count_conversation_tokens([{"role": "assistant", "content": text_to_save}])
                 
@@ -225,6 +264,23 @@ class AIService:
         api_url = f"{self.inference_url.rstrip('/')}/v1/chat/completions"
         api_key = None
         target_model = "local-model"
+        
+        # 0. System Config Defaults (if no user override)
+        try:
+            from .models import SystemConfiguration
+            from django.conf import settings
+            config = SystemConfiguration.get_solo()
+            if config:
+                if config.hosting_backend == 'vllm':
+                    vllm_url = getattr(settings, 'VLLM_BASE_URL', 'http://vllm:8000')
+                    api_url = f"{vllm_url.rstrip('/')}/v1/chat/completions"
+                    target_model = config.active_vllm_model.hf_model_id if config.active_vllm_model else target_model
+                elif config.hosting_backend == 'ollama':
+                    ollama_url = getattr(settings, 'OLLAMA_BASE_URL', 'http://ollama:11434')
+                    api_url = f"{ollama_url.rstrip('/')}/v1/chat/completions"
+                    target_model = config.active_ollama_model.hf_model_id if config.active_ollama_model else target_model
+        except Exception:
+            pass
         
         # 1. Inspect User Settings
         if user and not getattr(user, 'is_anonymous', False):
@@ -295,7 +351,7 @@ class AIService:
                                 "args": json.loads(args_str),
                                 "id": tc.get("id", f"call_{i}")
                             })
-                        content = f"<tool_calls>{json.dumps(tool_calls)}</tool_calls>"
+                        content = tool_calls
                     except Exception as e:
                         logger.error(f"Failed to parse tool_calls from OpenAI API: {e}")
                 results.append(content)
@@ -499,15 +555,47 @@ class AIService:
             self._log_generation(working_messages, [err_result], log_kwargs)
             return [err_result]
 
-    def generate_response2(self, messages, max_new_tokens=1024, num_return_sequences=1, temperature=0.7, log_kwargs=None, user=None, tools=None):
+    def supports_native_tools(self, user=None) -> bool:
+        """Returns True if the current configuration supports native tool calling (e.g. OpenAI/Ollama proxy)."""
+        needs_proxy = self.role in ["web", "worker"]
+        try:
+            from .models import SystemConfiguration
+            config = SystemConfiguration.get_solo()
+            if config and config.hosting_backend in ['vllm', 'ollama']:
+                needs_proxy = True
+        except Exception:
+            pass
+
+        if user and not getattr(user, 'is_anonymous', False):
+            from .models import UserActiveModel
+            if UserActiveModel.objects.filter(user=user, use_external=True).exists():
+                needs_proxy = True
+        return needs_proxy
+
+    def generate_response2(self, messages,
+                           max_new_tokens=500,
+                           temperature=0.7,
+                           log_kwargs=None,
+                           user=None,
+                           num_return_sequences=1,
+                           tools=None,
+                           lora_adapter=None):
         """
-        Facade for standard unstructured chat completions.
+        Generates an unstructured text response.
         
         Delegates to `_execute_generation_with_retries` to handle proxy routing, local model 
         VRAM loading, and Active RAG loops. `num_return_sequences` can be used to generate 
         multiple alternative responses to the same prompt.
         """
         needs_proxy = self.role in ["web", "worker"]
+        try:
+            from .models import SystemConfiguration
+            config = SystemConfiguration.get_solo()
+            if config and config.hosting_backend in ['vllm', 'ollama']:
+                needs_proxy = True
+        except Exception:
+            pass
+
         if user and not getattr(user, 'is_anonymous', False):
             from .models import UserActiveModel
             if UserActiveModel.objects.filter(user=user, use_external=True).exists():
@@ -515,6 +603,7 @@ class AIService:
 
         if needs_proxy:
             def proxy_callable(msgs, max_tok, temp, n):
+                # Optionally pass lora_adapter to external proxy request in future
                 res = self._execute_openai_standard_request(msgs, max_tok, temp, n, None, user=user, tools=tools)
                 return res if isinstance(res, list) else [res]
             generate_callable = proxy_callable
@@ -525,6 +614,13 @@ class AIService:
                         self.load_models()
                     if self.model is None:
                         raise RuntimeError("No Local AI Model is active in System Configuration, and no External API is configured for this user.")
+                        
+                    # Load appropriate LoRA adapter if specified
+                    if lora_adapter:
+                        self.set_active_adapter(adapter_path=lora_adapter.file_path, adapter_name=lora_adapter.name)
+                    else:
+                        self.set_active_adapter(None)
+                        
                     msgs_summary = self.summarize_conversation(msgs)
 
                     prompt = self.tokenizer.apply_chat_template(
@@ -564,7 +660,8 @@ class AIService:
                          temperature=0.7,
                          log_kwargs=None,
                          user=None,
-                         num_return_sequences=1):
+                         num_return_sequences=1,
+                         lora_adapter=None):
         """
         Facade for structured generation (JSON/Pydantic) using the `outlines` library.
         
@@ -583,6 +680,14 @@ class AIService:
         logger.info(" ".join([str(x) for x in ['Generate Outline Called', type(messages), response_schema]]))
 
         needs_proxy = self.role in ["web", "worker"]
+        try:
+            from .models import SystemConfiguration
+            config = SystemConfiguration.get_solo()
+            if config and config.hosting_backend in ['vllm', 'ollama']:
+                needs_proxy = True
+        except Exception:
+            pass
+
         if user and not getattr(user, 'is_anonymous', False):
             from .models import UserActiveModel
             if UserActiveModel.objects.filter(user=user, use_external=True).exists():
@@ -601,6 +706,12 @@ class AIService:
                         
                     if self.outline_pipeline is None:
                         raise RuntimeError("No Local AI Model is active in System Configuration.")
+                        
+                    # Load appropriate LoRA adapter if specified
+                    if lora_adapter:
+                        self.set_active_adapter(adapter_path=lora_adapter.file_path, adapter_name=lora_adapter.name)
+                    else:
+                        self.set_active_adapter(None)
 
                     cache_key = self._get_schema_cache_key(response_schema)
                     if cache_key not in self._generator_cache:

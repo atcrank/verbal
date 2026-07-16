@@ -65,9 +65,10 @@ def _report_doctest_run(test_name, prompt, result):
     filename = f"metacognition/metacognition_trials/{test_name}_report.rst"
     
     with open(filename, "w", encoding="utf-8") as f:
-        f.write(f"========================================\n")
-        f.write(f"Doctest Report: {test_name}\n")
-        f.write(f"========================================\n\n")
+        report_title = f"Doctest Report: {test_name}\n"
+        f.write(f"{"=" * len(report_title)}\n")
+        f.write(report_title)
+        f.write(f"{"=" * len(report_title)}\n\n")
         f.write(f"Date: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
         
         f.write("Conversation Prompts\n--------------------\n\n::\n\n")

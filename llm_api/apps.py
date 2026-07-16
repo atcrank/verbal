@@ -34,10 +34,9 @@ class LazyServiceRegistry:
             from .ollama_client import set_ollama_model_state
             config = SystemConfiguration.get_solo()
             if config and config.active_ollama_model:
-                # If a local PyTorch model is active, unload Ollama to free VRAM. Otherwise, load it.
-                active = not bool(config.active_local_model)
-                logger.info(f"SYNC: Setting Ollama model '{config.active_ollama_model}' active state to: {active}")
-                set_ollama_model_state(config.active_ollama_model, active=active)
+                active = config.hosting_backend == 'ollama'
+                logger.info(f"SYNC: Setting Ollama model '{config.active_ollama_model.name}' active state to: {active}")
+                set_ollama_model_state(config.active_ollama_model.hf_model_id, active=active)
         except Exception as e:
             logger.info(f'SYNC: Skipping Ollama startup sync due to error: {e}')
 

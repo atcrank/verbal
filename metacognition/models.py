@@ -1,5 +1,20 @@
 import logging
+import threading
+
 logger = logging.getLogger(__name__)
+
+_thread_locals = threading.local()
+
+class bypass_canonical_lock:
+    """Context manager to bypass the copy-on-write lock during seed.py operations."""
+    def __enter__(self):
+        _thread_locals.bypass = True
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        _thread_locals.bypass = False
+
+def is_lock_bypassed():
+    return getattr(_thread_locals, 'bypass', False)
+
 
 from django.db import models
 from llm_api.api import OUTPUT_TYPES  as LLM_OUTPUT_TYPES
@@ -71,6 +86,13 @@ class CognitiveBlueprint(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, help_text="Describes when the Router should select this blueprint.")
     moderation_lists = models.ManyToManyField(ModerationList, blank=True, help_text="Reusable moderation rules applied to all steps in this blueprint.")
+    is_autonomous = models.BooleanField(default=False, help_text="If True, self-routing on failure (route_to=SELF) is handled automatically rather than pausing for user input.")
+    is_canonical = models.BooleanField(default=False, help_text="If True, this object is maintained by seed.py and cannot be mutated.")
+
+    def save(self, *args, force_canonical_update=False, **kwargs):
+        if self.pk and self.is_canonical and not force_canonical_update and not is_lock_bypassed():
+            raise ValueError("Cannot mutate a canonical CognitiveBlueprint. Clone it instead.")
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
@@ -86,6 +108,10 @@ class ReasoningStep(models.Model):
 
     is_start_node = models.BooleanField(default=False,
                                         help_text="Check this if this is the first step in the blueprint.")
+    
+    is_canonical = models.BooleanField(default=False, help_text="If True, this object is maintained by seed.py and cannot be mutated.")
+    is_active = models.BooleanField(default=True, help_text="Set to False to soft-delete a bad leaf node variant while retaining it for historical tracking.")
+    lora_adapter = models.ForeignKey('llm_api.LoRAAdapter', on_delete=models.SET_NULL, null=True, blank=True, help_text="Optional specialized LoRA weights to load when running this specific step.")
 
     # The core instruction for this specific step
     system_prompt = models.TextField(help_text="The prompt driving this step. For a pre-written plan, instruct the LLM to output a specific sequence of tools in the ExecutionPlan.")
@@ -112,6 +138,7 @@ class ReasoningStep(models.Model):
     # Constraints & Formatting
     
     output_schema = models.ForeignKey(ResponseSchema, on_delete=models.SET_NULL, null=True, blank=True, help_text="Select a structured output format for this step.")
+    max_new_tokens = models.IntegerField(default=500, help_text="Maximum tokens to generate for this step. Increase for long-form analysis, decrease for short routing decisions.")
 
     # Quality Control
     evaluation_criteria = models.TextField(blank=True,
@@ -127,6 +154,36 @@ class ReasoningStep(models.Model):
 
     class Meta:
         ordering = ['id']  # Basic ordering, though the actual execution order is defined by the graph edges
+
+    def save(self, *args, force_canonical_update=False, **kwargs):
+        # Automatically inherit canonical status from parent blueprint on creation
+        if not self.pk and getattr(self, 'blueprint', None) and self.blueprint.is_canonical:
+            self.is_canonical = True
+            
+        if self.pk and self.is_canonical and not force_canonical_update and not is_lock_bypassed():
+            raise ValueError("Cannot mutate a canonical ReasoningStep. Call .create_variant() instead.")
+        super().save(*args, **kwargs)
+
+    def create_variant(self, variant_intent="", **overrides):
+        """Duplicates this step as a child variant, setting parent_step=self."""
+        new_step = self.__class__.objects.get(pk=self.pk)
+        new_step.pk = None
+        new_step.parent_step = self
+        new_step.is_canonical = False
+        new_step.variant_intent = variant_intent
+        
+        for key, value in overrides.items():
+            setattr(new_step, key, value)
+            
+        new_step.save()
+        
+        # Copy M2M relationships (available_tools)
+        new_step.available_tools.set(self.available_tools.all())
+        
+        # Parallel steps M2M
+        new_step.parallel_steps.set(self.parallel_steps.all())
+        
+        return new_step
 
     def __str__(self):
         return f"{self.blueprint.name} - {self.name}"

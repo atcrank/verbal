@@ -10,6 +10,8 @@ App achievements
 * **Automated Evaluation:** Scores model outputs mathematically using established metrics like Semantic Similarity and Faithfulness (grounding).
 * **Asynchronous Runners:** Benchmarking suites are delegated to Celery, allowing hundreds of tests to run in the background.
 * **Traceable Experiments:** Records all experiments, parameters, and historical benchmark runs directly in the database for longitudinal comparison.
+* **Data Flywheel & LoRA Training:** Export benchmark scenarios to Fine-Tuning Datasets (ShareGPT format) and trigger on-the-fly local LoRA fine-tuning using Unsloth.
+* **Dataset Quality Metrics:** Automatically calculates dataset metrics (token counts, semantic diversity via embeddings) and warns if data becomes stale compared to its source.
 
 App enhancement
 ---------------

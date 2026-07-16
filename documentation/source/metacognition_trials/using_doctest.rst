@@ -1,1 +1,1 @@
-.. include:: ../../../metacognition/metacognition_trials/using_doctest.rst
+.. include:: ../../../metacognition/metacognition_trials/using_doctest.txt

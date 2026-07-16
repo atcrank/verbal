@@ -168,6 +168,10 @@ VERBAL_ROLE = os.environ.get("VERBAL_ROLE", "standalone")
 # If acting as a web/worker client, where is the inference server?
 INFERENCE_URL = os.environ.get("INFERENCE_URL", "http://127.0.0.1:8001/api/llm")
 
+# Base URLs for external containerized inference endpoints
+OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://ollama:11434")
+VLLM_BASE_URL = os.environ.get("VLLM_BASE_URL", "http://vllm:8000")
+
 # ------------------------------------------------------------------------
 # CELERY & REDIS CONFIGURATION
 # ------------------------------------------------------------------------

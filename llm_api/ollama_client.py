@@ -3,8 +3,10 @@ logger = logging.getLogger(__name__)
 
 import requests
 
-# Matches the service name and port in your docker-compose.yml
-OLLAMA_BASE_URL = "http://ollama:11434"
+from django.conf import settings
+
+# Matches the service name and port in your docker-compose.yml (or overridden in settings)
+OLLAMA_BASE_URL = getattr(settings, "OLLAMA_BASE_URL", "http://ollama:11434")
 
 
 def get_available_ollama_models():

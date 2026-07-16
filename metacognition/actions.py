@@ -36,27 +36,29 @@ def handle_research(state: dict, llm_output: ResearchEvaluation) -> dict:
         state["working_prompt"] += "\n\n[SYSTEM: Research concluded without sufficient findings.]\n"
         state["route_to"] = "FAILURE"
     elif llm_output.status == "SEARCHING":
-        rag_service = service_registry.rag_service
-        grips_service = service_registry.grips_service
+        from background_resources.retrieval import unified_retrieve, format_context_block
+
+        all_queries = list(set(
+            (llm_output.rag_queries or []) + (llm_output.grips_queries or [])
+        ))
         aggregated_context = ""
-        
-        if rag_service and llm_output.rag_queries:
-            for q in llm_output.rag_queries:
-                docs = rag_service.get_context(q, k=2)
-                if docs:
-                    aggregated_context += f"\n\n--- RAG Results for '{q}' ---\n" + "\n".join([d.page_content for d in docs])
-                    
-        if grips_service and llm_output.grips_queries:
-            for q in llm_output.grips_queries:
-                docs = grips_service.get_grips_context(q, k=2)
-                if docs:
-                    aggregated_context += f"\n\n--- Grips Results for '{q}' ---\n" + "\n".join([d.page_content for d in docs])
-                    
+
+        for q in all_queries:
+            results = unified_retrieve(
+                query=q,
+                rag_service=service_registry.rag_service,
+                grips_service=service_registry.grips_service,
+                rag_k=2,
+                grips_k=2,
+            )
+            if results:
+                aggregated_context += f"\n\n--- Results for '{q}' ---\n" + format_context_block(results)
+
         if aggregated_context:
             state["working_prompt"] += f"\n\n[SYSTEM: Research Results]\n{aggregated_context}\n"
         else:
             state["working_prompt"] += "\n\n[SYSTEM: Searches returned no new information.]\n"
-            
+
         state["route_to"] = "SELF" # Loop back to re-evaluate the new context
     return state
 
@@ -86,34 +88,28 @@ def handle_difficult_prompt(state: dict, llm_output: DifficultPromptEvaluation) 
     if llm_output.action == "PROCEED":
         state["route_to"] = "SUCCESS"
     elif llm_output.action == "KNOWLEDGE_SEARCH":
-        rag_service = service_registry.rag_service
-        grips_service = service_registry.grips_service
-        
+        from background_resources.retrieval import unified_retrieve, format_context_block
+
         aggregated_context = ""
         print(f"🪝 Running Action Hook: handle_difficult_prompt (KNOWLEDGE_SEARCH) with queries: {llm_output.search_queries}")
-        
+
         for query in (llm_output.search_queries or []):
-            context_parts = []
-            
-            if grips_service:
-                grips_docs = grips_service.get_grips_context(query, k=2)
-                if grips_docs:
-                    context_parts.append("\n\n".join([f"Concept [{d.metadata.get('title', 'Unknown')}]:\n{d.page_content}" for d in grips_docs]))
-                    
-            if rag_service:
-                rag_docs = rag_service.get_context(query, k=2)
-                if rag_docs:
-                     context_parts.append("\n\n".join([f"Source: {d.metadata.get('filename', 'Unknown')}\nContent: {d.page_content}" for d in rag_docs]))
-                     
-            if context_parts:
+            results = unified_retrieve(
+                query=query,
+                rag_service=service_registry.rag_service,
+                grips_service=service_registry.grips_service,
+                rag_k=2,
+                grips_k=2,
+            )
+            if results:
                 aggregated_context += f"\n\n--- KNOWLEDGE SEARCH RESULTS FOR '{query}' ---\n"
-                aggregated_context += "\n---\n".join(context_parts)
-                
+                aggregated_context += format_context_block(results)
+
         if aggregated_context:
             state["working_prompt"] += f"\n\n[SYSTEM: Executed Knowledge Search for clarification: {', '.join(llm_output.search_queries)}]{aggregated_context}\n"
         else:
             state["working_prompt"] += f"\n\n[SYSTEM: Knowledge Search yielded no results. Please formulate a clarification question to ASK_USER.]\n"
-        
+
         state["route_to"] = "SELF"  # Loop back to re-evaluate with new info or to fall back to ASK_USER
     elif llm_output.action == "ASK_USER":
         state["working_prompt"] += f"\n\n--- SYSTEM PAUSE: WAITING FOR USER CLARIFICATION ---\nQuestion: {llm_output.clarification_question}\n"

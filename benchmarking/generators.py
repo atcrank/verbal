@@ -98,18 +98,51 @@ def generate_scenarios_for_document(document, stride=5, group_name=None, log_cal
                 batch = None
                 logger.info(" ".join([str(x) for x in ['Error on response validation:', e]]))
             if batch:
-                # Fetch the actual Django DB object to link as a ForeignKey
-
+                # Add LLM-as-a-judge quality filter
+                from pydantic import BaseModel
+                
+                class ScenarioEvaluation(BaseModel):
+                    passed: bool = Field(description="True if the question is non-trivial and the answer is strictly grounded in the text.")
+                    reasoning: str = Field(description="Reasoning for the evaluation.")
+                    
                 primary_chunk_id = chunk_ids[i]
                 rag_chunk = RAGChunk.objects.filter(chunk_id=primary_chunk_id).first()
                 for item in batch.items:
-                    scenarios.append(BenchmarkScenario(
-                        question=item.question,
-                        ideal_answer=item.answer,
-                        expected_keywords=item.keywords,
-                        source_doc=document,
-                        source_chunk=rag_chunk
-                    ))
+                    # Evaluate the item
+                    eval_prompt = f"""
+                    Evaluate this proposed benchmark scenario against the text.
+                    TEXT: {text[:4000]}
+                    QUESTION: {item.question}
+                    ANSWER: {item.answer}
+                    
+                    Must be non-trivial (not a generic question) and answer must be explicitly supported by the text.
+                    """
+                    
+                    try:
+                        eval_res = ai_service.generate_outline(
+                            messages=[{"role": "user", "content": eval_prompt}],
+                            response_schema=ScenarioEvaluation,
+                            max_new_tokens=300
+                        )
+                        if isinstance(eval_res, dict):
+                            eval_res = ScenarioEvaluation.model_validate(eval_res)
+                        elif isinstance(eval_res, str):
+                            eval_res = ScenarioEvaluation.model_validate_json(eval_res)
+                        elif isinstance(eval_res, list) and len(eval_res) > 0:
+                            eval_res = eval_res[0]
+                            
+                        if eval_res.passed:
+                            scenarios.append(BenchmarkScenario(
+                                question=item.question,
+                                ideal_answer=item.answer,
+                                expected_keywords=item.keywords,
+                                source_doc=document,
+                                source_chunk=rag_chunk
+                            ))
+                        else:
+                            log_callback(f"Filtered low-quality scenario: {item.question} - {eval_res.reasoning}")
+                    except Exception as e:
+                        logger.warning(f"Failed to evaluate scenario: {e}")
 
         except Exception as e:
             import traceback

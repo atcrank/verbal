@@ -1,25 +1,25 @@
 # Test Report: test_5_regex
 
-**Date:** 2026-06-18 10:32:09.306836
-**Duration:** 0.1432 seconds
+**Date:** 2026-07-15 09:20:39.200868
+**Duration:** 0.1586 seconds
 ## Vector Store Contents
 Total Chunks: 4
 
-### Chunk ID: a1925108-efb9-4acf-aea9-04ba40feede1
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/tricky_glossary.txt', 'chunk_id': 'a1925108-efb9-4acf-aea9-04ba40feede1', 'filename': 'documents/tricky_glossary.txt', 'chunk_index': 0, 'page_number': '100%', 'chunk_number': '1/1', 'indexed_hash': 'a6dd07c4a40beccde90259f563b14c667ca6ef64577e470009cc6f71d7603139-500_50', 'total_chunks': 1, 'location_percent': 100}
+### Chunk ID: 4b8b03c8-e2a5-4b37-a095-6d2cba25efc6
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/tricky_glossary.txt', 'chunk_id': '4b8b03c8-e2a5-4b37-a095-6d2cba25efc6', 'filename': 'documents/tricky_glossary.txt', 'chunk_index': 0, 'page_number': '100%', 'chunk_number': '1/1', 'indexed_hash': 'a6dd07c4a40beccde90259f563b14c667ca6ef64577e470009cc6f71d7603139-500_50', 'total_chunks': 1, 'location_percent': 100}
 - **Store Content:** Term1: Definition One.
 Term2: Definition Two.
 Term3: Definition Three....
 ---
-### Chunk ID: af2aa507-c959-4c59-b540-a4aa6fdf26c5
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/tricky_glossary.txt', 'reading': 'c6fb608a-a59d-4ff0-95c4-71e964b10a24', 'chunk_id': 'd210c93a-6cf5-41c7-9037-c4fb96ab4f21', 'filename': 'documents/tricky_glossary.txt', 'read_from': 'a1925108-efb9-4acf-aea9-04ba40feede1', 'strat_type': 'RegexStrategy', 'chunk_index': 0, 'page_number': '100%', 'chunk_number': '1/1', 'indexed_hash': 'a6dd07c4a40beccde90259f563b14c667ca6ef64577e470009cc6f71d7603139-500_50', 'total_chunks': 1, 'original_term': 'Term1', 'location_percent': 100}
+### Chunk ID: b4e605ca-6b80-4efb-8444-710ba1a982d0
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/tricky_glossary.txt', 'reading': '4da825f5-790d-47c9-b27f-9f1b743f2cc0', 'chunk_id': '455d916c-4377-44ca-b57f-a1a23bd99c48', 'filename': 'documents/tricky_glossary.txt', 'read_from': '4b8b03c8-e2a5-4b37-a095-6d2cba25efc6', 'strat_type': 'RegexStrategy', 'chunk_index': 0, 'page_number': '100%', 'chunk_number': '1/1', 'indexed_hash': 'a6dd07c4a40beccde90259f563b14c667ca6ef64577e470009cc6f71d7603139-500_50', 'total_chunks': 1, 'original_term': 'Term1', 'location_percent': 100}
 - **Store Content:** Term1...
 ---
-### Chunk ID: dfdf0947-8e8a-4c5e-9755-1c3560011a2a
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/tricky_glossary.txt', 'reading': 'c6fb608a-a59d-4ff0-95c4-71e964b10a24', 'chunk_id': 'b506b9e4-a845-4861-83d1-0daf77d6ecab', 'filename': 'documents/tricky_glossary.txt', 'read_from': 'a1925108-efb9-4acf-aea9-04ba40feede1', 'strat_type': 'RegexStrategy', 'chunk_index': 0, 'page_number': '100%', 'chunk_number': '1/1', 'indexed_hash': 'a6dd07c4a40beccde90259f563b14c667ca6ef64577e470009cc6f71d7603139-500_50', 'total_chunks': 1, 'original_term': 'Term2', 'location_percent': 100}
+### Chunk ID: a511f597-f7b7-477a-a4a4-27e7a9dc8e05
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/tricky_glossary.txt', 'reading': '4da825f5-790d-47c9-b27f-9f1b743f2cc0', 'chunk_id': '2dbab8d6-9ac7-41df-8431-6de062a6263c', 'filename': 'documents/tricky_glossary.txt', 'read_from': '4b8b03c8-e2a5-4b37-a095-6d2cba25efc6', 'strat_type': 'RegexStrategy', 'chunk_index': 0, 'page_number': '100%', 'chunk_number': '1/1', 'indexed_hash': 'a6dd07c4a40beccde90259f563b14c667ca6ef64577e470009cc6f71d7603139-500_50', 'total_chunks': 1, 'original_term': 'Term2', 'location_percent': 100}
 - **Store Content:** Term2...
 ---
-### Chunk ID: 6acde45b-ff4b-4860-a4ac-e6ecb76687de
-- **Metadata:** {'source': '/home/crank/coding/verbal/test_data/files/documents/tricky_glossary.txt', 'reading': 'c6fb608a-a59d-4ff0-95c4-71e964b10a24', 'chunk_id': '3a8105a2-d28c-4f2f-86c8-d481e59b3fe5', 'filename': 'documents/tricky_glossary.txt', 'read_from': 'a1925108-efb9-4acf-aea9-04ba40feede1', 'strat_type': 'RegexStrategy', 'chunk_index': 0, 'page_number': '100%', 'chunk_number': '1/1', 'indexed_hash': 'a6dd07c4a40beccde90259f563b14c667ca6ef64577e470009cc6f71d7603139-500_50', 'total_chunks': 1, 'original_term': 'Term3', 'location_percent': 100}
+### Chunk ID: 79bbd5be-fd7a-4fe3-a994-dab516a320a4
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/tricky_glossary.txt', 'reading': '4da825f5-790d-47c9-b27f-9f1b743f2cc0', 'chunk_id': '7c63018b-d75d-4bb1-af5d-3198a8b1090a', 'filename': 'documents/tricky_glossary.txt', 'read_from': '4b8b03c8-e2a5-4b37-a095-6d2cba25efc6', 'strat_type': 'RegexStrategy', 'chunk_index': 0, 'page_number': '100%', 'chunk_number': '1/1', 'indexed_hash': 'a6dd07c4a40beccde90259f563b14c667ca6ef64577e470009cc6f71d7603139-500_50', 'total_chunks': 1, 'original_term': 'Term3', 'location_percent': 100}
 - **Store Content:** Term3...
 ---

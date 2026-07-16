@@ -168,3 +168,28 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
+# Backups and workspaces
+backups/
+workspaces/
+
+# Scratch files and helper scripts
+scratch.py
+scratch_tests.py
+metacognition/scratch_tests.py
+clear_models.py
+replace_prints.py
+tests_addition.py
+test_langgraph_interrupt.py
+test_langgraph_interrupt2.py
+
+# Fault-finding data and logs
+metas.json
+prompt_variant.txt
+python_sandbox.txt
+recover_sandbox.txt
+recover_sandbox_full.txt
+recovered_code.txt
+sandbox_code.txt
+sandbox_code_full.txt
+view_actions.txt
+

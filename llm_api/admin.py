@@ -1,8 +1,7 @@
 # Register your models here.# llm_api/admin.py
 from django.contrib import admin, messages
 from django import forms
-from .models import LocalAIModel, ExternalAIModel, UserActiveModel, UserAPIKey, SystemConfiguration, PromptResponseLog, Conversation
-from .ollama_client import get_available_ollama_models
+from .models import LocalAIModel, ExternalAIModel, UserActiveModel, UserAPIKey, SystemConfiguration, PromptResponseLog, Conversation, LoRAAdapter
 
 @admin.action(description="Load this Model into Inference Server VRAM")
 def activate_local_model(modeladmin, request, queryset):
@@ -46,30 +45,39 @@ class PromptResponseLogAdmin(admin.ModelAdmin):
     autocomplete_fields = ('user', 'conversation')
 
 
-class SystemConfigurationForm(forms.ModelForm):
-    class Meta:
-        model = SystemConfiguration
-        fields = '__all__'
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        # 1. Fetch available models from Ollama
-        available_models = get_available_ollama_models()
-
-        # 2. Format as Django choices
-        choices = [('', '--- None / External Only ---')] + [(m, m) for m in available_models]
-
-        # 3. Apply the dynamic choices to the CharField
-        if 'active_ollama_model' in self.fields:
-            self.fields['active_ollama_model'].widget = forms.Select(choices=choices)
-
-
 @admin.register(SystemConfiguration)
 class SystemConfigurationAdmin(admin.ModelAdmin):
-    form = SystemConfigurationForm
+    fieldsets = (
+        ('Hosting Strategy', {
+            'fields': ('hosting_backend', 'system_tokenizer_id'),
+            'description': 'Select which internal engine acts as your primary AI host. The tokenizer is always loaded to CPU RAM for local proxy validation.'
+        }),
+        ('Local PyTorch Inference', {
+            'fields': ('active_local_model',),
+            'description': 'Settings for loading models directly into VRAM on the inference server.'
+        }),
+        ('vLLM Integration', {
+            'fields': ('active_vllm_model',),
+            'description': 'Settings for using the vLLM Docker service as the backend.'
+        }),
+        ('Ollama Integration', {
+            'fields': ('active_ollama_model',),
+            'description': 'Settings for using the Ollama Docker service as the backend.'
+        }),
+    )
 
 
 admin.site.register(ExternalAIModel)
 admin.site.register(UserActiveModel)
 admin.site.register(UserAPIKey)
+
+@admin.register(LoRAAdapter)
+class LoRAAdapterAdmin(admin.ModelAdmin):
+    list_display = ('name', 'base_model', 'dataset', 'currency_status')
+    search_fields = ('name', 'description')
+    
+    @admin.display(description='Currency Status')
+    def currency_status(self, obj):
+        if obj.is_stale:
+            return format_html('<span style="color: orange; font-weight: bold;">⚠️ Stale (Source data updated)</span>')
+        return format_html('<span style="color: green; font-weight: bold;">🟢 Up to date</span>')

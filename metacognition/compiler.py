@@ -120,8 +120,11 @@ def _make_step_node(step: ReasoningStep):
         llm_result_message = None
         
         if tools:
+            # 1. Create native dictionary schemas for the LLM
             tools_for_llm = []
+            valid_tool_names = set()
             for t in tools:
+                valid_tool_names.add(t.name)
                 tool_dict = {
                     "type": "function",
                     "function": {
@@ -134,51 +137,88 @@ def _make_step_node(step: ReasoningStep):
                 
             native_messages = [{"role": _map_role(m.type), "content": getattr(m, 'content', str(m))} for m in messages]
             
-            tool_instruction = "\n\nYou have access to the following tools:\n"
-            for t in tools:
-                tool_instruction += f"- {t.name}: {t.description}\n"
+            # 2. Select strategy based on native tool support
+            if ai_service.supports_native_tools(user=state.get("user")):
+                # Native Tool Calling (OpenAI/Ollama)
+                # Do not inject XML instructions; trust the API to return the tool array
+                [raw_response] = ai_service.generate_response2(
+                    native_messages, 
+                    max_new_tokens=step.max_new_tokens,
+                    tools=tools_for_llm,
+                    log_kwargs=log_kwargs,
+                    lora_adapter=step.lora_adapter
+                )
                 
-            tool_instruction += (
-                "\nTo use a tool, you MUST output a JSON array of tool calls "
-                "enclosed exactly in <tool_calls> and </tool_calls> tags. Example:\n"
-                "<tool_calls>\n"
-                '[\n  {"name": "tool_name", "args": {"arg1": "val1"}}\n]\n'
-                "</tool_calls>\n"
-                "If you want to use a tool, output ONLY the tool calls and no other text."
-            )
-            if native_messages and native_messages[0]["role"] == "system":
-                native_messages[0]["content"] += tool_instruction
-            
-            [raw_response] = ai_service.generate_response2(
-                native_messages, 
-                max_new_tokens=800,
-                tools=tools_for_llm,
-                log_kwargs=log_kwargs
-            )
-            
-            import re
-            tool_calls_match = re.search(r"<tool_calls>(.*?)</tool_calls>", raw_response, re.DOTALL)
-            if tool_calls_match:
-                try:
-                    result = json.loads(tool_calls_match.group(1))
-                except Exception as e:
-                    logger.error(f"Failed to parse tool calls json: {e}")
+                # ai_service.py has been updated to return the list of dicts directly
+                if isinstance(raw_response, list):
+                    result = raw_response
+                elif isinstance(raw_response, dict):
+                    result = [raw_response]
+                else:
                     result = raw_response
             else:
-                result = raw_response
+                # Fallback: XML Injected Tool Calling (Local/Outlines)
+                tool_instruction = "\n\nYou have access to the following tools:\n"
+                for t in tools:
+                    tool_instruction += f"- {t.name}: {t.description}\n"
+                    
+                tool_instruction += (
+                    "\nTo use a tool, you MUST output a JSON array of tool calls "
+                    "enclosed exactly in <tool_calls> and </tool_calls> tags. Example:\n"
+                    "<tool_calls>\n"
+                    '[\n  {"name": "tool_name", "args": {"arg1": "val1"}}\n]\n'
+                    "</tool_calls>\n"
+                    "If you want to use a tool, output ONLY the tool calls and no other text."
+                )
+                if native_messages and native_messages[0]["role"] == "system":
+                    native_messages[0]["content"] += tool_instruction
+                
+                [raw_response] = ai_service.generate_response2(
+                    native_messages, 
+                    max_new_tokens=step.max_new_tokens,
+                    tools=None, # DO NOT pass native tools to fallback
+                    log_kwargs=log_kwargs,
+                    lora_adapter=step.lora_adapter
+                )
+                
+                import re
+                tool_calls_match = re.search(r"<tool_calls>(.*?)</tool_calls>", raw_response, re.DOTALL)
+                if tool_calls_match:
+                    try:
+                        result = json.loads(tool_calls_match.group(1))
+                    except Exception as e:
+                        logger.error(f"Failed to parse tool calls json: {e}")
+                        result = raw_response
+                else:
+                    result = raw_response
+                    
+            # 3. Validate tool names
+            if isinstance(result, list) and len(result) > 0 and isinstance(result[0], dict) and "name" in result[0]:
+                validated_result = []
+                for tc in result:
+                    if tc.get("name") in valid_tool_names:
+                        validated_result.append(tc)
+                    else:
+                        logger.warning(f"LLM tried to call unauthorized/invented tool: {tc.get('name')}")
+                        validated_result.append({"error": f"Tool '{tc.get('name')}' is not available."})
+                result = validated_result
+                if len(result) == 1 and "error" in result[0]:
+                    result = result[0] # Convert to error dict if only one failed call
         elif schema_format:
             result = ai_service.generate_outline(
                 messages=[{"role": _map_role(m.type), "content": m.content} for m in messages],
                 response_schema=schema_format,
-                log_kwargs=log_kwargs
+                log_kwargs=log_kwargs,
+                lora_adapter=step.lora_adapter
             )
             if isinstance(result, list):
                 result = result[0]
         else:
             [raw_response] = ai_service.generate_response2(
                 [{"role": _map_role(m.type), "content": m.content} for m in messages], 
-                max_new_tokens=800,
-                log_kwargs=log_kwargs
+                max_new_tokens=step.max_new_tokens,
+                log_kwargs=log_kwargs,
+                lora_adapter=step.lora_adapter
             )
             result = ai_service.clean_response(raw_response)
         
@@ -271,10 +311,13 @@ def _make_step_node(step: ReasoningStep):
             else:
                 route_to = "SUCCESS" if evaluation_passed else "FAILURE"
                 
-            # Intercept FAILURE if it loops back to itself, change to USER_INPUT_REQUIRED
+            # Intercept FAILURE if it loops back to itself, change to USER_INPUT_REQUIRED unless autonomous
             if route_to == "FAILURE" and step.on_failure_step and step.on_failure_step.id == step.id:
-                route_to = "USER_INPUT_REQUIRED"
-                resume_to = f"step_{step.id}"
+                if step.blueprint.is_autonomous:
+                    route_to = "SELF"
+                else:
+                    route_to = "USER_INPUT_REQUIRED"
+                    resume_to = f"step_{step.id}"
                 
         # Update state
         new_messages = [AIMessage(content=str(result))] + additional_messages

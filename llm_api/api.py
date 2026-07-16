@@ -86,26 +86,31 @@ def generate_response(request, payload: GenerateIn):
             logger.error(f"Error checking requires_research: {e}")
             
     if not payload.skip_rag and requires_research:
-        rag_docs = service_registry.rag_service.get_context(payload.user_prompt)
-        if rag_docs:
-            rag_text = "\n\nRelevant Context (RAG):\n" + "\n\n".join([f"Source: {d.metadata.get('filename', 'Unknown')}\nContent: {d.page_content}" for d in rag_docs])
-            for d in rag_docs:
-                rag_selections.append({
-                    "model": "RAGChunk",
-                    "id": str(d.metadata.get('chunk_id', d.metadata.get('id', ''))),
-                    "preview": d.page_content[:150] + "..."
-                })
-            
-    if not payload.skip_grips and getattr(service_registry, 'grips_service', None):
-        grips_docs = service_registry.grips_service.get_grips_context(payload.user_prompt)
-        if grips_docs:
-            rag_text += "\n\nRelevant Concepts (Knowledge Graph):\n" + "\n\n".join([f"[{d.metadata.get('title', 'Unknown')}]: {d.page_content}" for d in grips_docs])
-            for d in grips_docs:
-                rag_selections.append({
-                    "model": "ConceptNode",
-                    "id": str(d.metadata.get('id', '')),
-                    "preview": d.page_content[:150] + "..."
-                })
+        from background_resources.retrieval import unified_retrieve, format_context_block
+
+        retrieval_results = unified_retrieve(
+            query=payload.user_prompt,
+            rag_service=service_registry.rag_service if not payload.skip_rag else None,
+            grips_service=getattr(service_registry, 'grips_service', None) if not payload.skip_grips else None,
+            rag_k=4,
+            grips_k=4,
+        )
+
+        if retrieval_results:
+            rag_text = "\n\nRelevant Context:\n" + format_context_block(retrieval_results)
+            for r in retrieval_results:
+                if r.source == "grips":
+                    rag_selections.append({
+                        "model": "ConceptNode",
+                        "id": str(r.concept_id or r.doc.metadata.get('concept_id', '')),
+                        "preview": r.doc.page_content[:150] + "..."
+                    })
+                else:
+                    rag_selections.append({
+                        "model": "RAGChunk",
+                        "id": str(r.doc.metadata.get('chunk_id', r.doc.metadata.get('id', ''))),
+                        "preview": r.doc.page_content[:150] + "..."
+                    })
     
     messages = messages + conversation.as_messages(leaf_log_id=payload.parent_log_id) + [{"role": "user", "content": payload.user_prompt + rag_text}]
     max_new_tokens = payload.max_new_tokens

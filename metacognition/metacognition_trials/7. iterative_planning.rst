@@ -1,6 +1,6 @@
-========================================
+========================================================================
 Trial 7: Iterative Planning (Task Decomposer)
-========================================
+========================================================================
 
 This test verifies the agent's ability to iteratively plan and execute a dynamic JSON queue of tasks, 
 specifically verifying that it processes each task sequentially without trailing off.

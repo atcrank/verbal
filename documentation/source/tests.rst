@@ -12,6 +12,12 @@ At the same time, as the app grows and function complexity increases, the test t
 'mocking' of major services may be worthwhile. The metacognition app defines both mocked tests, which will test only
 progress of a Blueprint through its Steps, including step failure and repetition.
 
+Other modes of evaluative safe running exist: benchmarking and doctest trials. See
+
+* :doc:`Running benchmarks <benchmarking_app>`
+* :doc:`Metacognition doctest trials <metacognition_trials>` 
+* :doc:`Using doctests <metacognition_trials/using_doctest>`
+
 Running tests
 -------------
 
@@ -19,7 +25,7 @@ To run quick tests, mocking the most time-consuming processing (mainly the AI se
 
 >python manage.py test --exclude-tag=e2e
 
-To test only end-to-end:
+To test only end-to-end tests that exercise connection to all the services:
 
 make sure the inference server and worker server are running locally in separate terminals:
 > . start_inference.sh

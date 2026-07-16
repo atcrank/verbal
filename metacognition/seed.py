@@ -210,57 +210,92 @@ def seed_architect(CognitiveBlueprint, ReasoningStep):
 def seed_nightmanager(CognitiveBlueprint, ReasoningStep, ResponseSchema, ToolDefinition):
     bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="NightManager",
-        defaults={'description': "Autonomous system administrator that manages server maintenance, RAG benchmark tracking, and active reading."}
+        defaults={
+            'description': "Autonomous system administrator that manages server maintenance, RAG benchmark tracking, and active reading.",
+            'is_autonomous': True
+        }
     )
 
     ReasoningStep.objects.filter(blueprint=bp).delete()
 
-    admin_step = ReasoningStep.objects.create(
+    step1 = ReasoningStep.objects.create(
         blueprint=bp,
-        name="Server Admin",
+        name="Backup & Status",
         is_start_node=True,
         system_prompt=(
             "You are the NightManager, an autonomous administrator for the verbal project. "
-            "You are a proactive agent, eager to find opportunities to improve the system. "
-            "You are awoken on a periodic schedule, and each wake-up starts a fresh Conversation which serves as your scratchpad. "
-            "First, you MUST run the database_backup tool. "
-            "Then, you must explicitly review the following areas of the system state:\n"
-            "1. Benchmark Results: Analyze recent benchmarks to see how blueprints are performing.\n"
-            "2. Conversations: Review your own past NightManager logs and recent user interactions and outcomes.\n"
-            "3. Knowledge Base: Review background_resources (RAG chunks) and grips content. Evaluate their ability to return high-value context.\n"
-            "4. Periodic Tasks: Confirm which periodic tasks should have happened and verify their execution.\n"
-            "The server runs all night, so you should keep it busy with useful work. Normal proactive activities include: "
-            "creating new or varied Blueprints and ReasoningStep content, configuring Benchmark Investigations on new Blueprints, "
-            "designing new ReadingStrategies, and all sorts of creative investigating and play. "
-            "If you find issues, report bugs or request codebase changes to expose more meaningful content. "
-            "Execute any necessary maintenance tasks using your provided tools. You can use django_shell_script for full CRUD access. "
-            "IMPORTANT: Do not use hard deletes (.delete()); use is_active=False or queue for review. "
-            "Stop looping only when you have completed all planned tasks and reviews using the TASK_COMPLETE tool."
+            "You are awoken on a periodic schedule to improve the system. "
+            "First, execute system_janitor to clean up empty workspaces. "
+            "Then, run database_backup to take a JSON backup of the Django DB. "
+            "Once both are complete, output a status report and conclude."
         ),
-        max_retries=5
+        max_retries=3,
+        max_new_tokens=500,
     )
     
-    # Assign tools to the NightManager
-    tools = [
-        "database_backup",
-        "system_janitor",
-        "review_benchmark_results",
-        "list_blueprints",
-        "list_available_tools",
-        "create_benchmark_scenario",
-        "run_benchmark",
-        "delegate_task",
-        "document_reader",
-        "django_shell_script",
-        "handle_execution_plan",
-        "TASK_COMPLETE",
-    ]
-    for tool_name in tools:
-        tool, _ = ToolDefinition.objects.get_or_create(name=tool_name)
-        admin_step.available_tools.add(tool)
+    step2 = ReasoningStep.objects.create(
+        blueprint=bp,
+        name="Review Benchmarks",
+        system_prompt=(
+            "Now review the recent benchmark results to see how blueprints are performing. "
+            "Use the review_benchmark_results tool to analyze the system's current performance. "
+            "Identify any regressions or areas that need improvement."
+        ),
+        max_retries=3,
+        max_new_tokens=800,
+    )
+    
+    step3 = ReasoningStep.objects.create(
+        blueprint=bp,
+        name="Propose Improvements",
+        system_prompt=(
+            "Based on the benchmark results, propose improvements. "
+            "You can use list_blueprints, create_blueprint, and create_benchmark_scenario. "
+            "Design new ReadingStrategies, configure benchmark investigations, or create new blueprints."
+        ),
+        max_retries=3,
+        max_new_tokens=1000,
+    )
+    
+    step4 = ReasoningStep.objects.create(
+        blueprint=bp,
+        name="Execute & Validate",
+        system_prompt=(
+            "Execute any necessary maintenance tasks or improvements using your tools. "
+            "You can use django_shell_script for full CRUD access, run_benchmark to test changes, "
+            "and delegate_task to farm out work. "
+            "IMPORTANT: Do not use hard deletes (.delete()); use is_active=False or queue for review. "
+            "Stop looping only when you have completed all planned tasks using the TASK_COMPLETE tool."
+        ),
+        max_retries=5,
+        max_new_tokens=1000,
+    )
 
-    admin_step.on_failure_step = admin_step
-    admin_step.save()
+    step1.on_success_step = step2
+    step1.on_failure_step = step1
+    step1.save()
+    
+    step2.on_success_step = step3
+    step2.on_failure_step = step2
+    step2.save()
+    
+    step3.on_success_step = step4
+    step3.on_failure_step = step3
+    step3.save()
+    
+    step4.on_success_step = None # Ends via TASK_COMPLETE
+    step4.on_failure_step = step4
+    step4.save()
+    
+    def _add_tools(step, tool_names):
+        for tool_name in tool_names:
+            tool, _ = ToolDefinition.objects.get_or_create(name=tool_name)
+            step.available_tools.add(tool)
+            
+    _add_tools(step1, ["system_janitor", "database_backup"])
+    _add_tools(step2, ["review_benchmark_results"])
+    _add_tools(step3, ["list_blueprints", "create_blueprint", "create_benchmark_scenario"])
+    _add_tools(step4, ["run_benchmark", "delegate_task", "django_shell_script", "document_reader", "TASK_COMPLETE"])
     
     # Programmatically add a PeriodicTask in Celery Beat using the run_blueprint_async signature
     try:
@@ -359,20 +394,22 @@ def seed_computational_logic(CognitiveBlueprint, ReasoningStep, ToolDefinition):
         step.available_tools.add(python_sandbox_tool)
 
 def seed_all():
+    from .models import bypass_canonical_lock
     ToolDefinition = apps.get_model('metacognition', 'ToolDefinition')
     CognitiveBlueprint = apps.get_model('metacognition', 'CognitiveBlueprint')
     ReasoningStep = apps.get_model('metacognition', 'ReasoningStep')
     ResponseSchema = apps.get_model('metacognition', 'ResponseSchema')
 
-    seed_tools(ToolDefinition)
-    seed_architect(CognitiveBlueprint, ReasoningStep)
-    seed_nightmanager(CognitiveBlueprint, ReasoningStep, ResponseSchema, ToolDefinition)
-    seed_grill_me(CognitiveBlueprint, ReasoningStep)
-    seed_escalation_of_effort(CognitiveBlueprint, ReasoningStep, ToolDefinition)
-    seed_computational_logic(CognitiveBlueprint, ReasoningStep, ToolDefinition)
-    seed_research_evaluation(CognitiveBlueprint, ReasoningStep, ResponseSchema)
-    seed_strategic_plan(CognitiveBlueprint, ReasoningStep, ResponseSchema)
-    seed_task_decomposer(CognitiveBlueprint, ReasoningStep, ResponseSchema)
+    with bypass_canonical_lock():
+        seed_tools(ToolDefinition)
+        seed_architect(CognitiveBlueprint, ReasoningStep)
+        seed_nightmanager(CognitiveBlueprint, ReasoningStep, ResponseSchema, ToolDefinition)
+        seed_grill_me(CognitiveBlueprint, ReasoningStep)
+        seed_escalation_of_effort(CognitiveBlueprint, ReasoningStep, ToolDefinition)
+        seed_computational_logic(CognitiveBlueprint, ReasoningStep, ToolDefinition)
+        seed_research_evaluation(CognitiveBlueprint, ReasoningStep, ResponseSchema)
+        seed_strategic_plan(CognitiveBlueprint, ReasoningStep, ResponseSchema)
+        seed_task_decomposer(CognitiveBlueprint, ReasoningStep, ResponseSchema)
 
 def seed_research_evaluation(CognitiveBlueprint, ReasoningStep, ResponseSchema):
     bp, _ = CognitiveBlueprint.objects.get_or_create(

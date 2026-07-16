@@ -33,7 +33,7 @@ from langchain_core.documents import Document as LangchainDocument
 class Document(models.Model):
     """
     A model to store uploaded documents, their content hash, and manage
-    their inclusion in a FAISS vector store.
+    their inclusion in a PGVector store.
     """
 
     title = models.CharField(max_length=255)
@@ -96,8 +96,8 @@ class Document(models.Model):
 @receiver(pre_delete, sender=Document)
 def delete_document_files(sender, instance, **kwargs):
     """
-    Signal to delete files from FAISS and file storage
-    *before* the Document object is deleted from the database.
+    Signal to delete files from vector index and file storage
+    when a ContextDocument is deleted from the database.
     """
     logger.info(f'Pre-delete signal for {instance.title} (hash: {instance.indexed_hash})...')
     from llm_api.apps import service_registry
@@ -146,7 +146,7 @@ class RAGChunk(models.Model):
     metadata = models.JSONField(default=dict)
 
     # Explicit Storage Status
-    in_vector_index = models.BooleanField(default=False, help_text="Is this chunk indexed in FAISS?")
+    in_vector_index = models.BooleanField(default=False, help_text="Is this chunk indexed in PGVector?")
     in_byte_store = models.BooleanField(default=False, help_text="Is the full object stored in the ByteStore?")
 
     # Usage Stats

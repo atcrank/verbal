@@ -322,19 +322,54 @@ class LocalAIModel(models.Model):
         return f"{self.name}"
 
 
+class LoRAAdapter(models.Model):
+    """Configuration for a LoRA adapter that can be dynamically loaded over the base model."""
+    name = models.CharField(max_length=255, help_text="Adapter short name (e.g., 'python_coder')")
+    file_path = models.CharField(max_length=500, help_text="Absolute path to the adapter directory on disk or HF hub ID")
+    description = models.TextField(blank=True, help_text="What this adapter specializes in.")
+    base_model = models.ForeignKey(LocalAIModel, on_delete=models.CASCADE, related_name="adapters", help_text="The base model this adapter was trained for.")
+    dataset = models.ForeignKey('benchmarking.FineTuningDataset', on_delete=models.SET_NULL, null=True, blank=True, help_text="The dataset this LoRA was trained on.")
+
+    @property
+    def is_stale(self):
+        """Returns True if the underlying dataset is stale."""
+        if self.dataset:
+            return self.dataset.is_stale
+        return False
+
+    def __str__(self):
+        return f"{self.name} (LoRA for {self.base_model.name})"
+
 class SystemConfiguration(models.Model):
     """Singleton model for global system settings and VRAM management."""
-    active_local_model = models.ForeignKey(
-        LocalAIModel, on_delete=models.SET_NULL, null=True, blank=True,
-        help_text="The PyTorch model loaded into VRAM. Leave blank to exclusively use Ollama/External APIs."
-    )
-    active_ollama_model = models.CharField(
-        max_length=255,
-        blank=True,
-        null=True,
-        help_text="The selected model currently running in the local Ollama container."
+    
+    class HostingBackend(models.TextChoices):
+        PYTORCH = 'pytorch', 'Local PyTorch (CPU/GPU)'
+        VLLM = 'vllm', 'Local vLLM Container'
+        OLLAMA = 'ollama', 'Local Ollama Container'
+
+    hosting_backend = models.CharField(
+        max_length=20,
+        choices=HostingBackend.choices,
+        default=HostingBackend.PYTORCH,
+        help_text="Select the primary inference engine used by the local proxy server."
     )
 
+    active_local_model = models.ForeignKey(
+        LocalAIModel, on_delete=models.SET_NULL, null=True, blank=True,
+        help_text="The PyTorch model loaded into VRAM. Used only when 'Local PyTorch' is the active hosting backend."
+    )
+    active_ollama_model = models.ForeignKey(
+        LocalAIModel, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="ollama_configurations",
+        help_text="The selected model running in the local Ollama container. Used only when 'Ollama Container' is the active hosting backend."
+    )
+
+    active_vllm_model = models.ForeignKey(
+        LocalAIModel, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="vllm_configurations",
+        help_text="Model loaded in the vLLM service. Used only when 'Local vLLM Container' is the active hosting backend."
+    )
     system_tokenizer_id = models.CharField(
         max_length=255, default="Qwen/Qwen2.5-3B-Instruct",
         help_text="Loaded into CPU RAM to count tokens, even if local VRAM model is disabled."
@@ -400,10 +435,13 @@ def track_ollama_model_changes(sender, instance, **kwargs):
         try:
             old_instance = SystemConfiguration.objects.get(pk=instance.pk)
             instance._old_ollama_model = old_instance.active_ollama_model
+            instance._old_hosting_backend = old_instance.hosting_backend
         except SystemConfiguration.DoesNotExist:
             instance._old_ollama_model = None
+            instance._old_hosting_backend = None
     else:
         instance._old_ollama_model = None
+        instance._old_hosting_backend = None
 
 
 @receiver(post_save, sender=SystemConfiguration)
@@ -411,12 +449,16 @@ def manage_ollama_vram(sender, instance, **kwargs):
     """Unload the old model and load the newly selected one."""
     old_model = getattr(instance, '_old_ollama_model', None)
     new_model = instance.active_ollama_model
+    
+    old_backend = getattr(instance, '_old_hosting_backend', None)
+    new_backend = instance.hosting_backend
 
-    if old_model != new_model:
-        # 1. Flush the previous model from VRAM
-        if old_model:
-            set_ollama_model_state(old_model, active=False)
+    # Case 1: We were using Ollama, but now we switched backend OR changed model
+    if old_backend == 'ollama' and old_model:
+        if new_backend != 'ollama' or old_model != new_model:
+            set_ollama_model_state(old_model.hf_model_id, active=False)
 
-        # 2. Pre-load the new model into VRAM
-        if new_model:
-            set_ollama_model_state(new_model, active=True)
+    # Case 2: We are now using Ollama, and either just switched to it OR changed model
+    if new_backend == 'ollama' and new_model:
+        if old_backend != 'ollama' or old_model != new_model:
+            set_ollama_model_state(new_model.hf_model_id, active=True)

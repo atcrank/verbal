@@ -43,6 +43,21 @@ services:
             - driver: nvidia
               count: all # Use 'all' to pass all GPUs, or a number for a specific count
               capabilities: [gpu]
+  vllm:
+    image: vllm/vllm-openai:latest
+    container_name: verbal_vllm
+    ports:
+      - "8003:8000"
+    environment:
+      - VLLM_MODEL=${VLLM_MODEL:-Qwen/Qwen2.5-3B-Instruct}
+      - VLLM_DEVICE=cuda
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
   sandbox:
     container_name: verbal_sandbox
     build:

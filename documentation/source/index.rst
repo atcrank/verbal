@@ -27,6 +27,7 @@ Verbal is what is presently known as a "harness", a set of tools to help a human
    :caption: Guides & Testing:
 
    using_ollama
+   metacognition_trials
    tests
 
 

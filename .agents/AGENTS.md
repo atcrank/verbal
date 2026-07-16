@@ -8,6 +8,7 @@ description: Core instructions for Antigravity agents working in this repository
 - In novel code, particularly things involving AI, prefer functional patterns and composition over deep class inheritance.
 - Prefer short clear functions to long ones, where practical, but use judgement.  One 30-line function might be preferable to five ten-line functions.
 - Never suppress exceptions silently. Make error messages as helpful as possible.
+- Use the venv at `../../py313/bin/python` to run tests, management commands, or anything in this Python environment.
 
 # Workflow & Skill Enforcement
 - At the beginning of a new feature development step, you must invoke the `/controlled-branching` skill to isolate your progress

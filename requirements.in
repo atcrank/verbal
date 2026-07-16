@@ -22,6 +22,8 @@ torch
 accelerate
 bitsandbytes
 pandas
+unsloth
+peft
 
 # --- RAG & Vector Store ---
 langchain

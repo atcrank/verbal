@@ -1,6 +1,6 @@
-========================================
+============================================
 Trial 6: Large Output Handling
-========================================
+============================================
 
 This test verifies the agent's ability to handle large data without crashing the context window
 and outputting an analysis based on a generated dataset.

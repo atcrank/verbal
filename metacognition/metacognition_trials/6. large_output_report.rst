@@ -191,7 +191,7 @@ Generated Workspace Files
 -------------------------
 
 File: sandbox_script.py
-^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^
 
 ::
 
