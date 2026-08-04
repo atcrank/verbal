@@ -31,6 +31,7 @@ Enhance the benchmarking app with three capabilities:
 - `_execute_generation_with_retries()` is the universal executor — all generations (structured and unstructured, local and proxy) flow through it.
 - The benchmark runner calls `ai_service.generate_response2()` and `ai_service.generate_outline()` but receives no timing metadata back.
 
+
 ### What's missing
 - No `GenerationMetrics` dataclass — timing is not captured at the ai_service level.
 - No tok/s computation anywhere.

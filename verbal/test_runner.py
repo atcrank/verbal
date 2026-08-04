@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from django.test.runner import DiscoverRunner
 from django.db import connection
 
@@ -17,6 +20,6 @@ class ForceTeardownTestRunner(DiscoverRunner):
                       AND pid <> pg_backend_pid();
                 """)
         except Exception as e:
-            print(f"Warning: Failed to terminate DB connections: {e}")
+            logger.info(f'Warning: Failed to terminate DB connections: {e}')
             
         super().teardown_databases(old_config, **kwargs)

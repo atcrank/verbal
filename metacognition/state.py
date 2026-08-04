@@ -2,12 +2,7 @@ import operator
 from typing import TypedDict, Annotated, Optional, List, Dict, Any
 from langchain_core.messages import BaseMessage
 
-# Reducer functions
-def add_messages(left: list[BaseMessage], right: list[BaseMessage]) -> list[BaseMessage]:
-    """Reducer for working memory: appends new messages."""
-    if right and getattr(right[0], 'content', '') == '__OVERWRITE_WORKING_MEMORY__':
-        return right[1:]
-    return left + right
+from langgraph.graph.message import add_messages
 
 def update_monologue(left: list[Dict], right: list[Dict]) -> list[Dict]:
     """Reducer for internal monologue: appends new monologue dicts."""

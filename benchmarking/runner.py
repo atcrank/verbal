@@ -264,7 +264,16 @@ def _generate_candidate_responses(ai_service, experiment, scenario, rag_text_blo
             max_new_tokens=300,
             num_return_sequences=iterations
         )
-        raw_responses = [(resp, {}) for resp in responses_strs]
+        
+        from llm_api.ai_service import get_last_generation_metrics
+        metrics = get_last_generation_metrics()
+        metrics_dict = {
+            "tokens_per_second": metrics.tokens_per_second if metrics else 0.0,
+            "generation_duration_ms": metrics.total_duration_ms if metrics else 0.0,
+            "output_tokens": metrics.output_tokens if metrics else 0
+        }
+        
+        raw_responses = [(resp, metrics_dict) for resp in responses_strs]
         
     return raw_responses
 

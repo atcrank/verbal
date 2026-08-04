@@ -21,6 +21,47 @@ import spacy
 from pydantic import BaseModel
 import typing
 import threading
+import time
+from dataclasses import dataclass, field
+
+@dataclass
+class GenerationMetrics:
+    output_tokens: int = 0
+    total_duration_ms: float = 0.0
+    tokens_per_second: float = 0.0
+    time_to_first_token_ms: float | None = None
+    prompt_eval_tokens_per_second: float | None = None
+
+_last_generation_metrics = threading.local()
+
+def get_last_generation_metrics() -> GenerationMetrics | None:
+    return getattr(_last_generation_metrics, 'metrics', None)
+
+def _sanitize_messages(msgs):
+    if not isinstance(msgs, list):
+        return msgs
+    sanitized = []
+    sys_prompt = ""
+    for m in msgs:
+        if m.get('role') == 'system':
+            sys_prompt += m.get('content', '') + "\n\n"
+        else:
+            sanitized.append(dict(m))
+    if sys_prompt:
+        if sanitized and sanitized[0].get('role') == 'user':
+            sanitized[0]['content'] = sys_prompt + sanitized[0].get('content', '')
+        else:
+            sanitized.insert(0, {'role': 'user', 'content': sys_prompt.strip()})
+            
+    # Merge consecutive roles for strict alternating templates like Gemma
+    merged = []
+    for m in sanitized:
+        if merged and merged[-1].get('role') == m.get('role'):
+            merged[-1]['content'] += "\n\n" + m.get('content', '')
+        else:
+            merged.append(dict(m))
+    return merged
+
 nlp = spacy.blank("en")
 nlp.add_pipe("sentencizer")
 
@@ -181,7 +222,10 @@ class AIService:
         if not adapter_path and not adapter_name:
             # Disable adapter if none is requested
             if hasattr(self.model, "disable_adapters"):
-                self.model.disable_adapters()
+                try:
+                    self.model.disable_adapters()
+                except Exception as e:
+                    logger.debug(f"Could not disable adapters (perhaps none loaded): {e}")
             return
             
         # If model doesn't support PEFT natively, it might need to be wrapped.
@@ -217,7 +261,7 @@ class AIService:
                     user_prompt += m.get('content', '') + "\n"
         return system_prompt.strip(), user_prompt.strip()
 
-    def _log_generation(self, messages, generated_texts, log_kwargs=None):
+    def _log_generation(self, messages, generated_texts, log_kwargs=None, model_name=None):
         if log_kwargs is None:
             log_kwargs = {}
         if log_kwargs.get("skip_log"):
@@ -243,6 +287,31 @@ class AIService:
                 
                 output_tokens = self.count_conversation_tokens([{"role": "assistant", "content": text_to_save}])
                 
+                # Fetch metrics if available
+                metrics = get_last_generation_metrics()
+                duration_ms = metrics.total_duration_ms if metrics else None
+                tps = metrics.tokens_per_second if metrics else None
+                
+                # Fetch model name if not explicitly provided or returned as Unknown
+                if not model_name or model_name == "Unknown":
+                    model_name = "Unknown"
+                    try:
+                        from .models import SystemConfiguration
+                        config = SystemConfiguration.get_solo()
+                        if config:
+                            if config.hosting_backend == 'vllm' and config.active_vllm_model:
+                                model_name = config.active_vllm_model.name
+                            elif config.hosting_backend == 'ollama' and config.active_ollama_model:
+                                model_name = config.active_ollama_model.name
+                            elif config.hosting_backend == 'pytorch' and config.active_local_model:
+                                model_name = config.active_local_model.name
+                    except Exception:
+                        pass
+                
+                # Use proxy provided output tokens if we have it, else our fallback estimation
+                if metrics and metrics.output_tokens > 0:
+                    output_tokens = metrics.output_tokens
+                
                 log = PromptResponseLog.objects.create(
                     system_prompt=system_prompt,
                     user_prompt=user_prompt,
@@ -252,6 +321,9 @@ class AIService:
                     rag_selections=log_kwargs.get("rag_selections", ""),
                     input_tokens=input_tokens,
                     output_tokens=output_tokens,
+                    generation_duration_ms=duration_ms,
+                    tokens_per_second=tps,
+                    model_name=model_name,
                     reasoning_step_id=log_kwargs.get("reasoning_step_id")
                 )
                 if "log_ids" in log_kwargs:
@@ -259,7 +331,7 @@ class AIService:
         except Exception as e:
             logger.info(f'Warning: Failed to log prompt response: {e}')
 
-    def _execute_openai_standard_request(self, messages, max_new_tokens, temperature, num_return_sequences, response_schema=None, user=None, tools=None):
+    def _execute_openai_standard_request(self, messages, max_new_tokens, temperature, num_return_sequences, response_schema=None, user=None, tools=None, lora_adapter=None, **kwargs):
         """Unifies HTTP calls to either external (OpenAI) or internal proxy endpoints."""
         api_url = f"{self.inference_url.rstrip('/')}/v1/chat/completions"
         api_key = None
@@ -274,10 +346,17 @@ class AIService:
                 if config.hosting_backend == 'vllm':
                     vllm_url = getattr(settings, 'VLLM_BASE_URL', 'http://vllm:8000')
                     api_url = f"{vllm_url.rstrip('/')}/v1/chat/completions"
-                    target_model = config.active_vllm_model.hf_model_id if config.active_vllm_model else target_model
+                    if getattr(lora_adapter, 'name', None):
+                        # Use the mounted volume path as the target model for vLLM
+                        target_model = f"/lora_adapters/{lora_adapter.name}"
+                        logger.info(f"Using dynamic LoRA adapter for vLLM: {target_model}")
+                    else:
+                        target_model = config.active_vllm_model.hf_model_id if config.active_vllm_model else target_model
                 elif config.hosting_backend == 'ollama':
                     ollama_url = getattr(settings, 'OLLAMA_BASE_URL', 'http://ollama:11434')
                     api_url = f"{ollama_url.rstrip('/')}/v1/chat/completions"
+                    if lora_adapter:
+                        logger.warning("Dynamic LoRA swapping is not supported on the Ollama backend. Falling back to base model.")
                     target_model = config.active_ollama_model.hf_model_id if config.active_ollama_model else target_model
         except Exception:
             pass
@@ -361,7 +440,10 @@ class AIService:
                 import time
                 time.sleep(0.5)
                 
-            return results if num_return_sequences > 1 else results[0]
+            out_res = results if num_return_sequences > 1 else results[0]
+            if kwargs.get("return_usage", False):
+                return out_res, data.get("usage", {}), data.get("model", "Unknown")
+            return out_res
 
         except requests.exceptions.RequestException as e:
             raise ConnectionError(f"Failed to communicate with API at {api_url}: {e}")
@@ -501,7 +583,20 @@ class AIService:
                 current_n = num_return_sequences if attempt == 0 else max(2, num_return_sequences + 1)
                 
                 try:
-                    raw_results = generated_callable(working_messages, max_new_tokens, temperature, current_n)
+                    # Capture proxy model name returned by the callable if available
+                    ret = generated_callable(working_messages, max_new_tokens, temperature, current_n)
+                    if isinstance(ret, tuple):
+                        if len(ret) == 3:
+                            raw_results, usage, model_name = ret
+                        elif len(ret) == 2:
+                            raw_results, model_name = ret
+                        else:
+                            raw_results = ret[0]
+                            model_name = None
+                    else:
+                        raw_results = ret
+                        model_name = None
+
                     logger.info(f'Raw results (Hop {search_hop + 1}, Attempt {attempt + 1}): {raw_results}')
                     
                     for res in raw_results:
@@ -519,14 +614,14 @@ class AIService:
                         
                     # 2. Return unstructured immediately if no search was triggered
                     if not is_structured:
-                        self._log_generation(working_messages, raw_results, log_kwargs)
+                        self._log_generation(working_messages, raw_results, log_kwargs, model_name=model_name)
                         return raw_results
                         
                     # 3. Validation Check for structured outputs
                     try:
                         valid_res = self._get_valid_structured_result(raw_results, response_schema)
                         # Success! We log working_messages so the DB reflects the Active RAG injections
-                        self._log_generation(working_messages, [valid_res], log_kwargs)
+                        self._log_generation(working_messages, [valid_res], log_kwargs, model_name=model_name)
                         return valid_res
                     except ValueError as ve:
                         last_error = ve
@@ -548,11 +643,11 @@ class AIService:
         logger.info(f'❌ {error_msg}')
         if is_structured:
             err_result = {"error": "GenerationFailed", "details": error_msg}
-            self._log_generation(working_messages, [err_result], log_kwargs)
+            self._log_generation(working_messages, [err_result], log_kwargs, model_name="Unknown")
             return err_result
         else:
             err_result = f"GenerationFailed: {error_msg}"
-            self._log_generation(working_messages, [err_result], log_kwargs)
+            self._log_generation(working_messages, [err_result], log_kwargs, model_name="Unknown")
             return [err_result]
 
     def supports_native_tools(self, user=None) -> bool:
@@ -561,8 +656,11 @@ class AIService:
         try:
             from .models import SystemConfiguration
             config = SystemConfiguration.get_solo()
-            if config and config.hosting_backend in ['vllm', 'ollama']:
-                needs_proxy = True
+            # Local open-weight models (vLLM, Ollama) typically lack tool-calling chat templates,
+            # causing the server to reject requests with tools= parameter.
+            # We rely on XML-injected tool calling for these backends instead.
+            if config and config.hosting_backend in ['vllm', 'ollama', 'pytorch']:
+                needs_proxy = False
         except Exception:
             pass
 
@@ -587,12 +685,20 @@ class AIService:
         VRAM loading, and Active RAG loops. `num_return_sequences` can be used to generate 
         multiple alternative responses to the same prompt.
         """
+        if log_kwargs is None:
+            log_kwargs = {}
+
         needs_proxy = self.role in ["web", "worker"]
         try:
             from .models import SystemConfiguration
             config = SystemConfiguration.get_solo()
             if config and config.hosting_backend in ['vllm', 'ollama']:
                 needs_proxy = True
+                
+            if config and config.hosting_backend == 'ollama' and lora_adapter:
+                base_model = config.active_ollama_model.hf_model_id if config.active_ollama_model else 'unknown'
+                sys_prompt, _ = self._extract_prompts(messages)
+                log_kwargs["system_prompt"] = log_kwargs.get("system_prompt", sys_prompt) + f"\n\n[SYSTEM NOTE: The specialised LoRA adapter '{lora_adapter.name}' for this step was not available on the Ollama backend, so this request fell back to the base model '{base_model}']"
         except Exception:
             pass
 
@@ -603,9 +709,27 @@ class AIService:
 
         if needs_proxy:
             def proxy_callable(msgs, max_tok, temp, n):
-                # Optionally pass lora_adapter to external proxy request in future
-                res = self._execute_openai_standard_request(msgs, max_tok, temp, n, None, user=user, tools=tools)
-                return res if isinstance(res, list) else [res]
+                start = time.perf_counter()
+                res, usage, model_name = self._execute_openai_standard_request(
+                    msgs, max_tok, temp, n, None, user=user, tools=tools, lora_adapter=lora_adapter, return_usage=True
+                )
+                duration_ms = (time.perf_counter() - start) * 1000
+                output_tokens = usage.get("completion_tokens", 0)
+                if output_tokens == 0 and res:
+                    # Fallback approximation if proxy does not return usage statistics
+                    as_list = res if isinstance(res, list) else [res]
+                    # Simple split by space approximation for raw text to avoid tokenizer overhead
+                    output_tokens = sum(len(str(r).split()) for r in as_list) * 1.3
+                    
+                metrics = GenerationMetrics(
+                    output_tokens=output_tokens,
+                    total_duration_ms=duration_ms,
+                    tokens_per_second=(output_tokens / (duration_ms / 1000)) if duration_ms > 0 else 0.0
+                )
+                _last_generation_metrics.metrics = metrics
+                if n > 1:
+                    return res, model_name
+                return [res], model_name
             generate_callable = proxy_callable
         else:
             def local_callable(msgs, max_tok, temp, n):
@@ -622,6 +746,7 @@ class AIService:
                         self.set_active_adapter(None)
                         
                     msgs_summary = self.summarize_conversation(msgs)
+                    msgs_summary = _sanitize_messages(msgs_summary)
 
                     prompt = self.tokenizer.apply_chat_template(
                         msgs_summary, tokenize=False, add_generation_prompt=True
@@ -630,6 +755,7 @@ class AIService:
                     inputs = self.tokenizer(prompt, return_tensors="pt").to(self.model.device)
                     do_sample = temp > 0.0
 
+                    start = time.perf_counter()
                     outputs = self.model.generate(
                         **inputs,
                         max_new_tokens=max_tok,
@@ -641,11 +767,20 @@ class AIService:
                         num_return_sequences=n,
                         repetition_penalty=1.05
                     )
+                    duration_ms = (time.perf_counter() - start) * 1000
 
                     prompt_length = inputs["input_ids"].shape[1]
                     generated_tokens = outputs[:, prompt_length:]
-                    results = self.tokenizer.batch_decode(generated_tokens, skip_special_tokens=True)
+                    output_tokens = sum(len(t) for t in generated_tokens)
+                    
+                    metrics = GenerationMetrics(
+                        output_tokens=output_tokens,
+                        total_duration_ms=duration_ms,
+                        tokens_per_second=(output_tokens / (duration_ms / 1000)) if duration_ms > 0 else 0.0
+                    )
+                    _last_generation_metrics.metrics = metrics
 
+                    results = self.tokenizer.batch_decode(generated_tokens, skip_special_tokens=True)
                     return results
             generate_callable = local_callable
 
@@ -679,12 +814,20 @@ class AIService:
         """
         logger.info(" ".join([str(x) for x in ['Generate Outline Called', type(messages), response_schema]]))
 
+        if log_kwargs is None:
+            log_kwargs = {}
+
         needs_proxy = self.role in ["web", "worker"]
         try:
             from .models import SystemConfiguration
             config = SystemConfiguration.get_solo()
             if config and config.hosting_backend in ['vllm', 'ollama']:
                 needs_proxy = True
+                
+            if config and config.hosting_backend == 'ollama' and lora_adapter:
+                base_model = config.active_ollama_model.hf_model_id if config.active_ollama_model else 'unknown'
+                sys_prompt, _ = self._extract_prompts(messages)
+                log_kwargs["system_prompt"] = log_kwargs.get("system_prompt", sys_prompt) + f"\n\n[SYSTEM NOTE: The specialised LoRA adapter '{lora_adapter.name}' for this step was not available on the Ollama backend, so this request fell back to the base model '{base_model}']"
         except Exception:
             pass
 
@@ -695,8 +838,22 @@ class AIService:
 
         if needs_proxy:
             def proxy_callable(msgs, max_tok, temp, n):
-                res = self._execute_openai_standard_request(msgs, max_tok, temp, n, response_schema, user=user)
-                return res if isinstance(res, list) else [res]
+                start = time.perf_counter()
+                res, usage, model_name = self._execute_openai_standard_request(
+                    msgs, max_tok, temp, n, response_schema, user=user, lora_adapter=lora_adapter, return_usage=True
+                )
+                duration_ms = (time.perf_counter() - start) * 1000
+                output_tokens = usage.get("completion_tokens", 0)
+                
+                metrics = GenerationMetrics(
+                    output_tokens=output_tokens,
+                    total_duration_ms=duration_ms,
+                    tokens_per_second=(output_tokens / (duration_ms / 1000)) if duration_ms > 0 else 0.0
+                )
+                _last_generation_metrics.metrics = metrics
+                
+                res_list = res if isinstance(res, list) else [res]
+                return res_list, model_name
             generate_callable = proxy_callable
         else:
             def local_callable(msgs, max_tok, temp, n):
@@ -726,12 +883,26 @@ class AIService:
                         self._generator_cache[cache_key] = outlines.Generator(self.outline_pipeline, actual_schema)
                     
                     generator = self._generator_cache[cache_key]
+                    msgs = _sanitize_messages(msgs)
                     prompt = self.tokenizer.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True) if isinstance(msgs, list) else msgs
                     
                     # outlines does not take huggingface generate kwargs natively. 
+                    start = time.perf_counter()
                     outputs = []
                     for _ in range(n):
                         outputs.append(generator(prompt, max_new_tokens=max_tok, temperature=temp))
+                    duration_ms = (time.perf_counter() - start) * 1000
+                    
+                    # Approximate output tokens since outlines just returns strings
+                    output_tokens = sum(len(self.tokenizer(o)["input_ids"]) for o in outputs)
+                    
+                    metrics = GenerationMetrics(
+                        output_tokens=output_tokens,
+                        total_duration_ms=duration_ms,
+                        tokens_per_second=(output_tokens / (duration_ms / 1000)) if duration_ms > 0 else 0.0
+                    )
+                    _last_generation_metrics.metrics = metrics
+
                     return outputs
             generate_callable = local_callable
 
@@ -790,8 +961,12 @@ class AIService:
                 messages,
                 add_generation_prompt=True
             )
+            if hasattr(token_list, 'input_ids'):
+                return len(token_list.input_ids)
+            elif isinstance(token_list, dict) and 'input_ids' in token_list:
+                return len(token_list['input_ids'])
             return len(token_list)
-        except NotImplementedError:
+        except Exception as e:
             # A fallback for older models without a chat template.
             # This is a *rough estimate* and will be inaccurate.
             logger.info('Warning: No chat template; falling back to naive token count.')

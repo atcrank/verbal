@@ -61,6 +61,7 @@ class Conversation(models.Model):
 
     # You can auto-generate this title from the first user_prompt!
     title = models.CharField(max_length=255, blank=True, default="New Conversation")
+    state_tree = models.JSONField(blank=True, null=True, default=dict, help_text="Hierarchical task and topic tracking tree (WS7).")
     objects = ConversationManager()
     
 
@@ -272,6 +273,12 @@ class PromptResponseLog(models.Model):
     parent_log = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='child_logs')
     input_tokens = models.IntegerField(default=0, help_text="Number of tokens in the prompt")
     output_tokens = models.IntegerField(default=0, help_text="Number of tokens in the generated response")
+    generation_duration_ms = models.FloatField(null=True, blank=True, 
+        help_text="Total wall-clock duration of the generation call in milliseconds")
+    tokens_per_second = models.FloatField(null=True, blank=True,
+        help_text="Output tokens generated per second")
+    model_name = models.CharField(max_length=255, null=True, blank=True,
+        help_text="The AI model used for this generation")
 
     # Telemetry for NightManager Performance Tracking
     reasoning_step = models.ForeignKey('metacognition.ReasoningStep', on_delete=models.SET_NULL, null=True, blank=True, related_name="prompt_logs")
@@ -425,7 +432,8 @@ class UserActiveModel(models.Model):
 
 from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
-from .ollama_client import set_ollama_model_state
+from . import ollama_client
+from . import vllm_client
 
 
 @receiver(pre_save, sender=SystemConfiguration)
@@ -445,20 +453,37 @@ def track_ollama_model_changes(sender, instance, **kwargs):
 
 
 @receiver(post_save, sender=SystemConfiguration)
-def manage_ollama_vram(sender, instance, **kwargs):
-    """Unload the old model and load the newly selected one."""
+def manage_hosting_backend(sender, instance, **kwargs):
+    """Unload old models and manage Docker containers for the backend."""
+    import sys
+    if 'test' in sys.argv:
+        return
+
     old_model = getattr(instance, '_old_ollama_model', None)
     new_model = instance.active_ollama_model
     
     old_backend = getattr(instance, '_old_hosting_backend', None)
     new_backend = instance.hosting_backend
 
-    # Case 1: We were using Ollama, but now we switched backend OR changed model
+    # Case 1: Switching away from Ollama or changing its model
     if old_backend == 'ollama' and old_model:
         if new_backend != 'ollama' or old_model != new_model:
-            set_ollama_model_state(old_model.hf_model_id, active=False)
+            ollama_client.set_ollama_model_state(old_model.hf_model_id, active=False)
+
+    # Manage Docker Containers if backend changed
+    if old_backend != new_backend:
+        if new_backend == 'vllm':
+            ollama_client.stop_container()
+            if instance.active_vllm_model:
+                vllm_client.start_container(instance.active_vllm_model.hf_model_id)
+        elif new_backend == 'ollama':
+            vllm_client.stop_container()
+            ollama_client.start_container()
+        elif new_backend == 'pytorch':
+            ollama_client.stop_container()
+            vllm_client.stop_container()
 
     # Case 2: We are now using Ollama, and either just switched to it OR changed model
     if new_backend == 'ollama' and new_model:
         if old_backend != 'ollama' or old_model != new_model:
-            set_ollama_model_state(new_model.hf_model_id, active=True)
+            ollama_client.set_ollama_model_state(new_model.hf_model_id, active=True)

@@ -15,6 +15,7 @@ Verbal is a Django-based computational study design assistant that integrates lo
 * **`sandbox_manager/`**: Python sandbox manager enabling secure, isolated code execution for autonomous agent tasks.
 * **`verbal/`**: A minimal app holding the project-wide custom test runner.
 * **`documentation/`**: Sphinx-based application documentation and usage guides.
+* **`.agents/`**: Custom agent skills, workstream tracking files, and developer notes.
 
 ## 3. Workflow Cheatsheet
 * **To add a new tool for the agent**: Look in `metacognition/actions.py` and `metacognition/meta_tools.py`.

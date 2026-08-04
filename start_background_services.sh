@@ -1,13 +1,21 @@
 #!/bin/bash
 
-# --- Configuration ---
-OLLAMA_MODEL="qwen2.5:7b"
+if [ -f .env ]; then
+    . .env
+else
+    echo "Warning: .env file not found, using .env.example"
+    . .env.example
+fi
 
-echo "1/3: Starting Docker containers (Postgresql, Redis, Ollama, Grobid)..."
+echo "1/3: Starting Docker containers..."
 docker compose up -d
 
 echo "2/3: Starting Celery worker..."
-source ../../py313/bin/activate
+if [ -n "$PYENV_ACTIVATE" ]; then
+    source "$PYENV_ACTIVATE"
+else
+    source ../../py313/bin/activate
+fi
 export VERBAL_ROLE=worker
 
 # Idempotent check: Only start watchmedo/celery if it isn't already running
@@ -26,8 +34,3 @@ if ! pgrep -f "watchmedo auto-restart" > /dev/null; then
  else
      echo "Celery Beat is already running."
  fi
-
- echo "Verifying/Pulling Ollama Model ($OLLAMA_MODEL) in the background..."
- # We use `pull` instead of `run` so it exits cleanly after downloading, rather than opening a chat.
- # A short sleep ensures the Ollama API inside the container is fully booted before we send the command.
- (sleep 5 && docker exec verbal_ollama ollama pull $OLLAMA_MODEL > ollama_pull.log 2>&1) &

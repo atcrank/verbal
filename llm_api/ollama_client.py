@@ -43,3 +43,29 @@ def set_ollama_model_state(model_name: str, active: bool):
         logger.info(f'✅ {action} {model_name} in Ollama VRAM.')
     except requests.exceptions.RequestException as e:
         logger.info(f'⚠️ Failed to manage Ollama model {model_name}: {e}')
+
+import subprocess
+
+def start_container():
+    """Starts the Ollama Docker container using docker compose."""
+    try:
+        logger.info("Starting Ollama container via docker compose...")
+        subprocess.run(
+            ["docker", "compose", "-f", str(settings.BASE_DIR / "docker-compose.yml"), "up", "-d", "ollama"],
+            check=True, capture_output=True, text=True
+        )
+        logger.info("✅ Ollama container started.")
+    except subprocess.CalledProcessError as e:
+        logger.error(f"❌ Failed to start Ollama container: {e.stderr}")
+
+def stop_container():
+    """Stops the Ollama Docker container using docker compose."""
+    try:
+        logger.info("Stopping Ollama container via docker compose...")
+        subprocess.run(
+            ["docker", "compose", "-f", str(settings.BASE_DIR / "docker-compose.yml"), "stop", "ollama"],
+            check=True, capture_output=True, text=True
+        )
+        logger.info("✅ Ollama container stopped.")
+    except subprocess.CalledProcessError as e:
+        logger.error(f"❌ Failed to stop Ollama container: {e.stderr}")

@@ -12,7 +12,7 @@ We target the auto-generated pipeline that links the ``StrategicPlan`` node dire
     >>> from metacognition.models import CognitiveBlueprint
     >>> from django.contrib.auth.models import User
     >>> user, _ = User.objects.get_or_create(username="test_user")
-    >>> bp = CognitiveBlueprint.objects.filter(name__startswith="Pipeline: ResearchEvaluation").first()
+    >>> bp = CognitiveBlueprint.objects.filter(name__startswith="ResearchEvaluation").first()
     
     >>> prompt = (
     ...     "If we toss a fair coin to decide whether (HEADS) to roll a D6 (six-sided dice) "

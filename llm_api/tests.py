@@ -98,9 +98,19 @@ class LlmApiIntegrationTests(TestCase):
         cls.settings_override.disable()
 
     def setUp(self):
+        from llm_api.models import SystemConfiguration, LocalAIModel
         self.client = Client()
         self.user = User.objects.create_user(username='testuser', password='password123')
         self.client.login(username='testuser', password='password123')
+        
+        config = SystemConfiguration.get_solo()
+        config.hosting_backend = 'pytorch'
+        model, _ = LocalAIModel.objects.get_or_create(
+            hf_model_id="Qwen/Qwen2.5-3B-Instruct", 
+            defaults={"name": "Qwen/Qwen2.5-3B-Instruct"}
+        )
+        config.active_local_model = model
+        config.save()
 
     @tag('e2e')
     def test_generate_response_with_real_rag(self):

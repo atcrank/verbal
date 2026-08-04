@@ -4,7 +4,7 @@ description: Core instructions for Antigravity agents working in this repository
 
 # General Rules
 - Always use Python 3.13+ syntax and features.
-- Prefer the conventions of the library you are using. 
+- Prefer the conventions of most up-to-date version the library you are using. 
 - In novel code, particularly things involving AI, prefer functional patterns and composition over deep class inheritance.
 - Prefer short clear functions to long ones, where practical, but use judgement.  One 30-line function might be preferable to five ten-line functions.
 - Never suppress exceptions silently. Make error messages as helpful as possible.
@@ -20,3 +20,11 @@ description: Core instructions for Antigravity agents working in this repository
 # Boundaries
 - Do not modify any files inside the `documents/`, `resources/`, `workspaces/`, or `sandbox` directories unless explicitly instructed.
 - Do not run database migrations. The Testing framework database fixtures will use them, but you are working in a git branch so changes to the default postgres database are a side effect. 
+
+# Note Consultation Rule
+On starting a new feature or debugging session, always check `.agents/workstream_specs/notes/INDEX.md` for any "enduring" constraints or pending notes related to the files you are about to edit.
+
+# Checking Package Availability
+- When needing to know if a python package is in the environment, start by checking `requirements.in`.
+- If not explicitly listed, check the compiled full environment list in `requirements.txt`.
+- Only check by trying an import if the package appears in the requirements files but seems to be unavailable. Do not use test imports as a primary discovery mechanism.

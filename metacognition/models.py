@@ -96,7 +96,7 @@ class CognitiveBlueprint(models.Model):
     def family_success_probability(self):
         from metacognition.compiler import resolve_active_steps
         try:
-            resolved = resolve_active_steps(self)
+            resolved, _ = resolve_active_steps(self)
         except Exception:
             return None
         if not resolved:
@@ -119,8 +119,32 @@ class CognitiveBlueprint(models.Model):
 
 
 class ReasoningStepQuerySet(models.QuerySet):
-    def active_for_blueprint(self, blueprint):
-        return self.filter(is_active=True, blueprint=blueprint)
+    def active_for_blueprint(self, blueprint) -> dict:
+        """
+        Returns active steps for a blueprint, grouped by their canonical root lineage.
+        Returns: {canonical_root_id: [active_variant, ...]}
+        """
+        all_steps = list(blueprint.steps.all())
+        step_map = {s.id: s for s in all_steps}
+        
+        def get_root(step):
+            curr = step
+            seen = set()
+            while curr.parent_step_id and curr.parent_step_id not in seen:
+                seen.add(curr.id)
+                if curr.parent_step_id in step_map:
+                    curr = step_map[curr.parent_step_id]
+                else:
+                    curr = curr.parent_step
+            return curr
+
+        groups = {}
+        for step in all_steps:
+            if step.is_active:
+                root = get_root(step)
+                groups.setdefault(root.id, []).append(step)
+                
+        return groups
 
 class ReasoningStepManager(models.Manager):
     def get_queryset(self):
@@ -131,8 +155,18 @@ class ReasoningStepManager(models.Manager):
 
 class ReasoningStep(models.Model):
     """
-    A single node in the cognitive state machine.
-    Represents one interaction with the LLM.
+    A single node in the cognitive state machine graph.
+    Represents one interaction or execution step with the LLM or sub-blueprint.
+
+    Graph Topology & Routing Notes:
+    - Directed Graph (Not Acyclic): The graph formed by ReasoningStep nodes is a directed graph
+      and is NOT strictly acyclic. Edges (on_success_step and on_failure_step) can route
+      backwards to any previously visited step, form loops, or self-loop (route_to=SELF).
+    - Unconditional Continuation: Routing both on_success_step and on_failure_step to the same
+      target step allows unconditional step progress (executing the next step regardless of outcome).
+    - Variant Evolution Lineage: When generating new variants of a step, agents should inspect
+      the `parent` foreign key to trace prompt history and examine neighbor steps (preceding
+      and succeeding nodes) to preserve context continuity and prevent regressing to old wordings.
     """
     blueprint = models.ForeignKey(CognitiveBlueprint, on_delete=models.CASCADE, related_name="steps")
     name = models.CharField(max_length=255, help_text="e.g., 'Draft Hypothesis', 'Critique Draft'")

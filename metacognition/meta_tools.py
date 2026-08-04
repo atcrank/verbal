@@ -130,7 +130,7 @@ def review_benchmark_results(state: dict, params: dict) -> str:
         for run in runs:
             summaries.append(
                 f"Run {run.id} ({run.timestamp.strftime('%Y-%m-%d')}): "
-                f"Blueprint ID: {run.experiment.blueprint_id if run.experiment else 'N/A'}, "
+                f"Blueprint ID: {run.experiment.configuration.get('blueprint_id', 'N/A') if run.experiment else 'N/A'}, "
                 f"RAG={run.average_rag_score:.2f}, Sem={run.average_semantic_score:.2f}, "
                 f"Faith={run.average_faithfulness or 'N/A'}"
             )
@@ -294,6 +294,20 @@ def django_shell_script(state: dict, params: dict) -> str:
     if ".delete(" in script_content:
         return "Error: Hard deletes are blocked. Use is_active=False or flag for review."
 
+    # AST Security Patch
+    import ast
+    try:
+        tree = ast.parse(script_content)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import) or isinstance(node, ast.ImportFrom):
+                module_name = getattr(node, 'module', None) or node.names[0].name
+                if module_name in ['os', 'sys', 'subprocess']:
+                    return f"Error: Importing '{module_name}' is blocked for security."
+                if module_name.startswith('django.core.management'):
+                    return "Error: Importing django management commands is blocked to prevent rogue migrations."
+    except SyntaxError as e:
+        return f"Syntax error in script: {e}"
+
     try:
         # We need a string buffer to capture stdout
         import sys
@@ -375,3 +389,429 @@ def TASK_COMPLETE(state: dict, params: dict) -> dict:
         "working_prompt": "Task completed successfully. Shutting down.",
         "route_to": "SUCCESS"
     }
+
+def discover_django_models(state: dict, params: dict) -> str:
+    """
+    Inspects the schema of Django models. If model_name is omitted, returns the whole spine of the app.
+    """
+    app_label = params.get("app_label")
+    model_name = params.get("model_name")
+    from django.apps import apps
+    
+    try:
+        app_config = apps.get_app_config(app_label)
+    except Exception as e:
+        return f"Error loading app '{app_label}': {e}"
+        
+    models_to_inspect = []
+    if model_name:
+        try:
+            models_to_inspect.append(app_config.get_model(model_name))
+        except Exception as e:
+            return f"Error loading model '{model_name}' in app '{app_label}': {e}"
+    else:
+        models_to_inspect = list(app_config.get_models())
+        
+    if not models_to_inspect:
+        return f"No models found for app '{app_label}'."
+        
+    summary = []
+    for model in models_to_inspect:
+        model_info = f"Model: {model.__name__}\nFields:\n"
+        for field in model._meta.get_fields():
+            if field.is_relation:
+                related_model = field.related_model
+                if related_model:
+                    rel_info = f"{related_model._meta.app_label}.{related_model.__name__}"
+                else:
+                    rel_info = "Unknown"
+                model_info += f"  - {field.name} ({field.__class__.__name__}) -> {rel_info}\n"
+            else:
+                model_info += f"  - {field.name} ({field.__class__.__name__})\n"
+        
+        methods = [func for func in dir(model) if callable(getattr(model, func)) and not func.startswith("__")]
+        custom_methods = [m for m in methods if m in ['create_variant', 'get_absolute_url', 'clean']]
+        if custom_methods:
+             model_info += f"Key Methods:\n"
+             for m in custom_methods:
+                 model_info += f"  - {m}()\n"
+                 
+        summary.append(model_info)
+        
+    return "\n\n".join(summary)
+
+
+def read_django_models(state: dict, params: dict) -> str:
+    """
+    A generic tool accepting app_label, model_name, and kwargs (filter parameters).
+    Replaces custom discovery scripts by allowing the LLM to query for things like unscored variants or empty Grips stubs directly.
+    """
+    app_label = params.get("app_label")
+    model_name = params.get("model_name")
+    filter_kwargs = params.get("kwargs", {})
+    limit = params.get("limit", 10)
+    
+    from django.apps import apps
+    from django.forms.models import model_to_dict
+    import json
+    try:
+        model = apps.get_model(app_label, model_name)
+    except Exception as e:
+        return f"Error loading model: {e}"
+        
+    try:
+        qs = model.objects.filter(**filter_kwargs)[:limit]
+        if not qs.exists():
+            return "No matching records found."
+            
+        results = []
+        for obj in qs:
+            obj_dict = model_to_dict(obj)
+            for k, v in obj_dict.items():
+                if v.__class__.__name__ not in ['str', 'int', 'float', 'bool', 'NoneType', 'dict', 'list']:
+                    obj_dict[k] = str(v)
+            obj_dict["__str__"] = str(obj)
+            results.append(obj_dict)
+        
+        return json.dumps(results, indent=2)
+    except Exception as e:
+        return f"Error executing query: {e}"
+
+
+def write_django_model(state: dict, params: dict) -> str:
+    """
+    A generic write tool for Django models. Supports create, update, update_or_create, and create_variant.
+    """
+    app_label = params.get("app_label")
+    model_name = params.get("model_name")
+    action = params.get("action", "create")
+    pk = params.get("pk")
+    model_params = params.get("parameters", {})
+    
+    from django.apps import apps
+    try:
+        model = apps.get_model(app_label, model_name)
+    except Exception as e:
+        return f"Error loading model: {e}"
+        
+    try:
+        if action == "create":
+            obj = model.objects.create(**model_params)
+            return f"Successfully created {model_name} (PK: {obj.pk})."
+            
+        elif action == "update":
+            if not pk:
+                return "Error: pk is required for update."
+            obj = model.objects.get(pk=pk)
+            for k, v in model_params.items():
+                setattr(obj, k, v)
+            obj.save()
+            return f"Successfully updated {model_name} (PK: {obj.pk})."
+            
+        elif action == "update_or_create":
+            defaults = model_params.pop("defaults", {})
+            obj, created = model.objects.update_or_create(**model_params, defaults=defaults)
+            status = "created" if created else "updated"
+            return f"Successfully {status} {model_name} (PK: {obj.pk})."
+            
+        elif action == "create_variant":
+            if not pk:
+                return "Error: pk is required for create_variant to select the parent instance."
+            obj = model.objects.get(pk=pk)
+            if hasattr(obj, "create_variant"):
+                variant_intent = model_params.pop("variant_intent", "")
+                new_obj = obj.create_variant(variant_intent=variant_intent, **model_params)
+                return f"Successfully created variant of {model_name} (New PK: {new_obj.pk})."
+            else:
+                return f"Error: Model {model_name} does not have a 'create_variant' method."
+        else:
+            return f"Error: Unknown action '{action}'."
+            
+    except Exception as e:
+        return f"Error executing write operation: {e}"
+
+def manage_dynamic_tools(state: dict, params: dict) -> str:
+    """
+    Allows the NightManager to write Python scripts to a metacognition/dynamic_tools/ directory and register them as ToolDefinitions.
+    Forces created_by="NightManager" to ensure other agents/users cannot accidentally execute untested scripts.
+    Implements basic AST-level security checks to block network/file/delete operations by default.
+    """
+    name = params.get("name")
+    description = params.get("description", "")
+    script_content = params.get("script_content", "")
+    input_schema = params.get("input_schema", "")
+    output_schema = params.get("output_schema", "")
+    
+    if not name or not script_content:
+        return "Error: name and script_content are required."
+        
+    import ast
+    try:
+        tree = ast.parse(script_content)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import) or isinstance(node, ast.ImportFrom):
+                module_name = getattr(node, 'module', None) or node.names[0].name
+                if module_name in ['os', 'sys', 'subprocess', 'requests', 'socket', 'urllib']:
+                    return f"Error: Importing '{module_name}' is not allowed for security reasons."
+            if isinstance(node, ast.Call):
+                if isinstance(node.func, ast.Attribute):
+                    if node.func.attr == 'delete':
+                        return "Error: calling .delete() is not allowed."
+    except SyntaxError as e:
+        return f"Syntax error in script: {e}"
+        
+    import os
+    from django.conf import settings
+    dynamic_tools_dir = os.path.join(settings.BASE_DIR, "metacognition", "dynamic_tools")
+    os.makedirs(dynamic_tools_dir, exist_ok=True)
+    
+    file_path = os.path.join(dynamic_tools_dir, f"{name}.py")
+    with open(file_path, "w") as f:
+        f.write(script_content)
+        
+    from django.contrib.auth.models import User
+    try:
+        nm_user, _ = User.objects.get_or_create(username="NightManager")
+    except Exception:
+        nm_user = None
+        
+    try:
+        from metacognition.models import ToolDefinition
+        tool = ToolDefinition.objects.filter(name=name).first()
+        if not tool:
+            tool = ToolDefinition(name=name)
+            
+        tool.description = description
+        tool.tool_type = "builtin"
+        tool.python_path = f"metacognition.dynamic_tools.{name}.{name}"
+        if input_schema:
+            tool.input_schema = input_schema
+        if output_schema:
+            tool.output_schema = output_schema
+        tool.created_by = nm_user
+        tool.requires_approval = False
+        tool.is_active = True
+        tool.save()
+        return f"Successfully created dynamic tool '{name}'."
+    except Exception as e:
+        return f"Failed to save tool definition: {e}"
+
+def update_conversation_state(state: dict, params: dict) -> str:
+    """
+    A tool allowing the agent to mutate the state_tree in the active Conversation.
+    actions: 'add_task', 'update_task_status'
+    """
+    action = params.get("action")
+    task_path = params.get("task_path")
+    status = params.get("status", "projected")
+    
+    conversation_id = state.get("conversation_id")
+    if not conversation_id:
+        return "Error: No active conversation."
+        
+    from llm_api.models import Conversation
+    try:
+        conv = Conversation.objects.get(id=conversation_id)
+        if not conv.state_tree:
+            conv.state_tree = {}
+            
+        parts = task_path.split(" > ")
+        current = conv.state_tree
+        for part in parts[:-1]:
+            if part not in current:
+                current[part] = {"status": "active", "children": {}}
+            current = current[part].get("children", current[part])
+            
+        leaf = parts[-1]
+        if action == "add_task":
+            if leaf not in current:
+                current[leaf] = {"status": status}
+            else:
+                current[leaf]["status"] = status
+        elif action == "update_task_status":
+            if leaf in current:
+                current[leaf]["status"] = status
+            else:
+                return f"Task '{task_path}' not found."
+                
+        conv.save(update_fields=['state_tree'])
+        import json
+        return f"Successfully updated conversation state. Current state: {json.dumps(conv.state_tree)}"
+    except Exception as e:
+        return f"Failed to update conversation state: {e}"
+
+def run_sub_blueprint(state: dict, params: dict) -> str:
+    """
+    Synchronously executes a sub-blueprint and returns its result, allowing the NightManager to instantly update the task's state in the tree.
+    """
+    blueprint_name = params.get('blueprint_name')
+    task_prompt = params.get('task_prompt')
+    user_id = state.get('user_id')
+    conversation_id = state.get('conversation_id')
+    
+    from metacognition.models import CognitiveBlueprint
+    from metacognition.tasks import run_blueprint
+    try:
+        bp = CognitiveBlueprint.objects.get(name=blueprint_name)
+        result = run_blueprint(
+            blueprint_id=bp.id,
+            user_prompt=task_prompt,
+            conversation_id=conversation_id,
+            user_id=user_id
+        )
+        return f"Sub-blueprint '{blueprint_name}' executed. Result: {result.get('final_response', 'No response')}"
+    except CognitiveBlueprint.DoesNotExist:
+        return f"Error: Sub-blueprint '{blueprint_name}' not found."
+    except Exception as e:
+        return f"Failed to run sub-blueprint: {e}"
+
+def get_conversation_metrics(state: dict, params: dict) -> str:
+    """Queries PromptResponseLog to summarize success rates and identify frequently failing reasoning steps."""
+    from llm_api.models import PromptResponseLog
+    from django.db.models import Count, Avg
+    
+    logs = PromptResponseLog.objects.exclude(step_status__isnull=True)
+    total = logs.count()
+    if not total:
+         return "No conversation logs with step_status found."
+         
+    success = logs.filter(step_status='SUCCESS').count()
+    failed = logs.filter(step_status='FAILURE').count()
+    retries = logs.filter(step_status='RETRY').count()
+    
+    # Redefine total to only include completed or failed steps for percentage calculation
+    resolved_total = success + failed
+    if resolved_total == 0:
+        success_rate = 0.0
+        failure_rate = 0.0
+    else:
+        success_rate = (success / resolved_total) * 100
+        failure_rate = (failed / resolved_total) * 100
+    
+    avg_tokens = logs.aggregate(avg_in=Avg('input_tokens'), avg_out=Avg('output_tokens'))
+    
+    # Find steps that fail most often
+    failed_steps = logs.filter(step_status='FAILURE').values('reasoning_step__name').annotate(fails=Count('id')).order_by('-fails')[:5]
+    
+    summary = (
+        f"Conversation Metrics:\\n"
+        f"- Total Steps Evaluated: {total} (Success: {success}, Failed: {failed}, Retries: {retries})\\n"
+        f"- Success Rate (Resolved): {success_rate:.1f}%\\n"
+        f"- Failure Rate (Resolved): {failure_rate:.1f}%\\n"
+        f"- Avg Input Tokens: {avg_tokens['avg_in'] or 0:.0f} | Avg Output: {avg_tokens['avg_out'] or 0:.0f}\\n\\n"
+        f"Most Frequently Failing Steps:\\n"
+    )
+    for f in failed_steps:
+        name = f['reasoning_step__name'] or "Unknown Step"
+        summary += f"- '{name}': {f['fails']} failures\\n"
+        
+    recent_failures = logs.filter(step_status='FAILURE').order_by('-created_at')[:3]
+    if recent_failures.exists():
+        summary += "\\nRecent Specific Failures (for deep reading):\\n"
+        for log in recent_failures:
+            name = log.reasoning_step.name if log.reasoning_step else "Unknown"
+            snippet = log.generated_response[:150].replace("\\n", " ") + "..." if log.generated_response else "No output"
+            summary += f"- Log ID: {log.id} | Step: '{name}' | Snippet: {snippet}\\n"
+            summary += "  (Use `fetch_log_details` with this ID to read full context)\\n"
+            
+    return summary
+
+def fetch_log_details(state: dict, params: dict) -> str:
+    """Fetches full details of a specific PromptResponseLog for deep reading."""
+    log_id = params.get("log_id")
+    from llm_api.models import PromptResponseLog
+    try:
+        log = PromptResponseLog.objects.get(id=log_id)
+        return (
+            f"Log ID: {log.id}\\n"
+            f"Step: {log.reasoning_step.name if log.reasoning_step else 'N/A'}\\n"
+            f"Status: {log.step_status}\\n"
+            f"System Prompt:\\n{log.system_prompt}\\n"
+            f"User Prompt:\\n{log.user_prompt}\\n"
+            f"Generated Response:\\n{log.generated_response}\\n"
+            f"RAG Selections: {log.rag_selections}\\n"
+        )
+    except Exception as e:
+        return f"Error fetching log: {e}"
+
+def get_rag_efficiency_metrics(state: dict, params: dict) -> str:
+    """Analyzes downstream impacts of RAG context on conversation failures."""
+    from llm_api.models import PromptResponseLog
+    from background_resources.models import Document, RAGChunk
+    from django.db.models import Avg
+    
+    # Look for logs that had RAG selections but still failed
+    failed_with_rag = PromptResponseLog.objects.filter(step_status='FAILURE').exclude(rag_selections=[]).exclude(rag_selections__isnull=True)
+    success_with_rag = PromptResponseLog.objects.filter(step_status='SUCCESS').exclude(rag_selections=[]).exclude(rag_selections__isnull=True)
+    
+    summary = "RAG Efficiency & Downstream Impact Metrics:\\n"
+    summary += f"- Steps failed despite having RAG context: {failed_with_rag.count()}\\n"
+    summary += f"- Steps succeeded with RAG context: {success_with_rag.count()}\\n"
+    
+    if failed_with_rag.exists():
+        avg_tokens = failed_with_rag.aggregate(avg_in=Avg('input_tokens'))
+        summary += f"- Avg Input Tokens for Failed RAG steps (indicates potential overload): {avg_tokens['avg_in'] or 0:.0f}\\n"
+        summary += "\\nReview these failed logs to determine if the RAG input was excessive, distracting, irrelevant, or insufficient.\\n"
+        summary += "\\nSpecific Failed RAG Logs:\\n"
+        for log in failed_with_rag.order_by('-created_at')[:3]:
+            name = log.reasoning_step.name if log.reasoning_step else "Unknown"
+            summary += f"- Log ID: {log.id} | Step: '{name}' (Use `fetch_log_details` to review RAG context)\\n"
+    
+    summary += f"\\nTotal Indexed Documents: {Document.objects.filter(currently_indexed=True).count()}\\n"
+    summary += f"Total RAG Chunks: {RAGChunk.objects.count()}\\n"
+    
+    return summary
+
+def get_grips_metrics(state: dict, params: dict) -> str:
+    """Summarizes Grips ConceptNode stats and flags downstream failures."""
+    from grips.models import Domain, ConceptNode, KnowledgeEdge
+    
+    domains = Domain.objects.count()
+    nodes = ConceptNode.objects.count()
+    edges = KnowledgeEdge.objects.count()
+    unlinted_nodes = ConceptNode.objects.filter(needs_linting=True).count()
+    empty_stubs = ConceptNode.objects.filter(narrative_content='').count()
+    
+    summary = "Grips Knowledge Graph Metrics:\\n"
+    summary += f"- Total Domains: {domains}\\n"
+    summary += f"- Total ConceptNodes: {nodes} ({empty_stubs} empty stubs, {unlinted_nodes} needing linting)\\n"
+    summary += f"- Total KnowledgeEdges: {edges}\\n\\n"
+    summary += "Note: Look for patterns in Conversation failures where Grips failed to provide relevant content, or provided too much irrelevant context.\\n"
+    return summary
+
+def get_benchmark_stats(state: dict, params: dict) -> str:
+    """Fetches summary statistics for recent benchmark investigations."""
+    from benchmarking.models import Investigation
+    investigations = Investigation.objects.all().order_by('-created_at')[:5]
+    
+    if not investigations:
+        return "No benchmark investigations found."
+        
+    summary = []
+    for inv in investigations:
+        df = inv.to_dataframe()
+        if not df.empty:
+            summary.append(f"Investigation: {inv.name}\\nStats:\\n{df.describe().to_string()}\\n")
+    return "\\n".join(summary) if summary else "No data in recent investigations."
+
+def read_benchmark_topic(state: dict, params: dict) -> str:
+    """Reads detailed performance for a specific investigation."""
+    inv_name = params.get("investigation_name")
+    from benchmarking.models import Investigation
+    inv = Investigation.objects.filter(name__icontains=inv_name).first()
+    if not inv:
+        return f"Investigation '{inv_name}' not found."
+    df = inv.to_dataframe()
+    if df.empty:
+        return "No data for this investigation."
+    return df.to_string()
+
+def create_benchmark_scenario(state: dict, params: dict) -> str:
+    """Creates a new scenario for benchmarking."""
+    question = params.get("question")
+    from benchmarking.models import BenchmarkScenario
+    try:
+        sc, created = BenchmarkScenario.objects.get_or_create(question=question)
+        return f"Scenario created/exists with ID: {sc.id}"
+    except Exception as e:
+        return f"Failed to create scenario: {e}"

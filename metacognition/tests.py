@@ -6,7 +6,7 @@ from .models import CognitiveBlueprint, ReasoningStep, ResponseSchema, ToolDefin
 from .tasks import run_blueprint
 from .actions import (
     ExecutionPlan, CheckParsingAction, CheckParsingArgs, TaskCompleteAction, TaskCompleteArgs,
-    python_sandbox, initialize_task_queue, process_task_queue, TaskQueue, TaskItem
+    python_sandbox, process_task_queue, TaskQueue, TaskItem
 )
 
 from langchain_core.documents import Document as LangchainDocument
@@ -59,7 +59,8 @@ class MetacognitionTraversalTests(TestCase):
             max_retries=2 # Allow 2 loops before failing
         )
         tool = ToolDefinition.objects.get_or_create(name="document_reader", defaults={"description": "Active reading tool", "python_path": "metacognition.meta_tools.document_reader"})[0]
-        self.active_step.available_tools.add(tool)
+        task_complete_tool = ToolDefinition.objects.get_or_create(name="TASK_COMPLETE", defaults={"description": "Task complete", "python_path": "metacognition.meta_tools.TASK_COMPLETE"})[0]
+        self.active_step.available_tools.add(tool, task_complete_tool)
         # Link to itself on failure
         self.active_step.on_failure_step = self.active_step
         self.active_step.save()
@@ -91,9 +92,9 @@ class MetacognitionTraversalTests(TestCase):
 
     @patch('metacognition.tasks.service_registry.rag_service.get_context')
     @patch('metacognition.tasks.service_registry.nlp_service.get_lemmatized_tokens')
-    @patch('metacognition.tasks.service_registry.ai_service.generate_response2')
+    @patch('metacognition.tasks.service_registry.ai_service.generate_outline')
     @patch('metacognition.tasks.service_registry.ai_service.clean_response')
-    def test_agentic_loop_and_success(self, mock_clean, mock_generate, mock_nlp, mock_rag):
+    def test_agentic_loop_and_success(self, mock_clean, mock_outline, mock_nlp, mock_rag):
         """
         Tests the action hook mutating state. The LLM uses the document_reader tool,
         the graph runs again, and then succeeds.
@@ -115,9 +116,9 @@ class MetacognitionTraversalTests(TestCase):
             "args": {"action": "fetch_chunk", "target_id": "chunk_0"},
             "id": "call_1"
         }])
-        mock_generate.side_effect = [
-            [f"<tool_calls>{tool_call_json}</tool_calls>"],
-            ["success with final answer."]
+        mock_outline.side_effect = [
+            {"tool_calls": [{"name": "document_reader", "args": {"action": "fetch_chunk", "target_id": "chunk_0"}}]},
+            {"tool_calls": [{"name": "TASK_COMPLETE", "args": {"final_answer": "success with final answer."}}]}
         ]
         
         from llm_api.apps import service_registry
@@ -134,13 +135,15 @@ class MetacognitionTraversalTests(TestCase):
                 from metacognition.state import AgentState
                 from langchain_core.messages import HumanMessage
                 graph = compile_graph_from_blueprint(self.agentic_bp)
+                from llm_api.models import Conversation
+                conv_loop1 = Conversation.objects.create(user_id=self.user.id, title="Test 1")
                 initial_state = AgentState(
                     working_memory=[HumanMessage(content="What is the sentence?")],
                     rag_context="",
                     resume_to=None,
                     token_budget_remaining=None,
                     route_to=None,
-                    conversation_id="loop-123",
+                    conversation_id=str(conv_loop1.id),
                     user_id=self.user.id,
                     step_count=0,
                     max_steps=5,
@@ -148,7 +151,7 @@ class MetacognitionTraversalTests(TestCase):
                     internal_monologue=[],
                     scratch={"primary_rag_doc_meta": {"chunk_index": 1, "indexed_hash": "test_hash"}}
                 )
-                config = {"configurable": {"thread_id": "loop-123"}}
+                config = {"configurable": {"thread_id": str(conv_loop1.id)}}
                 result = graph.invoke(initial_state, config)
 
         # Assertions
@@ -182,7 +185,7 @@ class MetacognitionTraversalTests(TestCase):
         }])
         
         # Return a tool call infinitely to exhaust max_retries
-        mock_generate.return_value = [f"<tool_calls>{tool_call_json}</tool_calls>"]
+        mock_generate.return_value = [json.dumps({"tool_calls": json.loads(tool_call_json)})]
 
         from llm_api.apps import service_registry
         with patch.object(service_registry.rag_service, 'store') as mock_store:
@@ -198,13 +201,15 @@ class MetacognitionTraversalTests(TestCase):
                 from metacognition.state import AgentState
                 from langchain_core.messages import HumanMessage
                 graph = compile_graph_from_blueprint(self.agentic_bp)
+                from llm_api.models import Conversation
+                conv_loop2 = Conversation.objects.create(user_id=self.user.id, title="Test 2")
                 initial_state = AgentState(
                     working_memory=[HumanMessage(content="Fetch forever.")],
                     rag_context="",
                     resume_to=None,
                     token_budget_remaining=None,
                     route_to=None,
-                    conversation_id="loop-456",
+                    conversation_id=str(conv_loop2.id),
                     user_id=self.user.id,
                     step_count=0,
                     max_steps=5,
@@ -212,7 +217,7 @@ class MetacognitionTraversalTests(TestCase):
                     internal_monologue=[],
                     scratch={"primary_rag_doc_meta": {"chunk_index": 5, "indexed_hash": "test"}}
                 )
-                config = {"configurable": {"thread_id": "loop-456"}}
+                config = {"configurable": {"thread_id": str(conv_loop2.id)}}
                 result = graph.invoke(initial_state, config)
 
         self.assertNotIn("error", result)
@@ -228,9 +233,8 @@ class MetacognitionTraversalTests(TestCase):
     @patch('metacognition.tasks.service_registry.ai_service.generate_outline')
     @patch('metacognition.tasks.service_registry.rag_service.get_context')
     @patch('metacognition.tasks.service_registry.nlp_service.get_lemmatized_tokens')
-    @patch('metacognition.tasks.service_registry.ai_service.generate_response2')
     @patch('metacognition.tasks.service_registry.ai_service.clean_response')
-    def test_execution_plan_and_success(self, mock_clean, mock_generate, mock_nlp, mock_rag, mock_outline):
+    def test_execution_plan_and_success(self, mock_clean, mock_nlp, mock_rag, mock_outline):
         """
         Tests the action hook for execution plan with tools.
         """
@@ -247,7 +251,6 @@ class MetacognitionTraversalTests(TestCase):
         plan_step = ReasoningStep.objects.create(
             blueprint=plan_bp, name="Plan step", is_start_node=True,
             system_prompt="Make a plan",
-            output_schema=schema,
             max_retries=2
         )
         tool = ToolDefinition.objects.get_or_create(name="handle_execution_plan", defaults={"description": "Execution tool"})[0]
@@ -255,24 +258,15 @@ class MetacognitionTraversalTests(TestCase):
         plan_step.on_failure_step = plan_step
         plan_step.save()
 
-        mock_outline.side_effect = [
-            ExecutionPlan(
-                analysis="Need to syntax check code",
-                queue=[CheckParsingAction(tool="CHECK_PARSING", parameters=CheckParsingArgs(code="print('Hello World')"), expected_outcome="Valid syntax")]
-            ),
-            ExecutionPlan(
-                analysis="Parsed successfully",
-                queue=[TaskCompleteAction(tool="TASK_COMPLETE", parameters=TaskCompleteArgs(final_answer="The answer is test"), expected_outcome="Done")]
-            )
-        ]
+
         
         import json
         call1_json = json.dumps([{"name": "handle_execution_plan", "args": {"analysis": "Need to syntax check code", "queue": [{"tool": "CHECK_PARSING", "parameters": {"code": "print('Hello World')"}, "expected_outcome": "Valid syntax"}]}, "id": "call_1"}])
         call2_json = json.dumps([{"name": "handle_execution_plan", "args": {"analysis": "Parsed successfully", "queue": [{"tool": "TASK_COMPLETE", "parameters": {"final_answer": "The answer is test"}, "expected_outcome": "Done"}]}, "id": "call_2"}])
 
-        mock_generate.side_effect = [
-            [f"<tool_calls>{call1_json}</tool_calls>"],
-            [f"<tool_calls>{call2_json}</tool_calls>"]
+        mock_outline.side_effect = [
+            {"tool_calls": [{"name": "handle_execution_plan", "args": {"analysis": "Need to syntax check code", "queue": [{"tool": "CHECK_PARSING", "parameters": {"code": "print('Hello World')"}, "expected_outcome": "Valid syntax"}]}}]},
+            {"tool_calls": [{"name": "handle_execution_plan", "args": {"analysis": "Parsed successfully", "queue": [{"tool": "TASK_COMPLETE", "parameters": {"final_answer": "The answer is test"}, "expected_outcome": "Done"}]}}]}
         ]
 
         result = run_blueprint(plan_bp.id, "Do this plan", user_id=self.user.id)
@@ -287,9 +281,9 @@ class MetacognitionTraversalTests(TestCase):
         llm_output = "print('hello')"
         with patch('requests.post') as mock_post:
             mock_post.return_value.status_code = 200
-            mock_post.return_value.json.return_value = {"output": "hello\n", "error": "", "return_code": 0}
+            mock_post.return_value.json.return_value = {"stdout": "hello\n", "stderr": "", "returncode": 0}
             
-            new_state = python_sandbox(code=llm_output, **state)
+            new_state = python_sandbox(state, {"code": llm_output})
             self.assertIn("Sandbox Execution Succeeded", new_state["working_prompt"])
             self.assertEqual(new_state["route_to"], "SUCCESS")
 
@@ -300,23 +294,16 @@ class MetacognitionTraversalTests(TestCase):
         llm_output = "bad_code()"
         with patch('requests.post') as mock_post:
             mock_post.return_value.status_code = 200
-            mock_post.return_value.json.return_value = {"output": "", "error": "NameError: name 'bad_code' is not defined", "return_code": 1}
+            mock_post.return_value.json.return_value = {"stdout": "", "stderr": "NameError: name 'bad_code' is not defined", "returncode": 1}
             
-            new_state = python_sandbox(code=llm_output, **state)
+            new_state = python_sandbox(state, {"code": llm_output})
             self.assertIn("Sandbox Execution Failed", new_state["working_prompt"])
             self.assertEqual(new_state["route_to"], "SELF")
-
-    def test_initialize_task_queue(self):
-        state = {"scratch": {}, "route_to": None}
-        tq = TaskQueue(queue=[TaskItem(goal="Task 1", delegated_blueprint=None), TaskItem(goal="Task 2", delegated_blueprint=None)])
-        new_state = initialize_task_queue(state, tq)
-        self.assertEqual(len(new_state["scratch"]["task_queue"]), 2)
-        self.assertEqual(new_state["route_to"], "SUCCESS")
 
     def test_process_task_queue_loop(self):
         state = {
             "scratch": {
-                "task_queue": [
+                "queue": [
                     {"goal": "Task 1", "delegated_blueprint": None},
                     {"goal": "Task 2", "delegated_blueprint": None}
                 ]
@@ -325,7 +312,7 @@ class MetacognitionTraversalTests(TestCase):
             "route_to": None
         }
         new_state = process_task_queue(state, None)
-        self.assertEqual(len(new_state["scratch"]["task_queue"]), 1)
+        self.assertEqual(len(new_state["scratch"]["queue"]), 1)
         self.assertIn("Task 1", new_state["working_prompt"])
         self.assertEqual(new_state["route_to"], "SELF")
 
@@ -335,20 +322,22 @@ class MetacognitionTraversalTests(TestCase):
         
         bp = CognitiveBlueprint.objects.create(name="SubBP")
         
+        from llm_api.models import Conversation
+        conv_loop3 = Conversation.objects.create(user_id=self.user.id, title="Test 3")
         state = {
             "scratch": {
-                "task_queue": [
-                    {"goal": "Task 1", "delegated_blueprint": "SubBP"}
+                "queue": [
+                    {"goal": "Task 1", "delegated_blueprint": bp.name}
                 ]
             },
             "working_prompt": "",
-            "conversation_id": "test_conv",
+            "conversation_id": str(conv_loop3.id),
             "user_id": self.user.id,
             "route_to": None
         }
         new_state = process_task_queue(state, None)
         
-        mock_run.assert_called_once_with(bp.id, "Task 1", conversation_id="test_conv", user_id=self.user.id)
+        mock_run.assert_called_once_with(bp.id, "Task 1", conversation_id=str(conv_loop3.id), user_id=self.user.id)
         self.assertIn("Delegated answer", new_state["working_prompt"])
         self.assertEqual(new_state["route_to"], "SELF")
 
@@ -362,7 +351,7 @@ class MetacognitionTraversalTests(TestCase):
         super().tearDownClass()
 
 @tag('e2e')
-class MetacognitionE2ETests(TestCase):
+class MetacognitionE2EExternalProxyTests(TestCase):
     """
     End-to-end tests that hit the REAL, running inference server.
     These are slow and require the full system to be running.
@@ -385,15 +374,42 @@ class MetacognitionE2ETests(TestCase):
         from llm_api.models import ExternalAIModel, UserActiveModel
 
         cls.test_system_user, _ = User.objects.get_or_create(username='test_system_user')
-        ext_api, _ = ExternalAIModel.objects.get_or_create(
+        # Dynamically discover the active model to avoid 404s
+        import urllib.request
+        import json
+        import subprocess
+        
+        active_model_name = "Qwen/Qwen2.5-3B-Instruct"
+        try:
+            ps = subprocess.run(["docker", "ps", "--format", "{{.Names}}"], capture_output=True, text=True)
+            names = ps.stdout.split()
+            if "verbal_ollama" in names:
+                req = urllib.request.Request("http://127.0.0.1:11434/api/tags")
+                with urllib.request.urlopen(req, timeout=2) as response:
+                    data = json.loads(response.read().decode())
+                    models = data.get("models", [])
+                    if models:
+                        active_model_name = models[0]["name"]
+            elif "verbal_vllm" in names:
+                req = urllib.request.Request("http://127.0.0.1:8003/v1/models")
+                with urllib.request.urlopen(req, timeout=2) as response:
+                    data = json.loads(response.read().decode())
+                    models = data.get("data", [])
+                    if models:
+                        active_model_name = models[0]["id"]
+        except Exception:
+            pass
+            
+        from django.conf import settings
+        ext_model = ExternalAIModel.objects.create(
             name="Live Inference Server",
             provider="openai",
             api_url="http://127.0.0.1:8001/api/llm/v1/chat/completions",
-            api_model_name="local-model"
+            api_model_name=active_model_name
         )
         UserActiveModel.objects.update_or_create(
             user=cls.test_system_user,
-            defaults={"active_external": ext_api, "use_external": True}
+            defaults={"active_external": ext_model, "use_external": True}
         )
 
         cls.original_outline = cls.ai_service.generate_outline
@@ -470,6 +486,105 @@ class MetacognitionE2ETests(TestCase):
         
         print("✅ E2E API test for /api/meta/execute_blueprint/ passed.")
 
+
+@tag('e2e')
+class MetacognitionE2ELocalProxyTests(TestCase):
+    """
+    End-to-end tests that hit the REAL, running local inference server (Ollama or vLLM).
+    These tests ensure that the native SystemConfiguration proxy routing works without
+    User-specific external overrides.
+    """
+    @classmethod
+    def setUpClass(cls):
+        from django.test.utils import override_settings
+        cls.settings_override = override_settings(
+            CELERY_TASK_ALWAYS_EAGER=True,
+            CELERY_TASK_EAGER_PROPAGATES=True,
+            OLLAMA_BASE_URL="http://127.0.0.1:11434",
+            VLLM_BASE_URL="http://127.0.0.1:8003",
+        )
+        cls.settings_override.enable()
+        super().setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        from llm_api.apps import service_registry
+        if getattr(service_registry, '_rag_service', None):
+            service_registry._rag_service.disconnect()
+        if getattr(service_registry, '_grips_service', None):
+            service_registry._grips_service.disconnect()
+        super().tearDownClass()
+
+    def setUp(self):
+        # We can just re-use the setup from the mocked tests to create the DB objects
+        self.mocked_tests = MetacognitionTraversalTests()
+        self.mocked_tests.setUp()
+        
+        # Determine which container is currently running to target it dynamically
+        import subprocess
+        import urllib.request
+        import json
+        running_backend = 'pytorch'
+        active_model_name = "Qwen/Qwen2.5-3B-Instruct"
+        try:
+            ps = subprocess.run(["docker", "ps", "--format", "{{.Names}}"], capture_output=True, text=True)
+            names = ps.stdout.split()
+            if "verbal_ollama" in names:
+                running_backend = "ollama"
+                try:
+                    req = urllib.request.Request("http://127.0.0.1:11434/api/tags")
+                    with urllib.request.urlopen(req, timeout=2) as response:
+                        data = json.loads(response.read().decode())
+                        models = data.get("models", [])
+                        if models:
+                            active_model_name = models[0]["name"]
+                except Exception:
+                    pass
+            elif "verbal_vllm" in names:
+                running_backend = "vllm"
+                try:
+                    req = urllib.request.Request("http://127.0.0.1:8003/v1/models")
+                    with urllib.request.urlopen(req, timeout=2) as response:
+                        data = json.loads(response.read().decode())
+                        models = data.get("data", [])
+                        if models:
+                            active_model_name = models[0]["id"]
+                except Exception:
+                    pass
+        except:
+            pass
+            
+        print(f"\n>>> Local E2E Tests targeting backend: {running_backend} with model {active_model_name}")
+
+        from llm_api.models import SystemConfiguration, LocalAIModel
+        config = SystemConfiguration.get_solo()
+        config.hosting_backend = running_backend
+        if running_backend == 'ollama':
+            model, _ = LocalAIModel.objects.get_or_create(hf_model_id=active_model_name, defaults={"name": active_model_name})
+            config.active_ollama_model = model
+        elif running_backend == 'vllm':
+            model, _ = LocalAIModel.objects.get_or_create(hf_model_id=active_model_name, defaults={"name": active_model_name})
+            config.active_vllm_model = model
+        elif running_backend == 'pytorch':
+            model, _ = LocalAIModel.objects.get_or_create(hf_model_id=active_model_name, defaults={"name": active_model_name})
+            config.active_local_model = model
+            
+        config.save()
+
+    def test_e2e_local_linear_blueprint(self):
+        """
+        Runs the simple IDEA protocol against the native local proxy.
+        """
+        print("\n>>> Running Local E2E test for IDEA protocol...")
+        result = run_blueprint(self.mocked_tests.idea_bp.id, "What are the pros and cons of using Django?", user_id=self.mocked_tests.user.id)
+        
+        self.assertNotIn("error", result, f"E2E run failed with an error: {result.get('error')}")
+        monologue = result.get("internal_monologue", [])
+        self.assertEqual(len(monologue), 3, "E2E run should have produced a 3-step monologue.")
+        for step in monologue:
+            self.assertNotIn("Generation failed", str(step.get("output", "")))
+        print("✅ Local E2E test for IDEA protocol passed.")
+
 class NightManagerToolTests(TestCase):
     """
     Tests the specialized tools available to the NightManager for Sysadmin duties.
@@ -530,7 +645,7 @@ class BlueprintEvolutionTests(TestCase):
 
     def test_resolve_active_steps_no_variants(self):
         from metacognition.compiler import resolve_active_steps
-        resolved = resolve_active_steps(self.bp)
+        resolved, _ = resolve_active_steps(self.bp)
         self.assertEqual(len(resolved), 2)
         self.assertEqual(resolved[self.step_a.id].id, self.step_a.id)
         self.assertEqual(resolved[self.step_b.id].id, self.step_b.id)
@@ -551,7 +666,7 @@ class BlueprintEvolutionTests(TestCase):
         v1_count = 0
         v2_count = 0
         for _ in range(100):
-            resolved = resolve_active_steps(self.bp)
+            resolved, _ = resolve_active_steps(self.bp)
             selected = resolved[self.step_a.id]
             if selected.id == variant_1.id:
                 v1_count += 1
@@ -575,7 +690,7 @@ class BlueprintEvolutionTests(TestCase):
         )
         
         for _ in range(20):
-            resolved = resolve_active_steps(self.bp)
+            resolved, _ = resolve_active_steps(self.bp)
             selected = resolved[self.step_a.id]
             self.assertEqual(selected.id, variant_1.id)
 
@@ -600,12 +715,14 @@ class BlueprintEvolutionTests(TestCase):
         from metacognition.state import AgentState
         from langchain_core.messages import HumanMessage
         
+        from llm_api.models import Conversation
+        conv_remap = Conversation.objects.create(user_id=self.user.id, title="Test 4")
         state = AgentState(
-            working_memory=[HumanMessage(content="Hello")],
+            working_memory=[],
             rag_context="",
             route_to=None,
             resume_to=None,
-            conversation_id="test-remap-1",
+            conversation_id=str(conv_remap.id),
             user_id=self.user.id,
             step_count=0,
             max_steps=5,
@@ -664,17 +781,64 @@ class BlueprintEvolutionTests(TestCase):
         from metacognition.summarizer import summarize_if_needed
         from langchain_core.messages import SystemMessage, HumanMessage
         
-        sys_msg = SystemMessage(content="System prompt")
-        messages = [sys_msg] + [HumanMessage(content=f"User msg {i}") for i in range(15)]
+        sys_msg = SystemMessage(content="System prompt", id="sys_1")
+        long_text = " ".join(["word"] * 30)
+        messages = [sys_msg] + [HumanMessage(content=f"User msg {i}: {long_text}", id=f"msg_{i}") for i in range(20)]
         
         state = {
             "working_memory": messages,
-            "token_budget_remaining": 20 # Low budget to force truncation
+            "token_budget_remaining": 499 # Use spec budget
         }
         
         result = summarize_if_needed(state)
         self.assertIn("working_memory", result)
-        new_memory = result["working_memory"]
-        self.assertLess(len(new_memory), len(messages))
-        self.assertEqual(new_memory[0].content, "System prompt")
-        self.assertEqual(new_memory[-1].content, "User msg 14")
+        remove_msgs = result["working_memory"]
+        self.assertGreater(len(remove_msgs), 0)
+        
+        from langchain_core.messages import RemoveMessage
+        for rm in remove_msgs:
+            self.assertIsInstance(rm, RemoveMessage)
+            
+        removed_ids = {rm.id for rm in remove_msgs}
+        self.assertNotIn("sys_1", removed_ids)
+        self.assertNotIn("msg_19", removed_ids)
+
+    @patch('metacognition.tasks.service_registry.ai_service.generate_response2')
+    def test_prompt_response_log_records_variant(self, mock_generate):
+        mock_generate.return_value = ["Success result"]
+        self.step_a.is_active = False
+        self.step_a.save()
+        variant_a = self.step_a.create_variant(
+            variant_intent="V_A", is_active=True, system_prompt="Variant A Prompt"
+        )
+        
+        from metacognition.compiler import compile_graph_from_blueprint
+        graph = compile_graph_from_blueprint(self.bp)
+        
+        from metacognition.state import AgentState
+        from langchain_core.messages import HumanMessage
+        
+        from llm_api.models import Conversation
+        conv_log = Conversation.objects.create(user_id=self.user.id, title="Test 5")
+        state = AgentState(
+            working_memory=[HumanMessage(content="User prompt")],
+            rag_context="",
+            route_to=None,
+            resume_to=None,
+            conversation_id=str(conv_log.id),
+            user_id=self.user.id,
+            step_count=0,
+            max_steps=5,
+            retries_remaining={},
+            internal_monologue=[],
+            scratch={},
+            token_budget_remaining=8000
+        )
+        
+        config = {"configurable": {"thread_id": "test-log-1"}}
+        graph.invoke(state, config)
+        
+        mock_generate.assert_called()
+        call_args = mock_generate.call_args_list[0]
+        log_kwargs = call_args.kwargs.get("log_kwargs", {})
+        self.assertEqual(log_kwargs.get("reasoning_step_id"), variant_a.id)

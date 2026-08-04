@@ -14,6 +14,7 @@ from benchmarking.models import (
 )
 from benchmarking.generators import generate_scenarios_for_document
 from benchmarking.runner import EvaluationScore, run_benchmark_suite
+from benchmarking.long_context_evaluator import run_long_context_evaluation
 from llm_api.apps import service_registry
 
 # Define isolated test paths
@@ -222,3 +223,78 @@ class BenchmarkingIntegrationTests(TestCase):
         
         response = self.client.get(f"/benchmarking/dashboard/{inv.id}/")
         self.assertEqual(response.status_code, 200)
+
+    @tag('e2e')
+    def test_7_generation_metrics_captured(self):
+        """Verify generation metrics are captured correctly."""
+        print("\n>>> Test 7: Generation Metrics")
+        from llm_api.ai_service import get_last_generation_metrics
+        
+        # Make a real call
+        messages = [{"role": "user", "content": "Say 'hello world' and nothing else."}]
+        responses = self.ai_service.generate_response2(messages=messages, max_new_tokens=10, num_return_sequences=1)
+        
+        metrics = get_last_generation_metrics()
+        self.assertIsNotNone(metrics)
+        self.assertGreater(metrics.total_duration_ms, 0)
+        self.assertGreater(metrics.tokens_per_second, 0)
+        self.assertGreater(metrics.output_tokens, 0)
+
+    @tag('e2e')
+    def test_8_benchmark_result_throughput(self):
+        """Verify tokens_per_second is captured in BenchmarkResult."""
+        print("\n>>> Test 8: Benchmark Result Throughput")
+        corpus = BenchmarkCorpus.objects.create(name="Throughput Test Corpus")
+        scen1 = BenchmarkScenario.objects.create(
+            question="What is 2+2? Answer briefly.",
+            ideal_answer="4"
+        )
+        group = ScenarioGroup.objects.create(name="Throughput Group")
+        group.scenarios.add(scen1)
+        
+        exp = Experiment.objects.create(
+            name="Throughput Test Exp",
+            corpus=corpus,
+            scenario_group=group,
+            configuration={"rag_strategy": "none", "generation_target": "direct"}
+        )
+        
+        run_record = run_benchmark_suite(exp, corpus)
+        result = BenchmarkResult.objects.get(run=run_record, scenario=scen1)
+        
+        self.assertIn("tokens_per_second", result.extra_metrics)
+        self.assertIn("generation_duration_ms", result.extra_metrics)
+        self.assertGreater(result.extra_metrics["tokens_per_second"], 0)
+
+    @tag('e2e')
+    def test_9_long_context_cumulative_tokens(self):
+        """Verify long context evaluator tracks cumulative tokens."""
+        print("\n>>> Test 9: Long Context Evaluator Cumulative Tokens")
+        corpus = BenchmarkCorpus.objects.create(name="LC Test Corpus")
+        group = ScenarioGroup.objects.create(name="LC Group")
+        
+        for i in range(3):
+            s = BenchmarkScenario.objects.create(
+                question=f"Question {i}: Give me a very short sentence.",
+                ideal_answer=f"Answer {i}"
+            )
+            group.scenarios.add(s)
+            
+        exp = Experiment.objects.create(
+            name="LC Test Exp",
+            corpus=corpus,
+            scenario_group=group,
+            configuration={"rag_strategy": "none", "context_mode": "chat"}
+        )
+        
+        run_record = run_long_context_evaluation(exp, corpus)
+        results = BenchmarkResult.objects.filter(run=run_record).order_by('id')
+        
+        self.assertEqual(results.count(), 3)
+        
+        prev_tokens = -1
+        for res in results:
+            self.assertIn("cumulative_input_tokens", res.extra_metrics)
+            current_tokens = res.extra_metrics["cumulative_input_tokens"]
+            self.assertGreater(current_tokens, prev_tokens)
+            prev_tokens = current_tokens

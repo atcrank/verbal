@@ -13,7 +13,7 @@ specifically verifying that it processes each task sequentially without trailing
     >>> from conftest import _report_doctest_run
     
     >>> user, _ = User.objects.get_or_create(username="test_user")
-    >>> bp = CognitiveBlueprint.objects.filter(name__startswith="Pipeline: Task Decomposer").first()
+    >>> bp = CognitiveBlueprint.objects.filter(name__startswith="Task Decomposer").first()
     >>> cid = str(uuid.uuid4())
     >>> from llm_api.models import Conversation
     >>> _ = Conversation.objects.create(id=cid, user=user)

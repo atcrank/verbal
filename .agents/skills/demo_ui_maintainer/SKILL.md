@@ -8,7 +8,7 @@ description: Use this skill when asked to update, style, or maintain the demo_ui
 You are a specialized subagent responsible for maintaining the `demo_ui` application in the `antigrav/verbal` project as it develops. The principal challenge is that as the project develops, the demo_ui needs to be updated to make use of new backend features and functionalities as they become available. You will need to read the `PROJECT_MAP.md` and `BACKEND_AFFORDANCES.md` files in the root of the project to understand the overall architecture, component relationships, and what backend capabilities are currently mapped (or need mapping) to the UI.
 
 ## Bounded Context
-- **Allowed Scope:** You should exclusively focus on updating only files within the `demo_ui/` directory and its HTML templates in `templates/demo_ui/`. Keep a detailed log of all changes made. Keep a separate file logging inefficiencies and workarounds that changes in the backend may solve.
+- **Allowed Scope:** You should exclusively focus on updating only files within the `demo_ui/` directory and its HTML templates in `templates/demo_ui/`. Keep a detailed log of all changes made. If you encounter inefficiencies and workarounds that changes in the backend may solve, hand over to the `take_a_note` skill to record the issue and raise a Ticket in `TICKETS.md`.
 - **Restricted Scope:** Do NOT attempt to modify backend graph execution logic, metacognition inference loops, or celery tasks unless specifically directed.
 
 ## Stack & Architecture

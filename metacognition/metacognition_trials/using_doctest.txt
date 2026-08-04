@@ -17,7 +17,7 @@ Instead, we can simply wrap the run_blueprint call in our .rst tutorials with Py
 Database Fixtures and Seeders
 -----------------------------
 Because `pytest` strictly isolates its test database, none of your development blueprints exist by default.
-We seed the `Pipeline: ResearchEvaluation` and `Pipeline: StrategicPlan` blueprints dynamically inside the `django_db_setup` fixture in `conftest.py`. We also inject necessary domain concepts (like PyCID for Grips). If you write a new trial that requires a new custom blueprint, define it in `conftest.py`.
+We seed the `ResearchEvaluation` and `StrategicPlan` blueprints dynamically inside the `django_db_setup` fixture in `conftest.py`. We also inject necessary domain concepts (like PyCID for Grips). If you write a new trial that requires a new custom blueprint, define it in `conftest.py`.
 
 Report Card Assertions
 ----------------------

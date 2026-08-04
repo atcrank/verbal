@@ -2,7 +2,7 @@ Scenario 3: The Grill-Me Loop
 =============================
 
 This test simulates a multi-turn conversation where the user provides an ambiguous request.
-The agent uses the "Pipeline: Grill Me" blueprint to ask clarifying questions sequentially,
+The agent uses the "Grill Me" blueprint to ask clarifying questions sequentially,
 terminating only when it has sufficient clarity to summarize the requirements.
 
 Execution

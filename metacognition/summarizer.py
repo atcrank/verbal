@@ -1,5 +1,5 @@
 import logging
-from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, RemoveMessage
 
 logger = logging.getLogger(__name__)
 
@@ -30,5 +30,13 @@ def summarize_if_needed(state: dict) -> dict:
         kept.insert(0, msg)
         token_estimate += msg_tokens
     
-    new_memory = ([system_msg] if system_msg else []) + kept
-    return {"working_memory": new_memory}
+    kept_ids = {id(m) for m in kept}
+    messages_to_remove = [m for m in remaining if id(m) not in kept_ids]
+    
+    # LangGraph requires the message id for RemoveMessage.
+    remove_msgs = [RemoveMessage(id=m.id) for m in messages_to_remove if getattr(m, 'id', None)]
+    
+    if not remove_msgs:
+        return {}
+        
+    return {"working_memory": remove_msgs}

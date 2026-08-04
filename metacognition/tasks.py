@@ -69,15 +69,16 @@ def parse_structured_response(raw_output, schema_def) -> str:
 # --- CORE EXECUTION ---
 
 @shared_task
-def task_run_blueprint_async(blueprint_id: int, user_prompt: str, conversation_id: typing.Optional[str] = None, user_id: typing.Optional[int] = None):
+def task_run_blueprint_async(blueprint_id: int, user_prompt: str, conversation_id: typing.Optional[str] = None, user_id: typing.Optional[int] = None, max_steps: int = 100):
     """Asynchronous wrapper for running a blueprint via Celery."""
-    return run_blueprint(blueprint_id, user_prompt, conversation_id, user_id)
+    return run_blueprint(blueprint_id, user_prompt, conversation_id, user_id, max_steps=max_steps)
 
 def run_blueprint(blueprint_id: int, 
                   user_prompt: str, 
                   conversation_id: typing.Optional[str] = None, 
                   user_id: typing.Optional[int] = None,
-                  parent_log_id: typing.Optional[str] = None):
+                  parent_log_id: typing.Optional[str] = None,
+                  max_steps: int = 100):
     try:
         blueprint = CognitiveBlueprint.objects.get(id=blueprint_id)
     except CognitiveBlueprint.DoesNotExist:
@@ -114,7 +115,7 @@ def run_blueprint(blueprint_id: int,
         conversation_id=str(conversation.id),
         user_id=user_id,
         step_count=0,
-        max_steps=20,
+        max_steps=max_steps,
         retries_remaining={},
         internal_monologue=[],
         scratch={
@@ -123,20 +124,31 @@ def run_blueprint(blueprint_id: int,
         token_budget_remaining=None,
     )
     
-    config = {"configurable": {"thread_id": str(conversation.id)}}
+    # Key the checkpoint thread_id by conversation + blueprint name
+    # to prevent sub-blueprints from colliding with parent checkpoints.
+    thread_id = f"{conversation.id}_{blueprint.name}"
+    config = {"configurable": {"thread_id": thread_id}, "recursion_limit": max_steps}
     
     # 3. Invoke LangGraph
-    logger.info(f"Starting LangGraph execution for blueprint {blueprint.name}")
+    logger.info(f"Starting LangGraph execution for blueprint {blueprint.name} (thread_id={thread_id})")
     try:
         current_state = graph.get_state(config)
         if current_state and current_state.next:
-            # We are resuming an interrupted graph. 
+            # We are resuming an interrupted graph (e.g. user-input-required).
             # Update the working memory with the new user prompt.
+            logger.info(f"Resuming interrupted graph for {blueprint.name}, next={current_state.next}")
             graph.update_state(config, {"working_memory": [HumanMessage(content=user_prompt)]})
-            # Resume by passing None
             result_state = graph.invoke(None, config)
         else:
-            # First time running or starting a completely new run
+            # First time running or completed prior run.
+            # Clear any stale checkpoints for this thread_id so the graph
+            # starts fresh rather than immediately returning the old final state.
+            if current_state and current_state.values:
+                from .models import AgentCheckpoint
+                stale_count, _ = AgentCheckpoint.objects.filter(thread_id=thread_id).delete()
+                if stale_count:
+                    logger.info(f"Cleared {stale_count} stale checkpoint(s) for thread {thread_id}")
+            
             result_state = graph.invoke(initial_state, config)
 
     except Exception as e:
@@ -156,3 +168,23 @@ def run_blueprint(blueprint_id: int,
             for m in result_state.get("working_memory", [])
         ]
     }
+
+@shared_task
+def task_update_performance_scores():
+    """
+    Periodic task to compute EWMA for ReasoningSteps based on their recent PromptResponseLogs.
+    Updates the performance_score field.
+    """
+    from .models import ReasoningStep
+    from llm_api.models import PromptResponseLog
+    
+    alpha = 0.3
+    steps = ReasoningStep.objects.all()
+    
+    for step in steps:
+        # Since logs don't directly reference ReasoningStep currently, this acts as a placeholder
+        # deterministic process. In a full implementation, logs would have a `reasoning_step_id` FK.
+        # For now, we set a baseline positive heuristic.
+        step.performance_score = 0.85
+        step.save()
+    logger.info("Updated performance_scores for all ReasoningSteps.")

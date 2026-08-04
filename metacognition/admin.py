@@ -47,29 +47,36 @@ class ReasoningStepInline(admin.StackedInline):
 @admin.action(description="Clone selected Blueprint(s) and their Steps")
 def clone_blueprint(modeladmin, request, queryset):
     for bp in queryset:
-        original_bp = CognitiveBlueprint.objects.get(pk=bp.pk)
         original_steps = list(bp.steps.all())
 
         # Copy Blueprint
-        bp.pk = None
-        bp.name = f"Copy of {bp.name}"
-        bp.is_canonical = False
-        bp.parent = original_bp
-        bp.save()
+        new_bp = CognitiveBlueprint.objects.create(
+            name=f"Copy of {bp.name}",
+            description=bp.description,
+            is_autonomous=bp.is_autonomous,
+            is_canonical=False,
+            parent=bp
+        )
 
         step_mapping = {}
         # First pass: copy the nodes
-        for step in original_steps:
-            old_id = step.pk
-            step.pk = None
-            step.blueprint = bp
-            step.is_canonical = False
-            step.performance_score = 0.0
-            step.save()
-            step_mapping[old_id] = step
+        for old_step in original_steps:
+            new_step = ReasoningStep.objects.get(pk=old_step.pk)
+            new_step.pk = None
+            new_step.blueprint = new_bp
+            new_step.is_canonical = False
+            new_step.performance_score = 0.0
+            new_step.save()
+            
+            # Copy M2M fields
+            new_step.available_tools.set(old_step.available_tools.all())
+            new_step.parallel_steps.set(old_step.parallel_steps.all())
+            
+            step_mapping[old_step.pk] = new_step
 
         # Second pass: relink the edges
-        for old_step, new_step in zip(original_steps, step_mapping.values()):
+        for old_step in original_steps:
+            new_step = step_mapping[old_step.pk]
             if old_step.on_success_step_id:
                 new_step.on_success_step = step_mapping.get(old_step.on_success_step_id)
             if old_step.on_failure_step_id:
@@ -100,21 +107,23 @@ class CognitiveBlueprintAdmin(admin.ModelAdmin):
         return current.name
 
     def resolved_steps_display(self, obj):
-        from .compiler import resolve_active_steps
         try:
-            resolved = resolve_active_steps(obj)
+            groups = ReasoningStep.objects.active_for_blueprint(obj)
         except Exception as e:
             return f"Error resolving steps: {e}"
-        if not resolved:
+        if not groups:
             return "No active steps."
         html = "<ul>"
-        for root_id, step in resolved.items():
-            html += f"<li>Lineage Root {root_id} -> Selected: <b>{step.name}</b> (ID: {step.id}, Intent: '{step.variant_intent or 'N/A'}', Weight: {step.selection_weight}, Active: {step.is_active})</li>"
+        for root_id, variants in groups.items():
+            html += f"<li>Lineage Root {root_id}<ul>"
+            for step in variants:
+                html += f"<li><b>{step.name}</b> (ID: {step.id}, Intent: '{step.variant_intent or 'N/A'}', Weight: {step.selection_weight})</li>"
+            html += "</ul></li>"
         html += "</ul>"
         from django.utils.safestring import mark_safe
         return mark_safe(html)
 
-    resolved_steps_display.short_description = "Resolved Active Steps (Current stochastic view)"
+    resolved_steps_display.short_description = "Active Steps by Lineage"
 
 @admin.action(description="Evolve Step (Create Child Variant)")
 def evolve_step(modeladmin, request, queryset):

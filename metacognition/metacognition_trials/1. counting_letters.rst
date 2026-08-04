@@ -12,7 +12,7 @@ We initialize the ``ExecutionPlan`` blueprint to drop the agent directly into th
     >>> from metacognition.models import CognitiveBlueprint
     >>> from django.contrib.auth.models import User
     >>> user, _ = User.objects.get_or_create(username="test_user")
-    >>> bp = CognitiveBlueprint.objects.filter(name__startswith="Pipeline: ResearchEvaluation").first()
+    >>> bp = CognitiveBlueprint.objects.filter(name__startswith="ResearchEvaluation").first()
     
     >>> prompt = (
     ...     "How many 'r's are in the word strawberry? "

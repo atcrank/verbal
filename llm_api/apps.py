@@ -27,18 +27,33 @@ class LazyServiceRegistry:
                 return True
         return False
 
-    def _sync_ollama_state(self):
-        """Reads the system config and ensures the Ollama container's VRAM state matches."""
+    def _sync_hosting_backend_state(self):
+        """Reads the system config and ensures the Docker containers and VRAM state match."""
+        import sys
+        if 'test' in sys.argv:
+            return
+
         try:
             from .models import SystemConfiguration
-            from .ollama_client import set_ollama_model_state
+            from . import ollama_client
+            from . import vllm_client
             config = SystemConfiguration.get_solo()
-            if config and config.active_ollama_model:
-                active = config.hosting_backend == 'ollama'
-                logger.info(f"SYNC: Setting Ollama model '{config.active_ollama_model.name}' active state to: {active}")
-                set_ollama_model_state(config.active_ollama_model.hf_model_id, active=active)
+            if config:
+                logger.info(f"SYNC: Syncing hosting backend state. Active backend is: {config.hosting_backend}")
+                if config.hosting_backend == 'vllm':
+                    ollama_client.stop_container()
+                    if config.active_vllm_model:
+                        vllm_client.start_container(config.active_vllm_model.hf_model_id)
+                elif config.hosting_backend == 'ollama':
+                    vllm_client.stop_container()
+                    ollama_client.start_container()
+                    if config.active_ollama_model:
+                        ollama_client.set_ollama_model_state(config.active_ollama_model.hf_model_id, active=True)
+                elif config.hosting_backend == 'pytorch':
+                    vllm_client.stop_container()
+                    ollama_client.stop_container()
         except Exception as e:
-            logger.info(f'SYNC: Skipping Ollama startup sync due to error: {e}')
+            logger.info(f'SYNC: Skipping backend startup sync due to error: {e}')
 
     @property
     def ai_service(self):
@@ -48,7 +63,7 @@ class LazyServiceRegistry:
         if self._ai_service is None:
             with self._lock:
                 if self._ai_service is None:
-                    self._sync_ollama_state()
+                    self._sync_hosting_backend_state()
                     logger.info('Initializing AI Service...')
                     from .ai_service import AIService
                     ai_serv = AIService()

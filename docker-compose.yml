@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   redis:
-    image: redis:alpine
+    image: ${DOCKER_REDIS_IMAGE:-redis:alpine}
     container_name: verbal_redis
     ports:
       - "6379:6379"
@@ -10,7 +10,7 @@ services:
     volumes:
       - redis_data:/data
   db:
-    image: pgvector/pgvector:pg16
+    image: ${DOCKER_POSTGRES_IMAGE:-pgvector/pgvector:pg16}
     container_name: verbal_db
     environment:
       POSTGRES_USER: verbal_user
@@ -21,7 +21,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
   grobid:
-    image: lfoppiano/grobid:0.8.0
+    image: ${DOCKER_GROBID_IMAGE:-lfoppiano/grobid:0.8.0}
     container_name: verbal_grobid
     ports:
       - "8070:8070"
@@ -29,13 +29,14 @@ services:
     # Grobid can be memory-heavy when processing massive PDFs,
     # but the container handles itself well alongside Ollama.
   ollama:
-    image: ollama/ollama
+    image: ${DOCKER_OLLAMA_IMAGE:-ollama/ollama}
     container_name: verbal_ollama
     ports:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
     restart: unless-stopped
+    profiles: ["inference"]
     deploy:
       resources:
         reservations:
@@ -44,10 +45,15 @@ services:
               count: all # Use 'all' to pass all GPUs, or a number for a specific count
               capabilities: [gpu]
   vllm:
-    image: vllm/vllm-openai:latest
+    image: ${DOCKER_VLLM_IMAGE:-vllm/vllm-openai:latest}
     container_name: verbal_vllm
     ports:
       - "8003:8000"
+    volumes:
+      - ./lora_adapters:/lora_adapters
+      - ~/.cache/huggingface:/root/.cache/huggingface
+    command: ["--enable-lora"]
+    profiles: ["inference"]
     environment:
       - VLLM_MODEL=${VLLM_MODEL:-Qwen/Qwen2.5-3B-Instruct}
       - VLLM_DEVICE=cuda

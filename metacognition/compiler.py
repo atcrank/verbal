@@ -16,52 +16,52 @@ from .summarizer import summarize_if_needed
 logger = logging.getLogger(__name__)
 
 
-def _find_lineage_root(step: ReasoningStep) -> ReasoningStep:
-    """Walk parent_step chain to find the canonical root."""
-    current = step
-    seen = set()
-    while current.parent_step and current.parent_step.id not in seen:
-        seen.add(current.id)
-        current = current.parent_step
-    return current
-
-
-def resolve_active_steps(blueprint: CognitiveBlueprint) -> Dict[int, ReasoningStep]:
+def resolve_active_steps(blueprint: CognitiveBlueprint) -> tuple[Dict[int, ReasoningStep], Dict[int, int]]:
     """
     Selects the active variant for each step lineage in a blueprint.
-    Returns {canonical_step_id: selected_ReasoningStep}.
+    Returns (resolved_steps, root_mapping).
     """
     import random
-    active_steps = ReasoningStep.objects.active_for_blueprint(blueprint)
+    lineage_groups = ReasoningStep.objects.active_for_blueprint(blueprint)
     
-    # Group by lineage root
-    lineage_groups = {}  # root_id -> [variants]
-    standalone = {}      # steps with no lineage
+    # We also need a fast lookup of step.id -> canonical_root.id for the router
+    all_steps = list(blueprint.steps.all())
+    step_map = {s.id: s for s in all_steps}
+    root_mapping = {}
     
-    for step in active_steps:
-        root = _find_lineage_root(step)
-        if root.id == step.id and not step.variants.filter(is_active=True).exists():
-            # This step IS the root AND has no active variants — it's standalone
-            standalone[step.id] = step
-        else:
-            lineage_groups.setdefault(root.id, []).append(step)
-            
-    resolved = dict(standalone)
+    def get_root_id(step):
+        curr = step
+        seen = set()
+        while curr.parent_step_id and curr.parent_step_id not in seen:
+            seen.add(curr.id)
+            if curr.parent_step_id in step_map:
+                curr = step_map[curr.parent_step_id]
+            else:
+                curr = curr.parent_step
+        return curr.id
+        
+    for step in all_steps:
+        root_mapping[step.id] = get_root_id(step)
+
+    resolved = {}
     for root_id, variants in lineage_groups.items():
-        weights = [max(v.selection_weight, 0.01) for v in variants]  # floor to avoid zero weights
-        [selected] = random.choices(variants, weights=weights, k=1)
-        resolved[root_id] = selected
-        logger.info(f"Variant selection for lineage {root_id}: selected '{selected.name}' "
-                    f"(weight={selected.selection_weight}, id={selected.id})")
-                    
-    return resolved
+        if len(variants) == 1 and variants[0].id == root_id and not variants[0].variants.filter(is_active=True).exists():
+            resolved[root_id] = variants[0]
+        else:
+            weights = [max(v.selection_weight, 0.01) for v in variants]
+            [selected] = random.choices(variants, weights=weights, k=1)
+            resolved[root_id] = selected
+            logger.info(f"Variant selection for lineage {root_id}: selected '{selected.name}' "
+                        f"(weight={selected.selection_weight}, id={selected.id})")
+                        
+    return resolved, root_mapping
 
 
-def _make_step_node(step: ReasoningStep):
+def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
     """
-    Creates a node function closure for a given ReasoningStep.
+    Creates an action node function closure for a given ReasoningStep.
     """
-    def step_node(state: AgentState) -> dict:
+    def action_node(state: AgentState) -> dict:
         from llm_api.ai_service import AIService
         from llm_api.apps import service_registry
         
@@ -72,32 +72,47 @@ def _make_step_node(step: ReasoningStep):
         retries_remaining = dict(state.get("retries_remaining", {}))
         step_key = str(step.id)
         
+        # --- max_steps Safety Brake ---
+        # step_count = total node visits across the entire graph (including loop re-visits).
+        # max_steps = hard cap on total node visits to prevent runaway execution.
+        max_steps = state.get("max_steps", 50)
+        if step_count > max_steps:
+            logger.warning(f"max_steps ({max_steps}) exceeded at step_count={step_count}. Halting graph.")
+            return {
+                "route_to": "END",
+                "step_count": step_count,
+                "retries_remaining": retries_remaining,
+                "internal_monologue": [{
+                    "step_name": step.name,
+                    "output": f"ABORTED: max_steps limit ({max_steps}) exceeded after {step_count} node visits.",
+                    "failed": True,
+                    "step_count": step_count
+                }],
+                "scratch": dict(state.get("scratch", {}))
+            }
+        
         # --- Token Budget & Summarization ---
-        # Very rough proxy: 1 word ~ 1.3 tokens
         current_budget = state.get("token_budget_remaining")
+        if current_budget is None:
+            current_budget = 8000
         working_memory = list(state.get("working_memory", []))
         
-        summarizer_triggered = False
-        if current_budget is not None:
-            # Estimate word count
-            word_count = sum(len(str(m.content).split()) for m in working_memory if hasattr(m, 'content'))
-            estimated_tokens = int(word_count * 1.3)
-            current_budget = max(0, current_budget - estimated_tokens)
-            
-            # Update state dict to pass to summarizer if it triggers
+        summary_remove_msgs = []
+        if current_budget < 500: # Threshold to trigger summarizer
+            from metacognition.summarizer import summarize_if_needed
             temp_state = dict(state)
             temp_state["token_budget_remaining"] = current_budget
             temp_state["working_memory"] = working_memory
             
-            if current_budget < 500: # Threshold to trigger summarizer
-                from metacognition.summarizer import summarize_if_needed
-                summary_updates = summarize_if_needed(temp_state)
-                if "working_memory" in summary_updates:
-                    working_memory = summary_updates["working_memory"]
-                    summarizer_triggered = True
-        else:
-            # Initialize if not set
-            current_budget = 8000
+            summary_updates = summarize_if_needed(temp_state)
+            if "working_memory" in summary_updates:
+                summary_remove_msgs = summary_updates["working_memory"]
+                remove_ids = {m.id for m in summary_remove_msgs if getattr(m, 'id', None)}
+                working_memory = [m for m in working_memory if getattr(m, 'id', None) not in remove_ids]
+                
+                # Reset budget based on remaining memory
+                word_count = sum(len(str(getattr(m, 'content', '')).split()) for m in working_memory)
+                current_budget = 8000 - int(word_count * 1.3)
 
         if step_key not in retries_remaining:
             # First visit to this step
@@ -121,10 +136,111 @@ def _make_step_node(step: ReasoningStep):
                     "scratch": dict(state.get("scratch", {}))
                 }
         
-        # Fetch the system prompt and merge with RAG context
+        # 1. Native Sub-Blueprint Execution Bypass
+        if step.sub_blueprint_id:
+            from .tasks import run_blueprint
+            from llm_api.models import Conversation
+            try:
+                # Serialize accumulated working_memory into the sub-blueprint prompt
+                prior_context = "\n".join(
+                    getattr(m, 'content', str(m))
+                    for m in state.get('working_memory', [])
+                    if hasattr(m, 'content')
+                )
+                task_prompt = f"Macro Goal: {step.system_prompt}\n\nWorking Context (Prior Blueprint Conclusions):\n{prior_context}"
+                logger.info(f"Step '{step.name}' bypassing LLM to execute sub-blueprint: {step.sub_blueprint.name}")
+                
+                # Use a stable, reusable Conversation for each sub-blueprint.
+                # This limits proliferation to exactly 1 Conversation per sub-blueprint,
+                # reused across nightly runs.
+                sub_conv_title = f"NightManager: {step.sub_blueprint.name}"
+                sub_conv, _ = Conversation.objects.get_or_create(
+                    title=sub_conv_title,
+                    user_id=state.get("user_id"),
+                    defaults={}
+                )
+                
+                res = run_blueprint(
+                    blueprint_id=step.sub_blueprint_id, 
+                    user_prompt=task_prompt, 
+                    conversation_id=str(sub_conv.id),
+                    user_id=state.get("user_id"),
+                    max_steps=150  # Sub-blueprint step budget
+                )
+                
+                final_response = res.get("final_response", "")
+                monologue = res.get("internal_monologue", [])
+                
+                # Evaluate success/failure of the sub-blueprint
+                sub_failed = False
+                if not monologue:
+                    # Sub-blueprint returned no execution trace at all
+                    sub_failed = True
+                    final_response = f"Sub-Blueprint '{step.sub_blueprint.name}' returned no execution trace."
+                elif monologue[-1].get("failed"):
+                    sub_failed = True
+                    
+                working_prompt = f"\n[SYSTEM: Sub-Blueprint '{step.sub_blueprint.name}' Completed.\nSuccess: {not sub_failed}\nOutput:\n{final_response}\n]\n"
+                
+                monologue_entry = {
+                    "step_name": step.name,
+                    "output": working_prompt,
+                    "failed": sub_failed,
+                    "step_count": step_count,
+                    "system_prompt": f"Native Sub-Blueprint Executor: {step.sub_blueprint.name}",
+                    "user_prompt": [],
+                    "sub_monologue": monologue
+                }
+                
+                return {
+                    "working_memory": summary_remove_msgs + [SystemMessage(content=working_prompt)],
+                    "route_to": "FAILURE" if sub_failed else "SUCCESS",
+                    "resume_to": None,
+                    "step_count": step_count,
+                    "retries_remaining": retries_remaining,
+                    "internal_monologue": [monologue_entry],
+                    "scratch": dict(state.get("scratch", {})),
+                    "token_budget_remaining": current_budget
+                }
+                
+            except Exception as e:
+                logger.error(f"Error executing sub-blueprint {step.sub_blueprint_id}: {e}")
+                working_prompt = f"\n[SYSTEM: Failed to execute Sub-Blueprint '{step.sub_blueprint.name}': {e}]\n"
+                monologue_entry = {
+                    "step_name": step.name,
+                    "output": working_prompt,
+                    "failed": True,
+                    "step_count": step_count,
+                    "system_prompt": f"Native Sub-Blueprint Executor: {step.sub_blueprint.name}",
+                    "user_prompt": []
+                }
+                return {
+                    "working_memory": summary_remove_msgs + [SystemMessage(content=working_prompt)],
+                    "route_to": "FAILURE",
+                    "resume_to": None,
+                    "step_count": step_count,
+                    "retries_remaining": retries_remaining,
+                    "internal_monologue": [monologue_entry],
+                    "scratch": dict(state.get("scratch", {})),
+                    "token_budget_remaining": current_budget
+                }
+        
         system_prompt = step.system_prompt
         if state.get("rag_context"):
             system_prompt += f"\n\nContext provided:\n{state.get('rag_context')}"
+        if state.get("scratch"):
+            system_prompt += f"\n\nScratchpad Variables:\n{json.dumps(state.get('scratch'), indent=2)}"
+        
+        # Inject Conversation.state_tree into the prompt so the LLM can see
+        # queued tasks, resolved tasks, and accumulated findings.
+        if state.get("conversation_id"):
+            try:
+                from llm_api.models import Conversation
+                conv = Conversation.objects.get(id=state["conversation_id"])
+                if conv.state_tree:
+                    system_prompt += f"\n\nConversation State Tree:\n{json.dumps(conv.state_tree, indent=2)}"
+            except Exception:
+                pass
             
         sys_msg = SystemMessage(content=system_prompt)
         
@@ -200,38 +316,78 @@ def _make_step_node(step: ReasoningStep):
                 else:
                     result = raw_response
             else:
-                # Fallback: XML Injected Tool Calling (Local/Outlines)
-                tool_instruction = "\n\nYou have access to the following tools:\n"
+                # Fallback: JSON-Schema Guided Generation via Outlines
+                # Build a dynamic JSON Schema for the available tools
+                tool_schemas = []
                 for t in tools:
-                    tool_instruction += f"- {t.name}: {t.description}\n"
+                    t_args = json.loads(t.input_schema) if t.input_schema else {"type": "object"}
+                    tool_schemas.append({
+                        "type": "object",
+                        "properties": {
+                            "name": {"type": "string", "const": t.name},
+                            "args": t_args
+                        },
+                        "required": ["name", "args"],
+                        "additionalProperties": False
+                    })
+                
+                tool_calls_schema = {
+                    "type": "object",
+                    "properties": {
+                        "tool_calls": {
+                            "type": "array",
+                            "items": {
+                                "anyOf": tool_schemas
+                            }
+                        }
+                    },
+                    "required": ["tool_calls"],
+                    "additionalProperties": False
+                }
+                
+                # We still provide tool descriptions in the prompt so the LLM understands semantics
+                tool_instruction = "\n\n--- TOOL INSTRUCTIONS ---\n"
+                tool_instruction += "You have access to the following tools:\n\n"
+                for t in tools:
+                    schema = json.loads(t.input_schema) if t.input_schema else {}
+                    props = schema.get("properties", {})
+                    param_desc = ", ".join(f'"{k}": "{v.get("description", v.get("type", "string"))}"' for k, v in props.items()) if props else ""
+                    tool_instruction += f"Tool: {t.name}\n  Description: {t.description}\n"
+                    if param_desc:
+                        tool_instruction += f"  Parameters: {{{param_desc}}}\n"
+                    tool_instruction += "\n"
                     
-                tool_instruction += (
-                    "\nTo use a tool, you MUST output a JSON array of tool calls "
-                    "enclosed exactly in <tool_calls> and </tool_calls> tags. Example:\n"
-                    "<tool_calls>\n"
-                    '[\n  {"name": "tool_name", "args": {"arg1": "val1"}}\n]\n'
-                    "</tool_calls>\n"
-                    "If you want to use a tool, output ONLY the tool calls and no other text."
-                )
+                tool_instruction += "You must respond with a JSON object containing a 'tool_calls' array. Each item must specify 'name' and 'args'. Do not add any text before or after the JSON."
+                
                 if native_messages and native_messages[0]["role"] == "system":
                     native_messages[0]["content"] += tool_instruction
                 
-                [raw_response] = ai_service.generate_response2(
+                raw_response = ai_service.generate_outline(
                     native_messages, 
+                    response_schema=tool_calls_schema,
                     max_new_tokens=step.max_new_tokens,
-                    tools=None, # DO NOT pass native tools to fallback
                     log_kwargs=log_kwargs,
                     lora_adapter=step.lora_adapter
                 )
                 
-                import re
-                tool_calls_match = re.search(r"<tool_calls>(.*?)</tool_calls>", raw_response, re.DOTALL)
-                if tool_calls_match:
+                if isinstance(raw_response, list):
+                    raw_response = raw_response[0]
+                    
+                # Since we used a raw JSON schema dict, Outlines returns a JSON string
+                if isinstance(raw_response, str):
                     try:
-                        result = json.loads(tool_calls_match.group(1))
-                    except Exception as e:
-                        logger.error(f"Failed to parse tool calls json: {e}")
+                        parsed = json.loads(raw_response)
+                        result = parsed.get("tool_calls", [])
+                    except json.JSONDecodeError as e:
+                        logger.error(f"Failed to parse tool calls json from outlines: {e} - Raw: {raw_response[:500]}")
                         result = raw_response
+                elif isinstance(raw_response, dict):
+                    if "error" in raw_response:
+                        # generate_outline returned an error (e.g. connection refused)
+                        # Propagate as an error dict so the step fails properly
+                        result = raw_response
+                    else:
+                        result = raw_response.get("tool_calls", [])
                 else:
                     result = raw_response
                     
@@ -247,6 +403,11 @@ def _make_step_node(step: ReasoningStep):
                 result = validated_result
                 if len(result) == 1 and "error" in result[0]:
                     result = result[0] # Convert to error dict if only one failed call
+            elif isinstance(result, str):
+                # The model produced raw text instead of tool calls.
+                # This means it "simulated" tool usage in prose rather than actually calling them.
+                logger.warning(f"Step '{step.name}' has tools but model returned raw text instead of tool calls. Treating as failure.")
+                result = {"error": "ToolCallMissing", "details": f"Model failed to produce tool calls. Raw output: {result[:500]}"}
         elif schema_format:
             result = ai_service.generate_outline(
                 messages=[{"role": _map_role(m.type), "content": m.content} for m in messages],
@@ -264,34 +425,6 @@ def _make_step_node(step: ReasoningStep):
                 lora_adapter=step.lora_adapter
             )
             result = ai_service.clean_response(raw_response)
-        
-        # Evaluate if criteria exists
-        evaluation_passed = True
-        resume_to = None
-        if step.evaluation_criteria and not isinstance(result, dict) and not (isinstance(result, dict) and "error" in result) and not (isinstance(result, list) and len(result)>0 and isinstance(result[0], dict) and "name" in result[0]):
-            # We must evaluate the combined context + result
-            from pydantic import BaseModel, Field
-            class EvaluationResult(BaseModel):
-                passed: bool = Field(description="True if the evaluation criteria is met, False otherwise.")
-                reasoning: str = Field(description="Reasoning for the evaluation result.")
-            
-            eval_messages = messages + [{"role": "assistant", "content": str(result)}]
-            eval_sys = SystemMessage(content=f"Evaluate the conversation state and the latest assistant response against the following criteria: {step.evaluation_criteria}")
-            eval_messages.insert(0, eval_sys)
-            
-            try:
-                eval_result = ai_service.generate_outline(
-                    messages=[{"role": _map_role(m.type), "content": getattr(m, 'content', str(m))} for m in eval_messages],
-                    response_schema=EvaluationResult,
-                    log_kwargs=log_kwargs
-                )
-                if isinstance(eval_result, list):
-                    eval_result = eval_result[0]
-                evaluation_passed = eval_result.passed
-                logger.info(f"Evaluation for '{step.name}': passed={evaluation_passed}, reasoning={eval_result.reasoning}")
-            except Exception as e:
-                logger.error(f"Evaluation failed: {e}")
-                evaluation_passed = False # Default to false if evaluation fails
         
         # Handle action hooks if defined
         route_to = None
@@ -319,7 +452,8 @@ def _make_step_node(step: ReasoningStep):
             logger.warning(f"Error in step {step.name}: {result['error']}")
             monologue_entry["failed"] = True
             monologue_entry["output"] = f"Generation error in step '{step.name}': {result.get('error', 'Unknown')}"
-            route_to = "SELF"  # Will decrement retries on next entry
+            route_to = "FAILURE" if "ToolCallMissing" in result.get('error', '') else "SELF" 
+            # If generation fails parsing, ReAct loops back (SELF).
         else:
             if getattr(result, "__class__", None).__name__ == "list" and len(result) > 0 and isinstance(result[0], dict) and "name" in result[0]:
                 tool_results_str = []
@@ -338,38 +472,55 @@ def _make_step_node(step: ReasoningStep):
                                 additional_messages.append(SystemMessage(content=msg))
                                 tool_results_str.append(msg)
                                 if route_to == "SUCCESS":
-                                    monologue_entry["output"] += f"\n{msg}"
+                                    monologue_entry["output"] += f"\\n{msg}"
                             if "current_chunk_index" in hook_result:
                                 scratch_updates["current_chunk_index"] = hook_result["current_chunk_index"]
                         else:
-                            tool_results_str.append(str(hook_result))
+                            res_str = str(hook_result)
+                            tool_results_str.append(res_str)
+                            
+                            # Add a loud success signal to help the model understand the tool worked
+                            success_prefix = ""
+                            if not res_str.lower().startswith("error"):
+                                success_prefix = f"✅ THE TOOL '{tool_name}' EXECUTED SUCCESSFULLY.\n"
+                                
+                            reminder = f"\n\nIMPORTANT: If this result satisfies your goal, you MUST output the TASK_COMPLETE tool now. Do not call {tool_name} again unless you need to execute a DIFFERENT action." if "TASK_COMPLETE" in [t.name for t in tools] else ""
+                            additional_messages.append(SystemMessage(content=f"[Tool '{tool_name}' Result]:\n{success_prefix}Output:\n{res_str}{reminder}"))
                     except Exception as e:
                         logger.error(f"Error in tool {tool_name}: {e}")
                         tool_results_str.append(f"Error in tool {tool_name}: {e}")
+                        additional_messages.append(SystemMessage(content=f"[Tool '{tool_name}' Error]: {e}"))
                         route_to = "FAILURE"
+                
+                if any(not msg.content.startswith("[Tool 'TASK_COMPLETE'") for msg in additional_messages) and "TASK_COMPLETE" in [t.name for t in tools]:
+                    additional_messages.append(HumanMessage(content="Tool execution completed. Review the results above. If you have achieved your goal, you MUST output the `TASK_COMPLETE` tool now. Do not call the same tools again with the same arguments."))
                 
                 monologue_entry["tool_result"] = "\n".join(tool_results_str)
                 if route_to is None:
                     route_to = "SELF"
             else:
-                route_to = "SUCCESS" if evaluation_passed else "FAILURE"
+                route_to = "SUCCESS" 
+                # Text output means we successfully generated an answer, subject to eval
                 
-            # Intercept FAILURE if it loops back to itself, change to USER_INPUT_REQUIRED unless autonomous
-            if route_to == "FAILURE" and step.on_failure_step and _find_lineage_root(step.on_failure_step).id == _find_lineage_root(step).id:
-                if step.blueprint.is_autonomous:
-                    route_to = "SELF"
-                else:
-                    route_to = "USER_INPUT_REQUIRED"
-                    resume_to = f"step_{_find_lineage_root(step).id}"
+        # Automatically merge any top-level Pydantic schema fields into scratch
+        if hasattr(result, "model_dump"):
+            try:
+                scratch_updates.update(result.model_dump())
+            except Exception as e:
+                logger.warning(f"Failed to merge Pydantic result into scratch: {e}")
+        elif hasattr(result, "dict"):
+            try:
+                scratch_updates.update(result.dict())
+            except Exception as e:
+                logger.warning(f"Failed to merge Pydantic v1 result into scratch: {e}")
                 
         # Update state
         new_messages = [AIMessage(content=str(result))] + additional_messages
+        final_memory = summary_remove_msgs + new_messages
         
-        if summarizer_triggered:
-            sentinel = SystemMessage(content='__OVERWRITE_WORKING_MEMORY__')
-            final_memory = [sentinel] + working_memory + new_messages
-        else:
-            final_memory = new_messages
+        new_words = sum(len(str(getattr(m, 'content', '')).split()) for m in new_messages)
+        new_tokens = int(new_words * 1.3)
+        final_budget = max(0, current_budget - new_tokens)
         
         # Telemetry: Update the PromptResponseLog with the step's final status
         if log_kwargs.get("log_ids"):
@@ -379,35 +530,151 @@ def _make_step_node(step: ReasoningStep):
                     log = PromptResponseLog.objects.get(id=log_id)
                     log.step_status = route_to
                     log.save(update_fields=['step_status'])
+                    monologue_entry["model_name"] = log.model_name
                 except Exception as e:
                     logger.warning(f"Failed to update step_status telemetry for log {log_id}: {e}")
         
+        # Fallback: if no log_ids were populated, query SystemConfiguration directly
+        if "model_name" not in monologue_entry:
+            try:
+                from llm_api.models import SystemConfiguration
+                config = SystemConfiguration.get_solo()
+                if config:
+                    if config.hosting_backend == 'vllm' and config.active_vllm_model:
+                        monologue_entry["model_name"] = config.active_vllm_model.name
+                    elif config.hosting_backend == 'ollama' and config.active_ollama_model:
+                        monologue_entry["model_name"] = config.active_ollama_model.name
+                    elif config.hosting_backend == 'pytorch' and config.active_local_model:
+                        monologue_entry["model_name"] = config.active_local_model.name
+            except Exception:
+                pass
         
         return {
             "working_memory": final_memory,  # Reducer will append or overwrite
             "route_to": route_to,
-            "resume_to": resume_to,
+            "resume_to": None,
             "step_count": step_count,
             "retries_remaining": retries_remaining,
             "internal_monologue": [monologue_entry],
             "scratch": scratch_updates,
-            "token_budget_remaining": current_budget
+            "token_budget_remaining": final_budget
         }
         
-    return step_node
+    return action_node
 
 
-def _make_router(step: ReasoningStep, all_steps: Dict[int, ReasoningStep]):
+def _make_eval_node(step: ReasoningStep, root_mapping: Dict[int, int]):
+    """
+    Creates an evaluation node function closure for a given ReasoningStep.
+    """
+    def eval_node(state: AgentState) -> dict:
+        route_to = state.get("route_to")
+        resume_to = state.get("resume_to")
+        
+        # 1. Do not evaluate if the graph is halting or awaiting input
+        if route_to in ("END", "USER_INPUT_REQUIRED"):
+            return {}
+            
+        # 2. Do not evaluate if this was a sub-blueprint (it handles its own success/failure)
+        if step.sub_blueprint_id:
+            return _intercept_failure(route_to, resume_to, state, step, root_mapping)
+            
+        # 3. Determine if this is an interactive step (requires TASK_COMPLETE to finish)
+        has_task_complete = "TASK_COMPLETE" in [t.name for t in step.available_tools.all()]
+        
+        # We only evaluate if:
+        # A) It's a deterministic step (no TASK_COMPLETE), so we evaluate immediately after the tool run (route_to == SELF or SUCCESS)
+        # B) It's an interactive step, and the model explicitly finished (route_to == SUCCESS)
+        should_evaluate = step.evaluation_criteria and (
+            (not has_task_complete) or 
+            (has_task_complete and route_to == "SUCCESS")
+        )
+        
+        if should_evaluate:
+            from llm_api.apps import service_registry
+            ai_service = service_registry.ai_service
+            
+            from pydantic import BaseModel, Field
+            class EvaluationResult(BaseModel):
+                passed: bool = Field(description="True if the evaluation criteria is met, False otherwise.")
+                reasoning: str = Field(description="Reasoning for the evaluation result.")
+            
+            import copy
+            messages = []
+            for m in state.get("working_memory", []):
+                m_copy = copy.copy(m)
+                if m_copy.type == "human" and hasattr(m_copy, "content") and "Working Context (Prior Blueprint Conclusions):" in str(m_copy.content):
+                    m_copy.content = str(m_copy.content).split("Working Context (Prior Blueprint Conclusions):")[0].strip()
+                messages.append(m_copy)
+                
+            eval_sys = SystemMessage(content=f"Evaluate the conversation state and the latest assistant response (and tool execution result if any) against the following criteria: {step.evaluation_criteria}\nDO NOT copy past evaluation results; you must evaluate the CURRENT assistant response.")
+            eval_messages = [eval_sys] + messages
+            
+            def _map_role(m_type: str) -> str:
+                if m_type == "human": return "user"
+                if m_type == "ai": return "assistant"
+                return m_type
+                
+            try:
+                eval_result = ai_service.generate_outline(
+                    messages=[{"role": _map_role(m.type), "content": getattr(m, 'content', str(m))} for m in eval_messages],
+                    response_schema=EvaluationResult,
+                    log_kwargs={"conversation_id": state.get("conversation_id"), "reasoning_step_id": step.id}
+                )
+                if isinstance(eval_result, list):
+                    eval_result = eval_result[0]
+                    
+                evaluation_passed = eval_result.passed
+                logger.info(f"Evaluation for '{step.name}': passed={evaluation_passed}, reasoning={eval_result.reasoning}")
+                
+                # Update route based on explicit evaluation
+                route_to = "SUCCESS" if evaluation_passed else "FAILURE"
+                
+                # Append the evaluator's reasoning to the monologue
+                if state.get("internal_monologue"):
+                    last_entry = dict(state["internal_monologue"][-1])
+                    last_entry["evaluator_reasoning"] = eval_result.reasoning
+                    return _intercept_failure(route_to, resume_to, state, step, root_mapping, updated_monologue=last_entry)
+                    
+            except Exception as e:
+                logger.error(f"Evaluation failed for '{step.name}': {e}")
+                route_to = "FAILURE" # Default to false if evaluation fails
+                
+        return _intercept_failure(route_to, resume_to, state, step, root_mapping)
+
+    def _intercept_failure(route_to, resume_to, state, step, root_mapping, updated_monologue=None):
+        # Intercept FAILURE if it loops back to itself, change to USER_INPUT_REQUIRED unless autonomous
+        if route_to == "FAILURE" and step.on_failure_step and root_mapping.get(step.on_failure_step.id) == root_mapping.get(step.id):
+            if not step.blueprint.is_autonomous:
+                route_to = "USER_INPUT_REQUIRED"
+                resume_to = f"step_{root_mapping.get(step.id)}"
+        
+        updates = {"route_to": route_to, "resume_to": resume_to}
+        if updated_monologue:
+            eval_entry = {
+                "step_name": f"{step.name} (Evaluation)",
+                "output": f"Evaluation Result: {route_to}\nReasoning: {updated_monologue.get('evaluator_reasoning', '')}",
+                "failed": route_to == "FAILURE",
+                "step_count": state.get("step_count", 0)
+            }
+            updates["internal_monologue"] = [eval_entry]
+            
+        return updates
+
+    return eval_node
+
+
+def _make_router(step: ReasoningStep, root_mapping: Dict[int, int]):
     """
     Creates a router function for conditional edges based on state["route_to"].
     """
     def router(state: AgentState) -> List[str] | str:
         route = state.get("route_to")
         
-        canonical_self_id = _find_lineage_root(step).id
+        canonical_self_id = root_mapping[step.id]
         
         if route == "SELF":
-            return f"step_{canonical_self_id}"
+            return f"step_{canonical_self_id}_action"
             
         elif route == "USER_INPUT_REQUIRED":
             return "interrupt_node"
@@ -416,15 +683,23 @@ def _make_router(step: ReasoningStep, all_steps: Dict[int, ReasoningStep]):
             # Handle Fan-Out
             parallel_targets = step.parallel_steps.all()
             if parallel_targets.exists():
-                return [Send(f"step_{_find_lineage_root(p).id}", state) for p in parallel_targets]
+                return [Send(f"step_{root_mapping[p.id]}_action", state) for p in parallel_targets if p.id in root_mapping]
                 
-            if step.on_success_step:
-                return f"step_{_find_lineage_root(step.on_success_step).id}"
+            try:
+                target_id = step.on_success_step_id
+                if target_id and target_id in root_mapping:
+                    return f"step_{root_mapping[target_id]}_action"
+            except Exception:
+                pass
             return END
             
         elif route == "FAILURE":
-            if step.on_failure_step:
-                return f"step_{_find_lineage_root(step.on_failure_step).id}"
+            try:
+                target_id = step.on_failure_step_id
+                if target_id and target_id in root_mapping:
+                    return f"step_{root_mapping[target_id]}_action"
+            except Exception:
+                pass
             return END
             
         # Default fallback
@@ -437,7 +712,7 @@ def compile_graph_from_blueprint(blueprint: CognitiveBlueprint) -> CompiledState
     """
     Reads Django models and emits a LangGraph StateGraph.
     """
-    resolved = resolve_active_steps(blueprint)
+    resolved, root_mapping = resolve_active_steps(blueprint)
     steps = resolved  # {canonical_id: selected_variant}
     if not steps:
         raise ValueError(f"Blueprint {blueprint.name} has no steps.")
@@ -446,8 +721,14 @@ def compile_graph_from_blueprint(blueprint: CognitiveBlueprint) -> CompiledState
     
     # Add nodes
     for canonical_id, step in steps.items():
-        node_name = f"step_{canonical_id}"
-        builder.add_node(node_name, _make_step_node(step))
+        action_node_name = f"step_{canonical_id}_action"
+        eval_node_name = f"step_{canonical_id}_eval"
+        
+        builder.add_node(action_node_name, _make_action_node(step, root_mapping))
+        builder.add_node(eval_node_name, _make_eval_node(step, root_mapping))
+        
+        # Unconditional edge from action to eval
+        builder.add_edge(action_node_name, eval_node_name)
         
     # Add dummy interrupt node
     def interrupt_node_func(state: AgentState) -> dict:
@@ -462,16 +743,17 @@ def compile_graph_from_blueprint(blueprint: CognitiveBlueprint) -> CompiledState
         # Fallback to the first created step
         start_step = blueprint.steps.order_by('id').first()
         
-    start_canonical_id = _find_lineage_root(start_step).id
-    builder.set_entry_point(f"step_{start_canonical_id}")
+    start_canonical_id = root_mapping[start_step.id]
+    builder.set_entry_point(f"step_{start_canonical_id}_action")
     
     # Add edges
     for canonical_id, step in steps.items():
-        node_name = f"step_{canonical_id}"
+        eval_node_name = f"step_{canonical_id}_eval"
         
+        # Router is attached to the eval node
         builder.add_conditional_edges(
-            node_name,
-            _make_router(step, steps),
+            eval_node_name,
+            _make_router(step, root_mapping),
         )
         
     builder.add_conditional_edges(

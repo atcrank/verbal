@@ -15,7 +15,20 @@ if [ ! -f "requirements.in" ]; then
     exit 1
 fi
 
-PYTORCH_INDEX="--extra-index-url https://download.pytorch.org/whl/cu124"
+# Load environment configuration
+if [ -f .env ]; then
+    . .env
+else
+    echo "Warning: .env file not found, using .env.example"
+    . .env.example
+fi
+
+PYTORCH_URL="${PYTORCH_INDEX_URL:-https://download.pytorch.org/whl/cu124}"
+if [ -n "$PYTORCH_URL" ]; then
+    PYTORCH_INDEX="--extra-index-url $PYTORCH_URL"
+else
+    PYTORCH_INDEX=""
+fi
 
  # Backup the previous known-good requirements state before overwriting
 if [ -f requirements.txt ]; then

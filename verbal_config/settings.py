@@ -169,8 +169,8 @@ VERBAL_ROLE = os.environ.get("VERBAL_ROLE", "standalone")
 INFERENCE_URL = os.environ.get("INFERENCE_URL", "http://127.0.0.1:8001/api/llm")
 
 # Base URLs for external containerized inference endpoints
-OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://ollama:11434")
-VLLM_BASE_URL = os.environ.get("VLLM_BASE_URL", "http://vllm:8000")
+OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
+VLLM_BASE_URL = os.environ.get("VLLM_BASE_URL", "http://127.0.0.1:8003")
 
 # ------------------------------------------------------------------------
 # CELERY & REDIS CONFIGURATION

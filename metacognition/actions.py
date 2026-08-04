@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import os
 import stat
 import subprocess
@@ -91,7 +94,7 @@ def handle_difficult_prompt(state: dict, llm_output: DifficultPromptEvaluation) 
         from background_resources.retrieval import unified_retrieve, format_context_block
 
         aggregated_context = ""
-        print(f"🪝 Running Action Hook: handle_difficult_prompt (KNOWLEDGE_SEARCH) with queries: {llm_output.search_queries}")
+        logger.info(f'🪝 Running Action Hook: handle_difficult_prompt (KNOWLEDGE_SEARCH) with queries: {llm_output.search_queries}')
 
         for query in (llm_output.search_queries or []):
             results = unified_retrieve(
@@ -444,8 +447,8 @@ def _tool_execute_script(params: ExecuteScriptArgs, workspace_dir: str) -> str:
 def handle_execution_plan(state: dict, params: dict) -> dict:
     queue = params.get("queue", [])
     analysis = params.get("analysis", "")
-    print(f"🪝 Received Execution Plan with {len(queue)} steps.")
-    print(f"DEBUG QUEUE: {repr(queue)}")
+    logger.info(f'🪝 Received Execution Plan with {len(queue)} steps.')
+    logger.info(f'DEBUG QUEUE: {repr(queue)}')
     
     plan_results = ""
     workspace_dir = _get_workspace_dir(state.get("conversation_id"))
@@ -471,7 +474,7 @@ def handle_execution_plan(state: dict, params: dict) -> dict:
             parsed_queue.append(action)
             
     for action in parsed_queue:
-        print(f"  -> Executing tool: {action.tool}")
+        logger.info(f'  -> Executing tool: {action.tool}')
         try:
             if action.tool == "TASK_COMPLETE" and action.parameters.final_answer:
                 state["working_prompt"] = state.get("working_prompt", "") + f"\n\n[TASK COMPLETE]\n{action.parameters.final_answer}\n"
@@ -529,19 +532,14 @@ class TaskItem(BaseModel):
 class TaskQueue(BaseModel):
     queue: list[TaskItem] = Field(description="A list of task items to process sequentially.")
 
-def initialize_task_queue(state: dict, llm_output: TaskQueue) -> dict:
-    state.setdefault("scratch", {})["task_queue"] = [t.model_dump() for t in llm_output.queue]
-    state["route_to"] = "SUCCESS"
-    return state
-
 def process_task_queue(state: dict, llm_output) -> dict:
-    task_queue = state.get("scratch", {}).get("task_queue", [])
+    task_queue = state.get("scratch", {}).get("queue", [])
     if not task_queue:
         state["route_to"] = "SUCCESS"
         return state
     
     current_task = task_queue.pop(0)
-    state["scratch"]["task_queue"] = task_queue
+    state["scratch"]["queue"] = task_queue
     
     goal = current_task.get("goal")
     delegated = current_task.get("delegated_blueprint")
@@ -561,21 +559,35 @@ def process_task_queue(state: dict, llm_output) -> dict:
     state["route_to"] = "SELF"
     return state
 
-def python_sandbox(code: str, **kwargs) -> dict:
+def python_sandbox(state: dict, params: dict) -> dict:
     """
     Executes Python code in a secure sandbox.
     """
     import requests
+    import os
     from django.conf import settings
+    
+    code = params.get("code", "")
+    
+    conversation_id = state.get("conversation_id")
+    workspace_dir = _get_workspace_dir(conversation_id)
+    safe_filepath = "sandbox_script.py"
+    script_path = os.path.join(workspace_dir, safe_filepath)
+    
+    with open(script_path, "w") as f:
+        f.write(code)
+        
+    cid_str = str(conversation_id) if conversation_id else "temp_workspace"
+    sandbox_filepath = f"{cid_str}/{safe_filepath}"
     
     sandbox_url = getattr(settings, "SANDBOX_URL", "http://sandbox:8000/execute")
     try:
-        resp = requests.post(sandbox_url, json={"code": code, "timeout": 30}, timeout=35)
+        resp = requests.post(sandbox_url, json={"filepath": sandbox_filepath, "timeout": 30}, timeout=35)
         if resp.status_code == 200:
             result = resp.json()
-            out = result.get("output", "")
-            err = result.get("error", "")
-            rc = result.get("return_code", 0)
+            out = result.get("stdout", "")
+            err = result.get("stderr", "")
+            rc = result.get("returncode", 0)
             if rc != 0 or err:
                 return {
                     "working_prompt": f"\n\n[SYSTEM: Sandbox Execution Failed (RC={rc}).\nError:\n{err}\nOutput:\n{out}\n]\n",
