@@ -119,8 +119,8 @@ class LlmApiIntegrationTests(TestCase):
         Verifies that RAG retrieves the ingested document and the LLM generates a response.
         """
         payload = {
-            "system_prompt": "You are a helpful assistant.",
-            "user_prompt": "What is the capital of France?",
+            "system_prompt": "You are a helpful assistant with access to a knowledge base. You must use the document_reader tool to search for information before answering.",
+            "user_prompt": "Search the knowledge base using the document_reader tool. What is the capital of France?",
             "max_new_tokens": 50
         }
 
@@ -143,6 +143,7 @@ class LlmApiIntegrationTests(TestCase):
         self.assertEqual(log.user, self.user)
         
         # The log should contain the text from our ingested file
-        print(f"📄 RAG Context Used: {log.rag_selections[:100]}...")
-        self.assertIn("France", log.rag_selections)
-        self.assertIn("Paris", log.rag_selections)
+        print(f"📄 RAG Context Used: {log.rag_selections}...")
+        rag_str = str(log.rag_selections)
+        self.assertIn("France", rag_str)
+        self.assertIn("Paris", rag_str)
