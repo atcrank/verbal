@@ -58,3 +58,36 @@ def sweep_unprocessed_documents():
         actions.append(f"Queued {len(doc_ids)} docs for RAG ingestion.")
 
     return " | ".join(actions) if actions else "No new documents to sweep."
+
+@shared_task
+def sweep_unprocessed_prompt_strategies():
+    """
+    Periodic task to ensure documents have semantic summaries indexed via PromptStrategy.
+    """
+    from .models import Document, PromptStrategy
+    from django.db.models import Count
+    actions = []
+    
+    # We want to find documents that are already chunked (have ReadingStrategies)
+    # but do NOT have a PromptStrategy.
+    docs_missing_prompt = Document.objects.annotate(
+        chunk_count=Count('readingstrategy__usages')
+    ).filter(
+        chunk_count__gt=0
+    ).exclude(
+        promptstrategy__isnull=False
+    )[:5]
+
+    for doc in docs_missing_prompt:
+        strat, created = PromptStrategy.objects.get_or_create(
+            document=doc,
+            strategy_description="Semantic Summary Index",
+            defaults={"prompt": "Summarize the core concepts, methodologies, and findings in this text to serve as a semantic search index."}
+        )
+            
+    if docs_missing_prompt:
+        strat_ids = list(PromptStrategy.objects.filter(document__in=docs_missing_prompt).values_list('id', flat=True))
+        task_process_reading_strategies.delay(strat_ids)
+        actions.append(f"Queued {len(strat_ids)} PromptStrategies for Semantic Indexing.")
+        
+    return " | ".join(actions) if actions else "No new PromptStrategies to sweep."

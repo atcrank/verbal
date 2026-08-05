@@ -104,9 +104,9 @@ def unified_retrieve(
                 if concept_id:
                     try:
                         from grips.models import ConceptNode
-                        node = ConceptNode.objects.only('source_chunk_id').get(id=concept_id)
-                        if node.source_chunk_id:
-                            source_chunk_id = str(node.source_chunk_id)
+                        node = ConceptNode.objects.select_related('source_chunk').only('source_chunk__chunk_id').get(id=concept_id)
+                        if node.source_chunk:
+                            source_chunk_id = str(node.source_chunk.chunk_id)
                             grips_source_chunk_ids.add(source_chunk_id)
                     except Exception:
                         pass
@@ -192,5 +192,83 @@ def format_context_block(results: list[RetrievalResult]) -> str:
         else:
             filename = r.doc.metadata.get('filename', 'Unknown Source')
             parts.append(f"[{i}] Source: {filename}\n{r.doc.page_content}")
+
+    return "\n\n".join(parts)
+
+
+def get_deep_context_report(query: str, conversation_id: str, rag_service=None, grips_service=None) -> str:
+    """
+    Super Retriever that gathers semantic, lexical, and conversation log context.
+    Returns a unified markdown string for the NM_Deep_Reader to digest.
+    """
+    parts = []
+    seen_chunks = set()
+    
+    # 1. Semantic Search
+    semantic_results = unified_retrieve(query, rag_service, grips_service, rag_k=5, grips_k=5, deduplicate=True)
+    if semantic_results:
+        parts.append("=== SEMANTIC RAG & GRIPS RESULTS ===")
+        for i, r in enumerate(semantic_results, 1):
+            if r.source == "grips":
+                title = r.doc.metadata.get('title', 'Unknown Concept')
+                parts.append(f"[Grips: {title} (ID: grips_{r.concept_id})]\n{r.doc.page_content}")
+                if r.concept_id:
+                    seen_chunks.add(f"grips_{r.concept_id}")
+            else:
+                chunk_id = r.metadata.get('chunk_id')
+                filename = r.doc.metadata.get('filename', 'Unknown Source')
+                parts.append(f"[Semantic Chunk: {filename} (ID: {chunk_id})]\n{r.doc.page_content}")
+                if chunk_id:
+                    seen_chunks.add(chunk_id)
+
+    # 2. Lexical Search
+    try:
+        from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
+        from background_resources.models import RAGChunk
+        from grips.models import ConceptNode
+        
+        parts.append("\n=== LEXICAL / KEYWORD SEARCH RESULTS ===")
+        search_query = SearchQuery(query)
+        
+        lexical_chunks = RAGChunk.objects.annotate(
+            rank=SearchRank(SearchVector('text_content'), search_query)
+        ).filter(rank__gt=0.1).order_by('-rank')[:5]
+        
+        for c in lexical_chunks:
+            if c.chunk_id not in seen_chunks:
+                filename = c.metadata.get('filename', 'Unknown Source') if c.metadata else 'Unknown Source'
+                parts.append(f"[Lexical Chunk: {filename} (ID: {c.chunk_id})]\n{c.text_content}")
+                seen_chunks.add(c.chunk_id)
+                
+        lexical_grips = ConceptNode.objects.annotate(
+            rank=SearchRank(SearchVector('narrative_content'), search_query)
+        ).filter(rank__gt=0.1).order_by('-rank')[:5]
+        
+        for c in lexical_grips:
+            cid = f"grips_{c.id}"
+            if cid not in seen_chunks:
+                parts.append(f"[Lexical Grips: {c.title} (ID: {cid})]\n{c.narrative_content}")
+                seen_chunks.add(cid)
+    except Exception as e:
+        logger.warning(f"Lexical search failed: {e}")
+
+    # 3. Conversation Logs (Private)
+    try:
+        from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
+        from llm_api.models import PromptResponseLog, Conversation
+        parts.append("\n=== PAST CONVERSATIONS (USER PRIVATE) ===")
+        
+        conv = Conversation.objects.get(id=conversation_id)
+        user_id = conv.user_id
+        search_query = SearchQuery(query)
+        
+        past_logs = PromptResponseLog.objects.annotate(
+            rank=SearchRank(SearchVector('user_prompt', 'generated_response'), search_query)
+        ).filter(user_id=user_id, rank__gt=0.1).exclude(conversation_id=conversation_id).order_by('-rank')[:5]
+        
+        for log in past_logs:
+            parts.append(f"[Past Log ID: {log.id}]\nUser: {log.user_prompt}\nAgent: {log.generated_response}")
+    except Exception as e:
+        logger.warning(f"Failed to fetch conversation logs for user: {e}")
 
     return "\n\n".join(parts)

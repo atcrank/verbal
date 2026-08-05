@@ -1,0 +1,157 @@
+Scenario 9: Deep RAG Retrieval and Lineage Deduplication
+======================================================
+
+This test verifies the "Super Retriever" logic (`get_deep_context_report`) which acts as the source for the `NM_Deep_Reader` sub-blueprint. 
+It ensures that:
+1. Lexical (keyword) fallback works for exact term matching.
+2. Conversation Logs are privately searched and retrieved.
+3. Semantic Retrieval successfully deduplicates raw `RAGChunk`s when a higher-level summary (`ConceptNode`) exists, avoiding redundant context.
+
+Setup & Database Seeding
+------------------------
+First, we set up a user, conversation, some logs, and the knowledge nodes.
+
+    >>> from django.contrib.auth.models import User
+    >>> from llm_api.models import Conversation, PromptResponseLog
+    >>> from background_resources.models import RAGChunk
+    >>> from grips.models import ConceptNode
+    
+    >>> user, _ = User.objects.get_or_create(username="rag_test_user")
+    >>> _ = Conversation.objects.filter(user=user).delete()
+    >>> _ = RAGChunk.objects.filter(chunk_id="test-chunk-rag-99").delete()
+    >>> _ = RAGChunk.objects.filter(chunk_id="bad-chunk-mc-001").delete()
+    >>> from grips.models import Domain
+    >>> _ = Domain.objects.filter(name="Oceanography").delete()
+    
+    >>> conv = Conversation.objects.create(user=user, title="Test Conversation")
+    
+    >>> # Seed a past conversation log to test private search
+    >>> past_log = PromptResponseLog.objects.create(
+    ...     conversation=conv, user=user,
+    ...     user_prompt="What about deep sea mining?",
+    ...     generated_response="It extracts rare minerals but disrupts ecosystems."
+    ... )
+    
+    >>> # Seed a RAGChunk and a derived ConceptNode
+    >>> chunk = RAGChunk.objects.create(
+    ...     chunk_id="test-chunk-rag-99", 
+    ...     text_content="Deep sea mining extracts cobalt and manganese, which are crucial for batteries."
+    ... )
+    
+    >>> # Seed an irrelevant chunk that shares keywords to test LLM distillation filtering
+    >>> bad_chunk = RAGChunk.objects.create(
+    ...     chunk_id="bad-chunk-mc-001",
+    ...     text_content="Deep sea mining is a fun activity in the video game Minecraft where you dig for diamonds."
+    ... )
+    >>> domain = Domain.objects.create(name="Oceanography")
+    >>> concept = ConceptNode.objects.create(
+    ...     title="Deep Sea Mining", 
+    ...     slug="deep-sea-mining",
+    ...     narrative_content="Extracts battery minerals from ocean floor.", 
+    ...     source_chunk=chunk,
+    ...     domain=domain
+    ... )
+
+Mocking the Semantic Services
+-----------------------------
+Because `pgvector` embeddings are not dynamically populated for ad-hoc strings in tests (without an active embedding LLM), we mock the semantic vector returns. Lexical text search will work natively via Postgres.
+
+    >>> from unittest.mock import MagicMock
+    >>> from langchain_core.documents import Document as LangchainDocument
+    >>> 
+    >>> mock_rag_doc = LangchainDocument(
+    ...     page_content=chunk.text_content, 
+    ...     metadata={"id": chunk.chunk_id, "chunk_id": chunk.chunk_id}
+    ... )
+    >>> rag_service_mock = MagicMock()
+    >>> rag_service_mock.get_context.return_value = [mock_rag_doc]
+    >>> rag_service_mock.db.similarity_search_with_score.return_value = [(mock_rag_doc, 0.5)]
+    >>> rag_service_mock.id_key = "id"
+    
+    >>> mock_grips_doc = LangchainDocument(
+    ...     page_content=concept.narrative_content, 
+    ...     metadata={"concept_id": concept.id, "title": concept.title}
+    ... )
+    >>> grips_service_mock = MagicMock()
+    >>> grips_service_mock.get_grips_context.return_value = [mock_grips_doc]
+    >>> grips_service_mock.db.similarity_search_with_score.return_value = [(mock_grips_doc, 0.6)]
+
+Execution and Evaluation
+------------------------
+We invoke the Deep Context Report and inspect its contents to ensure the correct strategies were applied.
+
+    >>> from background_resources.retrieval import get_deep_context_report
+    >>> 
+    >>> # We create a NEW conversation so that `conv` acts as a PAST conversation for this user.
+    >>> active_conv = Conversation.objects.create(user=user, title="Active Conversation")
+    >>> 
+    >>> report = get_deep_context_report(
+    ...     query="deep sea mining", 
+    ...     conversation_id=active_conv.id, 
+    ...     rag_service=rag_service_mock, 
+    ...     grips_service=grips_service_mock
+    ... )
+    
+    >>> # 1. ConceptNode should be present (Semantic & Lexical)
+    >>> assert "Deep Sea Mining" in report, "Grips ConceptNode was missing!"
+    
+    >>> # 2. RAGChunk should be DROPPED from Semantic (due to lineage deduplication)
+    >>> # BUT it might appear in Lexical if the rank is high enough.
+    >>> # The unified_retrieve logic specifically drops the semantic chunk.
+    >>> # Let's check unified_retrieve directly to assert deduplication:
+    >>> from background_resources.retrieval import unified_retrieve
+    >>> unified_results = unified_retrieve(
+    ...     "deep sea mining", rag_service=rag_service_mock, grips_service=grips_service_mock
+    ... )
+    >>> assert len(unified_results) == 1, "Expected exactly 1 result after deduplication!"
+    >>> assert unified_results[0].source == "grips", "Expected the Grips Concept to be prioritized!"
+    >>> assert unified_results[0].concept_id == concept.id, "Expected the correct ConceptNode ID!"
+    
+    >>> # 3. Past Logs should be present
+    >>> assert "disrupts ecosystems" in report, "Conversation log was missing from report!"
+    
+    >>> # 4. Generate the Report for manual inspection
+    >>> with open("metacognition/metacognition_trials/9. deep_rag_retrieval_report.rst", "w", encoding="utf-8") as f:
+    ...     _ = f.write("Doctest Report: 9. deep_rag_retrieval\n")
+    ...     _ = f.write("=====================================\n\n")
+    ...     _ = f.write("Deep Context Report Output\n")
+    ...     _ = f.write("--------------------------\n\n::\n\n")
+    ...     for line in report.splitlines():
+    ...         _ = f.write(f"    {line}\n")
+    
+    >>> print("- rag deduplication complete: 1/1")
+    - rag deduplication complete: 1/1
+
+    >>> # 5. Evaluate the Distillation Blueprint (NM_Deep_Reader)
+    >>> from metacognition.models import CognitiveBlueprint
+    >>> bp = CognitiveBlueprint.objects.get(name="NM_Deep_Reader")
+    >>> from metacognition.compiler import compile_graph_from_blueprint
+    >>> graph = compile_graph_from_blueprint(bp)
+    
+    >>> prompt = f"User Request: What about deep sea mining?\n\nContext Report:\n{report}"
+    >>> from llm_api.apps import service_registry
+    
+    >>> import contextlib
+    >>> import io
+    >>> f_null = io.StringIO()
+    >>> with contextlib.redirect_stdout(f_null):
+    ...     agent_run = graph.invoke({
+    ...         "working_memory": [{"role": "user", "content": prompt}],
+    ...         "conversation_id": str(active_conv.id)
+    ...     }, config={"configurable": {"thread_id": "test_1"}})
+    
+    >>> final_msg = agent_run["working_memory"][-1].content
+    >>> # Ensure the good stuff is kept
+    >>> assert "battery" in final_msg or "cobalt" in final_msg or "ecosystems" in final_msg, "Missing relevant context!"
+    >>> # Ensure the bad stuff is dropped
+    >>> assert "Minecraft" not in final_msg, "Distillation failed to drop irrelevant context!"
+    
+    >>> # Append the distillation result to the report
+    >>> with open("metacognition/metacognition_trials/9. deep_rag_retrieval_report.rst", "a", encoding="utf-8") as f:
+    ...     _ = f.write("\n\nDistilled Final Context (NM_Deep_Reader)\n")
+    ...     _ = f.write("----------------------------------------\n\n::\n\n")
+    ...     for line in final_msg.splitlines():
+    ...         _ = f.write(f"    {line}\n")
+    
+    >>> print("- distillation complete: 1/1")
+    - distillation complete: 1/1

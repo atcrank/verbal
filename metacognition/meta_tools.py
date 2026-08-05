@@ -343,14 +343,23 @@ def system_janitor(state: dict, params: dict) -> str:
         
     deleted_dirs = []
     
+    import shutil
+
     # Walk bottom-up so we can delete nested empty dirs
     for root, dirs, files in os.walk(workspaces_dir, topdown=False):
         for dir_name in dirs:
             dir_path = os.path.join(root, dir_name)
             try:
-                if not os.listdir(dir_path):
+                contents = os.listdir(dir_path)
+                if not contents:
                     os.rmdir(dir_path)
                     deleted_dirs.append(dir_path)
+                elif root == workspaces_dir:
+                    # Top-level workspace dir, allow deletion if only .git or .agents
+                    allowed = {'.git', '.agents'}
+                    if not (set(contents) - allowed):
+                        shutil.rmtree(dir_path)
+                        deleted_dirs.append(dir_path)
             except Exception as e:
                 logger.error(f"Failed to delete {dir_path}: {e}")
                 
@@ -778,6 +787,18 @@ def get_grips_metrics(state: dict, params: dict) -> str:
     summary += f"- Total KnowledgeEdges: {edges}\\n\\n"
     summary += "Note: Look for patterns in Conversation failures where Grips failed to provide relevant content, or provided too much irrelevant context.\\n"
     return summary
+
+def get_empty_grips_stubs(state: dict, params: dict) -> str:
+    """Returns the IDs of empty or unlinted Grips ConceptNodes so they can be processed by sub-agents."""
+    from grips.models import ConceptNode
+    
+    empty_nodes = ConceptNode.objects.filter(narrative_content='')
+    stubs = [str(node.id) for node in empty_nodes]
+    
+    if not stubs:
+        return "No empty stubs found."
+    
+    return f"Found {len(stubs)} empty stubs. IDs: {', '.join(stubs)}"
 
 def get_benchmark_stats(state: dict, params: dict) -> str:
     """Fetches summary statistics for recent benchmark investigations."""

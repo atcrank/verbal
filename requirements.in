@@ -53,3 +53,6 @@ pyspellchecker
 
 ./resources/wheels/en_core_web_sm-3.8.0-py3-none-any.whl
 ./resources/wheels/editdistance-0.6.2-cp313-cp313-linux_x86_64.whl
+
+# --- Playwright UI Tests ---
+pytest-playwright

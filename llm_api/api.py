@@ -19,24 +19,6 @@ from llm_api.apps import service_registry
 from background_resources.models import Document
 router = Router(auth=SessionAuth())
 
-def create_messages(conversation, system_prompt=None, user_prompt=None, rags=None):
-
-    messages = conversation.as_messages()
-    system_prompt = messages[0]
-    if not system_prompt:
-        system_prompt = "You are an expert experiment architect. Your task is to design a clear and efficient experiment design based on a user's description of what they want to find out. Output suggested factors in a list format."
-    augmented_system_prompt = system_prompt + f"\n  These extracts from a local collection of authoritative documents may be be used to help guide your answer:\n {rags} "
-
-    next_messages = [
-        {
-            "role": "system",
-            "content": augmented_system_prompt,
-        },
-        {"role": "user", "content": user_prompt},
-    ]
-    logger.info(" ".join([str(x) for x in ['Messages', messages]]))
-    logger.info(next_messages)
-    return messages + next_messages
 
 class GenerateIn(Schema):
     conversation_id: str = ""
@@ -86,31 +68,33 @@ def generate_response(request, payload: GenerateIn):
             logger.error(f"Error checking requires_research: {e}")
             
     if not payload.skip_rag and requires_research:
-        from background_resources.retrieval import unified_retrieve, format_context_block
+        from background_resources.retrieval import get_deep_context_report
+        from metacognition.models import CognitiveBlueprint
+        from metacognition.tasks import run_blueprint
 
-        retrieval_results = unified_retrieve(
+        deep_context = get_deep_context_report(
             query=payload.user_prompt,
+            conversation_id=conversation_id,
             rag_service=service_registry.rag_service if not payload.skip_rag else None,
             grips_service=getattr(service_registry, 'grips_service', None) if not payload.skip_grips else None,
-            rag_k=4,
-            grips_k=4,
         )
 
-        if retrieval_results:
-            rag_text = "\n\nRelevant Context:\n" + format_context_block(retrieval_results)
-            for r in retrieval_results:
-                if r.source == "grips":
-                    rag_selections.append({
-                        "model": "ConceptNode",
-                        "id": str(r.concept_id or r.doc.metadata.get('concept_id', '')),
-                        "preview": r.doc.page_content[:150] + "..."
-                    })
-                else:
-                    rag_selections.append({
-                        "model": "RAGChunk",
-                        "id": str(r.doc.metadata.get('chunk_id', r.doc.metadata.get('id', ''))),
-                        "preview": r.doc.page_content[:150] + "..."
-                    })
+        try:
+            blueprint = CognitiveBlueprint.objects.get(name="NM_Deep_Reader")
+            reader_prompt = f"User Query: {payload.user_prompt}\n\n{deep_context}"
+            
+            result = run_blueprint(
+                blueprint_id=blueprint.id,
+                user_prompt=reader_prompt,
+                user_id=request.auth.id,
+            )
+            
+            if "error" not in result and "final_response" in result:
+                distilled = result["final_response"].strip()
+                if distilled and distilled != "<SILENT_ABORT>":
+                    rag_text = "\n\nRelevant Context (Synthesized):\n" + distilled
+        except CognitiveBlueprint.DoesNotExist:
+            logger.warning("NM_Deep_Reader blueprint not found. Proceeding without RAG context.")
     
     messages = messages + conversation.as_messages(leaf_log_id=payload.parent_log_id) + [{"role": "user", "content": payload.user_prompt + rag_text}]
     max_new_tokens = payload.max_new_tokens

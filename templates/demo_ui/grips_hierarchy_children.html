@@ -6,6 +6,9 @@
             <details hx-get="{% url 'demo_ui:grips_concept_children' node.id %}" hx-trigger="toggle once" hx-target="#children-{{ node.id }}" hx-swap="innerHTML">
                 <summary class="search-card-title" style="font-size: 0.85rem; color: var(--text-main); cursor: pointer; outline: none;">
                     ↳ {{ node.title }}
+                    {% if not node.narrative_content %}
+                        <button hx-post="{% url 'demo_ui:fill_grips_stub' node.id %}" hx-swap="outerHTML" style="margin-left: 10px; font-size: 0.7rem; padding: 2px 6px; cursor: pointer; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; color: var(--text-main);">Fill Stub</button>
+                    {% endif %}
                 </summary>
                 <div style="margin-top: 5px; font-size: 0.8rem; color: var(--text-muted); padding-bottom: 8px;">
                     {{ node.narrative_content|truncatechars:150 }}

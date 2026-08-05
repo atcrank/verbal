@@ -75,6 +75,10 @@ TOOL_SCHEMAS = {
         "type": "object",
         "properties": {},
     },
+    "get_empty_grips_stubs": {
+        "type": "object",
+        "properties": {},
+    },
     "create_benchmark_scenario": {
         "type": "object",
         "properties": {
@@ -243,6 +247,7 @@ def seed_tools(ToolDefinition):
         ("run_benchmark", "Triggers a benchmarking test for a group of scenarios.", "builtin", "metacognition.meta_tools.run_benchmark"),
         ("django_shell_script", "Executes raw Python code in the host Django environment. Pass code via 'script_content' parameter.", "builtin", "metacognition.meta_tools.django_shell_script"),
         ("system_janitor", "Deletes empty workspace directories.", "builtin", "metacognition.meta_tools.system_janitor"),
+        ("get_empty_grips_stubs", "Returns IDs of empty ConceptNodes.", "builtin", "metacognition.meta_tools.get_empty_grips_stubs"),
         ("database_backup", "Takes a JSON backup of the Django DB.", "builtin", "metacognition.meta_tools.database_backup"),
         ("read_django_models", "Queries the database.", "builtin", "metacognition.meta_tools.read_django_models"),
         ("manage_dynamic_tools", "Creates Python scripts securely.", "builtin", "metacognition.meta_tools.manage_dynamic_tools"),
@@ -708,7 +713,7 @@ def seed_nm_system_modifications(CognitiveBlueprint, ReasoningStep, ToolDefiniti
 
     step1 = ReasoningStep.objects.create(
         blueprint=bp, name="Identify Target Modification Tasks", is_start_node=True, is_canonical=True,
-        system_prompt="Goal: Review Phase 1 evaluation findings and identify specific target modification tasks.\nAction: Queue projected modification tasks in the active conversation state_tree.",
+        system_prompt="Goal: Review Phase 1 evaluation findings and identify specific target modification tasks. Use `get_empty_grips_stubs` to find empty Grips ConceptNodes and queue a task 'Grips Stub Filler' for each.\nAction: Queue projected modification tasks in the active conversation state_tree.",
         evaluation_criteria="Did the LLM queue modification tasks in conversation state?", max_retries=5, max_new_tokens=1200
     )
     
@@ -744,7 +749,8 @@ def seed_nm_system_modifications(CognitiveBlueprint, ReasoningStep, ToolDefiniti
     
     tool_update, _ = ToolDefinition.objects.get_or_create(name="update_conversation_state")
     tool_complete, _ = ToolDefinition.objects.get_or_create(name="TASK_COMPLETE")
-    step1.available_tools.add(tool_update, tool_complete)
+    tool_stubs, _ = ToolDefinition.objects.get_or_create(name="get_empty_grips_stubs")
+    step1.available_tools.add(tool_update, tool_complete, tool_stubs)
     step2.available_tools.clear()
     step3.available_tools.clear()
     step4.available_tools.clear()
@@ -1014,6 +1020,35 @@ def seed_all():
         seed_strategic_plan(CognitiveBlueprint, ReasoningStep, ResponseSchema)
         seed_task_decomposer(CognitiveBlueprint, ReasoningStep, ResponseSchema, ToolDefinition)
         seed_propose_blueprint(CognitiveBlueprint, ReasoningStep, ToolDefinition)
+        seed_deep_reader(CognitiveBlueprint, ReasoningStep)
+
+def seed_deep_reader(CognitiveBlueprint, ReasoningStep):
+    bp, _ = CognitiveBlueprint.objects.update_or_create(
+        name="NM_Deep_Reader",
+        defaults={'description': "Super retriever and synthesizer for augmenting RAG."}
+    )
+    
+    ReasoningStep.objects.filter(blueprint=bp).delete()
+    
+    step1 = ReasoningStep.objects.create(
+        blueprint=bp,
+        name="Distill Context",
+        system_prompt=(
+            "You are an intelligent knowledge filter. You have been provided with a massive "
+            "deep context report containing semantic chunks, lexical hits, citation graphs, "
+            "and past conversation logs.\n\n"
+            "Your task:\n"
+            "1. Evaluate this material against the user's prompt and active conversational thread.\n"
+            "2. If the context is trivially known to a large language model or completely irrelevant, "
+            "you MUST output exactly the word <SILENT_ABORT>.\n"
+            "3. If the context provides valuable, novel information, distill it into a dense, token-efficient "
+            "summary.\n"
+            "4. You MUST explicitly include verifiable citations (e.g., [ID: xxx]) "
+            "in your summary so a human can verify the source.\n\n"
+            "Do NOT include any pleasantries. Output ONLY the distilled context block or <SILENT_ABORT>."
+        ),
+        is_start_node=True,
+    )
 
 def seed_research_evaluation(CognitiveBlueprint, ReasoningStep, ResponseSchema):
     bp_eval, _ = CognitiveBlueprint.objects.get_or_create(

@@ -21,6 +21,16 @@ App enhancement
 * **Visual Layout Parsing:** Upgrade the PDF parser to something layout-aware (like ``unstructured`` or specialized OCR) to better handle complex tables and multi-column formats.
 * **Graph-RAG Integration:** Bridge the ingested chunks with the ``grips`` app to build relational metadata for chunks (e.g., "Chunk A contradicts Chunk B").
 
+Unified Retrieval & Deep RAG Design Decisions
+-------------------------------------------
+
+Recent updates overhauled the retrieval architecture to prioritize token efficiency, novelty, and completeness using a "Super Retriever" approach (`get_deep_context_report`). Key design decisions include:
+
+* **Token Efficiency & Relevance:** Only material strictly aligned with the prompt and the active conversation `state_tree` is injected into the LLM context.
+* **Completeness & Fast Deterministic Paths:** We rely on `ConceptNode`s for complete ideas and summaries (via `PromptStrategy` generation), and utilize fast deterministic paths like PostgreSQL's `SearchVector` for robust lexical fallback.
+* **Lineage-Aware Deduplication & Boosting:** When raw `RAGChunk`s overlap semantically with their derived `ConceptNode` summaries, the unified retrieval system (`unified_retrieve`) prefers the higher-level Grips concept and drops the redundant raw chunk. The remaining concept receives a ranking distance boost to signify its higher informational density.
+* **The NM_Deep_Reader Sub-Blueprint:** A specialized sub-blueprint that digests the "Super Retriever" report—fusing Semantic, Lexical, Citation Graph, and Private User Conversation Logs—into a dense, high-signal prompt injection.
+
 Database models
 ---------------
 

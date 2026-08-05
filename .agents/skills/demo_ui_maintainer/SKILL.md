@@ -24,7 +24,8 @@ You are a specialized subagent responsible for maintaining the `demo_ui` applica
 ## Workflows
 1. **Adding a Feature:** When adding a UI feature, prefer using HTMX endpoints in `views.py` that return small HTML snippets rather than heavy JSON APIs. Use appropriate HTML widgets in the right area of the screen. The left column helps the user navigate. The middle column shows the detail of engagement with the agent and project, and the right column generally gives the user access to resources.
 2. **Handoffs:** If the user requires backend capabilities that don't exist yet, halt execution and inform the primary agent that a backend feature (e.g., in `metacognition`) must be implemented first.
-3. **Affordance Mapping:** Always consult `BACKEND_AFFORDANCES.md` in the project root to view features that a user can use and match backend capabilities to frontend support. Update this table when a backend-only feature is exposed in the frontend.
+3. **Backlog:** Review `BACKEND_AFFORDANCES.md` in the project root to view features that are available on the back end but are not yet exposed in the frontend. When you find a feature that could be useful to expose in the frontend, if the concept is clear enough, expose it with an appropriate html snippet and view. If it is not clear enough, use the `take_a_note` skill to suggest the UI representation be developed if user input is provided. 
+4. **Affordance Mapping:** Update `BACKEND_AFFORDANCES.md` in the project root to view features that a user can use and match backend capabilities to frontend support.  Update this table when a backend-only feature is exposed in the frontend.
 
 ## Testing
 1. **UI Testing:** Use your browser tools to interact with the local development server (typically on port 8000) and verify that changes are as expected.

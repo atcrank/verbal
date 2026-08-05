@@ -9,7 +9,7 @@ The `metacognition` app manages autonomous agent loops, tool execution, and cogn
 * with git hash 1f8b3044f05a71becfd56f4f2d305eff1a898325 (with local uncommitted modifications)
 
 ## 3. Component Directory
-* **Models**: `CognitiveBlueprint`: Defines an overarching AI workflow. `ReasoningStep`: A single node in a blueprint, detailing system prompts, LLM parameters, and connected tools.
+* **Models**: `CognitiveBlueprint`: Defines an overarching AI workflow. `ReasoningStep`: A single node in a blueprint, detailing system prompts, LLM parameters, and connected tools.  
 * **Views / API endpoints**: No direct HTTP views. Triggered entirely via Celery background tasks or signals.
 * **Admin**: `admin.py`: Provides UI for modifying `CognitiveBlueprint`, `ReasoningStep`, and `ToolDefinition`.
 * **Tasks**: `tasks.py`: Contains `run_blueprint` (main entrypoint for execution) and `night_manager_task` (runs nightly maintenance).

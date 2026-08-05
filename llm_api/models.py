@@ -161,7 +161,26 @@ class Conversation(models.Model):
                     "content": log.generated_response
                 })
 
-        return messages
+        # Consolidate system messages for API compliance (only one system prompt at the top)
+        final_messages = []
+        master_system = []
+        for msg in messages:
+            if msg["role"] == "system":
+                if "[Context note:" in msg["content"]:
+                    final_messages.append({"role": "assistant", "content": msg["content"]})
+                else:
+                    if msg["content"] not in master_system:
+                        master_system.append(msg["content"])
+            else:
+                final_messages.append(msg)
+                
+        if master_system:
+            final_messages.insert(0, {
+                "role": "system",
+                "content": "\n\n---\n\n".join(master_system)
+            })
+
+        return final_messages
 
     def _default_max_logs(self) -> int:
         """

@@ -12,4 +12,5 @@ urlpatterns = [
     path('conversation/<uuid:conversation_id>/download/<path:filename>', views.download_file, name='download_file'),
     path('grips-explorer/', views.grips_explorer_tab, name='grips_explorer_tab'),
     path('grips-explorer/children/<int:concept_id>/', views.grips_concept_children, name='grips_concept_children'),
+    path('grips-explorer/fill-stub/<int:concept_id>/', views.fill_grips_stub, name='fill_grips_stub'),
 ]

@@ -29,12 +29,34 @@ def django_db_setup(django_db_setup, django_db_blocker):
             RAGChunk.objects.all().update(in_vector_index=False)
             from llm_api.apps import service_registry
             rag_service = service_registry.rag_service
-            rag_service.force_reindex_all()
+            # rag_service.force_reindex_all()  # Disabled to speed up testing and prevent hangs on inference server
             
             from metacognition.seed import seed_all
             seed_all()
         except Exception as e:
             logger.info(f'\n⚠️ Could not load test_data.json fixture or seed data: {e}')
+
+@pytest.fixture(scope='session', autouse=True)
+def force_test_db_disconnect(django_db_setup, django_db_blocker):
+    """
+    Session-scoped fixture that yields during tests and forcefully severs
+    all active Postgres connections to the test database right before teardown.
+    Because it depends on django_db_setup, its teardown (post-yield) runs 
+    strictly BEFORE pytest-django attempts to drop the database.
+    """
+    yield
+    with django_db_blocker.unblock():
+        from django.db import connection
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute('''
+                    SELECT pg_terminate_backend(pid)
+                    FROM pg_stat_activity
+                    WHERE datname = current_database()
+                      AND pid <> pg_backend_pid();
+                ''')
+        except Exception as e:
+            pass
 
 
 @pytest.fixture(autouse=True)

@@ -21,6 +21,7 @@ These files contain the actual user prompts, retrieved context, and the expected
 * :doc:`6. Large Output <metacognition_trials/6. large_output>`
 * :doc:`7. Iterative Planning <metacognition_trials/7. iterative_planning>`
 * :doc:`8. Proactive Nightmanager <metacognition_trials/8. proactive_nightmanager>`
+* :doc:`9. Deep RAG Retrieval <metacognition_trials/9. deep_rag_retrieval>`
 
 Generated Execution Reports
 ---------------------------
@@ -34,6 +35,7 @@ These generated reports capture the complete cognitive loop of the agent attempt
 * :doc:`6. Large Output (Report) <metacognition_trials/6. large_output_report>`
 * :doc:`7. Iterative Planning (Report) <metacognition_trials/7. iterative_planning_report>`
 * :doc:`8. Proactive Nightmanager (Report) <metacognition_trials/8. proactive_nightmanager_report>` 
+* :doc:`9. Deep RAG Retrieval (Report) <metacognition_trials/9. deep_rag_retrieval_report>` 
 
 
 Running the trials as doctests

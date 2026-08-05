@@ -1,0 +1,36 @@
+Doctest Report: 9. deep_rag_retrieval
+=====================================
+
+Deep Context Report Output
+--------------------------
+
+::
+
+    === SEMANTIC RAG & GRIPS RESULTS ===
+    
+    [Grips: Deep Sea Mining (ID: grips_1)]
+    Extracts battery minerals from ocean floor.
+    
+    
+    === LEXICAL / KEYWORD SEARCH RESULTS ===
+    
+    [Lexical Chunk: Unknown Source (ID: test-chunk-rag-99)]
+    Deep sea mining extracts cobalt and manganese, which are crucial for batteries.
+    
+    [Lexical Chunk: Unknown Source (ID: bad-chunk-mc-001)]
+    Deep sea mining is a fun activity in the video game Minecraft where you dig for diamonds.
+    
+    
+    === PAST CONVERSATIONS (USER PRIVATE) ===
+    
+    [Past Log ID: a2860304-4df8-4804-90e3-10fb7d95c0c5]
+    User: What about deep sea mining?
+    Agent: It extracts rare minerals but disrupts ecosystems.
+
+
+Distilled Final Context (NM_Deep_Reader)
+----------------------------------------
+
+::
+
+    Deep sea mining involves extracting battery minerals like cobalt and manganese from the ocean floor [ID: grips_1, test-chunk-rag-99].

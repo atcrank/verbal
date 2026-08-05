@@ -386,3 +386,25 @@ def grips_concept_children(request, concept_id):
     return render(request, 'demo_ui/grips_hierarchy_children.html', {
         'children': children
     })
+
+
+@login_required
+@require_POST
+def fill_grips_stub(request, concept_id):
+    """Triggers the Grips Stub Filler blueprint for a specific ConceptNode."""
+    from metacognition.models import CognitiveBlueprint
+    from metacognition.tasks import task_run_blueprint_async
+    try:
+        bp = CognitiveBlueprint.objects.get(name="Grips Stub Filler")
+        # Trigger the async task
+        task_run_blueprint_async.delay(
+            blueprint_id=bp.id,
+            user_prompt=str(concept_id),
+            user_id=request.user.id
+        )
+        return HttpResponse('<span style="color: #2ecc71; font-weight: 500;">✓ Filler Queued.</span>')
+    except CognitiveBlueprint.DoesNotExist:
+        return HttpResponse('<span style="color: #ea5322; font-weight: 500;">Blueprint missing.</span>', status=404)
+    except Exception as e:
+        logger.exception("Failed to queue Grips Stub Filler")
+        return HttpResponse(f'<span style="color: #ea5322; font-weight: 500;">Error: {str(e)}</span>', status=500)

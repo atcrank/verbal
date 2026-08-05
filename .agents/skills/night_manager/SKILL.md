@@ -17,7 +17,8 @@ description: Use this skill to responsibly perform standard daily maintenance af
    - First, apply the `project_overview_maintainer` skill.
    - Second, apply the `app_map_maintainer` skill.
    - Third, apply the `django_test_evaluator` skill.
-   - Fourth, apply the `documentation_maintainer` skill.
+   - Fourth, apply the `demo_ui_maintainer` skill.
+   - Fifth, apply the `documentation_maintainer` skill.
 
 ## Output Formats
 

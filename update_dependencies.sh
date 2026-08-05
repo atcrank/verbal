@@ -48,8 +48,12 @@ echo "📦 2/2: Syncing virtual environment..."
 # 'sync' is incredibly powerful. It doesn't just install missing packages;
 # it will actively uninstall packages in your virtual environment that are NOT
 # in your requirements.txt, keeping your environment perfectly clean!
-uv pip sync requirements.txt $PYTORCH_INDEX
+uv pip sync requirements.txt $PYTORCH_INDEX --python ../../py313/bin/python
 
 echo "----------------------------------------"
 echo "✅ Success! Dependencies updated and locked."
 echo "Don't forget to commit your updated requirements.txt to source control."
+
+echo "🎭 Attempting to install Playwright browser binaries..."
+uv pip run --python ../../py313/bin/python playwright install chromium || echo "⚠️ Playwright not installed or unavailable, skipping browser installation."
+
