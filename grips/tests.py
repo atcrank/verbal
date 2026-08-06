@@ -31,11 +31,14 @@ class TestRetrievalLogic(TestCase):
 
         from unittest.mock import patch
         
-        class MockNode:
-            source_chunk_id = "chunk_A"
+        class MockChunk:
+            chunk_id = "chunk_A"
             
-        with patch('grips.models.ConceptNode.objects.only') as mock_only:
-            mock_only.return_value.get.return_value = MockNode()
+        class MockNode:
+            source_chunk = MockChunk()
+            
+        with patch('grips.models.ConceptNode.objects.select_related') as mock_sr:
+            mock_sr.return_value.only.return_value.get.return_value = MockNode()
 
             results = unified_retrieve(
                 query="test",

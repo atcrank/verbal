@@ -165,11 +165,12 @@ class MetacognitionTraversalTests(TestCase):
         # Verify the Draft Answer was extracted correctly on the final success pass
         self.assertIn("success with final answer.", monologue[-1]["output"])
 
+    @patch('llm_api.ai_service.AIService.supports_native_tools', return_value=True)
     @patch('metacognition.tasks.service_registry.rag_service.get_context')
     @patch('metacognition.tasks.service_registry.nlp_service.get_lemmatized_tokens')
     @patch('metacognition.tasks.service_registry.ai_service.generate_response2')
     @patch('metacognition.tasks.service_registry.ai_service.clean_response')
-    def test_agentic_max_retries_exhaustion(self, mock_clean, mock_generate, mock_nlp, mock_rag):
+    def test_agentic_max_retries_exhaustion(self, mock_clean, mock_generate, mock_nlp, mock_rag, mock_native):
         """
         Tests that the graph gracefully aborts if the LLM gets stuck in an infinite loop.
         """
@@ -177,15 +178,14 @@ class MetacognitionTraversalTests(TestCase):
         mock_nlp.return_value = ["dummy"]
         mock_clean.side_effect = lambda x: x
 
-        import json
-        tool_call_json = json.dumps([{
+        tool_call_list = [{
             "name": "document_reader",
             "args": {"action": "fetch_chunk", "target_id": "chunk_0"},
             "id": "call_loop"
-        }])
+        }]
         
         # Return a tool call infinitely to exhaust max_retries
-        mock_generate.return_value = [json.dumps({"tool_calls": json.loads(tool_call_json)})]
+        mock_generate.return_value = [tool_call_list]
 
         from llm_api.apps import service_registry
         with patch.object(service_registry.rag_service, 'store') as mock_store:

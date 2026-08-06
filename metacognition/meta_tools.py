@@ -890,3 +890,27 @@ def search_past_conversations(state: dict, params: dict) -> str:
     for log in past_logs:
         out.append(f"[Past Log ID: {log.id}]\nUser: {log.user_prompt}\nAgent: {log.generated_response}")
     return "\n\n".join(out) if out else "No past conversations found."
+
+def record_signal(state: dict, params: dict) -> str:
+    """
+    Append a faint signal, insight, or good idea to a persistent documentation file.
+    """
+    import os
+    import datetime
+    from django.conf import settings
+    signal = params.get('signal', '')
+    category = params.get('category', 'general')
+    
+    if not signal:
+        return "Error: signal is required."
+        
+    filepath = os.path.join(settings.BASE_DIR, 'resources', 'night_manager_signals.md')
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    entry = f"\n### {timestamp} - [{category.upper()}]\n{signal}\n"
+    
+    with open(filepath, 'a') as f:
+        f.write(entry)
+        
+    return f"Signal recorded successfully in {filepath}."

@@ -789,12 +789,12 @@ def seed_nm_self_improvement(CognitiveBlueprint, ReasoningStep, ToolDefinition):
 
     step1 = ReasoningStep.objects.create(
         blueprint=bp, name="Meta-Performance Contemplation", is_start_node=True, is_canonical=True,
-        system_prompt="Goal: Review overall NightManager execution performance across model runs.\nAction: Write a detailed summary.",
+        system_prompt="Goal: Review overall NightManager execution performance across model runs. Measure yourself against the best human. Proactively use the record_signal tool to document long-running but faint signals, to have somewhere to store the small increments of evidence and understanding or good ideas spotted in user prompts, that can accumulate night by night.\nAction: Write a detailed summary.",
         evaluation_criteria="Did the LLM write a summary?", max_retries=3, max_new_tokens=800
     )
     step2 = ReasoningStep.objects.create(
         blueprint=bp, name="Blueprint Evolution Contemplation", is_canonical=True,
-        system_prompt="Goal: Propose an updated NightManager Blueprint with any amended ReasoningSteps.\nAction: Write a proposed blueprint specification.",
+        system_prompt="Goal: Propose an updated NightManager Blueprint with any amended ReasoningSteps. Be proactive, inclined to tinker even if things are good, and proactive in shelving problems that are outside your scope.\nAction: Write a proposed blueprint specification.",
         evaluation_criteria="Did the LLM write a proposal?", max_retries=3, max_new_tokens=800
     )
     step3 = ReasoningStep.objects.create(
@@ -817,8 +817,10 @@ def seed_nm_self_improvement(CognitiveBlueprint, ReasoningStep, ToolDefinition):
     tool_complete, _ = ToolDefinition.objects.get_or_create(name="TASK_COMPLETE")
     tool_create_bp, _ = ToolDefinition.objects.get_or_create(name="create_blueprint")
     tool_create_tool, _ = ToolDefinition.objects.get_or_create(name="create_tool")
+    tool_record_signal, _ = ToolDefinition.objects.get_or_create(name="record_signal", defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.record_signal"})
+    
     step3.available_tools.add(tool_update, tool_complete, tool_create_bp, tool_create_tool)
-    step1.available_tools.clear()
+    step1.available_tools.add(tool_record_signal)
     step2.available_tools.clear()
 
 def seed_nightmanager(CognitiveBlueprint, ReasoningStep, ResponseSchema, ToolDefinition):

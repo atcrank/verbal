@@ -99,6 +99,7 @@ class LlmApiIntegrationTests(TestCase):
 
     def setUp(self):
         from llm_api.models import SystemConfiguration, LocalAIModel
+        from django.core.management import call_command
         self.client = Client()
         self.user = User.objects.create_user(username='testuser', password='password123')
         self.client.login(username='testuser', password='password123')
@@ -111,6 +112,10 @@ class LlmApiIntegrationTests(TestCase):
         )
         config.active_local_model = model
         config.save()
+        
+        # Ensure blueprints are available for the /generate_response/ endpoint which uses Deep_Reader
+        from metacognition.seed import seed_all
+        seed_all()
 
     @tag('e2e')
     def test_generate_response_with_real_rag(self):
@@ -119,8 +124,8 @@ class LlmApiIntegrationTests(TestCase):
         Verifies that RAG retrieves the ingested document and the LLM generates a response.
         """
         payload = {
-            "system_prompt": "You are a helpful assistant with access to a knowledge base. You must use the document_reader tool to search for information before answering.",
-            "user_prompt": "Search the knowledge base using the document_reader tool. What is the capital of France?",
+            "system_prompt": "You are a helpful assistant. Use the provided context to answer the question.",
+            "user_prompt": "What are the specific details mentioned in the internal company France document regarding its capital?",
             "max_new_tokens": 50
         }
 

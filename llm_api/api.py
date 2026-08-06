@@ -84,6 +84,7 @@ def generate_response(request, payload: GenerateIn):
                 distilled = result["final_response"].strip()
                 if distilled and distilled != "<SILENT_ABORT>":
                     rag_text = "\n\nRelevant Context (Synthesized):\n" + distilled
+                    rag_selections = [distilled]
         except CognitiveBlueprint.DoesNotExist:
             logger.warning("Deep_Reader blueprint not found. Proceeding without RAG context.")
     
