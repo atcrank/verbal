@@ -67,6 +67,30 @@ TOOL_SCHEMAS = {
         },
         "required": ["log_id"],
     },
+    "search_rag_chunks": {
+        "type": "object",
+        "properties": {
+            "query": {"type": "string", "description": "Search query."},
+            "k": {"type": "integer", "description": "Number of results to return."},
+        },
+        "required": ["query"],
+    },
+    "search_grips_nodes": {
+        "type": "object",
+        "properties": {
+            "query": {"type": "string", "description": "Search query."},
+            "k": {"type": "integer", "description": "Number of results to return."},
+        },
+        "required": ["query"],
+    },
+    "search_past_conversations": {
+        "type": "object",
+        "properties": {
+            "query": {"type": "string", "description": "Search query."},
+            "k": {"type": "integer", "description": "Number of results to return."},
+        },
+        "required": ["query"],
+    },
     "get_rag_efficiency_metrics": {
         "type": "object",
         "properties": {},
@@ -274,9 +298,9 @@ def seed_tools(ToolDefinition):
         )
 
 def seed_architect(CognitiveBlueprint, ReasoningStep):
-    bp, _ = CognitiveBlueprint.objects.get_or_create(
+    bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="The Architect",
-        defaults={'description': "Meta-agent blueprint capable of self-composing tools and blueprints."}
+        defaults={'description': "Meta-agent blueprint capable of self-composing tools and blueprints.", 'is_canonical': True}
     )
 
     ReasoningStep.objects.filter(blueprint=bp).delete()
@@ -308,13 +332,14 @@ def seed_architect(CognitiveBlueprint, ReasoningStep):
 def seed_grips_stub_filler(CognitiveBlueprint, ReasoningStep, ToolDefinition):
     bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="Grips Stub Filler",
-        defaults={'description': "Reads a ConceptNode ID, researches context, and writes its narrative.", 'is_autonomous': True}
+        defaults={'description': "Reads a ConceptNode ID, researches context, and writes its narrative.", 'is_autonomous': True, 'is_canonical': True}
     )
     ReasoningStep.objects.filter(blueprint=bp).delete()
     step1 = ReasoningStep.objects.create(
         blueprint=bp,
         name="Fill Stub",
         is_start_node=True,
+        is_canonical=True,
         system_prompt="You are a research assistant filling in empty Grips ConceptNodes. The user prompt provides the ID. Query the database, research the topic if necessary, and use django_shell_script to save the narrative. Then output TASK_COMPLETE.",
         max_retries=3,
         max_new_tokens=800,
@@ -329,7 +354,7 @@ def seed_grips_stub_filler(CognitiveBlueprint, ReasoningStep, ToolDefinition):
 def seed_variant_scorer(CognitiveBlueprint, ReasoningStep, ToolDefinition):
     bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="Variant Scorer",
-        defaults={'description': "Computes EWMA for ReasoningSteps and updates performance_score.", 'is_autonomous': True}
+        defaults={'description': "Computes EWMA for ReasoningSteps and updates performance_score.", 'is_autonomous': True, 'is_canonical': True}
     )
 def seed_nm_housekeeping(CognitiveBlueprint, ReasoningStep, ToolDefinition):
     bp, _ = CognitiveBlueprint.objects.update_or_create(
@@ -961,9 +986,9 @@ def seed_computational_logic(CognitiveBlueprint, ReasoningStep, ToolDefinition):
     step.available_tools.add(tool_complete)
 
 def seed_escalation_of_effort(CognitiveBlueprint, ReasoningStep, ToolDefinition):
-    bp, _ = CognitiveBlueprint.objects.get_or_create(
+    bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="Escalation of Effort",
-        defaults={'description': "Research APIs dynamically, solve the problem with execution, and summarize the result."}
+        defaults={'description': "Research APIs dynamically, solve the problem with execution, and summarize the result.", 'is_canonical': True}
     )
     
     ReasoningStep.objects.filter(blueprint=bp).delete()
@@ -1020,40 +1045,61 @@ def seed_all():
         seed_strategic_plan(CognitiveBlueprint, ReasoningStep, ResponseSchema)
         seed_task_decomposer(CognitiveBlueprint, ReasoningStep, ResponseSchema, ToolDefinition)
         seed_propose_blueprint(CognitiveBlueprint, ReasoningStep, ToolDefinition)
-        seed_deep_reader(CognitiveBlueprint, ReasoningStep)
+        seed_deep_reader(CognitiveBlueprint, ReasoningStep, ToolDefinition)
 
-def seed_deep_reader(CognitiveBlueprint, ReasoningStep):
+def seed_deep_reader(CognitiveBlueprint, ReasoningStep, ToolDefinition):
     bp, _ = CognitiveBlueprint.objects.update_or_create(
-        name="NM_Deep_Reader",
-        defaults={'description': "Super retriever and synthesizer for augmenting RAG."}
+        name="Deep_Reader",
+        defaults={'description': "Super retriever and synthesizer for augmenting RAG.", 'is_canonical': True}
     )
     
     ReasoningStep.objects.filter(blueprint=bp).delete()
     
     step1 = ReasoningStep.objects.create(
         blueprint=bp,
-        name="Distill Context",
+        name="Gather Context",
+        is_start_node=True,
+        is_canonical=True,
         system_prompt=(
-            "You are an intelligent knowledge filter. You have been provided with a massive "
-            "deep context report containing semantic chunks, lexical hits, citation graphs, "
-            "and past conversation logs.\n\n"
-            "Your task:\n"
-            "1. Evaluate this material against the user's prompt and active conversational thread.\n"
+            "You are an intelligent knowledge gatherer. Use the available tools to search RAG chunks, "
+            "Grips nodes, and past conversations to find information relevant to the user's prompt. "
+            "Do not stop until you have gathered sufficient context, or you have exhausted search variations. "
+            "If the query is trivial and requires no context, just output TASK_COMPLETE immediately."
+        ),
+        evaluation_criteria="Did the agent gather sufficient context using the tools?",
+        max_retries=3,
+    )
+    
+    step2 = ReasoningStep.objects.create(
+        blueprint=bp,
+        name="Distill Context",
+        is_canonical=True,
+        system_prompt=(
+            "You are an intelligent knowledge filter. Review the context you gathered in previous steps. "
+            "1. Evaluate this material against the user's prompt.\n"
             "2. If the context is trivially known to a large language model or completely irrelevant, "
             "you MUST output exactly the word <SILENT_ABORT>.\n"
-            "3. If the context provides valuable, novel information, distill it into a dense, token-efficient "
-            "summary.\n"
-            "4. You MUST explicitly include verifiable citations (e.g., [ID: xxx]) "
-            "in your summary so a human can verify the source.\n\n"
-            "Do NOT include any pleasantries. Output ONLY the distilled context block or <SILENT_ABORT>."
+            "3. If the context provides valuable, novel information, distill it into a dense, token-efficient summary.\n"
+            "4. You MUST explicitly include verifiable citations (e.g., [ID: xxx]) in your summary.\n\n"
+            "Output ONLY the distilled context block or <SILENT_ABORT>."
         ),
-        is_start_node=True,
     )
+    
+    step1.on_success_step = step2
+    step1.save()
+    
+    tool_rag, _ = ToolDefinition.objects.get_or_create(name="search_rag_chunks", defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.search_rag_chunks"})
+    tool_grips, _ = ToolDefinition.objects.get_or_create(name="search_grips_nodes", defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.search_grips_nodes"})
+    tool_past, _ = ToolDefinition.objects.get_or_create(name="search_past_conversations", defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.search_past_conversations"})
+    tool_complete, _ = ToolDefinition.objects.get_or_create(name="TASK_COMPLETE")
+    
+    step1.available_tools.add(tool_rag, tool_grips, tool_past, tool_complete)
+    step2.available_tools.add(tool_complete)
 
 def seed_research_evaluation(CognitiveBlueprint, ReasoningStep, ResponseSchema):
-    bp_eval, _ = CognitiveBlueprint.objects.get_or_create(
+    bp_eval, _ = CognitiveBlueprint.objects.update_or_create(
         name="ResearchEvaluation",
-        defaults={'description': "Full end-to-end pipeline for doctests."}
+        defaults={'description': "Full end-to-end pipeline for doctests.", 'is_canonical': True}
     )
     
     schema_research, _ = ResponseSchema.objects.get_or_create(
@@ -1101,9 +1147,9 @@ def seed_research_evaluation(CognitiveBlueprint, ReasoningStep, ResponseSchema):
     step4.save()
 
 def seed_strategic_plan(CognitiveBlueprint, ReasoningStep, ResponseSchema):
-    bp_strat, _ = CognitiveBlueprint.objects.get_or_create(
+    bp_strat, _ = CognitiveBlueprint.objects.update_or_create(
         name="StrategicPlan",
-        defaults={'description': "Strategic Planning isolated pipeline"}
+        defaults={'description': "Strategic Planning isolated pipeline", 'is_canonical': True}
     )
     
     schema_plan, _ = ResponseSchema.objects.get_or_create(
@@ -1120,9 +1166,9 @@ def seed_strategic_plan(CognitiveBlueprint, ReasoningStep, ResponseSchema):
     )
 
 def seed_propose_blueprint(CognitiveBlueprint, ReasoningStep, ToolDefinition):
-    bp, _ = CognitiveBlueprint.objects.get_or_create(
+    bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="Propose Blueprint",
-        defaults={'description': "Dynamically designs and saves a new CognitiveBlueprint to the database."}
+        defaults={'description': "Dynamically designs and saves a new CognitiveBlueprint to the database.", 'is_canonical': True}
     )
     
     ReasoningStep.objects.filter(blueprint=bp).delete()
@@ -1138,9 +1184,9 @@ def seed_propose_blueprint(CognitiveBlueprint, ReasoningStep, ToolDefinition):
         step.available_tools.add(create_tool)
 
 def seed_task_decomposer(CognitiveBlueprint, ReasoningStep, ResponseSchema, ToolDefinition):
-    bp, _ = CognitiveBlueprint.objects.get_or_create(
+    bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="Task Decomposer",
-        defaults={'description': "Iteratively process nested tasks using a JSON queue."}
+        defaults={'description': "Iteratively process nested tasks using a JSON queue.", 'is_canonical': True}
     )
     
     schema_queue, _ = ResponseSchema.objects.get_or_create(

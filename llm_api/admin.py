@@ -1,6 +1,8 @@
-# Register your models here.# llm_api/admin.py
 from django.contrib import admin, messages
 from django import forms
+from django.urls import reverse
+from django.utils.html import format_html
+from django.db.models import Count
 from .models import LocalAIModel, ExternalAIModel, UserActiveModel, UserAPIKey, SystemConfiguration, PromptResponseLog, Conversation, LoRAAdapter
 
 @admin.action(description="Load this Model into Inference Server VRAM")
@@ -28,21 +30,53 @@ class LocalAIModelAdmin(admin.ModelAdmin):
     search_fields = ('name', 'hf_model_id')
     actions = [activate_local_model, unload_local_models]
 
+class PromptResponseLogInline(admin.TabularInline):
+    model = PromptResponseLog
+    extra = 0
+    readonly_fields = ('id', 'created_at', 'model_name', 'step_status', 'truncated_prompt', 'truncated_response')
+    fields = ('id', 'created_at', 'model_name', 'step_status', 'truncated_prompt', 'truncated_response')
+    can_delete = False
+    
+    def truncated_prompt(self, obj):
+        return (obj.user_prompt[:50] + '...') if obj.user_prompt and len(obj.user_prompt) > 50 else obj.user_prompt
+    
+    def truncated_response(self, obj):
+        return (obj.generated_response[:50] + '...') if obj.generated_response and len(obj.generated_response) > 50 else obj.generated_response
+
+
 @admin.register(Conversation)
 class ConversationAdmin(admin.ModelAdmin):
-    list_display = ('title', 'user', 'start_time')
+    list_display = ('title', 'user', 'start_time', 'log_count', 'view_logs_link')
     list_filter = ('start_time', 'user')
     search_fields = ('title', 'user__username')
     readonly_fields = ('id', 'start_time')
     autocomplete_fields = ('user', )
+    inlines = [PromptResponseLogInline]
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.annotate(log_count=Count('promptresponselog'))
+
+    def log_count(self, obj):
+        return obj.log_count
+    log_count.admin_order_field = 'log_count'
+
+    def view_logs_link(self, obj):
+        url = reverse("admin:llm_api_promptresponselog_changelist") + f"?conversation__id__exact={obj.id}"
+        return format_html('<a href="{}">View {} Logs</a>', url, obj.log_count)
+    view_logs_link.short_description = "Logs"
 
 @admin.register(PromptResponseLog)
 class PromptResponseLogAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'conversation', 'user_feedback', 'created_at')
-    list_filter = ('user_feedback', 'created_at', 'user')
-    search_fields = ('user_prompt', 'generated_response', 'system_prompt', 'conversation__title', 'user__username')
+    list_display = ('id', 'user', 'conversation', 'feedback_display', 'step_status', 'reasoning_step', 'model_name', 'created_at')
+    list_filter = ('user_feedback', 'step_status', 'reasoning_step__blueprint__name', 'model_name', 'created_at', 'user')
+    search_fields = ('user_prompt', 'generated_response', 'system_prompt', 'conversation__title', 'user__username', 'reasoning_step__name')
     readonly_fields = ('id', 'created_at')
     autocomplete_fields = ('user', 'conversation')
+
+    @admin.display(description='Feedback')
+    def feedback_display(self, obj):
+        return obj.get_user_feedback_display() if obj.user_feedback is not None else "—"
 
 
 @admin.register(SystemConfiguration)

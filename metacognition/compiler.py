@@ -264,6 +264,7 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
             
         log_kwargs = {
             "conversation_id": state.get("conversation_id"),
+            "user_id": state.get("user_id"),
             "reasoning_step_id": step.id,
             "log_ids": []
         }
@@ -619,7 +620,7 @@ def _make_eval_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                 eval_result = ai_service.generate_outline(
                     messages=[{"role": _map_role(m.type), "content": getattr(m, 'content', str(m))} for m in eval_messages],
                     response_schema=EvaluationResult,
-                    log_kwargs={"conversation_id": state.get("conversation_id"), "reasoning_step_id": step.id}
+                    log_kwargs={"conversation_id": state.get("conversation_id"), "user_id": state.get("user_id"), "reasoning_step_id": step.id}
                 )
                 if isinstance(eval_result, list):
                     eval_result = eval_result[0]

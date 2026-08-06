@@ -68,24 +68,15 @@ def generate_response(request, payload: GenerateIn):
             logger.error(f"Error checking requires_research: {e}")
             
     if not payload.skip_rag and requires_research:
-        from background_resources.retrieval import get_deep_context_report
         from metacognition.models import CognitiveBlueprint
         from metacognition.tasks import run_blueprint
 
-        deep_context = get_deep_context_report(
-            query=payload.user_prompt,
-            conversation_id=conversation_id,
-            rag_service=service_registry.rag_service if not payload.skip_rag else None,
-            grips_service=getattr(service_registry, 'grips_service', None) if not payload.skip_grips else None,
-        )
-
         try:
-            blueprint = CognitiveBlueprint.objects.get(name="NM_Deep_Reader")
-            reader_prompt = f"User Query: {payload.user_prompt}\n\n{deep_context}"
+            blueprint = CognitiveBlueprint.objects.get(name="Deep_Reader")
             
             result = run_blueprint(
                 blueprint_id=blueprint.id,
-                user_prompt=reader_prompt,
+                user_prompt=f"Gather and distill context for the following user prompt: {payload.user_prompt}",
                 user_id=request.auth.id,
             )
             
@@ -94,7 +85,7 @@ def generate_response(request, payload: GenerateIn):
                 if distilled and distilled != "<SILENT_ABORT>":
                     rag_text = "\n\nRelevant Context (Synthesized):\n" + distilled
         except CognitiveBlueprint.DoesNotExist:
-            logger.warning("NM_Deep_Reader blueprint not found. Proceeding without RAG context.")
+            logger.warning("Deep_Reader blueprint not found. Proceeding without RAG context.")
     
     messages = messages + conversation.as_messages(leaf_log_id=payload.parent_log_id) + [{"role": "user", "content": payload.user_prompt + rag_text}]
     max_new_tokens = payload.max_new_tokens

@@ -836,3 +836,57 @@ def create_benchmark_scenario(state: dict, params: dict) -> str:
         return f"Scenario created/exists with ID: {sc.id}"
     except Exception as e:
         return f"Failed to create scenario: {e}"
+
+def search_rag_chunks(state: dict, params: dict) -> str:
+    query = params.get("query", "")
+    k = params.get("k", 5)
+    if not query:
+        return "Error: query is required."
+    from llm_api.apps import service_registry
+    if not service_registry.rag_service:
+        return "Error: RAG service offline."
+    results = service_registry.rag_service.get_context(query, k=k)
+    out = []
+    for d in results:
+        chunk_id = d.metadata.get('chunk_id')
+        filename = d.metadata.get('filename', 'Unknown')
+        out.append(f"[Chunk: {filename} (ID: {chunk_id})]\n{d.page_content}")
+    return "\n\n".join(out) if out else "No RAG results found."
+
+def search_grips_nodes(state: dict, params: dict) -> str:
+    query = params.get("query", "")
+    k = params.get("k", 5)
+    if not query:
+        return "Error: query is required."
+    from llm_api.apps import service_registry
+    if not getattr(service_registry, 'grips_service', None):
+        return "Error: Grips service offline."
+    results = service_registry.grips_service.get_grips_context(query, k=k)
+    out = []
+    for d in results:
+        title = d.metadata.get('title', 'Unknown Concept')
+        concept_id = d.metadata.get('concept_id')
+        out.append(f"[Grips: {title} (ID: grips_{concept_id})]\n{d.page_content}")
+    return "\n\n".join(out) if out else "No Grips results found."
+
+def search_past_conversations(state: dict, params: dict) -> str:
+    query = params.get("query", "")
+    k = params.get("k", 5)
+    if not query:
+        return "Error: query is required."
+    user_id = state.get("user_id")
+    if not user_id:
+        return "Error: user_id is required."
+    
+    from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
+    from llm_api.models import PromptResponseLog
+    
+    search_query = SearchQuery(query)
+    past_logs = PromptResponseLog.objects.annotate(
+        rank=SearchRank(SearchVector('user_prompt', 'generated_response'), search_query)
+    ).filter(user_id=user_id, rank__gt=0.1).order_by('-rank')[:k]
+    
+    out = []
+    for log in past_logs:
+        out.append(f"[Past Log ID: {log.id}]\nUser: {log.user_prompt}\nAgent: {log.generated_response}")
+    return "\n\n".join(out) if out else "No past conversations found."

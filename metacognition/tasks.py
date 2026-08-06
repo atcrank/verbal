@@ -97,10 +97,21 @@ def run_blueprint(blueprint_id: int,
         except Conversation.DoesNotExist:
             return {"error": "Conversation not found.", "status": 404}
     else:
-        conversation = Conversation.objects.create(
-            user_id=user_id,
-            title=user_prompt.split(".")[0][:50] + "..."
-        )
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        night_manager_user = User.objects.filter(username="NightManager").first()
+        
+        if night_manager_user and user_id == night_manager_user.id:
+            title = f"NightManager: {blueprint.name}"
+            conversation, _ = Conversation.objects.get_or_create(
+                user_id=user_id,
+                title=title
+            )
+        else:
+            conversation = Conversation.objects.create(
+                user_id=user_id,
+                title=user_prompt.split(".")[0][:50] + "..."
+            )
 
     # 2. Setup initial state
     from .state import AgentState
@@ -182,9 +193,20 @@ def task_update_performance_scores():
     steps = ReasoningStep.objects.all()
     
     for step in steps:
-        # Since logs don't directly reference ReasoningStep currently, this acts as a placeholder
-        # deterministic process. In a full implementation, logs would have a `reasoning_step_id` FK.
-        # For now, we set a baseline positive heuristic.
-        step.performance_score = 0.85
+        logs = PromptResponseLog.objects.filter(reasoning_step=step).order_by('created_at')
+        if not logs.exists():
+            continue
+        
+        score = step.performance_score
+        for log in logs:
+            if log.step_status == PromptResponseLog.StepStatus.SUCCESS:
+                val = 1.0
+            elif log.step_status in [PromptResponseLog.StepStatus.FAILURE, PromptResponseLog.StepStatus.RETRY]:
+                val = 0.0
+            else:
+                continue
+            score = (alpha * val) + ((1 - alpha) * score)
+            
+        step.performance_score = score
         step.save()
     logger.info("Updated performance_scores for all ReasoningSteps.")
