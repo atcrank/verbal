@@ -55,7 +55,7 @@ class ConversationAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        return qs.annotate(log_count=Count('promptresponselog'))
+        return qs.annotate(log_count=Count('logs'))
 
     def log_count(self, obj):
         return obj.log_count

@@ -637,6 +637,193 @@ def handle_edge_lint_tool(state: dict, params: dict) -> str:
         return f"Error - Edge {edge_id} not found."
 
 
+class NodeLintResult(BaseModel):
+    """
+    Evaluates and rewrites a ConceptNode narrative to fix style violations, missing references, or clarify meaning.
+    
+    Step Prompt: You are a meticulous editor. Review the existing ConceptNode narrative and apply the suggested fixes. Make sure to adhere to the Domain Style Guide and explicitly incorporate any exceptions or limitations (determinate negations). Return the improved narrative and the node_id.
+    Evaluation Prompt: Returns a NodeLintResult object containing the rewritten narrative and the original node_id.
+    """
+    node_id: int = Field(description="The ID of the ConceptNode being linted, exactly as provided in the prompt.")
+    improved_narrative: str = Field(description="The rewritten narrative for the ConceptNode.")
+
+def handle_node_lint_tool(state: dict, params: dict) -> str:
+    from grips.models import ConceptNode
+    
+    node_id = params.get("node_id")
+    improved_narrative = params.get("improved_narrative")
+    
+    if not node_id or not improved_narrative:
+        return "Error - Missing node_id or improved_narrative."
+        
+    try:
+        node = ConceptNode.objects.get(id=node_id)
+        node.narrative_content = improved_narrative
+        # By saving the node, it resets needs_linting in the normal workflow (if any post_save exists). 
+        # But we will let the blueprint clear the issue_flags if it passes the next re-evaluation step.
+        node.save(update_fields=['narrative_content'])
+        return f"Successfully updated narrative for node {node_id}."
+    except ConceptNode.DoesNotExist:
+        return f"Error - Node {node_id} not found."
+
+
+class StructuredClaim(BaseModel):
+    subject: str = Field(description="The subject of the claim (e.g., 'Foam Dispenser X').")
+    predicate: str = Field(description="ENUM: [REQUIRES, CAPABLE_OF, INCOMPATIBLE_WITH, HAS_PROPERTY, IS_A, PART_OF]")
+    object: str = Field(description="The object of the claim (e.g., 'PPE Level A').")
+    qualifier: str = Field(default="", description="Optional context or condition for the claim.")
+
+class ConceptExtraction(BaseModel):
+    """
+    Extracted concept and its operational logic claims.
+    """
+    title: str = Field(description="Clear, concise title of the concept.")
+    focus_hint: str = Field(description="A short phrase explaining the context of this concept in the domain.")
+    narrative_content: str = Field(description="Encyclopedic explanation of the concept.")
+    claims: list[StructuredClaim] = Field(default_factory=list, description="Operational logic claims for symbolic computation.")
+
+def handle_create_concept_nodes_tool(state: dict, params: dict) -> str:
+    from grips.models import ConceptNode, Domain
+    from document_storage.models import Document
+    import re
+    
+    domain_id = params.get("domain_id")
+    document_id = params.get("document_id")
+    concepts = params.get("concepts", [])
+    
+    if not domain_id or not concepts:
+        return "Error - Missing domain_id or concepts."
+        
+    try:
+        domain = Domain.objects.get(id=domain_id)
+    except Domain.DoesNotExist:
+        return f"Error - Domain {domain_id} not found."
+        
+    root_node = None
+    if document_id:
+        try:
+            from background_resources.models import Document
+            doc = Document.objects.get(id=document_id)
+            safe_doc_title = re.sub(r'[^a-zA-Z0-9]', '-', doc.title.lower())[:50]
+            root_node, _ = ConceptNode.objects.get_or_create(
+                domain=domain,
+                slug=f"doc-{doc.id}-{safe_doc_title}",
+                defaults={
+                    "title": f"Doc: {doc.title[:200]}",
+                    "focus_hint": "Document Root Node",
+                    "narrative_content": "Extracted from document.",
+                    "needs_linting": True
+                }
+            )
+        except Exception:
+            pass
+
+    created_count = 0
+    from grips.models import KnowledgeEdge
+    
+    for c in concepts:
+        title = c.get('title', 'Unknown Concept')
+        safe_title = re.sub(r'[^a-zA-Z0-9]', '-', title.lower())[:50]
+        
+        # If part of a document, prefix the slug so chunks don't clash identically named concepts from other docs easily
+        slug = f"doc-{document_id}-{safe_title}" if document_id else safe_title
+        
+        node, created = ConceptNode.objects.get_or_create(
+            domain=domain,
+            slug=slug,
+            defaults={
+                "title": title[:200],
+                "focus_hint": c.get('focus_hint', ''),
+                "narrative_content": c.get('narrative_content', ''),
+                "structured_claims": c.get('claims', []),
+                "needs_linting": True
+            }
+        )
+        if created:
+            created_count += 1
+            
+        if root_node and node != root_node:
+            KnowledgeEdge.objects.get_or_create(
+                source=root_node,
+                target=node,
+                relationship_type='INCLUDES',
+                defaults={"justification": "Extracted Sub-Concept"}
+            )
+            
+    # Trigger Level 2 digestion incrementally for newly created concepts?
+    # This could be handled by a queue, but for now we just return.
+    return f"Successfully created {created_count} ConceptNodes."
+
+class EvaluateConceptNeighborsResult(BaseModel):
+    decision: str = Field(description="ENUM: [MERGE, EDGE, DISTINCT]")
+    justification: str = Field(description="Explanation for the relationship or merge decision.")
+
+def handle_evaluate_concept_neighbors_tool(state: dict, params: dict) -> str:
+    from grips.models import ConceptNode, KnowledgeEdge
+    
+    source_id = params.get("source_id")
+    target_id = params.get("target_id")
+    decision = params.get("decision")
+    justification = params.get("justification", "")
+    
+    if not source_id or not target_id or not decision:
+        return "Error - Missing required parameters."
+        
+    try:
+        source = ConceptNode.objects.get(id=source_id)
+        target = ConceptNode.objects.get(id=target_id)
+    except ConceptNode.DoesNotExist:
+        return "Error - Source or Target node not found."
+        
+    if decision == "MERGE":
+        # For simplicity, we just mark a RELATED_TO edge with 'MERGE' in justification, 
+        # as actual node merging is complex (re-wiring edges, vectors, etc).
+        KnowledgeEdge.objects.get_or_create(
+            source=source, target=target, relationship_type='RELATED_TO',
+            defaults={"justification": f"[MERGE SUGGESTED] {justification}"}
+        )
+        return "Successfully evaluated. Merge suggested via RELATED_TO edge."
+    elif decision == "EDGE":
+        KnowledgeEdge.objects.get_or_create(
+            source=source, target=target, relationship_type='RELATED_TO',
+            defaults={"justification": justification}
+        )
+        return "Successfully created EDGE."
+    elif decision == "DISTINCT":
+        return "Evaluated as DISTINCT. No edge created."
+    else:
+        return f"Unknown decision: {decision}"
+
+class EvaluateCrossDomainResult(BaseModel):
+    is_related: bool = Field(description="True if they share underlying principles or are analogous.")
+    justification: str = Field(description="Explanation of the cross-domain analogy.")
+
+def handle_evaluate_cross_domain_tool(state: dict, params: dict) -> str:
+    from grips.models import ConceptNode, KnowledgeEdge
+    
+    source_id = params.get("source_id")
+    target_id = params.get("target_id")
+    is_related = params.get("is_related")
+    justification = params.get("justification", "")
+    
+    if not source_id or not target_id or is_related is None:
+        return "Error - Missing required parameters."
+        
+    if is_related:
+        try:
+            source = ConceptNode.objects.get(id=source_id)
+            target = ConceptNode.objects.get(id=target_id)
+            
+            KnowledgeEdge.objects.get_or_create(
+                source=source, target=target, relationship_type='RELATED_TO',
+                defaults={"justification": f"[Cross-Domain Link] {justification}"}
+            )
+            return "Successfully created Cross-Domain EDGE."
+        except ConceptNode.DoesNotExist:
+            return "Error - Source or Target node not found."
+            
+    return "Evaluated as not related. No edge created."
+
 # ACTION_REGISTRY has been deprecated and replaced by ToolDefinition.
 OUTPUT_TYPES = {"ResearchEvaluation": ResearchEvaluation,
                 "DifficultPromptEvaluation": DifficultPromptEvaluation,
@@ -645,7 +832,11 @@ OUTPUT_TYPES = {"ResearchEvaluation": ResearchEvaluation,
                 "ResultCritique": ResultCritique,
                 "PromptVariant": PromptVariant,
                 "TaskQueue": TaskQueue,
-                "EdgeLintResult": EdgeLintResult}
+                "EdgeLintResult": EdgeLintResult,
+                "NodeLintResult": NodeLintResult,
+                "ConceptExtraction": ConceptExtraction,
+                "EvaluateConceptNeighborsResult": EvaluateConceptNeighborsResult,
+                "EvaluateCrossDomainResult": EvaluateCrossDomainResult}
 
 # Inject the detailed schema description into the system prompt for the ExecutionPlan
 enhanced_prompt = (

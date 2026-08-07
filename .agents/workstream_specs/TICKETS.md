@@ -20,3 +20,12 @@
 
 - [ ] [Feature] Conversation logs as additional RAG knowledge-base (Status: pending) -> [Link to note](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260805_conversation_logs_rag.md)
   *Summary*: Investigate and design a system to index and retrieve past conversation logs as an additional RAG context source.
+
+- [ ] [Bug/Feature] Enforce dynamic tool authorization and add "stop" button (Status: pending) -> [Link to note](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260806_dynamic_tool_security_and_stop_button.md)
+  *Summary*: The LangGraph compiler currently ignores the `requires_approval` flag, allowing unverified dynamic tools to run. We need to halt graph execution when approval is needed, and also add a general "stop" button to interrupt long-running blueprints.
+
+- [ ] [Feature] NightManager archival and cleanup routines (Status: pending) -> [Link to note](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260806_nightmanager_pruning.md)
+  *Summary*: Give the NightManager responsibility to delete old `PromptResponseLogs`, prune `ReasoningStep` variant trees to 3-4 generations max, and delete redundant or noisy `Chunk` records.
+
+- [ ] [Feature] GRIPS testing and structured claims symbolic computation (Status: pending) -> [Link to note](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260807_grips_testing_and_claims_computation.md)
+  *Summary*: Ensure grips test coverage includes realistic e2e tests for generated objects. Design a computational engine to process `structured_claims` objects for truth values, implications, and necessity/sufficiency.

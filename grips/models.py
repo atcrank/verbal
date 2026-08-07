@@ -1,5 +1,6 @@
 from django.db import models
 from django.urls import reverse
+from django.contrib.postgres.fields import ArrayField
 from django.utils.html import format_html
 from django.templatetags.static import static
 from llm_api.models import LocalAIModel
@@ -61,6 +62,19 @@ class ConceptNode(models.Model):
         help_text="List of atomic claims (e.g., [{'subject': 'A', 'predicate': 'is', 'object': 'B'}]) for programmatic linting.",
         blank=True,
         null=True
+    )
+
+    class ConceptNodeFlags(models.TextChoices):
+        NEEDS_CITATION = 'needs_citation', 'Needs Citation'
+        STYLE_VIOLATION = 'style_violation', 'Style Violation'
+        NEEDS_CLARIFICATION = 'needs_clarification', 'Needs Clarification'
+        ORPHANED = 'orphaned', 'Orphaned (Missing Links)'
+
+    issue_flags = ArrayField(
+        models.CharField(max_length=32, choices=ConceptNodeFlags.choices),
+        default=list,
+        blank=True,
+        help_text="Wikipedia-style issue tags indicating problems with the narrative."
     )
 
     # State tracking for the "Linters"

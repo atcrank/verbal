@@ -56,3 +56,7 @@ pyspellchecker
 
 # --- Playwright UI Tests ---
 pytest-playwright
+
+# --- Production Web Server ---
+granian
+whitenoise

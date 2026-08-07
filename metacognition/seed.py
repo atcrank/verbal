@@ -171,17 +171,7 @@ TOOL_SCHEMAS = {
         },
         "required": ["app_label", "model_name"],
     },
-    "manage_dynamic_tools": {
-        "type": "object",
-        "properties": {
-            "name": {"type": "string"},
-            "description": {"type": "string"},
-            "script_content": {"type": "string"},
-            "input_schema": {"type": "string"},
-            "output_schema": {"type": "string"},
-        },
-        "required": ["name", "script_content"],
-    },
+
     "update_conversation_state": {
         "type": "object",
         "properties": {
@@ -274,7 +264,6 @@ def seed_tools(ToolDefinition):
         ("get_empty_grips_stubs", "Returns IDs of empty ConceptNodes.", "builtin", "metacognition.meta_tools.get_empty_grips_stubs"),
         ("database_backup", "Takes a JSON backup of the Django DB.", "builtin", "metacognition.meta_tools.database_backup"),
         ("read_django_models", "Queries the database.", "builtin", "metacognition.meta_tools.read_django_models"),
-        ("manage_dynamic_tools", "Creates Python scripts securely.", "builtin", "metacognition.meta_tools.manage_dynamic_tools"),
         ("update_conversation_state", "Mutates the state_tree in the active Conversation.", "builtin", "metacognition.meta_tools.update_conversation_state"),
         ("run_sub_blueprint", "Executes a sub-blueprint synchronously.", "builtin", "metacognition.meta_tools.run_sub_blueprint"),
         ("discover_django_models", "Inspects the schema of Django models to discover fields and relationships.", "builtin", "metacognition.meta_tools.discover_django_models"),
@@ -1043,13 +1032,17 @@ def seed_all():
         seed_grill_me(CognitiveBlueprint, ReasoningStep)
         seed_escalation_of_effort(CognitiveBlueprint, ReasoningStep, ToolDefinition)
         seed_computational_logic(CognitiveBlueprint, ReasoningStep, ToolDefinition)
+        seed_lint_grips_node(CognitiveBlueprint, ReasoningStep, ResponseSchema)
+        seed_digest_document_chunk(CognitiveBlueprint, ReasoningStep, ResponseSchema)
+        seed_evaluate_concept_neighbors(CognitiveBlueprint, ReasoningStep, ResponseSchema)
+        seed_evaluate_cross_domain(CognitiveBlueprint, ReasoningStep, ResponseSchema)
         seed_research_evaluation(CognitiveBlueprint, ReasoningStep, ResponseSchema)
         seed_strategic_plan(CognitiveBlueprint, ReasoningStep, ResponseSchema)
         seed_task_decomposer(CognitiveBlueprint, ReasoningStep, ResponseSchema, ToolDefinition)
         seed_propose_blueprint(CognitiveBlueprint, ReasoningStep, ToolDefinition)
-        seed_deep_reader(CognitiveBlueprint, ReasoningStep, ToolDefinition)
+        seed_deep_reader(CognitiveBlueprint, ReasoningStep, ToolDefinition, ResponseSchema)
 
-def seed_deep_reader(CognitiveBlueprint, ReasoningStep, ToolDefinition):
+def seed_deep_reader(CognitiveBlueprint, ReasoningStep, ToolDefinition, ResponseSchema):
     bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="Deep_Reader",
         defaults={'description': "Super retriever and synthesizer for augmenting RAG.", 'is_canonical': True}
@@ -1066,10 +1059,38 @@ def seed_deep_reader(CognitiveBlueprint, ReasoningStep, ToolDefinition):
             "You are an intelligent knowledge gatherer. Use the available tools to search RAG chunks, "
             "Grips nodes, and past conversations to find information relevant to the user's prompt. "
             "Do not stop until you have gathered sufficient context, or you have exhausted search variations. "
-            "If the query is trivial and requires no context, just output TASK_COMPLETE immediately."
+            "If the query is trivial and requires no context, just output TASK_COMPLETE immediately. "
+            "CRITICAL: If you are repeating this step because a previous evaluation marked the context as INCOMPLETE, "
+            "you MUST look at the previous 'missing_terms' and execute new tool queries specifically to find them."
         ),
         evaluation_criteria="Did the agent gather sufficient context using the tools?",
         max_retries=3,
+    )
+    
+    import json
+    schema_eval, _ = ResponseSchema.objects.get_or_create(
+        name="DeepReaderEvaluation_Schema", defaults={
+            'schema_type': 'json',
+            'json_schema': json.dumps({
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "enum": ["SUFFICIENT", "INCOMPLETE", "IRRELEVANT"],
+                        "description": "Evaluate if the context is sufficient. Use INCOMPLETE if it's missing definitions or critical terms."
+                    },
+                    "missing_terms": {
+                        "type": "string",
+                        "description": "If INCOMPLETE, list the exact terms or topics to search for in the next pass."
+                    },
+                    "distilled_context": {
+                        "type": "string",
+                        "description": "If SUFFICIENT, output the dense, token-efficient summary here with verifiable citations."
+                    }
+                },
+                "required": ["status"]
+            })
+        }
     )
     
     step2 = ReasoningStep.objects.create(
@@ -1080,12 +1101,17 @@ def seed_deep_reader(CognitiveBlueprint, ReasoningStep, ToolDefinition):
             "You are an intelligent knowledge filter. Review the context you gathered in previous steps. "
             "1. Evaluate this material against the user's prompt.\n"
             "2. If the context is trivially known to a large language model or completely irrelevant, "
-            "you MUST output exactly the word <SILENT_ABORT>.\n"
-            "3. If the context provides valuable, novel information, distill it into a dense, token-efficient summary.\n"
-            "4. You MUST explicitly include verifiable citations (e.g., [ID: xxx]) in your summary.\n\n"
-            "Output ONLY the distilled context block or <SILENT_ABORT>."
+            "set status to IRRELEVANT.\n"
+            "3. If the context is promising but explicitly missing definitions for new terms it introduced, "
+            "set status to INCOMPLETE and list the terms in missing_terms.\n"
+            "4. If the context provides valuable, novel information, set status to SUFFICIENT and distill it into a dense summary with verifiable citations (e.g., [ID: xxx])."
         ),
+        output_schema=schema_eval,
+        evaluation_criteria="Check the JSON status field. If status is SUFFICIENT or IRRELEVANT, pass (True). If status is INCOMPLETE, fail (False).",
+        max_retries=1,
     )
+    
+    step2.on_failure_step = step1
     
     step1.on_success_step = step2
     step1.save()
@@ -1265,4 +1291,239 @@ def seed_lint_grips_edge(CognitiveBlueprint, ReasoningStep, ResponseSchema):
         is_start_node=True, 
     )
     step1.available_tools.add(lint_tool)
+    step1.save()
+
+def seed_lint_grips_node(CognitiveBlueprint, ReasoningStep, ResponseSchema):
+    from metacognition.models import ToolDefinition
+    import json
+    
+    bp, _ = CognitiveBlueprint.objects.update_or_create(
+        name="LintGripsNode",
+        defaults={'description': "Metacognitive blueprint that evaluates ConceptNodes against a style guide and rewrites them if invalid."}
+    )
+    
+    ReasoningStep.objects.filter(blueprint=bp).delete()
+    ResponseSchema.objects.filter(name="NodeLintEvaluation").delete()
+    
+    eval_schema = ResponseSchema.objects.create(
+        name="NodeLintEvaluation",
+        description="Evaluates a ConceptNode against the Domain's style guide.",
+        schema_type="json",
+        json_schema=json.dumps({
+            "type": "object",
+            "properties": {
+                "is_valid": {"type": "boolean", "description": "True if narrative has no contradictions or style issues."},
+                "issue_flags": {
+                    "type": "array", 
+                    "items": {"type": "string"}, 
+                    "description": "List of issue flags. Valid values: needs_citation, style_violation, needs_clarification, orphaned."
+                },
+                "suggested_fixes": {"type": "string", "description": "Suggested rewrites to fix issues"}
+            },
+            "required": ["is_valid", "issue_flags", "suggested_fixes"]
+        })
+    )
+    
+    schema_dict = {
+        "type": "object",
+        "properties": {
+            "node_id": {"type": "integer", "description": "The ID of the ConceptNode being linted."},
+            "improved_narrative": {"type": "string", "description": "The rewritten narrative."}
+        },
+        "required": ["node_id", "improved_narrative"]
+    }
+    
+    lint_tool, _ = ToolDefinition.objects.update_or_create(
+        name="update_node_narrative",
+        defaults={
+            'description': "Saves the rewritten narrative to the database.",
+            'tool_type': 'builtin',
+            'python_path': 'metacognition.actions.handle_node_lint_tool',
+            'input_schema': json.dumps(schema_dict)
+        }
+    )
+    
+    step1 = ReasoningStep.objects.create(
+        blueprint=bp, 
+        name="Evaluate Node",
+        system_prompt="You are a strict knowledge graph linter. Evaluate the provided ConceptNode narrative against the Domain Style Guide. Important: Contradictions should be treated as determinate negations (limitations, exceptions, or assumptions) or as relational edges, unless they are pure unresolvable nonsense. Do not flag valid Hegelian contradictions as errors. Output a NodeLintEvaluation.", 
+        is_start_node=True, 
+        output_schema=eval_schema,
+        evaluation_criteria="If is_valid is true, the node is fine (set is_valid=True). If the node is flawed, you must set is_valid=False so it can be fixed."
+    )
+    
+    step2 = ReasoningStep.objects.create(
+        blueprint=bp,
+        name="Rewrite Node",
+        system_prompt="You are a meticulous editor. Review the existing ConceptNode narrative and apply the suggested fixes from the evaluation. Make sure to adhere to the Domain Style Guide and explicitly incorporate any exceptions or limitations. Once done, you MUST use the `update_node_narrative` tool to save your work.",
+        max_retries=2
+    )
+    step2.available_tools.add(lint_tool)
+    step2.save()
+    
+    step1.on_success_step = None # Halts successfully
+    step1.on_failure_step = step2 # If invalid, rewrite
+    step1.save()
+    
+    step2.on_success_step = step1
+    step2.on_failure_step = None # Halt and leave flags if failed twice
+    step2.save()
+
+def seed_digest_document_chunk(CognitiveBlueprint, ReasoningStep, ResponseSchema):
+    from metacognition.models import ToolDefinition
+    import json
+    
+    bp, _ = CognitiveBlueprint.objects.update_or_create(
+        name="DigestDocumentChunk",
+        defaults={'description': "Extracts operational concepts and claims from a document chunk."}
+    )
+    
+    ReasoningStep.objects.filter(blueprint=bp).delete()
+    ResponseSchema.objects.filter(name="ConceptExtraction").delete()
+    
+    schema_dict = {
+        "type": "object",
+        "properties": {
+            "domain_id": {"type": "integer"},
+            "document_id": {"type": "integer"},
+            "concepts": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string"},
+                        "focus_hint": {"type": "string"},
+                        "narrative_content": {"type": "string"},
+                        "claims": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "subject": {"type": "string"},
+                                    "predicate": {"type": "string", "enum": ["REQUIRES", "CAPABLE_OF", "INCOMPATIBLE_WITH", "HAS_PROPERTY", "IS_A", "PART_OF"]},
+                                    "object": {"type": "string"},
+                                    "qualifier": {"type": "string"}
+                                },
+                                "required": ["subject", "predicate", "object"]
+                            }
+                        }
+                    },
+                    "required": ["title", "focus_hint", "narrative_content"]
+                }
+            }
+        },
+        "required": ["domain_id", "document_id", "concepts"]
+    }
+    
+    save_tool, _ = ToolDefinition.objects.update_or_create(
+        name="create_concept_nodes_tool",
+        defaults={
+            'description': "Saves the extracted concepts and operational claims to the database.",
+            'tool_type': 'builtin',
+            'python_path': 'metacognition.actions.handle_create_concept_nodes_tool',
+            'input_schema': json.dumps(schema_dict)
+        }
+    )
+    
+    step1 = ReasoningStep.objects.create(
+        blueprint=bp, 
+        name="Extract Concepts",
+        system_prompt="You are an expert ontologist. Extract the key operational concepts from the provided document chunk. For each concept, extract its operational logic (requirements, capabilities, incompatibilities, properties, composition) as structured claims using strictly the provided predicates. Once extracted, you MUST use the `create_concept_nodes_tool` to save them. If there are no operational concepts, output an empty list.", 
+        is_start_node=True
+    )
+    step1.available_tools.add(save_tool)
+    step1.save()
+    
+    step1.on_success_step = None
+    step1.on_failure_step = None
+    step1.save()
+
+def seed_evaluate_concept_neighbors(CognitiveBlueprint, ReasoningStep, ResponseSchema):
+    from metacognition.models import ToolDefinition
+    import json
+    
+    bp, _ = CognitiveBlueprint.objects.update_or_create(
+        name="EvaluateConceptNeighbors",
+        defaults={'description': "Evaluates two concepts for merge/edge/distinct relation."}
+    )
+    
+    ReasoningStep.objects.filter(blueprint=bp).delete()
+    
+    schema_dict = {
+        "type": "object",
+        "properties": {
+            "source_id": {"type": "integer"},
+            "target_id": {"type": "integer"},
+            "decision": {"type": "string", "enum": ["MERGE", "EDGE", "DISTINCT"]},
+            "justification": {"type": "string"}
+        },
+        "required": ["source_id", "target_id", "decision", "justification"]
+    }
+    
+    eval_tool, _ = ToolDefinition.objects.update_or_create(
+        name="evaluate_relationship_tool",
+        defaults={
+            'description': "Saves the evaluated relationship decision.",
+            'tool_type': 'builtin',
+            'python_path': 'metacognition.actions.handle_evaluate_concept_neighbors_tool',
+            'input_schema': json.dumps(schema_dict)
+        }
+    )
+    
+    step1 = ReasoningStep.objects.create(
+        blueprint=bp, 
+        name="Evaluate Neighbors",
+        system_prompt="You are a Knowledge Graph Architect. Evaluate the relationship between Concept A and Concept B. Do they represent the EXACT SAME overarching domain concept (MERGE)? Are they related but distinct (EDGE)? Or are they completely unrelated (DISTINCT)? Use the `evaluate_relationship_tool` to record your decision.", 
+        is_start_node=True
+    )
+    step1.available_tools.add(eval_tool)
+    step1.save()
+    
+    step1.on_success_step = None
+    step1.on_failure_step = None
+    step1.save()
+
+def seed_evaluate_cross_domain(CognitiveBlueprint, ReasoningStep, ResponseSchema):
+    from metacognition.models import ToolDefinition
+    import json
+    
+    bp, _ = CognitiveBlueprint.objects.update_or_create(
+        name="EvaluateCrossDomain",
+        defaults={'description': "Evaluates concepts across domains for analogies."}
+    )
+    
+    ReasoningStep.objects.filter(blueprint=bp).delete()
+    
+    schema_dict = {
+        "type": "object",
+        "properties": {
+            "source_id": {"type": "integer"},
+            "target_id": {"type": "integer"},
+            "is_related": {"type": "boolean"},
+            "justification": {"type": "string"}
+        },
+        "required": ["source_id", "target_id", "is_related", "justification"]
+    }
+    
+    eval_tool, _ = ToolDefinition.objects.update_or_create(
+        name="evaluate_cross_domain_tool",
+        defaults={
+            'description': "Saves the evaluated cross-domain relationship.",
+            'tool_type': 'builtin',
+            'python_path': 'metacognition.actions.handle_evaluate_cross_domain_tool',
+            'input_schema': json.dumps(schema_dict)
+        }
+    )
+    
+    step1 = ReasoningStep.objects.create(
+        blueprint=bp, 
+        name="Evaluate Cross Domain",
+        system_prompt="You are a Knowledge Graph Architect. Evaluate these two concepts from DIFFERENT domains and determine if they are fundamentally analogous or share a deep structural relationship. Use the `evaluate_cross_domain_tool` to record your decision.", 
+        is_start_node=True
+    )
+    step1.available_tools.add(eval_tool)
+    step1.save()
+    
+    step1.on_success_step = None
+    step1.on_failure_step = None
     step1.save()

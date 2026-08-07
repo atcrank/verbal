@@ -542,9 +542,9 @@ def write_django_model(state: dict, params: dict) -> str:
 def manage_dynamic_tools(state: dict, params: dict) -> str:
     """
     Allows the NightManager to write Python scripts to a metacognition/dynamic_tools/ directory and register them as ToolDefinitions.
-    Forces created_by="NightManager" to ensure other agents/users cannot accidentally execute untested scripts.
-    Implements basic AST-level security checks to block network/file/delete operations by default.
+    NOTE: Currently disabled due to security concerns regarding unverified dynamic script execution.
     """
+    return "Error: manage_dynamic_tools is currently disabled pending implementation of human-in-the-loop authorization."
     name = params.get("name")
     description = params.get("description", "")
     script_content = params.get("script_content", "")

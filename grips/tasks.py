@@ -151,137 +151,9 @@ class UnifiedConceptDraft(BaseModel):
     claims: List[StructuredClaim] = Field(default_factory=list,
                                           description="Structured claims for the unified concept.")
 
-class CrossDomainEvaluation(BaseModel):
-    reasoning: str = Field(description="Analyze if these concepts from different domains are fundamentally related or analogous.")
-    is_related: bool = Field(description="True if they share underlying principles, structures, or causal mechanisms.")
-    justification: str = Field(default="", description="If related, briefly describe the connection to use as the edge justification.")
-
-
-
-@shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=True, retry_kwargs={'max_retries': 2})
-def task_digest_corpus_level_1_batch(self, domain_name: str, doc_title: str, batch_text: str, is_first_batch: bool):
-    """MAP TASK: Processes a single batch of chunks. Runs independently in the queue."""
-    ai_service = service_registry.ai_service
-
-    if is_first_batch:
-        prompt = f"""
-         You are an expert ontologist and systems analyst. Digest the following opening section of a document into the domain of '{domain_name}'.
-         Provide an overall summary of the document based on this introduction, and extract its key concepts into a clear summary and explanation.
-
-         Document Title: {doc_title}
-
-         Content Section:
-         {batch_text}
-         """
-        result = ai_service.generate_outline(
-            messages=[{"role": "user", "content": prompt}],
-            response_schema=DocumentDigest,
-            max_new_tokens=2500
-        )
-        if isinstance(result, dict):
-            if "error" in result:
-                raise ValueError(f"Generation failed: {result['details']}")
-            return result  # Return raw dict for celery serialization
-        elif isinstance(result, str):
-            return DocumentDigest.model_validate_json(result).model_dump()
-        return result.model_dump()
-
-    else:
-        prompt = f"""
-         You are an expert ontologist. Extract the key concepts from this section of the document into the domain of '{domain_name}'.
-
-         Document Title: {doc_title}
-
-         Content Section:
-         {batch_text}
-         """
-        result = ai_service.generate_outline(
-            messages=[{"role": "user", "content": prompt}],
-            response_schema=BatchConceptExtraction,
-            max_new_tokens=1500
-        )
-        if isinstance(result, dict):
-            if "error" in result:
-                raise ValueError(f"Generation failed: {result['details']}")
-            return result
-        elif isinstance(result, str):
-            return BatchConceptExtraction.model_validate_json(result).model_dump()
-        return result.model_dump()
-
-
-@shared_task
-def task_digest_corpus_level_1_finalize(batch_results: List[dict], domain_id: int, document_id: int):
-    """REDUCE TASK: Gathers all out-of-order batch results and writes them to the DB."""
-    try:
-        domain = Domain.objects.get(id=domain_id)
-        doc = Document.objects.get(id=document_id)
-    except Exception as e:
-        return f"Error loading domain/doc: {e}"
-
-    all_sub_concepts = []
-    overall_summary = "No summary generated."
-    new_node_ids = []
-
-    # Reconstruct data from the mapped results
-    for result in batch_results:
-        if "overall_summary" in result:
-            overall_summary = result["overall_summary"]
-        if "concept_nodes" in result:
-            all_sub_concepts.extend(result["concept_nodes"])
-
-    safe_title = re.sub(r'[^a-zA-Z0-9]', '-', doc.title.lower())[:50]
-    root_node, _ = ConceptNode.objects.get_or_create(
-        domain=domain,
-        slug=f"doc-{doc.id}-{safe_title}",
-        defaults={
-            "title": f"Doc: {doc.title[:200]}",
-            "focus_hint": "Level 1 Document Summary",
-            "narrative_content": overall_summary,
-            "needs_linting": True
-        }
-    )
-
-    service_registry.grips_service.index_concept_node(root_node)
-    new_node_ids.append(root_node.id)
-
-    for idx, concept_dict in enumerate(all_sub_concepts):
-        # Parse dicts back into our schema logic if needed
-        title = concept_dict.get('title', 'Unknown')
-        focus_hint = concept_dict.get('focus_hint', '')
-        summary = concept_dict.get('summary', '')
-        claims = concept_dict.get('claims', [])
-
-        safe_concept = re.sub(r'[^a-zA-Z0-9]', '-', title.lower())[:50]
-        child_node, _ = ConceptNode.objects.get_or_create(
-            domain=domain,
-            slug=f"doc-{doc.id}-c{idx}-{safe_concept}",
-            defaults={
-                "title": title,
-                "focus_hint": f"From Doc: {doc.title[:50]} - {focus_hint}",
-                "narrative_content": summary,
-                "structured_claims": claims,
-                "needs_linting": True
-            }
-        )
-        KnowledgeEdge.objects.get_or_create(
-            source=root_node,
-            target=child_node,
-            relationship_type='INCLUDES',
-            defaults={"justification": "Level 1 Extended TOC Extraction"}
-        )
-
-        service_registry.grips_service.index_concept_node(child_node)
-        new_node_ids.append(child_node.id)
-
-    # Immediately trigger incremental consolidation for these new concepts
-    task_digest_corpus_level_2.delay(domain.id, new_node_ids)
-
-    return f"Level 1 Digest complete for {domain.name} / {doc.title}"
-
-
 @shared_task
 def task_digest_corpus_level_1(domain_id: int, document_id: int):
-    """MASTER TASK: Sets up the Map-Reduce chord for processing a document."""
+    """MASTER TASK: Queues DigestDocumentChunk blueprint for each document chunk."""
     try:
         domain = Domain.objects.get(id=domain_id)
         doc = Document.objects.get(id=document_id)
@@ -309,25 +181,33 @@ def task_digest_corpus_level_1(domain_id: int, document_id: int):
             return f"No chunks could be made or found for document {doc.title}"
 
         batch_size = 15
-        batch_signatures = []
+        
+        from metacognition.models import CognitiveBlueprint
+        from metacognition.tasks import task_run_blueprint_async
+        
+        try:
+            bp = CognitiveBlueprint.objects.get(name="DigestDocumentChunk")
+        except CognitiveBlueprint.DoesNotExist:
+            return "DigestDocumentChunk blueprint not found. Run seed."
 
+        batch_count = 0
         for i in range(0, len(chunks), batch_size):
             batch_chunks = chunks[i:i + batch_size]
             batch_text = "\n\n".join(
                 [c.page_content if hasattr(c, 'page_content') else c.text_content for c in batch_chunks])
-            is_first = (i == 0)
-
-            # Create a Celery Signature for the Map task
-            batch_signatures.append(
-                task_digest_corpus_level_1_batch.s(domain.name, doc.title, batch_text, is_first)
+            
+            task_prompt = (
+                f"Digest the following text chunk into the domain of '{domain.name}'.\n\n"
+                f"Document Title: {doc.title}\n"
+                f"Domain: {domain.name}\n\n"
+                f"Content Section:\n{batch_text}\n\n"
+                f"Extract the key operational concepts and their operational logic (claims). Use the `create_concept_nodes_tool` with domain_id={domain.id} and document_id={doc.id}."
             )
+            
+            task_run_blueprint_async.delay(bp.id, task_prompt, None, None)
+            batch_count += 1
 
-        # Trigger the Map-Reduce Chord
-        # Executes all batch signatures independently, then passes results to finalize
-        chord(batch_signatures)(task_digest_corpus_level_1_finalize.s(domain_id, document_id))
-
-        return f"Map-Reduce Chord queued for {doc.title} ({len(batch_signatures)} batches)."
-
+        return f"Queued {batch_count} DigestDocumentChunk blueprint tasks for {doc.title}."
 
 class LintingReportSchema(BaseModel):
     is_valid: bool = Field(description="True if narrative has no contradictions or style issues.")
@@ -339,41 +219,32 @@ class LintingReportSchema(BaseModel):
 
 @shared_task(autoretry_for=(Exception,), retry_backoff=True, retry_kwargs={'max_retries': 3})
 def task_lint_concept_node(node_id: int):
-    """Evaluates a ConceptNode against the Domain's style guide and flags contradictions."""
+    """Triggers the LintGripsNode metacognitive blueprint to evaluate and repair a ConceptNode."""
     try:
         node = ConceptNode.objects.get(id=node_id)
     except ConceptNode.DoesNotExist:
         return "Node not found."
 
-    ai_service = service_registry.ai_service
+    from metacognition.models import CognitiveBlueprint
+    from metacognition.tasks import task_run_blueprint_async
+    
+    try:
+        bp = CognitiveBlueprint.objects.get(name="LintGripsNode")
+    except CognitiveBlueprint.DoesNotExist:
+        return "LintGripsNode blueprint not found."
 
-    prompt = f"""
-     You are a strict knowledge graph linter. Evaluate the following ConceptNode narrative.
-
-     Domain: {node.domain.name}
-     Style Guide: {node.domain.style_guide or 'Maintain objective, clear, encyclopedic tone.'}
-     Title: {node.title}
-     Focus Hint: {node.focus_hint}
-     Narrative: {node.narrative_content}
-     """
-
-    result = ai_service.generate_outline(
-        messages=[{"role": "user", "content": prompt}],
-        response_schema=LintingReportSchema,
-        max_new_tokens=1500
+    task_prompt = (
+        f"Evaluate this ConceptNode:\n\n"
+        f"Domain: {node.domain.name}\n"
+        f"Style Guide: {node.domain.style_guide or 'Maintain objective, clear, encyclopedic tone.'}\n"
+        f"Title: {node.title}\n"
+        f"Focus Hint: {node.focus_hint}\n"
+        f"Narrative: {node.narrative_content}\n\n"
+        f"Node ID: {node.id}"
     )
-    if isinstance(result, dict):
-        if "error" in result:
-            return f"Linting failed for '{node.title}': {result['details']}"
-        result = LintingReportSchema.model_validate(result)
-    elif isinstance(result, str):
-        result = LintingReportSchema.model_validate_json(result)
-
-    node.linting_report = result.model_dump()
-    node.needs_linting = not result.is_valid
-    node.last_linted_at = timezone.now()
-    node.save(update_fields=['linting_report', 'needs_linting', 'last_linted_at'])
-    return f"Linted '{node.title}': Valid={result.is_valid}"
+    
+    task_run_blueprint_async.delay(bp.id, task_prompt, None, None)
+    return f"Triggered linting blueprint for node {node_id}"
 
 
 @shared_task(autoretry_for=(Exception,), retry_backoff=True, retry_kwargs={'max_retries': 2})
@@ -426,127 +297,31 @@ def task_digest_corpus_level_2(domain_id: int, new_node_ids: List[int] = None):
                     KnowledgeEdge.objects.filter(source=neighbor_node, target=new_node).exists():
                 continue
 
-            # 2. Evaluate relationship
-            prompt = f"""
-                You are a Knowledge Graph Architect for the domain '{domain.name}'.
-                Evaluate the relationship between Concept A and Concept B.
-
-                Concept A (Slug: {new_node.slug}):
-                Title: {new_node.title}
-                Narrative: {new_node.narrative_content}
-
-                Concept B (Slug: {neighbor_node.slug}):
-                Title: {neighbor_node.title}
-                Narrative: {neighbor_node.narrative_content}
-
-                Do these represent the EXACT SAME overarching domain concept (MERGE)? 
-                Are they related but distinct (EDGE)? 
-                Or are they completely unrelated (DISTINCT)?
-                """
-
-            result = ai_service.generate_outline(
-                messages=[{"role": "user", "content": prompt}],
-                response_schema=ConceptRelationshipEvaluation,
-                max_new_tokens=1000
-            )
-
-            eval_obj = None
-            if isinstance(result, dict) and "error" not in result:
-                eval_obj = ConceptRelationshipEvaluation.model_validate(result)
-            elif isinstance(result, str):
-                try:
-                    eval_obj = ConceptRelationshipEvaluation.model_validate_json(result)
-                except Exception:
-                    continue
-            elif hasattr(result, 'relationship_action'):
-                eval_obj = result
-
-            if not eval_obj:
+            from metacognition.models import CognitiveBlueprint
+            from metacognition.tasks import task_run_blueprint_async
+            
+            try:
+                bp = CognitiveBlueprint.objects.get(name="EvaluateConceptNeighbors")
+            except CognitiveBlueprint.DoesNotExist:
+                logger.error("EvaluateConceptNeighbors blueprint not found.")
                 continue
 
-            # 3. Execute Graph Mutations
-            if eval_obj.relationship_action == "MERGE":
-                # Generate a unified, domain-level node
-                unify_prompt = f"""
-                 You are a domain expert unifying two related sub-concepts into a single, comprehensive Master Concept for the domain '{domain.name}'.
-                 Write a unified narrative that combines the details of both.
-                 CRITICAL: You MUST explicitly cite the original concepts inline using their exact slugs.
-                 For example: "Water hammer occurs when valves close quickly [[{new_node.slug}]], which damages pipes [[{neighbor_node.slug}]]."
+            # 2. Evaluate relationship via Blueprint
+            task_prompt = (
+                f"Evaluate the relationship between Concept A and Concept B for domain '{domain.name}'.\n\n"
+                f"Concept A (ID: {new_node.id}):\n"
+                f"Title: {new_node.title}\n"
+                f"Narrative: {new_node.narrative_content}\n\n"
+                f"Concept B (ID: {neighbor_node.id}):\n"
+                f"Title: {neighbor_node.title}\n"
+                f"Narrative: {neighbor_node.narrative_content}\n\n"
+                f"Use the `evaluate_relationship_tool` to record your decision with source_id={new_node.id} and target_id={neighbor_node.id}."
+            )
 
-                 Concept 1 (Slug: {new_node.slug}):
-                 Title: {new_node.title}
-                 Narrative: {new_node.narrative_content}
+            task_run_blueprint_async.delay(bp.id, task_prompt, None, None)
+            actions_taken.append(f"Queued blueprint eval for '{new_node.title}' and '{neighbor_node.title}'")
 
-                 Concept 2 (Slug: {neighbor_node.slug}):
-                 Title: {neighbor_node.title}
-                 Narrative: {neighbor_node.narrative_content}
-                 """
-
-                uni_result = ai_service.generate_outline(
-                    messages=[{"role": "user", "content": unify_prompt}],
-                    response_schema=UnifiedConceptDraft,
-                    max_new_tokens=2000
-                )
-
-                uni_obj = None
-                if isinstance(uni_result, dict) and "error" not in uni_result:
-                    uni_obj = UnifiedConceptDraft.model_validate(uni_result)
-                elif isinstance(uni_result, str):
-                    try:
-                        uni_obj = UnifiedConceptDraft.model_validate_json(uni_result)
-                    except Exception:
-                        continue
-                elif hasattr(uni_result, 'narrative'):
-                    uni_obj = uni_result
-
-                if not uni_obj:
-                    continue
-
-                safe_title = re.sub(r'[^a-zA-Z0-9]', '-', uni_obj.title.lower())[:50]
-                unified_slug = f"unified-{new_node.id}-{safe_title}"
-
-                master_node, created = ConceptNode.objects.get_or_create(
-                    domain=domain,
-                    slug=unified_slug,
-                    defaults={
-                        "title": uni_obj.title,
-                        "focus_hint": "Domain-level consolidated concept",
-                        "narrative_content": uni_obj.narrative,
-                        "structured_claims": [claim.model_dump() for claim in uni_obj.claims],
-                        "needs_linting": True
-                    }
-                )
-
-                if not created:
-                    master_node.narrative_content += f"\n\nAdditional synthesis:\n{uni_obj.narrative}"
-                    master_node.needs_linting = True
-                    master_node.save()
-
-                # Create EXEMPLIFIES edges to establish that the Level 1 nodes are examples/sources of the Master node
-                KnowledgeEdge.objects.get_or_create(source=new_node, target=master_node,
-                                                    relationship_type='EXEMPLIFIES',
-                                                    defaults={"justification": "Merged into unified concept."})
-                KnowledgeEdge.objects.get_or_create(source=neighbor_node, target=master_node,
-                                                    relationship_type='EXEMPLIFIES',
-                                                    defaults={"justification": "Merged into unified concept."})
-
-                grips_service.index_concept_node(master_node)
-                actions_taken.append(f"Merged '{new_node.title}' & '{neighbor_node.title}' -> '{master_node.title}'")
-
-                # Break to avoid merging the exact same new_node into multiple redundant master nodes in one pass
-                break
-
-            elif eval_obj.relationship_action == "EDGE":
-                pred = eval_obj.edge_predicate if eval_obj.edge_predicate else "RELATED_TO"
-                KnowledgeEdge.objects.get_or_create(
-                    source=new_node,
-                    target=neighbor_node,
-                    relationship_type=pred,
-                    defaults={"justification": eval_obj.reasoning[:500]}
-                )
-                actions_taken.append(f"Edge: '{new_node.title}' [{pred}] '{neighbor_node.title}'")
-
-    summary = f"Level 2 Complete. Actions: {len(actions_taken)}. " + " | ".join(actions_taken[:5])
+    summary = f"Level 2 Complete. Queued {len(actions_taken)} blueprint tasks. "
     logger.info(summary)
     return summary
 
@@ -593,42 +368,30 @@ def task_digest_corpus_level_3(self, domain_id: int):
                KnowledgeEdge.objects.filter(source=neighbor_node, target=node).exists():
                 continue
 
-            prompt = f"""
-            You are a highly analytical Knowledge Graph Architect.
-            Evaluate these two concepts from DIFFERENT domains and determine if they are fundamentally analogous or share a deep structural relationship.
+            from metacognition.models import CognitiveBlueprint
+            from metacognition.tasks import task_run_blueprint_async
+            
+            try:
+                bp = CognitiveBlueprint.objects.get(name="EvaluateCrossDomain")
+            except CognitiveBlueprint.DoesNotExist:
+                logger.error("EvaluateCrossDomain blueprint not found.")
+                continue
 
-            Domain A: {domain.name}
-            Concept A: {node.title}
-            Narrative: {node.narrative_content}
-
-            Domain B: {neighbor_node.domain.name}
-            Concept B: {neighbor_node.title}
-            Narrative: {neighbor_node.narrative_content}
-
-            Are these concepts structurally related or analogous across their domains?
-            """
-
-            result = ai_service.generate_outline(
-                messages=[{"role": "user", "content": prompt}],
-                response_schema=CrossDomainEvaluation,
-                max_new_tokens=1000
+            task_prompt = (
+                f"Evaluate these two concepts from DIFFERENT domains and determine if they are fundamentally analogous.\n\n"
+                f"Domain A: {domain.name}\n"
+                f"Concept A (ID: {node.id}):\n"
+                f"Title: {node.title}\n"
+                f"Narrative: {node.narrative_content}\n\n"
+                f"Domain B: {neighbor_node.domain.name}\n"
+                f"Concept B (ID: {neighbor_node.id}):\n"
+                f"Title: {neighbor_node.title}\n"
+                f"Narrative: {neighbor_node.narrative_content}\n\n"
+                f"Use the `evaluate_cross_domain_tool` to record your decision with source_id={node.id} and target_id={neighbor_node.id}."
             )
 
-            eval_obj = None
-            if isinstance(result, dict) and "error" not in result:
-                eval_obj = CrossDomainEvaluation.model_validate(result)
-            elif isinstance(result, str):
-                try: eval_obj = CrossDomainEvaluation.model_validate_json(result)
-                except Exception: continue
-            elif hasattr(result, 'is_related'):
-                eval_obj = result
-
-            if eval_obj and eval_obj.is_related:
-                KnowledgeEdge.objects.get_or_create(
-                    source=node, target=neighbor_node, relationship_type='RELATED_TO',
-                    defaults={"justification": f"[Cross-Domain Link] {eval_obj.justification[:400]}"}
-                )
-                actions_taken.append(f"Linked '{node.title}' to '{neighbor_node.title}'")
+            task_run_blueprint_async.delay(bp.id, task_prompt, None, None)
+            actions_taken.append(f"Queued cross-domain blueprint for '{node.title}' & '{neighbor_node.title}'")
 
     return f"Level 3 Complete. Created {len(actions_taken)} cross-domain edges."
 
@@ -644,6 +407,8 @@ def sweep_unlinted_concepts():
         return "No concepts currently require linting."
         
     for node in nodes:
+        node.needs_linting = False
+        node.save(update_fields=['needs_linting'])
         task_lint_concept_node.delay(node.id)
         
     return f"Queued {nodes.count()} concepts for automated linting."
@@ -657,7 +422,7 @@ def sweep_dirty_edges():
     from metacognition.models import CognitiveBlueprint
     from metacognition.tasks import task_run_blueprint_async
     
-    dirty_edges = KnowledgeEdge.objects.filter(justification__icontains='Concept A')[:20]
+    dirty_edges = KnowledgeEdge.objects.filter(justification__icontains='Concept A', needs_linting=True)[:20]
     
     if not dirty_edges:
         return "No dirty edges currently require linting."
@@ -668,6 +433,9 @@ def sweep_dirty_edges():
         return "LintGripsEdge blueprint not found."
         
     for edge in dirty_edges:
+        edge.needs_linting = False
+        edge.save(update_fields=['needs_linting'])
+        
         task_prompt = (
             f"Rewrite this justification:\n\n{edge.justification}\n\n"
             f"The edge is between '{edge.source.title}' and '{edge.target.title}'.\n"

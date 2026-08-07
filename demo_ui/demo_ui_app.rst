@@ -1,7 +1,7 @@
 Demo UI
 ========
 
-The Demo UI is a Django template with htmx-managed updates that provides a chat interface.
+The Demo UI is a Django template with htmx-managed updates that provides a chat interface. Its not so different from openWebUI. Its provided as a demo and playtest pending development of a finished UI/UX with more features tailored to the domain. 
 
 
 App achievements
