@@ -41,15 +41,19 @@ class LazyServiceRegistry:
             if config:
                 logger.info(f"SYNC: Syncing hosting backend state. Active backend is: {config.hosting_backend}")
                 if config.hosting_backend == 'vllm':
+                    logger.info("SYNC: Stopping Ollama and ensuring vLLM is running...")
                     ollama_client.stop_container()
                     if config.active_vllm_model:
                         vllm_client.start_container(config.active_vllm_model.hf_model_id)
                 elif config.hosting_backend == 'ollama':
+                    logger.info("SYNC: Stopping vLLM and ensuring Ollama is running...")
                     vllm_client.stop_container()
                     ollama_client.start_container()
                     if config.active_ollama_model:
+                        logger.info(f"SYNC: Loading Ollama model: {config.active_ollama_model.hf_model_id}")
                         ollama_client.set_ollama_model_state(config.active_ollama_model.hf_model_id, active=True)
                 elif config.hosting_backend == 'pytorch':
+                    logger.info("SYNC: Stopping both Ollama and vLLM containers...")
                     vllm_client.stop_container()
                     ollama_client.stop_container()
         except Exception as e:

@@ -487,22 +487,28 @@ def manage_hosting_backend(sender, instance, **kwargs):
     # Case 1: Switching away from Ollama or changing its model
     if old_backend == 'ollama' and old_model:
         if new_backend != 'ollama' or old_model != new_model:
+            logger.info(f"Unloading Ollama model: {old_model.hf_model_id}")
             ollama_client.set_ollama_model_state(old_model.hf_model_id, active=False)
 
     # Manage Docker Containers if backend changed
     if old_backend != new_backend:
+        logger.info(f"Switching hosting backend from '{old_backend}' to '{new_backend}'")
         if new_backend == 'vllm':
+            logger.info("Stopping Ollama and starting vLLM container...")
             ollama_client.stop_container()
             if instance.active_vllm_model:
                 vllm_client.start_container(instance.active_vllm_model.hf_model_id)
         elif new_backend == 'ollama':
+            logger.info("Stopping vLLM and starting Ollama container...")
             vllm_client.stop_container()
             ollama_client.start_container()
         elif new_backend == 'pytorch':
+            logger.info("Stopping both Ollama and vLLM containers (switching to local PyTorch)...")
             ollama_client.stop_container()
             vllm_client.stop_container()
 
     # Case 2: We are now using Ollama, and either just switched to it OR changed model
     if new_backend == 'ollama' and new_model:
         if old_backend != 'ollama' or old_model != new_model:
+            logger.info(f"Loading Ollama model: {new_model.hf_model_id}")
             ollama_client.set_ollama_model_state(new_model.hf_model_id, active=True)
