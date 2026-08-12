@@ -29,6 +29,26 @@ class LocalAIModelAdmin(admin.ModelAdmin):
     list_display = ('name', 'hf_model_id')
     search_fields = ('name', 'hf_model_id')
     actions = [activate_local_model, unload_local_models]
+    
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        extra_context = extra_context or {}
+        model_instance = self.get_object(request, object_id)
+        if model_instance:
+            try:
+                from huggingface_hub import scan_cache_dir
+                hf_cache = scan_cache_dir()
+                repo_info = next((r for r in hf_cache.repos if r.repo_id == model_instance.hf_model_id), None)
+                if repo_info:
+                    size_gb = repo_info.size_on_disk / (1024**3)
+                    extra_context['hf_cache_status'] = f"Cached ({size_gb:.2f} GB)"
+                    extra_context['is_cached'] = True
+                else:
+                    extra_context['hf_cache_status'] = "Not Cached"
+                    extra_context['is_cached'] = False
+            except Exception as e:
+                extra_context['hf_cache_status'] = f"Error: {e}"
+                extra_context['is_cached'] = False
+        return super().change_view(request, object_id, form_url, extra_context=extra_context)
 
 class PromptResponseLogInline(admin.TabularInline):
     model = PromptResponseLog
@@ -90,7 +110,7 @@ class PromptResponseLogAdmin(admin.ModelAdmin):
 class SystemConfigurationAdmin(admin.ModelAdmin):
     fieldsets = (
         ('Hosting Strategy', {
-            'fields': ('hosting_backend', 'system_tokenizer_id'),
+            'fields': ('hosting_backend', 'system_tokenizer'),
             'description': 'Select which internal engine acts as your primary AI host. The tokenizer is always loaded to CPU RAM for local proxy validation.'
         }),
         ('Local PyTorch Inference', {

@@ -346,6 +346,12 @@ def seed_variant_scorer(CognitiveBlueprint, ReasoningStep, ToolDefinition):
         defaults={'description': "Computes EWMA for ReasoningSteps and updates performance_score.", 'is_autonomous': True, 'is_canonical': True}
     )
 def seed_nm_housekeeping(CognitiveBlueprint, ReasoningStep, ToolDefinition):
+    bp_qs = CognitiveBlueprint.objects.filter(name="NM_Housekeeping")
+    if bp_qs.count() > 1:
+        # Delete duplicates if they somehow got created
+        bp = bp_qs.first()
+        bp_qs.exclude(id=bp.id).delete()
+    
     bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="NM_Housekeeping",
         defaults={'description': "NightManager sub-blueprint for system cleanup.", 'is_autonomous': True, 'is_canonical': True}

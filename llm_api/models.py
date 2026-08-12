@@ -396,8 +396,10 @@ class SystemConfiguration(models.Model):
         related_name="vllm_configurations",
         help_text="Model loaded in the vLLM service. Used only when 'Local vLLM Container' is the active hosting backend."
     )
-    system_tokenizer_id = models.CharField(
-        max_length=255, default="Qwen/Qwen2.5-3B-Instruct",
+
+    system_tokenizer = models.ForeignKey(
+        'LocalAIModel', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="system_tokenizer_configurations",
         help_text="Loaded into CPU RAM to count tokens, even if local VRAM model is disabled."
     )
 

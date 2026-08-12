@@ -119,7 +119,8 @@ class AIService:
             from .models import SystemConfiguration
             config = SystemConfiguration.get_solo()
             if config:
-                tokenizer_id = config.system_tokenizer_id
+                tokenizer_id = config.system_tokenizer.hf_model_id if config.system_tokenizer else "Qwen/Qwen2.5-3B-Instruct"
+                logger.info(f"Loading system tokenizer: {tokenizer_id}")
                 
                 if config.hosting_backend == 'vllm':
                     logger.info('📂 System Config: vLLM is enabled. Bypassing PyTorch load.')

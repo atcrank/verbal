@@ -1,0 +1,75 @@
+{% extends "admin/change_form.html" %}
+
+{% block object-tools %}
+    {% if original %}
+    <div style="background-color: #f8f9fa; padding: 15px; border-radius: 4px; border: 1px solid #ddd; margin-bottom: 20px;">
+        <h3>HuggingFace Cache Status</h3>
+        <p><strong>Status:</strong> <span id="hf-cache-status">{{ hf_cache_status }}</span></p>
+        
+        {% if not is_cached %}
+        <div id="download-container">
+            <button type="button" class="button" style="background-color: #007bff; color: white;" 
+                    onclick="startDownload({{ original.pk }})">
+                Download to Cache
+            </button>
+        </div>
+        {% endif %}
+        
+        <div id="progress-container" style="display: none; margin-top: 15px;">
+            <p id="download-message">Starting download...</p>
+            <div style="width: 100%; background-color: #e0e0e0; border-radius: 4px; overflow: hidden;">
+                <div id="download-progress-bar" style="width: 0%; height: 20px; background-color: #4caf50; transition: width 0.5s;"></div>
+            </div>
+            <p id="download-percentage" style="text-align: right; margin-top: 5px;">0%</p>
+        </div>
+    </div>
+    
+    <script>
+    let pollInterval = null;
+    
+    function startDownload(modelId) {
+        document.getElementById('download-container').style.display = 'none';
+        document.getElementById('progress-container').style.display = 'block';
+        
+        fetch('/api/admin/download_model_cache/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ "model_id": modelId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.task_id) {
+                pollInterval = setInterval(() => checkStatus(data.task_id), 2000);
+            } else {
+                document.getElementById('download-message').innerText = "Error starting download: " + (data.error || "Unknown");
+            }
+        });
+    }
+    
+    function checkStatus(taskId) {
+        fetch(`/api/admin/download_model_status/${taskId}/`)
+        .then(response => response.json())
+        .then(data => {
+            if(data.status) {
+                document.getElementById('download-message').innerText = data.status;
+            }
+            if(data.percentage !== undefined) {
+                document.getElementById('download-progress-bar').style.width = data.percentage + '%';
+                document.getElementById('download-percentage').innerText = data.percentage + '%';
+                if(data.percentage >= 100 && data.status === "Complete") {
+                    clearInterval(pollInterval);
+                    document.getElementById('hf-cache-status').innerText = "Cached (Refresh to see size)";
+                } else if(data.status && data.status.startsWith("Failed")) {
+                    clearInterval(pollInterval);
+                    document.getElementById('download-progress-bar').style.backgroundColor = '#f44336';
+                }
+            }
+        });
+    }
+    </script>
+    {% endif %}
+    
+    {{ block.super }}
+{% endblock %}

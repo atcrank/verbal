@@ -658,3 +658,29 @@ def preview_prompt(request, payload: PromptPreviewIn):
         return JsonResponse({"error": "Document not found."})
     except Exception as e:
         return JsonResponse({"error": f"Error generating summary: {str(e)}"})
+
+# --- Admin Cache Downloader Endpoints ---
+
+class DownloadModelIn(Schema):
+    model_id: int
+
+@router.post("/admin/download_model_cache/")
+@csrf_exempt
+def start_download_model_cache(request, payload: DownloadModelIn):
+    from llm_api.models import LocalAIModel
+    from llm_api.tasks import download_model_cache
+    try:
+        model = LocalAIModel.objects.get(id=payload.model_id)
+        task = download_model_cache.delay(model.hf_model_id)
+        return JsonResponse({"task_id": task.id})
+    except LocalAIModel.DoesNotExist:
+        return JsonResponse({"error": "Model not found."}, status=404)
+
+@router.get("/admin/download_model_status/{task_id}/")
+@csrf_exempt
+def check_download_model_status(request, task_id: str):
+    from django.core.cache import cache
+    progress = cache.get(f"model_download_progress_{task_id}")
+    if progress:
+        return JsonResponse(progress)
+    return JsonResponse({"status": "Unknown or Finished", "percentage": 100})

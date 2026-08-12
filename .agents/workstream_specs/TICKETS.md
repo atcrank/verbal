@@ -30,5 +30,5 @@
 - [ ] [Feature] GRIPS testing and structured claims symbolic computation (Status: pending) -> [Link to note](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260807_grips_testing_and_claims_computation.md)
   *Summary*: Ensure grips test coverage includes realistic e2e tests for generated objects. Design a computational engine to process `structured_claims` objects for truth values, implications, and necessity/sufficiency.
 
-- [ ] [Feature/Architecture] Model Admin UI & System Tokenizer Improvements (Status: pending) -> [Link to note](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260812_model_admin_tokenizer.md)
-  *Summary*: Enhance `LocalAIModel` Django admin UI to show time taken and errors during model fetching. Refactor `SystemConfiguration.system_tokenizer_id` to point to `LocalAIModel` directly. Investigate architectural concerns for CPU-only environments.
+- [x] [Feature] Model Admin and System Tokenizer UI (Status: done) -> [Link to note](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260812_model_admin_tokenizer.md)
+  *Summary*: Implement "Look at local HuggingFace cache" functionality in LocalAIModel. Add controls to explicitly download/hold/remove cached models, handle progress bars via tqdm interceptors, and show disk usage. Refactor SystemConfiguration.system_tokenizer_id to be a relational field pointing to LocalAIModel.
