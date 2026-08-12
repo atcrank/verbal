@@ -15,6 +15,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 import os
+import json
 from django.contrib import admin
 from django.urls import path, include, re_path
 from django.http import HttpResponse
@@ -24,9 +25,21 @@ from django.conf import settings
 from django.conf.urls.static import static
 from ninja import NinjaAPI
 from ninja.security import django_auth
+from ninja.openapi.docs import Swagger
 from llm_api.api import router as llm_router
 from metacognition import api as metacognition_api
-api = NinjaAPI(auth=django_auth)
+
+class LocalSwagger(Swagger):
+    def render_page(self, request, api, **kwargs):
+        self.settings["url"] = self.get_openapi_url(api, kwargs)
+        context = {
+            "swagger_settings": json.dumps(self.settings, indent=1),
+            "api": api,
+        }
+        from django.shortcuts import render
+        return render(request, "vendor/swagger.html", context)
+
+api = NinjaAPI(auth=django_auth, docs=LocalSwagger())
 
 api.add_router("/llm/", llm_router)
 api.add_router("/meta/", metacognition_api.router)

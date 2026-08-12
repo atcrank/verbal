@@ -147,3 +147,27 @@ service_registry = LazyServiceRegistry()
 class LlmApiConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'llm_api'
+
+    def ready(self):
+        from django.conf import settings
+        import os
+        import threading
+        
+        # Prevent running twice in dev mode with the auto-reloader
+        if os.environ.get('RUN_MAIN', None) != 'true' and settings.DEBUG:
+            return
+            
+        role = getattr(settings, 'VERBAL_ROLE', 'standalone')
+        if role in ['inference', 'standalone']:
+            logger.info(f"🚀 Eagerly loading AI models in background thread (Role: {role})...")
+            
+            def load_models():
+                try:
+                    # Accessing the property triggers the lazy initialization
+                    _ = service_registry.ai_service
+                    logger.info("✅ Background AI model loading complete.")
+                except Exception as e:
+                    logger.error(f"❌ Failed to eagerly load AI models: {e}")
+            
+            t = threading.Thread(target=load_models, daemon=True)
+            t.start()

@@ -150,11 +150,6 @@ TEST_RUNNER = 'verbal.test_runner.ForceTeardownTestRunner'
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-FILES = BASE_DIR / 'background_resources/knowledge_sources/'
-VECTOR_STORE = BASE_DIR / 'background_resources/vector_store/'
-CHUNK_STORE = BASE_DIR / 'background_resources/vector_store/chunks/'
-DEFINITION_STORE = BASE_DIR / 'background_resources/vector_store/definitions/'
-
 # LLM models that are solid condidates as per early 2026 for my development machine with only 6gb VRAM
 # LLM_MODEL_ID = "microsoft/Phi-3-mini-4k-instruct"
 # LLM_MODEL_ID = "Qwen/Qwen2.5-3B-Instruct"  # Highly recommended for 6GB VRAM

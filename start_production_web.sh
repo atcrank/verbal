@@ -1,5 +1,4 @@
 #!/bin/bash
-export VERBAL_ROLE=web
 export DJANGO_DEBUG=False 
 
 if [ -f .env ]; then
@@ -8,6 +7,7 @@ else
     echo "Warning: .env file not found, using .env.example"
     . .env.example
 fi
+export VERBAL_ROLE=web
 
 . ${PYENV_ACTIVATE}
 

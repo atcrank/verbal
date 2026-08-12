@@ -33,15 +33,22 @@ class LocalAIModelAdmin(admin.ModelAdmin):
 class PromptResponseLogInline(admin.TabularInline):
     model = PromptResponseLog
     extra = 0
-    readonly_fields = ('id', 'created_at', 'model_name', 'step_status', 'truncated_prompt', 'truncated_response')
-    fields = ('id', 'created_at', 'model_name', 'step_status', 'truncated_prompt', 'truncated_response')
+    readonly_fields = ('view_link', 'created_at', 'model_name', 'step_status', 'truncated_prompt', 'truncated_response')
+    fields = ('view_link', 'created_at', 'model_name', 'step_status', 'truncated_prompt', 'truncated_response')
     can_delete = False
     
+    def view_link(self, obj):
+        if obj.pk:
+            url = reverse("admin:llm_api_promptresponselog_change", args=(obj.pk,))
+            return format_html('<a href="{}">View Log</a>', url)
+        return ""
+    view_link.short_description = "Detail"
+    
     def truncated_prompt(self, obj):
-        return (obj.user_prompt[:50] + '...') if obj.user_prompt and len(obj.user_prompt) > 50 else obj.user_prompt
+        return (obj.user_prompt[:250] + '...') if obj.user_prompt and len(obj.user_prompt) > 250 else obj.user_prompt
     
     def truncated_response(self, obj):
-        return (obj.generated_response[:50] + '...') if obj.generated_response and len(obj.generated_response) > 50 else obj.generated_response
+        return (obj.generated_response[:250] + '...') if obj.generated_response and len(obj.generated_response) > 250 else obj.generated_response
 
 
 @admin.register(Conversation)

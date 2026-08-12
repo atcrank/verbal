@@ -51,8 +51,46 @@ SPACY_EXPECTED_HASH="${SPACY_WHEEL_HASH:-1932429db727d4bff3deed6b34cfc05df17794f
 
 download_and_verify "$SPACY_URL" "$SPACY_FILE" "$SPACY_EXPECTED_HASH"
 
+# 2. Frontend Assets
+FRONTEND_DIR="./static/vendor"
+mkdir -p "$FRONTEND_DIR"
+
 echo "----------------------------------------"
-echo "🎉 All resources securely vendored into $RESOURCES_DIR."
+echo "🌐 Downloading Frontend Assets..."
+
+# HTMX
+HTMX_URL="https://unpkg.com/htmx.org@1.9.10/dist/htmx.min.js"
+HTMX_FILE="htmx.min.js"
+HTMX_HASH="b3bdcf5c741897a53648b1207fff0469a0d61901429ba1f6e88f98ebd84e669e"
+
+# Swagger UI JS
+SWAGGER_JS_URL="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.9.0/swagger-ui-bundle.js"
+SWAGGER_JS_FILE="swagger-ui-bundle.js"
+SWAGGER_JS_HASH="2a556306524bed2ca668ec5ae19b1dbd4d9cdaa34795c9063a1c44b29a9c6097"
+
+# Swagger UI CSS
+SWAGGER_CSS_URL="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.9.0/swagger-ui.css"
+SWAGGER_CSS_FILE="swagger-ui.css"
+SWAGGER_CSS_HASH="c24ecffd63fc797d37bed1c68ea030479ad1c7a30638ffb6b5a2559ea98bc431"
+
+# Mermaid JS
+MERMAID_JS_URL="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"
+MERMAID_JS_FILE="mermaid.esm.min.mjs"
+MERMAID_JS_HASH="14e29bbe403640f0ac59417d4cedb77a4e83b8494dacb677db23c10b5b99fae7"
+
+# We override RESOURCES_DIR temporarily for the download_and_verify function
+ORIGINAL_RESOURCES_DIR="$RESOURCES_DIR"
+RESOURCES_DIR="$FRONTEND_DIR"
+
+download_and_verify "$HTMX_URL" "$HTMX_FILE" "$HTMX_HASH"
+download_and_verify "$SWAGGER_JS_URL" "$SWAGGER_JS_FILE" "$SWAGGER_JS_HASH"
+download_and_verify "$SWAGGER_CSS_URL" "$SWAGGER_CSS_FILE" "$SWAGGER_CSS_HASH"
+download_and_verify "$MERMAID_JS_URL" "$MERMAID_JS_FILE" "$MERMAID_JS_HASH"
+
+RESOURCES_DIR="$ORIGINAL_RESOURCES_DIR"
+
+echo "----------------------------------------"
+echo "🎉 All resources securely vendored."
 
 echo "📦 Building editdistance wheel from specific GitHub commit..."
 EDITDISTANCE_URL="${EDITDISTANCE_GIT_URL:-git+https://github.com/roy-ht/editdistance.git@3f5a5b0299f36662349df0917352a42c620e3dd4}"

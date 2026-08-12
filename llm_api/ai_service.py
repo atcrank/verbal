@@ -409,6 +409,7 @@ class AIService:
             headers["Authorization"] = f"Bearer {api_key}"
 
         try:
+            logger.info(f"🚀 Routing inference request to: {api_url} (Model: {target_model})")
             response = requests.post(api_url, headers=headers, json=payload)
             response.raise_for_status()
             data = response.json()

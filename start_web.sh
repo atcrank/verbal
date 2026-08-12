@@ -1,10 +1,10 @@
-export VERBAL_ROLE=web
 if [ -f .env ]; then
     . .env
 else
     echo "Warning: .env file not found, using .env.example"
     . .env.example
 fi
+export VERBAL_ROLE=web
 . ${PYENV_ACTIVATE}
 python manage.py runserver 8000
 
