@@ -25,4 +25,14 @@ export VERBAL_ROLE=web
 python manage.py collectstatic --noinput
 
 # Boot the lightning-fast Granian ASGI server
-granian --interface asgi verbal_config.asgi:application --host 0.0.0.0 --port 8000
+GRANIAN_ARGS="--interface asgi verbal_config.asgi:application --host 0.0.0.0"
+
+if [ -n "$SSL_CERT_PATH" ] && [ -n "$SSL_KEY_PATH" ]; then
+    echo "SSL enabled: cert=$SSL_CERT_PATH key=$SSL_KEY_PATH"
+    GRANIAN_ARGS="$GRANIAN_ARGS --port 443 --ssl-certificate $SSL_CERT_PATH --ssl-keyfile $SSL_KEY_PATH"
+else
+    echo "SSL not configured — serving plain HTTP on port 8000"
+    GRANIAN_ARGS="$GRANIAN_ARGS --port 8000"
+fi
+
+granian $GRANIAN_ARGS
