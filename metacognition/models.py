@@ -110,8 +110,11 @@ class CognitiveBlueprint(models.Model):
         return prod
 
     def save(self, *args, force_canonical_update=False, **kwargs):
-        if self.pk and self.is_canonical and not force_canonical_update and not is_lock_bypassed():
-            raise ValueError("Cannot mutate a canonical CognitiveBlueprint. Clone it instead.")
+        if self.pk and not force_canonical_update and not is_lock_bypassed():
+            # Check the original DB state to see if it was ALREADY canonical
+            orig = type(self).objects.filter(pk=self.pk).first()
+            if orig and orig.is_canonical:
+                raise ValueError("Cannot mutate a canonical CognitiveBlueprint. Clone it instead.")
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -233,8 +236,10 @@ class ReasoningStep(models.Model):
         if not self.pk and getattr(self, 'blueprint', None) and self.blueprint.is_canonical:
             self.is_canonical = True
             
-        if self.pk and self.is_canonical and not force_canonical_update and not is_lock_bypassed():
-            raise ValueError("Cannot mutate a canonical ReasoningStep. Call .create_variant() instead.")
+        if self.pk and not force_canonical_update and not is_lock_bypassed():
+            orig = type(self).objects.filter(pk=self.pk).first()
+            if orig and orig.is_canonical:
+                raise ValueError("Cannot mutate a canonical ReasoningStep. Call .create_variant() instead.")
         super().save(*args, **kwargs)
 
     def create_variant(self, variant_intent="", **overrides):

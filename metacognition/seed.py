@@ -1305,7 +1305,7 @@ def seed_lint_grips_node(CognitiveBlueprint, ReasoningStep, ResponseSchema):
     
     bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="LintGripsNode",
-        defaults={'description': "Metacognitive blueprint that evaluates ConceptNodes against a style guide and rewrites them if invalid."}
+        defaults={'description': "Metacognitive blueprint that evaluates ConceptNodes against a style guide and rewrites them if invalid.", 'is_canonical': True}
     )
     
     ReasoningStep.objects.filter(blueprint=bp).delete()
@@ -1381,7 +1381,7 @@ def seed_digest_document_chunk(CognitiveBlueprint, ReasoningStep, ResponseSchema
     
     bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="DigestDocumentChunk",
-        defaults={'description': "Extracts operational concepts and claims from a document chunk."}
+        defaults={'description': "Extracts operational concepts and claims from a document chunk.", 'is_canonical': True}
     )
     
     ReasoningStep.objects.filter(blueprint=bp).delete()
@@ -1450,7 +1450,7 @@ def seed_evaluate_concept_neighbors(CognitiveBlueprint, ReasoningStep, ResponseS
     
     bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="EvaluateConceptNeighbors",
-        defaults={'description': "Evaluates two concepts for merge/edge/distinct relation."}
+        defaults={'description': "Evaluates two concepts for merge/edge/distinct relation.", 'is_canonical': True}
     )
     
     ReasoningStep.objects.filter(blueprint=bp).delete()
@@ -1495,7 +1495,7 @@ def seed_evaluate_cross_domain(CognitiveBlueprint, ReasoningStep, ResponseSchema
     
     bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="EvaluateCrossDomain",
-        defaults={'description': "Evaluates concepts across domains for analogies."}
+        defaults={'description': "Evaluates concepts across domains for analogies.", 'is_canonical': True}
     )
     
     ReasoningStep.objects.filter(blueprint=bp).delete()
