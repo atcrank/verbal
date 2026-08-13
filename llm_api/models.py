@@ -338,7 +338,7 @@ class PromptResponseLog(models.Model):
 
 class LocalAIModel(models.Model):
     """Configuration for an LLM loaded natively into VRAM on the inference server."""
-    name = models.CharField(max_length=255, help_text="Friendly name (e.g. 'Qwen 2.5 3B')")
+    name = models.CharField(max_length=255, help_text="Friendly name (e.g. 'Gemma 4 E2B')")
     hf_model_id = models.CharField(max_length=255, help_text="HuggingFace ID")
     description = models.TextField(blank=True, help_text="Notes on capabilities, VRAM usage, etc.")
     load_in_4bit = models.BooleanField(default=True, help_text="Use 4-bit quantization (Recommended for 6GB VRAM)")

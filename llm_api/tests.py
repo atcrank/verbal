@@ -107,8 +107,8 @@ class LlmApiIntegrationTests(TestCase):
         config = SystemConfiguration.get_solo()
         config.hosting_backend = 'pytorch'
         model, _ = LocalAIModel.objects.get_or_create(
-            hf_model_id="Qwen/Qwen2.5-3B-Instruct", 
-            defaults={"name": "Qwen/Qwen2.5-3B-Instruct"}
+            hf_model_id="google/gemma-4-E2B-it", 
+            defaults={"name": "Gemma 4 E2B"}
         )
         config.active_local_model = model
         config.save()

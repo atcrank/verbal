@@ -2,6 +2,11 @@ import logging
 logger = logging.getLogger(__name__)
 
 import os
+
+# Guard: blank HF_ENDPOINT (from .env sourcing) breaks huggingface_hub's URL builder.
+# Must be cleaned before any huggingface_hub import.
+if not os.environ.get("HF_ENDPOINT"):
+    os.environ.pop("HF_ENDPOINT", None)
 import gc
 import json
 import requests
@@ -113,13 +118,13 @@ class AIService:
         token = os.getenv("HF_TOKEN")
 
         self.model_id = None
-        tokenizer_id = "Qwen/Qwen2.5-3B-Instruct"
+        tokenizer_id = "google/gemma-4-E2B-it"
         
         try:
             from .models import SystemConfiguration
             config = SystemConfiguration.get_solo()
             if config:
-                tokenizer_id = config.system_tokenizer.hf_model_id if config.system_tokenizer else "Qwen/Qwen2.5-3B-Instruct"
+                tokenizer_id = config.system_tokenizer.hf_model_id if config.system_tokenizer else "google/gemma-4-E2B-it"
                 logger.info(f"Loading system tokenizer: {tokenizer_id}")
                 
                 if config.hosting_backend == 'vllm':

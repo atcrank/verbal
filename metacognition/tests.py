@@ -379,7 +379,7 @@ class MetacognitionE2EExternalProxyTests(TestCase):
         import json
         import subprocess
         
-        active_model_name = "Qwen/Qwen2.5-3B-Instruct"
+        active_model_name = "google/gemma-4-E2B-it"
         try:
             ps = subprocess.run(["docker", "ps", "--format", "{{.Names}}"], capture_output=True, text=True)
             names = ps.stdout.split()
@@ -525,7 +525,7 @@ class MetacognitionE2ELocalProxyTests(TestCase):
         import urllib.request
         import json
         running_backend = 'pytorch'
-        active_model_name = "Qwen/Qwen2.5-3B-Instruct"
+        active_model_name = "google/gemma-4-E2B-it"
         try:
             ps = subprocess.run(["docker", "ps", "--format", "{{.Names}}"], capture_output=True, text=True)
             names = ps.stdout.split()

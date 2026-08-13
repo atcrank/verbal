@@ -150,18 +150,17 @@ TEST_RUNNER = 'verbal.test_runner.ForceTeardownTestRunner'
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# LLM models that are solid condidates as per early 2026 for my development machine with only 6gb VRAM
+# LLM models that are solid candidates as per mid 2026 for my development machine with only 6gb VRAM
+# LLM_MODEL_ID = "google/gemma-4-E2B-it"      # Recommended: Gemma 4 E2B, very fast, lightweight
+# LLM_MODEL_ID = "google/gemma-2-2b-it"       # Previous gen, still solid
 # LLM_MODEL_ID = "microsoft/Phi-3-mini-4k-instruct"
-# LLM_MODEL_ID = "Qwen/Qwen2.5-3B-Instruct"  # Highly recommended for 6GB VRAM
-# LLM_MODEL_ID = "google/gemma-2-2b-it"      # Very fast, lightweight
 # LLM_MODEL_ID = "mistralai/Mistral-7B-Instruct-v0.3" # Might be tight/slow
-# LLM_MODEL_ID = "meta-llama/Meta-Llama-3.1-8B-Instruct" # Likely to OOM on 6GB
 
-# LLM models that are solid condidates as per early 2026 for a better machine with 16gb VRAM
-# Qwen 2.5 14B Instruct (Quantized): Highly Recommended. If you run this through Ollama (ollama run qwen2.5:14b), it will use 4-bit quantization and take up about 9GB of VRAM. It punches so far above its weight class that it rivals GPT-4o-mini in logic, coding, and JSON constraint adherence. It is the absolute champion of this tier.
-# Llama 3.1 8B Instruct (Unquantized): If you want to run natively in your inference Django instance without aggressive quantization, this is the way to go. It will take about 10GB of VRAM in FP16, leaving you 6GB for a massive KV-cache (meaning it can read entire RAG chunks simultaneously without breaking a sweat).
+# LLM models that are solid candidates as per mid 2026 for a better machine with 16gb VRAM
+# Google Gemma 4 E4B: Recommended. Uses mixture-of-experts with per-layer embeddings. Runs comfortably in 4-bit quantization on 16GB VRAM with a 128k native context window.
+# Llama 3.1 8B Instruct (Unquantized): If you want to run natively in your inference Django instance without aggressive quantization, this is the way to go. It will take about 10GB of VRAM in FP16, leaving you 6GB for a massive KV-cache.
 
-#Mistral NeMo 12B: Co-developed by Nvidia, this model was practically designed for your GPU. It has a massive 128k context window natively and is explicitly trained for RAG retrieval tasks.
+# Mistral NeMo 12B: Co-developed by Nvidia, this model was practically designed for your GPU. It has a massive 128k context window natively and is explicitly trained for RAG retrieval tasks.
 
 # ------------------------------------------------------------------------
 # MICROSERVICE / ROLE CONFIGURATION

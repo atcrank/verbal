@@ -25,7 +25,7 @@ def sweep_benchmark_generation():
     return f"Queued benchmark generation for recent documents: {doc_ids}"
 
 @shared_task
-def task_train_lora(dataset_id, model_id='Qwen/Qwen2.5-3B-Instruct', epochs=3, rank=16, batch_size=2):
+def task_train_lora(dataset_id, model_id='google/gemma-4-E2B-it', epochs=3, rank=16, batch_size=2):
     """
     Background task to train a LoRA adapter from a FineTuningDataset.
     """
@@ -101,7 +101,7 @@ def task_calculate_dataset_metrics(dataset_id):
         dataset.total_tokens = total_tokens
         
         # Estimate training time: (tokens * 3 epochs) / (~2000 tokens/sec * 60 seconds)
-        # We'll use a conservative 1000 tokens/sec for Qwen-3B on a standard consumer GPU
+        # We'll use a conservative 1000 tokens/sec for a small model on a standard consumer GPU
         tokens_per_minute = 1000 * 60
         dataset.estimated_training_minutes = int((total_tokens * 3) / tokens_per_minute)
         

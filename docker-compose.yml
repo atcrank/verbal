@@ -55,7 +55,7 @@ services:
     command: ["--enable-lora"]
     profiles: ["inference"]
     environment:
-      - VLLM_MODEL=${VLLM_MODEL:-Qwen/Qwen2.5-3B-Instruct}
+      - VLLM_MODEL=${VLLM_MODEL:-google/gemma-4-E2B-it}
       - VLLM_DEVICE=cuda
     deploy:
       resources:

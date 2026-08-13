@@ -11,7 +11,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('--dataset', type=str, required=True, help='Path to the .jsonl training data')
         parser.add_argument('--output', type=str, required=True, help='Path to save the LoRA weights')
-        parser.add_argument('--model', type=str, default='Qwen/Qwen2.5-3B-Instruct', help='Base model HuggingFace ID')
+        parser.add_argument('--model', type=str, default='google/gemma-4-E2B-it', help='Base model HuggingFace ID')
         parser.add_argument('--epochs', type=int, default=3, help='Number of training epochs')
         parser.add_argument('--batch-size', type=int, default=2, help='Batch size per device')
         parser.add_argument('--rank', type=int, default=16, help='LoRA Rank (r)')
