@@ -1,0 +1,1628 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Metacognition - plans and self-evaluation &mdash; Verbal 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=2709fde1"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design" href="work_organisation_app.html" />
+    <link rel="prev" title="Grips - wiki knowledge banks" href="grips_app.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Verbal
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="llm_api_app.html">LLM API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="background_resources_app.html">Background Resources - context documents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grips_app.html">Grips - wiki knowledge banks</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Metacognition - plans and self-evaluation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#app-achievements">App achievements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#app-enhancement">App enhancement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-metacognition.models">Database models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.models.AgentCheckpoint"><code class="docutils literal notranslate"><span class="pre">AgentCheckpoint</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.AgentCheckpoint.DoesNotExist"><code class="docutils literal notranslate"><span class="pre">AgentCheckpoint.DoesNotExist</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.AgentCheckpoint.MultipleObjectsReturned"><code class="docutils literal notranslate"><span class="pre">AgentCheckpoint.MultipleObjectsReturned</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.AgentCheckpoint.NotUpdated"><code class="docutils literal notranslate"><span class="pre">AgentCheckpoint.NotUpdated</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.AgentCheckpoint.checkpoint_id"><code class="docutils literal notranslate"><span class="pre">AgentCheckpoint.checkpoint_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.AgentCheckpoint.created_at"><code class="docutils literal notranslate"><span class="pre">AgentCheckpoint.created_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.AgentCheckpoint.get_next_by_created_at"><code class="docutils literal notranslate"><span class="pre">AgentCheckpoint.get_next_by_created_at()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.AgentCheckpoint.get_previous_by_created_at"><code class="docutils literal notranslate"><span class="pre">AgentCheckpoint.get_previous_by_created_at()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.AgentCheckpoint.id"><code class="docutils literal notranslate"><span class="pre">AgentCheckpoint.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.AgentCheckpoint.metadata_json"><code class="docutils literal notranslate"><span class="pre">AgentCheckpoint.metadata_json</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.AgentCheckpoint.objects"><code class="docutils literal notranslate"><span class="pre">AgentCheckpoint.objects</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.AgentCheckpoint.parent_id"><code class="docutils literal notranslate"><span class="pre">AgentCheckpoint.parent_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.AgentCheckpoint.state_json"><code class="docutils literal notranslate"><span class="pre">AgentCheckpoint.state_json</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.AgentCheckpoint.thread_id"><code class="docutils literal notranslate"><span class="pre">AgentCheckpoint.thread_id</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.models.CognitiveBlueprint"><code class="docutils literal notranslate"><span class="pre">CognitiveBlueprint</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.CognitiveBlueprint.DoesNotExist"><code class="docutils literal notranslate"><span class="pre">CognitiveBlueprint.DoesNotExist</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.CognitiveBlueprint.MultipleObjectsReturned"><code class="docutils literal notranslate"><span class="pre">CognitiveBlueprint.MultipleObjectsReturned</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.CognitiveBlueprint.NotUpdated"><code class="docutils literal notranslate"><span class="pre">CognitiveBlueprint.NotUpdated</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.CognitiveBlueprint.conversations"><code class="docutils literal notranslate"><span class="pre">CognitiveBlueprint.conversations</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.CognitiveBlueprint.descendants"><code class="docutils literal notranslate"><span class="pre">CognitiveBlueprint.descendants</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.CognitiveBlueprint.description"><code class="docutils literal notranslate"><span class="pre">CognitiveBlueprint.description</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.CognitiveBlueprint.family_success_probability"><code class="docutils literal notranslate"><span class="pre">CognitiveBlueprint.family_success_probability</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.CognitiveBlueprint.id"><code class="docutils literal notranslate"><span class="pre">CognitiveBlueprint.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.CognitiveBlueprint.invoked_by_steps"><code class="docutils literal notranslate"><span class="pre">CognitiveBlueprint.invoked_by_steps</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.CognitiveBlueprint.is_autonomous"><code class="docutils literal notranslate"><span class="pre">CognitiveBlueprint.is_autonomous</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.CognitiveBlueprint.is_canonical"><code class="docutils literal notranslate"><span class="pre">CognitiveBlueprint.is_canonical</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.CognitiveBlueprint.moderation_lists"><code class="docutils literal notranslate"><span class="pre">CognitiveBlueprint.moderation_lists</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.CognitiveBlueprint.name"><code class="docutils literal notranslate"><span class="pre">CognitiveBlueprint.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.CognitiveBlueprint.objects"><code class="docutils literal notranslate"><span class="pre">CognitiveBlueprint.objects</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.CognitiveBlueprint.parent"><code class="docutils literal notranslate"><span class="pre">CognitiveBlueprint.parent</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.CognitiveBlueprint.parent_id"><code class="docutils literal notranslate"><span class="pre">CognitiveBlueprint.parent_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.CognitiveBlueprint.save"><code class="docutils literal notranslate"><span class="pre">CognitiveBlueprint.save()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.CognitiveBlueprint.steps"><code class="docutils literal notranslate"><span class="pre">CognitiveBlueprint.steps</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.CognitiveBlueprint.tool_definitions"><code class="docutils literal notranslate"><span class="pre">CognitiveBlueprint.tool_definitions</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.models.ModerationList"><code class="docutils literal notranslate"><span class="pre">ModerationList</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ModerationList.DoesNotExist"><code class="docutils literal notranslate"><span class="pre">ModerationList.DoesNotExist</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ModerationList.MultipleObjectsReturned"><code class="docutils literal notranslate"><span class="pre">ModerationList.MultipleObjectsReturned</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ModerationList.NotUpdated"><code class="docutils literal notranslate"><span class="pre">ModerationList.NotUpdated</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ModerationList.cognitiveblueprint_set"><code class="docutils literal notranslate"><span class="pre">ModerationList.cognitiveblueprint_set</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ModerationList.concepts"><code class="docutils literal notranslate"><span class="pre">ModerationList.concepts</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ModerationList.id"><code class="docutils literal notranslate"><span class="pre">ModerationList.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ModerationList.name"><code class="docutils literal notranslate"><span class="pre">ModerationList.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ModerationList.objects"><code class="docutils literal notranslate"><span class="pre">ModerationList.objects</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.models.ReasoningStep"><code class="docutils literal notranslate"><span class="pre">ReasoningStep</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.DoesNotExist"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.DoesNotExist</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.MultipleObjectsReturned"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.MultipleObjectsReturned</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.NotUpdated"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.NotUpdated</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.available_tools"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.available_tools</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.blueprint"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.blueprint</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.blueprint_id"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.blueprint_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.create_variant"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.create_variant()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.evaluation_criteria"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.evaluation_criteria</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.failure_sources"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.failure_sources</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.get_proposed_by_display"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.get_proposed_by_display()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.id"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.include_state_tree"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.include_state_tree</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.is_active"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.is_active</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.is_canonical"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.is_canonical</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.is_pending_review"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.is_pending_review</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.is_start_node"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.is_start_node</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.lora_adapter"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.lora_adapter</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.lora_adapter_id"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.lora_adapter_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.max_new_tokens"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.max_new_tokens</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.max_retries"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.max_retries</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.name"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.objects"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.objects</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.on_failure_step"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.on_failure_step</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.on_failure_step_id"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.on_failure_step_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.on_success_step"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.on_success_step</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.on_success_step_id"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.on_success_step_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.output_schema"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.output_schema</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.output_schema_id"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.output_schema_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.parallel_sources"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.parallel_sources</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.parallel_steps"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.parallel_steps</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.parent_step"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.parent_step</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.parent_step_id"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.parent_step_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.performance_score"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.performance_score</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.prompt_logs"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.prompt_logs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.proposed_at"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.proposed_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.proposed_by"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.proposed_by</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.save"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.save()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.selection_weight"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.selection_weight</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.sub_blueprint"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.sub_blueprint</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.sub_blueprint_id"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.sub_blueprint_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.success_sources"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.success_sources</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.system_prompt"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.system_prompt</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.variant_intent"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.variant_intent</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStep.variants"><code class="docutils literal notranslate"><span class="pre">ReasoningStep.variants</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.models.ReasoningStepManager"><code class="docutils literal notranslate"><span class="pre">ReasoningStepManager</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStepManager.active_for_blueprint"><code class="docutils literal notranslate"><span class="pre">ReasoningStepManager.active_for_blueprint()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStepManager.get_queryset"><code class="docutils literal notranslate"><span class="pre">ReasoningStepManager.get_queryset()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.models.ReasoningStepQuerySet"><code class="docutils literal notranslate"><span class="pre">ReasoningStepQuerySet</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ReasoningStepQuerySet.active_for_blueprint"><code class="docutils literal notranslate"><span class="pre">ReasoningStepQuerySet.active_for_blueprint()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.models.ResponseSchema"><code class="docutils literal notranslate"><span class="pre">ResponseSchema</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ResponseSchema.DoesNotExist"><code class="docutils literal notranslate"><span class="pre">ResponseSchema.DoesNotExist</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ResponseSchema.MultipleObjectsReturned"><code class="docutils literal notranslate"><span class="pre">ResponseSchema.MultipleObjectsReturned</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ResponseSchema.NotUpdated"><code class="docutils literal notranslate"><span class="pre">ResponseSchema.NotUpdated</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ResponseSchema.SCHEMA_TYPES"><code class="docutils literal notranslate"><span class="pre">ResponseSchema.SCHEMA_TYPES</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ResponseSchema.description"><code class="docutils literal notranslate"><span class="pre">ResponseSchema.description</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ResponseSchema.get_pydantic_model_name_display"><code class="docutils literal notranslate"><span class="pre">ResponseSchema.get_pydantic_model_name_display()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ResponseSchema.get_schema_type_display"><code class="docutils literal notranslate"><span class="pre">ResponseSchema.get_schema_type_display()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ResponseSchema.id"><code class="docutils literal notranslate"><span class="pre">ResponseSchema.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ResponseSchema.json_schema"><code class="docutils literal notranslate"><span class="pre">ResponseSchema.json_schema</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ResponseSchema.name"><code class="docutils literal notranslate"><span class="pre">ResponseSchema.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ResponseSchema.objects"><code class="docutils literal notranslate"><span class="pre">ResponseSchema.objects</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ResponseSchema.pydantic_model_name"><code class="docutils literal notranslate"><span class="pre">ResponseSchema.pydantic_model_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ResponseSchema.reasoningstep_set"><code class="docutils literal notranslate"><span class="pre">ResponseSchema.reasoningstep_set</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ResponseSchema.schema_type"><code class="docutils literal notranslate"><span class="pre">ResponseSchema.schema_type</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.models.ToolDefinition"><code class="docutils literal notranslate"><span class="pre">ToolDefinition</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.DoesNotExist"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.DoesNotExist</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.MultipleObjectsReturned"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.MultipleObjectsReturned</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.NotUpdated"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.NotUpdated</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.TOOL_TYPES"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.TOOL_TYPES</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.api_url"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.api_url</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.created_at"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.created_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.created_by"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.created_by</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.created_by_id"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.created_by_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.description"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.description</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.get_callable"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.get_callable()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.get_next_by_created_at"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.get_next_by_created_at()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.get_previous_by_created_at"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.get_previous_by_created_at()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.get_tool_type_display"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.get_tool_type_display()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.id"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.input_schema"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.input_schema</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.is_active"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.is_active</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.is_promoted"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.is_promoted</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.name"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.objects"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.objects</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.output_schema"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.output_schema</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.python_path"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.python_path</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.reasoning_steps"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.reasoning_steps</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.requires_approval"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.requires_approval</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.sub_blueprint"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.sub_blueprint</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.sub_blueprint_id"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.sub_blueprint_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.tool_type"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.tool_type</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.models.bypass_canonical_lock"><code class="docutils literal notranslate"><span class="pre">bypass_canonical_lock</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.models.get_schema_choices"><code class="docutils literal notranslate"><span class="pre">get_schema_choices()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.models.is_lock_bypassed"><code class="docutils literal notranslate"><span class="pre">is_lock_bypassed()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-metacognition.api">API Reference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.api.ApproveToolIn"><code class="docutils literal notranslate"><span class="pre">ApproveToolIn</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.api.ApproveToolIn.blueprint_id"><code class="docutils literal notranslate"><span class="pre">ApproveToolIn.blueprint_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.api.ApproveToolIn.model_config"><code class="docutils literal notranslate"><span class="pre">ApproveToolIn.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.api.ApproveToolIn.run_id"><code class="docutils literal notranslate"><span class="pre">ApproveToolIn.run_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.api.ApproveToolIn.thread_id"><code class="docutils literal notranslate"><span class="pre">ApproveToolIn.thread_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.api.ApproveToolIn.tool_name"><code class="docutils literal notranslate"><span class="pre">ApproveToolIn.tool_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.api.ApproveToolIn.user_prompt"><code class="docutils literal notranslate"><span class="pre">ApproveToolIn.user_prompt</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.api.BlueprintDispatchIn"><code class="docutils literal notranslate"><span class="pre">BlueprintDispatchIn</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.api.BlueprintDispatchIn.blueprint_id"><code class="docutils literal notranslate"><span class="pre">BlueprintDispatchIn.blueprint_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.api.BlueprintDispatchIn.conversation_id"><code class="docutils literal notranslate"><span class="pre">BlueprintDispatchIn.conversation_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.api.BlueprintDispatchIn.model_config"><code class="docutils literal notranslate"><span class="pre">BlueprintDispatchIn.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.api.BlueprintDispatchIn.user_prompt"><code class="docutils literal notranslate"><span class="pre">BlueprintDispatchIn.user_prompt</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.api.BlueprintRunIn"><code class="docutils literal notranslate"><span class="pre">BlueprintRunIn</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.api.BlueprintRunIn.blueprint_id"><code class="docutils literal notranslate"><span class="pre">BlueprintRunIn.blueprint_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.api.BlueprintRunIn.conversation_id"><code class="docutils literal notranslate"><span class="pre">BlueprintRunIn.conversation_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.api.BlueprintRunIn.model_config"><code class="docutils literal notranslate"><span class="pre">BlueprintRunIn.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.api.BlueprintRunIn.parent_log_id"><code class="docutils literal notranslate"><span class="pre">BlueprintRunIn.parent_log_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.api.BlueprintRunIn.run_id"><code class="docutils literal notranslate"><span class="pre">BlueprintRunIn.run_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.api.BlueprintRunIn.user_prompt"><code class="docutils literal notranslate"><span class="pre">BlueprintRunIn.user_prompt</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.api.CancelBlueprintIn"><code class="docutils literal notranslate"><span class="pre">CancelBlueprintIn</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.api.CancelBlueprintIn.model_config"><code class="docutils literal notranslate"><span class="pre">CancelBlueprintIn.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.api.CancelBlueprintIn.run_id"><code class="docutils literal notranslate"><span class="pre">CancelBlueprintIn.run_id</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.api.approve_tool"><code class="docutils literal notranslate"><span class="pre">approve_tool()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.api.cancel_blueprint"><code class="docutils literal notranslate"><span class="pre">cancel_blueprint()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.api.dispatch_blueprint"><code class="docutils literal notranslate"><span class="pre">dispatch_blueprint()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.api.execute_blueprint"><code class="docutils literal notranslate"><span class="pre">execute_blueprint()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.api.stream_blueprint"><code class="docutils literal notranslate"><span class="pre">stream_blueprint()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-metacognition.tasks">Background Tasks</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.tasks.check_for_banned_concepts"><code class="docutils literal notranslate"><span class="pre">check_for_banned_concepts()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.tasks.get_schema_object"><code class="docutils literal notranslate"><span class="pre">get_schema_object()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.tasks.parse_structured_response"><code class="docutils literal notranslate"><span class="pre">parse_structured_response()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.tasks.run_blueprint"><code class="docutils literal notranslate"><span class="pre">run_blueprint()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo_ui_app.html">Demo UI</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="using_ollama.html">Ollama as Local AI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests.html">Testing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Verbal</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Metacognition - plans and self-evaluation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/metacognition_app.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="metacognition-plans-and-self-evaluation">
+<h1>Metacognition - plans and self-evaluation<a class="headerlink" href="#metacognition-plans-and-self-evaluation" title="Link to this heading"></a></h1>
+<p>This app defines and manages the “thinking processes” (Cognitive Blueprints) and agentic workflows that the LLM uses to reason about complex tasks, execute tools in a sandboxed environment, and iteratively evaluate its own results before delivering a final answer.</p>
+<p>To see these agentic capabilities in action, including their execution traces and generated files, please review the <a class="reference internal" href="metacognition_trials.html#metacognition-trials-page"><span class="std std-ref">Metacognition Trials &amp; Reports</span></a>.</p>
+<section id="app-achievements">
+<h2>App achievements<a class="headerlink" href="#app-achievements" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Agentic Workflows:</strong> Developed a state-machine-driven loop for LLM tool execution using LangGraph, including Git-tracked workspaces and secure Python sandbox integration.</p></li>
+<li><p><strong>Dynamic Workflow Branching:</strong> Integrated LangGraph to power advanced workflows with conditional logic, loops, and state-machine-driven reasoning pipelines.</p></li>
+<li><p><strong>Blueprint Architecture:</strong> Established the data models to store predefined cognitive strategies and workflows.</p></li>
+<li><p><strong>Unified Schema Registry:</strong> Successfully consolidated Pydantic <code class="docutils literal notranslate"><span class="pre">BaseModel</span></code> definitions and Django-Ninja <code class="docutils literal notranslate"><span class="pre">Schema</span></code> classes into a dynamically loaded, migration-safe <code class="docutils literal notranslate"><span class="pre">OUTPUT_TYPES</span></code> registry.</p></li>
+<li><p><strong>Moderation Integration:</strong> Created structures for reusable moderation lists and banned concept lemmas to enforce safety across all reasoning blueprints.</p></li>
+</ul>
+</section>
+<section id="app-enhancement">
+<h2>App enhancement<a class="headerlink" href="#app-enhancement" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Visual Strategy Builder:</strong> Create a drag-and-drop or node-based interface in the admin to assemble cognitive pipelines (e.g., “Extract -&gt; Reflect -&gt; Critique -&gt; Summarize”).</p></li>
+<li><p><strong>Context-Aware Triggering:</strong> Build a classification router that looks at a user’s query and automatically selects the most appropriate Cognitive Blueprint without manual user selection.</p></li>
+</ul>
+</section>
+<section id="module-metacognition.models">
+<span id="database-models"></span><h2>Database models<a class="headerlink" href="#module-metacognition.models" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="metacognition.models.AgentCheckpoint">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">metacognition.models.</span></span><span class="sig-name descname"><span class="pre">AgentCheckpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/models.html#AgentCheckpoint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.models.AgentCheckpoint" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
+<p>Django implementation of LangGraph BaseCheckpointSaver storage.</p>
+<dl class="py exception">
+<dt class="sig sig-object py" id="metacognition.models.AgentCheckpoint.DoesNotExist">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DoesNotExist</span></span><a class="headerlink" href="#metacognition.models.AgentCheckpoint.DoesNotExist" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectDoesNotExist</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="metacognition.models.AgentCheckpoint.MultipleObjectsReturned">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MultipleObjectsReturned</span></span><a class="headerlink" href="#metacognition.models.AgentCheckpoint.MultipleObjectsReturned" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleObjectsReturned</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="metacognition.models.AgentCheckpoint.NotUpdated">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NotUpdated</span></span><a class="headerlink" href="#metacognition.models.AgentCheckpoint.NotUpdated" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectNotUpdated</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">DatabaseError</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.AgentCheckpoint.checkpoint_id">
+<span class="sig-name descname"><span class="pre">checkpoint_id</span></span><a class="headerlink" href="#metacognition.models.AgentCheckpoint.checkpoint_id" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.AgentCheckpoint.created_at">
+<span class="sig-name descname"><span class="pre">created_at</span></span><a class="headerlink" href="#metacognition.models.AgentCheckpoint.created_at" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="metacognition.models.AgentCheckpoint.get_next_by_created_at">
+<span class="sig-name descname"><span class="pre">get_next_by_created_at</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field=&lt;django.db.models.fields.DateTimeField:</span> <span class="pre">created_at&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_next=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#metacognition.models.AgentCheckpoint.get_next_by_created_at" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="metacognition.models.AgentCheckpoint.get_previous_by_created_at">
+<span class="sig-name descname"><span class="pre">get_previous_by_created_at</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field=&lt;django.db.models.fields.DateTimeField:</span> <span class="pre">created_at&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_next=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#metacognition.models.AgentCheckpoint.get_previous_by_created_at" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.AgentCheckpoint.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#metacognition.models.AgentCheckpoint.id" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.AgentCheckpoint.metadata_json">
+<span class="sig-name descname"><span class="pre">metadata_json</span></span><a class="headerlink" href="#metacognition.models.AgentCheckpoint.metadata_json" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.AgentCheckpoint.objects">
+<span class="sig-name descname"><span class="pre">objects</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;django.db.models.manager.Manager</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#metacognition.models.AgentCheckpoint.objects" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.AgentCheckpoint.parent_id">
+<span class="sig-name descname"><span class="pre">parent_id</span></span><a class="headerlink" href="#metacognition.models.AgentCheckpoint.parent_id" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.AgentCheckpoint.state_json">
+<span class="sig-name descname"><span class="pre">state_json</span></span><a class="headerlink" href="#metacognition.models.AgentCheckpoint.state_json" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.AgentCheckpoint.thread_id">
+<span class="sig-name descname"><span class="pre">thread_id</span></span><a class="headerlink" href="#metacognition.models.AgentCheckpoint.thread_id" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="metacognition.models.CognitiveBlueprint">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">metacognition.models.</span></span><span class="sig-name descname"><span class="pre">CognitiveBlueprint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/models.html#CognitiveBlueprint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.models.CognitiveBlueprint" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
+<p>A container for a specific cognitive strategy or thinking pattern.
+(e.g., ‘Causal Experiment Designer’, ‘Devil’s Advocate Critique’)</p>
+<dl class="py exception">
+<dt class="sig sig-object py" id="metacognition.models.CognitiveBlueprint.DoesNotExist">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DoesNotExist</span></span><a class="headerlink" href="#metacognition.models.CognitiveBlueprint.DoesNotExist" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectDoesNotExist</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="metacognition.models.CognitiveBlueprint.MultipleObjectsReturned">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MultipleObjectsReturned</span></span><a class="headerlink" href="#metacognition.models.CognitiveBlueprint.MultipleObjectsReturned" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleObjectsReturned</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="metacognition.models.CognitiveBlueprint.NotUpdated">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NotUpdated</span></span><a class="headerlink" href="#metacognition.models.CognitiveBlueprint.NotUpdated" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectNotUpdated</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">DatabaseError</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.CognitiveBlueprint.conversations">
+<span class="sig-name descname"><span class="pre">conversations</span></span><a class="headerlink" href="#metacognition.models.CognitiveBlueprint.conversations" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related objects manager on the reverse side of a
+many-to-one relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
+<p>Most of the implementation is delegated to a dynamically defined manager
+class built by <code class="docutils literal notranslate"><span class="pre">create_reverse_many_to_one_manager()</span></code> defined below.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.CognitiveBlueprint.descendants">
+<span class="sig-name descname"><span class="pre">descendants</span></span><a class="headerlink" href="#metacognition.models.CognitiveBlueprint.descendants" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related objects manager on the reverse side of a
+many-to-one relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
+<p>Most of the implementation is delegated to a dynamically defined manager
+class built by <code class="docutils literal notranslate"><span class="pre">create_reverse_many_to_one_manager()</span></code> defined below.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.CognitiveBlueprint.description">
+<span class="sig-name descname"><span class="pre">description</span></span><a class="headerlink" href="#metacognition.models.CognitiveBlueprint.description" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="metacognition.models.CognitiveBlueprint.family_success_probability">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">family_success_probability</span></span><a class="headerlink" href="#metacognition.models.CognitiveBlueprint.family_success_probability" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.CognitiveBlueprint.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#metacognition.models.CognitiveBlueprint.id" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.CognitiveBlueprint.invoked_by_steps">
+<span class="sig-name descname"><span class="pre">invoked_by_steps</span></span><a class="headerlink" href="#metacognition.models.CognitiveBlueprint.invoked_by_steps" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related objects manager on the reverse side of a
+many-to-one relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
+<p>Most of the implementation is delegated to a dynamically defined manager
+class built by <code class="docutils literal notranslate"><span class="pre">create_reverse_many_to_one_manager()</span></code> defined below.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.CognitiveBlueprint.is_autonomous">
+<span class="sig-name descname"><span class="pre">is_autonomous</span></span><a class="headerlink" href="#metacognition.models.CognitiveBlueprint.is_autonomous" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.CognitiveBlueprint.is_canonical">
+<span class="sig-name descname"><span class="pre">is_canonical</span></span><a class="headerlink" href="#metacognition.models.CognitiveBlueprint.is_canonical" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.CognitiveBlueprint.moderation_lists">
+<span class="sig-name descname"><span class="pre">moderation_lists</span></span><a class="headerlink" href="#metacognition.models.CognitiveBlueprint.moderation_lists" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related objects manager on the forward and reverse sides of
+a many-to-many relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Pizza</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">toppings</span> <span class="o">=</span> <span class="n">ManyToManyField</span><span class="p">(</span><span class="n">Topping</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;pizzas&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Pizza.toppings</span></code> and <code class="docutils literal notranslate"><span class="pre">Topping.pizzas</span></code> are <code class="docutils literal notranslate"><span class="pre">ManyToManyDescriptor</span></code>
+instances.</p>
+<p>Most of the implementation is delegated to a dynamically defined manager
+class built by <code class="docutils literal notranslate"><span class="pre">create_forward_many_to_many_manager()</span></code> defined below.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.CognitiveBlueprint.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#metacognition.models.CognitiveBlueprint.name" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.CognitiveBlueprint.objects">
+<span class="sig-name descname"><span class="pre">objects</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;django.db.models.manager.Manager</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#metacognition.models.CognitiveBlueprint.objects" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.CognitiveBlueprint.parent">
+<span class="sig-name descname"><span class="pre">parent</span></span><a class="headerlink" href="#metacognition.models.CognitiveBlueprint.parent" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related object on the forward side of a many-to-one or
+one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.CognitiveBlueprint.parent_id">
+<span class="sig-name descname"><span class="pre">parent_id</span></span><a class="headerlink" href="#metacognition.models.CognitiveBlueprint.parent_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="metacognition.models.CognitiveBlueprint.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_canonical_update</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/models.html#CognitiveBlueprint.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.models.CognitiveBlueprint.save" title="Link to this definition"></a></dt>
+<dd><p>Save the current instance. Override this in a subclass if you want to
+control the saving process.</p>
+<p>The ‘force_insert’ and ‘force_update’ parameters can be used to insist
+that the “save” must be an SQL insert or update (or equivalent for
+non-SQL backends), respectively. Normally, they should not be set.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.CognitiveBlueprint.steps">
+<span class="sig-name descname"><span class="pre">steps</span></span><a class="headerlink" href="#metacognition.models.CognitiveBlueprint.steps" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related objects manager on the reverse side of a
+many-to-one relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
+<p>Most of the implementation is delegated to a dynamically defined manager
+class built by <code class="docutils literal notranslate"><span class="pre">create_reverse_many_to_one_manager()</span></code> defined below.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.CognitiveBlueprint.tool_definitions">
+<span class="sig-name descname"><span class="pre">tool_definitions</span></span><a class="headerlink" href="#metacognition.models.CognitiveBlueprint.tool_definitions" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related objects manager on the reverse side of a
+many-to-one relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
+<p>Most of the implementation is delegated to a dynamically defined manager
+class built by <code class="docutils literal notranslate"><span class="pre">create_reverse_many_to_one_manager()</span></code> defined below.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="metacognition.models.ModerationList">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">metacognition.models.</span></span><span class="sig-name descname"><span class="pre">ModerationList</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/models.html#ModerationList"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.models.ModerationList" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
+<p>A reusable set of banned concepts/lemmas to be applied across blueprints.</p>
+<dl class="py exception">
+<dt class="sig sig-object py" id="metacognition.models.ModerationList.DoesNotExist">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DoesNotExist</span></span><a class="headerlink" href="#metacognition.models.ModerationList.DoesNotExist" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectDoesNotExist</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="metacognition.models.ModerationList.MultipleObjectsReturned">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MultipleObjectsReturned</span></span><a class="headerlink" href="#metacognition.models.ModerationList.MultipleObjectsReturned" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleObjectsReturned</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="metacognition.models.ModerationList.NotUpdated">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NotUpdated</span></span><a class="headerlink" href="#metacognition.models.ModerationList.NotUpdated" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectNotUpdated</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">DatabaseError</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ModerationList.cognitiveblueprint_set">
+<span class="sig-name descname"><span class="pre">cognitiveblueprint_set</span></span><a class="headerlink" href="#metacognition.models.ModerationList.cognitiveblueprint_set" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related objects manager on the forward and reverse sides of
+a many-to-many relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Pizza</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">toppings</span> <span class="o">=</span> <span class="n">ManyToManyField</span><span class="p">(</span><span class="n">Topping</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;pizzas&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Pizza.toppings</span></code> and <code class="docutils literal notranslate"><span class="pre">Topping.pizzas</span></code> are <code class="docutils literal notranslate"><span class="pre">ManyToManyDescriptor</span></code>
+instances.</p>
+<p>Most of the implementation is delegated to a dynamically defined manager
+class built by <code class="docutils literal notranslate"><span class="pre">create_forward_many_to_many_manager()</span></code> defined below.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ModerationList.concepts">
+<span class="sig-name descname"><span class="pre">concepts</span></span><a class="headerlink" href="#metacognition.models.ModerationList.concepts" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ModerationList.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#metacognition.models.ModerationList.id" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ModerationList.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#metacognition.models.ModerationList.name" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ModerationList.objects">
+<span class="sig-name descname"><span class="pre">objects</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;django.db.models.manager.Manager</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#metacognition.models.ModerationList.objects" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">metacognition.models.</span></span><span class="sig-name descname"><span class="pre">ReasoningStep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/models.html#ReasoningStep"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.models.ReasoningStep" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
+<p>A single node in the cognitive state machine graph.
+Represents one interaction or execution step with the LLM or sub-blueprint.</p>
+<p>Graph Topology &amp; Routing Notes:
+- Directed Graph (Not Acyclic): The graph formed by ReasoningStep nodes is a directed graph</p>
+<blockquote>
+<div><p>and is NOT strictly acyclic. Edges (on_success_step and on_failure_step) can route
+backwards to any previously visited step, form loops, or self-loop (route_to=SELF).</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>Unconditional Continuation: Routing both on_success_step and on_failure_step to the same
+target step allows unconditional step progress (executing the next step regardless of outcome).</p></li>
+<li><p>Variant Evolution Lineage: When generating new variants of a step, agents should inspect
+the <cite>parent</cite> foreign key to trace prompt history and examine neighbor steps (preceding
+and succeeding nodes) to preserve context continuity and prevent regressing to old wordings.</p></li>
+</ul>
+<dl class="py exception">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.DoesNotExist">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DoesNotExist</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.DoesNotExist" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectDoesNotExist</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.MultipleObjectsReturned">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MultipleObjectsReturned</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.MultipleObjectsReturned" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleObjectsReturned</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.NotUpdated">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NotUpdated</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.NotUpdated" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectNotUpdated</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">DatabaseError</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.available_tools">
+<span class="sig-name descname"><span class="pre">available_tools</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.available_tools" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related objects manager on the forward and reverse sides of
+a many-to-many relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Pizza</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">toppings</span> <span class="o">=</span> <span class="n">ManyToManyField</span><span class="p">(</span><span class="n">Topping</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;pizzas&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Pizza.toppings</span></code> and <code class="docutils literal notranslate"><span class="pre">Topping.pizzas</span></code> are <code class="docutils literal notranslate"><span class="pre">ManyToManyDescriptor</span></code>
+instances.</p>
+<p>Most of the implementation is delegated to a dynamically defined manager
+class built by <code class="docutils literal notranslate"><span class="pre">create_forward_many_to_many_manager()</span></code> defined below.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.blueprint">
+<span class="sig-name descname"><span class="pre">blueprint</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.blueprint" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related object on the forward side of a many-to-one or
+one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.blueprint_id">
+<span class="sig-name descname"><span class="pre">blueprint_id</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.blueprint_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.create_variant">
+<span class="sig-name descname"><span class="pre">create_variant</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variant_intent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">overrides</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/models.html#ReasoningStep.create_variant"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.models.ReasoningStep.create_variant" title="Link to this definition"></a></dt>
+<dd><p>Duplicates this step as a child variant, setting parent_step=self.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.evaluation_criteria">
+<span class="sig-name descname"><span class="pre">evaluation_criteria</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.evaluation_criteria" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.failure_sources">
+<span class="sig-name descname"><span class="pre">failure_sources</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.failure_sources" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related objects manager on the reverse side of a
+many-to-one relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
+<p>Most of the implementation is delegated to a dynamically defined manager
+class built by <code class="docutils literal notranslate"><span class="pre">create_reverse_many_to_one_manager()</span></code> defined below.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.get_proposed_by_display">
+<span class="sig-name descname"><span class="pre">get_proposed_by_display</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field=&lt;django.db.models.fields.CharField:</span> <span class="pre">proposed_by&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#metacognition.models.ReasoningStep.get_proposed_by_display" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.id" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.include_state_tree">
+<span class="sig-name descname"><span class="pre">include_state_tree</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.include_state_tree" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.is_active">
+<span class="sig-name descname"><span class="pre">is_active</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.is_active" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.is_canonical">
+<span class="sig-name descname"><span class="pre">is_canonical</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.is_canonical" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.is_pending_review">
+<span class="sig-name descname"><span class="pre">is_pending_review</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.is_pending_review" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.is_start_node">
+<span class="sig-name descname"><span class="pre">is_start_node</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.is_start_node" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.lora_adapter">
+<span class="sig-name descname"><span class="pre">lora_adapter</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.lora_adapter" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related object on the forward side of a many-to-one or
+one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.lora_adapter_id">
+<span class="sig-name descname"><span class="pre">lora_adapter_id</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.lora_adapter_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.max_new_tokens">
+<span class="sig-name descname"><span class="pre">max_new_tokens</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.max_new_tokens" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.max_retries">
+<span class="sig-name descname"><span class="pre">max_retries</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.max_retries" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.name" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.objects">
+<span class="sig-name descname"><span class="pre">objects</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;metacognition.models.ReasoningStepManager</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#metacognition.models.ReasoningStep.objects" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.on_failure_step">
+<span class="sig-name descname"><span class="pre">on_failure_step</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.on_failure_step" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related object on the forward side of a many-to-one or
+one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.on_failure_step_id">
+<span class="sig-name descname"><span class="pre">on_failure_step_id</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.on_failure_step_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.on_success_step">
+<span class="sig-name descname"><span class="pre">on_success_step</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.on_success_step" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related object on the forward side of a many-to-one or
+one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.on_success_step_id">
+<span class="sig-name descname"><span class="pre">on_success_step_id</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.on_success_step_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.output_schema">
+<span class="sig-name descname"><span class="pre">output_schema</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.output_schema" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related object on the forward side of a many-to-one or
+one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.output_schema_id">
+<span class="sig-name descname"><span class="pre">output_schema_id</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.output_schema_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.parallel_sources">
+<span class="sig-name descname"><span class="pre">parallel_sources</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.parallel_sources" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related objects manager on the forward and reverse sides of
+a many-to-many relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Pizza</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">toppings</span> <span class="o">=</span> <span class="n">ManyToManyField</span><span class="p">(</span><span class="n">Topping</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;pizzas&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Pizza.toppings</span></code> and <code class="docutils literal notranslate"><span class="pre">Topping.pizzas</span></code> are <code class="docutils literal notranslate"><span class="pre">ManyToManyDescriptor</span></code>
+instances.</p>
+<p>Most of the implementation is delegated to a dynamically defined manager
+class built by <code class="docutils literal notranslate"><span class="pre">create_forward_many_to_many_manager()</span></code> defined below.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.parallel_steps">
+<span class="sig-name descname"><span class="pre">parallel_steps</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.parallel_steps" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related objects manager on the forward and reverse sides of
+a many-to-many relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Pizza</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">toppings</span> <span class="o">=</span> <span class="n">ManyToManyField</span><span class="p">(</span><span class="n">Topping</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;pizzas&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Pizza.toppings</span></code> and <code class="docutils literal notranslate"><span class="pre">Topping.pizzas</span></code> are <code class="docutils literal notranslate"><span class="pre">ManyToManyDescriptor</span></code>
+instances.</p>
+<p>Most of the implementation is delegated to a dynamically defined manager
+class built by <code class="docutils literal notranslate"><span class="pre">create_forward_many_to_many_manager()</span></code> defined below.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.parent_step">
+<span class="sig-name descname"><span class="pre">parent_step</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.parent_step" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related object on the forward side of a many-to-one or
+one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.parent_step_id">
+<span class="sig-name descname"><span class="pre">parent_step_id</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.parent_step_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.performance_score">
+<span class="sig-name descname"><span class="pre">performance_score</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.performance_score" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.prompt_logs">
+<span class="sig-name descname"><span class="pre">prompt_logs</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.prompt_logs" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related objects manager on the reverse side of a
+many-to-one relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
+<p>Most of the implementation is delegated to a dynamically defined manager
+class built by <code class="docutils literal notranslate"><span class="pre">create_reverse_many_to_one_manager()</span></code> defined below.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.proposed_at">
+<span class="sig-name descname"><span class="pre">proposed_at</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.proposed_at" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.proposed_by">
+<span class="sig-name descname"><span class="pre">proposed_by</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.proposed_by" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_canonical_update</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/models.html#ReasoningStep.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.models.ReasoningStep.save" title="Link to this definition"></a></dt>
+<dd><p>Save the current instance. Override this in a subclass if you want to
+control the saving process.</p>
+<p>The ‘force_insert’ and ‘force_update’ parameters can be used to insist
+that the “save” must be an SQL insert or update (or equivalent for
+non-SQL backends), respectively. Normally, they should not be set.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.selection_weight">
+<span class="sig-name descname"><span class="pre">selection_weight</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.selection_weight" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.sub_blueprint">
+<span class="sig-name descname"><span class="pre">sub_blueprint</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.sub_blueprint" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related object on the forward side of a many-to-one or
+one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.sub_blueprint_id">
+<span class="sig-name descname"><span class="pre">sub_blueprint_id</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.sub_blueprint_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.success_sources">
+<span class="sig-name descname"><span class="pre">success_sources</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.success_sources" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related objects manager on the reverse side of a
+many-to-one relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
+<p>Most of the implementation is delegated to a dynamically defined manager
+class built by <code class="docutils literal notranslate"><span class="pre">create_reverse_many_to_one_manager()</span></code> defined below.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.system_prompt">
+<span class="sig-name descname"><span class="pre">system_prompt</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.system_prompt" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.variant_intent">
+<span class="sig-name descname"><span class="pre">variant_intent</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.variant_intent" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStep.variants">
+<span class="sig-name descname"><span class="pre">variants</span></span><a class="headerlink" href="#metacognition.models.ReasoningStep.variants" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related objects manager on the reverse side of a
+many-to-one relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
+<p>Most of the implementation is delegated to a dynamically defined manager
+class built by <code class="docutils literal notranslate"><span class="pre">create_reverse_many_to_one_manager()</span></code> defined below.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStepManager">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">metacognition.models.</span></span><span class="sig-name descname"><span class="pre">ReasoningStepManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/models.html#ReasoningStepManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.models.ReasoningStepManager" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Manager</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStepManager.active_for_blueprint">
+<span class="sig-name descname"><span class="pre">active_for_blueprint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">blueprint</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/models.html#ReasoningStepManager.active_for_blueprint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.models.ReasoningStepManager.active_for_blueprint" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStepManager.get_queryset">
+<span class="sig-name descname"><span class="pre">get_queryset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/models.html#ReasoningStepManager.get_queryset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.models.ReasoningStepManager.get_queryset" title="Link to this definition"></a></dt>
+<dd><p>Return a new QuerySet object. Subclasses can override this method to
+customize the behavior of the Manager.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStepQuerySet">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">metacognition.models.</span></span><span class="sig-name descname"><span class="pre">ReasoningStepQuerySet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">using</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hints</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/models.html#ReasoningStepQuerySet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.models.ReasoningStepQuerySet" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QuerySet</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="metacognition.models.ReasoningStepQuerySet.active_for_blueprint">
+<span class="sig-name descname"><span class="pre">active_for_blueprint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">blueprint</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/metacognition/models.html#ReasoningStepQuerySet.active_for_blueprint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.models.ReasoningStepQuerySet.active_for_blueprint" title="Link to this definition"></a></dt>
+<dd><p>Returns active steps for a blueprint, grouped by their canonical root lineage.
+Returns: {canonical_root_id: [active_variant, …]}</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="metacognition.models.ResponseSchema">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">metacognition.models.</span></span><span class="sig-name descname"><span class="pre">ResponseSchema</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/models.html#ResponseSchema"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.models.ResponseSchema" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
+<p>A reusable output schema for LLM generation.
+Can be either a dynamic JSON schema or a reference to a hardcoded Pydantic model.</p>
+<dl class="py exception">
+<dt class="sig sig-object py" id="metacognition.models.ResponseSchema.DoesNotExist">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DoesNotExist</span></span><a class="headerlink" href="#metacognition.models.ResponseSchema.DoesNotExist" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectDoesNotExist</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="metacognition.models.ResponseSchema.MultipleObjectsReturned">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MultipleObjectsReturned</span></span><a class="headerlink" href="#metacognition.models.ResponseSchema.MultipleObjectsReturned" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleObjectsReturned</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="metacognition.models.ResponseSchema.NotUpdated">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NotUpdated</span></span><a class="headerlink" href="#metacognition.models.ResponseSchema.NotUpdated" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectNotUpdated</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">DatabaseError</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ResponseSchema.SCHEMA_TYPES">
+<span class="sig-name descname"><span class="pre">SCHEMA_TYPES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[('json',</span> <span class="pre">'JSON</span> <span class="pre">Schema'),</span> <span class="pre">('pydantic',</span> <span class="pre">'Hardcoded</span> <span class="pre">Pydantic</span> <span class="pre">Model')]</span></em><a class="headerlink" href="#metacognition.models.ResponseSchema.SCHEMA_TYPES" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ResponseSchema.description">
+<span class="sig-name descname"><span class="pre">description</span></span><a class="headerlink" href="#metacognition.models.ResponseSchema.description" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="metacognition.models.ResponseSchema.get_pydantic_model_name_display">
+<span class="sig-name descname"><span class="pre">get_pydantic_model_name_display</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field=&lt;django.db.models.fields.CharField:</span> <span class="pre">pydantic_model_name&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#metacognition.models.ResponseSchema.get_pydantic_model_name_display" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="metacognition.models.ResponseSchema.get_schema_type_display">
+<span class="sig-name descname"><span class="pre">get_schema_type_display</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field=&lt;django.db.models.fields.CharField:</span> <span class="pre">schema_type&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#metacognition.models.ResponseSchema.get_schema_type_display" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ResponseSchema.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#metacognition.models.ResponseSchema.id" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ResponseSchema.json_schema">
+<span class="sig-name descname"><span class="pre">json_schema</span></span><a class="headerlink" href="#metacognition.models.ResponseSchema.json_schema" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ResponseSchema.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#metacognition.models.ResponseSchema.name" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ResponseSchema.objects">
+<span class="sig-name descname"><span class="pre">objects</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;django.db.models.manager.Manager</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#metacognition.models.ResponseSchema.objects" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ResponseSchema.pydantic_model_name">
+<span class="sig-name descname"><span class="pre">pydantic_model_name</span></span><a class="headerlink" href="#metacognition.models.ResponseSchema.pydantic_model_name" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ResponseSchema.reasoningstep_set">
+<span class="sig-name descname"><span class="pre">reasoningstep_set</span></span><a class="headerlink" href="#metacognition.models.ResponseSchema.reasoningstep_set" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related objects manager on the reverse side of a
+many-to-one relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
+<p>Most of the implementation is delegated to a dynamically defined manager
+class built by <code class="docutils literal notranslate"><span class="pre">create_reverse_many_to_one_manager()</span></code> defined below.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ResponseSchema.schema_type">
+<span class="sig-name descname"><span class="pre">schema_type</span></span><a class="headerlink" href="#metacognition.models.ResponseSchema.schema_type" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="metacognition.models.ToolDefinition">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">metacognition.models.</span></span><span class="sig-name descname"><span class="pre">ToolDefinition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/models.html#ToolDefinition"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.models.ToolDefinition" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
+<p>A tool that can be invoked by an agent node.</p>
+<dl class="py exception">
+<dt class="sig sig-object py" id="metacognition.models.ToolDefinition.DoesNotExist">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DoesNotExist</span></span><a class="headerlink" href="#metacognition.models.ToolDefinition.DoesNotExist" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectDoesNotExist</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="metacognition.models.ToolDefinition.MultipleObjectsReturned">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MultipleObjectsReturned</span></span><a class="headerlink" href="#metacognition.models.ToolDefinition.MultipleObjectsReturned" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleObjectsReturned</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="metacognition.models.ToolDefinition.NotUpdated">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NotUpdated</span></span><a class="headerlink" href="#metacognition.models.ToolDefinition.NotUpdated" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectNotUpdated</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">DatabaseError</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ToolDefinition.TOOL_TYPES">
+<span class="sig-name descname"><span class="pre">TOOL_TYPES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[('builtin',</span> <span class="pre">'Built-in</span> <span class="pre">Python</span> <span class="pre">Function'),</span> <span class="pre">('api',</span> <span class="pre">'HTTP</span> <span class="pre">API</span> <span class="pre">Call'),</span> <span class="pre">('blueprint',</span> <span class="pre">'Execute</span> <span class="pre">Sub-Blueprint'),</span> <span class="pre">('django_action',</span> <span class="pre">'Django</span> <span class="pre">ORM</span> <span class="pre">Action')]</span></em><a class="headerlink" href="#metacognition.models.ToolDefinition.TOOL_TYPES" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ToolDefinition.api_url">
+<span class="sig-name descname"><span class="pre">api_url</span></span><a class="headerlink" href="#metacognition.models.ToolDefinition.api_url" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ToolDefinition.created_at">
+<span class="sig-name descname"><span class="pre">created_at</span></span><a class="headerlink" href="#metacognition.models.ToolDefinition.created_at" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ToolDefinition.created_by">
+<span class="sig-name descname"><span class="pre">created_by</span></span><a class="headerlink" href="#metacognition.models.ToolDefinition.created_by" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related object on the forward side of a many-to-one or
+one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ToolDefinition.created_by_id">
+<span class="sig-name descname"><span class="pre">created_by_id</span></span><a class="headerlink" href="#metacognition.models.ToolDefinition.created_by_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ToolDefinition.description">
+<span class="sig-name descname"><span class="pre">description</span></span><a class="headerlink" href="#metacognition.models.ToolDefinition.description" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="metacognition.models.ToolDefinition.get_callable">
+<span class="sig-name descname"><span class="pre">get_callable</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/models.html#ToolDefinition.get_callable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.models.ToolDefinition.get_callable" title="Link to this definition"></a></dt>
+<dd><p>Resolves the Python function from the dotted path.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="metacognition.models.ToolDefinition.get_next_by_created_at">
+<span class="sig-name descname"><span class="pre">get_next_by_created_at</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field=&lt;django.db.models.fields.DateTimeField:</span> <span class="pre">created_at&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_next=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#metacognition.models.ToolDefinition.get_next_by_created_at" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="metacognition.models.ToolDefinition.get_previous_by_created_at">
+<span class="sig-name descname"><span class="pre">get_previous_by_created_at</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field=&lt;django.db.models.fields.DateTimeField:</span> <span class="pre">created_at&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_next=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#metacognition.models.ToolDefinition.get_previous_by_created_at" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="metacognition.models.ToolDefinition.get_tool_type_display">
+<span class="sig-name descname"><span class="pre">get_tool_type_display</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field=&lt;django.db.models.fields.CharField:</span> <span class="pre">tool_type&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#metacognition.models.ToolDefinition.get_tool_type_display" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ToolDefinition.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#metacognition.models.ToolDefinition.id" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ToolDefinition.input_schema">
+<span class="sig-name descname"><span class="pre">input_schema</span></span><a class="headerlink" href="#metacognition.models.ToolDefinition.input_schema" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ToolDefinition.is_active">
+<span class="sig-name descname"><span class="pre">is_active</span></span><a class="headerlink" href="#metacognition.models.ToolDefinition.is_active" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ToolDefinition.is_promoted">
+<span class="sig-name descname"><span class="pre">is_promoted</span></span><a class="headerlink" href="#metacognition.models.ToolDefinition.is_promoted" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ToolDefinition.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#metacognition.models.ToolDefinition.name" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ToolDefinition.objects">
+<span class="sig-name descname"><span class="pre">objects</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;django.db.models.manager.Manager</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#metacognition.models.ToolDefinition.objects" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ToolDefinition.output_schema">
+<span class="sig-name descname"><span class="pre">output_schema</span></span><a class="headerlink" href="#metacognition.models.ToolDefinition.output_schema" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ToolDefinition.python_path">
+<span class="sig-name descname"><span class="pre">python_path</span></span><a class="headerlink" href="#metacognition.models.ToolDefinition.python_path" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ToolDefinition.reasoning_steps">
+<span class="sig-name descname"><span class="pre">reasoning_steps</span></span><a class="headerlink" href="#metacognition.models.ToolDefinition.reasoning_steps" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related objects manager on the forward and reverse sides of
+a many-to-many relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Pizza</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">toppings</span> <span class="o">=</span> <span class="n">ManyToManyField</span><span class="p">(</span><span class="n">Topping</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;pizzas&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Pizza.toppings</span></code> and <code class="docutils literal notranslate"><span class="pre">Topping.pizzas</span></code> are <code class="docutils literal notranslate"><span class="pre">ManyToManyDescriptor</span></code>
+instances.</p>
+<p>Most of the implementation is delegated to a dynamically defined manager
+class built by <code class="docutils literal notranslate"><span class="pre">create_forward_many_to_many_manager()</span></code> defined below.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ToolDefinition.requires_approval">
+<span class="sig-name descname"><span class="pre">requires_approval</span></span><a class="headerlink" href="#metacognition.models.ToolDefinition.requires_approval" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ToolDefinition.sub_blueprint">
+<span class="sig-name descname"><span class="pre">sub_blueprint</span></span><a class="headerlink" href="#metacognition.models.ToolDefinition.sub_blueprint" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related object on the forward side of a many-to-one or
+one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ToolDefinition.sub_blueprint_id">
+<span class="sig-name descname"><span class="pre">sub_blueprint_id</span></span><a class="headerlink" href="#metacognition.models.ToolDefinition.sub_blueprint_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ToolDefinition.tool_type">
+<span class="sig-name descname"><span class="pre">tool_type</span></span><a class="headerlink" href="#metacognition.models.ToolDefinition.tool_type" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="metacognition.models.bypass_canonical_lock">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">metacognition.models.</span></span><span class="sig-name descname"><span class="pre">bypass_canonical_lock</span></span><a class="reference internal" href="_modules/metacognition/models.html#bypass_canonical_lock"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.models.bypass_canonical_lock" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Context manager to bypass the copy-on-write lock during seed.py operations.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="metacognition.models.get_schema_choices">
+<span class="sig-prename descclassname"><span class="pre">metacognition.models.</span></span><span class="sig-name descname"><span class="pre">get_schema_choices</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/models.html#get_schema_choices"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.models.get_schema_choices" title="Link to this definition"></a></dt>
+<dd><p>Returns a dynamically generated list of choices for the Django admin.
+Using a callable prevents Django from creating new migration files
+every time a schema is added to OUTPUT_TYPES.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="metacognition.models.is_lock_bypassed">
+<span class="sig-prename descclassname"><span class="pre">metacognition.models.</span></span><span class="sig-name descname"><span class="pre">is_lock_bypassed</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/models.html#is_lock_bypassed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.models.is_lock_bypassed" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-metacognition.api">
+<span id="api-reference"></span><h2>API Reference<a class="headerlink" href="#module-metacognition.api" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="metacognition.api.ApproveToolIn">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">metacognition.api.</span></span><span class="sig-name descname"><span class="pre">ApproveToolIn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thread_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tool_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blueprint_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_prompt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/api.html#ApproveToolIn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.api.ApproveToolIn" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Schema</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.api.ApproveToolIn.blueprint_id">
+<span class="sig-name descname"><span class="pre">blueprint_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#metacognition.api.ApproveToolIn.blueprint_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.api.ApproveToolIn.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'from_attributes':</span> <span class="pre">True}</span></em><a class="headerlink" href="#metacognition.api.ApproveToolIn.model_config" title="Link to this definition"></a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.api.ApproveToolIn.run_id">
+<span class="sig-name descname"><span class="pre">run_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#metacognition.api.ApproveToolIn.run_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.api.ApproveToolIn.thread_id">
+<span class="sig-name descname"><span class="pre">thread_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#metacognition.api.ApproveToolIn.thread_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.api.ApproveToolIn.tool_name">
+<span class="sig-name descname"><span class="pre">tool_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#metacognition.api.ApproveToolIn.tool_name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.api.ApproveToolIn.user_prompt">
+<span class="sig-name descname"><span class="pre">user_prompt</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#metacognition.api.ApproveToolIn.user_prompt" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="metacognition.api.BlueprintDispatchIn">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">metacognition.api.</span></span><span class="sig-name descname"><span class="pre">BlueprintDispatchIn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blueprint_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_prompt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conversation_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/api.html#BlueprintDispatchIn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.api.BlueprintDispatchIn" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Schema</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.api.BlueprintDispatchIn.blueprint_id">
+<span class="sig-name descname"><span class="pre">blueprint_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#metacognition.api.BlueprintDispatchIn.blueprint_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.api.BlueprintDispatchIn.conversation_id">
+<span class="sig-name descname"><span class="pre">conversation_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#metacognition.api.BlueprintDispatchIn.conversation_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.api.BlueprintDispatchIn.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'from_attributes':</span> <span class="pre">True}</span></em><a class="headerlink" href="#metacognition.api.BlueprintDispatchIn.model_config" title="Link to this definition"></a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.api.BlueprintDispatchIn.user_prompt">
+<span class="sig-name descname"><span class="pre">user_prompt</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#metacognition.api.BlueprintDispatchIn.user_prompt" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="metacognition.api.BlueprintRunIn">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">metacognition.api.</span></span><span class="sig-name descname"><span class="pre">BlueprintRunIn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blueprint_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_prompt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conversation_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_log_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/api.html#BlueprintRunIn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.api.BlueprintRunIn" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Schema</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.api.BlueprintRunIn.blueprint_id">
+<span class="sig-name descname"><span class="pre">blueprint_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#metacognition.api.BlueprintRunIn.blueprint_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.api.BlueprintRunIn.conversation_id">
+<span class="sig-name descname"><span class="pre">conversation_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#metacognition.api.BlueprintRunIn.conversation_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.api.BlueprintRunIn.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'from_attributes':</span> <span class="pre">True}</span></em><a class="headerlink" href="#metacognition.api.BlueprintRunIn.model_config" title="Link to this definition"></a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.api.BlueprintRunIn.parent_log_id">
+<span class="sig-name descname"><span class="pre">parent_log_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#metacognition.api.BlueprintRunIn.parent_log_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.api.BlueprintRunIn.run_id">
+<span class="sig-name descname"><span class="pre">run_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#metacognition.api.BlueprintRunIn.run_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.api.BlueprintRunIn.user_prompt">
+<span class="sig-name descname"><span class="pre">user_prompt</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#metacognition.api.BlueprintRunIn.user_prompt" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="metacognition.api.CancelBlueprintIn">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">metacognition.api.</span></span><span class="sig-name descname"><span class="pre">CancelBlueprintIn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/api.html#CancelBlueprintIn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.api.CancelBlueprintIn" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Schema</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.api.CancelBlueprintIn.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'from_attributes':</span> <span class="pre">True}</span></em><a class="headerlink" href="#metacognition.api.CancelBlueprintIn.model_config" title="Link to this definition"></a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.api.CancelBlueprintIn.run_id">
+<span class="sig-name descname"><span class="pre">run_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#metacognition.api.CancelBlueprintIn.run_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="metacognition.api.approve_tool">
+<span class="sig-prename descclassname"><span class="pre">metacognition.api.</span></span><span class="sig-name descname"><span class="pre">approve_tool</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">payload</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#metacognition.api.ApproveToolIn" title="metacognition.api.ApproveToolIn"><span class="pre">ApproveToolIn</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/api.html#approve_tool"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.api.approve_tool" title="Link to this definition"></a></dt>
+<dd><p>Authorizes a pending tool execution and resumes the suspended LangGraph checkpoint.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="metacognition.api.cancel_blueprint">
+<span class="sig-prename descclassname"><span class="pre">metacognition.api.</span></span><span class="sig-name descname"><span class="pre">cancel_blueprint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">payload</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#metacognition.api.CancelBlueprintIn" title="metacognition.api.CancelBlueprintIn"><span class="pre">CancelBlueprintIn</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/api.html#cancel_blueprint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.api.cancel_blueprint" title="Link to this definition"></a></dt>
+<dd><p>Cancels an active blueprint run by setting the cancellation flag in Redis.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="metacognition.api.dispatch_blueprint">
+<span class="sig-prename descclassname"><span class="pre">metacognition.api.</span></span><span class="sig-name descname"><span class="pre">dispatch_blueprint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">payload</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#metacognition.api.BlueprintDispatchIn" title="metacognition.api.BlueprintDispatchIn"><span class="pre">BlueprintDispatchIn</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/api.html#dispatch_blueprint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.api.dispatch_blueprint" title="Link to this definition"></a></dt>
+<dd><p>Asynchronously dispatches a Cognitive Blueprint execution to Celery.
+Returns the run_id and stream URL for Datastar SSE consumption.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="metacognition.api.execute_blueprint">
+<span class="sig-prename descclassname"><span class="pre">metacognition.api.</span></span><span class="sig-name descname"><span class="pre">execute_blueprint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">payload</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#metacognition.api.BlueprintRunIn" title="metacognition.api.BlueprintRunIn"><span class="pre">BlueprintRunIn</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/api.html#execute_blueprint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.api.execute_blueprint" title="Link to this definition"></a></dt>
+<dd><p>Synchronously executes a multi-step Cognitive Blueprint via the backend executor.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="metacognition.api.stream_blueprint">
+<span class="sig-prename descclassname"><span class="pre">metacognition.api.</span></span><span class="sig-name descname"><span class="pre">stream_blueprint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/api.html#stream_blueprint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.api.stream_blueprint" title="Link to this definition"></a></dt>
+<dd><p>Server-Sent Events (SSE) streaming endpoint using the Datastar protocol.
+Streams DOM fragment patches and reactive signal updates in real-time.</p>
+</dd></dl>
+
+</section>
+<section id="module-metacognition.tasks">
+<span id="background-tasks"></span><h2>Background Tasks<a class="headerlink" href="#module-metacognition.tasks" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="metacognition.tasks.check_for_banned_concepts">
+<span class="sig-prename descclassname"><span class="pre">metacognition.tasks.</span></span><span class="sig-name descname"><span class="pre">check_for_banned_concepts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blueprint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#metacognition.models.CognitiveBlueprint" title="metacognition.models.CognitiveBlueprint"><span class="pre">CognitiveBlueprint</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">nlp_service</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">set</span></span></span><a class="reference internal" href="_modules/metacognition/tasks.html#check_for_banned_concepts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.tasks.check_for_banned_concepts" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="metacognition.tasks.get_schema_object">
+<span class="sig-prename descclassname"><span class="pre">metacognition.tasks.</span></span><span class="sig-name descname"><span class="pre">get_schema_object</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">schema_def</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/tasks.html#get_schema_object"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.tasks.get_schema_object" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="metacognition.tasks.parse_structured_response">
+<span class="sig-prename descclassname"><span class="pre">metacognition.tasks.</span></span><span class="sig-name descname"><span class="pre">parse_structured_response</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">raw_output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schema_def</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/metacognition/tasks.html#parse_structured_response"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.tasks.parse_structured_response" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="metacognition.tasks.run_blueprint">
+<span class="sig-prename descclassname"><span class="pre">metacognition.tasks.</span></span><span class="sig-name descname"><span class="pre">run_blueprint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">blueprint_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_prompt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conversation_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_log_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/tasks.html#run_blueprint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.tasks.run_blueprint" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="grips_app.html" class="btn btn-neutral float-left" title="Grips - wiki knowledge banks" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="work_organisation_app.html" class="btn btn-neutral float-right" title="Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Andrew Cruickshank.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -73,10 +73,15 @@ SWAGGER_CSS_URL="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.9.0/swagger-ui.c
 SWAGGER_CSS_FILE="swagger-ui.css"
 SWAGGER_CSS_HASH="c24ecffd63fc797d37bed1c68ea030479ad1c7a30638ffb6b5a2559ea98bc431"
 
-# Mermaid JS
-MERMAID_JS_URL="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"
-MERMAID_JS_FILE="mermaid.esm.min.mjs"
-MERMAID_JS_HASH="14e29bbe403640f0ac59417d4cedb77a4e83b8494dacb677db23c10b5b99fae7"
+# Mermaid JS (Standalone UMD bundle)
+MERMAID_JS_URL="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"
+MERMAID_JS_FILE="mermaid.min.js"
+MERMAID_JS_HASH="8d607d7ef1d077a8aa202e18e62212bfa992c68bfeabc5cf45d51a128fe6675d"
+
+# Datastar JS (Reactive SSE client)
+DATASTAR_JS_URL="https://cdn.jsdelivr.net/gh/starfederation/datastar@1.0.0-beta.9/bundles/datastar.js"
+DATASTAR_JS_FILE="datastar.js"
+DATASTAR_JS_HASH="11d9e34fecd2ca69b9faf9096bbd33feea2c79a732372337f34950a617538768"
 
 # We override RESOURCES_DIR temporarily for the download_and_verify function
 ORIGINAL_RESOURCES_DIR="$RESOURCES_DIR"
@@ -86,6 +91,7 @@ download_and_verify "$HTMX_URL" "$HTMX_FILE" "$HTMX_HASH"
 download_and_verify "$SWAGGER_JS_URL" "$SWAGGER_JS_FILE" "$SWAGGER_JS_HASH"
 download_and_verify "$SWAGGER_CSS_URL" "$SWAGGER_CSS_FILE" "$SWAGGER_CSS_HASH"
 download_and_verify "$MERMAID_JS_URL" "$MERMAID_JS_FILE" "$MERMAID_JS_HASH"
+download_and_verify "$DATASTAR_JS_URL" "$DATASTAR_JS_FILE" "$DATASTAR_JS_HASH"
 
 RESOURCES_DIR="$ORIGINAL_RESOURCES_DIR"
 

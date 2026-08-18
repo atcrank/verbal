@@ -81,9 +81,9 @@
 
 </div>
 
-<!-- Load Mermaid.js from CDN -->
-<script type="module">
-    import mermaid from "{% static 'vendor/mermaid.esm.min.mjs' %}";
+<!-- Load Mermaid.js from vendored assets -->
+<script src="{% static 'vendor/mermaid.min.js' %}"></script>
+<script>
     mermaid.initialize({ startOnLoad: true, theme: 'default' });
 </script>
 

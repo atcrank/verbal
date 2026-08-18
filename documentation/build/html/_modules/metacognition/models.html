@@ -1,0 +1,507 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>metacognition.models &mdash; Verbal 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Verbal
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../llm_api_app.html">LLM API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../background_resources_app.html">Background Resources - context documents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grips_app.html">Grips - wiki knowledge banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_app.html">Demo UI</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../using_ollama.html">Ollama as Local AI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tests.html">Testing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Verbal</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">metacognition.models</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for metacognition.models</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="n">_thread_locals</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">local</span><span class="p">()</span>
+
+<div class="viewcode-block" id="bypass_canonical_lock">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.models.bypass_canonical_lock">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">bypass_canonical_lock</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Context manager to bypass the copy-on-write lock during seed.py operations.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">_thread_locals</span><span class="o">.</span><span class="n">bypass</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">):</span>
+        <span class="n">_thread_locals</span><span class="o">.</span><span class="n">bypass</span> <span class="o">=</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="is_lock_bypassed">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.models.is_lock_bypassed">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">is_lock_bypassed</span><span class="p">():</span>
+    <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">_thread_locals</span><span class="p">,</span> <span class="s1">&#39;bypass&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span></div>
+
+
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.db</span><span class="w"> </span><span class="kn">import</span> <span class="n">models</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">OUTPUT_TYPES</span>  <span class="k">as</span> <span class="n">LLM_OUTPUT_TYPES</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">background_resources.rag_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">OUTPUT_TYPES</span> <span class="k">as</span> <span class="n">RAG_OUTPUT_TYPES</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.actions</span><span class="w"> </span><span class="kn">import</span> <span class="n">OUTPUT_TYPES</span> <span class="k">as</span> <span class="n">ACTION_OUTPUT_TYPES</span>
+
+<span class="n">OUTPUT_TYPES</span> <span class="o">=</span> <span class="n">LLM_OUTPUT_TYPES</span> <span class="o">|</span> <span class="n">RAG_OUTPUT_TYPES</span> <span class="o">|</span> <span class="n">ACTION_OUTPUT_TYPES</span>
+
+<div class="viewcode-block" id="get_schema_choices">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.models.get_schema_choices">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_schema_choices</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns a dynamically generated list of choices for the Django admin.</span>
+<span class="sd">    Using a callable prevents Django from creating new migration files</span>
+<span class="sd">    every time a schema is added to OUTPUT_TYPES.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">choices</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">OUTPUT_TYPES</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="c1"># Safely extract field names handling both Pydantic v1 and v2/Ninja</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s1">&#39;model_fields&#39;</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s1">&#39;__fields__&#39;</span><span class="p">,</span> <span class="p">{}))</span>
+        <span class="n">field_names</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="n">display_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">field_names</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="c1"># Truncate if there are tons of fields so the dropdown isn&#39;t massive</span>
+        <span class="n">choices</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">key</span><span class="p">,</span> <span class="n">display_name</span><span class="p">[:</span><span class="mi">97</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;...&quot;</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">display_name</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">100</span> <span class="k">else</span> <span class="n">display_name</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">choices</span></div>
+
+<span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;Schema_choices&#39;</span><span class="p">,</span> <span class="n">get_schema_choices</span><span class="p">()]]))</span>
+
+<div class="viewcode-block" id="ModerationList">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.models.ModerationList">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ModerationList</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A reusable set of banned concepts/lemmas to be applied across blueprints.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">)</span>
+    <span class="n">concepts</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Comma-separated concepts (lemmas). E.g., &#39;arson, bomb, explosive&#39;&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span></div>
+
+
+<div class="viewcode-block" id="ResponseSchema">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.models.ResponseSchema">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ResponseSchema</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A reusable output schema for LLM generation. </span>
+<span class="sd">    Can be either a dynamic JSON schema or a reference to a hardcoded Pydantic model.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">)</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    
+    <span class="n">SCHEMA_TYPES</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="s1">&#39;JSON Schema&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;pydantic&#39;</span><span class="p">,</span> <span class="s1">&#39;Hardcoded Pydantic Model&#39;</span><span class="p">),</span>
+    <span class="p">]</span>
+    <span class="n">schema_type</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">choices</span><span class="o">=</span><span class="n">SCHEMA_TYPES</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">)</span>
+    
+    <span class="n">json_schema</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">(</span>
+        <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> 
+        <span class="n">help_text</span><span class="o">=</span><span class="s1">&#39;Enter valid JSON Schema. Example for a simple string wrapper:</span><span class="se">\n</span><span class="s1">{</span><span class="se">\n</span><span class="s1">  &quot;type&quot;: &quot;object&quot;,</span><span class="se">\n</span><span class="s1">  &quot;properties&quot;: {</span><span class="se">\n</span><span class="s1">    &quot;result&quot;: {&quot;type&quot;: &quot;string&quot;}</span><span class="se">\n</span><span class="s1">  },</span><span class="se">\n</span><span class="s1">  &quot;required&quot;: [&quot;result&quot;]</span><span class="se">\n</span><span class="s1">}&#39;</span>
+    <span class="p">)</span>
+    
+    <span class="n">pydantic_model_name</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span>
+        <span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">choices</span><span class="o">=</span><span class="n">get_schema_choices</span><span class="p">,</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Name of a registered model (e.g. &#39;Factor&#39;). Sourced from registered OUTPUT_TYPES.&quot;</span>
+    <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span></div>
+
+
+<div class="viewcode-block" id="CognitiveBlueprint">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.models.CognitiveBlueprint">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CognitiveBlueprint</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A container for a specific cognitive strategy or thinking pattern.</span>
+<span class="sd">    (e.g., &#39;Causal Experiment Designer&#39;, &#39;Devil&#39;s Advocate Critique&#39;)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">)</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Describes when the Router should select this blueprint.&quot;</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;self&#39;</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">SET_NULL</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> 
+                                <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;descendants&#39;</span><span class="p">,</span>
+                                <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;The Blueprint this was cloned from, for lineage tracking.&quot;</span><span class="p">)</span>
+    <span class="n">moderation_lists</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ManyToManyField</span><span class="p">(</span><span class="n">ModerationList</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Reusable moderation rules applied to all steps in this blueprint.&quot;</span><span class="p">)</span>
+    <span class="n">is_autonomous</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;If True, self-routing on failure (route_to=SELF) is handled automatically rather than pausing for user input.&quot;</span><span class="p">)</span>
+    <span class="n">is_canonical</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;If True, this object is maintained by seed.py and cannot be mutated.&quot;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">family_success_probability</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.compiler</span><span class="w"> </span><span class="kn">import</span> <span class="n">resolve_active_steps</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">resolved</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">resolve_active_steps</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">resolved</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">scores</span> <span class="o">=</span> <span class="p">[</span><span class="n">step</span><span class="o">.</span><span class="n">performance_score</span> <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="n">resolved</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+        <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">s</span> <span class="o">==</span> <span class="mf">0.0</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">scores</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">prod</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">scores</span><span class="p">:</span>
+            <span class="n">prod</span> <span class="o">*=</span> <span class="n">s</span>
+        <span class="k">return</span> <span class="n">prod</span>
+
+<div class="viewcode-block" id="CognitiveBlueprint.save">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.models.CognitiveBlueprint.save">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">force_canonical_update</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pk</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">force_canonical_update</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_lock_bypassed</span><span class="p">():</span>
+            <span class="c1"># Check the original DB state to see if it was ALREADY canonical</span>
+            <span class="n">orig</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">pk</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pk</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">orig</span> <span class="ow">and</span> <span class="n">orig</span><span class="o">.</span><span class="n">is_canonical</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot mutate a canonical CognitiveBlueprint. Clone it instead.&quot;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span></div>
+
+
+
+<div class="viewcode-block" id="ReasoningStepQuerySet">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.models.ReasoningStepQuerySet">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ReasoningStepQuerySet</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">QuerySet</span><span class="p">):</span>
+<div class="viewcode-block" id="ReasoningStepQuerySet.active_for_blueprint">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.models.ReasoningStepQuerySet.active_for_blueprint">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">active_for_blueprint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blueprint</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns active steps for a blueprint, grouped by their canonical root lineage.</span>
+<span class="sd">        Returns: {canonical_root_id: [active_variant, ...]}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">all_steps</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">blueprint</span><span class="o">.</span><span class="n">steps</span><span class="o">.</span><span class="n">all</span><span class="p">())</span>
+        <span class="n">step_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">s</span><span class="o">.</span><span class="n">id</span><span class="p">:</span> <span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">all_steps</span><span class="p">}</span>
+        
+        <span class="k">def</span><span class="w"> </span><span class="nf">get_root</span><span class="p">(</span><span class="n">step</span><span class="p">):</span>
+            <span class="n">curr</span> <span class="o">=</span> <span class="n">step</span>
+            <span class="n">seen</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+            <span class="k">while</span> <span class="n">curr</span><span class="o">.</span><span class="n">parent_step_id</span> <span class="ow">and</span> <span class="n">curr</span><span class="o">.</span><span class="n">parent_step_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen</span><span class="p">:</span>
+                <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">curr</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">curr</span><span class="o">.</span><span class="n">parent_step_id</span> <span class="ow">in</span> <span class="n">step_map</span><span class="p">:</span>
+                    <span class="n">curr</span> <span class="o">=</span> <span class="n">step_map</span><span class="p">[</span><span class="n">curr</span><span class="o">.</span><span class="n">parent_step_id</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">curr</span> <span class="o">=</span> <span class="n">curr</span><span class="o">.</span><span class="n">parent_step</span>
+            <span class="k">return</span> <span class="n">curr</span>
+
+        <span class="n">groups</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="n">all_steps</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">step</span><span class="o">.</span><span class="n">is_active</span><span class="p">:</span>
+                <span class="n">root</span> <span class="o">=</span> <span class="n">get_root</span><span class="p">(</span><span class="n">step</span><span class="p">)</span>
+                <span class="n">groups</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">root</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">step</span><span class="p">)</span>
+                
+        <span class="k">return</span> <span class="n">groups</span></div>
+</div>
+
+
+<div class="viewcode-block" id="ReasoningStepManager">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.models.ReasoningStepManager">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ReasoningStepManager</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Manager</span><span class="p">):</span>
+<div class="viewcode-block" id="ReasoningStepManager.get_queryset">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.models.ReasoningStepManager.get_queryset">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_queryset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">ReasoningStepQuerySet</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">using</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_db</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ReasoningStepManager.active_for_blueprint">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.models.ReasoningStepManager.active_for_blueprint">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">active_for_blueprint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blueprint</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_queryset</span><span class="p">()</span><span class="o">.</span><span class="n">active_for_blueprint</span><span class="p">(</span><span class="n">blueprint</span><span class="p">)</span></div>
+</div>
+
+
+<div class="viewcode-block" id="ReasoningStep">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.models.ReasoningStep">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ReasoningStep</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A single node in the cognitive state machine graph.</span>
+<span class="sd">    Represents one interaction or execution step with the LLM or sub-blueprint.</span>
+
+<span class="sd">    Graph Topology &amp; Routing Notes:</span>
+<span class="sd">    - Directed Graph (Not Acyclic): The graph formed by ReasoningStep nodes is a directed graph</span>
+<span class="sd">      and is NOT strictly acyclic. Edges (on_success_step and on_failure_step) can route</span>
+<span class="sd">      backwards to any previously visited step, form loops, or self-loop (route_to=SELF).</span>
+<span class="sd">    - Unconditional Continuation: Routing both on_success_step and on_failure_step to the same</span>
+<span class="sd">      target step allows unconditional step progress (executing the next step regardless of outcome).</span>
+<span class="sd">    - Variant Evolution Lineage: When generating new variants of a step, agents should inspect</span>
+<span class="sd">      the `parent` foreign key to trace prompt history and examine neighbor steps (preceding</span>
+<span class="sd">      and succeeding nodes) to preserve context continuity and prevent regressing to old wordings.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">blueprint</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">CognitiveBlueprint</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">CASCADE</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s2">&quot;steps&quot;</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;e.g., &#39;Draft Hypothesis&#39;, &#39;Critique Draft&#39;&quot;</span><span class="p">)</span>
+
+    <span class="n">is_start_node</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Check this if this is the first step in the blueprint.&quot;</span><span class="p">)</span>
+    
+    <span class="n">is_canonical</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;If True, this object is maintained by seed.py and cannot be mutated.&quot;</span><span class="p">)</span>
+    <span class="n">is_active</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Set to False to soft-delete a bad leaf node variant while retaining it for historical tracking.&quot;</span><span class="p">)</span>
+    <span class="n">lora_adapter</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;llm_api.LoRAAdapter&#39;</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">SET_NULL</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Optional specialized LoRA weights to load when running this specific step.&quot;</span><span class="p">)</span>
+
+    <span class="n">is_pending_review</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> 
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Set by NightManager when proposing a new variant for human review.&quot;</span><span class="p">)</span>
+    <span class="n">proposed_by</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">choices</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;system&#39;</span><span class="p">,</span> <span class="s1">&#39;System&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="s1">&#39;User&#39;</span><span class="p">)],</span> 
+        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;user&#39;</span><span class="p">)</span>
+    <span class="n">proposed_at</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">objects</span> <span class="o">=</span> <span class="n">ReasoningStepManager</span><span class="p">()</span>
+
+    <span class="c1"># The core instruction for this specific step</span>
+    <span class="n">system_prompt</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;The prompt driving this step. For a pre-written plan, instruct the LLM to output a specific sequence of tools in the ExecutionPlan.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># The Routing / Graph Edges</span>
+    <span class="n">on_success_step</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;self&#39;</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">SET_NULL</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                        <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;success_sources&#39;</span><span class="p">,</span>
+                                        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;The next step if this step completes successfully.&quot;</span><span class="p">)</span>
+    <span class="n">on_failure_step</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;self&#39;</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">SET_NULL</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                        <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;failure_sources&#39;</span><span class="p">,</span>
+                                        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;The step to route to if this step fails its evaluation criteria.&quot;</span><span class="p">)</span>
+                                        
+    <span class="n">sub_blueprint</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">CognitiveBlueprint</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">SET_NULL</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                      <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;invoked_by_steps&#39;</span><span class="p">,</span>
+                                      <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Optional: Execute another blueprint as a sub-routine before moving to the next step.&quot;</span><span class="p">)</span>
+    <span class="n">parallel_steps</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ManyToManyField</span><span class="p">(</span><span class="s1">&#39;self&#39;</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">symmetrical</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                            <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;parallel_sources&#39;</span><span class="p">,</span>
+                                            <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Optional: Execute these steps in parallel (fan-out) upon success.&quot;</span><span class="p">)</span>
+    <span class="n">max_retries</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Maximum times this step can loop before forcing a failure.&quot;</span><span class="p">)</span>
+    
+    <span class="n">available_tools</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ManyToManyField</span><span class="p">(</span><span class="s1">&#39;ToolDefinition&#39;</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;reasoning_steps&#39;</span><span class="p">,</span>
+                                             <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Tools available to the LLM during this step.&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># Constraints &amp; Formatting</span>
+    
+    <span class="n">output_schema</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">ResponseSchema</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">SET_NULL</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Select a structured output format for this step.&quot;</span><span class="p">)</span>
+    <span class="n">max_new_tokens</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Maximum tokens to generate for this step. Increase for long-form analysis, decrease for short routing decisions.&quot;</span><span class="p">)</span>
+    <span class="n">include_state_tree</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;If True, formats and injects Conversation.state_tree into the working prompt.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Quality Control</span>
+    <span class="n">evaluation_criteria</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                           <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Optional: What defines a &#39;success&#39; for this step? Used by the LLM-as-a-judge to decide whether to follow the success or failure edge.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Speciation &amp; Evolutionary Tracking</span>
+    <span class="n">parent_step</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;self&#39;</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">SET_NULL</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;variants&#39;</span><span class="p">,</span>
+                                    <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;The ancestral ReasoningStep this variant evolved from.&quot;</span><span class="p">)</span>
+    <span class="n">variant_intent</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                      <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;What this speciated variant is optimized for (e.g. &#39;Spatial Execution&#39;).&quot;</span><span class="p">)</span>
+    <span class="n">performance_score</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">FloatField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Calculated periodically by the NightManager (e.g. success rate discount).&quot;</span><span class="p">)</span>
+    <span class="n">selection_weight</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">FloatField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Weight used for A/B testing or RL multi-armed bandit variant selection.&quot;</span><span class="p">)</span>
+
+    <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">ordering</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span>  <span class="c1"># Basic ordering, though the actual execution order is defined by the graph edges</span>
+
+<div class="viewcode-block" id="ReasoningStep.save">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.models.ReasoningStep.save">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">force_canonical_update</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1"># Automatically inherit canonical status from parent blueprint on creation</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">pk</span> <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;blueprint&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">blueprint</span><span class="o">.</span><span class="n">is_canonical</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">is_canonical</span> <span class="o">=</span> <span class="kc">True</span>
+            
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pk</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">force_canonical_update</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_lock_bypassed</span><span class="p">():</span>
+            <span class="n">orig</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">pk</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pk</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">orig</span> <span class="ow">and</span> <span class="n">orig</span><span class="o">.</span><span class="n">is_canonical</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot mutate a canonical ReasoningStep. Call .create_variant() instead.&quot;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ReasoningStep.create_variant">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.models.ReasoningStep.create_variant">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_variant</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variant_intent</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">overrides</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Duplicates this step as a child variant, setting parent_step=self.&quot;&quot;&quot;</span>
+        <span class="n">new_step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">pk</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pk</span><span class="p">)</span>
+        <span class="n">new_step</span><span class="o">.</span><span class="n">pk</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">new_step</span><span class="o">.</span><span class="n">parent_step</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="n">new_step</span><span class="o">.</span><span class="n">is_canonical</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">new_step</span><span class="o">.</span><span class="n">variant_intent</span> <span class="o">=</span> <span class="n">variant_intent</span>
+        <span class="n">new_step</span><span class="o">.</span><span class="n">performance_score</span> <span class="o">=</span> <span class="mf">0.0</span>
+        
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">overrides</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">new_step</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+            
+        <span class="n">new_step</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+        
+        <span class="c1"># Copy M2M relationships (available_tools)</span>
+        <span class="n">new_step</span><span class="o">.</span><span class="n">available_tools</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">available_tools</span><span class="o">.</span><span class="n">all</span><span class="p">())</span>
+        
+        <span class="c1"># Parallel steps M2M</span>
+        <span class="n">new_step</span><span class="o">.</span><span class="n">parallel_steps</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parallel_steps</span><span class="o">.</span><span class="n">all</span><span class="p">())</span>
+        
+        <span class="k">return</span> <span class="n">new_step</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">blueprint</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.contrib.auth.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">User</span>
+
+<div class="viewcode-block" id="ToolDefinition">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.models.ToolDefinition">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ToolDefinition</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A tool that can be invoked by an agent node.&quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># e.g. &quot;search_knowledge&quot;</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">()</span>  <span class="c1"># Used in LLM tool descriptions</span>
+    
+    <span class="n">TOOL_TYPES</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="s1">&#39;builtin&#39;</span><span class="p">,</span> <span class="s1">&#39;Built-in Python Function&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;api&#39;</span><span class="p">,</span> <span class="s1">&#39;HTTP API Call&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;blueprint&#39;</span><span class="p">,</span> <span class="s1">&#39;Execute Sub-Blueprint&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;django_action&#39;</span><span class="p">,</span> <span class="s1">&#39;Django ORM Action&#39;</span><span class="p">),</span>
+    <span class="p">]</span>
+    <span class="n">tool_type</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">choices</span><span class="o">=</span><span class="n">TOOL_TYPES</span><span class="p">)</span>
+    
+    <span class="c1"># For &#39;builtin&#39;: dotted path to the Python function</span>
+    <span class="c1"># e.g. &quot;metacognition.actions.handle_research&quot;</span>
+    <span class="n">python_path</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    
+    <span class="c1"># For &#39;api&#39;: the URL template</span>
+    <span class="n">api_url</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">URLField</span><span class="p">(</span><span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    
+    <span class="c1"># For &#39;blueprint&#39;: FK to the sub-blueprint</span>
+    <span class="n">sub_blueprint</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;CognitiveBlueprint&#39;</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">SET_NULL</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s2">&quot;tool_definitions&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># The Pydantic schema for the tool&#39;s input parameters (stored as JSON Schema)</span>
+    <span class="n">input_schema</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;JSON Schema for tool parameters&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># The Pydantic schema for the tool&#39;s output (stored as JSON Schema)</span>
+    <span class="n">output_schema</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;JSON Schema for tool return value&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># Governance</span>
+    <span class="n">is_active</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">requires_approval</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;If true, triggers human-in-the-loop before execution&quot;</span><span class="p">)</span>
+    <span class="n">is_promoted</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;If true, this tool has been promoted to production and is fully available.&quot;</span><span class="p">)</span>
+    <span class="n">created_by</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">User</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">SET_NULL</span><span class="p">)</span>
+    <span class="n">created_at</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="n">auto_now_add</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">get_tool_type_display</span><span class="p">()</span><span class="si">}</span><span class="s2">)&quot;</span>
+    
+<div class="viewcode-block" id="ToolDefinition.get_callable">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.models.ToolDefinition.get_callable">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_callable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Resolves the Python function from the dotted path.&quot;&quot;&quot;</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">importlib</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tool_type</span> <span class="o">==</span> <span class="s1">&#39;builtin&#39;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">python_path</span><span class="p">:</span>
+            <span class="n">module_path</span><span class="p">,</span> <span class="n">func_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">python_path</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">module</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="n">module_path</span><span class="p">)</span>
+            <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">func_name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+</div>
+
+
+<div class="viewcode-block" id="AgentCheckpoint">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.models.AgentCheckpoint">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AgentCheckpoint</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Django implementation of LangGraph BaseCheckpointSaver storage.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">thread_id</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">db_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">checkpoint_id</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">db_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">parent_id</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    
+    <span class="c1"># Stored as serialized JSON representations</span>
+    <span class="n">state_json</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">JSONField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">metadata_json</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">JSONField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    
+    <span class="n">created_at</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="n">auto_now_add</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">unique_together</span> <span class="o">=</span> <span class="p">((</span><span class="s1">&#39;thread_id&#39;</span><span class="p">,</span> <span class="s1">&#39;checkpoint_id&#39;</span><span class="p">),)</span>
+        <span class="n">ordering</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;-created_at&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Checkpoint </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_id</span><span class="si">}</span><span class="s2"> for Thread </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">thread_id</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Andrew Cruickshank.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

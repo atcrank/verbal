@@ -1,0 +1,146 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Using doctest &mdash; Verbal 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Verbal
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../llm_api_app.html">LLM API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../background_resources_app.html">Background Resources - context documents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../grips_app.html">Grips - wiki knowledge banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo_ui_app.html">Demo UI</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../using_ollama.html">Ollama as Local AI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tests.html">Testing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Verbal</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Using doctest</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/metacognition_trials/using_doctest.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="using-doctest">
+<h1>Using doctest<a class="headerlink" href="#using-doctest" title="Link to this heading"></a></h1>
+<p>To use these testable documents, invoke:</p>
+<p>&gt; pytest metacognition/metacognition_trials/</p>
+</section>
+<section id="notes-on-use-of-contextlib">
+<h1>Notes on use of “contextlib”<a class="headerlink" href="#notes-on-use-of-contextlib" title="Link to this heading"></a></h1>
+<p>Doctests work by looking at the line immediately following a &gt;&gt;&gt; command. If there is no text there, doctest expects that absolutely nothing will be printed to the console during the execution of that command.
+Because our run_blueprint function and the underlying AI/RAG services are intentionally heavily instrumented with print() statements (e.g., Initializing RAG Service…, 🪝 Received Execution Plan…), doctest sees all this terminal output, compares it to the “Expected nothing” implicitly defined in your .rst file, and flags it as a failure!</p>
+<p>We don’t want to remove our print statements because they are incredibly useful for debugging and tracking the agent’s thought process in the server logs.
+Instead, we can simply wrap the run_blueprint call in our .rst tutorials with Python’s built-in contextlib.redirect_stdout. This intercepts all the print statements and throws them into a temporary memory buffer so doctest doesn’t see them, allowing the test to smoothly proceed to the assertion!</p>
+</section>
+<section id="database-fixtures-and-seeders">
+<h1>Database Fixtures and Seeders<a class="headerlink" href="#database-fixtures-and-seeders" title="Link to this heading"></a></h1>
+<p>Because <cite>pytest</cite> strictly isolates its test database, none of your development blueprints exist by default.
+We seed the <cite>ResearchEvaluation</cite> and <cite>StrategicPlan</cite> blueprints dynamically inside the <cite>django_db_setup</cite> fixture in <cite>conftest.py</cite>. We also inject necessary domain concepts (like PyCID for Grips). If you write a new trial that requires a new custom blueprint, define it in <cite>conftest.py</cite>.</p>
+</section>
+<section id="report-card-assertions">
+<h1>Report Card Assertions<a class="headerlink" href="#report-card-assertions" title="Link to this heading"></a></h1>
+<p>Given that some models (especially local ones like Gemm4-2B-it) might struggle with advanced cognitive reasoning, our doctests use a “Report Card” style of assertion. Instead of strict boolean matches for “ACCEPT”, we simply assert whether the model made a complete attempt by returning a structured JSON response.</p>
+<dl>
+<dt>Example assertion::</dt><dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">final_str</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;final_response&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">try</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">resp</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">final_str</span><span class="p">)</span> <span class="k">if</span> <span class="s2">&quot;{&quot;</span> <span class="ow">in</span> <span class="n">final_str</span> <span class="k">else</span> <span class="p">{}</span>
+<span class="gp">... </span><span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="k">pass</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;- complete attempt: </span><span class="si">{</span><span class="mi">1</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">final_str</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="mi">0</span><span class="si">}</span><span class="s2">/1&quot;</span><span class="p">)</span>
+<span class="go">- complete attempt: 1/1</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Andrew Cruickshank.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

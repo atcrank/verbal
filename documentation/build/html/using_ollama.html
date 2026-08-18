@@ -1,0 +1,196 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ollama as Local AI &mdash; Verbal 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=2709fde1"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Testing" href="tests.html" />
+    <link rel="prev" title="Demo UI" href="demo_ui_app.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Verbal
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="llm_api_app.html">LLM API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="background_resources_app.html">Background Resources - context documents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grips_app.html">Grips - wiki knowledge banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo_ui_app.html">Demo UI</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Ollama as Local AI</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#step-1-start-ollama-and-pull-a-model">Step 1: Start Ollama and Pull a Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#step-2-configure-the-external-model-in-django-admin">Step 2: Configure the External Model in Django Admin</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#step-3-create-a-dummy-api-key">Step 3: Create a Dummy API Key</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#step-4-route-your-user-s-traffic">Step 4: Route Your User’s Traffic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#step-5-test-it">Step 5: Test It!</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#a-quick-note-on-structured-json-outlines-vs-ollama">A Quick Note on Structured JSON (Outlines vs Ollama)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tests.html">Testing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Verbal</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Ollama as Local AI</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/using_ollama.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="ollama-as-local-ai">
+<h1>Ollama as Local AI<a class="headerlink" href="#ollama-as-local-ai" title="Link to this heading"></a></h1>
+<p>Using a local Ollama service is an excellent way to test your external proxy functionality without spending money on OpenAI or Anthropic credits.</p>
+<p>Because Ollama natively provides an OpenAI-compatible API layer out of the box, your Django application won’t know the difference between a local Ollama container and the actual OpenAI servers. It will successfully test your HTTP routing, your payload formatting (including the strict JSON schemas), and your response parsing.</p>
+<p>Here is exactly how to set it up and test it through your new Django Admin architecture.</p>
+<section id="step-1-start-ollama-and-pull-a-model">
+<h2>Step 1: Start Ollama and Pull a Model<a class="headerlink" href="#step-1-start-ollama-and-pull-a-model" title="Link to this heading"></a></h2>
+<p>If you have Ollama installed natively or running via the Docker container discussed earlier, make sure it is running. Then, pull a lightweight model to test with. (Since you like Qwen, let’s use that):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ollama<span class="w"> </span>run<span class="w"> </span>qwen2.5:3b
+</pre></div>
+</div>
+<p>You can press <code class="docutils literal notranslate"><span class="pre">Ctrl+D</span></code> to exit the chat prompt once it downloads and verifies; the Ollama server runs in the background.</p>
+</section>
+<section id="step-2-configure-the-external-model-in-django-admin">
+<h2>Step 2: Configure the External Model in Django Admin<a class="headerlink" href="#step-2-configure-the-external-model-in-django-admin" title="Link to this heading"></a></h2>
+<p>Open your Django Admin (<code class="docutils literal notranslate"><span class="pre">http://localhost:8000/admin/</span></code>) and navigate to the <strong>External AI Models</strong> table. Add a new record:</p>
+<ul class="simple">
+<li><p><strong>Name:</strong> Local Ollama Qwen</p></li>
+<li><p><strong>Provider:</strong> openai (Crucial: This tells your app to use the standard OpenAI payload, which Ollama expects).</p></li>
+<li><p><strong>Api url:</strong> <code class="docutils literal notranslate"><span class="pre">http://127.0.0.1:11434/v1/chat/completions</span></code> (This is Ollama’s default OpenAI-compatible endpoint).</p></li>
+<li><p><strong>Api model name:</strong> qwen2.5:3b (This must match the Ollama model tag exactly).</p></li>
+<li><p><strong>Context window:</strong> 8192 (or whatever you prefer).</p></li>
+</ul>
+</section>
+<section id="step-3-create-a-dummy-api-key">
+<h2>Step 3: Create a Dummy API Key<a class="headerlink" href="#step-3-create-a-dummy-api-key" title="Link to this heading"></a></h2>
+<p>Even though Ollama doesn’t strictly check for an API key, standard API clients often expect the header to be present. Navigate to <strong>User API Keys</strong> and add one:</p>
+<ul class="simple">
+<li><p><strong>User:</strong> Select your admin user.</p></li>
+<li><p><strong>Provider:</strong> openai (Must match the provider name you used above).</p></li>
+<li><p><strong>Api key:</strong> ollama-dummy-key</p></li>
+</ul>
+</section>
+<section id="step-4-route-your-user-s-traffic">
+<h2>Step 4: Route Your User’s Traffic<a class="headerlink" href="#step-4-route-your-user-s-traffic" title="Link to this heading"></a></h2>
+<p>Navigate to <strong>User Active Models</strong> (your routing preferences table) and create/update the record for your user:</p>
+<ul class="simple">
+<li><p><strong>User:</strong> Your admin user.</p></li>
+<li><p><strong>Active external:</strong> Select the <em>Local Ollama Qwen</em> model you just created.</p></li>
+<li><p><strong>Use external:</strong> Check this box!</p></li>
+</ul>
+</section>
+<section id="step-5-test-it">
+<h2>Step 5: Test It!<a class="headerlink" href="#step-5-test-it" title="Link to this heading"></a></h2>
+<p>Now, trigger a generation. You can do this by:</p>
+<ol class="arabic simple">
+<li><p>Going to the Vector Index Explorer and generating a summary for a chunk.</p></li>
+<li><p>Going to the Regex preview tool and generating a candidate.</p></li>
+<li><p>Just chatting in your standard conversation interface.</p></li>
+</ol>
+<p><strong>How you’ll know it’s working:</strong> If you look at the terminal running your web or worker instance, you won’t see the standard HuggingFace/Outlines generation logs. Instead, you can look at your Ollama server logs. If you are running Ollama natively, you can open a terminal and run <code class="docutils literal notranslate"><span class="pre">ollama</span> <span class="pre">ps</span></code>. When you trigger a request from Django, you’ll see the <code class="docutils literal notranslate"><span class="pre">qwen2.5:3b</span></code> model spike in CPU/GPU usage as it processes the HTTP request from your proxy!</p>
+</section>
+<section id="a-quick-note-on-structured-json-outlines-vs-ollama">
+<h2>A Quick Note on Structured JSON (Outlines vs Ollama)<a class="headerlink" href="#a-quick-note-on-structured-json-outlines-vs-ollama" title="Link to this heading"></a></h2>
+<p>Your <code class="docutils literal notranslate"><span class="pre">ai_service.py</span></code> is formatting the structured output exactly to the bleeding-edge OpenAI standard:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="nt">&quot;response_format&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;json_schema&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;json_schema&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;json_schema&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;schema&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;schemaObject&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;schemaObject&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="nt">&quot;strict&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Ollama recently added support for this exact syntax (as of version 0.3.0+). If Ollama complains or ignores the schema and outputs raw markdown instead of strict JSON, just make sure you have updated your Ollama installation to the latest version.</p>
+</div>
+<p>Once this works with Ollama, switching to actual OpenAI or Anthropic (via an OpenAI bridge) is literally just swapping the URL to <code class="docutils literal notranslate"><span class="pre">https://api.openai.com/v1/chat/completions</span></code>, changing the model name to <code class="docutils literal notranslate"><span class="pre">gpt-4o-mini</span></code>, and dropping in a real API key!</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="demo_ui_app.html" class="btn btn-neutral float-left" title="Demo UI" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tests.html" class="btn btn-neutral float-right" title="Testing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Andrew Cruickshank.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

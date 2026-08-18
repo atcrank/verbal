@@ -1,0 +1,375 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>metacognition.api &mdash; Verbal 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Verbal
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../llm_api_app.html">LLM API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../background_resources_app.html">Background Resources - context documents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grips_app.html">Grips - wiki knowledge banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_app.html">Demo UI</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../using_ollama.html">Ollama as Local AI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tests.html">Testing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Verbal</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">metacognition.api</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for metacognition.api</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">typing</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">ninja</span><span class="w"> </span><span class="kn">import</span> <span class="n">Router</span><span class="p">,</span> <span class="n">Schema</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.http</span><span class="w"> </span><span class="kn">import</span> <span class="n">JsonResponse</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.views.decorators.csrf</span><span class="w"> </span><span class="kn">import</span> <span class="n">ensure_csrf_cookie</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">uuid</span><span class="w"> </span><span class="kn">import</span> <span class="n">uuid4</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.http</span><span class="w"> </span><span class="kn">import</span> <span class="n">JsonResponse</span><span class="p">,</span> <span class="n">StreamingHttpResponse</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.views.decorators.csrf</span><span class="w"> </span><span class="kn">import</span> <span class="n">ensure_csrf_cookie</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_blueprint</span><span class="p">,</span> <span class="n">task_run_blueprint_async</span><span class="p">,</span> <span class="n">task_resume_blueprint_async</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.events</span><span class="w"> </span><span class="kn">import</span> <span class="n">set_cancellation_flag</span><span class="p">,</span> <span class="n">subscribe_blueprint_events</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.datastar</span><span class="w"> </span><span class="kn">import</span> <span class="n">DatastarSSE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">PromptResponseLog</span><span class="p">,</span> <span class="n">Conversation</span>
+
+<span class="n">router</span> <span class="o">=</span> <span class="n">Router</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="BlueprintRunIn">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.api.BlueprintRunIn">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BlueprintRunIn</span><span class="p">(</span><span class="n">Schema</span><span class="p">):</span>
+    <span class="n">blueprint_id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">user_prompt</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">conversation_id</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">parent_log_id</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">run_id</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="BlueprintDispatchIn">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.api.BlueprintDispatchIn">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BlueprintDispatchIn</span><span class="p">(</span><span class="n">Schema</span><span class="p">):</span>
+    <span class="n">blueprint_id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">user_prompt</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">conversation_id</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="CancelBlueprintIn">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.api.CancelBlueprintIn">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CancelBlueprintIn</span><span class="p">(</span><span class="n">Schema</span><span class="p">):</span>
+    <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span></div>
+
+
+<div class="viewcode-block" id="ApproveToolIn">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.api.ApproveToolIn">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ApproveToolIn</span><span class="p">(</span><span class="n">Schema</span><span class="p">):</span>
+    <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">thread_id</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">tool_name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">blueprint_id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">user_prompt</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="execute_blueprint">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.api.execute_blueprint">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/execute_blueprint/&quot;</span><span class="p">)</span>
+<span class="nd">@ensure_csrf_cookie</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">execute_blueprint</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">BlueprintRunIn</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Synchronously executes a multi-step Cognitive Blueprint via the backend executor.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">user_id</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">auth</span><span class="p">,</span> <span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;auth&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">user_id</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;user&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">is_authenticated</span><span class="p">:</span>
+        <span class="n">user_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">id</span>
+
+    <span class="c1"># Rewind the physical Git workspace if branching from an earlier state</span>
+    <span class="k">if</span> <span class="n">payload</span><span class="o">.</span><span class="n">parent_log_id</span> <span class="ow">and</span> <span class="n">payload</span><span class="o">.</span><span class="n">conversation_id</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">parent_log</span> <span class="o">=</span> <span class="n">PromptResponseLog</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">parent_log_id</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">parent_log</span><span class="o">.</span><span class="n">git_commit_hash</span><span class="p">:</span>
+                <span class="n">conv</span> <span class="o">=</span> <span class="n">Conversation</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">conversation_id</span><span class="p">)</span>
+                <span class="n">workspace_dir</span> <span class="o">=</span> <span class="n">conv</span><span class="o">.</span><span class="n">get_workspace_dir</span><span class="p">()</span>
+                
+                <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">workspace_dir</span><span class="p">):</span>
+                    <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s2">&quot;git&quot;</span><span class="p">,</span> <span class="s2">&quot;checkout&quot;</span><span class="p">,</span> <span class="s2">&quot;-f&quot;</span><span class="p">,</span> <span class="n">parent_log</span><span class="o">.</span><span class="n">git_commit_hash</span><span class="p">],</span> <span class="n">cwd</span><span class="o">=</span><span class="n">workspace_dir</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Rewound workspace </span><span class="si">{</span><span class="n">workspace_dir</span><span class="si">}</span><span class="s1"> to commit </span><span class="si">{</span><span class="n">parent_log</span><span class="o">.</span><span class="n">git_commit_hash</span><span class="p">[:</span><span class="mi">7</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="n">PromptResponseLog</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">,</span> <span class="n">Conversation</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">):</span>
+            <span class="k">pass</span>
+        <span class="k">except</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">CalledProcessError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Failed to rewind workspace: </span><span class="si">{</span><span class="n">e</span><span class="o">.</span><span class="n">stderr</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">run_blueprint</span><span class="p">(</span>
+        <span class="n">blueprint_id</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">blueprint_id</span><span class="p">,</span>
+        <span class="n">user_prompt</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">user_prompt</span><span class="p">,</span>
+        <span class="n">conversation_id</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">conversation_id</span><span class="p">,</span>
+        <span class="n">user_id</span><span class="o">=</span><span class="n">user_id</span><span class="p">,</span>
+        <span class="n">parent_log_id</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">parent_log_id</span><span class="p">,</span>
+        <span class="n">run_id</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">run_id</span>
+    <span class="p">)</span>
+    
+    <span class="k">if</span> <span class="s2">&quot;error&quot;</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+        <span class="n">status_code</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;status&quot;</span><span class="p">,</span> <span class="mi">400</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;error&quot;</span><span class="p">]},</span> <span class="n">status</span><span class="o">=</span><span class="n">status_code</span><span class="p">)</span>
+        
+    <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">(</span><span class="n">result</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="dispatch_blueprint">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.api.dispatch_blueprint">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/dispatch_blueprint/&quot;</span><span class="p">)</span>
+<span class="nd">@ensure_csrf_cookie</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">dispatch_blueprint</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">BlueprintDispatchIn</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Asynchronously dispatches a Cognitive Blueprint execution to Celery.</span>
+<span class="sd">    Returns the run_id and stream URL for Datastar SSE consumption.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">user_id</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">auth</span><span class="p">,</span> <span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;auth&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">user_id</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;user&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">is_authenticated</span><span class="p">:</span>
+        <span class="n">user_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">id</span>
+
+    <span class="n">run_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid4</span><span class="p">())</span>
+    
+    <span class="n">task_run_blueprint_async</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span>
+        <span class="n">blueprint_id</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">blueprint_id</span><span class="p">,</span>
+        <span class="n">user_prompt</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">user_prompt</span><span class="p">,</span>
+        <span class="n">conversation_id</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">conversation_id</span><span class="p">,</span>
+        <span class="n">user_id</span><span class="o">=</span><span class="n">user_id</span><span class="p">,</span>
+        <span class="n">run_id</span><span class="o">=</span><span class="n">run_id</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span>
+        <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;dispatched&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;run_id&quot;</span><span class="p">:</span> <span class="n">run_id</span><span class="p">,</span>
+        <span class="s2">&quot;conversation_id&quot;</span><span class="p">:</span> <span class="n">payload</span><span class="o">.</span><span class="n">conversation_id</span><span class="p">,</span>
+        <span class="s2">&quot;stream_url&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;/api/meta/stream_blueprint/?run_id=</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="p">})</span></div>
+
+
+
+<div class="viewcode-block" id="cancel_blueprint">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.api.cancel_blueprint">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/cancel_blueprint/&quot;</span><span class="p">)</span>
+<span class="nd">@ensure_csrf_cookie</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">cancel_blueprint</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">CancelBlueprintIn</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Cancels an active blueprint run by setting the cancellation flag in Redis.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">set_cancellation_flag</span><span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">run_id</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span>
+        <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;cancellation_requested&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;run_id&quot;</span><span class="p">:</span> <span class="n">payload</span><span class="o">.</span><span class="n">run_id</span>
+    <span class="p">})</span></div>
+
+
+
+<div class="viewcode-block" id="approve_tool">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.api.approve_tool">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/approve_tool/&quot;</span><span class="p">)</span>
+<span class="nd">@ensure_csrf_cookie</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">approve_tool</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">ApproveToolIn</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Authorizes a pending tool execution and resumes the suspended LangGraph checkpoint.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">task_resume_blueprint_async</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span>
+        <span class="n">blueprint_id</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">blueprint_id</span><span class="p">,</span>
+        <span class="n">thread_id</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">thread_id</span><span class="p">,</span>
+        <span class="n">run_id</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">run_id</span><span class="p">,</span>
+        <span class="n">approved_tool</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">tool_name</span><span class="p">,</span>
+        <span class="n">user_prompt</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">user_prompt</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span>
+        <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;resumed&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;run_id&quot;</span><span class="p">:</span> <span class="n">payload</span><span class="o">.</span><span class="n">run_id</span><span class="p">,</span>
+        <span class="s2">&quot;approved_tool&quot;</span><span class="p">:</span> <span class="n">payload</span><span class="o">.</span><span class="n">tool_name</span>
+    <span class="p">})</span></div>
+
+
+
+<div class="viewcode-block" id="stream_blueprint">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.api.stream_blueprint">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/stream_blueprint/&quot;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">stream_blueprint</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Server-Sent Events (SSE) streaming endpoint using the Datastar protocol.</span>
+<span class="sd">    Streams DOM fragment patches and reactive signal updates in real-time.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">event_generator</span><span class="p">():</span>
+        <span class="c1"># Initial connection signal</span>
+        <span class="k">yield</span> <span class="n">DatastarSSE</span><span class="o">.</span><span class="n">merge_signals</span><span class="p">({</span>
+            <span class="s2">&quot;isStreaming&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;runId&quot;</span><span class="p">:</span> <span class="n">run_id</span><span class="p">,</span>
+            <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;running&quot;</span>
+        <span class="p">})</span>
+
+        <span class="k">async</span> <span class="k">for</span> <span class="n">event_data</span> <span class="ow">in</span> <span class="n">subscribe_blueprint_events</span><span class="p">(</span><span class="n">run_id</span><span class="p">):</span>
+            <span class="n">event_type</span> <span class="o">=</span> <span class="n">event_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;event&quot;</span><span class="p">)</span>
+            <span class="n">payload</span> <span class="o">=</span> <span class="n">event_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="p">{})</span>
+
+            <span class="k">if</span> <span class="n">event_type</span> <span class="o">==</span> <span class="s2">&quot;step_started&quot;</span><span class="p">:</span>
+                <span class="n">step_name</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;step_name&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="n">step_count</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;step_count&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="n">frag</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;&lt;div id=&quot;blueprint-status&quot; class=&quot;agent-step active&quot;&gt;</span>
+<span class="s2">                    &lt;span class=&quot;badge&quot;&gt;Step </span><span class="si">{</span><span class="n">step_count</span><span class="si">}</span><span class="s2">&lt;/span&gt;</span>
+<span class="s2">                    &lt;strong&gt;Executing: </span><span class="si">{</span><span class="n">step_name</span><span class="si">}</span><span class="s2">&lt;/strong&gt;</span>
+<span class="s2">                &lt;/div&gt;&quot;&quot;&quot;</span>
+                <span class="k">yield</span> <span class="n">DatastarSSE</span><span class="o">.</span><span class="n">merge_fragments</span><span class="p">(</span><span class="n">frag</span><span class="p">,</span> <span class="n">selector</span><span class="o">=</span><span class="s2">&quot;#blueprint-status&quot;</span><span class="p">,</span> <span class="n">merge_mode</span><span class="o">=</span><span class="s2">&quot;morph&quot;</span><span class="p">)</span>
+                <span class="k">yield</span> <span class="n">DatastarSSE</span><span class="o">.</span><span class="n">merge_signals</span><span class="p">({</span><span class="s2">&quot;currentStep&quot;</span><span class="p">:</span> <span class="n">step_name</span><span class="p">,</span> <span class="s2">&quot;stepCount&quot;</span><span class="p">:</span> <span class="n">step_count</span><span class="p">})</span>
+
+            <span class="k">elif</span> <span class="n">event_type</span> <span class="o">==</span> <span class="s2">&quot;approval_required&quot;</span><span class="p">:</span>
+                <span class="n">tool_name</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tool_name&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="n">tool_args</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tool_args&quot;</span><span class="p">,</span> <span class="p">{})</span>
+                <span class="n">tool_desc</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tool_description&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="n">thread_id</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;thread_id&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="n">step_id</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;step_id&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="n">card_html</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;&lt;div id=&quot;tool-approval-card&quot; class=&quot;approval-card pending&quot;&gt;</span>
+<span class="s2">                    &lt;h4&gt;⚠️ Approval Required for Tool: &lt;code&gt;</span><span class="si">{</span><span class="n">tool_name</span><span class="si">}</span><span class="s2">&lt;/code&gt;&lt;/h4&gt;</span>
+<span class="s2">                    &lt;p&gt;</span><span class="si">{</span><span class="n">tool_desc</span><span class="si">}</span><span class="s2">&lt;/p&gt;</span>
+<span class="s2">                    &lt;pre&gt;&lt;code&gt;</span><span class="si">{</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">tool_args</span><span class="p">,</span><span class="w"> </span><span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/code&gt;&lt;/pre&gt;</span>
+<span class="s2">                    &lt;div class=&quot;actions&quot;&gt;</span>
+<span class="s2">                        &lt;button data-on-click=&quot;@post(&#39;/api/meta/approve_tool/&#39;, </span><span class="se">{{</span><span class="s2">run_id: &#39;</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">&#39;, thread_id: &#39;</span><span class="si">{</span><span class="n">thread_id</span><span class="si">}</span><span class="s2">&#39;, tool_name: &#39;</span><span class="si">{</span><span class="n">tool_name</span><span class="si">}</span><span class="s2">&#39;, blueprint_id: </span><span class="si">{</span><span class="n">step_id</span><span class="si">}</span><span class="se">}}</span><span class="s2">)&quot; class=&quot;btn-approve&quot;&gt;Approve &amp; Continue&lt;/button&gt;</span>
+<span class="s2">                        &lt;button data-on-click=&quot;@post(&#39;/api/meta/cancel_blueprint/&#39;, </span><span class="se">{{</span><span class="s2">run_id: &#39;</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">&#39;</span><span class="se">}}</span><span class="s2">)&quot; class=&quot;btn-cancel&quot;&gt;Cancel Run&lt;/button&gt;</span>
+<span class="s2">                    &lt;/div&gt;</span>
+<span class="s2">                &lt;/div&gt;&quot;&quot;&quot;</span>
+                <span class="k">yield</span> <span class="n">DatastarSSE</span><span class="o">.</span><span class="n">merge_fragments</span><span class="p">(</span><span class="n">card_html</span><span class="p">,</span> <span class="n">selector</span><span class="o">=</span><span class="s2">&quot;#tool-approval-container&quot;</span><span class="p">,</span> <span class="n">merge_mode</span><span class="o">=</span><span class="s2">&quot;morph&quot;</span><span class="p">)</span>
+                <span class="k">yield</span> <span class="n">DatastarSSE</span><span class="o">.</span><span class="n">merge_signals</span><span class="p">({</span><span class="s2">&quot;requiresApproval&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;pendingTool&quot;</span><span class="p">:</span> <span class="n">tool_name</span><span class="p">})</span>
+
+            <span class="k">elif</span> <span class="n">event_type</span> <span class="o">==</span> <span class="s2">&quot;step_completed&quot;</span><span class="p">:</span>
+                <span class="n">step_name</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;step_name&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;output&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="n">frag</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;&lt;div class=&quot;monologue-item&quot;&gt;</span>
+<span class="s2">                    &lt;h5&gt;✅ </span><span class="si">{</span><span class="n">step_name</span><span class="si">}</span><span class="s2">&lt;/h5&gt;</span>
+<span class="s2">                    &lt;p&gt;</span><span class="si">{</span><span class="n">output</span><span class="si">}</span><span class="s2">&lt;/p&gt;</span>
+<span class="s2">                &lt;/div&gt;&quot;&quot;&quot;</span>
+                <span class="k">yield</span> <span class="n">DatastarSSE</span><span class="o">.</span><span class="n">merge_fragments</span><span class="p">(</span><span class="n">frag</span><span class="p">,</span> <span class="n">selector</span><span class="o">=</span><span class="s2">&quot;#monologue-stream&quot;</span><span class="p">,</span> <span class="n">merge_mode</span><span class="o">=</span><span class="s2">&quot;append&quot;</span><span class="p">)</span>
+
+            <span class="k">elif</span> <span class="n">event_type</span> <span class="o">==</span> <span class="s2">&quot;completed&quot;</span><span class="p">:</span>
+                <span class="n">final_resp</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;final_response&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="n">frag</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;&lt;div id=&quot;blueprint-final-response&quot; class=&quot;response-content&quot;&gt;</span>
+<span class="s2">                    &lt;div class=&quot;markdown-body&quot;&gt;</span><span class="si">{</span><span class="n">final_resp</span><span class="si">}</span><span class="s2">&lt;/div&gt;</span>
+<span class="s2">                &lt;/div&gt;&quot;&quot;&quot;</span>
+                <span class="k">yield</span> <span class="n">DatastarSSE</span><span class="o">.</span><span class="n">merge_fragments</span><span class="p">(</span><span class="n">frag</span><span class="p">,</span> <span class="n">selector</span><span class="o">=</span><span class="s2">&quot;#blueprint-final-response&quot;</span><span class="p">,</span> <span class="n">merge_mode</span><span class="o">=</span><span class="s2">&quot;morph&quot;</span><span class="p">)</span>
+                <span class="k">yield</span> <span class="n">DatastarSSE</span><span class="o">.</span><span class="n">merge_signals</span><span class="p">({</span><span class="s2">&quot;isStreaming&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;completed&quot;</span><span class="p">})</span>
+                <span class="k">break</span>
+
+            <span class="k">elif</span> <span class="n">event_type</span> <span class="o">==</span> <span class="s2">&quot;cancelled&quot;</span><span class="p">:</span>
+                <span class="n">frag</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;&lt;div id=&quot;blueprint-status&quot; class=&quot;agent-step cancelled&quot;&gt;</span>
+<span class="s2">                    &lt;span class=&quot;badge badge-cancelled&quot;&gt;Cancelled&lt;/span&gt;</span>
+<span class="s2">                    &lt;strong&gt;Execution halted by user.&lt;/strong&gt;</span>
+<span class="s2">                &lt;/div&gt;&quot;&quot;&quot;</span>
+                <span class="k">yield</span> <span class="n">DatastarSSE</span><span class="o">.</span><span class="n">merge_fragments</span><span class="p">(</span><span class="n">frag</span><span class="p">,</span> <span class="n">selector</span><span class="o">=</span><span class="s2">&quot;#blueprint-status&quot;</span><span class="p">,</span> <span class="n">merge_mode</span><span class="o">=</span><span class="s2">&quot;morph&quot;</span><span class="p">)</span>
+                <span class="k">yield</span> <span class="n">DatastarSSE</span><span class="o">.</span><span class="n">merge_signals</span><span class="p">({</span><span class="s2">&quot;isStreaming&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;cancelled&quot;</span><span class="p">})</span>
+                <span class="k">break</span>
+
+            <span class="k">elif</span> <span class="n">event_type</span> <span class="o">==</span> <span class="s2">&quot;error&quot;</span><span class="p">:</span>
+                <span class="n">err_msg</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;error&quot;</span><span class="p">,</span> <span class="s2">&quot;Unknown error&quot;</span><span class="p">)</span>
+                <span class="n">frag</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;&lt;div id=&quot;blueprint-status&quot; class=&quot;agent-step error&quot;&gt;</span>
+<span class="s2">                    &lt;span class=&quot;badge badge-error&quot;&gt;Error&lt;/span&gt;</span>
+<span class="s2">                    &lt;strong&gt;</span><span class="si">{</span><span class="n">err_msg</span><span class="si">}</span><span class="s2">&lt;/strong&gt;</span>
+<span class="s2">                &lt;/div&gt;&quot;&quot;&quot;</span>
+                <span class="k">yield</span> <span class="n">DatastarSSE</span><span class="o">.</span><span class="n">merge_fragments</span><span class="p">(</span><span class="n">frag</span><span class="p">,</span> <span class="n">selector</span><span class="o">=</span><span class="s2">&quot;#blueprint-status&quot;</span><span class="p">,</span> <span class="n">merge_mode</span><span class="o">=</span><span class="s2">&quot;morph&quot;</span><span class="p">)</span>
+                <span class="k">yield</span> <span class="n">DatastarSSE</span><span class="o">.</span><span class="n">merge_signals</span><span class="p">({</span><span class="s2">&quot;isStreaming&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;error&quot;</span><span class="p">})</span>
+                <span class="k">break</span>
+
+    <span class="k">return</span> <span class="n">StreamingHttpResponse</span><span class="p">(</span><span class="n">event_generator</span><span class="p">(),</span> <span class="n">content_type</span><span class="o">=</span><span class="s2">&quot;text/event-stream&quot;</span><span class="p">)</span></div>
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Andrew Cruickshank.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

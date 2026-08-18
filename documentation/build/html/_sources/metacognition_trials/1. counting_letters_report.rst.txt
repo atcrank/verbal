@@ -1,0 +1,1 @@
+.. include:: ../../../metacognition/metacognition_trials/1. counting_letters_report.rst

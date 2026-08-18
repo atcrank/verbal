@@ -1,0 +1,1475 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Benchmarking - model and strategy evaluations &mdash; Verbal 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=2709fde1"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Grips - wiki knowledge banks" href="grips_app.html" />
+    <link rel="prev" title="Background Resources - context documents" href="background_resources_app.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Verbal
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="llm_api_app.html">LLM API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="background_resources_app.html">Background Resources - context documents</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Benchmarking - model and strategy evaluations</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#app-achievements">App achievements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#app-enhancement">App enhancement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-benchmarking.models">Database models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#benchmarking.models.BenchmarkCorpus"><code class="docutils literal notranslate"><span class="pre">BenchmarkCorpus</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkCorpus.DoesNotExist"><code class="docutils literal notranslate"><span class="pre">BenchmarkCorpus.DoesNotExist</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkCorpus.MultipleObjectsReturned"><code class="docutils literal notranslate"><span class="pre">BenchmarkCorpus.MultipleObjectsReturned</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkCorpus.NotUpdated"><code class="docutils literal notranslate"><span class="pre">BenchmarkCorpus.NotUpdated</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkCorpus.benchmarkrun_set"><code class="docutils literal notranslate"><span class="pre">BenchmarkCorpus.benchmarkrun_set</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkCorpus.description"><code class="docutils literal notranslate"><span class="pre">BenchmarkCorpus.description</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkCorpus.documents"><code class="docutils literal notranslate"><span class="pre">BenchmarkCorpus.documents</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkCorpus.experiment_set"><code class="docutils literal notranslate"><span class="pre">BenchmarkCorpus.experiment_set</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkCorpus.id"><code class="docutils literal notranslate"><span class="pre">BenchmarkCorpus.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkCorpus.name"><code class="docutils literal notranslate"><span class="pre">BenchmarkCorpus.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkCorpus.objects"><code class="docutils literal notranslate"><span class="pre">BenchmarkCorpus.objects</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#benchmarking.models.BenchmarkResult"><code class="docutils literal notranslate"><span class="pre">BenchmarkResult</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkResult.DoesNotExist"><code class="docutils literal notranslate"><span class="pre">BenchmarkResult.DoesNotExist</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkResult.MultipleObjectsReturned"><code class="docutils literal notranslate"><span class="pre">BenchmarkResult.MultipleObjectsReturned</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkResult.NotUpdated"><code class="docutils literal notranslate"><span class="pre">BenchmarkResult.NotUpdated</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkResult.duration_seconds"><code class="docutils literal notranslate"><span class="pre">BenchmarkResult.duration_seconds</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkResult.extra_metrics"><code class="docutils literal notranslate"><span class="pre">BenchmarkResult.extra_metrics</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkResult.faithfulness_score"><code class="docutils literal notranslate"><span class="pre">BenchmarkResult.faithfulness_score</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkResult.generated_response"><code class="docutils literal notranslate"><span class="pre">BenchmarkResult.generated_response</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkResult.id"><code class="docutils literal notranslate"><span class="pre">BenchmarkResult.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkResult.objects"><code class="docutils literal notranslate"><span class="pre">BenchmarkResult.objects</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkResult.prompt_text"><code class="docutils literal notranslate"><span class="pre">BenchmarkResult.prompt_text</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkResult.rag_recall_score"><code class="docutils literal notranslate"><span class="pre">BenchmarkResult.rag_recall_score</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkResult.raw_retrieved_text"><code class="docutils literal notranslate"><span class="pre">BenchmarkResult.raw_retrieved_text</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkResult.relevance_score"><code class="docutils literal notranslate"><span class="pre">BenchmarkResult.relevance_score</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkResult.run"><code class="docutils literal notranslate"><span class="pre">BenchmarkResult.run</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkResult.run_id"><code class="docutils literal notranslate"><span class="pre">BenchmarkResult.run_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkResult.scenario"><code class="docutils literal notranslate"><span class="pre">BenchmarkResult.scenario</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkResult.scenario_id"><code class="docutils literal notranslate"><span class="pre">BenchmarkResult.scenario_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkResult.semantic_score"><code class="docutils literal notranslate"><span class="pre">BenchmarkResult.semantic_score</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#benchmarking.models.BenchmarkRun"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.DoesNotExist"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.DoesNotExist</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.MultipleObjectsReturned"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.MultipleObjectsReturned</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.NotUpdated"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.NotUpdated</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.average_faithfulness"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.average_faithfulness</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.average_rag_score"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.average_rag_score</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.average_relevance"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.average_relevance</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.average_semantic_score"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.average_semantic_score</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.benchmarkresult_set"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.benchmarkresult_set</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.configuration_snapshot"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.configuration_snapshot</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.corpus"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.corpus</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.corpus_id"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.corpus_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.eval_success_rate"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.eval_success_rate</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.experiment"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.experiment</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.experiment_id"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.experiment_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.get_next_by_timestamp"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.get_next_by_timestamp()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.get_previous_by_timestamp"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.get_previous_by_timestamp()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.id"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.objects"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.objects</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.timestamp"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.timestamp</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#benchmarking.models.BenchmarkScenario"><code class="docutils literal notranslate"><span class="pre">BenchmarkScenario</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkScenario.DoesNotExist"><code class="docutils literal notranslate"><span class="pre">BenchmarkScenario.DoesNotExist</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkScenario.MultipleObjectsReturned"><code class="docutils literal notranslate"><span class="pre">BenchmarkScenario.MultipleObjectsReturned</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkScenario.NotUpdated"><code class="docutils literal notranslate"><span class="pre">BenchmarkScenario.NotUpdated</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkScenario.benchmarkresult_set"><code class="docutils literal notranslate"><span class="pre">BenchmarkScenario.benchmarkresult_set</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkScenario.expected_keywords"><code class="docutils literal notranslate"><span class="pre">BenchmarkScenario.expected_keywords</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkScenario.groups"><code class="docutils literal notranslate"><span class="pre">BenchmarkScenario.groups</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkScenario.id"><code class="docutils literal notranslate"><span class="pre">BenchmarkScenario.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkScenario.ideal_answer"><code class="docutils literal notranslate"><span class="pre">BenchmarkScenario.ideal_answer</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkScenario.objects"><code class="docutils literal notranslate"><span class="pre">BenchmarkScenario.objects</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkScenario.question"><code class="docutils literal notranslate"><span class="pre">BenchmarkScenario.question</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkScenario.source_chunk"><code class="docutils literal notranslate"><span class="pre">BenchmarkScenario.source_chunk</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkScenario.source_chunk_id"><code class="docutils literal notranslate"><span class="pre">BenchmarkScenario.source_chunk_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkScenario.source_doc"><code class="docutils literal notranslate"><span class="pre">BenchmarkScenario.source_doc</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkScenario.source_doc_id"><code class="docutils literal notranslate"><span class="pre">BenchmarkScenario.source_doc_id</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#benchmarking.models.Experiment"><code class="docutils literal notranslate"><span class="pre">Experiment</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.Experiment.DoesNotExist"><code class="docutils literal notranslate"><span class="pre">Experiment.DoesNotExist</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.Experiment.MultipleObjectsReturned"><code class="docutils literal notranslate"><span class="pre">Experiment.MultipleObjectsReturned</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.Experiment.NotUpdated"><code class="docutils literal notranslate"><span class="pre">Experiment.NotUpdated</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.Experiment.benchmarkrun_set"><code class="docutils literal notranslate"><span class="pre">Experiment.benchmarkrun_set</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.Experiment.configuration"><code class="docutils literal notranslate"><span class="pre">Experiment.configuration</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.Experiment.corpus"><code class="docutils literal notranslate"><span class="pre">Experiment.corpus</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.Experiment.corpus_id"><code class="docutils literal notranslate"><span class="pre">Experiment.corpus_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.Experiment.created_at"><code class="docutils literal notranslate"><span class="pre">Experiment.created_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.Experiment.description"><code class="docutils literal notranslate"><span class="pre">Experiment.description</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.Experiment.generate_comprehensive_matrix"><code class="docutils literal notranslate"><span class="pre">Experiment.generate_comprehensive_matrix()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.Experiment.get_next_by_created_at"><code class="docutils literal notranslate"><span class="pre">Experiment.get_next_by_created_at()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.Experiment.get_previous_by_created_at"><code class="docutils literal notranslate"><span class="pre">Experiment.get_previous_by_created_at()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.Experiment.id"><code class="docutils literal notranslate"><span class="pre">Experiment.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.Experiment.investigation"><code class="docutils literal notranslate"><span class="pre">Experiment.investigation</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.Experiment.investigation_id"><code class="docutils literal notranslate"><span class="pre">Experiment.investigation_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.Experiment.iterations"><code class="docutils literal notranslate"><span class="pre">Experiment.iterations</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.Experiment.name"><code class="docutils literal notranslate"><span class="pre">Experiment.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.Experiment.objects"><code class="docutils literal notranslate"><span class="pre">Experiment.objects</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.Experiment.scenario_group"><code class="docutils literal notranslate"><span class="pre">Experiment.scenario_group</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.Experiment.scenario_group_id"><code class="docutils literal notranslate"><span class="pre">Experiment.scenario_group_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.Experiment.selected_model"><code class="docutils literal notranslate"><span class="pre">Experiment.selected_model</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.Experiment.selected_model_id"><code class="docutils literal notranslate"><span class="pre">Experiment.selected_model_id</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#benchmarking.models.FineTuningDataset"><code class="docutils literal notranslate"><span class="pre">FineTuningDataset</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.FineTuningDataset.DoesNotExist"><code class="docutils literal notranslate"><span class="pre">FineTuningDataset.DoesNotExist</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.FineTuningDataset.MultipleObjectsReturned"><code class="docutils literal notranslate"><span class="pre">FineTuningDataset.MultipleObjectsReturned</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.FineTuningDataset.NotUpdated"><code class="docutils literal notranslate"><span class="pre">FineTuningDataset.NotUpdated</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.FineTuningDataset.created_at"><code class="docutils literal notranslate"><span class="pre">FineTuningDataset.created_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.FineTuningDataset.estimated_training_minutes"><code class="docutils literal notranslate"><span class="pre">FineTuningDataset.estimated_training_minutes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.FineTuningDataset.example_count"><code class="docutils literal notranslate"><span class="pre">FineTuningDataset.example_count</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.FineTuningDataset.file_path"><code class="docutils literal notranslate"><span class="pre">FineTuningDataset.file_path</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.FineTuningDataset.format"><code class="docutils literal notranslate"><span class="pre">FineTuningDataset.format</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.FineTuningDataset.get_format_display"><code class="docutils literal notranslate"><span class="pre">FineTuningDataset.get_format_display()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.FineTuningDataset.get_next_by_created_at"><code class="docutils literal notranslate"><span class="pre">FineTuningDataset.get_next_by_created_at()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.FineTuningDataset.get_previous_by_created_at"><code class="docutils literal notranslate"><span class="pre">FineTuningDataset.get_previous_by_created_at()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.FineTuningDataset.id"><code class="docutils literal notranslate"><span class="pre">FineTuningDataset.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.FineTuningDataset.is_stale"><code class="docutils literal notranslate"><span class="pre">FineTuningDataset.is_stale</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.FineTuningDataset.loraadapter_set"><code class="docutils literal notranslate"><span class="pre">FineTuningDataset.loraadapter_set</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.FineTuningDataset.name"><code class="docutils literal notranslate"><span class="pre">FineTuningDataset.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.FineTuningDataset.objects"><code class="docutils literal notranslate"><span class="pre">FineTuningDataset.objects</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.FineTuningDataset.scenario_group"><code class="docutils literal notranslate"><span class="pre">FineTuningDataset.scenario_group</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.FineTuningDataset.scenario_group_id"><code class="docutils literal notranslate"><span class="pre">FineTuningDataset.scenario_group_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.FineTuningDataset.semantic_diversity_score"><code class="docutils literal notranslate"><span class="pre">FineTuningDataset.semantic_diversity_score</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.FineTuningDataset.total_tokens"><code class="docutils literal notranslate"><span class="pre">FineTuningDataset.total_tokens</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#benchmarking.models.Investigation"><code class="docutils literal notranslate"><span class="pre">Investigation</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.Investigation.DoesNotExist"><code class="docutils literal notranslate"><span class="pre">Investigation.DoesNotExist</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.Investigation.MultipleObjectsReturned"><code class="docutils literal notranslate"><span class="pre">Investigation.MultipleObjectsReturned</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.Investigation.NotUpdated"><code class="docutils literal notranslate"><span class="pre">Investigation.NotUpdated</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.Investigation.create_grid_experiments"><code class="docutils literal notranslate"><span class="pre">Investigation.create_grid_experiments()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.Investigation.created_at"><code class="docutils literal notranslate"><span class="pre">Investigation.created_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.Investigation.description"><code class="docutils literal notranslate"><span class="pre">Investigation.description</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.Investigation.experiments"><code class="docutils literal notranslate"><span class="pre">Investigation.experiments</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.Investigation.get_next_by_created_at"><code class="docutils literal notranslate"><span class="pre">Investigation.get_next_by_created_at()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.Investigation.get_previous_by_created_at"><code class="docutils literal notranslate"><span class="pre">Investigation.get_previous_by_created_at()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.Investigation.id"><code class="docutils literal notranslate"><span class="pre">Investigation.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.Investigation.name"><code class="docutils literal notranslate"><span class="pre">Investigation.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.Investigation.objects"><code class="docutils literal notranslate"><span class="pre">Investigation.objects</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.Investigation.to_dataframe"><code class="docutils literal notranslate"><span class="pre">Investigation.to_dataframe()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#benchmarking.models.ScenarioGroup"><code class="docutils literal notranslate"><span class="pre">ScenarioGroup</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.ScenarioGroup.DoesNotExist"><code class="docutils literal notranslate"><span class="pre">ScenarioGroup.DoesNotExist</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.ScenarioGroup.MultipleObjectsReturned"><code class="docutils literal notranslate"><span class="pre">ScenarioGroup.MultipleObjectsReturned</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.ScenarioGroup.NotUpdated"><code class="docutils literal notranslate"><span class="pre">ScenarioGroup.NotUpdated</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.ScenarioGroup.datasets"><code class="docutils literal notranslate"><span class="pre">ScenarioGroup.datasets</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.ScenarioGroup.description"><code class="docutils literal notranslate"><span class="pre">ScenarioGroup.description</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.ScenarioGroup.experiment_set"><code class="docutils literal notranslate"><span class="pre">ScenarioGroup.experiment_set</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.ScenarioGroup.get_next_by_updated_at"><code class="docutils literal notranslate"><span class="pre">ScenarioGroup.get_next_by_updated_at()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.ScenarioGroup.get_previous_by_updated_at"><code class="docutils literal notranslate"><span class="pre">ScenarioGroup.get_previous_by_updated_at()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.ScenarioGroup.id"><code class="docutils literal notranslate"><span class="pre">ScenarioGroup.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.ScenarioGroup.name"><code class="docutils literal notranslate"><span class="pre">ScenarioGroup.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.ScenarioGroup.objects"><code class="docutils literal notranslate"><span class="pre">ScenarioGroup.objects</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.ScenarioGroup.scenarios"><code class="docutils literal notranslate"><span class="pre">ScenarioGroup.scenarios</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.ScenarioGroup.updated_at"><code class="docutils literal notranslate"><span class="pre">ScenarioGroup.updated_at</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-benchmarking.generators">Generators</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#benchmarking.generators.SyntheticQA"><code class="docutils literal notranslate"><span class="pre">SyntheticQA</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.generators.SyntheticQA.answer"><code class="docutils literal notranslate"><span class="pre">SyntheticQA.answer</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.generators.SyntheticQA.keywords"><code class="docutils literal notranslate"><span class="pre">SyntheticQA.keywords</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.generators.SyntheticQA.model_config"><code class="docutils literal notranslate"><span class="pre">SyntheticQA.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.generators.SyntheticQA.question"><code class="docutils literal notranslate"><span class="pre">SyntheticQA.question</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.generators.SyntheticQA.type"><code class="docutils literal notranslate"><span class="pre">SyntheticQA.type</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#benchmarking.generators.SyntheticQABatch"><code class="docutils literal notranslate"><span class="pre">SyntheticQABatch</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.generators.SyntheticQABatch.items"><code class="docutils literal notranslate"><span class="pre">SyntheticQABatch.items</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.generators.SyntheticQABatch.model_config"><code class="docutils literal notranslate"><span class="pre">SyntheticQABatch.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#benchmarking.generators.generate_scenarios_for_document"><code class="docutils literal notranslate"><span class="pre">generate_scenarios_for_document()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-benchmarking.runner">Benchmark Runner</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#benchmarking.runner.EvaluationScore"><code class="docutils literal notranslate"><span class="pre">EvaluationScore</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.runner.EvaluationScore.clamp_score"><code class="docutils literal notranslate"><span class="pre">EvaluationScore.clamp_score()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.runner.EvaluationScore.model_config"><code class="docutils literal notranslate"><span class="pre">EvaluationScore.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.runner.EvaluationScore.reasoning"><code class="docutils literal notranslate"><span class="pre">EvaluationScore.reasoning</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.runner.EvaluationScore.score"><code class="docutils literal notranslate"><span class="pre">EvaluationScore.score</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#benchmarking.runner.evaluate_metric"><code class="docutils literal notranslate"><span class="pre">evaluate_metric()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#benchmarking.runner.run_benchmark_suite"><code class="docutils literal notranslate"><span class="pre">run_benchmark_suite()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="grips_app.html">Grips - wiki knowledge banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo_ui_app.html">Demo UI</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="using_ollama.html">Ollama as Local AI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests.html">Testing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Verbal</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Benchmarking - model and strategy evaluations</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/benchmarking_app.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="benchmarking-model-and-strategy-evaluations">
+<h1>Benchmarking - model and strategy evaluations<a class="headerlink" href="#benchmarking-model-and-strategy-evaluations" title="Link to this heading"></a></h1>
+<p>This app provides an automated test harness to evaluate the performance of AI models and RAG retrieval configurations against the local knowledge base.</p>
+<section id="app-achievements">
+<h2>App achievements<a class="headerlink" href="#app-achievements" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Synthetic Data Generation:</strong> Autonomously reads uploaded documents and generates challenging, context-grounded Question/Answer pairs.</p></li>
+<li><p><strong>Automated Evaluation:</strong> Scores model outputs mathematically using established metrics like Semantic Similarity and Faithfulness (grounding).</p></li>
+<li><p><strong>Asynchronous Runners:</strong> Benchmarking suites are delegated to Celery, allowing hundreds of tests to run in the background.</p></li>
+<li><p><strong>Traceable Experiments:</strong> Records all experiments, parameters, and historical benchmark runs directly in the database for longitudinal comparison.</p></li>
+<li><p><strong>Data Flywheel &amp; LoRA Training:</strong> Export benchmark scenarios to Fine-Tuning Datasets (ShareGPT format) and trigger on-the-fly local LoRA fine-tuning using Unsloth.</p></li>
+<li><p><strong>Dataset Quality Metrics:</strong> Automatically calculates dataset metrics (token counts, semantic diversity via embeddings) and warns if data becomes stale compared to its source.</p></li>
+</ul>
+</section>
+<section id="app-enhancement">
+<h2>App enhancement<a class="headerlink" href="#app-enhancement" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>LLM-as-a-Judge:</strong> Implement advanced evaluators where a larger “Teacher” model (e.g., GPT-4o) grades the output of the local models on nuance, tone, and formatting.</p></li>
+<li><p><strong>Data Visualization:</strong> Build integrated charts/graphs in the Django Admin to visually compare the performance of different models over time.</p></li>
+<li><p><strong>Prompt Optimization:</strong> Add automated prompt-tuning loops (like DSPy) that slightly tweak system prompts to maximize the benchmark score over successive runs.</p></li>
+<li><p><strong>Retrieval Metric Expansion:</strong> Add metrics specifically for the RAG pipeline, such as Mean Reciprocal Rank (MRR) and Normalized Discounted Cumulative Gain (NDCG).</p></li>
+</ul>
+</section>
+<section id="module-benchmarking.models">
+<span id="database-models"></span><h2>Database models<a class="headerlink" href="#module-benchmarking.models" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkCorpus">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">benchmarking.models.</span></span><span class="sig-name descname"><span class="pre">BenchmarkCorpus</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/benchmarking/models.html#BenchmarkCorpus"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmarking.models.BenchmarkCorpus" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
+<p>A specific set of documents used for a test suite.</p>
+<dl class="py exception">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkCorpus.DoesNotExist">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DoesNotExist</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkCorpus.DoesNotExist" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectDoesNotExist</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkCorpus.MultipleObjectsReturned">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MultipleObjectsReturned</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkCorpus.MultipleObjectsReturned" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleObjectsReturned</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkCorpus.NotUpdated">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NotUpdated</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkCorpus.NotUpdated" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectNotUpdated</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">DatabaseError</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkCorpus.benchmarkrun_set">
+<span class="sig-name descname"><span class="pre">benchmarkrun_set</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkCorpus.benchmarkrun_set" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related objects manager on the reverse side of a
+many-to-one relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
+<p>Most of the implementation is delegated to a dynamically defined manager
+class built by <code class="docutils literal notranslate"><span class="pre">create_reverse_many_to_one_manager()</span></code> defined below.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkCorpus.description">
+<span class="sig-name descname"><span class="pre">description</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkCorpus.description" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkCorpus.documents">
+<span class="sig-name descname"><span class="pre">documents</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkCorpus.documents" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related objects manager on the forward and reverse sides of
+a many-to-many relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Pizza</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">toppings</span> <span class="o">=</span> <span class="n">ManyToManyField</span><span class="p">(</span><span class="n">Topping</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;pizzas&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Pizza.toppings</span></code> and <code class="docutils literal notranslate"><span class="pre">Topping.pizzas</span></code> are <code class="docutils literal notranslate"><span class="pre">ManyToManyDescriptor</span></code>
+instances.</p>
+<p>Most of the implementation is delegated to a dynamically defined manager
+class built by <code class="docutils literal notranslate"><span class="pre">create_forward_many_to_many_manager()</span></code> defined below.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkCorpus.experiment_set">
+<span class="sig-name descname"><span class="pre">experiment_set</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkCorpus.experiment_set" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related objects manager on the reverse side of a
+many-to-one relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
+<p>Most of the implementation is delegated to a dynamically defined manager
+class built by <code class="docutils literal notranslate"><span class="pre">create_reverse_many_to_one_manager()</span></code> defined below.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkCorpus.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkCorpus.id" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkCorpus.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkCorpus.name" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkCorpus.objects">
+<span class="sig-name descname"><span class="pre">objects</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;django.db.models.manager.Manager</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#benchmarking.models.BenchmarkCorpus.objects" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkResult">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">benchmarking.models.</span></span><span class="sig-name descname"><span class="pre">BenchmarkResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/benchmarking/models.html#BenchmarkResult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmarking.models.BenchmarkResult" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
+<p>The atomic result of one Scenario in one Run.</p>
+<dl class="py exception">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkResult.DoesNotExist">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DoesNotExist</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkResult.DoesNotExist" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectDoesNotExist</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkResult.MultipleObjectsReturned">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MultipleObjectsReturned</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkResult.MultipleObjectsReturned" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleObjectsReturned</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkResult.NotUpdated">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NotUpdated</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkResult.NotUpdated" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectNotUpdated</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">DatabaseError</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkResult.duration_seconds">
+<span class="sig-name descname"><span class="pre">duration_seconds</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkResult.duration_seconds" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkResult.extra_metrics">
+<span class="sig-name descname"><span class="pre">extra_metrics</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkResult.extra_metrics" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkResult.faithfulness_score">
+<span class="sig-name descname"><span class="pre">faithfulness_score</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkResult.faithfulness_score" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkResult.generated_response">
+<span class="sig-name descname"><span class="pre">generated_response</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkResult.generated_response" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkResult.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkResult.id" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkResult.objects">
+<span class="sig-name descname"><span class="pre">objects</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;django.db.models.manager.Manager</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#benchmarking.models.BenchmarkResult.objects" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkResult.prompt_text">
+<span class="sig-name descname"><span class="pre">prompt_text</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkResult.prompt_text" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkResult.rag_recall_score">
+<span class="sig-name descname"><span class="pre">rag_recall_score</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkResult.rag_recall_score" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkResult.raw_retrieved_text">
+<span class="sig-name descname"><span class="pre">raw_retrieved_text</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkResult.raw_retrieved_text" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkResult.relevance_score">
+<span class="sig-name descname"><span class="pre">relevance_score</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkResult.relevance_score" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkResult.run">
+<span class="sig-name descname"><span class="pre">run</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkResult.run" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related object on the forward side of a many-to-one or
+one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkResult.run_id">
+<span class="sig-name descname"><span class="pre">run_id</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkResult.run_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkResult.scenario">
+<span class="sig-name descname"><span class="pre">scenario</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkResult.scenario" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related object on the forward side of a many-to-one or
+one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkResult.scenario_id">
+<span class="sig-name descname"><span class="pre">scenario_id</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkResult.scenario_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkResult.semantic_score">
+<span class="sig-name descname"><span class="pre">semantic_score</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkResult.semantic_score" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkRun">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">benchmarking.models.</span></span><span class="sig-name descname"><span class="pre">BenchmarkRun</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/benchmarking/models.html#BenchmarkRun"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmarking.models.BenchmarkRun" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
+<p>Log of a specific execution of an Experiment on a Corpus.</p>
+<dl class="py exception">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkRun.DoesNotExist">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DoesNotExist</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkRun.DoesNotExist" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectDoesNotExist</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkRun.MultipleObjectsReturned">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MultipleObjectsReturned</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkRun.MultipleObjectsReturned" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleObjectsReturned</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkRun.NotUpdated">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NotUpdated</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkRun.NotUpdated" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectNotUpdated</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">DatabaseError</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkRun.average_faithfulness">
+<span class="sig-name descname"><span class="pre">average_faithfulness</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkRun.average_faithfulness" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkRun.average_rag_score">
+<span class="sig-name descname"><span class="pre">average_rag_score</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkRun.average_rag_score" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkRun.average_relevance">
+<span class="sig-name descname"><span class="pre">average_relevance</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkRun.average_relevance" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkRun.average_semantic_score">
+<span class="sig-name descname"><span class="pre">average_semantic_score</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkRun.average_semantic_score" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkRun.benchmarkresult_set">
+<span class="sig-name descname"><span class="pre">benchmarkresult_set</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkRun.benchmarkresult_set" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related objects manager on the reverse side of a
+many-to-one relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
+<p>Most of the implementation is delegated to a dynamically defined manager
+class built by <code class="docutils literal notranslate"><span class="pre">create_reverse_many_to_one_manager()</span></code> defined below.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkRun.configuration_snapshot">
+<span class="sig-name descname"><span class="pre">configuration_snapshot</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkRun.configuration_snapshot" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkRun.corpus">
+<span class="sig-name descname"><span class="pre">corpus</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkRun.corpus" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related object on the forward side of a many-to-one or
+one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkRun.corpus_id">
+<span class="sig-name descname"><span class="pre">corpus_id</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkRun.corpus_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkRun.eval_success_rate">
+<span class="sig-name descname"><span class="pre">eval_success_rate</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkRun.eval_success_rate" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkRun.experiment">
+<span class="sig-name descname"><span class="pre">experiment</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkRun.experiment" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related object on the forward side of a many-to-one or
+one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkRun.experiment_id">
+<span class="sig-name descname"><span class="pre">experiment_id</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkRun.experiment_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkRun.get_next_by_timestamp">
+<span class="sig-name descname"><span class="pre">get_next_by_timestamp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field=&lt;django.db.models.fields.DateTimeField:</span> <span class="pre">timestamp&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_next=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#benchmarking.models.BenchmarkRun.get_next_by_timestamp" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkRun.get_previous_by_timestamp">
+<span class="sig-name descname"><span class="pre">get_previous_by_timestamp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field=&lt;django.db.models.fields.DateTimeField:</span> <span class="pre">timestamp&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_next=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#benchmarking.models.BenchmarkRun.get_previous_by_timestamp" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkRun.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkRun.id" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkRun.objects">
+<span class="sig-name descname"><span class="pre">objects</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;django.db.models.manager.Manager</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#benchmarking.models.BenchmarkRun.objects" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkRun.timestamp">
+<span class="sig-name descname"><span class="pre">timestamp</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkRun.timestamp" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkScenario">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">benchmarking.models.</span></span><span class="sig-name descname"><span class="pre">BenchmarkScenario</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/benchmarking/models.html#BenchmarkScenario"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmarking.models.BenchmarkScenario" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
+<p>A single test case: Question + Expected Truth.</p>
+<dl class="py exception">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkScenario.DoesNotExist">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DoesNotExist</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkScenario.DoesNotExist" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectDoesNotExist</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkScenario.MultipleObjectsReturned">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MultipleObjectsReturned</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkScenario.MultipleObjectsReturned" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleObjectsReturned</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkScenario.NotUpdated">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NotUpdated</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkScenario.NotUpdated" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectNotUpdated</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">DatabaseError</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkScenario.benchmarkresult_set">
+<span class="sig-name descname"><span class="pre">benchmarkresult_set</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkScenario.benchmarkresult_set" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related objects manager on the reverse side of a
+many-to-one relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
+<p>Most of the implementation is delegated to a dynamically defined manager
+class built by <code class="docutils literal notranslate"><span class="pre">create_reverse_many_to_one_manager()</span></code> defined below.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkScenario.expected_keywords">
+<span class="sig-name descname"><span class="pre">expected_keywords</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkScenario.expected_keywords" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkScenario.groups">
+<span class="sig-name descname"><span class="pre">groups</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkScenario.groups" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related objects manager on the forward and reverse sides of
+a many-to-many relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Pizza</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">toppings</span> <span class="o">=</span> <span class="n">ManyToManyField</span><span class="p">(</span><span class="n">Topping</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;pizzas&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Pizza.toppings</span></code> and <code class="docutils literal notranslate"><span class="pre">Topping.pizzas</span></code> are <code class="docutils literal notranslate"><span class="pre">ManyToManyDescriptor</span></code>
+instances.</p>
+<p>Most of the implementation is delegated to a dynamically defined manager
+class built by <code class="docutils literal notranslate"><span class="pre">create_forward_many_to_many_manager()</span></code> defined below.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkScenario.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkScenario.id" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkScenario.ideal_answer">
+<span class="sig-name descname"><span class="pre">ideal_answer</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkScenario.ideal_answer" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkScenario.objects">
+<span class="sig-name descname"><span class="pre">objects</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;django.db.models.manager.Manager</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#benchmarking.models.BenchmarkScenario.objects" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkScenario.question">
+<span class="sig-name descname"><span class="pre">question</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkScenario.question" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkScenario.source_chunk">
+<span class="sig-name descname"><span class="pre">source_chunk</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkScenario.source_chunk" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related object on the forward side of a many-to-one or
+one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkScenario.source_chunk_id">
+<span class="sig-name descname"><span class="pre">source_chunk_id</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkScenario.source_chunk_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkScenario.source_doc">
+<span class="sig-name descname"><span class="pre">source_doc</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkScenario.source_doc" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related object on the forward side of a many-to-one or
+one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkScenario.source_doc_id">
+<span class="sig-name descname"><span class="pre">source_doc_id</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkScenario.source_doc_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="benchmarking.models.Experiment">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">benchmarking.models.</span></span><span class="sig-name descname"><span class="pre">Experiment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/benchmarking/models.html#Experiment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmarking.models.Experiment" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
+<p>Defines the configuration being tested (The ‘A’ or ‘B’).</p>
+<dl class="py exception">
+<dt class="sig sig-object py" id="benchmarking.models.Experiment.DoesNotExist">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DoesNotExist</span></span><a class="headerlink" href="#benchmarking.models.Experiment.DoesNotExist" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectDoesNotExist</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="benchmarking.models.Experiment.MultipleObjectsReturned">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MultipleObjectsReturned</span></span><a class="headerlink" href="#benchmarking.models.Experiment.MultipleObjectsReturned" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleObjectsReturned</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="benchmarking.models.Experiment.NotUpdated">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NotUpdated</span></span><a class="headerlink" href="#benchmarking.models.Experiment.NotUpdated" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectNotUpdated</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">DatabaseError</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.Experiment.benchmarkrun_set">
+<span class="sig-name descname"><span class="pre">benchmarkrun_set</span></span><a class="headerlink" href="#benchmarking.models.Experiment.benchmarkrun_set" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related objects manager on the reverse side of a
+many-to-one relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
+<p>Most of the implementation is delegated to a dynamically defined manager
+class built by <code class="docutils literal notranslate"><span class="pre">create_reverse_many_to_one_manager()</span></code> defined below.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.Experiment.configuration">
+<span class="sig-name descname"><span class="pre">configuration</span></span><a class="headerlink" href="#benchmarking.models.Experiment.configuration" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.Experiment.corpus">
+<span class="sig-name descname"><span class="pre">corpus</span></span><a class="headerlink" href="#benchmarking.models.Experiment.corpus" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related object on the forward side of a many-to-one or
+one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.Experiment.corpus_id">
+<span class="sig-name descname"><span class="pre">corpus_id</span></span><a class="headerlink" href="#benchmarking.models.Experiment.corpus_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.Experiment.created_at">
+<span class="sig-name descname"><span class="pre">created_at</span></span><a class="headerlink" href="#benchmarking.models.Experiment.created_at" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.Experiment.description">
+<span class="sig-name descname"><span class="pre">description</span></span><a class="headerlink" href="#benchmarking.models.Experiment.description" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="benchmarking.models.Experiment.generate_comprehensive_matrix">
+<span class="sig-name descname"><span class="pre">generate_comprehensive_matrix</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/benchmarking/models.html#Experiment.generate_comprehensive_matrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmarking.models.Experiment.generate_comprehensive_matrix" title="Link to this definition"></a></dt>
+<dd><p>Constructor that uses this Experiment as a template to generate a full suite
+of valid RAG options and chunk sizes for A/B testing.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="benchmarking.models.Experiment.get_next_by_created_at">
+<span class="sig-name descname"><span class="pre">get_next_by_created_at</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field=&lt;django.db.models.fields.DateTimeField:</span> <span class="pre">created_at&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_next=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#benchmarking.models.Experiment.get_next_by_created_at" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="benchmarking.models.Experiment.get_previous_by_created_at">
+<span class="sig-name descname"><span class="pre">get_previous_by_created_at</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field=&lt;django.db.models.fields.DateTimeField:</span> <span class="pre">created_at&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_next=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#benchmarking.models.Experiment.get_previous_by_created_at" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.Experiment.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#benchmarking.models.Experiment.id" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.Experiment.investigation">
+<span class="sig-name descname"><span class="pre">investigation</span></span><a class="headerlink" href="#benchmarking.models.Experiment.investigation" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related object on the forward side of a many-to-one or
+one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.Experiment.investigation_id">
+<span class="sig-name descname"><span class="pre">investigation_id</span></span><a class="headerlink" href="#benchmarking.models.Experiment.investigation_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.Experiment.iterations">
+<span class="sig-name descname"><span class="pre">iterations</span></span><a class="headerlink" href="#benchmarking.models.Experiment.iterations" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.Experiment.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#benchmarking.models.Experiment.name" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.Experiment.objects">
+<span class="sig-name descname"><span class="pre">objects</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;django.db.models.manager.Manager</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#benchmarking.models.Experiment.objects" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.Experiment.scenario_group">
+<span class="sig-name descname"><span class="pre">scenario_group</span></span><a class="headerlink" href="#benchmarking.models.Experiment.scenario_group" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related object on the forward side of a many-to-one or
+one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.Experiment.scenario_group_id">
+<span class="sig-name descname"><span class="pre">scenario_group_id</span></span><a class="headerlink" href="#benchmarking.models.Experiment.scenario_group_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.Experiment.selected_model">
+<span class="sig-name descname"><span class="pre">selected_model</span></span><a class="headerlink" href="#benchmarking.models.Experiment.selected_model" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related object on the forward side of a many-to-one or
+one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.Experiment.selected_model_id">
+<span class="sig-name descname"><span class="pre">selected_model_id</span></span><a class="headerlink" href="#benchmarking.models.Experiment.selected_model_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="benchmarking.models.FineTuningDataset">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">benchmarking.models.</span></span><span class="sig-name descname"><span class="pre">FineTuningDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/benchmarking/models.html#FineTuningDataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmarking.models.FineTuningDataset" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
+<p>A physical export of a ScenarioGroup (e.g. JSONL) used for training.</p>
+<dl class="py exception">
+<dt class="sig sig-object py" id="benchmarking.models.FineTuningDataset.DoesNotExist">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DoesNotExist</span></span><a class="headerlink" href="#benchmarking.models.FineTuningDataset.DoesNotExist" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectDoesNotExist</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="benchmarking.models.FineTuningDataset.MultipleObjectsReturned">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MultipleObjectsReturned</span></span><a class="headerlink" href="#benchmarking.models.FineTuningDataset.MultipleObjectsReturned" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleObjectsReturned</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="benchmarking.models.FineTuningDataset.NotUpdated">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NotUpdated</span></span><a class="headerlink" href="#benchmarking.models.FineTuningDataset.NotUpdated" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectNotUpdated</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">DatabaseError</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.FineTuningDataset.created_at">
+<span class="sig-name descname"><span class="pre">created_at</span></span><a class="headerlink" href="#benchmarking.models.FineTuningDataset.created_at" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.FineTuningDataset.estimated_training_minutes">
+<span class="sig-name descname"><span class="pre">estimated_training_minutes</span></span><a class="headerlink" href="#benchmarking.models.FineTuningDataset.estimated_training_minutes" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.FineTuningDataset.example_count">
+<span class="sig-name descname"><span class="pre">example_count</span></span><a class="headerlink" href="#benchmarking.models.FineTuningDataset.example_count" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.FineTuningDataset.file_path">
+<span class="sig-name descname"><span class="pre">file_path</span></span><a class="headerlink" href="#benchmarking.models.FineTuningDataset.file_path" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.FineTuningDataset.format">
+<span class="sig-name descname"><span class="pre">format</span></span><a class="headerlink" href="#benchmarking.models.FineTuningDataset.format" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="benchmarking.models.FineTuningDataset.get_format_display">
+<span class="sig-name descname"><span class="pre">get_format_display</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field=&lt;django.db.models.fields.CharField:</span> <span class="pre">format&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#benchmarking.models.FineTuningDataset.get_format_display" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="benchmarking.models.FineTuningDataset.get_next_by_created_at">
+<span class="sig-name descname"><span class="pre">get_next_by_created_at</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field=&lt;django.db.models.fields.DateTimeField:</span> <span class="pre">created_at&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_next=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#benchmarking.models.FineTuningDataset.get_next_by_created_at" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="benchmarking.models.FineTuningDataset.get_previous_by_created_at">
+<span class="sig-name descname"><span class="pre">get_previous_by_created_at</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field=&lt;django.db.models.fields.DateTimeField:</span> <span class="pre">created_at&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_next=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#benchmarking.models.FineTuningDataset.get_previous_by_created_at" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.FineTuningDataset.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#benchmarking.models.FineTuningDataset.id" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="benchmarking.models.FineTuningDataset.is_stale">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_stale</span></span><a class="headerlink" href="#benchmarking.models.FineTuningDataset.is_stale" title="Link to this definition"></a></dt>
+<dd><p>Returns True if the parent ScenarioGroup has been updated since this dataset was created.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.FineTuningDataset.loraadapter_set">
+<span class="sig-name descname"><span class="pre">loraadapter_set</span></span><a class="headerlink" href="#benchmarking.models.FineTuningDataset.loraadapter_set" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related objects manager on the reverse side of a
+many-to-one relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
+<p>Most of the implementation is delegated to a dynamically defined manager
+class built by <code class="docutils literal notranslate"><span class="pre">create_reverse_many_to_one_manager()</span></code> defined below.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.FineTuningDataset.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#benchmarking.models.FineTuningDataset.name" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.FineTuningDataset.objects">
+<span class="sig-name descname"><span class="pre">objects</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;django.db.models.manager.Manager</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#benchmarking.models.FineTuningDataset.objects" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.FineTuningDataset.scenario_group">
+<span class="sig-name descname"><span class="pre">scenario_group</span></span><a class="headerlink" href="#benchmarking.models.FineTuningDataset.scenario_group" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related object on the forward side of a many-to-one or
+one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.FineTuningDataset.scenario_group_id">
+<span class="sig-name descname"><span class="pre">scenario_group_id</span></span><a class="headerlink" href="#benchmarking.models.FineTuningDataset.scenario_group_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.FineTuningDataset.semantic_diversity_score">
+<span class="sig-name descname"><span class="pre">semantic_diversity_score</span></span><a class="headerlink" href="#benchmarking.models.FineTuningDataset.semantic_diversity_score" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.FineTuningDataset.total_tokens">
+<span class="sig-name descname"><span class="pre">total_tokens</span></span><a class="headerlink" href="#benchmarking.models.FineTuningDataset.total_tokens" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="benchmarking.models.Investigation">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">benchmarking.models.</span></span><span class="sig-name descname"><span class="pre">Investigation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/benchmarking/models.html#Investigation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmarking.models.Investigation" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
+<p>Organizes a set of experiments testing a specific hypothesis.</p>
+<dl class="py exception">
+<dt class="sig sig-object py" id="benchmarking.models.Investigation.DoesNotExist">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DoesNotExist</span></span><a class="headerlink" href="#benchmarking.models.Investigation.DoesNotExist" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectDoesNotExist</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="benchmarking.models.Investigation.MultipleObjectsReturned">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MultipleObjectsReturned</span></span><a class="headerlink" href="#benchmarking.models.Investigation.MultipleObjectsReturned" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleObjectsReturned</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="benchmarking.models.Investigation.NotUpdated">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NotUpdated</span></span><a class="headerlink" href="#benchmarking.models.Investigation.NotUpdated" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectNotUpdated</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">DatabaseError</span></code></p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="benchmarking.models.Investigation.create_grid_experiments">
+<span class="sig-name descname"><span class="pre">create_grid_experiments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">corpus</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scenario_group</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">param_grid</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/benchmarking/models.html#Investigation.create_grid_experiments"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmarking.models.Investigation.create_grid_experiments" title="Link to this definition"></a></dt>
+<dd><p>Tool to create a set of experiments varying in a regular way.
+param_grid: dict of {key: [list of values]}</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.Investigation.created_at">
+<span class="sig-name descname"><span class="pre">created_at</span></span><a class="headerlink" href="#benchmarking.models.Investigation.created_at" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.Investigation.description">
+<span class="sig-name descname"><span class="pre">description</span></span><a class="headerlink" href="#benchmarking.models.Investigation.description" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.Investigation.experiments">
+<span class="sig-name descname"><span class="pre">experiments</span></span><a class="headerlink" href="#benchmarking.models.Investigation.experiments" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related objects manager on the reverse side of a
+many-to-one relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
+<p>Most of the implementation is delegated to a dynamically defined manager
+class built by <code class="docutils literal notranslate"><span class="pre">create_reverse_many_to_one_manager()</span></code> defined below.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="benchmarking.models.Investigation.get_next_by_created_at">
+<span class="sig-name descname"><span class="pre">get_next_by_created_at</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field=&lt;django.db.models.fields.DateTimeField:</span> <span class="pre">created_at&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_next=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#benchmarking.models.Investigation.get_next_by_created_at" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="benchmarking.models.Investigation.get_previous_by_created_at">
+<span class="sig-name descname"><span class="pre">get_previous_by_created_at</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field=&lt;django.db.models.fields.DateTimeField:</span> <span class="pre">created_at&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_next=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#benchmarking.models.Investigation.get_previous_by_created_at" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.Investigation.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#benchmarking.models.Investigation.id" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.Investigation.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#benchmarking.models.Investigation.name" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.Investigation.objects">
+<span class="sig-name descname"><span class="pre">objects</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;django.db.models.manager.Manager</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#benchmarking.models.Investigation.objects" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="benchmarking.models.Investigation.to_dataframe">
+<span class="sig-name descname"><span class="pre">to_dataframe</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/benchmarking/models.html#Investigation.to_dataframe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmarking.models.Investigation.to_dataframe" title="Link to this definition"></a></dt>
+<dd><p>Exports all benchmark results for this investigation into a flattened Pandas DataFrame.
+Nested JSON keys automatically become columns (e.g., ‘extra_metrics.hop_count’).</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="benchmarking.models.ScenarioGroup">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">benchmarking.models.</span></span><span class="sig-name descname"><span class="pre">ScenarioGroup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/benchmarking/models.html#ScenarioGroup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmarking.models.ScenarioGroup" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
+<p>A reusable collection of benchmark scenarios.</p>
+<dl class="py exception">
+<dt class="sig sig-object py" id="benchmarking.models.ScenarioGroup.DoesNotExist">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DoesNotExist</span></span><a class="headerlink" href="#benchmarking.models.ScenarioGroup.DoesNotExist" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectDoesNotExist</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="benchmarking.models.ScenarioGroup.MultipleObjectsReturned">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MultipleObjectsReturned</span></span><a class="headerlink" href="#benchmarking.models.ScenarioGroup.MultipleObjectsReturned" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleObjectsReturned</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="benchmarking.models.ScenarioGroup.NotUpdated">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NotUpdated</span></span><a class="headerlink" href="#benchmarking.models.ScenarioGroup.NotUpdated" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectNotUpdated</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">DatabaseError</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.ScenarioGroup.datasets">
+<span class="sig-name descname"><span class="pre">datasets</span></span><a class="headerlink" href="#benchmarking.models.ScenarioGroup.datasets" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related objects manager on the reverse side of a
+many-to-one relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
+<p>Most of the implementation is delegated to a dynamically defined manager
+class built by <code class="docutils literal notranslate"><span class="pre">create_reverse_many_to_one_manager()</span></code> defined below.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.ScenarioGroup.description">
+<span class="sig-name descname"><span class="pre">description</span></span><a class="headerlink" href="#benchmarking.models.ScenarioGroup.description" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.ScenarioGroup.experiment_set">
+<span class="sig-name descname"><span class="pre">experiment_set</span></span><a class="headerlink" href="#benchmarking.models.ScenarioGroup.experiment_set" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related objects manager on the reverse side of a
+many-to-one relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
+<p>Most of the implementation is delegated to a dynamically defined manager
+class built by <code class="docutils literal notranslate"><span class="pre">create_reverse_many_to_one_manager()</span></code> defined below.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="benchmarking.models.ScenarioGroup.get_next_by_updated_at">
+<span class="sig-name descname"><span class="pre">get_next_by_updated_at</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field=&lt;django.db.models.fields.DateTimeField:</span> <span class="pre">updated_at&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_next=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#benchmarking.models.ScenarioGroup.get_next_by_updated_at" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="benchmarking.models.ScenarioGroup.get_previous_by_updated_at">
+<span class="sig-name descname"><span class="pre">get_previous_by_updated_at</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field=&lt;django.db.models.fields.DateTimeField:</span> <span class="pre">updated_at&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_next=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#benchmarking.models.ScenarioGroup.get_previous_by_updated_at" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.ScenarioGroup.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#benchmarking.models.ScenarioGroup.id" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.ScenarioGroup.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#benchmarking.models.ScenarioGroup.name" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.ScenarioGroup.objects">
+<span class="sig-name descname"><span class="pre">objects</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;django.db.models.manager.Manager</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#benchmarking.models.ScenarioGroup.objects" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.ScenarioGroup.scenarios">
+<span class="sig-name descname"><span class="pre">scenarios</span></span><a class="headerlink" href="#benchmarking.models.ScenarioGroup.scenarios" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related objects manager on the forward and reverse sides of
+a many-to-many relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Pizza</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">toppings</span> <span class="o">=</span> <span class="n">ManyToManyField</span><span class="p">(</span><span class="n">Topping</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;pizzas&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Pizza.toppings</span></code> and <code class="docutils literal notranslate"><span class="pre">Topping.pizzas</span></code> are <code class="docutils literal notranslate"><span class="pre">ManyToManyDescriptor</span></code>
+instances.</p>
+<p>Most of the implementation is delegated to a dynamically defined manager
+class built by <code class="docutils literal notranslate"><span class="pre">create_forward_many_to_many_manager()</span></code> defined below.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.ScenarioGroup.updated_at">
+<span class="sig-name descname"><span class="pre">updated_at</span></span><a class="headerlink" href="#benchmarking.models.ScenarioGroup.updated_at" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-benchmarking.generators">
+<span id="generators"></span><h2>Generators<a class="headerlink" href="#module-benchmarking.generators" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="benchmarking.generators.SyntheticQA">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">benchmarking.generators.</span></span><span class="sig-name descname"><span class="pre">SyntheticQA</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">question</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">answer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keywords</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'Factoid'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'Reasoning'</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/benchmarking/generators.html#SyntheticQA"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmarking.generators.SyntheticQA" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.generators.SyntheticQA.answer">
+<span class="sig-name descname"><span class="pre">answer</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#benchmarking.generators.SyntheticQA.answer" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.generators.SyntheticQA.keywords">
+<span class="sig-name descname"><span class="pre">keywords</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#benchmarking.generators.SyntheticQA.keywords" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.generators.SyntheticQA.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#benchmarking.generators.SyntheticQA.model_config" title="Link to this definition"></a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.generators.SyntheticQA.question">
+<span class="sig-name descname"><span class="pre">question</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#benchmarking.generators.SyntheticQA.question" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.generators.SyntheticQA.type">
+<span class="sig-name descname"><span class="pre">type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'Factoid'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'Reasoning'</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#benchmarking.generators.SyntheticQA.type" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="benchmarking.generators.SyntheticQABatch">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">benchmarking.generators.</span></span><span class="sig-name descname"><span class="pre">SyntheticQABatch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">items</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#benchmarking.generators.SyntheticQA" title="benchmarking.generators.SyntheticQA"><span class="pre">SyntheticQA</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/benchmarking/generators.html#SyntheticQABatch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmarking.generators.SyntheticQABatch" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.generators.SyntheticQABatch.items">
+<span class="sig-name descname"><span class="pre">items</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#benchmarking.generators.SyntheticQA" title="benchmarking.generators.SyntheticQA"><span class="pre">SyntheticQA</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#benchmarking.generators.SyntheticQABatch.items" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.generators.SyntheticQABatch.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#benchmarking.generators.SyntheticQABatch.model_config" title="Link to this definition"></a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmarking.generators.generate_scenarios_for_document">
+<span class="sig-prename descclassname"><span class="pre">benchmarking.generators.</span></span><span class="sig-name descname"><span class="pre">generate_scenarios_for_document</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">document</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stride=5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group_name=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_callback=&lt;built-in</span> <span class="pre">function</span> <span class="pre">print&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/benchmarking/generators.html#generate_scenarios_for_document"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmarking.generators.generate_scenarios_for_document" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-benchmarking.runner">
+<span id="benchmark-runner"></span><h2>Benchmark Runner<a class="headerlink" href="#module-benchmarking.runner" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="benchmarking.runner.EvaluationScore">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">benchmarking.runner.</span></span><span class="sig-name descname"><span class="pre">EvaluationScore</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reasoning</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">score</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/benchmarking/runner.html#EvaluationScore"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmarking.runner.EvaluationScore" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="benchmarking.runner.EvaluationScore.clamp_score">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">clamp_score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/benchmarking/runner.html#EvaluationScore.clamp_score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmarking.runner.EvaluationScore.clamp_score" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.runner.EvaluationScore.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#benchmarking.runner.EvaluationScore.model_config" title="Link to this definition"></a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.runner.EvaluationScore.reasoning">
+<span class="sig-name descname"><span class="pre">reasoning</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#benchmarking.runner.EvaluationScore.reasoning" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.runner.EvaluationScore.score">
+<span class="sig-name descname"><span class="pre">score</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#benchmarking.runner.EvaluationScore.score" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmarking.runner.evaluate_metric">
+<span class="sig-prename descclassname"><span class="pre">benchmarking.runner.</span></span><span class="sig-name descname"><span class="pre">evaluate_metric</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ai_service</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prompt_template</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_sequences</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/benchmarking/runner.html#evaluate_metric"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmarking.runner.evaluate_metric" title="Link to this definition"></a></dt>
+<dd><p>Generic LLM-as-a-Judge evaluator using parallel sampling.
+Generates multiple sequences, discards parsing failures, and averages the valid scores.
+Returns (average_normalized_score, success_rate).
+If all parsing fails, returns (-1.0, 0.0) as a sentinel.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="benchmarking.runner.run_benchmark_suite">
+<span class="sig-prename descclassname"><span class="pre">benchmarking.runner.</span></span><span class="sig-name descname"><span class="pre">run_benchmark_suite</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">experiment</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">corpus</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_callback</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/benchmarking/runner.html#run_benchmark_suite"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmarking.runner.run_benchmark_suite" title="Link to this definition"></a></dt>
+<dd><p>Executes a benchmark run for a given Experiment and Corpus.</p>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="background_resources_app.html" class="btn btn-neutral float-left" title="Background Resources - context documents" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="grips_app.html" class="btn btn-neutral float-right" title="Grips - wiki knowledge banks" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Andrew Cruickshank.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

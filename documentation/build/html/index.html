@@ -1,0 +1,264 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Verbal: Computational Study Design Assistant &mdash; Verbal 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=2709fde1"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="LLM API" href="llm_api_app.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="#" class="icon icon-home">
+            Verbal
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="llm_api_app.html">LLM API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="background_resources_app.html">Background Resources - context documents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grips_app.html">Grips - wiki knowledge banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo_ui_app.html">Demo UI</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="using_ollama.html">Ollama as Local AI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests.html">Testing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">Verbal</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Verbal: Computational Study Design Assistant</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="verbal-computational-study-design-assistant">
+<h1>Verbal: Computational Study Design Assistant<a class="headerlink" href="#verbal-computational-study-design-assistant" title="Link to this heading"></a></h1>
+<p>Welcome to the documentation for <strong>Verbal</strong>, Django handles for gripping your Large Language Models.</p>
+<p>Verbal is what is presently known as a “harness”, a set of tools to help a human interact with and make use of Large Language Models. The motivating example is support for study designers in documenting, organizing, and expanding research questions, their scopes, constraints, and the underlying causal or structural relationships among factors. It aims to develop standard Retrieval-Augmented Generation (RAG) into a structured knowledge graph and agentic reasoning framework. This is used by users and the model’s capabilities to understand, underpin and handle the domains of interest and the skilful action to</p>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="llm_api_app.html">LLM API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="llm_api_app.html#app-achievements">App achievements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="llm_api_app.html#app-enhancement">App enhancement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="llm_api_app.html#module-llm_api.models">Database models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="llm_api_app.html#module-llm_api.api">API Reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="llm_api_app.html#module-llm_api.ai_service">Background Tasks</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="background_resources_app.html">Background Resources - context documents</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="background_resources_app.html#app-achievements">App achievements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="background_resources_app.html#app-enhancement">App enhancement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="background_resources_app.html#unified-retrieval-deep-rag-design-decisions">Unified Retrieval &amp; Deep RAG Design Decisions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="background_resources_app.html#module-background_resources.models">Database models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="background_resources_app.html#module-background_resources.rag_service">RAG Service</a></li>
+<li class="toctree-l2"><a class="reference internal" href="background_resources_app.html#module-background_resources.nlp_service">NLP Service</a></li>
+<li class="toctree-l2"><a class="reference internal" href="background_resources_app.html#module-background_resources.tasks">Background Tasks</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="benchmarking_app.html">Benchmarking - model and strategy evaluations</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="benchmarking_app.html#app-achievements">App achievements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmarking_app.html#app-enhancement">App enhancement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmarking_app.html#module-benchmarking.models">Database models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmarking_app.html#module-benchmarking.generators">Generators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmarking_app.html#module-benchmarking.runner">Benchmark Runner</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="grips_app.html">Grips - wiki knowledge banks</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="grips_app.html#app-achievements">App achievements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="grips_app.html#app-enhancement">App enhancement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="grips_app.html#module-grips.models">Database models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="grips_app.html#module-grips.tasks">Grip Tasks</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="metacognition_app.html">Metacognition - plans and self-evaluation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="metacognition_app.html#app-achievements">App achievements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="metacognition_app.html#app-enhancement">App enhancement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="metacognition_app.html#module-metacognition.models">Database models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="metacognition_app.html#module-metacognition.api">API Reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="metacognition_app.html#module-metacognition.tasks">Background Tasks</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="work_organisation_app.html#app-achievements-core-capabilities">App Achievements &amp; Core Capabilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="work_organisation_app.html#database-models">Database Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="work_organisation_app.html#api-endpoints">API Endpoints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="work_organisation_app.html#module-work_organisation.clustering">Clustering &amp; Synthesis Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="work_organisation_app.html#module-work_organisation.events">Real-time Event Streaming</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="demo_ui_app.html">Demo UI</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="demo_ui_app.html#app-achievements">App achievements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="demo_ui_app.html#app-enhancement">App enhancement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="demo_ui_app.html#ui-walkthrough">UI Walkthrough</a></li>
+<li class="toctree-l2"><a class="reference internal" href="demo_ui_app.html#module-demo_ui.views">Demo UI Views</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="using_ollama.html">Ollama as Local AI</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="using_ollama.html#step-1-start-ollama-and-pull-a-model">Step 1: Start Ollama and Pull a Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_ollama.html#step-2-configure-the-external-model-in-django-admin">Step 2: Configure the External Model in Django Admin</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_ollama.html#step-3-create-a-dummy-api-key">Step 3: Create a Dummy API Key</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_ollama.html#step-4-route-your-user-s-traffic">Step 4: Route Your User’s Traffic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_ollama.html#step-5-test-it">Step 5: Test It!</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_ollama.html#a-quick-note-on-structured-json-outlines-vs-ollama">A Quick Note on Structured JSON (Outlines vs Ollama)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="metacognition_trials.html">Metacognition Trials &amp; Reports</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="metacognition_trials.html#trial-specifications">Trial Specifications</a></li>
+<li class="toctree-l2"><a class="reference internal" href="metacognition_trials.html#generated-execution-reports">Generated Execution Reports</a></li>
+<li class="toctree-l2"><a class="reference internal" href="metacognition_trials.html#running-the-trials-as-doctests">Running the trials as doctests</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tests.html">Testing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tests.html#philosophy">Philosophy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tests.html#running-tests">Running tests</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<section id="quickstart">
+<h2>Quickstart<a class="headerlink" href="#quickstart" title="Link to this heading"></a></h2>
+<p>Verbal uses a modern distributed architecture to ensure heavy AI inference does not block the web interface or background workers.</p>
+<p>To start the full system locally:</p>
+<ol class="arabic">
+<li><p><strong>Start the Background Services (Redis &amp; Celery):</strong>
+Ensure you have Docker running, then execute the toggle script. This spins up Redis and a watchmedo-wrapped Celery worker.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./toggle_background_task_service.sh
+</pre></div>
+</div>
+</li>
+<li><p><strong>Start the Inference Server:</strong>
+Open a new terminal, activate your environment, and start the local GPU inference server on port 8001.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">VERBAL_ROLE</span><span class="o">=</span>inference
+python<span class="w"> </span>manage.py<span class="w"> </span>runserver<span class="w"> </span><span class="m">8001</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Start the Web Interface:</strong>
+Open a third terminal, activate your environment, and start the lightweight Django web/admin server on port 8000.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">VERBAL_ROLE</span><span class="o">=</span>web
+python<span class="w"> </span>manage.py<span class="w"> </span>runserver<span class="w"> </span><span class="m">8000</span>
+</pre></div>
+</div>
+</li>
+</ol>
+<p>You can now navigate to <code class="docutils literal notranslate"><span class="pre">http://localhost:8000/admin/</span></code> to access the system.</p>
+<p>Interactive API self-description (OpenAPI standard) is at <code class="docutils literal notranslate"><span class="pre">http:/localhost:8000/api/docs/</span></code></p>
+</section>
+<section id="configuration-guide">
+<h2>Configuration Guide<a class="headerlink" href="#configuration-guide" title="Link to this heading"></a></h2>
+<p>Verbal utilizes environment variables to dictate how the current process interacts with the AI pipelines.</p>
+<section id="role-management-verbal-role">
+<h3>Role Management (<code class="docutils literal notranslate"><span class="pre">VERBAL_ROLE</span></code>)<a class="headerlink" href="#role-management-verbal-role" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">inference</span></code>: Loads massive HuggingFace models (e.g., Qwen, Gemma) directly into GPU VRAM. It acts as an internal microservice.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">web</span></code>: Bypasses heavy model loading. Acts as a lightweight HTTP client routing generation requests to the inference server.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">worker</span></code>: Used by Celery. Identical to the <code class="docutils literal notranslate"><span class="pre">web</span></code> role but includes small pauses to allow the UI to interleave requests.</p></li>
+</ul>
+</section>
+<section id="inference-routing-inference-url">
+<h3>Inference Routing (<code class="docutils literal notranslate"><span class="pre">INFERENCE_URL</span></code>)<a class="headerlink" href="#inference-routing-inference-url" title="Link to this heading"></a></h3>
+<p>By default, web and worker roles route their requests to <code class="docutils literal notranslate"><span class="pre">http://127.0.0.1:8001/api/llm</span></code>. You can override this if you decide to host the inference server on a different machine on your local network.</p>
+</section>
+<section id="external-models-openai-ollama">
+<h3>External Models (OpenAI, Ollama)<a class="headerlink" href="#external-models-openai-ollama" title="Link to this heading"></a></h3>
+<p>Verbal natively supports standard OpenAI <code class="docutils literal notranslate"><span class="pre">/v1/chat/completions</span></code> endpoints. To route traffic to an external provider or a containerized Ollama instance, configure an <strong>External AI Model</strong> in the Django Admin and assign it via the <strong>User Active Models</strong> table. See the <a class="reference internal" href="using_ollama.html"><span class="doc">Ollama as Local AI</span></a> guide for a complete walkthrough.</p>
+</section>
+</section>
+</section>
+<section id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Link to this heading"></a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="llm_api_app.html" class="btn btn-neutral float-right" title="LLM API" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Andrew Cruickshank.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

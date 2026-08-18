@@ -1,0 +1,903 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>llm_api.api &mdash; Verbal 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Verbal
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../llm_api_app.html">LLM API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../background_resources_app.html">Background Resources - context documents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grips_app.html">Grips - wiki knowledge banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_app.html">Demo UI</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../using_ollama.html">Ollama as Local AI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tests.html">Testing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Verbal</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">llm_api.api</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for llm_api.api</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">typing</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">outlines</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">asdict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">field_validator</span><span class="p">,</span> <span class="n">model_validator</span><span class="p">,</span> <span class="n">ValidationError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ninja</span><span class="w"> </span><span class="kn">import</span> <span class="n">Router</span><span class="p">,</span> <span class="n">Schema</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.http</span><span class="w"> </span><span class="kn">import</span> <span class="n">HttpRequest</span><span class="p">,</span> <span class="n">HttpResponse</span><span class="p">,</span> <span class="n">JsonResponse</span><span class="p">,</span> <span class="n">FileResponse</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.views.decorators.csrf</span><span class="w"> </span><span class="kn">import</span> <span class="n">csrf_exempt</span><span class="p">,</span> <span class="n">ensure_csrf_cookie</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ninja.security</span><span class="w"> </span><span class="kn">import</span> <span class="n">SessionAuth</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Conversation</span><span class="p">,</span> <span class="n">PromptResponseLog</span><span class="p">,</span> <span class="n">LocalAIModel</span><span class="p">,</span> <span class="n">ExternalAIModel</span><span class="p">,</span> <span class="n">UserActiveModel</span><span class="p">,</span> <span class="n">UserAPIKey</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.apps</span><span class="w"> </span><span class="kn">import</span> <span class="n">service_registry</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">background_resources.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Document</span>
+<span class="n">router</span> <span class="o">=</span> <span class="n">Router</span><span class="p">(</span><span class="n">auth</span><span class="o">=</span><span class="n">SessionAuth</span><span class="p">())</span>
+
+
+<div class="viewcode-block" id="GenerateIn">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.api.GenerateIn">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">GenerateIn</span><span class="p">(</span><span class="n">Schema</span><span class="p">):</span>
+    <span class="n">conversation_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">system_prompt</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">user_prompt</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">max_new_tokens</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span>
+    <span class="n">skip_rag</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">skip_grips</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">parent_log_id</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">uncertainty_mode</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># 1: ask, 2: search, 3: guess</span></div>
+
+
+<div class="viewcode-block" id="generate_response">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.api.generate_response">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/generate_response/&quot;</span><span class="p">)</span>
+<span class="nd">@ensure_csrf_cookie</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">generate_response</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">GenerateIn</span><span class="p">):</span>
+    <span class="c1"># TODO: system prompt is supposed to appear only once and subsequent messages should not be system prompts</span>
+    <span class="n">conversation_id</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">conversation_id</span>
+    <span class="n">messages</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">conversation_id</span><span class="p">:</span>
+        <span class="n">conversation</span> <span class="o">=</span> <span class="n">Conversation</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">conversation_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">conversation</span><span class="o">.</span><span class="n">user_id</span> <span class="o">!=</span> <span class="n">request</span><span class="o">.</span><span class="n">auth</span><span class="o">.</span><span class="n">id</span><span class="p">:</span>
+            <span class="c1"># I think I&#39;d like to copy the conversation and allow the new user to take it over</span>
+            <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;You are not authorized to access this conversation.&quot;</span><span class="p">})</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">conversation</span> <span class="o">=</span> <span class="n">Conversation</span><span class="p">(</span><span class="n">user_id</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">auth</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="n">conversation</span><span class="o">.</span><span class="n">title</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">user_prompt</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># first sentence only</span>
+        <span class="n">conversation</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+        <span class="n">conversation_id</span> <span class="o">=</span> <span class="n">conversation</span><span class="o">.</span><span class="n">id</span>
+        <span class="n">system_prompt</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">system_prompt</span> <span class="ow">or</span> <span class="s2">&quot;You are an expert experiment architect. Your task is to design a clear and efficient experiment design based on a user&#39;s description of what they want to find out. Output suggested factors in a list format.&quot;</span>
+        <span class="n">messages</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;system&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">system_prompt</span><span class="p">})</span>
+
+    <span class="c1"># Determine the parent log for the tree</span>
+    <span class="n">parent_log</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">payload</span><span class="o">.</span><span class="n">parent_log_id</span><span class="p">:</span>
+        <span class="n">parent_log</span> <span class="o">=</span> <span class="n">PromptResponseLog</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">parent_log_id</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">conversation_id</span><span class="p">:</span>
+        <span class="n">parent_log</span> <span class="o">=</span> <span class="n">PromptResponseLog</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">conversation_id</span><span class="o">=</span><span class="n">conversation_id</span><span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s1">&#39;-created_at&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+
+    <span class="n">rag_text</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">rag_selections</span> <span class="o">=</span> <span class="p">[]</span>
+    
+    <span class="n">requires_research</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">payload</span><span class="o">.</span><span class="n">skip_rag</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">background_resources.nlp_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">NLPService</span>
+            <span class="n">requires_research</span> <span class="o">=</span> <span class="n">NLPService</span><span class="p">()</span><span class="o">.</span><span class="n">requires_research</span><span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">user_prompt</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error checking requires_research: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">payload</span><span class="o">.</span><span class="n">skip_rag</span> <span class="ow">and</span> <span class="n">requires_research</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">CognitiveBlueprint</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_blueprint</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">blueprint</span> <span class="o">=</span> <span class="n">CognitiveBlueprint</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Deep_Reader&quot;</span><span class="p">)</span>
+            
+            <span class="n">result</span> <span class="o">=</span> <span class="n">run_blueprint</span><span class="p">(</span>
+                <span class="n">blueprint_id</span><span class="o">=</span><span class="n">blueprint</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="n">user_prompt</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Gather and distill context for the following user prompt: </span><span class="si">{</span><span class="n">payload</span><span class="o">.</span><span class="n">user_prompt</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">user_id</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">auth</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="p">)</span>
+            
+            <span class="k">if</span> <span class="s2">&quot;error&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">result</span> <span class="ow">and</span> <span class="s2">&quot;final_response&quot;</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+                <span class="n">distilled</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;final_response&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">distilled</span> <span class="ow">and</span> <span class="n">distilled</span> <span class="o">!=</span> <span class="s2">&quot;&lt;SILENT_ABORT&gt;&quot;</span><span class="p">:</span>
+                    <span class="n">rag_text</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">Relevant Context (Synthesized):</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">distilled</span>
+                    <span class="n">rag_selections</span> <span class="o">=</span> <span class="p">[</span><span class="n">distilled</span><span class="p">]</span>
+        <span class="k">except</span> <span class="n">CognitiveBlueprint</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Deep_Reader blueprint not found. Proceeding without RAG context.&quot;</span><span class="p">)</span>
+    
+    <span class="n">messages</span> <span class="o">=</span> <span class="n">messages</span> <span class="o">+</span> <span class="n">conversation</span><span class="o">.</span><span class="n">as_messages</span><span class="p">(</span><span class="n">leaf_log_id</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">parent_log_id</span><span class="p">)</span> <span class="o">+</span> <span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">payload</span><span class="o">.</span><span class="n">user_prompt</span> <span class="o">+</span> <span class="n">rag_text</span><span class="p">}]</span>
+    <span class="n">max_new_tokens</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">max_new_tokens</span>
+    
+    <span class="c1"># Inject uncertainty handling into the system prompt (messages[0])</span>
+    <span class="k">if</span> <span class="n">messages</span> <span class="ow">and</span> <span class="n">messages</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;role&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;system&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">payload</span><span class="o">.</span><span class="n">uncertainty_mode</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">messages</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;content&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">If you lack information to answer confidently based on the provided context, state what you know and explicitly ask the user if they would like you to search the knowledge base for specific concepts.&quot;</span>
+        <span class="k">elif</span> <span class="n">payload</span><span class="o">.</span><span class="n">uncertainty_mode</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">messages</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;content&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">If you lack information, output &lt;SEARCH: term&gt; to halt and query the database.&quot;</span>
+        <span class="k">elif</span> <span class="n">payload</span><span class="o">.</span><span class="n">uncertainty_mode</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">messages</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;content&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Do not ask for more information. Use your best judgment and infer the answer.&quot;</span>
+    
+    <span class="n">input_tokens</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">ai_service</span><span class="o">.</span><span class="n">count_conversation_tokens</span><span class="p">(</span><span class="n">messages</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;Token Count:&#39;</span><span class="p">,</span> <span class="n">input_tokens</span><span class="p">]]))</span>
+    
+    <span class="p">[</span><span class="n">response</span><span class="p">]</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">ai_service</span><span class="o">.</span><span class="n">generate_response2</span><span class="p">(</span><span class="n">messages</span><span class="o">=</span><span class="n">messages</span><span class="p">,</span> <span class="n">max_new_tokens</span><span class="o">=</span><span class="n">max_new_tokens</span><span class="p">,</span> <span class="n">log_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;skip_log&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span> <span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">auth</span><span class="p">)</span>
+    <span class="n">cleaned_response</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">ai_service</span><span class="o">.</span><span class="n">clean_response</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+    
+    <span class="n">output_tokens</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">ai_service</span><span class="o">.</span><span class="n">count_conversation_tokens</span><span class="p">([{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;assistant&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">cleaned_response</span><span class="p">}])</span>
+    
+    <span class="n">system_prompt</span> <span class="o">=</span> <span class="n">messages</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;content&quot;</span><span class="p">]</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">PromptResponseLog</span><span class="p">(</span><span class="n">system_prompt</span><span class="o">=</span><span class="n">system_prompt</span><span class="p">,</span> <span class="n">user_prompt</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">user_prompt</span><span class="p">,</span>
+                          <span class="n">rag_selections</span><span class="o">=</span><span class="n">rag_selections</span><span class="p">,</span> <span class="n">conversation_id</span><span class="o">=</span><span class="n">conversation_id</span><span class="p">,</span>
+                          <span class="n">generated_response</span><span class="o">=</span><span class="n">cleaned_response</span><span class="p">,</span> <span class="n">user_id</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">auth</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                          <span class="n">parent_log</span><span class="o">=</span><span class="n">parent_log</span><span class="p">,</span> <span class="n">input_tokens</span><span class="o">=</span><span class="n">input_tokens</span><span class="p">,</span> <span class="n">output_tokens</span><span class="o">=</span><span class="n">output_tokens</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;conversation_id&quot;</span><span class="p">:</span> <span class="n">conversation_id</span><span class="p">,</span> <span class="s2">&quot;cleaned_response&quot;</span><span class="p">:</span> <span class="n">cleaned_response</span><span class="p">})</span></div>
+
+
+
+<div class="viewcode-block" id="get_rag_context">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.api.get_rag_context">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/get_rag_context/&quot;</span><span class="p">)</span>
+<span class="nd">@ensure_csrf_cookie</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_rag_context</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">rag_service</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;RAG Service offline.&quot;</span><span class="p">})</span>
+    <span class="n">doc_segments</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">rag_service</span><span class="o">.</span><span class="n">get_context</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">)</span>
+    <span class="c1"># Convert Langchain Documents to JSON-serializable dicts</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;page_content&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">page_content</span><span class="p">,</span> <span class="s2">&quot;metadata&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">metadata</span><span class="p">}</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">doc_segments</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;rag_context&quot;</span><span class="p">:</span> <span class="n">results</span><span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="get_grips_context">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.api.get_grips_context">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/get_grips_context/&quot;</span><span class="p">)</span>
+<span class="nd">@ensure_csrf_cookie</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_grips_context</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">service_registry</span><span class="p">,</span> <span class="s1">&#39;grips_service&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;Grips Service offline.&quot;</span><span class="p">})</span>
+    <span class="n">doc_segments</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">grips_service</span><span class="o">.</span><span class="n">get_grips_context</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">)</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;page_content&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">page_content</span><span class="p">,</span> <span class="s2">&quot;metadata&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">metadata</span><span class="p">}</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">doc_segments</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;grips_context&quot;</span><span class="p">:</span> <span class="n">results</span><span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="get_workspace_info">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.api.get_workspace_info">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/conversation/</span><span class="si">{conversation_id}</span><span class="s2">/workspace/&quot;</span><span class="p">)</span>
+<span class="nd">@ensure_csrf_cookie</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_workspace_info</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">conversation_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the file listing and git history for a conversation&#39;s workspace.&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">conversation</span> <span class="o">=</span> <span class="n">Conversation</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">conversation_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">conversation</span><span class="o">.</span><span class="n">user_id</span> <span class="o">!=</span> <span class="n">request</span><span class="o">.</span><span class="n">auth</span><span class="o">.</span><span class="n">id</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;Not authorized to access this workspace.&quot;</span><span class="p">},</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span>
+            <span class="s2">&quot;files&quot;</span><span class="p">:</span> <span class="n">conversation</span><span class="o">.</span><span class="n">get_workspace_files</span><span class="p">(),</span>
+            <span class="s2">&quot;git_history&quot;</span><span class="p">:</span> <span class="n">conversation</span><span class="o">.</span><span class="n">get_git_history</span><span class="p">()</span>
+        <span class="p">})</span>
+    <span class="k">except</span> <span class="n">Conversation</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;Conversation not found.&quot;</span><span class="p">},</span> <span class="n">status</span><span class="o">=</span><span class="mi">404</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_workspace_file">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.api.get_workspace_file">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/conversation/</span><span class="si">{conversation_id}</span><span class="s2">/workspace/file/&quot;</span><span class="p">)</span>
+<span class="nd">@ensure_csrf_cookie</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_workspace_file</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">conversation_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">commit_hash</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;HEAD&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extracts the content of a file from the workspace at a specific git commit.&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">conversation</span> <span class="o">=</span> <span class="n">Conversation</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">conversation_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">conversation</span><span class="o">.</span><span class="n">user_id</span> <span class="o">!=</span> <span class="n">request</span><span class="o">.</span><span class="n">auth</span><span class="o">.</span><span class="n">id</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;Not authorized to access this workspace.&quot;</span><span class="p">},</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
+        
+        <span class="n">content</span> <span class="o">=</span> <span class="n">conversation</span><span class="o">.</span><span class="n">get_file_at_commit</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">commit_hash</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">content</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;File or commit not found in workspace.&quot;</span><span class="p">},</span> <span class="n">status</span><span class="o">=</span><span class="mi">404</span><span class="p">)</span>
+            
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span>
+            <span class="s2">&quot;filename&quot;</span><span class="p">:</span> <span class="n">filename</span><span class="p">,</span>
+            <span class="s2">&quot;commit_hash&quot;</span><span class="p">:</span> <span class="n">commit_hash</span><span class="p">,</span>
+            <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">content</span>
+        <span class="p">})</span>
+    <span class="k">except</span> <span class="n">Conversation</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;Conversation not found.&quot;</span><span class="p">},</span> <span class="n">status</span><span class="o">=</span><span class="mi">404</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="OutlineQuery">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.api.OutlineQuery">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">OutlineQuery</span><span class="p">(</span><span class="n">Schema</span><span class="p">):</span>
+    <span class="n">user_query</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">max_topics</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span></div>
+
+
+<div class="viewcode-block" id="StateValue">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.api.StateValue">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">StateValue</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">definition</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="StateSet">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.api.StateSet">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">StateSet</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">state_values</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="n">StateValue</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span></div>
+
+
+<div class="viewcode-block" id="Factor">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.api.Factor">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Factor</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">state_options</span><span class="p">:</span> <span class="n">StateSet</span></div>
+
+
+
+<span class="c1"># Pydantic example</span>
+<div class="viewcode-block" id="Hydrant">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.api.Hydrant">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Hydrant</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">location_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;name of the hydrant&quot;</span><span class="p">)</span>
+    <span class="n">water_static_pressure</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">ge</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">le</span><span class="o">=</span><span class="mi">650</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;kPa - hydrant static pressure&quot;</span><span class="p">)</span>
+    <span class="n">water_residual_pressure</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">ge</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">le</span><span class="o">=</span><span class="mi">550</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;kPa - hydrant residual pressure&quot;</span><span class="p">)</span>
+    <span class="n">peak_flow</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">ge</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">le</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;L / minute - max flow of water from the hydrant&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Hydrant.validate_residual_pressure">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.api.Hydrant.validate_residual_pressure">[docs]</a>
+    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;location_name&#39;</span><span class="p">)</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">validate_residual_pressure</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">v</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Infants must be defined as months, not 0 years.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">v</span></div>
+
+
+<div class="viewcode-block" id="Hydrant.check_physics">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.api.Hydrant.check_physics">[docs]</a>
+    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;after&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_physics</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># The LLM might try to generate a residual higher than static</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">residual_pressure</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">static_pressure</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Physics violation: Residual pressure (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">residual_pressure</span><span class="si">}</span><span class="s2">) &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;cannot be higher than Static pressure (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">static_pressure</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+</div>
+
+
+<div class="viewcode-block" id="OutlineIn">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.api.OutlineIn">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">OutlineIn</span><span class="p">(</span><span class="n">Schema</span><span class="p">):</span>
+    <span class="n">query</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">schema_key</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="get_outline">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.api.get_outline">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/get_outline/&quot;</span><span class="p">)</span>
+<span class="nd">@ensure_csrf_cookie</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_outline</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">OutlineIn</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">schema_key</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">output_type</span> <span class="o">=</span> <span class="n">OUTPUT_TYPES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">schema_key</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">output_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;Schema key not known.&quot;</span><span class="p">})</span>
+    <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">schema_key</span><span class="p">)</span> <span class="o">==</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="n">output_type</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">schema_key</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;Get Outline called: types -&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">query</span><span class="p">),</span> <span class="n">output_type</span><span class="p">]]))</span>
+    <span class="n">outline</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">ai_service</span><span class="o">.</span><span class="n">generate_outline</span><span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">query</span><span class="p">,</span> <span class="n">output_type</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">auth</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;Outline&#39;</span><span class="p">,</span> <span class="n">outline</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">outline</span><span class="p">)]]))</span>
+    
+    <span class="n">outline_data</span> <span class="o">=</span> <span class="n">outline</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">outline</span><span class="p">,</span> <span class="s1">&#39;model_dump&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="n">outline</span>
+    <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;outline&quot;</span><span class="p">:</span> <span class="n">outline_data</span><span class="p">})</span></div>
+
+
+
+<span class="c1"># --- Standard OpenAI API Proxy Endpoints (No Auth) ---</span>
+
+<div class="viewcode-block" id="OpenAIChatMessage">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.api.OpenAIChatMessage">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">OpenAIChatMessage</span><span class="p">(</span><span class="n">Schema</span><span class="p">):</span>
+    <span class="n">role</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">content</span><span class="p">:</span> <span class="nb">str</span></div>
+
+
+<div class="viewcode-block" id="OpenAIJsonSchema">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.api.OpenAIJsonSchema">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">OpenAIJsonSchema</span><span class="p">(</span><span class="n">Schema</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">schema_dict</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;schema&quot;</span><span class="p">)</span>
+    <span class="n">strict</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="OpenAIResponseFormat">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.api.OpenAIResponseFormat">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">OpenAIResponseFormat</span><span class="p">(</span><span class="n">Schema</span><span class="p">):</span>
+    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">json_schema_format</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">OpenAIJsonSchema</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;json_schema&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="OpenAIChatCompletionIn">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.api.OpenAIChatCompletionIn">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">OpenAIChatCompletionIn</span><span class="p">(</span><span class="n">Schema</span><span class="p">):</span>
+    <span class="n">model</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;local-model&quot;</span>
+    <span class="n">messages</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="n">OpenAIChatMessage</span><span class="p">]</span>
+    <span class="n">temperature</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.7</span>
+    <span class="n">max_tokens</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1024</span>
+    <span class="n">n</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">response_format</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">OpenAIResponseFormat</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">RegexCandidate</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">reasoning</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Brief analysis of the text structure and strategy&quot;</span><span class="p">)</span>
+    <span class="n">pattern</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">min_length</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The Python regex pattern&quot;</span><span class="p">)</span>
+
+<span class="n">OUTPUT_TYPES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;Factor&quot;</span><span class="p">:</span> <span class="n">Factor</span><span class="p">,</span>
+    <span class="s2">&quot;RegexCandidate&quot;</span><span class="p">:</span> <span class="n">RegexCandidate</span><span class="p">,</span>
+<span class="p">}</span>
+
+<div class="viewcode-block" id="internal_ping">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.api.internal_ping">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/internal/ping/&quot;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="nd">@csrf_exempt</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">internal_ping</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">django.conf</span><span class="w"> </span><span class="kn">import</span> <span class="n">settings</span>
+    <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;ok&quot;</span><span class="p">,</span> <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="s2">&quot;VERBAL_ROLE&quot;</span><span class="p">,</span> <span class="s2">&quot;unknown&quot;</span><span class="p">)})</span></div>
+
+
+<div class="viewcode-block" id="openai_chat_completions">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.api.openai_chat_completions">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/v1/chat/completions&quot;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="nd">@csrf_exempt</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">openai_chat_completions</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">OpenAIChatCompletionIn</span><span class="p">):</span>
+    <span class="n">messages</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="n">m</span><span class="o">.</span><span class="n">role</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">m</span><span class="o">.</span><span class="n">content</span><span class="p">}</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">payload</span><span class="o">.</span><span class="n">messages</span><span class="p">]</span>
+    <span class="n">max_tokens</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">max_tokens</span> <span class="ow">or</span> <span class="mi">1024</span>
+    
+    <span class="c1"># Route structured output vs standard generation</span>
+    <span class="k">if</span> <span class="n">payload</span><span class="o">.</span><span class="n">response_format</span> <span class="ow">and</span> <span class="n">payload</span><span class="o">.</span><span class="n">response_format</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;json_schema&quot;</span><span class="p">:</span>
+        <span class="n">schema_obj</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">response_format</span><span class="o">.</span><span class="n">json_schema_format</span>
+        <span class="n">schema_dict</span> <span class="o">=</span> <span class="n">schema_obj</span><span class="o">.</span><span class="n">schema_dict</span> <span class="k">if</span> <span class="n">schema_obj</span> <span class="k">else</span> <span class="p">{}</span>
+        <span class="n">schema_name</span> <span class="o">=</span> <span class="n">schema_obj</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="n">schema_obj</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+
+        
+        <span class="n">response_schema</span> <span class="o">=</span> <span class="n">schema_dict</span>
+        
+        <span class="c1"># Attempt to resolve the Pydantic class by name to enable native validation &amp; FSM setup</span>
+        <span class="k">if</span> <span class="n">schema_name</span> <span class="ow">in</span> <span class="n">OUTPUT_TYPES</span><span class="p">:</span>
+            <span class="n">response_schema</span> <span class="o">=</span> <span class="n">OUTPUT_TYPES</span><span class="p">[</span><span class="n">schema_name</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">background_resources.rag_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">OUTPUT_TYPES</span> <span class="k">as</span> <span class="n">RAG_OUTPUT_TYPES</span>
+                <span class="k">if</span> <span class="n">schema_name</span> <span class="ow">in</span> <span class="n">RAG_OUTPUT_TYPES</span><span class="p">:</span>
+                    <span class="n">response_schema</span> <span class="o">=</span> <span class="n">RAG_OUTPUT_TYPES</span><span class="p">[</span><span class="n">schema_name</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+                <span class="k">pass</span>
+            
+            <span class="k">if</span> <span class="n">response_schema</span> <span class="o">==</span> <span class="n">schema_dict</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="kn">import</span><span class="w"> </span><span class="nn">benchmarking.generators</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">bg</span>
+                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">bg</span><span class="p">,</span> <span class="n">schema_name</span><span class="p">):</span>
+                        <span class="n">response_schema</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">bg</span><span class="p">,</span> <span class="n">schema_name</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+                    <span class="k">pass</span>
+            
+            <span class="k">if</span> <span class="n">response_schema</span> <span class="o">==</span> <span class="n">schema_dict</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="kn">import</span><span class="w"> </span><span class="nn">metacognition.actions</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ma</span>
+                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ma</span><span class="p">,</span> <span class="n">schema_name</span><span class="p">):</span>
+                        <span class="n">response_schema</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ma</span><span class="p">,</span> <span class="n">schema_name</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+                    <span class="k">pass</span>
+        
+        <span class="n">result</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">ai_service</span><span class="o">.</span><span class="n">generate_outline</span><span class="p">(</span>
+            <span class="n">messages</span><span class="o">=</span><span class="n">messages</span><span class="p">,</span>
+            <span class="n">response_schema</span><span class="o">=</span><span class="n">response_schema</span><span class="p">,</span>
+            <span class="n">max_new_tokens</span><span class="o">=</span><span class="n">max_tokens</span><span class="p">,</span>
+            <span class="n">temperature</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">temperature</span><span class="p">,</span>
+            <span class="n">num_return_sequences</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">n</span><span class="p">,</span>
+            <span class="n">log_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;skip_log&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+        <span class="p">)</span>
+        
+        <span class="n">results_list</span> <span class="o">=</span> <span class="n">result</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="p">[</span><span class="n">result</span><span class="p">]</span>
+        <span class="n">choices</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">results_list</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="s1">&#39;model_dump&#39;</span><span class="p">):</span>
+                <span class="n">content</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="n">content</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># JsonSchema generations return strings directly</span>
+                <span class="n">content</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+            <span class="n">choices</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;assistant&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">content</span><span class="p">}})</span>
+            
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;choices&quot;</span><span class="p">:</span> <span class="n">choices</span><span class="p">})</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">ai_service</span><span class="o">.</span><span class="n">generate_response2</span><span class="p">(</span>
+            <span class="n">messages</span><span class="o">=</span><span class="n">messages</span><span class="p">,</span>
+            <span class="n">max_new_tokens</span><span class="o">=</span><span class="n">max_tokens</span><span class="p">,</span>
+            <span class="n">temperature</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">temperature</span><span class="p">,</span>
+            <span class="n">num_return_sequences</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">n</span><span class="p">,</span>
+            <span class="n">log_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;skip_log&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+        <span class="p">)</span>
+        <span class="n">choices</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;assistant&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">r</span><span class="p">)}}</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">results</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;choices&quot;</span><span class="p">:</span> <span class="n">choices</span><span class="p">})</span></div>
+
+
+<span class="c1"># --- PDF Viewer Endpoint ---</span>
+
+<div class="viewcode-block" id="view_document_pdf">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.api.view_document_pdf">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/view_document/</span><span class="si">{doc_id}</span><span class="s2">/&quot;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">view_document_pdf</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Serves a document&#39;s PDF file with the X-Frame-Options header set to SAMEORIGIN,</span>
+<span class="sd">    allowing it to be embedded in an iframe within the Django admin.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">doc</span> <span class="o">=</span> <span class="n">Document</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">doc_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">doc</span><span class="o">.</span><span class="n">file</span> <span class="ow">and</span> <span class="n">doc</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.pdf&#39;</span><span class="p">):</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">FileResponse</span><span class="p">(</span><span class="n">doc</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s1">&#39;rb&#39;</span><span class="p">),</span> <span class="n">content_type</span><span class="o">=</span><span class="s1">&#39;application/pdf&#39;</span><span class="p">)</span>
+            <span class="n">response</span><span class="p">[</span><span class="s1">&#39;X-Frame-Options&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;SAMEORIGIN&#39;</span>
+            <span class="k">return</span> <span class="n">response</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s2">&quot;Document has no associated PDF file.&quot;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">404</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">Document</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s2">&quot;Document not found.&quot;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">404</span><span class="p">)</span></div>
+
+
+<span class="c1"># --- Admin Helper Endpoints ---</span>
+
+<div class="viewcode-block" id="RegexSuggestIn">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.api.RegexSuggestIn">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">RegexSuggestIn</span><span class="p">(</span><span class="n">Schema</span><span class="p">):</span>
+    <span class="n">description</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">term_description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">definition_description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">examples</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">document_id</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="RegexCandidate">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.api.RegexCandidate">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">RegexCandidate</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">reasoning</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Brief analysis of the text structure and strategy&quot;</span><span class="p">)</span>
+    <span class="n">pattern</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">min_length</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The Python regex pattern&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="suggest_regex">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.api.suggest_regex">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/admin/suggest_regex/&quot;</span><span class="p">)</span>
+<span class="nd">@ensure_csrf_cookie</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">suggest_regex</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">RegexSuggestIn</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Asks the AI to generate a regex based on description and examples.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># 1. Fetch Sample Text for &quot;Genetic&quot; Evaluation</span>
+    <span class="n">sample_text</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">payload</span><span class="o">.</span><span class="n">document_id</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">doc</span> <span class="o">=</span> <span class="n">Document</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">document_id</span><span class="p">)</span>
+            <span class="n">chunks</span><span class="p">,</span> <span class="n">chunk_ids</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">rag_service</span><span class="o">.</span><span class="n">convert_chunk_store_document</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">chunks</span> <span class="ow">and</span> <span class="n">chunk_ids</span><span class="p">:</span>
+                <span class="n">chunks</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">rag_service</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">mget</span><span class="p">(</span><span class="n">chunk_ids</span><span class="p">)</span>
+                <span class="n">chunks</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">chunks</span> <span class="k">if</span> <span class="n">c</span><span class="p">]</span>
+            
+            <span class="c1"># Use first 5 chunks as test ground</span>
+            <span class="k">if</span> <span class="n">chunks</span><span class="p">:</span>
+                <span class="n">sample_text</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">c</span><span class="o">.</span><span class="n">page_content</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">chunks</span><span class="p">[:</span><span class="mi">5</span><span class="p">]])</span>
+        <span class="k">except</span> <span class="n">Document</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+    <span class="n">prompt</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    You are a regular expression expert. </span>
+<span class="s2">    Task: Create simple, logical Python regex pattern (compatible with re.findall) to extract structured data from a text document.</span>
+<span class="s2">    </span>
+<span class="s2">    CRITICAL REQUIREMENT: Each regex MUST capture exactly two groups.</span>
+<span class="s2">    Group 1: </span><span class="si">{</span><span class="n">payload</span><span class="o">.</span><span class="n">term_description</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">payload</span><span class="o">.</span><span class="n">term_description</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s2">&quot;The term or key being defined&quot;</span><span class="si">}</span>
+<span class="s2">    Group 2: </span><span class="si">{</span><span class="n">payload</span><span class="o">.</span><span class="n">definition_description</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">payload</span><span class="o">.</span><span class="n">definition_description</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s2">&quot;The definition or value&quot;</span><span class="si">}</span>
+<span class="s2">    </span>
+<span class="s2">    Context/Description: </span><span class="si">{</span><span class="n">payload</span><span class="o">.</span><span class="n">description</span><span class="si">}</span>
+
+<span class="s2">    Positive Examples (lines that should match):</span>
+<span class="s2">    </span><span class="si">{</span><span class="n">payload</span><span class="o">.</span><span class="n">examples</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">payload</span><span class="o">.</span><span class="n">examples</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s2">&quot;No examples provided. Rely strictly on the description.&quot;</span><span class="si">}</span>
+<span class="s2">    </span>
+<span class="s2">    GUIDELINES:</span>
+<span class="s2">    1. GENERALIZE: Do not overfit to the specific words in the examples. Match the structure (e.g. &quot;Word: Definition&quot;). </span>
+<span class="s2">    2. LOOK TO PUNCTUATION: Significant structure is usually expressed in punctuation and whitespace characters.</span>
+<span class="s2">    3. COMPATIBILITY: Python&#39;s re module DOES NOT support variable-width look-behind assertions. Do not use them.</span>
+<span class="s2">    4. TWO GROUPS PER MATCH: Use non-capturing groups (?:...) for any grouping that is not the Term (Group 1) or Definition (Group 2). Each match must be a 2-tuple because they are to be stored as a Key and Value.  </span>
+<span class="s2">    5. NO NESTING: Do not nest groups.</span>
+<span class="s2">    </span>
+<span class="s2">    OUTPUT FORMAT:</span>
+<span class="s2">    Your response MUST consist of ONLY THE REGEX. Don&#39;t include any labels, introductions or preambles.</span>
+<span class="s2">    </span>
+<span class="s2">    &quot;&quot;&quot;</span>
+    
+    <span class="n">messages</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">prompt</span><span class="p">}]</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;MESSAGES FOR REGEX:&#39;</span><span class="p">,</span> <span class="n">messages</span><span class="p">]]))</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Use the standard LLM pipeline which has do_sample=True for diversity</span>
+        <span class="n">responses</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">ai_service</span><span class="o">.</span><span class="n">generate_outline</span><span class="p">(</span><span class="n">messages</span><span class="o">=</span><span class="n">messages</span><span class="p">,</span> <span class="n">response_schema</span><span class="o">=</span><span class="n">RegexCandidate</span><span class="p">,</span> <span class="n">max_new_tokens</span><span class="o">=</span><span class="mi">2048</span><span class="p">,</span> <span class="n">num_return_sequences</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+        
+        <span class="n">candidates</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">responses</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">raw_response</span> <span class="ow">in</span> <span class="n">responses</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw_response</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;error&quot;</span> <span class="ow">in</span> <span class="n">raw_response</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw_response</span><span class="p">,</span> <span class="n">RegexCandidate</span><span class="p">):</span>
+                    <span class="n">candidates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">raw_response</span><span class="o">.</span><span class="n">pattern</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw_response</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                    <span class="n">candidates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">RegexCandidate</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">raw_response</span><span class="p">)</span><span class="o">.</span><span class="n">pattern</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw_response</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                    <span class="c1"># Clean up markdown code blocks if present</span>
+                    <span class="n">clean_json</span> <span class="o">=</span> <span class="n">raw_response</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;```json&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;```&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                    <span class="n">candidates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">RegexCandidate</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="n">clean_json</span><span class="p">)</span><span class="o">.</span><span class="n">pattern</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">continue</span>
+        
+        <span class="c1"># Deduplicate candidates preserving order</span>
+        <span class="n">seen</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">unique_candidates</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">candidates</span><span class="p">:</span>
+            <span class="n">c_clean</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">c_clean</span> <span class="ow">and</span> <span class="n">c_clean</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen</span><span class="p">:</span>
+                <span class="n">unique_candidates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c_clean</span><span class="p">)</span>
+                <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">c_clean</span><span class="p">)</span>
+        <span class="n">candidates</span> <span class="o">=</span> <span class="n">unique_candidates</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;AI generation failed: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">})</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">candidates</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;AI returned no candidates.&quot;</span><span class="p">})</span>
+
+    <span class="c1"># --- Genetic Selection / Ranking ---</span>
+    <span class="n">best_regex</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">best_score</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    
+    <span class="n">scored_candidates</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">candidates</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">pattern</span> <span class="ow">in</span> <span class="n">candidates</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Compile with MULTILINE automatically to be forgiving</span>
+            <span class="n">c_regex</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">MULTILINE</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">c_regex</span><span class="o">.</span><span class="n">groups</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">continue</span>
+            
+            <span class="n">matches</span> <span class="o">=</span> <span class="n">c_regex</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">sample_text</span><span class="p">)</span>
+            <span class="n">match_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">matches</span><span class="p">)</span>
+            
+            <span class="c1"># Heuristics for Quality</span>
+            <span class="c1"># 1. Term Length Sanity: Terms shouldn&#39;t be massive (e.g. &gt; 100 chars)</span>
+            <span class="c1">#    If they are, the regex is likely too greedy (e.g. matching whole lines as terms)</span>
+            <span class="n">avg_term_len</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">matches</span><span class="p">)</span> <span class="o">/</span> <span class="n">match_count</span> <span class="k">if</span> <span class="n">match_count</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+            
+            <span class="n">score</span> <span class="o">=</span> <span class="n">match_count</span>
+            
+            <span class="c1"># Penalize greedy terms</span>
+            <span class="k">if</span> <span class="n">avg_term_len</span> <span class="o">&gt;</span> <span class="mi">100</span><span class="p">:</span>
+                <span class="n">score</span> <span class="o">=</span> <span class="mi">0</span>
+            
+            <span class="n">scored_candidates</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;regex&quot;</span><span class="p">:</span> <span class="n">pattern</span><span class="p">,</span> <span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="n">score</span><span class="p">,</span> <span class="s2">&quot;matches&quot;</span><span class="p">:</span> <span class="n">match_count</span><span class="p">})</span>
+            
+            <span class="k">if</span> <span class="n">score</span> <span class="o">&gt;</span> <span class="n">best_score</span><span class="p">:</span>
+                <span class="n">best_score</span> <span class="o">=</span> <span class="n">score</span>
+                <span class="n">best_regex</span> <span class="o">=</span> <span class="n">pattern</span>
+                
+        <span class="k">except</span> <span class="n">re</span><span class="o">.</span><span class="n">error</span><span class="p">:</span>
+            <span class="k">continue</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;scored candidates&#39;</span><span class="p">,</span> <span class="n">scored_candidates</span><span class="p">]]))</span>
+    <span class="k">if</span> <span class="n">best_regex</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;regex&quot;</span><span class="p">:</span> <span class="n">best_regex</span><span class="p">,</span> <span class="s2">&quot;candidates_evaluated&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">candidates</span><span class="p">),</span> <span class="s2">&quot;best_match_count&quot;</span><span class="p">:</span> <span class="n">best_score</span><span class="p">})</span>
+    
+    <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Generated </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">candidates</span><span class="p">)</span><span class="si">}</span><span class="s2"> candidates but none were valid or found matches.&quot;</span><span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="RegexPreviewIn">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.api.RegexPreviewIn">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">RegexPreviewIn</span><span class="p">(</span><span class="n">Schema</span><span class="p">):</span>
+    <span class="n">document_id</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">chunk_id</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">regex</span><span class="p">:</span> <span class="nb">str</span></div>
+
+
+<div class="viewcode-block" id="preview_regex">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.api.preview_regex">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/admin/preview_regex/&quot;</span><span class="p">)</span>
+<span class="nd">@ensure_csrf_cookie</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">preview_regex</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">RegexPreviewIn</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Tests a regex against a specific chunk or the first 5 chunks of a document.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">target_chunks</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="c1"># 1. Try to get specific chunk if selected</span>
+        <span class="k">if</span> <span class="n">payload</span><span class="o">.</span><span class="n">chunk_id</span><span class="p">:</span>
+            <span class="n">chunks</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">rag_service</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">mget</span><span class="p">([</span><span class="n">payload</span><span class="o">.</span><span class="n">chunk_id</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">chunks</span> <span class="ow">and</span> <span class="n">chunks</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="n">target_chunks</span> <span class="o">=</span> <span class="p">[</span><span class="n">chunks</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+
+        <span class="c1"># 2. Fallback to document chunks</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">target_chunks</span> <span class="ow">and</span> <span class="n">payload</span><span class="o">.</span><span class="n">document_id</span><span class="p">:</span>
+            <span class="n">doc</span> <span class="o">=</span> <span class="n">Document</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">document_id</span><span class="p">)</span>
+            <span class="c1"># We grab chunks. If not indexed, we generate them in memory.</span>
+            <span class="n">chunks</span><span class="p">,</span> <span class="n">chunk_ids</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">rag_service</span><span class="o">.</span><span class="n">convert_chunk_store_document</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>
+            
+            <span class="c1"># If chunks are reused (already indexed), fetch them from store so we can process them</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">chunks</span> <span class="ow">and</span> <span class="n">chunk_ids</span><span class="p">:</span>
+                <span class="n">chunks</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">rag_service</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">mget</span><span class="p">(</span><span class="n">chunk_ids</span><span class="p">)</span>
+                <span class="n">chunks</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">chunks</span> <span class="k">if</span> <span class="n">c</span><span class="p">]</span> <span class="c1"># Filter Nones</span>
+            
+            <span class="k">if</span> <span class="n">chunks</span><span class="p">:</span>
+                <span class="c1"># Test against the first 5 chunks to ensure we catch patterns that might start later</span>
+                <span class="n">target_chunks</span> <span class="o">=</span> <span class="n">chunks</span><span class="p">[:</span><span class="mi">5</span><span class="p">]</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">target_chunks</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;matches&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;sample_text&quot;</span><span class="p">:</span> <span class="s2">&quot;No text found.&quot;</span><span class="p">})</span>
+
+        <span class="n">sample_text</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">--- CHUNK BREAK ---</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">c</span><span class="o">.</span><span class="n">page_content</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">target_chunks</span><span class="p">])</span>
+        
+        <span class="c1"># Use the RAG service&#39;s extraction logic to ensure consistency</span>
+        <span class="c1"># We reuse get_glossary_terms logic but generic</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">regex</span><span class="p">)</span>
+            <span class="n">matches</span> <span class="o">=</span> <span class="n">pattern</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">sample_text</span><span class="p">)</span>
+            <span class="c1"># Limit matches to top 10 to avoid huge payloads</span>
+            <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span>
+                <span class="s2">&quot;matches&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">matches</span><span class="p">[:</span><span class="mi">10</span><span class="p">]],</span> 
+                <span class="s2">&quot;count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">matches</span><span class="p">),</span>
+                <span class="s2">&quot;sample_text&quot;</span><span class="p">:</span> <span class="n">sample_text</span>  <span class="c1"># Return full text of the 5 chunks for inspection</span>
+            <span class="p">})</span>
+        <span class="k">except</span> <span class="n">re</span><span class="o">.</span><span class="n">error</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Invalid Regex: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">})</span>
+            
+    <span class="k">except</span> <span class="n">Document</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;Document not found.&quot;</span><span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="AbbreviationPreviewIn">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.api.AbbreviationPreviewIn">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AbbreviationPreviewIn</span><span class="p">(</span><span class="n">Schema</span><span class="p">):</span>
+    <span class="n">document_id</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">chunk_id</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="preview_abbreviations">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.api.preview_abbreviations">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/admin/preview_abbreviations/&quot;</span><span class="p">)</span>
+<span class="nd">@ensure_csrf_cookie</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">preview_abbreviations</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">AbbreviationPreviewIn</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Tests abbreviation extraction against a specific chunk or the first 5 chunks.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">target_chunks</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="k">if</span> <span class="n">payload</span><span class="o">.</span><span class="n">chunk_id</span><span class="p">:</span>
+            <span class="n">chunks</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">rag_service</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">mget</span><span class="p">([</span><span class="n">payload</span><span class="o">.</span><span class="n">chunk_id</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">chunks</span> <span class="ow">and</span> <span class="n">chunks</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="n">target_chunks</span> <span class="o">=</span> <span class="p">[</span><span class="n">chunks</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">target_chunks</span> <span class="ow">and</span> <span class="n">payload</span><span class="o">.</span><span class="n">document_id</span><span class="p">:</span>
+            <span class="n">doc</span> <span class="o">=</span> <span class="n">Document</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">document_id</span><span class="p">)</span>
+            <span class="n">chunks</span><span class="p">,</span> <span class="n">chunk_ids</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">rag_service</span><span class="o">.</span><span class="n">convert_chunk_store_document</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">chunks</span> <span class="ow">and</span> <span class="n">chunk_ids</span><span class="p">:</span>
+                <span class="n">chunks</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">rag_service</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">mget</span><span class="p">(</span><span class="n">chunk_ids</span><span class="p">)</span>
+                <span class="n">chunks</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">chunks</span> <span class="k">if</span> <span class="n">c</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">chunks</span><span class="p">:</span>
+                <span class="n">target_chunks</span> <span class="o">=</span> <span class="n">chunks</span><span class="p">[:</span><span class="mi">5</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">target_chunks</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;abbreviations&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;sample_text&quot;</span><span class="p">:</span> <span class="s2">&quot;No text found.&quot;</span><span class="p">})</span>
+
+        <span class="n">sample_text</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">c</span><span class="o">.</span><span class="n">page_content</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">target_chunks</span><span class="p">])</span>
+        
+        <span class="n">nlp_service</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">nlp_service</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">nlp_service</span><span class="o">.</span><span class="n">get_abbreviation_model</span><span class="p">()</span>
+        <span class="n">doc</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">sample_text</span><span class="p">)</span>
+        
+        <span class="n">abbreviations</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">doc</span><span class="o">.</span><span class="n">_</span><span class="o">.</span><span class="n">abbreviations</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">abrv</span> <span class="ow">in</span> <span class="n">doc</span><span class="o">.</span><span class="n">_</span><span class="o">.</span><span class="n">abbreviations</span><span class="p">:</span>
+                <span class="n">abbreviations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">abrv</span><span class="o">.</span><span class="n">text</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">abrv</span><span class="o">.</span><span class="n">_</span><span class="o">.</span><span class="n">long_form</span><span class="o">.</span><span class="n">text</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;abbreviations&quot;</span><span class="p">:</span> <span class="n">abbreviations</span><span class="p">,</span> <span class="s2">&quot;count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">abbreviations</span><span class="p">),</span> <span class="s2">&quot;sample_text&quot;</span><span class="p">:</span> <span class="n">sample_text</span><span class="p">[:</span><span class="mi">1000</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;...&quot;</span><span class="p">})</span>
+
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)})</span></div>
+
+
+<div class="viewcode-block" id="PromptPreviewIn">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.api.PromptPreviewIn">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PromptPreviewIn</span><span class="p">(</span><span class="n">Schema</span><span class="p">):</span>
+    <span class="n">document_id</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">chunk_id</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">prompt</span><span class="p">:</span> <span class="nb">str</span></div>
+
+
+<div class="viewcode-block" id="preview_prompt">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.api.preview_prompt">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/admin/preview_prompt/&quot;</span><span class="p">)</span>
+<span class="nd">@ensure_csrf_cookie</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">preview_prompt</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">PromptPreviewIn</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Tests a prompt against a specific chunk or the first chunk of a document.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">target_chunk</span> <span class="o">=</span> <span class="kc">None</span>
+        
+        <span class="c1"># 1. Try to get specific chunk if selected</span>
+        <span class="k">if</span> <span class="n">payload</span><span class="o">.</span><span class="n">chunk_id</span><span class="p">:</span>
+            <span class="n">chunks</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">rag_service</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">mget</span><span class="p">([</span><span class="n">payload</span><span class="o">.</span><span class="n">chunk_id</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">chunks</span> <span class="ow">and</span> <span class="n">chunks</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="n">target_chunk</span> <span class="o">=</span> <span class="n">chunks</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        
+        <span class="c1"># 2. Fallback to first chunk of document</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">target_chunk</span> <span class="ow">and</span> <span class="n">payload</span><span class="o">.</span><span class="n">document_id</span><span class="p">:</span>
+            <span class="n">doc</span> <span class="o">=</span> <span class="n">Document</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">document_id</span><span class="p">)</span>
+            <span class="c1"># We grab chunks. If not indexed, we generate them in memory.</span>
+            <span class="n">chunks</span><span class="p">,</span> <span class="n">chunk_ids</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">rag_service</span><span class="o">.</span><span class="n">convert_chunk_store_document</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>
+            
+            <span class="c1"># If chunks are reused (already indexed), fetch them from store</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">chunks</span> <span class="ow">and</span> <span class="n">chunk_ids</span><span class="p">:</span>
+                <span class="n">chunks</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">rag_service</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">mget</span><span class="p">(</span><span class="n">chunk_ids</span><span class="p">)</span>
+                <span class="n">chunks</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">chunks</span> <span class="k">if</span> <span class="n">c</span><span class="p">]</span> <span class="c1"># Filter Nones</span>
+            
+            <span class="k">if</span> <span class="n">chunks</span><span class="p">:</span>
+                <span class="n">target_chunk</span> <span class="o">=</span> <span class="n">chunks</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">target_chunk</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;No text found. Select a document or a specific chunk.&quot;</span><span class="p">})</span>
+        
+        <span class="n">result</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">rag_service</span><span class="o">.</span><span class="n">get_chunk_summary</span><span class="p">(</span><span class="n">target_chunk</span><span class="o">.</span><span class="n">page_content</span><span class="p">,</span> <span class="n">custom_prompt</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">prompt</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span>
+            <span class="s2">&quot;long_form&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">long_form</span><span class="p">,</span>
+            <span class="s2">&quot;short_form&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">short_form</span><span class="p">,</span>
+            <span class="s2">&quot;keywords&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">keywords</span><span class="p">,</span>
+            <span class="s2">&quot;sample_text&quot;</span><span class="p">:</span> <span class="n">target_chunk</span><span class="o">.</span><span class="n">page_content</span><span class="p">[:</span><span class="mi">1000</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;...&quot;</span>
+        <span class="p">})</span>
+            
+    <span class="k">except</span> <span class="n">Document</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;Document not found.&quot;</span><span class="p">})</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Error generating summary: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">})</span></div>
+
+
+<span class="c1"># --- Admin Cache Downloader Endpoints ---</span>
+
+<div class="viewcode-block" id="DownloadModelIn">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.api.DownloadModelIn">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DownloadModelIn</span><span class="p">(</span><span class="n">Schema</span><span class="p">):</span>
+    <span class="n">model_id</span><span class="p">:</span> <span class="nb">int</span></div>
+
+
+<div class="viewcode-block" id="start_download_model_cache">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.api.start_download_model_cache">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/admin/download_model_cache/&quot;</span><span class="p">)</span>
+<span class="nd">@csrf_exempt</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">start_download_model_cache</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">DownloadModelIn</span><span class="p">):</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">LocalAIModel</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">download_model_cache</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">LocalAIModel</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">model_id</span><span class="p">)</span>
+        <span class="n">task</span> <span class="o">=</span> <span class="n">download_model_cache</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">hf_model_id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;task_id&quot;</span><span class="p">:</span> <span class="n">task</span><span class="o">.</span><span class="n">id</span><span class="p">})</span>
+    <span class="k">except</span> <span class="n">LocalAIModel</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;Model not found.&quot;</span><span class="p">},</span> <span class="n">status</span><span class="o">=</span><span class="mi">404</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="check_download_model_status">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.api.check_download_model_status">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/admin/download_model_status/</span><span class="si">{task_id}</span><span class="s2">/&quot;</span><span class="p">)</span>
+<span class="nd">@csrf_exempt</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_download_model_status</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">task_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">django.core.cache</span><span class="w"> </span><span class="kn">import</span> <span class="n">cache</span>
+    <span class="n">progress</span> <span class="o">=</span> <span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;model_download_progress_</span><span class="si">{</span><span class="n">task_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">progress</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">(</span><span class="n">progress</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;Unknown or Finished&quot;</span><span class="p">,</span> <span class="s2">&quot;percentage&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">})</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Andrew Cruickshank.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

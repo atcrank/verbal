@@ -1,0 +1,304 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>grips.models &mdash; Verbal 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Verbal
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../llm_api_app.html">LLM API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../background_resources_app.html">Background Resources - context documents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grips_app.html">Grips - wiki knowledge banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_app.html">Demo UI</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../using_ollama.html">Ollama as Local AI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tests.html">Testing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Verbal</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">grips.models</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for grips.models</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">django.db</span><span class="w"> </span><span class="kn">import</span> <span class="n">models</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.urls</span><span class="w"> </span><span class="kn">import</span> <span class="n">reverse</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.contrib.postgres.fields</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArrayField</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.utils.html</span><span class="w"> </span><span class="kn">import</span> <span class="n">format_html</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.templatetags.static</span><span class="w"> </span><span class="kn">import</span> <span class="n">static</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">LocalAIModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.db.models.signals</span><span class="w"> </span><span class="kn">import</span> <span class="n">pre_delete</span><span class="p">,</span> <span class="n">post_save</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.dispatch</span><span class="w"> </span><span class="kn">import</span> <span class="n">receiver</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgvector.django</span><span class="w"> </span><span class="kn">import</span> <span class="n">VectorField</span><span class="p">,</span> <span class="n">HnswIndex</span>
+
+
+<div class="viewcode-block" id="Domain">
+<a class="viewcode-back" href="../../grips_app.html#grips.models.Domain">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Domain</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;High-level knowledge areas (e.g., &#39;Quantum Physics&#39;, &#39;HR Policies&#39;).&quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Broad description of this knowledge domain.&quot;</span><span class="p">)</span>
+    <span class="n">style_guide</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">(</span>
+        <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="n">format_html</span><span class="p">(</span>
+            <span class="s1">&#39;Instructions for the LLM on how to format or reason about concepts in this domain. &#39;</span>
+            <span class="s1">&#39;&lt;a href=&quot;</span><span class="si">{url}</span><span class="s1">&quot; target=&quot;_blank&quot;&gt;View the style guide docs&lt;/a&gt;.&#39;</span><span class="p">,</span>
+            <span class="n">url</span><span class="o">=</span><span class="n">static</span><span class="p">(</span><span class="s2">&quot;docs/style_guides.html&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">documents</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ManyToManyField</span><span class="p">(</span>
+        <span class="s1">&#39;background_resources.Document&#39;</span><span class="p">,</span>
+        <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;domains&#39;</span><span class="p">,</span>
+        <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Documents that form the foundational knowledge corpus for this domain.&quot;</span>
+    <span class="p">)</span>
+    <span class="n">created_at</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="n">auto_now_add</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+
+<div class="viewcode-block" id="Domain.get_admin_url">
+<a class="viewcode-back" href="../../grips_app.html#grips.models.Domain.get_admin_url">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_admin_url</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">reverse</span><span class="p">(</span><span class="s2">&quot;admin:grips_domain_change&quot;</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">])</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ConceptNode">
+<a class="viewcode-back" href="../../grips_app.html#grips.models.ConceptNode">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ConceptNode</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The core &#39;Wiki Page&#39; - a dense, cross-referenced knowledge element.&quot;&quot;&quot;</span>
+    <span class="n">domain</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Domain</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">CASCADE</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s2">&quot;concepts&quot;</span><span class="p">)</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">)</span>
+    <span class="n">slug</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">SlugField</span><span class="p">(</span><span class="n">unique</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Used for internal [[wiki-linking]]&quot;</span><span class="p">)</span>
+    <span class="n">focus_hint</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span>
+        <span class="n">max_length</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> 
+        <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> 
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Optional hint to disambiguate the topic for the AI (e.g., &#39;Focus purely on physical extrication, not vehicle deployment&#39;).&quot;</span>
+    <span class="p">)</span>
+    <span class="n">source_chunk</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;background_resources.RAGChunk&#39;</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">SET_NULL</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;sourced_concepts&#39;</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;The Primary RAGChunk which is summarised in this concept.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Human/Model readable narrative</span>
+    <span class="n">narrative_content</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">(</span>
+        <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="n">format_html</span><span class="p">(</span>
+            <span class="s1">&#39;The dense, Markdown-formatted explanation. &lt;a href=&quot;</span><span class="si">{url}</span><span class="s1">&quot; target=&quot;_blank&quot;&gt;Markdown Tips &amp; Tricks&lt;/a&gt;&#39;</span><span class="p">,</span>
+            <span class="n">url</span><span class="o">=</span><span class="n">static</span><span class="p">(</span><span class="s2">&quot;docs/markdown_tips.html&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="c1"># The Symbolically Computable Format</span>
+    <span class="n">structured_claims</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">JSONField</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="nb">list</span><span class="p">,</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;List of atomic claims (e.g., [{&#39;subject&#39;: &#39;A&#39;, &#39;predicate&#39;: &#39;is&#39;, &#39;object&#39;: &#39;B&#39;}]) for programmatic linting.&quot;</span><span class="p">,</span>
+        <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">null</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+
+<div class="viewcode-block" id="ConceptNode.ConceptNodeFlags">
+<a class="viewcode-back" href="../../grips_app.html#grips.models.ConceptNode.ConceptNodeFlags">[docs]</a>
+    <span class="k">class</span><span class="w"> </span><span class="nc">ConceptNodeFlags</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">TextChoices</span><span class="p">):</span>
+        <span class="n">NEEDS_CITATION</span> <span class="o">=</span> <span class="s1">&#39;needs_citation&#39;</span><span class="p">,</span> <span class="s1">&#39;Needs Citation&#39;</span>
+        <span class="n">STYLE_VIOLATION</span> <span class="o">=</span> <span class="s1">&#39;style_violation&#39;</span><span class="p">,</span> <span class="s1">&#39;Style Violation&#39;</span>
+        <span class="n">NEEDS_CLARIFICATION</span> <span class="o">=</span> <span class="s1">&#39;needs_clarification&#39;</span><span class="p">,</span> <span class="s1">&#39;Needs Clarification&#39;</span>
+        <span class="n">ORPHANED</span> <span class="o">=</span> <span class="s1">&#39;orphaned&#39;</span><span class="p">,</span> <span class="s1">&#39;Orphaned (Missing Links)&#39;</span></div>
+
+
+    <span class="n">issue_flags</span> <span class="o">=</span> <span class="n">ArrayField</span><span class="p">(</span>
+        <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">choices</span><span class="o">=</span><span class="n">ConceptNodeFlags</span><span class="o">.</span><span class="n">choices</span><span class="p">),</span>
+        <span class="n">default</span><span class="o">=</span><span class="nb">list</span><span class="p">,</span>
+        <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Wikipedia-style issue tags indicating problems with the narrative.&quot;</span>
+    <span class="p">)</span>
+
+    <span class="c1"># State tracking for the &quot;Linters&quot;</span>
+    <span class="n">needs_linting</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Flagged when updated so the background linter can verify it.&quot;</span><span class="p">)</span>
+    <span class="n">last_linted_at</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">linting_report</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">JSONField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="nb">dict</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">embedding</span> <span class="o">=</span> <span class="n">VectorField</span><span class="p">(</span><span class="n">dimensions</span><span class="o">=</span><span class="mi">384</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">indexes</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">HnswIndex</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="s1">&#39;conceptnode_embed_hnsw&#39;</span><span class="p">,</span>
+                <span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;embedding&#39;</span><span class="p">],</span>
+                <span class="n">m</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>
+                <span class="n">ef_construction</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span>
+                <span class="n">opclasses</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;vector_cosine_ops&#39;</span><span class="p">],</span>
+            <span class="p">),</span>
+        <span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">title</span>
+
+<div class="viewcode-block" id="ConceptNode.get_admin_url">
+<a class="viewcode-back" href="../../grips_app.html#grips.models.ConceptNode.get_admin_url">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_admin_url</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">reverse</span><span class="p">(</span><span class="s2">&quot;admin:grips_conceptnode_change&quot;</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ConceptNode.get_wiki_url">
+<a class="viewcode-back" href="../../grips_app.html#grips.models.ConceptNode.get_wiki_url">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_wiki_url</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Placeholder path. Once you build a frontend view, change this to use reverse()</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;/wiki/concepts/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">slug</span><span class="si">}</span><span class="s2">/&quot;</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="index_concept_vector">
+<a class="viewcode-back" href="../../grips_app.html#grips.models.index_concept_vector">[docs]</a>
+<span class="nd">@receiver</span><span class="p">(</span><span class="n">post_save</span><span class="p">,</span> <span class="n">sender</span><span class="o">=</span><span class="n">ConceptNode</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">index_concept_vector</span><span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">created</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;When a ConceptNode is saved, asynchronously index it into PGVector.&quot;&quot;&quot;</span>
+    <span class="n">update_fields</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;update_fields&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">update_fields</span> <span class="ow">and</span> <span class="nb">set</span><span class="p">(</span><span class="n">update_fields</span><span class="p">)</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;embedding&#39;</span><span class="p">}:</span>
+        <span class="k">return</span>
+    <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span> <span class="s1">&#39;_skip_signal&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="k">return</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+    <span class="k">if</span> <span class="s1">&#39;test&#39;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">:</span>
+        <span class="k">return</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">grips.tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">task_index_concept_node</span>
+    <span class="c1"># Delay to celery so we don&#39;t block the web request</span>
+    <span class="n">task_index_concept_node</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">instance</span><span class="o">.</span><span class="n">id</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeEdge">
+<a class="viewcode-back" href="../../grips_app.html#grips.models.KnowledgeEdge">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">KnowledgeEdge</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Defines exact, computable relationships between ConceptNodes.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="KnowledgeEdge.RelationshipTypes">
+<a class="viewcode-back" href="../../grips_app.html#grips.models.KnowledgeEdge.RelationshipTypes">[docs]</a>
+    <span class="k">class</span><span class="w"> </span><span class="nc">RelationshipTypes</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">TextChoices</span><span class="p">):</span>
+        <span class="n">DEPENDS_ON</span> <span class="o">=</span> <span class="s1">&#39;DEPENDS_ON&#39;</span><span class="p">,</span> <span class="s1">&#39;Depends On (Causal / Prerequisite)&#39;</span>
+        <span class="n">INCLUDES</span> <span class="o">=</span> <span class="s1">&#39;INCLUDES&#39;</span><span class="p">,</span> <span class="s1">&#39;Includes / Comprises (Part-Whole)&#39;</span>
+        <span class="n">EXEMPLIFIES</span> <span class="o">=</span> <span class="s1">&#39;EXEMPLIFIES&#39;</span><span class="p">,</span> <span class="s1">&#39;Exemplifies / Instantiates (Idea-Example)&#39;</span>
+        <span class="n">RELATED_TO</span> <span class="o">=</span> <span class="s1">&#39;RELATED_TO&#39;</span><span class="p">,</span> <span class="s1">&#39;Is Related To (Catchall) - alternatives, constraints, exclusions, negations&#39;</span></div>
+
+
+    <span class="n">source</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">ConceptNode</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">CASCADE</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s2">&quot;outgoing_edges&quot;</span><span class="p">)</span>
+    <span class="n">target</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">ConceptNode</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">CASCADE</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s2">&quot;incoming_edges&quot;</span><span class="p">)</span>
+    <span class="n">relationship_type</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">choices</span><span class="o">=</span><span class="n">RelationshipTypes</span><span class="o">.</span><span class="n">choices</span><span class="p">)</span>
+
+    <span class="c1"># Allows an LLM to explain *why* this relationship exists, or to specify the </span>
+    <span class="c1"># specific catchall relation (e.g., &#39;is_alternative_to&#39;, &#39;constrains/modifies&#39;, &#39;is_excluded_by&#39;)</span>
+    <span class="n">justification</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Explanation for the relatioship or specific catchall relationship (e.g., is_alternative_to)&quot;</span><span class="p">)</span>
+
+    <span class="n">needs_linting</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Flagged when updated so the background linter can verify it.&quot;</span><span class="p">)</span>
+    <span class="n">last_linted_at</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">linting_report</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">JSONField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="nb">dict</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">unique_together</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;source&#39;</span><span class="p">,</span> <span class="s1">&#39;target&#39;</span><span class="p">,</span> <span class="s1">&#39;relationship_type&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">slug</span><span class="si">}</span><span class="s2"> --[</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">relationship_type</span><span class="si">}</span><span class="s2">]--&gt; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="o">.</span><span class="n">slug</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+
+
+
+
+
+<div class="viewcode-block" id="CeleryStatus">
+<a class="viewcode-back" href="../../grips_app.html#grips.models.CeleryStatus">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CeleryStatus</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dummy model to hook the Celery dashboard into the admin.&quot;&quot;&quot;</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">managed</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">verbose_name_plural</span> <span class="o">=</span> <span class="s2">&quot;Celery Status Dashboard&quot;</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Andrew Cruickshank.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

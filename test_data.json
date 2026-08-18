@@ -63957,7 +63957,7 @@
             "active_local_model": 3,
             "active_ollama_model": 3,
             "active_vllm_model": 3,
-            "system_tokenizer_id": "google/gemma-4-E2B-it"
+            "system_tokenizer": 3
         }
     }
 ]

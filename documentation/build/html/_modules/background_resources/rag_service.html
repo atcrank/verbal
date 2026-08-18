@@ -1,0 +1,1095 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>background_resources.rag_service &mdash; Verbal 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Verbal
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../llm_api_app.html">LLM API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../background_resources_app.html">Background Resources - context documents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grips_app.html">Grips - wiki knowledge banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_app.html">Demo UI</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../using_ollama.html">Ollama as Local AI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tests.html">Testing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Verbal</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">background_resources.rag_service</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for background_resources.rag_service</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">torch</span><span class="p">,</span> <span class="s2">&quot;float8_e8m0fnu&quot;</span><span class="p">):</span>
+    <span class="nb">setattr</span><span class="p">(</span><span class="n">torch</span><span class="p">,</span> <span class="s2">&quot;float8_e8m0fnu&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">uuid</span><span class="w"> </span><span class="kn">import</span> <span class="n">uuid4</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">zipfile</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.conf</span><span class="w"> </span><span class="kn">import</span> <span class="n">settings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.db</span><span class="w"> </span><span class="kn">import</span> <span class="n">models</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.db.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Count</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">timezone</span>
+
+<span class="c1"># You will need to have these libraries installed:</span>
+<span class="c1"># pip install langchain langchain-community langchain-postgres sentence-transformers</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langchain_text_splitters</span><span class="w"> </span><span class="kn">import</span> <span class="n">CharacterTextSplitter</span><span class="p">,</span> <span class="n">RecursiveCharacterTextSplitter</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langchain_core.documents</span><span class="w"> </span><span class="kn">import</span> <span class="n">Document</span> <span class="k">as</span> <span class="n">LangchainDocument</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langchain_community.document_loaders</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">PyPDFLoader</span><span class="p">,</span> <span class="n">Docx2txtLoader</span><span class="p">,</span> <span class="n">UnstructuredPowerPointLoader</span><span class="p">,</span> <span class="n">RecursiveUrlLoader</span><span class="p">,</span> <span class="n">DirectoryLoader</span><span class="p">,</span> <span class="n">BSHTMLLoader</span><span class="p">,</span> <span class="n">NotebookLoader</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bs4</span><span class="w"> </span><span class="kn">import</span> <span class="n">BeautifulSoup</span> <span class="k">as</span> <span class="n">Soup</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langchain_huggingface</span><span class="w"> </span><span class="kn">import</span> <span class="n">HuggingFaceEmbeddings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgvector.django</span><span class="w"> </span><span class="kn">import</span> <span class="n">CosineDistance</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">outlines</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Literal</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">background_resources.models</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">Document</span> <span class="k">as</span> <span class="n">DjangoDocument</span><span class="p">,</span> 
+                                         <span class="n">RAGChunk</span> <span class="k">as</span> <span class="n">DjangoChunk</span><span class="p">,</span>
+                                        <span class="n">StrategyChunkUsage</span><span class="p">,</span>
+                                         <span class="n">ReadingStrategy</span> <span class="k">as</span> <span class="n">DjangoReadingStrategy</span><span class="p">,</span>
+                                         <span class="n">GrobidReadingStrategy</span><span class="p">,</span>
+                                         <span class="n">RAGQueryLog</span><span class="p">,</span> 
+                                         <span class="n">PromptStrategy</span><span class="p">,</span> 
+                                         <span class="n">RegexStrategy</span><span class="p">,</span> 
+                                         <span class="n">AbbreviationsReadingStrategy</span><span class="p">)</span> 
+
+
+
+<div class="viewcode-block" id="DocumentHandles">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.rag_service.DocumentHandles">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DocumentHandles</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">long_form</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+    <span class="n">short_form</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>
+    <span class="n">keywords</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="GlossaryItem">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.rag_service.GlossaryItem">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">GlossaryItem</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">term</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The acronym or defined term&quot;</span><span class="p">)</span>
+    <span class="n">definition</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The full explanation or definition of the term&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="GlossaryExtraction">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.rag_service.GlossaryExtraction">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">GlossaryExtraction</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">items</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">GlossaryItem</span><span class="p">]</span></div>
+
+
+
+<span class="n">OUTPUT_TYPES</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;DocumentHandles&quot;</span><span class="p">:</span> <span class="n">DocumentHandles</span><span class="p">,</span>
+                <span class="s2">&quot;GlossaryItem&quot;</span><span class="p">:</span> <span class="n">GlossaryItem</span><span class="p">,</span>
+                <span class="s2">&quot;GlossaryExtraction&quot;</span><span class="p">:</span> <span class="n">GlossaryExtraction</span><span class="p">}</span>
+
+
+<div class="viewcode-block" id="DjangoChunkStore">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.rag_service.DjangoChunkStore">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DjangoChunkStore</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Seamlessly replaces LocalFileStore by reading/writing directly to the RAGChunk Django model.&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="DjangoChunkStore.mget">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.rag_service.DjangoChunkStore.mget">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">mget</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keys</span><span class="p">):</span>
+        <span class="c1"># Coerce all keys to strings to prevent UUID object hash mismatch in dict lookups!</span>
+        <span class="n">str_keys</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">]</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">str_keys</span><span class="p">)</span>
+        <span class="n">chunks</span> <span class="o">=</span> <span class="n">DjangoChunk</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">chunk_id__in</span><span class="o">=</span><span class="n">str_keys</span><span class="p">)</span>
+        <span class="n">chunk_dict</span> <span class="o">=</span> <span class="p">{</span><span class="nb">str</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">chunk_id</span><span class="p">):</span> <span class="n">LangchainDocument</span><span class="p">(</span><span class="n">page_content</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">text_content</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">metadata</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">chunks</span><span class="p">}</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">chunk_dict</span><span class="p">)</span>
+        <span class="n">chunk_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">chunk_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">str_keys</span><span class="p">]</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">chunk_list</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">chunk_list</span></div>
+
+
+<div class="viewcode-block" id="DjangoChunkStore.mset">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.rag_service.DjangoChunkStore.mset">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">mset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kv_pairs</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kv_pairs</span><span class="p">:</span>
+            <span class="n">DjangoChunk</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">update_or_create</span><span class="p">(</span>
+                <span class="n">chunk_id</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">k</span><span class="p">),</span>
+                <span class="n">defaults</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s1">&#39;text_content&#39;</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">page_content</span><span class="p">,</span>
+                    <span class="s1">&#39;metadata&#39;</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span>
+                    <span class="s1">&#39;in_byte_store&#39;</span><span class="p">:</span> <span class="kc">True</span>
+                <span class="p">}</span>
+            <span class="p">)</span></div>
+
+            
+<div class="viewcode-block" id="DjangoChunkStore.mdelete">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.rag_service.DjangoChunkStore.mdelete">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">mdelete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keys</span><span class="p">):</span>
+        <span class="n">str_keys</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">]</span>
+        <span class="n">DjangoChunk</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">chunk_id__in</span><span class="o">=</span><span class="n">str_keys</span><span class="p">)</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">in_byte_store</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+        
+<div class="viewcode-block" id="DjangoChunkStore.yield_keys">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.rag_service.DjangoChunkStore.yield_keys">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">yield_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">DjangoChunk</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">in_byte_store</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">values_list</span><span class="p">(</span><span class="s1">&#39;chunk_id&#39;</span><span class="p">,</span> <span class="n">flat</span><span class="o">=</span><span class="kc">True</span><span class="p">)]</span></div>
+</div>
+
+
+<div class="viewcode-block" id="RAGService">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.rag_service.RAGService">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">RAGService</span><span class="p">:</span>
+
+    <span class="n">embeddings</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">hashes_indexed</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">store</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">retriever</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">chain</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">collection_name</span><span class="o">=</span><span class="s2">&quot;verbal_background_resources&quot;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">collection_name</span> <span class="o">=</span> <span class="n">collection_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span> <span class="o">=</span> <span class="n">HuggingFaceEmbeddings</span><span class="p">(</span><span class="n">model_name</span><span class="o">=</span><span class="s2">&quot;all-MiniLM-L6-v2&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reading_ids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>  <span class="c1"># reading_ids</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">store</span> <span class="o">=</span> <span class="n">DjangoChunkStore</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">id_key</span> <span class="o">=</span> <span class="s2">&quot;chunk_id&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hashes_indexed</span> <span class="o">=</span> <span class="p">{}</span>
+        
+        <span class="c1"># Pre-populate indexed hashes from Django</span>
+        <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">DjangoChunk</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">in_vector_index</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+            <span class="n">scheme</span> <span class="o">=</span> <span class="n">chunk</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;indexed_hash&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">scheme</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">scheme</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">hashes_indexed</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">hashes_indexed</span><span class="p">[</span><span class="n">scheme</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">hashes_indexed</span><span class="p">[</span><span class="n">scheme</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">chunk</span><span class="o">.</span><span class="n">chunk_id</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;RAG Service initialized with native pgvector.django backend.&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="RAGService.force_reindex_all">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.rag_service.RAGService.force_reindex_all">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">force_reindex_all</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Resets the vector index status and re-indexes all chunks. Useful for test fixture loads.&quot;&quot;&quot;</span>
+        <span class="n">DjangoChunk</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">all</span><span class="p">()</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">in_vector_index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">embedding</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hashes_indexed</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">index_unindexed_chunks</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="RAGService.index_unindexed_chunks">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.rag_service.RAGService.index_unindexed_chunks">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">index_unindexed_chunks</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Indexes any RAGChunks in Postgres that do not yet have vector embeddings.&quot;&quot;&quot;</span>
+        <span class="n">unindexed</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">DjangoChunk</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">in_vector_index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">text_content__isnull</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">exclude</span><span class="p">(</span><span class="n">text_content</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">unindexed</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+            
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Embedding </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">unindexed</span><span class="p">)</span><span class="si">}</span><span class="s1"> chunks into RAGChunk.embedding in batches...&#39;</span><span class="p">)</span>
+        <span class="n">batch_size</span> <span class="o">=</span> <span class="mi">250</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">unindexed</span><span class="p">),</span> <span class="n">batch_size</span><span class="p">):</span>
+            <span class="n">batch</span> <span class="o">=</span> <span class="n">unindexed</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="n">batch_size</span><span class="p">]</span>
+            <span class="n">texts</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">text_content</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">batch</span><span class="p">]</span>
+            <span class="n">embeddings</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span><span class="o">.</span><span class="n">embed_documents</span><span class="p">(</span><span class="n">texts</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">chunk</span><span class="p">,</span> <span class="n">emb</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">):</span>
+                <span class="n">chunk</span><span class="o">.</span><span class="n">embedding</span> <span class="o">=</span> <span class="n">emb</span>
+                <span class="n">chunk</span><span class="o">.</span><span class="n">in_vector_index</span> <span class="o">=</span> <span class="kc">True</span>
+                
+                <span class="n">scheme</span> <span class="o">=</span> <span class="n">chunk</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;indexed_hash&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">scheme</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">scheme</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">hashes_indexed</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">hashes_indexed</span><span class="p">[</span><span class="n">scheme</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">chunk</span><span class="o">.</span><span class="n">chunk_id</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">hashes_indexed</span><span class="p">[</span><span class="n">scheme</span><span class="p">]:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">hashes_indexed</span><span class="p">[</span><span class="n">scheme</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">chunk</span><span class="o">.</span><span class="n">chunk_id</span><span class="p">))</span>
+                        
+            <span class="n">DjangoChunk</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">bulk_update</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;embedding&#39;</span><span class="p">,</span> <span class="s1">&#39;in_vector_index&#39;</span><span class="p">])</span>
+            
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Indexing complete.&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">unindexed</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="RAGService.save_db">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.rag_service.RAGService.save_db">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save_db</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span> <span class="c1"># Postgres persists automatically</span></div>
+
+
+<div class="viewcode-block" id="RAGService.load_db">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.rag_service.RAGService.load_db">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_db</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span> <span class="c1"># Postgres persists automatically</span></div>
+
+
+<div class="viewcode-block" id="RAGService.disconnect">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.rag_service.RAGService.disconnect">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">disconnect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span> <span class="c1"># No persistent external connection pools to dispose</span></div>
+
+
+<div class="viewcode-block" id="RAGService.delete_document_from_vectorstore">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.rag_service.RAGService.delete_document_from_vectorstore">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">delete_document_from_vectorstore</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">document</span><span class="p">):</span>
+        <span class="n">reading_list</span> <span class="o">=</span> <span class="n">document</span><span class="o">.</span><span class="n">readingstrategy_set</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">reading</span> <span class="ow">in</span> <span class="n">reading_list</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">delete_reading_from_vectorstore</span><span class="p">(</span><span class="n">reading</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="RAGService.delete_reading_from_vectorstore">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.rag_service.RAGService.delete_reading_from_vectorstore">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">delete_reading_from_vectorstore</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">readingstrategy</span><span class="p">):</span>
+        <span class="c1"># Only delete chunks if they are not used by any OTHER reading strategy</span>
+        <span class="c1"># The post_delete signal on StrategyChunkUsage will handle the reference counting</span>
+        <span class="c1"># and delete the RAGChunk + Store content if orphaned.</span>
+        <span class="n">readingstrategy</span><span class="o">.</span><span class="n">usages</span><span class="o">.</span><span class="n">all</span><span class="p">()</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Deleted readings of </span><span class="si">{</span><span class="n">readingstrategy</span><span class="o">.</span><span class="n">document</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="RAGService.audit_stores">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.rag_service.RAGService.audit_stores">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">audit_stores</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Finds documents that have not been ingested.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">unindexed_docs</span> <span class="o">=</span> <span class="n">DjangoDocument</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span>
+            <span class="n">chunk_count</span><span class="o">=</span><span class="n">Count</span><span class="p">(</span><span class="s1">&#39;readingstrategy__usages&#39;</span><span class="p">)</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">chunk_count</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">distinct</span><span class="p">()</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;unindexed_docs&quot;</span><span class="p">:</span> <span class="n">unindexed_docs</span><span class="p">,</span>
+            <span class="s2">&quot;has_issues&quot;</span><span class="p">:</span> <span class="n">unindexed_docs</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="RAGService.similarity_search_with_score">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.rag_service.RAGService.similarity_search_with_score">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">similarity_search_with_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span> <span class="nb">filter</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">LangchainDocument</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Performs cosine distance search directly over RAGChunk embeddings.&quot;&quot;&quot;</span>
+        <span class="n">query_vector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span><span class="o">.</span><span class="n">embed_query</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+        <span class="n">qs</span> <span class="o">=</span> <span class="n">DjangoChunk</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="n">distance</span><span class="o">=</span><span class="n">CosineDistance</span><span class="p">(</span><span class="s2">&quot;embedding&quot;</span><span class="p">,</span> <span class="n">query_vector</span><span class="p">))</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">embedding__isnull</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">filter</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">filter</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">qs</span> <span class="o">=</span> <span class="n">qs</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="sa">f</span><span class="s2">&quot;metadata__</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">:</span> <span class="n">val</span><span class="p">})</span>
+        <span class="n">chunks</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">qs</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s2">&quot;distance&quot;</span><span class="p">)[:</span><span class="n">k</span><span class="p">])</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="p">(</span><span class="n">LangchainDocument</span><span class="p">(</span><span class="n">page_content</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">text_content</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">metadata</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">distance</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">chunks</span>
+        <span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="RAGService.get_direct_context">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.rag_service.RAGService.get_direct_context">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_direct_context</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">similarity_search_with_score</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">)</span>
+        <span class="n">doc_cards</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;file </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">:&quot;</span> <span class="o">+</span> <span class="n">doc</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;filename&quot;</span><span class="p">,</span> <span class="s2">&quot;unknown&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;: &quot;</span> <span class="o">+</span> <span class="n">doc</span><span class="o">.</span><span class="n">page_content</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="n">_</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">results</span><span class="p">)]</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Retrieved context: </span><span class="si">{</span><span class="n">doc_cards</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">retrieved_context</span> <span class="o">=</span> <span class="s2">&quot;Also, this is an arguably relevant excerpt from my document library:&quot;</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">doc_cards</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">retrieved_context</span></div>
+
+
+<div class="viewcode-block" id="RAGService.get_chunk_from_store">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.rag_service.RAGService.get_chunk_from_store">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_chunk_from_store</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chunk_id</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">mget</span><span class="p">([</span><span class="n">chunk_id</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="RAGService.get_context">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.rag_service.RAGService.get_context">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_context</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span> <span class="n">max_distance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">LangchainDocument</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves relevant documents by searching the vector index and fetching parent chunks.</span>
+
+<span class="sd">        Uses PGVector distance (lower = better). Results beyond max_distance are</span>
+<span class="sd">        dropped before the lexical relevance check to eliminate noise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">docs_and_scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">similarity_search_with_score</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">docs_and_scores</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Matches: []&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+        <span class="c1"># Gate out results that exceed the distance threshold</span>
+        <span class="n">matches</span> <span class="o">=</span> <span class="p">[(</span><span class="n">doc</span><span class="p">,</span> <span class="n">score</span><span class="p">)</span> <span class="k">for</span> <span class="n">doc</span><span class="p">,</span> <span class="n">score</span> <span class="ow">in</span> <span class="n">docs_and_scores</span> <span class="k">if</span> <span class="n">score</span> <span class="o">&lt;=</span> <span class="n">max_distance</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">matches</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;All </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">docs_and_scores</span><span class="p">)</span><span class="si">}</span><span class="s1"> results exceeded max_distance=</span><span class="si">{</span><span class="n">max_distance</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Matches: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">matches</span><span class="p">)</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">docs_and_scores</span><span class="p">)</span><span class="si">}</span><span class="s1"> passed distance gate (max=</span><span class="si">{</span><span class="n">max_distance</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">)</span>
+
+        <span class="n">parent_ids</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">seen_ids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">doc</span><span class="p">,</span> <span class="n">_score</span> <span class="ow">in</span> <span class="n">matches</span><span class="p">:</span>
+            <span class="n">meta</span> <span class="o">=</span> <span class="n">doc</span><span class="o">.</span><span class="n">metadata</span> <span class="ow">or</span> <span class="p">{}</span>
+            <span class="c1"># Safely extract chunk_id from metadata or fallback to document ID</span>
+            <span class="n">p_id</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id_key</span><span class="p">)</span> <span class="ow">or</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">p_id</span><span class="p">:</span>
+                <span class="n">p_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">p_id</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">p_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen_ids</span><span class="p">:</span>
+                    <span class="n">parent_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p_id</span><span class="p">)</span>
+                    <span class="n">seen_ids</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">p_id</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parent_ids</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">k</span> <span class="o">*</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">break</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;ParentIDs&#39;</span><span class="p">,</span> <span class="n">parent_ids</span><span class="p">]]))</span>
+
+        <span class="n">final_docs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">parent_ids</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">mget</span><span class="p">(</span><span class="n">parent_ids</span><span class="p">)</span>
+                <span class="n">final_docs</span> <span class="o">=</span> <span class="p">[</span><span class="n">doc</span> <span class="k">for</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">results</span> <span class="k">if</span> <span class="n">doc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Error during manual store retrieval: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="n">scored_results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">verify_rag_relevance</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">final_docs</span><span class="p">)</span>
+        
+        <span class="n">top_results</span> <span class="o">=</span> <span class="n">scored_results</span><span class="p">[:</span><span class="n">k</span><span class="p">]</span>
+        <span class="n">sorted_docs</span> <span class="o">=</span> <span class="p">[</span><span class="n">doc</span> <span class="k">for</span> <span class="n">doc</span><span class="p">,</span> <span class="n">score</span> <span class="ow">in</span> <span class="n">top_results</span><span class="p">]</span>
+
+        <span class="n">final_parent_ids</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">doc</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id_key</span><span class="p">))</span> <span class="k">for</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">sorted_docs</span> <span class="k">if</span> <span class="n">doc</span><span class="o">.</span><span class="n">metadata</span> <span class="ow">and</span> <span class="n">doc</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id_key</span><span class="p">)]</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;Final Parent IDs&#39;</span><span class="p">,</span> <span class="n">final_parent_ids</span><span class="p">]]))</span>
+        <span class="k">if</span> <span class="n">final_parent_ids</span><span class="p">:</span>
+            <span class="n">DjangoChunk</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">chunk_id__in</span><span class="o">=</span><span class="n">final_parent_ids</span><span class="p">)</span>\
+                <span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">hit_count</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">F</span><span class="p">(</span><span class="s1">&#39;hit_count&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">last_accessed</span><span class="o">=</span><span class="n">timezone</span><span class="o">.</span><span class="n">now</span><span class="p">())</span>
+
+        <span class="k">if</span> <span class="n">sorted_docs</span><span class="p">:</span>
+            <span class="n">response_preview</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">] </span><span class="si">{</span><span class="n">d</span><span class="o">.</span><span class="n">page_content</span><span class="p">[:</span><span class="mi">300</span><span class="p">]</span><span class="si">}</span><span class="s2">...&quot;</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sorted_docs</span><span class="p">)])</span>
+            <span class="n">RAGQueryLog</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+                <span class="n">query_text</span><span class="o">=</span><span class="n">query</span><span class="p">,</span>
+                <span class="n">response_generated</span><span class="o">=</span><span class="n">response_preview</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">sorted_docs</span></div>
+
+
+
+<div class="viewcode-block" id="RAGService.load_models">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.rag_service.RAGService.load_models">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_models</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Syncs the vector store with the database and saves it to disk.</span>
+<span class="sd">        Creates an empty store if one doesn&#39;t exist and no documents are found.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.apps</span><span class="w"> </span><span class="kn">import</span> <span class="n">service_registry</span>
+        <span class="n">ai_service</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">ai_service</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;RAG Service Models Loaded.&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="RAGService.is_likely_toc">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.rag_service.RAGService.is_likely_toc">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_likely_toc</span><span class="p">(</span><span class="n">text_chunk</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="n">text_chunk</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">lines</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="c1"># Filter empty lines to avoid skewing percentages</span>
+        <span class="n">non_empty_lines</span> <span class="o">=</span> <span class="p">[</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span> <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">non_empty_lines</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="c1"># 1. &quot;Dots&quot; pattern: Looks for &quot;...... 12&quot; common in old school PDFs</span>
+        <span class="c1"># Added check that it must match at least 2 distinct lines to avoid a fluke</span>
+        <span class="n">dot_pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\.{3,}\s*\d+$&#39;</span><span class="p">)</span>
+        <span class="n">dot_matches</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">non_empty_lines</span> <span class="k">if</span> <span class="n">dot_pattern</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">line</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">dot_matches</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="c1"># 2. Header Check: Look for variations of &quot;Contents&quot;, &quot;Index&quot;, &quot;Figures&quot;</span>
+        <span class="c1"># We limit this to the first 5 non-empty lines</span>
+        <span class="n">header_pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^\s*(table of|list of)?\s*(contents|index|figures|tables)\b&#39;</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+        <span class="n">has_structural_header</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="n">header_pattern</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">non_empty_lines</span><span class="p">[:</span><span class="mi">5</span><span class="p">])</span>
+
+        <span class="c1"># 3. Page Number Heuristic</span>
+        <span class="c1"># Refined Regex: \s\d{1,3}$</span>
+        <span class="c1"># Matches &quot; 5&quot;, &quot; 102&quot;. Ignores &quot; 2024&quot; (Year) or &quot; 10000&quot; (Data)</span>
+        <span class="n">page_num_pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\s\d{1,3}$&#39;</span><span class="p">)</span>
+        <span class="n">lines_ending_in_page_num</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">non_empty_lines</span> <span class="k">if</span> <span class="n">page_num_pattern</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">line</span><span class="p">))</span>
+
+        <span class="c1"># Calculate ratio based on non-empty lines</span>
+        <span class="n">ratio</span> <span class="o">=</span> <span class="n">lines_ending_in_page_num</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">non_empty_lines</span><span class="p">)</span>
+
+        <span class="c1"># Decision: Requires BOTH a header AND a pattern of numbers</span>
+        <span class="k">if</span> <span class="n">has_structural_header</span> <span class="ow">and</span> <span class="n">ratio</span> <span class="o">&gt;</span> <span class="mf">0.25</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="c1"># Special Case: If NO header, but massive signal (e.g., &gt; 60% of lines look like TOC), toss it.</span>
+        <span class="c1"># This catches TOCs that span multiple pages where the &quot;Contents&quot; header was on the previous page.</span>
+        <span class="k">if</span> <span class="n">ratio</span> <span class="o">&gt;</span> <span class="mf">0.6</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="RAGService.convert_chunk_store_document">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.rag_service.RAGService.convert_chunk_store_document">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">convert_chunk_store_document</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">document</span><span class="p">:</span> <span class="n">DjangoDocument</span><span class="p">,</span> <span class="n">chunk_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">chunk_overlap</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">LangchainDocument</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+        <span class="c1"># ... inside the loop for docs_to_add ...</span>
+        
+        <span class="c1"># Determine effective chunking parameters</span>
+        <span class="n">eff_size</span> <span class="o">=</span> <span class="n">chunk_size</span> <span class="k">if</span> <span class="n">chunk_size</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">document</span><span class="o">.</span><span class="n">chunk_size</span>
+        <span class="n">eff_overlap</span> <span class="o">=</span> <span class="n">chunk_overlap</span> <span class="k">if</span> <span class="n">chunk_overlap</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">document</span><span class="o">.</span><span class="n">chunk_overlap</span>
+        
+        <span class="n">current_scheme</span> <span class="o">=</span> <span class="n">document</span><span class="o">.</span><span class="n">chunking_scheme</span><span class="p">(</span><span class="n">eff_size</span><span class="p">,</span> <span class="n">eff_overlap</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">current_scheme</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">hashes_indexed</span><span class="p">:</span>
+            <span class="c1"># Check if the chunks actually exist in the store (integrity check)</span>
+            <span class="n">existing_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hashes_indexed</span><span class="p">[</span><span class="n">current_scheme</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">existing_ids</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">mget</span><span class="p">([</span><span class="n">existing_ids</span><span class="p">[</span><span class="mi">0</span><span class="p">]])[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Reusing </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">existing_ids</span><span class="p">)</span><span class="si">}</span><span class="s1"> existing chunks for scheme </span><span class="si">{</span><span class="n">current_scheme</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="p">[],</span> <span class="n">existing_ids</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Scheme </span><span class="si">{</span><span class="n">current_scheme</span><span class="si">}</span><span class="s1"> found in index but chunks missing from store. Re-indexing.&#39;</span><span class="p">)</span>
+
+        <span class="n">raw_docs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">text_splitter</span> <span class="o">=</span> <span class="n">RecursiveCharacterTextSplitter</span><span class="p">(</span>
+            <span class="n">chunk_size</span><span class="o">=</span><span class="n">eff_size</span><span class="p">,</span>
+            <span class="n">chunk_overlap</span><span class="o">=</span><span class="n">eff_overlap</span><span class="p">,</span>
+            <span class="n">separators</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">])</span> <span class="c1"># Tries to split by paragraph, then line, then word)</span>
+
+        <span class="n">file_path</span> <span class="o">=</span> <span class="n">document</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">path</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">file_extension</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">file_extension</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;.md&#39;</span><span class="p">]:</span>
+            <span class="k">with</span> <span class="n">document</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="c1"># Wrap raw text in a Document object to match Loader outputs</span>
+                <span class="n">raw_docs</span> <span class="o">=</span> <span class="p">[</span><span class="n">LangchainDocument</span><span class="p">(</span><span class="n">page_content</span><span class="o">=</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(),</span> <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="n">file_path</span><span class="p">})]</span>
+
+        <span class="k">elif</span> <span class="n">file_extension</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;.pdf&#39;</span><span class="p">:</span>
+            <span class="c1"># PyPDFLoader returns 1 Document per page</span>
+            <span class="n">loader</span> <span class="o">=</span> <span class="n">PyPDFLoader</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+            <span class="n">raw_docs</span> <span class="o">=</span> <span class="n">loader</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">raw_docs</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s1">&#39;page&#39;</span> <span class="ow">in</span> <span class="n">doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">:</span>
+                    <span class="n">doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;page_number&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;page&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+
+        <span class="k">elif</span> <span class="n">file_extension</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;.docx&#39;</span><span class="p">:</span>
+            <span class="c1"># Docx2txtLoader usually returns 1 Document for the WHOLE file and pagination is not available</span>
+            <span class="n">loader</span> <span class="o">=</span> <span class="n">Docx2txtLoader</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+            <span class="n">raw_docs</span> <span class="o">=</span> <span class="n">loader</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+
+        <span class="k">elif</span> <span class="n">file_extension</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;.pptx&#39;</span><span class="p">:</span>
+            <span class="n">loader</span> <span class="o">=</span> <span class="n">UnstructuredPowerPointLoader</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+            <span class="n">raw_docs</span> <span class="o">=</span> <span class="n">loader</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+            <span class="c1"># Unstructured often provides &#39;page_number&#39;, but let&#39;s ensure it exists</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">doc</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">raw_docs</span><span class="p">):</span>
+                <span class="k">if</span> <span class="s1">&#39;page_number&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">:</span>
+                    <span class="n">doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;page_number&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span>
+
+        <span class="k">elif</span> <span class="n">file_extension</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;.zip&#39;</span><span class="p">:</span>
+            <span class="c1"># 1. Define Extraction Path: media/corpora/&lt;hash&gt;</span>
+            <span class="n">extract_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">MEDIA_ROOT</span><span class="p">,</span> <span class="s2">&quot;corpora&quot;</span><span class="p">,</span> <span class="n">document</span><span class="o">.</span><span class="n">indexed_hash</span><span class="p">)</span>
+            
+            <span class="c1"># 2. Unzip if not already there (Idempotency check)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">extract_path</span><span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Unzipping corpus to </span><span class="si">{</span><span class="n">extract_path</span><span class="si">}</span><span class="s1">...&#39;</span><span class="p">)</span>
+                <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">zip_ref</span><span class="p">:</span>
+                    <span class="n">zip_ref</span><span class="o">.</span><span class="n">extractall</span><span class="p">(</span><span class="n">extract_path</span><span class="p">)</span>
+            
+            <span class="c1"># 3. Load using DirectoryLoader (Iterates all HTML files)</span>
+            <span class="c1"># We use BSHTMLLoader to parse the HTML into text</span>
+            <span class="n">loader</span> <span class="o">=</span> <span class="n">DirectoryLoader</span><span class="p">(</span>
+                <span class="n">extract_path</span><span class="p">,</span> 
+                <span class="n">glob</span><span class="o">=</span><span class="s2">&quot;**/*.html&quot;</span><span class="p">,</span> 
+                <span class="n">loader_cls</span><span class="o">=</span><span class="n">BSHTMLLoader</span><span class="p">,</span>
+                <span class="n">loader_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;open_encoding&quot;</span><span class="p">:</span> <span class="s2">&quot;utf-8&quot;</span><span class="p">}</span>
+            <span class="p">)</span>
+            <span class="n">raw_docs</span> <span class="o">=</span> <span class="n">loader</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+
+        <span class="k">elif</span> <span class="n">file_extension</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;.ipynb&#39;</span><span class="p">:</span>
+            <span class="c1"># Native parsing preserves code vs markdown cells perfectly for LLMs</span>
+            <span class="n">loader</span> <span class="o">=</span> <span class="n">NotebookLoader</span><span class="p">(</span>
+                <span class="n">file_path</span><span class="p">,</span>
+                <span class="n">include_outputs</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>       <span class="c1"># Includes cell outputs (prints, errors)</span>
+                <span class="n">max_output_length</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span>      <span class="c1"># Truncates massive outputs (like giant matrices)</span>
+                <span class="n">remove_newline</span><span class="o">=</span><span class="kc">False</span>
+            <span class="p">)</span>
+            <span class="n">raw_docs</span> <span class="o">=</span> <span class="n">loader</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">doc</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">raw_docs</span><span class="p">):</span>
+                <span class="k">if</span> <span class="s1">&#39;page_number&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">:</span>
+                    <span class="n">doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;page_number&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Unsupported file type.&#39;</span><span class="p">)</span>
+            
+        <span class="c1"># Normalize line endings for all loaded docs to ensure splitters and regexes work safely</span>
+        <span class="k">for</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">raw_docs</span><span class="p">:</span>
+            <span class="n">doc</span><span class="o">.</span><span class="n">page_content</span> <span class="o">=</span> <span class="n">doc</span><span class="o">.</span><span class="n">page_content</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\r\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="n">final_chunks</span> <span class="o">=</span> <span class="p">[</span><span class="n">chunk</span> <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">text_splitter</span><span class="o">.</span><span class="n">split_documents</span><span class="p">(</span><span class="n">raw_docs</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_likely_toc</span><span class="p">(</span><span class="n">chunk</span><span class="o">.</span><span class="n">page_content</span><span class="p">)]</span>
+
+        <span class="n">total_chunks</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">final_chunks</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">vec_doc</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">final_chunks</span><span class="p">):</span>
+            <span class="c1"># A. Merge Global Metadata (e.g., indexed_hash, filename)</span>
+            <span class="c1"># We copy to avoid mutating the class reference</span>
+            <span class="n">global_meta</span> <span class="o">=</span> <span class="n">document</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">if</span> <span class="n">document</span><span class="o">.</span><span class="n">metadata</span> <span class="k">else</span> <span class="p">{}</span>
+            <span class="n">vec_doc</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">global_meta</span><span class="p">)</span>
+
+            <span class="c1"># B. Calculate Relative Location (The &quot;Universal&quot; Metric)</span>
+            <span class="c1"># &quot;chunk_index&quot;: 0, &quot;total_chunks&quot;: 10</span>
+            <span class="n">vec_doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;chunk_index&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">index</span>
+            <span class="n">vec_doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;total_chunks&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">total_chunks</span>
+
+            <span class="c1"># &quot;location_percent&quot;: 25 (integer for easy filtering/display)</span>
+            <span class="k">if</span> <span class="n">total_chunks</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">vec_doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;location_percent&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(((</span><span class="n">index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">total_chunks</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">vec_doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;location_percent&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+            <span class="c1"># C. Fallback for Page Numbers</span>
+            <span class="c1"># If a file format didn&#39;t provide a page number, we can use the location</span>
+            <span class="c1"># to give a rough estimate or simply default to 1.</span>
+            <span class="k">if</span> <span class="s2">&quot;page_number&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">vec_doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">:</span>
+                <span class="c1"># Optional: Estimate page number for TXT if you didn&#39;t do the line-count trick</span>
+                <span class="c1"># vec_doc.metadata[&quot;page_number&quot;] = 1</span>
+                <span class="n">vec_doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;page_number&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">vec_doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;location_percent&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">%&quot;</span>
+
+        <span class="n">chunk_ids</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">uuid4</span><span class="p">())</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">final_chunks</span><span class="p">))]</span>
+        <span class="c1">#  PREPPED CHUNKS COMPLETE. Load them to</span>
+        <span class="n">chunks</span> <span class="o">=</span> <span class="n">final_chunks</span>
+        <span class="n">chunks_to_store</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">lc_docs_to_add</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">chunk</span><span class="p">,</span> <span class="n">chunk_id</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">chunks</span><span class="p">,</span> <span class="n">chunk_ids</span><span class="p">)):</span>
+            <span class="c1"># Update the chunk&#39;s metadata in place so the Store copy gets the ID</span>
+            <span class="n">chunk</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">id_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">chunk_id</span>
+            <span class="n">chunk</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;filename&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">document</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">name</span>
+            <span class="n">chunk</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;chunk_number&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">chunks</span><span class="p">))</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">chunk</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;indexed_hash&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">current_scheme</span>
+            
+            <span class="n">chunks_to_store</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">chunk_id</span><span class="p">,</span> <span class="n">chunk</span><span class="p">))</span>
+            
+        <span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">mset</span><span class="p">(</span><span class="n">chunks_to_store</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hashes_indexed</span><span class="p">[</span><span class="n">current_scheme</span><span class="p">]</span> <span class="o">=</span> <span class="n">chunk_ids</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">index_unindexed_chunks</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">document</span><span class="o">.</span><span class="n">currently_indexed</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">document</span><span class="o">.</span><span class="n">metadata</span><span class="p">:</span>
+                <span class="n">document</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">document</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;chunking_scheme&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">current_scheme</span>
+            <span class="n">document</span><span class="o">.</span><span class="n">currently_indexed</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">document</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">update_fields</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;currently_indexed&#39;</span><span class="p">,</span> <span class="s1">&#39;metadata&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">chunks</span><span class="p">,</span> <span class="n">chunk_ids</span></div>
+
+
+<div class="viewcode-block" id="RAGService.convert_chunk_store_document_grobid">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.rag_service.RAGService.convert_chunk_store_document_grobid">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">convert_chunk_store_document_grobid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">document</span><span class="p">:</span> <span class="n">DjangoDocument</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">LangchainDocument</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Uses the cached TEI XML from the Grobid client to split the document cleanly by semantic sections.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">current_scheme</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">document</span><span class="o">.</span><span class="n">indexed_hash</span><span class="si">}</span><span class="s2">-grobid_semantic&quot;</span>
+        
+        <span class="k">if</span> <span class="n">current_scheme</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">hashes_indexed</span><span class="p">:</span>
+            <span class="n">existing_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hashes_indexed</span><span class="p">[</span><span class="n">current_scheme</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">existing_ids</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">mget</span><span class="p">([</span><span class="n">existing_ids</span><span class="p">[</span><span class="mi">0</span><span class="p">]])[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Reusing </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">existing_ids</span><span class="p">)</span><span class="si">}</span><span class="s1"> existing Grobid chunks for scheme </span><span class="si">{</span><span class="n">current_scheme</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">document</span><span class="o">.</span><span class="n">currently_indexed</span><span class="p">:</span>
+                    <span class="n">document</span><span class="o">.</span><span class="n">currently_indexed</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="n">document</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">update_fields</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;currently_indexed&#39;</span><span class="p">])</span>
+                <span class="k">return</span> <span class="p">[],</span> <span class="n">existing_ids</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">document</span><span class="p">,</span> <span class="s1">&#39;grobid_metadata&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">document</span><span class="o">.</span><span class="n">grobid_metadata</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">document</span><span class="o">.</span><span class="n">grobid_metadata</span><span class="o">.</span><span class="n">tei_xml</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Document &#39;</span><span class="si">{</span><span class="n">document</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">&#39; does not have cached Grobid TEI XML. Run Grobid extraction first.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Quality check: Reject files that Grobid failed to structure (e.g., PowerPoint PDFs)</span>
+        <span class="n">ref</span> <span class="o">=</span> <span class="n">document</span><span class="o">.</span><span class="n">grobid_metadata</span>
+        <span class="n">meaningful_fields</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="nb">getattr</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="s1">&#39;authors&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="s1">&#39;abstract&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+            <span class="nb">getattr</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="s1">&#39;journal&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="s1">&#39;publisher&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+            <span class="nb">getattr</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="s1">&#39;year&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="s1">&#39;publication_date&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+            <span class="nb">getattr</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="s1">&#39;volume&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="s1">&#39;issue&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+            <span class="nb">getattr</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="s1">&#39;pages&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="s1">&#39;doi&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="p">]</span>
+        
+        <span class="c1"># If ALL of these fields are empty/falsy, the Grobid extraction is deemed too low-quality</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">field</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">meaningful_fields</span> <span class="k">if</span> <span class="n">field</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Skipping Grobid chunking for &#39;</span><span class="si">{</span><span class="n">document</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">&#39;: No meaningful metadata extracted. Falling back to default splitters.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">[],</span> <span class="p">[]</span>
+
+        <span class="n">tei_xml</span> <span class="o">=</span> <span class="n">document</span><span class="o">.</span><span class="n">grobid_metadata</span><span class="o">.</span><span class="n">tei_xml</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">grobid_client.tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">grobid_tei_to_semantic_chunks</span>
+        
+        <span class="n">final_chunks</span> <span class="o">=</span> <span class="n">grobid_tei_to_semantic_chunks</span><span class="p">(</span><span class="n">tei_xml</span><span class="p">,</span> <span class="n">document_title</span><span class="o">=</span><span class="n">document</span><span class="o">.</span><span class="n">title</span><span class="p">)</span>
+        
+        <span class="n">total_chunks</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">final_chunks</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">vec_doc</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">final_chunks</span><span class="p">):</span>
+            <span class="n">global_meta</span> <span class="o">=</span> <span class="n">document</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">if</span> <span class="n">document</span><span class="o">.</span><span class="n">metadata</span> <span class="k">else</span> <span class="p">{}</span>
+            <span class="n">vec_doc</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">global_meta</span><span class="p">)</span>
+            <span class="n">vec_doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;chunk_index&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">index</span>
+            <span class="n">vec_doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;total_chunks&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">total_chunks</span>
+            <span class="n">vec_doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;location_percent&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(((</span><span class="n">index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">total_chunks</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span> <span class="k">if</span> <span class="n">total_chunks</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="k">if</span> <span class="s2">&quot;page_number&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">vec_doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">:</span>
+                <span class="n">vec_doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;page_number&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">vec_doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;location_percent&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">%&quot;</span>
+
+        <span class="n">chunk_ids</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">uuid4</span><span class="p">())</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">final_chunks</span><span class="p">))]</span>
+        
+        <span class="n">chunks_to_store</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">lc_docs_to_add</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">chunk</span><span class="p">,</span> <span class="n">chunk_id</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">final_chunks</span><span class="p">,</span> <span class="n">chunk_ids</span><span class="p">)):</span>
+            <span class="n">chunk</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">id_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">chunk_id</span>
+            <span class="n">chunk</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;filename&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">document</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">name</span>
+            <span class="n">chunk</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;chunk_number&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">final_chunks</span><span class="p">))</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">chunk</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;indexed_hash&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">current_scheme</span>
+            
+            <span class="n">chunks_to_store</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">chunk_id</span><span class="p">,</span> <span class="n">chunk</span><span class="p">))</span>
+            
+        <span class="k">if</span> <span class="n">chunks_to_store</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">mset</span><span class="p">(</span><span class="n">chunks_to_store</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hashes_indexed</span><span class="p">[</span><span class="n">current_scheme</span><span class="p">]</span> <span class="o">=</span> <span class="n">chunk_ids</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">index_unindexed_chunks</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">document</span><span class="o">.</span><span class="n">currently_indexed</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">document</span><span class="o">.</span><span class="n">metadata</span><span class="p">:</span>
+                    <span class="n">document</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="n">document</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;chunking_scheme&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">current_scheme</span>
+                <span class="n">document</span><span class="o">.</span><span class="n">currently_indexed</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">document</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">update_fields</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;currently_indexed&#39;</span><span class="p">,</span> <span class="s1">&#39;metadata&#39;</span><span class="p">])</span>
+            
+        <span class="k">return</span> <span class="n">final_chunks</span><span class="p">,</span> <span class="n">chunk_ids</span></div>
+
+
+<div class="viewcode-block" id="RAGService.complete_reading">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.rag_service.RAGService.complete_reading">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">complete_reading</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reading_strategy</span><span class="p">:</span> <span class="n">DjangoReadingStrategy</span><span class="o">|</span><span class="n">PromptStrategy</span><span class="o">|</span><span class="n">RegexStrategy</span><span class="o">|</span> <span class="n">AbbreviationsReadingStrategy</span><span class="o">|</span><span class="n">GrobidReadingStrategy</span><span class="p">):</span>
+        <span class="c1"># Polymorphic call to the consolidated strategy method</span>
+        <span class="n">reading_strategy</span><span class="o">.</span><span class="n">apply_strategy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="RAGService.ingest_queryset_documents">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.rag_service.RAGService.ingest_queryset_documents">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ingest_queryset_documents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">queryset</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;This is to be the top function for ingestion and assumes a queryset of our Django Document models.</span>
+<span class="sd">        It might be worthwhile in other examples to split the queryset by filtering on indexing_strategy&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">queryset</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">for</span> <span class="n">document</span> <span class="ow">in</span> <span class="n">queryset</span><span class="p">:</span>
+            <span class="c1"># Safely ensure a default chunking strategy exists without crashing on legacy duplicates</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">DjangoReadingStrategy</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">document</span><span class="o">=</span><span class="n">document</span><span class="p">,</span> <span class="n">strategy_description</span><span class="o">=</span><span class="s2">&quot;Default Chunking&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="n">DjangoReadingStrategy</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">document</span><span class="o">=</span><span class="n">document</span><span class="p">,</span> <span class="n">strategy_description</span><span class="o">=</span><span class="s2">&quot;Default Chunking&quot;</span><span class="p">)</span>
+            
+            <span class="c1"># Auto-create Grobid Semantic Chunking strategy if meaningful TEI XML exists</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">document</span><span class="p">,</span> <span class="s1">&#39;grobid_metadata&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">document</span><span class="o">.</span><span class="n">grobid_metadata</span> <span class="ow">and</span> <span class="n">document</span><span class="o">.</span><span class="n">grobid_metadata</span><span class="o">.</span><span class="n">tei_xml</span><span class="p">:</span>
+                <span class="n">ref</span> <span class="o">=</span> <span class="n">document</span><span class="o">.</span><span class="n">grobid_metadata</span>
+                <span class="n">meaningful_fields</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="nb">getattr</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="s1">&#39;authors&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="s1">&#39;abstract&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+                    <span class="nb">getattr</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="s1">&#39;journal&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="s1">&#39;publisher&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+                    <span class="nb">getattr</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="s1">&#39;year&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="s1">&#39;publication_date&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+                    <span class="nb">getattr</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="s1">&#39;volume&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="s1">&#39;issue&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+                    <span class="nb">getattr</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="s1">&#39;pages&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="s1">&#39;doi&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+                <span class="p">]</span>
+                <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">field</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">meaningful_fields</span> <span class="k">if</span> <span class="n">field</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
+                    <span class="c1"># Safely ensure Grobid strategy exists without crashing</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">GrobidReadingStrategy</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">document</span><span class="o">=</span><span class="n">document</span><span class="p">,</span> <span class="n">strategy_description</span><span class="o">=</span><span class="s2">&quot;Grobid Semantic Chunking&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                        <span class="n">GrobidReadingStrategy</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+                            <span class="n">document</span><span class="o">=</span><span class="n">document</span><span class="p">,</span>
+                            <span class="n">strategy_description</span><span class="o">=</span><span class="s2">&quot;Grobid Semantic Chunking&quot;</span>
+                        <span class="p">)</span>
+
+            <span class="c1"># Ingest all types of strategies</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ingest_queryset_reading_strategies</span><span class="p">(</span><span class="n">document</span><span class="o">.</span><span class="n">readingstrategy_set</span><span class="o">.</span><span class="n">all</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ingest_queryset_reading_strategies</span><span class="p">(</span><span class="n">document</span><span class="o">.</span><span class="n">promptstrategy_set</span><span class="o">.</span><span class="n">all</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ingest_queryset_reading_strategies</span><span class="p">(</span><span class="n">document</span><span class="o">.</span><span class="n">regexstrategy_set</span><span class="o">.</span><span class="n">all</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ingest_queryset_reading_strategies</span><span class="p">(</span><span class="n">document</span><span class="o">.</span><span class="n">abbreviationsreadingstrategy_set</span><span class="o">.</span><span class="n">all</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ingest_queryset_reading_strategies</span><span class="p">(</span><span class="n">document</span><span class="o">.</span><span class="n">grobidreadingstrategy_set</span><span class="o">.</span><span class="n">all</span><span class="p">())</span></div>
+
+
+
+<div class="viewcode-block" id="RAGService.ingest_queryset_reading_strategies">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.rag_service.RAGService.ingest_queryset_reading_strategies">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ingest_queryset_reading_strategies</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">queryset</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;This is to be the top function for ingestion and assumes a queryset of our Django ReadingStrategy models.&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">queryset</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">for</span> <span class="n">readingstrategy</span> <span class="ow">in</span> <span class="n">queryset</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">complete_reading</span><span class="p">(</span><span class="n">readingstrategy</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="RAGService.get_chunk_summary">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.rag_service.RAGService.get_chunk_summary">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_chunk_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chunk_text</span><span class="p">,</span> <span class="n">custom_prompt</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;This function provides more diverse index options - you can use it to generate hypothetical questions answered in the chunk text, or a summary of the text, or any other response.  Significant danger of hallucination - instead of summaries, you could get the models general knowledge that the chunk &quot;reminded it&quot; of, which is unsourced and potentially false. You may also get summaries that are just wrong. There are also significant reliability issues - the summary output is a longform, a shortform and then keywords, but one or more may be empty, the longform can be shorter than the shortform and so on.&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">custom_prompt</span><span class="p">:</span>
+            <span class="n">prompt</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">custom_prompt</span><span class="si">}</span><span class="se">\n</span><span class="s2"> Chunk: </span><span class="si">{</span><span class="n">chunk_text</span><span class="p">[:</span><span class="mi">2000</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">prompt</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;You are a data ingestion agent. Analyze the following document chunk. </span><span class="se">\n</span><span class="s2"> 1. If it is a Table of Contents, Index, or Copyright page, it is structural noise and no summary is needed.</span><span class="se">\n</span><span class="s2"> 2. A longform response is at least several sentences, and covers many or all of the ideas in the chunk. A shortform response is a sentence or two, covering the key ideas.</span><span class="se">\n</span><span class="s2"> Chunk: </span><span class="si">{</span><span class="n">chunk_text</span><span class="p">[:</span><span class="mi">2000</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span> <span class="c1"># Truncate for speed if needed</span>
+
+        <span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.apps</span><span class="w"> </span><span class="kn">import</span> <span class="n">service_registry</span>
+        <span class="n">ai_service</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">ai_service</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">summary_result</span> <span class="o">=</span> <span class="n">ai_service</span><span class="o">.</span><span class="n">generate_outline</span><span class="p">(</span>
+                <span class="n">messages</span><span class="o">=</span><span class="n">prompt</span><span class="p">,</span>
+                <span class="n">response_schema</span><span class="o">=</span><span class="n">DocumentHandles</span><span class="p">,</span>
+                <span class="n">max_new_tokens</span><span class="o">=</span><span class="mi">1500</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">summary_result</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="k">if</span> <span class="s2">&quot;error&quot;</span> <span class="ow">in</span> <span class="n">summary_result</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">summary_result</span><span class="p">[</span><span class="s2">&quot;details&quot;</span><span class="p">])</span>
+                <span class="n">summary</span> <span class="o">=</span> <span class="n">DocumentHandles</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">summary_result</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">summary_result</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">summary</span> <span class="o">=</span> <span class="n">DocumentHandles</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="n">summary_result</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">summary</span> <span class="o">=</span> <span class="n">summary_result</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Error generating chunk summary: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">summary</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">summary</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;Summary obj&#39;</span><span class="p">,</span> <span class="n">summary</span><span class="p">]]))</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">summary</span><span class="o">.</span><span class="n">long_form</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">summary</span><span class="o">.</span><span class="n">short_form</span><span class="p">):</span>
+                <span class="n">summary</span><span class="o">.</span><span class="n">long_form</span><span class="p">,</span> <span class="n">summary</span><span class="o">.</span><span class="n">short_form</span> <span class="o">=</span> <span class="n">summary</span><span class="o">.</span><span class="n">short_form</span><span class="p">,</span> <span class="n">summary</span><span class="o">.</span><span class="n">long_form</span>
+            <span class="k">return</span> <span class="n">summary</span>
+        <span class="k">return</span> <span class="n">DocumentHandles</span><span class="p">(</span><span class="n">long_form</span><span class="o">=</span><span class="n">chunk_text</span><span class="p">[:</span><span class="mi">500</span><span class="p">],</span> <span class="n">short_form</span><span class="o">=</span><span class="n">chunk_text</span><span class="p">[:</span><span class="mi">100</span><span class="p">],</span> <span class="n">keywords</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;summarisation failed&quot;</span><span class="p">,])</span></div>
+
+
+<div class="viewcode-block" id="RAGService.is_hallucination">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.rag_service.RAGService.is_hallucination">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_hallucination</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">term</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">chunk_text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns True if the term is NOT found in the source text.</span>
+<span class="sd">        Uses case-insensitive matching to be forgiving of capitalization.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 1. Clean both inputs</span>
+        <span class="n">clean_term</span> <span class="o">=</span> <span class="n">term</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="n">clean_text</span> <span class="o">=</span> <span class="n">chunk_text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+        <span class="c1"># 2. Strict Check: Term must appear in the text</span>
+        <span class="k">if</span> <span class="n">clean_term</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">clean_text</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="RAGService.check_definition_grounding">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.rag_service.RAGService.check_definition_grounding">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_definition_grounding</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">definition</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">chunk_text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="n">def_words</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">definition</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="n">chunk_words</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">chunk_text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+
+        <span class="c1"># Calculate intersection (common words)</span>
+        <span class="n">common</span> <span class="o">=</span> <span class="n">def_words</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">chunk_words</span><span class="p">)</span>
+
+        <span class="c1"># Remove stopwords to be accurate (the, a, is, etc.)</span>
+        <span class="n">stopwords</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;the&#39;</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;an&#39;</span><span class="p">,</span> <span class="s1">&#39;is&#39;</span><span class="p">,</span> <span class="s1">&#39;are&#39;</span><span class="p">,</span> <span class="s1">&#39;of&#39;</span><span class="p">,</span> <span class="s1">&#39;to&#39;</span><span class="p">,</span> <span class="s1">&#39;in&#39;</span><span class="p">}</span>
+        <span class="n">meaningful_overlap</span> <span class="o">=</span> <span class="n">common</span> <span class="o">-</span> <span class="n">stopwords</span>
+
+        <span class="c1"># If the definition has ZERO meaningful words from the text, it&#39;s likely an external hallucination</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">meaningful_overlap</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span></div>
+
+
+<div class="viewcode-block" id="RAGService.get_glossary_terms">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.rag_service.RAGService.get_glossary_terms">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_glossary_terms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw_text</span><span class="p">,</span> <span class="n">regex</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Security Warning: User-supplied regexes can cause ReDoS (Regular Expression Denial of Service).</span>
+            <span class="c1"># Ensure that only trusted administrators can modify the extraction_regex field.</span>
+            <span class="n">regex</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">regex</span><span class="p">)</span>
+            <span class="n">matches</span> <span class="o">=</span> <span class="n">regex</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">raw_text</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">matches</span><span class="p">:</span>
+                <span class="n">valid_definitions</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">matches</span><span class="p">:</span>
+                    <span class="c1"># Expecting (term, definition) tuple from regex groups</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">match</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+                        <span class="n">term</span> <span class="o">=</span> <span class="n">match</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                        <span class="n">definition</span> <span class="o">=</span> <span class="n">match</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                        <span class="n">valid_definitions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">GlossaryItem</span><span class="p">(</span><span class="n">term</span><span class="o">=</span><span class="n">term</span><span class="p">,</span> <span class="n">definition</span><span class="o">=</span><span class="n">definition</span><span class="p">))</span>
+
+                <span class="n">glossary_extraction</span> <span class="o">=</span> <span class="n">valid_definitions</span>
+                <span class="k">return</span> <span class="n">glossary_extraction</span>
+        <span class="k">except</span> <span class="n">re</span><span class="o">.</span><span class="n">error</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Invalid regex </span><span class="si">{</span><span class="n">regex</span><span class="si">}</span><span class="s1">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="c1"># Fallback to LLM if regex fails? Or just log error?</span>
+            <span class="k">pass</span></div>
+
+
+        <span class="c1"># GlossaryExtraction is a LIST of GlossaryEntry items, so it handles multiple terms per page</span>
+<div class="viewcode-block" id="RAGService.glossary_generator">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.rag_service.RAGService.glossary_generator">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">glossary_generator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw_text</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;This code attempts to use a Language Model to yield glossary terms and definitions. Slow and pretty unreliable.&quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.apps</span><span class="w"> </span><span class="kn">import</span> <span class="n">service_registry</span>
+        <span class="n">ai_service</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">ai_service</span>
+
+        <span class="n">prompt</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        You are a strict data extraction engine. </span>
+<span class="s2">        Your job is to extract definitions explicitly stated in the text below.</span>
+<span class="s2">        </span>
+<span class="s2">        RULES:</span>
+<span class="s2">        1. ONLY extract terms that are defined in the provided text.</span>
+<span class="s2">        2. If a term is mentioned but not defined, IGNORE it.</span>
+<span class="s2">        3. Do NOT use your own knowledge. If the text says &quot;Apple is a fruit&quot;, extract it. If it just says &quot;Apple&quot;, do not invent a definition.</span>
+<span class="s2">        4. Return an empty list if no definitions are found.</span>
+<span class="s2">        </span>
+<span class="s2">        Usually the separator is a colon (:), but a dash (-) is also used. </span>
+<span class="s2">        Ignore standard filler text, such as headings, footers, page numbers. Do precise data extraction by transcribing - limit yourself to the text itself. </span>
+<span class="s2">        You may correct typographical errors in the source.</span>
+
+<span class="s2">        TEXT TO ORGANIZE INTO DEFINITIONS:</span>
+<span class="s2">        </span><span class="si">{</span><span class="n">raw_text</span><span class="p">[:</span><span class="mi">1000</span><span class="p">]</span><span class="si">}</span>
+<span class="s2">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># 2. Generate</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">ai_service</span><span class="o">.</span><span class="n">generate_outline</span><span class="p">(</span>
+                <span class="n">messages</span><span class="o">=</span><span class="n">prompt</span><span class="p">,</span>
+                <span class="n">response_schema</span><span class="o">=</span><span class="n">GlossaryExtraction</span><span class="p">,</span>
+                <span class="n">max_new_tokens</span><span class="o">=</span><span class="mi">1024</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="k">if</span> <span class="s2">&quot;error&quot;</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;details&quot;</span><span class="p">])</span>
+                <span class="n">glossary_entries</span> <span class="o">=</span> <span class="n">GlossaryExtraction</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">glossary_entries</span> <span class="o">=</span> <span class="n">GlossaryExtraction</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">glossary_entries</span> <span class="o">=</span> <span class="n">result</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Error generating glossary: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">glossary_entries</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;Glossary from chunks:&#39;</span><span class="p">,</span> <span class="n">result</span><span class="p">]]))</span>
+
+        <span class="k">if</span> <span class="n">glossary_entries</span><span class="p">:</span>
+            <span class="n">valid_definitions</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">glossary_entries</span><span class="o">.</span><span class="n">items</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_hallucination</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">term</span><span class="p">,</span> <span class="n">raw_text</span><span class="p">):</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;Hallucination detected:&#39;</span><span class="p">,</span> <span class="n">item</span><span class="o">.</span><span class="n">term</span><span class="p">,</span> <span class="s1">&#39; not in&#39;</span><span class="p">,</span> <span class="n">raw_text</span><span class="p">]]))</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_definition_grounding</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">definition</span><span class="p">,</span> <span class="n">raw_text</span><span class="p">):</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;Definition not grounding:&#39;</span><span class="p">,</span> <span class="n">item</span><span class="o">.</span><span class="n">definition</span><span class="p">,</span> <span class="s1">&#39; not found in&#39;</span><span class="p">,</span> <span class="n">raw_text</span><span class="p">]]))</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_hallucination</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">term</span><span class="p">,</span> <span class="n">raw_text</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_definition_grounding</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">definition</span><span class="p">,</span> <span class="n">raw_text</span><span class="p">):</span>
+                    <span class="n">valid_definitions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">valid_definitions</span>
+        <span class="k">return</span> <span class="p">[]</span></div>
+
+
+<div class="viewcode-block" id="RAGService.verify_rag_relevance">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.rag_service.RAGService.verify_rag_relevance">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">verify_rag_relevance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_query</span><span class="p">,</span> <span class="n">retrieved_chunks</span><span class="p">,</span> <span class="n">min_overlap</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.apps</span><span class="w"> </span><span class="kn">import</span> <span class="n">service_registry</span>
+        <span class="n">nlp_service</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">nlp_service</span>
+
+        <span class="c1"># 1. Get core concepts from query</span>
+        <span class="c1"># Query: &quot;How do I fix memory leaks?&quot; -&gt; {&#39;fix&#39;, &#39;memory&#39;, &#39;leak&#39;}</span>
+        <span class="c1"># Lowercase lemmas to ensure case-insensitive matching (e.g. &quot;Water&quot; vs &quot;water&quot;)</span>
+        <span class="n">query_lemmas</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">t</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">nlp_service</span><span class="o">.</span><span class="n">get_lemmatized_tokens</span><span class="p">(</span><span class="n">user_query</span><span class="p">)])</span>
+
+        <span class="n">scored_results</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">retrieved_chunks</span><span class="p">):</span>
+            <span class="c1"># 2. Get concepts from the chunk</span>
+            <span class="n">content_to_check</span> <span class="o">=</span> <span class="n">chunk</span><span class="o">.</span><span class="n">page_content</span>
+            <span class="k">if</span> <span class="n">chunk</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;original_term&quot;</span><span class="p">):</span>
+                <span class="n">content_to_check</span> <span class="o">=</span> <span class="n">chunk</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;original_term&quot;</span><span class="p">]</span> <span class="o">+</span><span class="s2">&quot;: &quot;</span> <span class="o">+</span> <span class="n">content_to_check</span>
+
+            <span class="n">chunk_lemmas</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">t</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">nlp_service</span><span class="o">.</span><span class="n">get_lemmatized_tokens</span><span class="p">(</span><span class="n">content_to_check</span><span class="p">)])</span>
+
+            <span class="c1"># 3. Calculate overlap</span>
+            <span class="c1"># Calculate Query Coverage: What percentage of the query&#39;s concepts are present in the chunk?</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">query_lemmas</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">overlap_ratio</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">intersection</span> <span class="o">=</span> <span class="n">query_lemmas</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">chunk_lemmas</span><span class="p">)</span>
+                <span class="n">base_overlap</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">intersection</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">query_lemmas</span><span class="p">)</span>
+                
+                <span class="c1"># Length Penalty (Information Density):</span>
+                <span class="c1"># Discount overlap score for excessively long chunks.</span>
+                <span class="c1"># Chunks under 100 lemmas get no penalty.</span>
+                <span class="c1"># A 1000-lemma chunk is penalized heavily (100/1000 = 0.1).</span>
+                <span class="n">length_penalty</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">100.0</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">chunk_lemmas</span><span class="p">)))</span>
+                <span class="n">overlap_ratio</span> <span class="o">=</span> <span class="n">base_overlap</span> <span class="o">*</span> <span class="n">length_penalty</span>
+            
+            <span class="c1"># 4. Tie-breaker: Prefer definitions ONLY if they actually match the query context</span>
+            <span class="n">is_relevant_definition</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">original_term</span> <span class="o">=</span> <span class="n">chunk</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;original_term&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">original_term</span><span class="p">:</span>
+                <span class="n">term_lemmas</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">t</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">nlp_service</span><span class="o">.</span><span class="n">get_lemmatized_tokens</span><span class="p">(</span><span class="n">original_term</span><span class="p">)])</span>
+                <span class="c1"># If the term shares words with the query, or the definition is a strong match</span>
+                <span class="k">if</span> <span class="n">term_lemmas</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">query_lemmas</span><span class="p">)</span> <span class="ow">or</span> <span class="n">overlap_ratio</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">:</span>
+                    <span class="n">is_relevant_definition</span> <span class="o">=</span> <span class="mi">1</span>
+            
+            <span class="c1"># By defaulting to 0.0, we stop punishing the semantic embedding model for finding synonyms!</span>
+            <span class="k">if</span> <span class="n">overlap_ratio</span> <span class="o">&gt;=</span> <span class="n">min_overlap</span> <span class="ow">or</span> <span class="n">is_relevant_definition</span><span class="p">:</span>
+                <span class="n">scored_results</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">chunk</span><span class="p">,</span> <span class="n">overlap_ratio</span><span class="p">,</span> <span class="n">is_relevant_definition</span><span class="p">,</span> <span class="n">i</span><span class="p">))</span>
+
+        <span class="c1"># HYBRID SEARCH SORTING:</span>
+        <span class="c1"># 1. Target Definition (Exact Glossary Hit)</span>
+        <span class="c1"># 2. Lexical Overlap (Safeguard against embedding hallucinations like Python code)</span>
+        <span class="c1"># 3. Original Semantic Rank (-x[3])</span>
+        <span class="n">sorted_results</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">scored_results</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="n">x</span><span class="p">[</span><span class="mi">3</span><span class="p">]),</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[(</span><span class="n">item</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">item</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">sorted_results</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="RAGService.dump_index_to_file">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.rag_service.RAGService.dump_index_to_file">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">dump_index_to_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_filename</span><span class="o">=</span><span class="s2">&quot;index_dump.txt&quot;</span><span class="p">,</span> <span class="n">comparison_doc_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Writes the entire contents of the vector store + byte store to a text file.</span>
+<span class="sd">        Format:</span>
+<span class="sd">        [TERM/SUMMARY] -&gt; [FULL CONTENT] (Source)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">background_resources.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Document</span>
+        <span class="n">indexed_false_positives</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># hallucinated entries</span>
+        <span class="n">indexed_misses</span> <span class="o">=</span> <span class="p">[]</span>           <span class="c1">#  entries not found in index</span>
+
+        <span class="n">deterministic_glossary_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">comparison_doc_id</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">d</span> <span class="o">=</span> <span class="n">Document</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">comparison_doc_id</span><span class="p">)</span>
+                <span class="n">deterministic_glossary_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_glossary_deterministic</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;glossary_read_dump.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;--- DUMP OF </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">deterministic_glossary_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2"> Deterministic Glossary Dict ITEMS ---</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+                    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">deterministic_glossary_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+                        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Entry #</span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">--------------------------------------------</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Index Key (Term): </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Definition: </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;dumped dict&#39;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">Document</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Comparison document with ID </span><span class="si">{</span><span class="n">comparison_doc_id</span><span class="si">}</span><span class="s1"> not found.&#39;</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Dumping index to </span><span class="si">{</span><span class="n">output_filename</span><span class="si">}</span><span class="s1">...&#39;</span><span class="p">)</span>
+        <span class="n">index_docs</span> <span class="o">=</span> <span class="n">DjangoChunk</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">in_vector_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">index_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_filename</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;--- DUMP OF </span><span class="si">{</span><span class="n">index_docs</span><span class="o">.</span><span class="n">count</span><span class="p">()</span><span class="si">}</span><span class="s2"> INDEXED ITEMS ---</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">index_doc</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">index_docs</span><span class="p">):</span>
+                <span class="c1"># The text used for searching (e.g. The Glossary Term)</span>
+                <span class="n">search_term</span> <span class="o">=</span> <span class="p">(</span><span class="n">index_doc</span><span class="o">.</span><span class="n">text_content</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="p">)</span>
+
+                <span class="c1"># The ID pointing to the full content</span>
+                <span class="n">chunk_id</span> <span class="o">=</span> <span class="n">index_doc</span><span class="o">.</span><span class="n">chunk_id</span>
+
+                <span class="c1"># Retrieve the full content (e.g. The Definition)</span>
+                <span class="c1"># We use the store directly</span>
+                <span class="n">docs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">mget</span><span class="p">([</span><span class="n">chunk_id</span><span class="p">])</span>
+                <span class="n">full_content_doc</span> <span class="o">=</span> <span class="n">docs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">docs</span> <span class="k">else</span> <span class="kc">None</span>
+
+                <span class="k">if</span> <span class="n">full_content_doc</span><span class="p">:</span>
+                    <span class="n">body_text</span> <span class="o">=</span> <span class="n">full_content_doc</span><span class="o">.</span><span class="n">page_content</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                    <span class="n">source</span> <span class="o">=</span> <span class="n">full_content_doc</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;filename&quot;</span><span class="p">,</span> <span class="s2">&quot;Unknown Source&quot;</span><span class="p">)</span>
+                    <span class="n">page</span> <span class="o">=</span> <span class="n">full_content_doc</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;page_number&quot;</span><span class="p">,</span> <span class="s2">&quot;?&quot;</span><span class="p">)</span>
+                    <span class="n">index_dict</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">search_term</span><span class="p">:</span> <span class="n">body_text</span><span class="p">})</span>
+                    <span class="k">if</span> <span class="n">deterministic_glossary_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">search_term</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">indexed_false_positives</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">search_term</span><span class="p">)</span>
+
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">body_text</span> <span class="o">=</span> <span class="s2">&quot;[MISSING IN STORE - ORPHANED INDEX]&quot;</span>
+                    <span class="n">source</span> <span class="o">=</span> <span class="s2">&quot;N/A&quot;</span>
+                    <span class="n">page</span> <span class="o">=</span> <span class="s2">&quot;N/A&quot;</span>
+
+                <span class="c1"># Write to file</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Entry #</span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Index Key (Term): </span><span class="si">{</span><span class="n">search_term</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Content:          </span><span class="si">{</span><span class="n">body_text</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Source:           </span><span class="si">{</span><span class="n">source</span><span class="si">}</span><span class="s2"> (Page </span><span class="si">{</span><span class="n">page</span><span class="si">}</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Dumped vector_store.&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">deterministic_glossary_dict</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">deterministic_glossary_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">index_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">indexed_misses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">indexed_misses</span><span class="p">)</span><span class="si">}</span><span class="s1"> misses / </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">deterministic_glossary_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s1"> and &#39;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">indexed_false_positives</span><span class="p">)</span><span class="si">}</span><span class="s1"> hallucinations / </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">index_dict</span><span class="p">)</span><span class="si">}</span><span class="s1"> total.&#39;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;Index Misses:&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">-&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">indexed_misses</span><span class="p">)]]))</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;Index Hallucinations:&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">-&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">indexed_false_positives</span><span class="p">)]]))</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Andrew Cruickshank.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

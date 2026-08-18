@@ -1,0 +1,252 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Doctest Report: 7. iterative_planning &mdash; Verbal 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Verbal
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../llm_api_app.html">LLM API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../background_resources_app.html">Background Resources - context documents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../grips_app.html">Grips - wiki knowledge banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo_ui_app.html">Demo UI</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../using_ollama.html">Ollama as Local AI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tests.html">Testing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Verbal</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Doctest Report: 7. iterative_planning</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/metacognition_trials/7. iterative_planning_report.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="doctest-report-7-iterative-planning">
+<h1>Doctest Report: 7. iterative_planning<a class="headerlink" href="#doctest-report-7-iterative-planning" title="Link to this heading"></a></h1>
+<p>Date: 2026-07-24 16:42:05</p>
+<section id="conversation-prompts">
+<h2>Conversation Prompts<a class="headerlink" href="#conversation-prompts" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>[Turn 1]:
+We need to analyze our Django project. Task 1: List all models in `metacognition/models.py`. Task 2: List all functions in `metacognition/actions.py`. Task 3: Provide a brief summary of how they relate.
+</pre></div>
+</div>
+</section>
+<section id="execution-trace">
+<h2>Execution Trace<a class="headerlink" href="#execution-trace" title="Link to this heading"></a></h2>
+<section id="step-1">
+<h3>Step 1<a class="headerlink" href="#step-1" title="Link to this heading"></a></h3>
+<p><em>(Generated by: Gemma4-2B)</em></p>
+<p><strong>System</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Break</span> <span class="n">the</span> <span class="n">user</span><span class="s1">&#39;s complex request into a strict programmatic JSON queue of sub-tasks. Each task must be delegated to a specific blueprint. Available blueprints:</span>
+<span class="o">-</span> <span class="s1">&#39;Escalation of Effort&#39;</span><span class="p">:</span> <span class="n">General</span> <span class="n">purpose</span> <span class="n">python</span><span class="o">/</span><span class="n">django</span> <span class="n">worker</span>
+<span class="o">-</span> <span class="s1">&#39;Computational Logic&#39;</span><span class="p">:</span> <span class="n">Data</span> <span class="n">processing</span> <span class="n">worker</span>
+<span class="o">-</span> <span class="s1">&#39;Propose Blueprint&#39;</span><span class="p">:</span> <span class="n">If</span> <span class="n">no</span> <span class="n">existing</span> <span class="n">blueprint</span> <span class="n">fits</span><span class="p">,</span> <span class="n">use</span> <span class="n">this</span> <span class="n">to</span> <span class="n">design</span> <span class="n">a</span> <span class="n">new</span> <span class="n">one</span><span class="o">.</span>
+
+<span class="n">Scratchpad</span> <span class="n">Variables</span><span class="p">:</span>
+<span class="p">{</span>
+  <span class="s2">&quot;current_chunk_index&quot;</span><span class="p">:</span> <span class="mi">0</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>User</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="s1">&#39;We need to analyze our Django project. Task 1: List all models in `metacognition/models.py`. Task 2: List all functions in `metacognition/actions.py`. Task 3: Provide a brief summary of how they relate.&#39;</span><span class="p">}]</span>
+</pre></div>
+</div>
+<p><strong>Assistant</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s2">&quot;queue&quot;</span><span class="p">:</span> <span class="p">[]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="step-2">
+<h3>Step 2<a class="headerlink" href="#step-2" title="Link to this heading"></a></h3>
+<p><em>(Generated by: Gemma4-2B)</em></p>
+<p><strong>System</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Check</span> <span class="n">the</span> <span class="s1">&#39;queue&#39;</span> <span class="ow">in</span> <span class="n">your</span> <span class="n">Scratchpad</span> <span class="n">Variables</span><span class="o">.</span> <span class="n">Pop</span> <span class="n">the</span> <span class="n">first</span> <span class="n">pending</span> <span class="n">task</span><span class="o">.</span> <span class="n">Use</span> <span class="n">the</span> <span class="s1">&#39;run_sub_blueprint&#39;</span> <span class="n">tool</span> <span class="n">to</span> <span class="n">execute</span> <span class="n">it</span> <span class="n">by</span> <span class="n">passing</span> <span class="s1">&#39;blueprint_name&#39;</span> <span class="ow">and</span> <span class="s1">&#39;task_prompt&#39;</span><span class="o">.</span> <span class="n">You</span> <span class="n">MUST</span> <span class="n">update</span> <span class="n">the</span> <span class="n">queue</span> <span class="n">state</span> <span class="p">(</span><span class="n">by</span> <span class="n">deleting</span> <span class="n">the</span> <span class="n">task</span> <span class="n">you</span> <span class="n">just</span> <span class="n">ran</span><span class="p">)</span> <span class="n">using</span> <span class="s1">&#39;update_conversation_state&#39;</span> <span class="ow">or</span> <span class="n">by</span> <span class="n">just</span> <span class="n">describing</span> <span class="n">the</span> <span class="n">remaining</span> <span class="n">queue</span><span class="o">.</span> <span class="n">If</span> <span class="n">no</span> <span class="n">tasks</span> <span class="n">remain</span><span class="p">,</span> <span class="n">output</span> <span class="n">the</span> <span class="s1">&#39;TASK_COMPLETE&#39;</span> <span class="n">tool</span><span class="o">.</span>
+
+<span class="n">Scratchpad</span> <span class="n">Variables</span><span class="p">:</span>
+<span class="p">{</span>
+  <span class="s2">&quot;current_chunk_index&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+  <span class="s2">&quot;queue&quot;</span><span class="p">:</span> <span class="p">[]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>User</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="s1">&#39;We need to analyze our Django project. Task 1: List all models in `metacognition/models.py`. Task 2: List all functions in `metacognition/actions.py`. Task 3: Provide a brief summary of how they relate.&#39;</span><span class="p">},</span> <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;assistant&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="s1">&#39;queue=[]&#39;</span><span class="p">}]</span>
+</pre></div>
+</div>
+<p><strong>Assistant</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;run_sub_blueprint&#39;</span><span class="p">,</span> <span class="s1">&#39;args&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;blueprint_name&#39;</span><span class="p">:</span> <span class="s1">&#39;list_models&#39;</span><span class="p">,</span> <span class="s1">&#39;task_prompt&#39;</span><span class="p">:</span> <span class="s1">&#39;List all models in metacognition/models.py&#39;</span><span class="p">}}]</span>
+</pre></div>
+</div>
+<p><strong>Tool Output</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Error</span><span class="p">:</span> <span class="n">Sub</span><span class="o">-</span><span class="n">blueprint</span> <span class="s1">&#39;list_models&#39;</span> <span class="ow">not</span> <span class="n">found</span><span class="o">.</span>
+</pre></div>
+</div>
+</section>
+<section id="step-3">
+<h3>Step 3<a class="headerlink" href="#step-3" title="Link to this heading"></a></h3>
+<p><em>(Generated by: Gemma4-2B)</em></p>
+<p><strong>System</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Check</span> <span class="n">the</span> <span class="s1">&#39;queue&#39;</span> <span class="ow">in</span> <span class="n">your</span> <span class="n">Scratchpad</span> <span class="n">Variables</span><span class="o">.</span> <span class="n">Pop</span> <span class="n">the</span> <span class="n">first</span> <span class="n">pending</span> <span class="n">task</span><span class="o">.</span> <span class="n">Use</span> <span class="n">the</span> <span class="s1">&#39;run_sub_blueprint&#39;</span> <span class="n">tool</span> <span class="n">to</span> <span class="n">execute</span> <span class="n">it</span> <span class="n">by</span> <span class="n">passing</span> <span class="s1">&#39;blueprint_name&#39;</span> <span class="ow">and</span> <span class="s1">&#39;task_prompt&#39;</span><span class="o">.</span> <span class="n">You</span> <span class="n">MUST</span> <span class="n">update</span> <span class="n">the</span> <span class="n">queue</span> <span class="n">state</span> <span class="p">(</span><span class="n">by</span> <span class="n">deleting</span> <span class="n">the</span> <span class="n">task</span> <span class="n">you</span> <span class="n">just</span> <span class="n">ran</span><span class="p">)</span> <span class="n">using</span> <span class="s1">&#39;update_conversation_state&#39;</span> <span class="ow">or</span> <span class="n">by</span> <span class="n">just</span> <span class="n">describing</span> <span class="n">the</span> <span class="n">remaining</span> <span class="n">queue</span><span class="o">.</span> <span class="n">If</span> <span class="n">no</span> <span class="n">tasks</span> <span class="n">remain</span><span class="p">,</span> <span class="n">output</span> <span class="n">the</span> <span class="s1">&#39;TASK_COMPLETE&#39;</span> <span class="n">tool</span><span class="o">.</span>
+
+<span class="n">Scratchpad</span> <span class="n">Variables</span><span class="p">:</span>
+<span class="p">{</span>
+  <span class="s2">&quot;current_chunk_index&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+  <span class="s2">&quot;queue&quot;</span><span class="p">:</span> <span class="p">[]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>User</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="s1">&#39;We need to analyze our Django project. Task 1: List all models in `metacognition/models.py`. Task 2: List all functions in `metacognition/actions.py`. Task 3: Provide a brief summary of how they relate.&#39;</span><span class="p">},</span> <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;assistant&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="s1">&#39;queue=[]&#39;</span><span class="p">},</span> <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;assistant&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="s2">&quot;[{&#39;name&#39;: &#39;run_sub_blueprint&#39;, &#39;args&#39;: {&#39;blueprint_name&#39;: &#39;list_models&#39;, &#39;task_prompt&#39;: &#39;List all models in metacognition/models.py&#39;}}]&quot;</span><span class="p">}]</span>
+</pre></div>
+</div>
+<p><strong>Assistant</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[]</span>
+</pre></div>
+</div>
+</section>
+<section id="step-4">
+<h3>Step 4<a class="headerlink" href="#step-4" title="Link to this heading"></a></h3>
+<p><em>(Generated by: Gemma4-2B)</em></p>
+<p><strong>System</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">All</span> <span class="n">tasks</span> <span class="n">are</span> <span class="n">complete</span><span class="o">.</span> <span class="n">Summarize</span> <span class="n">the</span> <span class="n">total</span> <span class="n">work</span> <span class="n">done</span> <span class="n">based</span> <span class="n">on</span> <span class="n">the</span> <span class="n">execution</span> <span class="n">history</span><span class="o">.</span>
+
+<span class="n">Scratchpad</span> <span class="n">Variables</span><span class="p">:</span>
+<span class="p">{</span>
+  <span class="s2">&quot;current_chunk_index&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+  <span class="s2">&quot;queue&quot;</span><span class="p">:</span> <span class="p">[]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>User</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="s1">&#39;We need to analyze our Django project. Task 1: List all models in `metacognition/models.py`. Task 2: List all functions in `metacognition/actions.py`. Task 3: Provide a brief summary of how they relate.&#39;</span><span class="p">},</span> <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;assistant&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="s1">&#39;queue=[]&#39;</span><span class="p">},</span> <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;assistant&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="s2">&quot;[{&#39;name&#39;: &#39;run_sub_blueprint&#39;, &#39;args&#39;: {&#39;blueprint_name&#39;: &#39;list_models&#39;, &#39;task_prompt&#39;: &#39;List all models in metacognition/models.py&#39;}}]&quot;</span><span class="p">},</span> <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;assistant&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="s1">&#39;[]&#39;</span><span class="p">}]</span>
+</pre></div>
+</div>
+<p><strong>Assistant</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>The execution history shows an attempt to use a tool named `run_sub_blueprint` with the blueprint `&#39;list_models&#39;`, which resulted in an error: &quot;Sub-blueprint &#39;list_models&#39; not found.&quot;
+
+**Summary of Work Done:**
+
+The intended tasks were:
+1. List all models in `metacognition/models.py`.
+2. List all functions in `metacognition/actions.py`.
+3. Provide a brief summary of how they relate.
+
+**Actual Outcome:**
+The process failed immediately because the required sub-blueprint (`list_models`) was not found, meaning **none of the requested analysis tasks were successfully completed.**
+</pre></div>
+</div>
+</section>
+</section>
+<section id="final-response">
+<h2>Final Response<a class="headerlink" href="#final-response" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>The execution history shows an attempt to use a tool named `run_sub_blueprint` with the blueprint `&#39;list_models&#39;`, which resulted in an error: &quot;Sub-blueprint &#39;list_models&#39; not found.&quot;
+
+**Summary of Work Done:**
+
+The intended tasks were:
+1. List all models in `metacognition/models.py`.
+2. List all functions in `metacognition/actions.py`.
+3. Provide a brief summary of how they relate.
+
+**Actual Outcome:**
+The process failed immediately because the required sub-blueprint (`list_models`) was not found, meaning **none of the requested analysis tasks were successfully completed.**
+</pre></div>
+</div>
+</section>
+<section id="generated-workspace-files">
+<h2>Generated Workspace Files<a class="headerlink" href="#generated-workspace-files" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Andrew Cruickshank.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

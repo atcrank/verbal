@@ -1,0 +1,1016 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grips - wiki knowledge banks &mdash; Verbal 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=2709fde1"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Metacognition - plans and self-evaluation" href="metacognition_app.html" />
+    <link rel="prev" title="Benchmarking - model and strategy evaluations" href="benchmarking_app.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Verbal
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="llm_api_app.html">LLM API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="background_resources_app.html">Background Resources - context documents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Grips - wiki knowledge banks</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#app-achievements">App achievements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#app-enhancement">App enhancement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-grips.models">Database models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#grips.models.Domain"><code class="docutils literal notranslate"><span class="pre">Domain</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.Domain.name"><code class="docutils literal notranslate"><span class="pre">Domain.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.Domain.description"><code class="docutils literal notranslate"><span class="pre">Domain.description</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.Domain.style_guide"><code class="docutils literal notranslate"><span class="pre">Domain.style_guide</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.Domain.documents"><code class="docutils literal notranslate"><span class="pre">Domain.documents</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.Domain.created_at"><code class="docutils literal notranslate"><span class="pre">Domain.created_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.Domain.get_admin_url"><code class="docutils literal notranslate"><span class="pre">Domain.get_admin_url()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.Domain.DoesNotExist"><code class="docutils literal notranslate"><span class="pre">Domain.DoesNotExist</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.Domain.MultipleObjectsReturned"><code class="docutils literal notranslate"><span class="pre">Domain.MultipleObjectsReturned</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.Domain.NotUpdated"><code class="docutils literal notranslate"><span class="pre">Domain.NotUpdated</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.Domain.concepts"><code class="docutils literal notranslate"><span class="pre">Domain.concepts</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.Domain.get_next_by_created_at"><code class="docutils literal notranslate"><span class="pre">Domain.get_next_by_created_at()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.Domain.get_previous_by_created_at"><code class="docutils literal notranslate"><span class="pre">Domain.get_previous_by_created_at()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.Domain.id"><code class="docutils literal notranslate"><span class="pre">Domain.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.Domain.objects"><code class="docutils literal notranslate"><span class="pre">Domain.objects</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#grips.models.ConceptNode"><code class="docutils literal notranslate"><span class="pre">ConceptNode</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.ConceptNode.domain"><code class="docutils literal notranslate"><span class="pre">ConceptNode.domain</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.ConceptNode.title"><code class="docutils literal notranslate"><span class="pre">ConceptNode.title</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.ConceptNode.slug"><code class="docutils literal notranslate"><span class="pre">ConceptNode.slug</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.ConceptNode.focus_hint"><code class="docutils literal notranslate"><span class="pre">ConceptNode.focus_hint</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.ConceptNode.source_chunk"><code class="docutils literal notranslate"><span class="pre">ConceptNode.source_chunk</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.ConceptNode.narrative_content"><code class="docutils literal notranslate"><span class="pre">ConceptNode.narrative_content</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.ConceptNode.structured_claims"><code class="docutils literal notranslate"><span class="pre">ConceptNode.structured_claims</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.ConceptNode.ConceptNodeFlags"><code class="docutils literal notranslate"><span class="pre">ConceptNode.ConceptNodeFlags</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.ConceptNode.issue_flags"><code class="docutils literal notranslate"><span class="pre">ConceptNode.issue_flags</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.ConceptNode.needs_linting"><code class="docutils literal notranslate"><span class="pre">ConceptNode.needs_linting</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.ConceptNode.last_linted_at"><code class="docutils literal notranslate"><span class="pre">ConceptNode.last_linted_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.ConceptNode.linting_report"><code class="docutils literal notranslate"><span class="pre">ConceptNode.linting_report</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.ConceptNode.embedding"><code class="docutils literal notranslate"><span class="pre">ConceptNode.embedding</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.ConceptNode.get_admin_url"><code class="docutils literal notranslate"><span class="pre">ConceptNode.get_admin_url()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.ConceptNode.get_wiki_url"><code class="docutils literal notranslate"><span class="pre">ConceptNode.get_wiki_url()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.ConceptNode.DoesNotExist"><code class="docutils literal notranslate"><span class="pre">ConceptNode.DoesNotExist</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.ConceptNode.MultipleObjectsReturned"><code class="docutils literal notranslate"><span class="pre">ConceptNode.MultipleObjectsReturned</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.ConceptNode.NotUpdated"><code class="docutils literal notranslate"><span class="pre">ConceptNode.NotUpdated</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.ConceptNode.domain_id"><code class="docutils literal notranslate"><span class="pre">ConceptNode.domain_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.ConceptNode.id"><code class="docutils literal notranslate"><span class="pre">ConceptNode.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.ConceptNode.incoming_edges"><code class="docutils literal notranslate"><span class="pre">ConceptNode.incoming_edges</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.ConceptNode.objects"><code class="docutils literal notranslate"><span class="pre">ConceptNode.objects</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.ConceptNode.outgoing_edges"><code class="docutils literal notranslate"><span class="pre">ConceptNode.outgoing_edges</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.ConceptNode.source_chunk_id"><code class="docutils literal notranslate"><span class="pre">ConceptNode.source_chunk_id</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#grips.models.index_concept_vector"><code class="docutils literal notranslate"><span class="pre">index_concept_vector()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#grips.models.KnowledgeEdge"><code class="docutils literal notranslate"><span class="pre">KnowledgeEdge</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.KnowledgeEdge.RelationshipTypes"><code class="docutils literal notranslate"><span class="pre">KnowledgeEdge.RelationshipTypes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.KnowledgeEdge.source"><code class="docutils literal notranslate"><span class="pre">KnowledgeEdge.source</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.KnowledgeEdge.target"><code class="docutils literal notranslate"><span class="pre">KnowledgeEdge.target</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.KnowledgeEdge.relationship_type"><code class="docutils literal notranslate"><span class="pre">KnowledgeEdge.relationship_type</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.KnowledgeEdge.justification"><code class="docutils literal notranslate"><span class="pre">KnowledgeEdge.justification</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.KnowledgeEdge.needs_linting"><code class="docutils literal notranslate"><span class="pre">KnowledgeEdge.needs_linting</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.KnowledgeEdge.last_linted_at"><code class="docutils literal notranslate"><span class="pre">KnowledgeEdge.last_linted_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.KnowledgeEdge.linting_report"><code class="docutils literal notranslate"><span class="pre">KnowledgeEdge.linting_report</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.KnowledgeEdge.DoesNotExist"><code class="docutils literal notranslate"><span class="pre">KnowledgeEdge.DoesNotExist</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.KnowledgeEdge.MultipleObjectsReturned"><code class="docutils literal notranslate"><span class="pre">KnowledgeEdge.MultipleObjectsReturned</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.KnowledgeEdge.NotUpdated"><code class="docutils literal notranslate"><span class="pre">KnowledgeEdge.NotUpdated</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.KnowledgeEdge.get_relationship_type_display"><code class="docutils literal notranslate"><span class="pre">KnowledgeEdge.get_relationship_type_display()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.KnowledgeEdge.id"><code class="docutils literal notranslate"><span class="pre">KnowledgeEdge.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.KnowledgeEdge.objects"><code class="docutils literal notranslate"><span class="pre">KnowledgeEdge.objects</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.KnowledgeEdge.source_id"><code class="docutils literal notranslate"><span class="pre">KnowledgeEdge.source_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.KnowledgeEdge.target_id"><code class="docutils literal notranslate"><span class="pre">KnowledgeEdge.target_id</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#grips.models.CeleryStatus"><code class="docutils literal notranslate"><span class="pre">CeleryStatus</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.CeleryStatus.DoesNotExist"><code class="docutils literal notranslate"><span class="pre">CeleryStatus.DoesNotExist</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.CeleryStatus.MultipleObjectsReturned"><code class="docutils literal notranslate"><span class="pre">CeleryStatus.MultipleObjectsReturned</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.CeleryStatus.NotUpdated"><code class="docutils literal notranslate"><span class="pre">CeleryStatus.NotUpdated</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.CeleryStatus.id"><code class="docutils literal notranslate"><span class="pre">CeleryStatus.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.models.CeleryStatus.objects"><code class="docutils literal notranslate"><span class="pre">CeleryStatus.objects</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-grips.tasks">Grip Tasks</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#grips.tasks.StructuredClaim"><code class="docutils literal notranslate"><span class="pre">StructuredClaim</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#grips.tasks.StructuredClaim.predicate"><code class="docutils literal notranslate"><span class="pre">StructuredClaim.predicate</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.tasks.StructuredClaim.subject"><code class="docutils literal notranslate"><span class="pre">StructuredClaim.subject</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.tasks.StructuredClaim.object"><code class="docutils literal notranslate"><span class="pre">StructuredClaim.object</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.tasks.StructuredClaim.model_config"><code class="docutils literal notranslate"><span class="pre">StructuredClaim.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#grips.tasks.ConceptDraft"><code class="docutils literal notranslate"><span class="pre">ConceptDraft</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#grips.tasks.ConceptDraft.thought_process"><code class="docutils literal notranslate"><span class="pre">ConceptDraft.thought_process</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.tasks.ConceptDraft.narrative"><code class="docutils literal notranslate"><span class="pre">ConceptDraft.narrative</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.tasks.ConceptDraft.source_chunk_id"><code class="docutils literal notranslate"><span class="pre">ConceptDraft.source_chunk_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.tasks.ConceptDraft.claims"><code class="docutils literal notranslate"><span class="pre">ConceptDraft.claims</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.tasks.ConceptDraft.clean_narrative"><code class="docutils literal notranslate"><span class="pre">ConceptDraft.clean_narrative()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.tasks.ConceptDraft.model_config"><code class="docutils literal notranslate"><span class="pre">ConceptDraft.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#grips.tasks.SubConcept"><code class="docutils literal notranslate"><span class="pre">SubConcept</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#grips.tasks.SubConcept.title"><code class="docutils literal notranslate"><span class="pre">SubConcept.title</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.tasks.SubConcept.focus_hint"><code class="docutils literal notranslate"><span class="pre">SubConcept.focus_hint</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.tasks.SubConcept.summary"><code class="docutils literal notranslate"><span class="pre">SubConcept.summary</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.tasks.SubConcept.claims"><code class="docutils literal notranslate"><span class="pre">SubConcept.claims</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.tasks.SubConcept.model_config"><code class="docutils literal notranslate"><span class="pre">SubConcept.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#grips.tasks.DocumentDigest"><code class="docutils literal notranslate"><span class="pre">DocumentDigest</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#grips.tasks.DocumentDigest.overall_summary"><code class="docutils literal notranslate"><span class="pre">DocumentDigest.overall_summary</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.tasks.DocumentDigest.concept_nodes"><code class="docutils literal notranslate"><span class="pre">DocumentDigest.concept_nodes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.tasks.DocumentDigest.model_config"><code class="docutils literal notranslate"><span class="pre">DocumentDigest.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#grips.tasks.BatchConceptExtraction"><code class="docutils literal notranslate"><span class="pre">BatchConceptExtraction</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#grips.tasks.BatchConceptExtraction.concept_nodes"><code class="docutils literal notranslate"><span class="pre">BatchConceptExtraction.concept_nodes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.tasks.BatchConceptExtraction.model_config"><code class="docutils literal notranslate"><span class="pre">BatchConceptExtraction.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#grips.tasks.ConceptRelationshipEvaluation"><code class="docutils literal notranslate"><span class="pre">ConceptRelationshipEvaluation</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#grips.tasks.ConceptRelationshipEvaluation.reasoning"><code class="docutils literal notranslate"><span class="pre">ConceptRelationshipEvaluation.reasoning</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.tasks.ConceptRelationshipEvaluation.relationship_action"><code class="docutils literal notranslate"><span class="pre">ConceptRelationshipEvaluation.relationship_action</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.tasks.ConceptRelationshipEvaluation.edge_predicate"><code class="docutils literal notranslate"><span class="pre">ConceptRelationshipEvaluation.edge_predicate</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.tasks.ConceptRelationshipEvaluation.model_config"><code class="docutils literal notranslate"><span class="pre">ConceptRelationshipEvaluation.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#grips.tasks.UnifiedConceptDraft"><code class="docutils literal notranslate"><span class="pre">UnifiedConceptDraft</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#grips.tasks.UnifiedConceptDraft.title"><code class="docutils literal notranslate"><span class="pre">UnifiedConceptDraft.title</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.tasks.UnifiedConceptDraft.narrative"><code class="docutils literal notranslate"><span class="pre">UnifiedConceptDraft.narrative</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.tasks.UnifiedConceptDraft.claims"><code class="docutils literal notranslate"><span class="pre">UnifiedConceptDraft.claims</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.tasks.UnifiedConceptDraft.model_config"><code class="docutils literal notranslate"><span class="pre">UnifiedConceptDraft.model_config</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#grips.tasks.LintingReportSchema"><code class="docutils literal notranslate"><span class="pre">LintingReportSchema</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#grips.tasks.LintingReportSchema.is_valid"><code class="docutils literal notranslate"><span class="pre">LintingReportSchema.is_valid</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.tasks.LintingReportSchema.style_violations"><code class="docutils literal notranslate"><span class="pre">LintingReportSchema.style_violations</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.tasks.LintingReportSchema.contradictions"><code class="docutils literal notranslate"><span class="pre">LintingReportSchema.contradictions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.tasks.LintingReportSchema.missing_cross_references"><code class="docutils literal notranslate"><span class="pre">LintingReportSchema.missing_cross_references</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.tasks.LintingReportSchema.suggested_fixes"><code class="docutils literal notranslate"><span class="pre">LintingReportSchema.suggested_fixes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grips.tasks.LintingReportSchema.model_config"><code class="docutils literal notranslate"><span class="pre">LintingReportSchema.model_config</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo_ui_app.html">Demo UI</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="using_ollama.html">Ollama as Local AI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests.html">Testing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Verbal</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Grips - wiki knowledge banks</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/grips_app.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="grips-wiki-knowledge-banks">
+<h1>Grips - wiki knowledge banks<a class="headerlink" href="#grips-wiki-knowledge-banks" title="Link to this heading"></a></h1>
+<p>This app is an LLM-curated Knowledge Graph and highly structured wiki. It provides the AI with “handles” or “grips” on dense conceptual areas, acting as a structured compensating context engine.</p>
+<section id="app-achievements">
+<h2>App achievements<a class="headerlink" href="#app-achievements" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Structured Ontology:</strong> Separates human-readable markdown narrative from machine-readable JSON propositions (structured claims).</p></li>
+<li><p><strong>Automated Curation:</strong> Allows creating stub entries and dispatching background Celery tasks to write dense, encyclopedic entries based on the RAG document store.</p></li>
+<li><p><strong>Semantic Relationships:</strong> Defines hard relationship edges (<code class="docutils literal notranslate"><span class="pre">DEPENDS_ON</span></code>, <code class="docutils literal notranslate"><span class="pre">INCLUDES</span></code>, <code class="docutils literal notranslate"><span class="pre">EXEMPLIFIES</span></code>, <code class="docutils literal notranslate"><span class="pre">RELATED_TO</span></code>) to build a traversable graph.</p></li>
+<li><p><strong>RAG Integration:</strong> Intercepts and merges user queries against both the Grips Graph and semantic document search with smart deduplication.</p></li>
+<li><p><strong>Admin Wiki Experience:</strong> Integrates dynamic Markdown rendering and contextual URL linking directly into the Django Admin to mimic an Obsidian-like wiki.</p></li>
+</ul>
+</section>
+<section id="app-enhancement">
+<h2>App enhancement<a class="headerlink" href="#app-enhancement" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Document summary:</strong> Develop pipeline to summarise a whole document into a set of related concept nodes informed primarily from that document.</p></li>
+<li><p><strong>Automated Linting Pipeline:</strong> Develop background linters that actively evaluate new <code class="docutils literal notranslate"><span class="pre">ConceptNodes</span></code> for contradictions, missing cross-references, and style-guide violations.</p></li>
+<li><p><strong>Edge Extraction:</strong> Create LLM tasks that read narratives and automatically suggest new <code class="docutils literal notranslate"><span class="pre">KnowledgeEdge</span></code> relationships between existing concepts.</p></li>
+<li><p><strong>Graph Visualization:</strong> Build a frontend module (e.g., using D3.js or Cytoscape) to allow users and developers to visually navigate the concept network.</p></li>
+<li><p><strong>Metacognitive Verification:</strong> Allow the AI to query its own generated claims against the <code class="docutils literal notranslate"><span class="pre">benchmarking</span></code> logic to score its own wiki entries for faithfulness.</p></li>
+</ul>
+</section>
+<section id="module-grips.models">
+<span id="database-models"></span><h2>Database models<a class="headerlink" href="#module-grips.models" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="grips.models.Domain">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grips.models.</span></span><span class="sig-name descname"><span class="pre">Domain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grips/models.html#Domain"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grips.models.Domain" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
+<p>High-level knowledge areas (e.g., ‘Quantum Physics’, ‘HR Policies’).</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.Domain.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#grips.models.Domain.name" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.Domain.description">
+<span class="sig-name descname"><span class="pre">description</span></span><a class="headerlink" href="#grips.models.Domain.description" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.Domain.style_guide">
+<span class="sig-name descname"><span class="pre">style_guide</span></span><a class="headerlink" href="#grips.models.Domain.style_guide" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.Domain.documents">
+<span class="sig-name descname"><span class="pre">documents</span></span><a class="headerlink" href="#grips.models.Domain.documents" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related objects manager on the forward and reverse sides of
+a many-to-many relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Pizza</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">toppings</span> <span class="o">=</span> <span class="n">ManyToManyField</span><span class="p">(</span><span class="n">Topping</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;pizzas&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Pizza.toppings</span></code> and <code class="docutils literal notranslate"><span class="pre">Topping.pizzas</span></code> are <code class="docutils literal notranslate"><span class="pre">ManyToManyDescriptor</span></code>
+instances.</p>
+<p>Most of the implementation is delegated to a dynamically defined manager
+class built by <code class="docutils literal notranslate"><span class="pre">create_forward_many_to_many_manager()</span></code> defined below.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.Domain.created_at">
+<span class="sig-name descname"><span class="pre">created_at</span></span><a class="headerlink" href="#grips.models.Domain.created_at" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="grips.models.Domain.get_admin_url">
+<span class="sig-name descname"><span class="pre">get_admin_url</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grips/models.html#Domain.get_admin_url"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grips.models.Domain.get_admin_url" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="grips.models.Domain.DoesNotExist">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DoesNotExist</span></span><a class="headerlink" href="#grips.models.Domain.DoesNotExist" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectDoesNotExist</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="grips.models.Domain.MultipleObjectsReturned">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MultipleObjectsReturned</span></span><a class="headerlink" href="#grips.models.Domain.MultipleObjectsReturned" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleObjectsReturned</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="grips.models.Domain.NotUpdated">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NotUpdated</span></span><a class="headerlink" href="#grips.models.Domain.NotUpdated" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectNotUpdated</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">DatabaseError</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.Domain.concepts">
+<span class="sig-name descname"><span class="pre">concepts</span></span><a class="headerlink" href="#grips.models.Domain.concepts" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related objects manager on the reverse side of a
+many-to-one relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
+<p>Most of the implementation is delegated to a dynamically defined manager
+class built by <code class="docutils literal notranslate"><span class="pre">create_reverse_many_to_one_manager()</span></code> defined below.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="grips.models.Domain.get_next_by_created_at">
+<span class="sig-name descname"><span class="pre">get_next_by_created_at</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field=&lt;django.db.models.fields.DateTimeField:</span> <span class="pre">created_at&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_next=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#grips.models.Domain.get_next_by_created_at" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="grips.models.Domain.get_previous_by_created_at">
+<span class="sig-name descname"><span class="pre">get_previous_by_created_at</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field=&lt;django.db.models.fields.DateTimeField:</span> <span class="pre">created_at&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_next=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#grips.models.Domain.get_previous_by_created_at" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.Domain.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#grips.models.Domain.id" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.Domain.objects">
+<span class="sig-name descname"><span class="pre">objects</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;django.db.models.manager.Manager</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#grips.models.Domain.objects" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="grips.models.ConceptNode">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grips.models.</span></span><span class="sig-name descname"><span class="pre">ConceptNode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grips/models.html#ConceptNode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grips.models.ConceptNode" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
+<p>The core ‘Wiki Page’ - a dense, cross-referenced knowledge element.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.ConceptNode.domain">
+<span class="sig-name descname"><span class="pre">domain</span></span><a class="headerlink" href="#grips.models.ConceptNode.domain" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related object on the forward side of a many-to-one or
+one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.ConceptNode.title">
+<span class="sig-name descname"><span class="pre">title</span></span><a class="headerlink" href="#grips.models.ConceptNode.title" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.ConceptNode.slug">
+<span class="sig-name descname"><span class="pre">slug</span></span><a class="headerlink" href="#grips.models.ConceptNode.slug" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.ConceptNode.focus_hint">
+<span class="sig-name descname"><span class="pre">focus_hint</span></span><a class="headerlink" href="#grips.models.ConceptNode.focus_hint" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.ConceptNode.source_chunk">
+<span class="sig-name descname"><span class="pre">source_chunk</span></span><a class="headerlink" href="#grips.models.ConceptNode.source_chunk" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related object on the forward side of a many-to-one or
+one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.ConceptNode.narrative_content">
+<span class="sig-name descname"><span class="pre">narrative_content</span></span><a class="headerlink" href="#grips.models.ConceptNode.narrative_content" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.ConceptNode.structured_claims">
+<span class="sig-name descname"><span class="pre">structured_claims</span></span><a class="headerlink" href="#grips.models.ConceptNode.structured_claims" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="grips.models.ConceptNode.ConceptNodeFlags">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ConceptNodeFlags</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names=&lt;not</span> <span class="pre">given&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qualname=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start=1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary=None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grips/models.html#ConceptNode.ConceptNodeFlags"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grips.models.ConceptNode.ConceptNodeFlags" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">TextChoices</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.ConceptNode.ConceptNodeFlags.NEEDS_CITATION">
+<span class="sig-name descname"><span class="pre">NEEDS_CITATION</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'needs_citation'</span></em><a class="headerlink" href="#grips.models.ConceptNode.ConceptNodeFlags.NEEDS_CITATION" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.ConceptNode.ConceptNodeFlags.STYLE_VIOLATION">
+<span class="sig-name descname"><span class="pre">STYLE_VIOLATION</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'style_violation'</span></em><a class="headerlink" href="#grips.models.ConceptNode.ConceptNodeFlags.STYLE_VIOLATION" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.ConceptNode.ConceptNodeFlags.NEEDS_CLARIFICATION">
+<span class="sig-name descname"><span class="pre">NEEDS_CLARIFICATION</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'needs_clarification'</span></em><a class="headerlink" href="#grips.models.ConceptNode.ConceptNodeFlags.NEEDS_CLARIFICATION" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.ConceptNode.ConceptNodeFlags.ORPHANED">
+<span class="sig-name descname"><span class="pre">ORPHANED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'orphaned'</span></em><a class="headerlink" href="#grips.models.ConceptNode.ConceptNodeFlags.ORPHANED" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.ConceptNode.issue_flags">
+<span class="sig-name descname"><span class="pre">issue_flags</span></span><a class="headerlink" href="#grips.models.ConceptNode.issue_flags" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.ConceptNode.needs_linting">
+<span class="sig-name descname"><span class="pre">needs_linting</span></span><a class="headerlink" href="#grips.models.ConceptNode.needs_linting" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.ConceptNode.last_linted_at">
+<span class="sig-name descname"><span class="pre">last_linted_at</span></span><a class="headerlink" href="#grips.models.ConceptNode.last_linted_at" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.ConceptNode.linting_report">
+<span class="sig-name descname"><span class="pre">linting_report</span></span><a class="headerlink" href="#grips.models.ConceptNode.linting_report" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.ConceptNode.embedding">
+<span class="sig-name descname"><span class="pre">embedding</span></span><a class="headerlink" href="#grips.models.ConceptNode.embedding" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="grips.models.ConceptNode.get_admin_url">
+<span class="sig-name descname"><span class="pre">get_admin_url</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grips/models.html#ConceptNode.get_admin_url"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grips.models.ConceptNode.get_admin_url" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="grips.models.ConceptNode.get_wiki_url">
+<span class="sig-name descname"><span class="pre">get_wiki_url</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grips/models.html#ConceptNode.get_wiki_url"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grips.models.ConceptNode.get_wiki_url" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="grips.models.ConceptNode.DoesNotExist">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DoesNotExist</span></span><a class="headerlink" href="#grips.models.ConceptNode.DoesNotExist" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectDoesNotExist</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="grips.models.ConceptNode.MultipleObjectsReturned">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MultipleObjectsReturned</span></span><a class="headerlink" href="#grips.models.ConceptNode.MultipleObjectsReturned" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleObjectsReturned</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="grips.models.ConceptNode.NotUpdated">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NotUpdated</span></span><a class="headerlink" href="#grips.models.ConceptNode.NotUpdated" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectNotUpdated</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">DatabaseError</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.ConceptNode.domain_id">
+<span class="sig-name descname"><span class="pre">domain_id</span></span><a class="headerlink" href="#grips.models.ConceptNode.domain_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.ConceptNode.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#grips.models.ConceptNode.id" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.ConceptNode.incoming_edges">
+<span class="sig-name descname"><span class="pre">incoming_edges</span></span><a class="headerlink" href="#grips.models.ConceptNode.incoming_edges" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related objects manager on the reverse side of a
+many-to-one relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
+<p>Most of the implementation is delegated to a dynamically defined manager
+class built by <code class="docutils literal notranslate"><span class="pre">create_reverse_many_to_one_manager()</span></code> defined below.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.ConceptNode.objects">
+<span class="sig-name descname"><span class="pre">objects</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;django.db.models.manager.Manager</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#grips.models.ConceptNode.objects" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.ConceptNode.outgoing_edges">
+<span class="sig-name descname"><span class="pre">outgoing_edges</span></span><a class="headerlink" href="#grips.models.ConceptNode.outgoing_edges" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related objects manager on the reverse side of a
+many-to-one relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
+<p>Most of the implementation is delegated to a dynamically defined manager
+class built by <code class="docutils literal notranslate"><span class="pre">create_reverse_many_to_one_manager()</span></code> defined below.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.ConceptNode.source_chunk_id">
+<span class="sig-name descname"><span class="pre">source_chunk_id</span></span><a class="headerlink" href="#grips.models.ConceptNode.source_chunk_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="grips.models.index_concept_vector">
+<span class="sig-prename descclassname"><span class="pre">grips.models.</span></span><span class="sig-name descname"><span class="pre">index_concept_vector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sender</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instance</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">created</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grips/models.html#index_concept_vector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grips.models.index_concept_vector" title="Link to this definition"></a></dt>
+<dd><p>When a ConceptNode is saved, asynchronously index it into PGVector.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="grips.models.KnowledgeEdge">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grips.models.</span></span><span class="sig-name descname"><span class="pre">KnowledgeEdge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grips/models.html#KnowledgeEdge"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grips.models.KnowledgeEdge" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
+<p>Defines exact, computable relationships between ConceptNodes.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="grips.models.KnowledgeEdge.RelationshipTypes">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RelationshipTypes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names=&lt;not</span> <span class="pre">given&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qualname=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start=1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary=None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grips/models.html#KnowledgeEdge.RelationshipTypes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grips.models.KnowledgeEdge.RelationshipTypes" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">TextChoices</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.KnowledgeEdge.RelationshipTypes.DEPENDS_ON">
+<span class="sig-name descname"><span class="pre">DEPENDS_ON</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'DEPENDS_ON'</span></em><a class="headerlink" href="#grips.models.KnowledgeEdge.RelationshipTypes.DEPENDS_ON" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.KnowledgeEdge.RelationshipTypes.INCLUDES">
+<span class="sig-name descname"><span class="pre">INCLUDES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'INCLUDES'</span></em><a class="headerlink" href="#grips.models.KnowledgeEdge.RelationshipTypes.INCLUDES" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.KnowledgeEdge.RelationshipTypes.EXEMPLIFIES">
+<span class="sig-name descname"><span class="pre">EXEMPLIFIES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'EXEMPLIFIES'</span></em><a class="headerlink" href="#grips.models.KnowledgeEdge.RelationshipTypes.EXEMPLIFIES" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.KnowledgeEdge.RelationshipTypes.RELATED_TO">
+<span class="sig-name descname"><span class="pre">RELATED_TO</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'RELATED_TO'</span></em><a class="headerlink" href="#grips.models.KnowledgeEdge.RelationshipTypes.RELATED_TO" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.KnowledgeEdge.source">
+<span class="sig-name descname"><span class="pre">source</span></span><a class="headerlink" href="#grips.models.KnowledgeEdge.source" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related object on the forward side of a many-to-one or
+one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.KnowledgeEdge.target">
+<span class="sig-name descname"><span class="pre">target</span></span><a class="headerlink" href="#grips.models.KnowledgeEdge.target" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related object on the forward side of a many-to-one or
+one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.KnowledgeEdge.relationship_type">
+<span class="sig-name descname"><span class="pre">relationship_type</span></span><a class="headerlink" href="#grips.models.KnowledgeEdge.relationship_type" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.KnowledgeEdge.justification">
+<span class="sig-name descname"><span class="pre">justification</span></span><a class="headerlink" href="#grips.models.KnowledgeEdge.justification" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.KnowledgeEdge.needs_linting">
+<span class="sig-name descname"><span class="pre">needs_linting</span></span><a class="headerlink" href="#grips.models.KnowledgeEdge.needs_linting" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.KnowledgeEdge.last_linted_at">
+<span class="sig-name descname"><span class="pre">last_linted_at</span></span><a class="headerlink" href="#grips.models.KnowledgeEdge.last_linted_at" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.KnowledgeEdge.linting_report">
+<span class="sig-name descname"><span class="pre">linting_report</span></span><a class="headerlink" href="#grips.models.KnowledgeEdge.linting_report" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="grips.models.KnowledgeEdge.DoesNotExist">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DoesNotExist</span></span><a class="headerlink" href="#grips.models.KnowledgeEdge.DoesNotExist" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectDoesNotExist</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="grips.models.KnowledgeEdge.MultipleObjectsReturned">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MultipleObjectsReturned</span></span><a class="headerlink" href="#grips.models.KnowledgeEdge.MultipleObjectsReturned" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleObjectsReturned</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="grips.models.KnowledgeEdge.NotUpdated">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NotUpdated</span></span><a class="headerlink" href="#grips.models.KnowledgeEdge.NotUpdated" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectNotUpdated</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">DatabaseError</span></code></p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="grips.models.KnowledgeEdge.get_relationship_type_display">
+<span class="sig-name descname"><span class="pre">get_relationship_type_display</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field=&lt;django.db.models.fields.CharField:</span> <span class="pre">relationship_type&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#grips.models.KnowledgeEdge.get_relationship_type_display" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.KnowledgeEdge.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#grips.models.KnowledgeEdge.id" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.KnowledgeEdge.objects">
+<span class="sig-name descname"><span class="pre">objects</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;django.db.models.manager.Manager</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#grips.models.KnowledgeEdge.objects" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.KnowledgeEdge.source_id">
+<span class="sig-name descname"><span class="pre">source_id</span></span><a class="headerlink" href="#grips.models.KnowledgeEdge.source_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.KnowledgeEdge.target_id">
+<span class="sig-name descname"><span class="pre">target_id</span></span><a class="headerlink" href="#grips.models.KnowledgeEdge.target_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="grips.models.CeleryStatus">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grips.models.</span></span><span class="sig-name descname"><span class="pre">CeleryStatus</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grips/models.html#CeleryStatus"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grips.models.CeleryStatus" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
+<p>Dummy model to hook the Celery dashboard into the admin.</p>
+<dl class="py exception">
+<dt class="sig sig-object py" id="grips.models.CeleryStatus.DoesNotExist">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DoesNotExist</span></span><a class="headerlink" href="#grips.models.CeleryStatus.DoesNotExist" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectDoesNotExist</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="grips.models.CeleryStatus.MultipleObjectsReturned">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MultipleObjectsReturned</span></span><a class="headerlink" href="#grips.models.CeleryStatus.MultipleObjectsReturned" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleObjectsReturned</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="grips.models.CeleryStatus.NotUpdated">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NotUpdated</span></span><a class="headerlink" href="#grips.models.CeleryStatus.NotUpdated" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectNotUpdated</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">DatabaseError</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.CeleryStatus.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#grips.models.CeleryStatus.id" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.models.CeleryStatus.objects">
+<span class="sig-name descname"><span class="pre">objects</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;django.db.models.manager.Manager</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#grips.models.CeleryStatus.objects" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-grips.tasks">
+<span id="grip-tasks"></span><h2>Grip Tasks<a class="headerlink" href="#module-grips.tasks" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="grips.tasks.StructuredClaim">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grips.tasks.</span></span><span class="sig-name descname"><span class="pre">StructuredClaim</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predicate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'DEPENDS_ON'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'INCLUDES'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'EXEMPLIFIES'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'RELATED_TO'</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subject</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grips/tasks.html#StructuredClaim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grips.tasks.StructuredClaim" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.tasks.StructuredClaim.predicate">
+<span class="sig-name descname"><span class="pre">predicate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'DEPENDS_ON'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'INCLUDES'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'EXEMPLIFIES'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'RELATED_TO'</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#grips.tasks.StructuredClaim.predicate" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.tasks.StructuredClaim.subject">
+<span class="sig-name descname"><span class="pre">subject</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#grips.tasks.StructuredClaim.subject" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.tasks.StructuredClaim.object">
+<span class="sig-name descname"><span class="pre">object</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#grips.tasks.StructuredClaim.object" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.tasks.StructuredClaim.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#grips.tasks.StructuredClaim.model_config" title="Link to this definition"></a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="grips.tasks.ConceptDraft">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grips.tasks.</span></span><span class="sig-name descname"><span class="pre">ConceptDraft</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thought_process</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">narrative</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_chunk_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">claims</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#grips.tasks.StructuredClaim" title="grips.tasks.StructuredClaim"><span class="pre">StructuredClaim</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grips/tasks.html#ConceptDraft"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grips.tasks.ConceptDraft" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.tasks.ConceptDraft.thought_process">
+<span class="sig-name descname"><span class="pre">thought_process</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#grips.tasks.ConceptDraft.thought_process" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.tasks.ConceptDraft.narrative">
+<span class="sig-name descname"><span class="pre">narrative</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#grips.tasks.ConceptDraft.narrative" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.tasks.ConceptDraft.source_chunk_id">
+<span class="sig-name descname"><span class="pre">source_chunk_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#grips.tasks.ConceptDraft.source_chunk_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.tasks.ConceptDraft.claims">
+<span class="sig-name descname"><span class="pre">claims</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#grips.tasks.StructuredClaim" title="grips.tasks.StructuredClaim"><span class="pre">StructuredClaim</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#grips.tasks.ConceptDraft.claims" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="grips.tasks.ConceptDraft.clean_narrative">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">clean_narrative</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grips/tasks.html#ConceptDraft.clean_narrative"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grips.tasks.ConceptDraft.clean_narrative" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.tasks.ConceptDraft.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#grips.tasks.ConceptDraft.model_config" title="Link to this definition"></a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="grips.tasks.SubConcept">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grips.tasks.</span></span><span class="sig-name descname"><span class="pre">SubConcept</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">focus_hint:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">summary:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">claims:</span> <span class="pre">~typing.List[~grips.tasks.StructuredClaim]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grips/tasks.html#SubConcept"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grips.tasks.SubConcept" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.tasks.SubConcept.title">
+<span class="sig-name descname"><span class="pre">title</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#grips.tasks.SubConcept.title" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.tasks.SubConcept.focus_hint">
+<span class="sig-name descname"><span class="pre">focus_hint</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#grips.tasks.SubConcept.focus_hint" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.tasks.SubConcept.summary">
+<span class="sig-name descname"><span class="pre">summary</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#grips.tasks.SubConcept.summary" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.tasks.SubConcept.claims">
+<span class="sig-name descname"><span class="pre">claims</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#grips.tasks.StructuredClaim" title="grips.tasks.StructuredClaim"><span class="pre">StructuredClaim</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#grips.tasks.SubConcept.claims" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.tasks.SubConcept.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#grips.tasks.SubConcept.model_config" title="Link to this definition"></a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="grips.tasks.DocumentDigest">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grips.tasks.</span></span><span class="sig-name descname"><span class="pre">DocumentDigest</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overall_summary</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">concept_nodes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#grips.tasks.SubConcept" title="grips.tasks.SubConcept"><span class="pre">SubConcept</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grips/tasks.html#DocumentDigest"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grips.tasks.DocumentDigest" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.tasks.DocumentDigest.overall_summary">
+<span class="sig-name descname"><span class="pre">overall_summary</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#grips.tasks.DocumentDigest.overall_summary" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.tasks.DocumentDigest.concept_nodes">
+<span class="sig-name descname"><span class="pre">concept_nodes</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#grips.tasks.SubConcept" title="grips.tasks.SubConcept"><span class="pre">SubConcept</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#grips.tasks.DocumentDigest.concept_nodes" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.tasks.DocumentDigest.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#grips.tasks.DocumentDigest.model_config" title="Link to this definition"></a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="grips.tasks.BatchConceptExtraction">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grips.tasks.</span></span><span class="sig-name descname"><span class="pre">BatchConceptExtraction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">concept_nodes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#grips.tasks.SubConcept" title="grips.tasks.SubConcept"><span class="pre">SubConcept</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grips/tasks.html#BatchConceptExtraction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grips.tasks.BatchConceptExtraction" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.tasks.BatchConceptExtraction.concept_nodes">
+<span class="sig-name descname"><span class="pre">concept_nodes</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#grips.tasks.SubConcept" title="grips.tasks.SubConcept"><span class="pre">SubConcept</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#grips.tasks.BatchConceptExtraction.concept_nodes" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.tasks.BatchConceptExtraction.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#grips.tasks.BatchConceptExtraction.model_config" title="Link to this definition"></a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="grips.tasks.ConceptRelationshipEvaluation">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grips.tasks.</span></span><span class="sig-name descname"><span class="pre">ConceptRelationshipEvaluation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reasoning</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">relationship_action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'MERGE'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'EDGE'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'DISTINCT'</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_predicate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'DEPENDS_ON'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'INCLUDES'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'EXEMPLIFIES'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'RELATED_TO'</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'RELATED_TO'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grips/tasks.html#ConceptRelationshipEvaluation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grips.tasks.ConceptRelationshipEvaluation" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.tasks.ConceptRelationshipEvaluation.reasoning">
+<span class="sig-name descname"><span class="pre">reasoning</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#grips.tasks.ConceptRelationshipEvaluation.reasoning" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.tasks.ConceptRelationshipEvaluation.relationship_action">
+<span class="sig-name descname"><span class="pre">relationship_action</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'MERGE'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'EDGE'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'DISTINCT'</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#grips.tasks.ConceptRelationshipEvaluation.relationship_action" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.tasks.ConceptRelationshipEvaluation.edge_predicate">
+<span class="sig-name descname"><span class="pre">edge_predicate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'DEPENDS_ON'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'INCLUDES'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'EXEMPLIFIES'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'RELATED_TO'</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#grips.tasks.ConceptRelationshipEvaluation.edge_predicate" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.tasks.ConceptRelationshipEvaluation.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#grips.tasks.ConceptRelationshipEvaluation.model_config" title="Link to this definition"></a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="grips.tasks.UnifiedConceptDraft">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grips.tasks.</span></span><span class="sig-name descname"><span class="pre">UnifiedConceptDraft</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">narrative:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">claims:</span> <span class="pre">~typing.List[~grips.tasks.StructuredClaim]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grips/tasks.html#UnifiedConceptDraft"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grips.tasks.UnifiedConceptDraft" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.tasks.UnifiedConceptDraft.title">
+<span class="sig-name descname"><span class="pre">title</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#grips.tasks.UnifiedConceptDraft.title" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.tasks.UnifiedConceptDraft.narrative">
+<span class="sig-name descname"><span class="pre">narrative</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#grips.tasks.UnifiedConceptDraft.narrative" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.tasks.UnifiedConceptDraft.claims">
+<span class="sig-name descname"><span class="pre">claims</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#grips.tasks.StructuredClaim" title="grips.tasks.StructuredClaim"><span class="pre">StructuredClaim</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#grips.tasks.UnifiedConceptDraft.claims" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.tasks.UnifiedConceptDraft.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#grips.tasks.UnifiedConceptDraft.model_config" title="Link to this definition"></a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="grips.tasks.LintingReportSchema">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grips.tasks.</span></span><span class="sig-name descname"><span class="pre">LintingReportSchema</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_valid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">style_violations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contradictions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">missing_cross_references</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suggested_fixes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grips/tasks.html#LintingReportSchema"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grips.tasks.LintingReportSchema" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.tasks.LintingReportSchema.is_valid">
+<span class="sig-name descname"><span class="pre">is_valid</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#grips.tasks.LintingReportSchema.is_valid" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.tasks.LintingReportSchema.style_violations">
+<span class="sig-name descname"><span class="pre">style_violations</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#grips.tasks.LintingReportSchema.style_violations" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.tasks.LintingReportSchema.contradictions">
+<span class="sig-name descname"><span class="pre">contradictions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#grips.tasks.LintingReportSchema.contradictions" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.tasks.LintingReportSchema.missing_cross_references">
+<span class="sig-name descname"><span class="pre">missing_cross_references</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#grips.tasks.LintingReportSchema.missing_cross_references" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.tasks.LintingReportSchema.suggested_fixes">
+<span class="sig-name descname"><span class="pre">suggested_fixes</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#grips.tasks.LintingReportSchema.suggested_fixes" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grips.tasks.LintingReportSchema.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#grips.tasks.LintingReportSchema.model_config" title="Link to this definition"></a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="benchmarking_app.html" class="btn btn-neutral float-left" title="Benchmarking - model and strategy evaluations" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="metacognition_app.html" class="btn btn-neutral float-right" title="Metacognition - plans and self-evaluation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Andrew Cruickshank.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

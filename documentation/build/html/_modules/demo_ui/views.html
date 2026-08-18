@@ -1,0 +1,566 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>demo_ui.views &mdash; Verbal 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Verbal
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../llm_api_app.html">LLM API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../background_resources_app.html">Background Resources - context documents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grips_app.html">Grips - wiki knowledge banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_app.html">Demo UI</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../using_ollama.html">Ollama as Local AI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tests.html">Testing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Verbal</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">demo_ui.views</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for demo_ui.views</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.shortcuts</span><span class="w"> </span><span class="kn">import</span> <span class="n">render</span><span class="p">,</span> <span class="n">HttpResponse</span><span class="p">,</span> <span class="n">get_object_or_404</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.contrib.auth.decorators</span><span class="w"> </span><span class="kn">import</span> <span class="n">login_required</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.utils.safestring</span><span class="w"> </span><span class="kn">import</span> <span class="n">mark_safe</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Conversation</span><span class="p">,</span> <span class="n">PromptResponseLog</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">CognitiveBlueprint</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.apps</span><span class="w"> </span><span class="kn">import</span> <span class="n">service_registry</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">grips.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConceptNode</span><span class="p">,</span> <span class="n">Domain</span><span class="p">,</span> <span class="n">KnowledgeEdge</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">markdown</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">markdown</span> <span class="o">=</span> <span class="kc">None</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_prepare_log_for_display</span><span class="p">(</span><span class="n">log</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper to cleanly format AI responses and User Prompts for HTML rendering.&quot;&quot;&quot;</span>
+    <span class="c1"># 1. Format AI Response (Auto-detect raw JSON)</span>
+    <span class="n">ai_text</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">log</span><span class="o">.</span><span class="n">generated_response</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">ai_text</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;{&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">ai_text</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;}&#39;</span><span class="p">))</span> <span class="ow">or</span> <span class="p">(</span><span class="n">ai_text</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;[&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">ai_text</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;]&#39;</span><span class="p">)):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">parsed</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">ai_text</span><span class="p">)</span>
+            <span class="n">ai_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;```json</span><span class="se">\n</span><span class="si">{</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">parsed</span><span class="p">,</span><span class="w"> </span><span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s2">```&quot;</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+                
+    <span class="k">if</span> <span class="n">markdown</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">html_response</span> <span class="o">=</span> <span class="n">mark_safe</span><span class="p">(</span><span class="n">markdown</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="n">ai_text</span><span class="p">,</span> <span class="n">extensions</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;fenced_code&#39;</span><span class="p">,</span> <span class="s1">&#39;tables&#39;</span><span class="p">,</span> <span class="s1">&#39;nl2br&#39;</span><span class="p">,</span> <span class="s1">&#39;sane_lists&#39;</span><span class="p">]))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">django.utils.html</span><span class="w"> </span><span class="kn">import</span> <span class="n">linebreaks</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">html_response</span> <span class="o">=</span> <span class="n">linebreaks</span><span class="p">(</span><span class="n">ai_text</span><span class="p">)</span>
+        
+    <span class="c1"># 2. Format User Prompt (Add linebreaks so paragraphs display correctly)</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">django.utils.html</span><span class="w"> </span><span class="kn">import</span> <span class="n">linebreaks</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">html_user_prompt</span> <span class="o">=</span> <span class="n">mark_safe</span><span class="p">(</span><span class="n">linebreaks</span><span class="p">(</span><span class="n">log</span><span class="o">.</span><span class="n">user_prompt</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+    
+    <span class="c1"># 3. Format RAG selections if they are JSON</span>
+    <span class="k">if</span> <span class="n">log</span><span class="o">.</span><span class="n">rag_selections</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">log</span><span class="o">.</span><span class="n">rag_selections</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">html_rag_selections</span> <span class="o">=</span> <span class="n">mark_safe</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&lt;pre style=&#39;font-size: 0.75rem; white-space: pre-wrap;&#39;&gt;</span><span class="si">{</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">log</span><span class="o">.</span><span class="n">rag_selections</span><span class="p">,</span><span class="w"> </span><span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/pre&gt;&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">html_rag_selections</span> <span class="o">=</span> <span class="n">log</span><span class="o">.</span><span class="n">rag_selections</span>
+        
+    <span class="k">return</span> <span class="n">log</span>
+
+<div class="viewcode-block" id="index">
+<a class="viewcode-back" href="../../demo_ui_app.html#demo_ui.views.index">[docs]</a>
+<span class="nd">@login_required</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">index</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Renders the main Demo UI shell.&quot;&quot;&quot;</span>
+    <span class="n">conversations</span> <span class="o">=</span> <span class="n">Conversation</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">)</span><span class="o">.</span><span class="n">exclude</span><span class="p">(</span><span class="n">user__username</span><span class="o">=</span><span class="s2">&quot;NightManager&quot;</span><span class="p">)</span>
+    <span class="n">blueprints</span> <span class="o">=</span> <span class="n">CognitiveBlueprint</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">exclude</span><span class="p">(</span><span class="n">name__startswith</span><span class="o">=</span><span class="s2">&quot;NightManager&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">exclude</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;The Architect&quot;</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;demo_ui/index.html&#39;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s1">&#39;conversations&#39;</span><span class="p">:</span> <span class="n">conversations</span><span class="p">,</span>
+        <span class="s1">&#39;blueprints&#39;</span><span class="p">:</span> <span class="n">blueprints</span><span class="p">,</span>
+    <span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="search_knowledge_base">
+<a class="viewcode-back" href="../../demo_ui_app.html#demo_ui.views.search_knowledge_base">[docs]</a>
+<span class="nd">@login_required</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">search_knowledge_base</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;HTMX endpoint to perform a unified search across RAG and Grips.&quot;&quot;&quot;</span>
+    <span class="n">query</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;q&#39;</span><span class="p">,</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_prompt&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">query</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s1">&#39;&lt;div class=&quot;conv-date&quot; style=&quot;text-align: center; margin-top: 20px;&quot;&gt;Search results will appear here.&lt;/div&gt;&#39;</span><span class="p">)</span>
+
+    <span class="kn">from</span><span class="w"> </span><span class="nn">background_resources.retrieval</span><span class="w"> </span><span class="kn">import</span> <span class="n">unified_retrieve</span>
+    
+    <span class="n">retrieval_results</span> <span class="o">=</span> <span class="n">unified_retrieve</span><span class="p">(</span>
+        <span class="n">query</span><span class="o">=</span><span class="n">query</span><span class="p">,</span>
+        <span class="n">rag_service</span><span class="o">=</span><span class="n">service_registry</span><span class="o">.</span><span class="n">rag_service</span><span class="p">,</span>
+        <span class="n">grips_service</span><span class="o">=</span><span class="n">service_registry</span><span class="o">.</span><span class="n">grips_service</span><span class="p">,</span>
+        <span class="n">rag_k</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+        <span class="n">grips_k</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">unified_results</span> <span class="o">=</span> <span class="p">[]</span>
+    
+    <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">retrieval_results</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">source</span> <span class="o">==</span> <span class="s2">&quot;grips&quot;</span><span class="p">:</span>
+            <span class="n">source_doc_name</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">source_chunk_id</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="kn">from</span><span class="w"> </span><span class="nn">background_resources.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">RAGChunk</span>
+                    <span class="n">chunk</span> <span class="o">=</span> <span class="n">RAGChunk</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">source_chunk_id</span><span class="p">)</span>
+                    <span class="n">source_doc_name</span> <span class="o">=</span> <span class="n">chunk</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;filename&#39;</span><span class="p">,</span> <span class="s1">&#39;Unknown Document&#39;</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="k">pass</span>
+            <span class="n">unified_results</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;grip&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;doc&#39;</span><span class="p">:</span> <span class="n">r</span><span class="o">.</span><span class="n">doc</span><span class="p">,</span>
+                <span class="s1">&#39;source_doc_name&#39;</span><span class="p">:</span> <span class="n">source_doc_name</span>
+            <span class="p">})</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">unified_results</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;rag&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;doc&#39;</span><span class="p">:</span> <span class="n">r</span><span class="o">.</span><span class="n">doc</span>
+            <span class="p">})</span>
+
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;demo_ui/search_results.html&#39;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s1">&#39;unified_results&#39;</span><span class="p">:</span> <span class="n">unified_results</span><span class="p">,</span>
+        <span class="s1">&#39;query&#39;</span><span class="p">:</span> <span class="n">query</span>
+    <span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="get_conversation">
+<a class="viewcode-back" href="../../demo_ui_app.html#demo_ui.views.get_conversation">[docs]</a>
+<span class="nd">@login_required</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_conversation</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">conversation_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;HTMX endpoint to load an existing conversation&#39;s history.&quot;&quot;&quot;</span>
+    <span class="n">conversation</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span><span class="n">Conversation</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">conversation_id</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>
+    
+    <span class="c1"># Logs are ordered by -created_at, so we reverse them for top-to-bottom chat flow</span>
+    <span class="n">logs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">conversation</span><span class="o">.</span><span class="n">logs</span><span class="o">.</span><span class="n">all</span><span class="p">())[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    
+    <span class="k">for</span> <span class="n">log</span> <span class="ow">in</span> <span class="n">logs</span><span class="p">:</span>
+        <span class="n">_prepare_log_for_display</span><span class="p">(</span><span class="n">log</span><span class="p">)</span>
+
+    <span class="n">response_html</span> <span class="o">=</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;demo_ui/chat_history.html&#39;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s1">&#39;conversation&#39;</span><span class="p">:</span> <span class="n">conversation</span><span class="p">,</span>
+        <span class="s1">&#39;logs&#39;</span><span class="p">:</span> <span class="n">logs</span>
+    <span class="p">})</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+    
+    <span class="c1"># Append workspace files OOB swap</span>
+    <span class="n">files</span> <span class="o">=</span> <span class="n">_get_workspace_files_list</span><span class="p">(</span><span class="n">conversation</span><span class="p">)</span>
+    <span class="n">files_html</span> <span class="o">=</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;demo_ui/workspace_files.html&#39;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s1">&#39;files&#39;</span><span class="p">:</span> <span class="n">files</span><span class="p">,</span>
+        <span class="s1">&#39;conversation_id&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">conversation</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+    <span class="p">})</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="n">response_html</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">files_html</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="send_message">
+<a class="viewcode-back" href="../../demo_ui_app.html#demo_ui.views.send_message">[docs]</a>
+<span class="nd">@login_required</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">send_message</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;HTMX endpoint to process a prompt, run AI/Blueprint, and return the new bubbles.&quot;&quot;&quot;</span>
+    <span class="n">user_prompt</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_prompt&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="n">conversation_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;conversation_id&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">blueprint_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;blueprint_id&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">user_prompt</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+        
+    <span class="c1"># 1. Resolve or Create Conversation</span>
+    <span class="k">if</span> <span class="n">conversation_id</span><span class="p">:</span>
+        <span class="n">conversation</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span><span class="n">Conversation</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">conversation_id</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">conversation</span> <span class="o">=</span> <span class="n">Conversation</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">,</span> 
+            <span class="n">title</span><span class="o">=</span><span class="n">user_prompt</span><span class="p">[:</span><span class="mi">50</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="s2">&quot;...&quot;</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">user_prompt</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">50</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">blueprint_id</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">bp</span> <span class="o">=</span> <span class="n">CognitiveBlueprint</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">blueprint_id</span><span class="p">)</span>
+                <span class="n">conversation</span><span class="o">.</span><span class="n">blueprint</span> <span class="o">=</span> <span class="n">bp</span>
+                <span class="n">conversation</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+            <span class="k">except</span> <span class="n">CognitiveBlueprint</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+                <span class="k">pass</span>
+
+    <span class="c1"># 2. Execute Generation (Blueprint or Native)</span>
+    <span class="k">if</span> <span class="n">blueprint_id</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">uuid</span><span class="w"> </span><span class="kn">import</span> <span class="n">uuid4</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">task_run_blueprint_async</span>
+        
+        <span class="n">run_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid4</span><span class="p">())</span>
+        <span class="n">task_run_blueprint_async</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span>
+            <span class="n">blueprint_id</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">blueprint_id</span><span class="p">),</span>
+            <span class="n">user_prompt</span><span class="o">=</span><span class="n">user_prompt</span><span class="p">,</span>
+            <span class="n">conversation_id</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">conversation</span><span class="o">.</span><span class="n">id</span><span class="p">),</span>
+            <span class="n">user_id</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="n">run_id</span><span class="o">=</span><span class="n">run_id</span>
+        <span class="p">)</span>
+        
+        <span class="n">streaming_markup</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;&lt;div id=&quot;blueprint-exec-</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">&quot; data-signals=&quot;</span><span class="se">{{</span><span class="s2">isStreaming: true</span><span class="se">}}</span><span class="s2">&quot; data-on-load=&quot;@get(&#39;/api/meta/stream_blueprint/?run_id=</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">&#39;)&quot;&gt;</span>
+<span class="s2">&lt;div id=&quot;blueprint-status&quot; class=&quot;agent-step active&quot;&gt;</span>
+<span class="s2">    &lt;span class=&quot;badge&quot;&gt;Dispatched&lt;/span&gt;</span>
+<span class="s2">    &lt;strong&gt;Executing cognitive blueprint asynchronously...&lt;/strong&gt;</span>
+<span class="s2">&lt;/div&gt;</span>
+<span class="s2">&lt;div id=&quot;tool-approval-container&quot;&gt;&lt;/div&gt;</span>
+<span class="s2">&lt;div id=&quot;monologue-stream&quot;&gt;&lt;/div&gt;</span>
+<span class="s2">&lt;div id=&quot;blueprint-final-response&quot;&gt;&lt;/div&gt;</span>
+<span class="s2">&lt;/div&gt;&quot;&quot;&quot;</span>
+        
+        <span class="n">log</span> <span class="o">=</span> <span class="n">PromptResponseLog</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="n">system_prompt</span><span class="o">=</span><span class="s2">&quot;[Async Blueprint Execution]&quot;</span><span class="p">,</span> 
+            <span class="n">user_prompt</span><span class="o">=</span><span class="n">user_prompt</span><span class="p">,</span>
+            <span class="n">conversation</span><span class="o">=</span><span class="n">conversation</span><span class="p">,</span>
+            <span class="n">generated_response</span><span class="o">=</span><span class="n">streaming_markup</span><span class="p">,</span> 
+            <span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">,</span>
+            <span class="n">input_tokens</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">output_tokens</span><span class="o">=</span><span class="mi">0</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">messages</span> <span class="o">=</span> <span class="n">conversation</span><span class="o">.</span><span class="n">as_messages</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">messages</span><span class="p">:</span>
+            <span class="n">messages</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;system&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="s2">&quot;You are a helpful study design assistant.&quot;</span><span class="p">})</span>
+            
+        <span class="n">included_context_json</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;included_context&#39;</span><span class="p">,</span> <span class="s1">&#39;[]&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">included_context</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">included_context_json</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">included_context</span> <span class="o">=</span> <span class="p">[]</span>
+            
+        <span class="n">rag_selections</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">rag_text</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">included_context</span><span class="p">:</span>
+            <span class="n">model_type</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;model&quot;</span><span class="p">)</span>
+            <span class="n">item_id</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="n">model_type</span> <span class="o">==</span> <span class="s2">&quot;RAGChunk&quot;</span> <span class="ow">and</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">rag_service</span><span class="p">:</span>
+                <span class="n">docs</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">rag_service</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">mget</span><span class="p">([</span><span class="n">item_id</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">docs</span> <span class="ow">and</span> <span class="n">docs</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                    <span class="n">d</span> <span class="o">=</span> <span class="n">docs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">rag_selections</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="s2">&quot;RAGChunk&quot;</span><span class="p">,</span> <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">item_id</span><span class="p">,</span> <span class="s2">&quot;preview&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">page_content</span><span class="p">[:</span><span class="mi">150</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;...&quot;</span><span class="p">})</span>
+                    <span class="n">rag_text</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Source: </span><span class="si">{</span><span class="n">d</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;filename&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Unknown&#39;</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s2">Content: </span><span class="si">{</span><span class="n">d</span><span class="o">.</span><span class="n">page_content</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+                    
+            <span class="k">elif</span> <span class="n">model_type</span> <span class="o">==</span> <span class="s2">&quot;ConceptNode&quot;</span><span class="p">:</span>
+                <span class="n">content</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;content&quot;</span><span class="p">,</span> <span class="s2">&quot;Concept content unavailable&quot;</span><span class="p">)</span>
+                <span class="n">rag_selections</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="s2">&quot;ConceptNode&quot;</span><span class="p">,</span> <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">item_id</span><span class="p">,</span> <span class="s2">&quot;preview&quot;</span><span class="p">:</span> <span class="n">content</span><span class="p">[:</span><span class="mi">150</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;...&quot;</span><span class="p">})</span>
+                <span class="n">rag_text</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Concept:</span><span class="se">\n</span><span class="si">{</span><span class="n">content</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+                
+            <span class="k">elif</span> <span class="n">model_type</span> <span class="o">==</span> <span class="s2">&quot;Document&quot;</span> <span class="ow">and</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">rag_service</span><span class="p">:</span>
+                <span class="c1"># If they dropped a whole document, maybe just add a reference to it</span>
+                <span class="n">content</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;content&quot;</span><span class="p">,</span> <span class="s2">&quot;Document dropped&quot;</span><span class="p">)</span>
+                <span class="n">rag_selections</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="s2">&quot;Document&quot;</span><span class="p">,</span> <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">item_id</span><span class="p">,</span> <span class="s2">&quot;preview&quot;</span><span class="p">:</span> <span class="n">content</span><span class="p">})</span>
+                <span class="n">rag_text</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Reference Document: </span><span class="si">{</span><span class="n">content</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+                
+            <span class="k">elif</span> <span class="n">model_type</span> <span class="o">==</span> <span class="s2">&quot;Conversation&quot;</span><span class="p">:</span>
+                <span class="n">content</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;content&quot;</span><span class="p">,</span> <span class="s2">&quot;Conversation dropped&quot;</span><span class="p">)</span>
+                <span class="n">rag_selections</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="s2">&quot;Conversation&quot;</span><span class="p">,</span> <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">item_id</span><span class="p">,</span> <span class="s2">&quot;preview&quot;</span><span class="p">:</span> <span class="n">content</span><span class="p">})</span>
+                <span class="n">rag_text</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Previous Conversation Reference: </span><span class="si">{</span><span class="n">content</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        
+        <span class="k">if</span> <span class="n">rag_text</span><span class="p">:</span>
+            <span class="n">messages_for_llm</span> <span class="o">=</span> <span class="n">messages</span> <span class="o">+</span> <span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">user_prompt</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">Relevant Context:</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">rag_text</span><span class="p">}]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">messages_for_llm</span> <span class="o">=</span> <span class="n">messages</span> <span class="o">+</span> <span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">user_prompt</span><span class="p">}]</span>
+        
+        <span class="n">input_tokens</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">ai_service</span><span class="o">.</span><span class="n">count_conversation_tokens</span><span class="p">(</span><span class="n">messages_for_llm</span><span class="p">)</span>
+        <span class="p">[</span><span class="n">response</span><span class="p">]</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">ai_service</span><span class="o">.</span><span class="n">generate_response2</span><span class="p">(</span><span class="n">messages</span><span class="o">=</span><span class="n">messages_for_llm</span><span class="p">,</span> <span class="n">max_new_tokens</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">log_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;skip_log&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span> <span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>
+        <span class="n">cleaned_response</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">ai_service</span><span class="o">.</span><span class="n">clean_response</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+        
+        <span class="n">output_tokens</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">ai_service</span><span class="o">.</span><span class="n">count_conversation_tokens</span><span class="p">([{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;assistant&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">cleaned_response</span><span class="p">}])</span>
+        
+        <span class="n">log</span> <span class="o">=</span> <span class="n">PromptResponseLog</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="n">system_prompt</span><span class="o">=</span><span class="n">messages</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;content&quot;</span><span class="p">],</span> <span class="n">user_prompt</span><span class="o">=</span><span class="n">user_prompt</span><span class="p">,</span> <span class="n">rag_selections</span><span class="o">=</span><span class="n">rag_selections</span><span class="p">,</span> 
+            <span class="n">conversation</span><span class="o">=</span><span class="n">conversation</span><span class="p">,</span> <span class="n">generated_response</span><span class="o">=</span><span class="n">cleaned_response</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">,</span>
+            <span class="n">input_tokens</span><span class="o">=</span><span class="n">input_tokens</span><span class="p">,</span> <span class="n">output_tokens</span><span class="o">=</span><span class="n">output_tokens</span>
+        <span class="p">)</span>
+        
+    <span class="c1"># 3. Render formatting</span>
+    <span class="n">_prepare_log_for_display</span><span class="p">(</span><span class="n">log</span><span class="p">)</span>
+
+    <span class="n">response_html</span> <span class="o">=</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;demo_ui/chat_message.html&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;log&#39;</span><span class="p">:</span> <span class="n">log</span><span class="p">,</span> <span class="s1">&#39;conversation&#39;</span><span class="p">:</span> <span class="n">conversation</span><span class="p">})</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+    
+    <span class="c1"># Append workspace files OOB swap</span>
+    <span class="n">files</span> <span class="o">=</span> <span class="n">_get_workspace_files_list</span><span class="p">(</span><span class="n">conversation</span><span class="p">)</span>
+    <span class="n">files_html</span> <span class="o">=</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;demo_ui/workspace_files.html&#39;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s1">&#39;files&#39;</span><span class="p">:</span> <span class="n">files</span><span class="p">,</span>
+        <span class="s1">&#39;conversation_id&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">conversation</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+    <span class="p">})</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="n">response_html</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">files_html</span><span class="p">)</span></div>
+
+
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.views.decorators.http</span><span class="w"> </span><span class="kn">import</span> <span class="n">require_POST</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">background_resources.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Document</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">background_resources.tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">task_process_documents</span>
+
+<div class="viewcode-block" id="upload_document">
+<a class="viewcode-back" href="../../demo_ui_app.html#demo_ui.views.upload_document">[docs]</a>
+<span class="nd">@login_required</span>
+<span class="nd">@require_POST</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">upload_document</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;HTMX endpoint to upload a document and trigger background RAG processing.&quot;&quot;&quot;</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="n">author</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;author&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="ow">or</span> <span class="kc">None</span>
+    <span class="n">uploaded_file</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">FILES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;file&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">title</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">uploaded_file</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s1">&#39;&lt;span style=&quot;color: #ea5322; font-weight: 500;&quot;&gt;Title and file are required.&lt;/span&gt;&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">400</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Create Document instance</span>
+        <span class="n">doc</span> <span class="o">=</span> <span class="n">Document</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
+            <span class="n">author</span><span class="o">=</span><span class="n">author</span><span class="p">,</span>
+            <span class="n">file</span><span class="o">=</span><span class="n">uploaded_file</span>
+        <span class="p">)</span>
+        
+        <span class="c1"># Trigger Celery task asynchronously</span>
+        <span class="n">task_process_documents</span><span class="o">.</span><span class="n">delay</span><span class="p">([</span><span class="n">doc</span><span class="o">.</span><span class="n">id</span><span class="p">])</span>
+        
+        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s1">&#39;&lt;span style=&quot;color: #2ecc71; font-weight: 500;&quot;&gt;✓ Ingestion started.&lt;/span&gt;&#39;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Failed to upload document&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;&lt;span style=&quot;color: #ea5322; font-weight: 500;&quot;&gt;Upload failed: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s1">&lt;/span&gt;&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="list_documents">
+<a class="viewcode-back" href="../../demo_ui_app.html#demo_ui.views.list_documents">[docs]</a>
+<span class="nd">@login_required</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">list_documents</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;HTMX endpoint to render the recent uploaded documents list.&quot;&quot;&quot;</span>
+    <span class="n">documents</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">Document</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">all</span><span class="p">()</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s1">&#39;-uploaded_at&#39;</span><span class="p">)[:</span><span class="mi">15</span><span class="p">])</span>
+    
+    <span class="c1"># Workaround: since backend ingestion never sets currently_indexed to True,</span>
+    <span class="c1"># we dynamically check if any reading strategies have chunk usages in the DB.</span>
+    <span class="k">for</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">documents</span><span class="p">:</span>
+        <span class="n">doc</span><span class="o">.</span><span class="n">currently_indexed</span> <span class="o">=</span> <span class="n">doc</span><span class="o">.</span><span class="n">readingstrategy_set</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">usages__isnull</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span>
+        
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;demo_ui/document_list.html&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;documents&#39;</span><span class="p">:</span> <span class="n">documents</span><span class="p">})</span></div>
+
+
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.http</span><span class="w"> </span><span class="kn">import</span> <span class="n">FileResponse</span><span class="p">,</span> <span class="n">Http404</span><span class="p">,</span> <span class="n">HttpResponseForbidden</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">timezone</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_workspace_files_list</span><span class="p">(</span><span class="n">conversation</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Retrieves file details (names, sizes, mtimes) inside conversation workspace.&quot;&quot;&quot;</span>
+    <span class="n">workspace_dir</span> <span class="o">=</span> <span class="n">conversation</span><span class="o">.</span><span class="n">get_workspace_dir</span><span class="p">()</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">workspace_dir</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[]</span>
+    
+    <span class="n">file_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">root</span><span class="p">,</span> <span class="n">dirs</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">workspace_dir</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s1">&#39;.git&#39;</span> <span class="ow">in</span> <span class="n">dirs</span><span class="p">:</span>
+            <span class="n">dirs</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s1">&#39;.git&#39;</span><span class="p">)</span>  <span class="c1"># Hide version control internals</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+            <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+            <span class="n">rel_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">relpath</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">workspace_dir</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">info</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">stat</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+                <span class="n">size_kb</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">st_size</span> <span class="o">/</span> <span class="mi">1024</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+                <span class="n">file_list</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                    <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">rel_path</span><span class="p">,</span>
+                    <span class="s1">&#39;size&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">size_kb</span><span class="si">}</span><span class="s2"> KB&quot;</span> <span class="k">if</span> <span class="n">size_kb</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">info</span><span class="o">.</span><span class="n">st_size</span><span class="si">}</span><span class="s2"> bytes&quot;</span><span class="p">,</span>
+                    <span class="s1">&#39;modified&#39;</span><span class="p">:</span> <span class="n">timezone</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">st_mtime</span><span class="p">,</span> <span class="n">tz</span><span class="o">=</span><span class="n">timezone</span><span class="o">.</span><span class="n">get_current_timezone</span><span class="p">())</span>
+                <span class="p">})</span>
+            <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+                <span class="k">pass</span>
+    <span class="c1"># Sort files alphabetically by name</span>
+    <span class="n">file_list</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">file_list</span>
+
+
+<div class="viewcode-block" id="download_file">
+<a class="viewcode-back" href="../../demo_ui_app.html#demo_ui.views.download_file">[docs]</a>
+<span class="nd">@login_required</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">download_file</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">conversation_id</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Secure endpoint to download a generated file from a conversation workspace.&quot;&quot;&quot;</span>
+    <span class="n">conversation</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span><span class="n">Conversation</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">conversation_id</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>
+    <span class="n">workspace_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">conversation</span><span class="o">.</span><span class="n">get_workspace_dir</span><span class="p">())</span>
+    
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">workspace_dir</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">Http404</span><span class="p">(</span><span class="s2">&quot;Workspace directory not found&quot;</span><span class="p">)</span>
+        
+    <span class="c1"># Safe path resolution to prevent directory traversal</span>
+    <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">workspace_dir</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">file_path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">workspace_dir</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">HttpResponseForbidden</span><span class="p">(</span><span class="s2">&quot;Access denied: path traversal attempt detected.&quot;</span><span class="p">)</span>
+        
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">Http404</span><span class="p">(</span><span class="s2">&quot;Requested file not found&quot;</span><span class="p">)</span>
+        
+    <span class="k">return</span> <span class="n">FileResponse</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">),</span> <span class="n">as_attachment</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">file_path</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="grips_explorer_tab">
+<a class="viewcode-back" href="../../demo_ui_app.html#demo_ui.views.grips_explorer_tab">[docs]</a>
+<span class="nd">@login_required</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">grips_explorer_tab</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;HTMX endpoint to render the Grips Explorer.&quot;&quot;&quot;</span>
+    <span class="n">query</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;q&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    
+    <span class="k">if</span> <span class="n">query</span><span class="p">:</span>
+        <span class="c1"># Search ConceptNodes</span>
+        <span class="c1"># Simplistic substring search on title or narrative_content</span>
+        <span class="n">concepts</span> <span class="o">=</span> <span class="n">ConceptNode</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">title__icontains</span><span class="o">=</span><span class="n">query</span><span class="p">)</span> <span class="o">|</span> <span class="n">ConceptNode</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">narrative_content__icontains</span><span class="o">=</span><span class="n">query</span><span class="p">)</span>
+        <span class="n">concepts</span> <span class="o">=</span> <span class="n">concepts</span><span class="o">.</span><span class="n">select_related</span><span class="p">(</span><span class="s1">&#39;domain&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s1">&#39;domain__name&#39;</span><span class="p">,</span> <span class="s1">&#39;title&#39;</span><span class="p">)[:</span><span class="mi">50</span><span class="p">]</span>
+        
+        <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;demo_ui/grips_search_results.html&#39;</span><span class="p">,</span> <span class="p">{</span>
+            <span class="s1">&#39;concepts&#39;</span><span class="p">:</span> <span class="n">concepts</span><span class="p">,</span>
+            <span class="s1">&#39;query&#39;</span><span class="p">:</span> <span class="n">query</span>
+        <span class="p">})</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Show Hierarchy Overview</span>
+        <span class="n">domains</span> <span class="o">=</span> <span class="n">Domain</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">prefetch_related</span><span class="p">(</span><span class="s1">&#39;concepts&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="c1"># For a true hierarchy we might just show domains, and then root concepts</span>
+        <span class="n">domain_data</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">domains</span><span class="p">:</span>
+            <span class="c1"># We want true root nodes: concepts with no incoming INCLUDES edges.</span>
+            <span class="n">roots</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">concepts</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">incoming_edges__isnull</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s1">&#39;title&#39;</span><span class="p">)</span>
+            <span class="n">domain_data</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s1">&#39;domain&#39;</span><span class="p">:</span> <span class="n">d</span><span class="p">,</span>
+                <span class="s1">&#39;concepts&#39;</span><span class="p">:</span> <span class="n">roots</span>
+            <span class="p">})</span>
+            
+        <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;demo_ui/grips_hierarchy.html&#39;</span><span class="p">,</span> <span class="p">{</span>
+            <span class="s1">&#39;domain_data&#39;</span><span class="p">:</span> <span class="n">domain_data</span>
+        <span class="p">})</span></div>
+
+
+
+<div class="viewcode-block" id="grips_concept_children">
+<a class="viewcode-back" href="../../demo_ui_app.html#demo_ui.views.grips_concept_children">[docs]</a>
+<span class="nd">@login_required</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">grips_concept_children</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">concept_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;HTMX endpoint to lazily load children of a ConceptNode in the hierarchy.&quot;&quot;&quot;</span>
+    <span class="n">node</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span><span class="n">ConceptNode</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">concept_id</span><span class="p">)</span>
+    <span class="c1"># Find all children where this node is the source of an INCLUDES edge</span>
+    <span class="n">children_edges</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">outgoing_edges</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">relationship_type</span><span class="o">=</span><span class="s1">&#39;INCLUDES&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">select_related</span><span class="p">(</span><span class="s1">&#39;target&#39;</span><span class="p">)</span>
+    <span class="n">children</span> <span class="o">=</span> <span class="p">[</span><span class="n">edge</span><span class="o">.</span><span class="n">target</span> <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">children_edges</span><span class="p">]</span>
+    
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;demo_ui/grips_hierarchy_children.html&#39;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s1">&#39;children&#39;</span><span class="p">:</span> <span class="n">children</span>
+    <span class="p">})</span></div>
+
+
+
+<div class="viewcode-block" id="fill_grips_stub">
+<a class="viewcode-back" href="../../demo_ui_app.html#demo_ui.views.fill_grips_stub">[docs]</a>
+<span class="nd">@login_required</span>
+<span class="nd">@require_POST</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">fill_grips_stub</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">concept_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Triggers the Grips Stub Filler blueprint for a specific ConceptNode.&quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">CognitiveBlueprint</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">task_run_blueprint_async</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">bp</span> <span class="o">=</span> <span class="n">CognitiveBlueprint</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Grips Stub Filler&quot;</span><span class="p">)</span>
+        <span class="c1"># Trigger the async task</span>
+        <span class="n">task_run_blueprint_async</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span>
+            <span class="n">blueprint_id</span><span class="o">=</span><span class="n">bp</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="n">user_prompt</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">concept_id</span><span class="p">),</span>
+            <span class="n">user_id</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">id</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s1">&#39;&lt;span style=&quot;color: #2ecc71; font-weight: 500;&quot;&gt;✓ Filler Queued.&lt;/span&gt;&#39;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">CognitiveBlueprint</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s1">&#39;&lt;span style=&quot;color: #ea5322; font-weight: 500;&quot;&gt;Blueprint missing.&lt;/span&gt;&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">404</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Failed to queue Grips Stub Filler&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;&lt;span style=&quot;color: #ea5322; font-weight: 500;&quot;&gt;Error: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s1">&lt;/span&gt;&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Andrew Cruickshank.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,258 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Demo UI &mdash; Verbal 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=2709fde1"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Ollama as Local AI" href="using_ollama.html" />
+    <link rel="prev" title="Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design" href="work_organisation_app.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Verbal
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="llm_api_app.html">LLM API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="background_resources_app.html">Background Resources - context documents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grips_app.html">Grips - wiki knowledge banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Demo UI</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#app-achievements">App achievements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#app-enhancement">App enhancement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#ui-walkthrough">UI Walkthrough</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#main-chat-interface">1. Main Chat Interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sending-a-prompt">2. Sending a Prompt</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ai-response">3. AI Response</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#document-management">4. Document Management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#grips-explorer">5. Grips Explorer</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-demo_ui.views">Demo UI Views</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.download_file"><code class="docutils literal notranslate"><span class="pre">download_file()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.fill_grips_stub"><code class="docutils literal notranslate"><span class="pre">fill_grips_stub()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.get_conversation"><code class="docutils literal notranslate"><span class="pre">get_conversation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.grips_concept_children"><code class="docutils literal notranslate"><span class="pre">grips_concept_children()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.grips_explorer_tab"><code class="docutils literal notranslate"><span class="pre">grips_explorer_tab()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.index"><code class="docutils literal notranslate"><span class="pre">index()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.list_documents"><code class="docutils literal notranslate"><span class="pre">list_documents()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.search_knowledge_base"><code class="docutils literal notranslate"><span class="pre">search_knowledge_base()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.send_message"><code class="docutils literal notranslate"><span class="pre">send_message()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.upload_document"><code class="docutils literal notranslate"><span class="pre">upload_document()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="using_ollama.html">Ollama as Local AI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests.html">Testing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Verbal</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Demo UI</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/demo_ui_app.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="demo-ui">
+<h1>Demo UI<a class="headerlink" href="#demo-ui" title="Link to this heading"></a></h1>
+<p>The Demo UI is a Django template with htmx-managed updates that provides a chat interface. Its not so different from openWebUI. Its provided as a demo and playtest pending development of a finished UI/UX with more features tailored to the domain.</p>
+<section id="app-achievements">
+<h2>App achievements<a class="headerlink" href="#app-achievements" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Shows “Conversations” list and displays chat for the selected</p></li>
+<li><p>Allows direct RAG index search for user</p></li>
+<li><p>Shows Blueprints for users to adopt.</p></li>
+</ul>
+</section>
+<section id="app-enhancement">
+<h2>App enhancement<a class="headerlink" href="#app-enhancement" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Support more of the setup functions from this screen (file uploads)</p></li>
+<li><p>Show more of the progress through blueprints as they happen, and tool products.</p></li>
+</ul>
+</section>
+<section id="ui-walkthrough">
+<h2>UI Walkthrough<a class="headerlink" href="#ui-walkthrough" title="Link to this heading"></a></h2>
+<section id="main-chat-interface">
+<h3>1. Main Chat Interface<a class="headerlink" href="#main-chat-interface" title="Link to this heading"></a></h3>
+<p>The main chat interface allows you to interact with the active AI model.</p>
+<a class="reference internal image-reference" href="_images/01_main_ui_empty.png"><img alt="Main UI" src="_images/01_main_ui_empty.png" style="width: 800px;" />
+</a>
+</section>
+<section id="sending-a-prompt">
+<h3>2. Sending a Prompt<a class="headerlink" href="#sending-a-prompt" title="Link to this heading"></a></h3>
+<p>Fill out the prompt field and optionally attach documents.</p>
+<a class="reference internal image-reference" href="_images/02_chat_filled.png"><img alt="Chat Filled" src="_images/02_chat_filled.png" style="width: 800px;" />
+</a>
+</section>
+<section id="ai-response">
+<h3>3. AI Response<a class="headerlink" href="#ai-response" title="Link to this heading"></a></h3>
+<p>The AI streams its response directly into the chat bubble.</p>
+<a class="reference internal image-reference" href="../../documents/walkthroughs/screenshots/03_chat_response.png"><img alt="Chat Response" src="../../documents/walkthroughs/screenshots/03_chat_response.png" style="width: 800px;" />
+</a>
+</section>
+<section id="document-management">
+<h3>4. Document Management<a class="headerlink" href="#document-management" title="Link to this heading"></a></h3>
+<p>Manage and upload RAG context files via the Documents tab.</p>
+<a class="reference internal image-reference" href="_images/04_documents_view.png"><img alt="Documents View" src="_images/04_documents_view.png" style="width: 800px;" />
+</a>
+</section>
+<section id="grips-explorer">
+<h3>5. Grips Explorer<a class="headerlink" href="#grips-explorer" title="Link to this heading"></a></h3>
+<p>Explore the conceptual knowledge graph populated by Grips.</p>
+<a class="reference internal image-reference" href="_images/05_grips_explorer.png"><img alt="Grips Explorer" src="_images/05_grips_explorer.png" style="width: 800px;" />
+</a>
+</section>
+</section>
+<section id="module-demo_ui.views">
+<span id="demo-ui-views"></span><h2>Demo UI Views<a class="headerlink" href="#module-demo_ui.views" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="demo_ui.views.download_file">
+<span class="sig-prename descclassname"><span class="pre">demo_ui.views.</span></span><span class="sig-name descname"><span class="pre">download_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conversation_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/demo_ui/views.html#download_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#demo_ui.views.download_file" title="Link to this definition"></a></dt>
+<dd><p>Secure endpoint to download a generated file from a conversation workspace.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="demo_ui.views.fill_grips_stub">
+<span class="sig-prename descclassname"><span class="pre">demo_ui.views.</span></span><span class="sig-name descname"><span class="pre">fill_grips_stub</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">concept_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/demo_ui/views.html#fill_grips_stub"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#demo_ui.views.fill_grips_stub" title="Link to this definition"></a></dt>
+<dd><p>Triggers the Grips Stub Filler blueprint for a specific ConceptNode.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="demo_ui.views.get_conversation">
+<span class="sig-prename descclassname"><span class="pre">demo_ui.views.</span></span><span class="sig-name descname"><span class="pre">get_conversation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conversation_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/demo_ui/views.html#get_conversation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#demo_ui.views.get_conversation" title="Link to this definition"></a></dt>
+<dd><p>HTMX endpoint to load an existing conversation’s history.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="demo_ui.views.grips_concept_children">
+<span class="sig-prename descclassname"><span class="pre">demo_ui.views.</span></span><span class="sig-name descname"><span class="pre">grips_concept_children</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">concept_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/demo_ui/views.html#grips_concept_children"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#demo_ui.views.grips_concept_children" title="Link to this definition"></a></dt>
+<dd><p>HTMX endpoint to lazily load children of a ConceptNode in the hierarchy.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="demo_ui.views.grips_explorer_tab">
+<span class="sig-prename descclassname"><span class="pre">demo_ui.views.</span></span><span class="sig-name descname"><span class="pre">grips_explorer_tab</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/demo_ui/views.html#grips_explorer_tab"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#demo_ui.views.grips_explorer_tab" title="Link to this definition"></a></dt>
+<dd><p>HTMX endpoint to render the Grips Explorer.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="demo_ui.views.index">
+<span class="sig-prename descclassname"><span class="pre">demo_ui.views.</span></span><span class="sig-name descname"><span class="pre">index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/demo_ui/views.html#index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#demo_ui.views.index" title="Link to this definition"></a></dt>
+<dd><p>Renders the main Demo UI shell.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="demo_ui.views.list_documents">
+<span class="sig-prename descclassname"><span class="pre">demo_ui.views.</span></span><span class="sig-name descname"><span class="pre">list_documents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/demo_ui/views.html#list_documents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#demo_ui.views.list_documents" title="Link to this definition"></a></dt>
+<dd><p>HTMX endpoint to render the recent uploaded documents list.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="demo_ui.views.search_knowledge_base">
+<span class="sig-prename descclassname"><span class="pre">demo_ui.views.</span></span><span class="sig-name descname"><span class="pre">search_knowledge_base</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/demo_ui/views.html#search_knowledge_base"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#demo_ui.views.search_knowledge_base" title="Link to this definition"></a></dt>
+<dd><p>HTMX endpoint to perform a unified search across RAG and Grips.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="demo_ui.views.send_message">
+<span class="sig-prename descclassname"><span class="pre">demo_ui.views.</span></span><span class="sig-name descname"><span class="pre">send_message</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/demo_ui/views.html#send_message"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#demo_ui.views.send_message" title="Link to this definition"></a></dt>
+<dd><p>HTMX endpoint to process a prompt, run AI/Blueprint, and return the new bubbles.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="demo_ui.views.upload_document">
+<span class="sig-prename descclassname"><span class="pre">demo_ui.views.</span></span><span class="sig-name descname"><span class="pre">upload_document</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/demo_ui/views.html#upload_document"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#demo_ui.views.upload_document" title="Link to this definition"></a></dt>
+<dd><p>HTMX endpoint to upload a document and trigger background RAG processing.</p>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="work_organisation_app.html" class="btn btn-neutral float-left" title="Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="using_ollama.html" class="btn btn-neutral float-right" title="Ollama as Local AI" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Andrew Cruickshank.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

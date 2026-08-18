@@ -1,0 +1,677 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>work_organisation.api &mdash; Verbal 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Verbal
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../llm_api_app.html">LLM API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../background_resources_app.html">Background Resources - context documents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grips_app.html">Grips - wiki knowledge banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_app.html">Demo UI</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../using_ollama.html">Ollama as Local AI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tests.html">Testing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Verbal</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">work_organisation.api</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for work_organisation.api</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ninja</span><span class="w"> </span><span class="kn">import</span> <span class="n">Router</span><span class="p">,</span> <span class="n">Schema</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.http</span><span class="w"> </span><span class="kn">import</span> <span class="n">StreamingHttpResponse</span><span class="p">,</span> <span class="n">JsonResponse</span><span class="p">,</span> <span class="n">HttpResponse</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.shortcuts</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_object_or_404</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.contrib.auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_user_model</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.contrib.auth.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Group</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Project</span><span class="p">,</span> <span class="n">Workshop</span><span class="p">,</span> <span class="n">WorkshopSession</span><span class="p">,</span> <span class="n">WhiteboardCard</span><span class="p">,</span> <span class="n">WhiteboardCluster</span><span class="p">,</span> <span class="n">ConversationMember</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.events</span><span class="w"> </span><span class="kn">import</span> <span class="n">stream_whiteboard_events</span><span class="p">,</span> <span class="n">publish_whiteboard_event</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.clustering</span><span class="w"> </span><span class="kn">import</span> <span class="n">cluster_whiteboard_cards</span><span class="p">,</span> <span class="n">extract_causal_factors_from_session</span><span class="p">,</span> <span class="n">export_whiteboard_markdown_summary</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">router</span> <span class="o">=</span> <span class="n">Router</span><span class="p">()</span>
+<span class="n">User</span> <span class="o">=</span> <span class="n">get_user_model</span><span class="p">()</span>
+
+
+<span class="c1"># ==========================================</span>
+<span class="c1"># NINJA SCHEMAS</span>
+<span class="c1"># ==========================================</span>
+
+<div class="viewcode-block" id="ProjectCreateSchema">
+<a class="viewcode-back" href="../../work_organisation_app.html#work_organisation.api.ProjectCreateSchema">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ProjectCreateSchema</span><span class="p">(</span><span class="n">Schema</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">description</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">is_public</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">group_ids</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span></div>
+
+
+
+<div class="viewcode-block" id="ProjectOutSchema">
+<a class="viewcode-back" href="../../work_organisation_app.html#work_organisation.api.ProjectOutSchema">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ProjectOutSchema</span><span class="p">(</span><span class="n">Schema</span><span class="p">):</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">slug</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">description</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">is_public</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">created_at</span><span class="p">:</span> <span class="nb">str</span></div>
+
+
+
+<div class="viewcode-block" id="WorkshopCreateSchema">
+<a class="viewcode-back" href="../../work_organisation_app.html#work_organisation.api.WorkshopCreateSchema">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">WorkshopCreateSchema</span><span class="p">(</span><span class="n">Schema</span><span class="p">):</span>
+    <span class="n">project_id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">description</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">objective</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">group_ids</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span></div>
+
+
+
+<div class="viewcode-block" id="WorkshopOutSchema">
+<a class="viewcode-back" href="../../work_organisation_app.html#work_organisation.api.WorkshopOutSchema">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">WorkshopOutSchema</span><span class="p">(</span><span class="n">Schema</span><span class="p">):</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">project_id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">description</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">objective</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">session_count</span><span class="p">:</span> <span class="nb">int</span></div>
+
+
+
+<div class="viewcode-block" id="SessionCreateSchema">
+<a class="viewcode-back" href="../../work_organisation_app.html#work_organisation.api.SessionCreateSchema">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SessionCreateSchema</span><span class="p">(</span><span class="n">Schema</span><span class="p">):</span>
+    <span class="n">workshop_id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">session_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;whiteboard&quot;</span>
+    <span class="n">access_mode</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;RESTRICTED_TRACKED&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="CardDetailSchema">
+<a class="viewcode-back" href="../../work_organisation_app.html#work_organisation.api.CardDetailSchema">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CardDetailSchema</span><span class="p">(</span><span class="n">Schema</span><span class="p">):</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">card_type</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">pos_x</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">pos_y</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">cluster_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">author_alias</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">metadata</span><span class="p">:</span> <span class="nb">dict</span></div>
+
+
+
+<div class="viewcode-block" id="ClusterDetailSchema">
+<a class="viewcode-back" href="../../work_organisation_app.html#work_organisation.api.ClusterDetailSchema">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ClusterDetailSchema</span><span class="p">(</span><span class="n">Schema</span><span class="p">):</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">summary</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">color</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">pos_x</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">pos_y</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">width</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">height</span><span class="p">:</span> <span class="nb">float</span></div>
+
+
+
+<div class="viewcode-block" id="SessionDetailOutSchema">
+<a class="viewcode-back" href="../../work_organisation_app.html#work_organisation.api.SessionDetailOutSchema">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SessionDetailOutSchema</span><span class="p">(</span><span class="n">Schema</span><span class="p">):</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">workshop_id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">project_id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">session_type</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">access_mode</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">conversation_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">clusters</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">ClusterDetailSchema</span><span class="p">]</span>
+    <span class="n">cards</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">CardDetailSchema</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="CardCreateSchema">
+<a class="viewcode-back" href="../../work_organisation_app.html#work_organisation.api.CardCreateSchema">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CardCreateSchema</span><span class="p">(</span><span class="n">Schema</span><span class="p">):</span>
+    <span class="n">session_id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">card_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;idea&quot;</span>
+    <span class="n">pos_x</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">pos_y</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">cluster_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">author_alias</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span></div>
+
+
+
+<div class="viewcode-block" id="CardMoveSchema">
+<a class="viewcode-back" href="../../work_organisation_app.html#work_organisation.api.CardMoveSchema">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CardMoveSchema</span><span class="p">(</span><span class="n">Schema</span><span class="p">):</span>
+    <span class="n">card_id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">pos_x</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">pos_y</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">cluster_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="ClusterRequestSchema">
+<a class="viewcode-back" href="../../work_organisation_app.html#work_organisation.api.ClusterRequestSchema">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ClusterRequestSchema</span><span class="p">(</span><span class="n">Schema</span><span class="p">):</span>
+    <span class="n">session_id</span><span class="p">:</span> <span class="nb">int</span></div>
+
+
+
+<div class="viewcode-block" id="TokenStreamRequestSchema">
+<a class="viewcode-back" href="../../work_organisation_app.html#work_organisation.api.TokenStreamRequestSchema">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TokenStreamRequestSchema</span><span class="p">(</span><span class="n">Schema</span><span class="p">):</span>
+    <span class="n">prompt</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">system_prompt</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;You are a helpful assistant.&quot;</span>
+    <span class="n">max_new_tokens</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">500</span></div>
+
+
+
+<span class="c1"># ==========================================</span>
+<span class="c1"># WORK ORGANISATION PATHWAYS</span>
+<span class="c1"># ==========================================</span>
+
+<div class="viewcode-block" id="list_projects">
+<a class="viewcode-back" href="../../work_organisation_app.html#work_organisation.api.list_projects">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/projects/&quot;</span><span class="p">,</span> <span class="n">response</span><span class="o">=</span><span class="n">List</span><span class="p">[</span><span class="n">ProjectOutSchema</span><span class="p">])</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">list_projects</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Lists all projects accessible to the current user (via group scoping).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">projects</span> <span class="o">=</span> <span class="n">Project</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">for_user</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">p</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s2">&quot;slug&quot;</span><span class="p">:</span> <span class="n">p</span><span class="o">.</span><span class="n">slug</span><span class="p">,</span>
+            <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="n">p</span><span class="o">.</span><span class="n">description</span><span class="p">,</span>
+            <span class="s2">&quot;is_public&quot;</span><span class="p">:</span> <span class="n">p</span><span class="o">.</span><span class="n">is_public</span><span class="p">,</span>
+            <span class="s2">&quot;created_at&quot;</span><span class="p">:</span> <span class="n">p</span><span class="o">.</span><span class="n">created_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+        <span class="p">}</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">projects</span>
+    <span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="create_project">
+<a class="viewcode-back" href="../../work_organisation_app.html#work_organisation.api.create_project">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/projects/&quot;</span><span class="p">,</span> <span class="n">response</span><span class="o">=</span><span class="n">ProjectOutSchema</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_project</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">ProjectCreateSchema</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates a new project and attaches specified Django Groups.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">author</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span> <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">is_authenticated</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">project</span> <span class="o">=</span> <span class="n">Project</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">description</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="n">created_by</span><span class="o">=</span><span class="n">author</span><span class="p">,</span>
+        <span class="n">is_public</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">is_public</span> <span class="ow">or</span> <span class="kc">False</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">payload</span><span class="o">.</span><span class="n">group_ids</span><span class="p">:</span>
+        <span class="n">groups</span> <span class="o">=</span> <span class="n">Group</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">id__in</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">group_ids</span><span class="p">)</span>
+        <span class="n">project</span><span class="o">.</span><span class="n">groups</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">groups</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">project</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">project</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+        <span class="s2">&quot;slug&quot;</span><span class="p">:</span> <span class="n">project</span><span class="o">.</span><span class="n">slug</span><span class="p">,</span>
+        <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="n">project</span><span class="o">.</span><span class="n">description</span><span class="p">,</span>
+        <span class="s2">&quot;is_public&quot;</span><span class="p">:</span> <span class="n">project</span><span class="o">.</span><span class="n">is_public</span><span class="p">,</span>
+        <span class="s2">&quot;created_at&quot;</span><span class="p">:</span> <span class="n">project</span><span class="o">.</span><span class="n">created_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+    <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="list_workshops">
+<a class="viewcode-back" href="../../work_organisation_app.html#work_organisation.api.list_workshops">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/workshops/&quot;</span><span class="p">,</span> <span class="n">response</span><span class="o">=</span><span class="n">List</span><span class="p">[</span><span class="n">WorkshopOutSchema</span><span class="p">])</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">list_workshops</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">project_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Lists workshops accessible to user, optionally filtered by project_id.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">qs</span> <span class="o">=</span> <span class="n">Workshop</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">for_user</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">project_id</span><span class="p">:</span>
+        <span class="n">qs</span> <span class="o">=</span> <span class="n">qs</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">project_id</span><span class="o">=</span><span class="n">project_id</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">w</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s2">&quot;project_id&quot;</span><span class="p">:</span> <span class="n">w</span><span class="o">.</span><span class="n">project_id</span><span class="p">,</span>
+            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">w</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="n">w</span><span class="o">.</span><span class="n">description</span><span class="p">,</span>
+            <span class="s2">&quot;objective&quot;</span><span class="p">:</span> <span class="n">w</span><span class="o">.</span><span class="n">objective</span><span class="p">,</span>
+            <span class="s2">&quot;session_count&quot;</span><span class="p">:</span> <span class="n">w</span><span class="o">.</span><span class="n">sessions</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+        <span class="p">}</span>
+        <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">qs</span>
+    <span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="create_workshop">
+<a class="viewcode-back" href="../../work_organisation_app.html#work_organisation.api.create_workshop">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/workshops/&quot;</span><span class="p">,</span> <span class="n">response</span><span class="o">=</span><span class="n">WorkshopOutSchema</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_workshop</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">WorkshopCreateSchema</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates a new Workshop under a project.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">project</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span><span class="n">Project</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">for_user</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">),</span> <span class="nb">id</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">project_id</span><span class="p">)</span>
+    <span class="n">author</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span> <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">is_authenticated</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="n">workshop</span> <span class="o">=</span> <span class="n">Workshop</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+        <span class="n">project</span><span class="o">=</span><span class="n">project</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">description</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="n">objective</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">objective</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="n">created_by</span><span class="o">=</span><span class="n">author</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">payload</span><span class="o">.</span><span class="n">group_ids</span><span class="p">:</span>
+        <span class="n">groups</span> <span class="o">=</span> <span class="n">Group</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">id__in</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">group_ids</span><span class="p">)</span>
+        <span class="n">workshop</span><span class="o">.</span><span class="n">groups</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">groups</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">workshop</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+        <span class="s2">&quot;project_id&quot;</span><span class="p">:</span> <span class="n">workshop</span><span class="o">.</span><span class="n">project_id</span><span class="p">,</span>
+        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">workshop</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+        <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="n">workshop</span><span class="o">.</span><span class="n">description</span><span class="p">,</span>
+        <span class="s2">&quot;objective&quot;</span><span class="p">:</span> <span class="n">workshop</span><span class="o">.</span><span class="n">objective</span><span class="p">,</span>
+        <span class="s2">&quot;session_count&quot;</span><span class="p">:</span> <span class="mi">0</span>
+    <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="create_new_session">
+<a class="viewcode-back" href="../../work_organisation_app.html#work_organisation.api.create_new_session">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/sessions/new/&quot;</span><span class="p">,</span> <span class="n">response</span><span class="o">=</span><span class="n">SessionDetailOutSchema</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_new_session</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">SessionCreateSchema</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Quick-Launch Pathway: Auto-provisions a WorkshopSession, links an llm_api.Conversation,</span>
+<span class="sd">    and grants the creator an &#39;owner&#39; ConversationMember role.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Conversation</span>
+
+    <span class="n">workshop</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span><span class="n">Workshop</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">for_user</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">),</span> <span class="nb">id</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">workshop_id</span><span class="p">)</span>
+    <span class="n">author</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span> <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">is_authenticated</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="c1"># 1. Provision associated Conversation</span>
+    <span class="n">conv</span> <span class="o">=</span> <span class="n">Conversation</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+        <span class="n">user</span><span class="o">=</span><span class="n">author</span><span class="p">,</span>
+        <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">workshop</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">payload</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="p">)</span>
+
+    <span class="c1"># 2. Create Session</span>
+    <span class="n">session</span> <span class="o">=</span> <span class="n">WorkshopSession</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+        <span class="n">workshop</span><span class="o">=</span><span class="n">workshop</span><span class="p">,</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+        <span class="n">session_type</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">session_type</span> <span class="ow">or</span> <span class="s2">&quot;whiteboard&quot;</span><span class="p">,</span>
+        <span class="n">access_mode</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">access_mode</span> <span class="ow">or</span> <span class="s2">&quot;RESTRICTED_TRACKED&quot;</span><span class="p">,</span>
+        <span class="n">conversation</span><span class="o">=</span><span class="n">conv</span>
+    <span class="p">)</span>
+
+    <span class="c1"># 3. Add ConversationMember ownership</span>
+    <span class="k">if</span> <span class="n">author</span><span class="p">:</span>
+        <span class="n">ConversationMember</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="n">conversation</span><span class="o">=</span><span class="n">conv</span><span class="p">,</span>
+            <span class="n">user</span><span class="o">=</span><span class="n">author</span><span class="p">,</span>
+            <span class="n">role</span><span class="o">=</span><span class="s1">&#39;owner&#39;</span><span class="p">,</span>
+            <span class="n">display_alias</span><span class="o">=</span><span class="n">author</span><span class="o">.</span><span class="n">username</span>
+        <span class="p">)</span>
+
+    <span class="c1"># 4. Broadcast session creation</span>
+    <span class="n">publish_whiteboard_event</span><span class="p">(</span><span class="n">session</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s2">&quot;session_created&quot;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s2">&quot;session_id&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">session</span><span class="o">.</span><span class="n">id</span><span class="p">),</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">session</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+        <span class="s2">&quot;workshop_id&quot;</span><span class="p">:</span> <span class="n">workshop</span><span class="o">.</span><span class="n">id</span>
+    <span class="p">})</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">session</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+        <span class="s2">&quot;workshop_id&quot;</span><span class="p">:</span> <span class="n">workshop</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+        <span class="s2">&quot;project_id&quot;</span><span class="p">:</span> <span class="n">workshop</span><span class="o">.</span><span class="n">project_id</span><span class="p">,</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">session</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+        <span class="s2">&quot;session_type&quot;</span><span class="p">:</span> <span class="n">session</span><span class="o">.</span><span class="n">session_type</span><span class="p">,</span>
+        <span class="s2">&quot;access_mode&quot;</span><span class="p">:</span> <span class="n">session</span><span class="o">.</span><span class="n">access_mode</span><span class="p">,</span>
+        <span class="s2">&quot;conversation_id&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">conv</span><span class="o">.</span><span class="n">id</span><span class="p">),</span>
+        <span class="s2">&quot;clusters&quot;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">&quot;cards&quot;</span><span class="p">:</span> <span class="p">[]</span>
+    <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="get_session_detail">
+<a class="viewcode-back" href="../../work_organisation_app.html#work_organisation.api.get_session_detail">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/sessions/</span><span class="si">{session_id}</span><span class="s2">/&quot;</span><span class="p">,</span> <span class="n">response</span><span class="o">=</span><span class="n">SessionDetailOutSchema</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_session_detail</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">session_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Fetches full session state (clusters, cards, member aliases) respecting anonymity modes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">session</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span><span class="n">WorkshopSession</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">for_user</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">),</span> <span class="nb">id</span><span class="o">=</span><span class="n">session_id</span><span class="p">)</span>
+    <span class="n">clusters</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">clusters</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+    <span class="n">cards</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">cards</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+
+    <span class="n">clusters_out</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">cl</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">cl</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+            <span class="s2">&quot;summary&quot;</span><span class="p">:</span> <span class="n">cl</span><span class="o">.</span><span class="n">summary</span><span class="p">,</span>
+            <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="n">cl</span><span class="o">.</span><span class="n">color</span><span class="p">,</span>
+            <span class="s2">&quot;pos_x&quot;</span><span class="p">:</span> <span class="n">cl</span><span class="o">.</span><span class="n">pos_x</span><span class="p">,</span>
+            <span class="s2">&quot;pos_y&quot;</span><span class="p">:</span> <span class="n">cl</span><span class="o">.</span><span class="n">pos_y</span><span class="p">,</span>
+            <span class="s2">&quot;width&quot;</span><span class="p">:</span> <span class="n">cl</span><span class="o">.</span><span class="n">width</span><span class="p">,</span>
+            <span class="s2">&quot;height&quot;</span><span class="p">:</span> <span class="n">cl</span><span class="o">.</span><span class="n">height</span>
+        <span class="p">}</span>
+        <span class="k">for</span> <span class="n">cl</span> <span class="ow">in</span> <span class="n">clusters</span>
+    <span class="p">]</span>
+
+    <span class="n">cards_out</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cards</span><span class="p">:</span>
+        <span class="n">author_display</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">author_alias</span> <span class="ow">or</span> <span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">author</span><span class="o">.</span><span class="n">username</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">author</span> <span class="k">else</span> <span class="s2">&quot;Participant&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">session</span><span class="o">.</span><span class="n">access_mode</span> <span class="o">==</span> <span class="s1">&#39;RESTRICTED_ANONYMIZED_UI&#39;</span><span class="p">:</span>
+            <span class="n">author_display</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">author_alias</span> <span class="ow">or</span> <span class="s2">&quot;Participant&quot;</span>
+        <span class="k">elif</span> <span class="n">session</span><span class="o">.</span><span class="n">access_mode</span> <span class="o">==</span> <span class="s1">&#39;RESTRICTED_ANONYMIZED_DB&#39;</span><span class="p">:</span>
+            <span class="n">author_display</span> <span class="o">=</span> <span class="s2">&quot;Anonymous&quot;</span>
+
+        <span class="n">cards_out</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">text</span><span class="p">,</span>
+            <span class="s2">&quot;card_type&quot;</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">card_type</span><span class="p">,</span>
+            <span class="s2">&quot;pos_x&quot;</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">pos_x</span><span class="p">,</span>
+            <span class="s2">&quot;pos_y&quot;</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">pos_y</span><span class="p">,</span>
+            <span class="s2">&quot;cluster_id&quot;</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">cluster_id</span><span class="p">,</span>
+            <span class="s2">&quot;author_alias&quot;</span><span class="p">:</span> <span class="n">author_display</span><span class="p">,</span>
+            <span class="s2">&quot;metadata&quot;</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">metadata</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="p">})</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">session</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+        <span class="s2">&quot;workshop_id&quot;</span><span class="p">:</span> <span class="n">session</span><span class="o">.</span><span class="n">workshop_id</span><span class="p">,</span>
+        <span class="s2">&quot;project_id&quot;</span><span class="p">:</span> <span class="n">session</span><span class="o">.</span><span class="n">workshop</span><span class="o">.</span><span class="n">project_id</span><span class="p">,</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">session</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+        <span class="s2">&quot;session_type&quot;</span><span class="p">:</span> <span class="n">session</span><span class="o">.</span><span class="n">session_type</span><span class="p">,</span>
+        <span class="s2">&quot;access_mode&quot;</span><span class="p">:</span> <span class="n">session</span><span class="o">.</span><span class="n">access_mode</span><span class="p">,</span>
+        <span class="s2">&quot;conversation_id&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">session</span><span class="o">.</span><span class="n">conversation_id</span><span class="p">)</span> <span class="k">if</span> <span class="n">session</span><span class="o">.</span><span class="n">conversation_id</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">&quot;clusters&quot;</span><span class="p">:</span> <span class="n">clusters_out</span><span class="p">,</span>
+        <span class="s2">&quot;cards&quot;</span><span class="p">:</span> <span class="n">cards_out</span>
+    <span class="p">}</span></div>
+
+
+
+<span class="c1"># ==========================================</span>
+<span class="c1"># SSE &amp; CANVAS REAL-TIME ENDPOINTS</span>
+<span class="c1"># ==========================================</span>
+
+<div class="viewcode-block" id="stream_session_events">
+<a class="viewcode-back" href="../../work_organisation_app.html#work_organisation.api.stream_session_events">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/stream_session/</span><span class="si">{session_id}</span><span class="s2">/&quot;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">stream_session_events</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">session_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Real-time Datastar SSE endpoint for synchronized canvas mutations.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">StreamingHttpResponse</span><span class="p">(</span>
+        <span class="n">stream_whiteboard_events</span><span class="p">(</span><span class="n">session_id</span><span class="p">),</span>
+        <span class="n">content_type</span><span class="o">=</span><span class="s2">&quot;text/event-stream&quot;</span>
+    <span class="p">)</span>
+    <span class="n">response</span><span class="p">[</span><span class="s2">&quot;Cache-Control&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;no-cache&quot;</span>
+    <span class="n">response</span><span class="p">[</span><span class="s2">&quot;X-Accel-Buffering&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;no&quot;</span>
+    <span class="k">return</span> <span class="n">response</span></div>
+
+
+
+<div class="viewcode-block" id="stream_llm_response">
+<a class="viewcode-back" href="../../work_organisation_app.html#work_organisation.api.stream_llm_response">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/stream_response/&quot;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">stream_llm_response</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">TokenStreamRequestSchema</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    ASGI/Ninja token streaming endpoint providing progressive generation chunks.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.apps</span><span class="w"> </span><span class="kn">import</span> <span class="n">service_registry</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">token_generator</span><span class="p">():</span>
+        <span class="n">messages</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;system&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">payload</span><span class="o">.</span><span class="n">system_prompt</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">payload</span><span class="o">.</span><span class="n">prompt</span><span class="p">}</span>
+        <span class="p">]</span>
+        <span class="n">ai_service</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">ai_service</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="p">[</span><span class="n">raw_response</span><span class="p">]</span> <span class="o">=</span> <span class="n">ai_service</span><span class="o">.</span><span class="n">generate_response2</span><span class="p">(</span>
+                <span class="n">messages</span><span class="p">,</span>
+                <span class="n">max_new_tokens</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">max_new_tokens</span>
+            <span class="p">)</span>
+            <span class="n">clean_text</span> <span class="o">=</span> <span class="n">ai_service</span><span class="o">.</span><span class="n">clean_response</span><span class="p">(</span><span class="n">raw_response</span><span class="p">)</span>
+            
+            <span class="n">words</span> <span class="o">=</span> <span class="n">clean_text</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">words</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="sa">f</span><span class="s2">&quot;data: </span><span class="si">{</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;token&#39;</span><span class="p">:</span><span class="w"> </span><span class="n">w</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s1">&#39; &#39;</span><span class="p">})</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+            <span class="k">yield</span> <span class="sa">f</span><span class="s2">&quot;data: </span><span class="si">{</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;done&#39;</span><span class="p">:</span><span class="w"> </span><span class="kc">True</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;full_text&#39;</span><span class="p">:</span><span class="w"> </span><span class="n">clean_text</span><span class="p">})</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error streaming LLM tokens: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">yield</span> <span class="sa">f</span><span class="s2">&quot;data: </span><span class="si">{</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span><span class="w"> </span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)})</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+
+    <span class="n">response</span> <span class="o">=</span> <span class="n">StreamingHttpResponse</span><span class="p">(</span><span class="n">token_generator</span><span class="p">(),</span> <span class="n">content_type</span><span class="o">=</span><span class="s2">&quot;text/event-stream&quot;</span><span class="p">)</span>
+    <span class="n">response</span><span class="p">[</span><span class="s2">&quot;Cache-Control&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;no-cache&quot;</span>
+    <span class="n">response</span><span class="p">[</span><span class="s2">&quot;X-Accel-Buffering&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;no&quot;</span>
+    <span class="k">return</span> <span class="n">response</span></div>
+
+
+
+<div class="viewcode-block" id="create_card">
+<a class="viewcode-back" href="../../work_organisation_app.html#work_organisation.api.create_card">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/cards/&quot;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_card</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">CardCreateSchema</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates a new WhiteboardCard respecting the session&#39;s access and anonymity mode.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">session</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span><span class="n">WorkshopSession</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">for_user</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">),</span> <span class="nb">id</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">session_id</span><span class="p">)</span>
+
+    <span class="n">author</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">author_alias</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">author_alias</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">session</span><span class="o">.</span><span class="n">access_mode</span> <span class="o">==</span> <span class="s1">&#39;RESTRICTED_TRACKED&#39;</span><span class="p">:</span>
+        <span class="n">author</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span> <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">is_authenticated</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="k">elif</span> <span class="n">session</span><span class="o">.</span><span class="n">access_mode</span> <span class="o">==</span> <span class="s1">&#39;RESTRICTED_ANONYMIZED_UI&#39;</span><span class="p">:</span>
+        <span class="n">author</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span> <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">is_authenticated</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">author_alias</span><span class="p">:</span>
+            <span class="n">uid</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">id</span> <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">is_authenticated</span> <span class="k">else</span> <span class="mi">1</span>
+            <span class="n">author_alias</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Participant #</span><span class="si">{</span><span class="p">((</span><span class="n">uid</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">37</span><span class="p">)</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="mi">90</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">10</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">elif</span> <span class="n">session</span><span class="o">.</span><span class="n">access_mode</span> <span class="o">==</span> <span class="s1">&#39;RESTRICTED_ANONYMIZED_DB&#39;</span><span class="p">:</span>
+        <span class="n">author</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">author_alias</span> <span class="o">=</span> <span class="s2">&quot;Anonymous&quot;</span>
+    <span class="k">elif</span> <span class="n">session</span><span class="o">.</span><span class="n">access_mode</span> <span class="o">==</span> <span class="s1">&#39;PUBLIC_OPTIONAL_USER&#39;</span><span class="p">:</span>
+        <span class="n">author</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span> <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">is_authenticated</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="n">author_alias</span> <span class="o">=</span> <span class="n">author_alias</span> <span class="ow">or</span> <span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">username</span> <span class="k">if</span> <span class="n">author</span> <span class="k">else</span> <span class="s2">&quot;Anonymous&quot;</span><span class="p">)</span>
+
+    <span class="n">card</span> <span class="o">=</span> <span class="n">WhiteboardCard</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+        <span class="n">session</span><span class="o">=</span><span class="n">session</span><span class="p">,</span>
+        <span class="n">text</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">text</span><span class="p">,</span>
+        <span class="n">card_type</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">card_type</span> <span class="ow">or</span> <span class="s2">&quot;idea&quot;</span><span class="p">,</span>
+        <span class="n">pos_x</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">pos_x</span> <span class="ow">or</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">pos_y</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">pos_y</span> <span class="ow">or</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">cluster_id</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">cluster_id</span><span class="p">,</span>
+        <span class="n">author</span><span class="o">=</span><span class="n">author</span><span class="p">,</span>
+        <span class="n">author_alias</span><span class="o">=</span><span class="n">author_alias</span><span class="p">,</span>
+        <span class="n">metadata</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">metadata</span> <span class="ow">or</span> <span class="p">{}</span>
+    <span class="p">)</span>
+
+    <span class="n">publish_whiteboard_event</span><span class="p">(</span><span class="n">session</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s2">&quot;card_added&quot;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s2">&quot;card_id&quot;</span><span class="p">:</span> <span class="n">card</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+        <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">card</span><span class="o">.</span><span class="n">text</span><span class="p">,</span>
+        <span class="s2">&quot;card_type&quot;</span><span class="p">:</span> <span class="n">card</span><span class="o">.</span><span class="n">card_type</span><span class="p">,</span>
+        <span class="s2">&quot;pos_x&quot;</span><span class="p">:</span> <span class="n">card</span><span class="o">.</span><span class="n">pos_x</span><span class="p">,</span>
+        <span class="s2">&quot;pos_y&quot;</span><span class="p">:</span> <span class="n">card</span><span class="o">.</span><span class="n">pos_y</span><span class="p">,</span>
+        <span class="s2">&quot;cluster_id&quot;</span><span class="p">:</span> <span class="n">card</span><span class="o">.</span><span class="n">cluster_id</span><span class="p">,</span>
+        <span class="s2">&quot;author_alias&quot;</span><span class="p">:</span> <span class="n">card</span><span class="o">.</span><span class="n">author_alias</span>
+    <span class="p">})</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;success&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;card_id&quot;</span><span class="p">:</span> <span class="n">card</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+        <span class="s2">&quot;author_alias&quot;</span><span class="p">:</span> <span class="n">card</span><span class="o">.</span><span class="n">author_alias</span><span class="p">,</span>
+        <span class="s2">&quot;card_type&quot;</span><span class="p">:</span> <span class="n">card</span><span class="o">.</span><span class="n">card_type</span>
+    <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="move_card">
+<a class="viewcode-back" href="../../work_organisation_app.html#work_organisation.api.move_card">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/cards/move/&quot;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">move_card</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">CardMoveSchema</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Updates the coordinates and cluster assignment for a card.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">card</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span><span class="n">WhiteboardCard</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">for_user</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">),</span> <span class="nb">id</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">card_id</span><span class="p">)</span>
+    <span class="n">card</span><span class="o">.</span><span class="n">pos_x</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">pos_x</span>
+    <span class="n">card</span><span class="o">.</span><span class="n">pos_y</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">pos_y</span>
+    <span class="k">if</span> <span class="n">payload</span><span class="o">.</span><span class="n">cluster_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">card</span><span class="o">.</span><span class="n">cluster_id</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">cluster_id</span> <span class="k">if</span> <span class="n">payload</span><span class="o">.</span><span class="n">cluster_id</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">card</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">update_fields</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;pos_x&#39;</span><span class="p">,</span> <span class="s1">&#39;pos_y&#39;</span><span class="p">,</span> <span class="s1">&#39;cluster&#39;</span><span class="p">])</span>
+
+    <span class="n">publish_whiteboard_event</span><span class="p">(</span><span class="n">card</span><span class="o">.</span><span class="n">session_id</span><span class="p">,</span> <span class="s2">&quot;card_moved&quot;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s2">&quot;card_id&quot;</span><span class="p">:</span> <span class="n">card</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+        <span class="s2">&quot;pos_x&quot;</span><span class="p">:</span> <span class="n">card</span><span class="o">.</span><span class="n">pos_x</span><span class="p">,</span>
+        <span class="s2">&quot;pos_y&quot;</span><span class="p">:</span> <span class="n">card</span><span class="o">.</span><span class="n">pos_y</span><span class="p">,</span>
+        <span class="s2">&quot;cluster_id&quot;</span><span class="p">:</span> <span class="n">card</span><span class="o">.</span><span class="n">cluster_id</span>
+    <span class="p">})</span>
+
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;success&quot;</span><span class="p">,</span> <span class="s2">&quot;card_id&quot;</span><span class="p">:</span> <span class="n">card</span><span class="o">.</span><span class="n">id</span><span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="api_cluster_ideas">
+<a class="viewcode-back" href="../../work_organisation_app.html#work_organisation.api.api_cluster_ideas">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/cluster_ideas/&quot;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">api_cluster_ideas</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">ClusterRequestSchema</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Synthesizes and groups all session cards into thematic clusters via structured LLM schema.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">session</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span><span class="n">WorkshopSession</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">for_user</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">),</span> <span class="nb">id</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">session_id</span><span class="p">)</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">cluster_whiteboard_cards</span><span class="p">(</span><span class="n">session</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">res</span></div>
+
+
+
+<div class="viewcode-block" id="api_extract_causal_graph">
+<a class="viewcode-back" href="../../work_organisation_app.html#work_organisation.api.api_extract_causal_graph">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/extract_causal_graph/&quot;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">api_extract_causal_graph</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">ClusterRequestSchema</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Extracts causal variables, discrete state options, and influence links from the whiteboard.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">session</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span><span class="n">WorkshopSession</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">for_user</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">),</span> <span class="nb">id</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">session_id</span><span class="p">)</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">extract_causal_factors_from_session</span><span class="p">(</span><span class="n">session</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">res</span></div>
+
+
+
+<div class="viewcode-block" id="api_export_summary">
+<a class="viewcode-back" href="../../work_organisation_app.html#work_organisation.api.api_export_summary">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/export_summary/</span><span class="si">{session_id}</span><span class="s2">/&quot;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">api_export_summary</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">session_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieves a formatted Markdown summary and tables of the whiteboard session.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">session</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span><span class="n">WorkshopSession</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">for_user</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">),</span> <span class="nb">id</span><span class="o">=</span><span class="n">session_id</span><span class="p">)</span>
+    <span class="n">md_content</span> <span class="o">=</span> <span class="n">export_whiteboard_markdown_summary</span><span class="p">(</span><span class="n">session</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="n">md_content</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s2">&quot;text/markdown&quot;</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Andrew Cruickshank.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

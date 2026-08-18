@@ -1,0 +1,618 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>grips.tasks &mdash; Verbal 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Verbal
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../llm_api_app.html">LLM API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../background_resources_app.html">Background Resources - context documents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grips_app.html">Grips - wiki knowledge banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_app.html">Demo UI</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../using_ollama.html">Ollama as Local AI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tests.html">Testing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Verbal</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">grips.tasks</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for grips.tasks</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">timezone</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">celery</span><span class="w"> </span><span class="kn">import</span> <span class="n">shared_task</span><span class="p">,</span> <span class="n">chord</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">field_validator</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.apps</span><span class="w"> </span><span class="kn">import</span> <span class="n">service_registry</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">background_resources.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Document</span><span class="p">,</span> <span class="n">RAGChunk</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConceptNode</span><span class="p">,</span> <span class="n">Domain</span><span class="p">,</span> <span class="n">KnowledgeEdge</span>
+
+
+<div class="viewcode-block" id="StructuredClaim">
+<a class="viewcode-back" href="../../grips_app.html#grips.tasks.StructuredClaim">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">StructuredClaim</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">predicate</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;DEPENDS_ON&#39;</span><span class="p">,</span> <span class="s1">&#39;INCLUDES&#39;</span><span class="p">,</span> <span class="s1">&#39;EXEMPLIFIES&#39;</span><span class="p">,</span> <span class="s1">&#39;RELATED_TO&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;The relationship type (e.g. INCLUDES for part-whole, DEPENDS_ON for causal/prerequisite).&quot;</span><span class="p">)</span>
+    <span class="n">subject</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="nb">object</span><span class="p">:</span> <span class="nb">str</span></div>
+
+
+<div class="viewcode-block" id="ConceptDraft">
+<a class="viewcode-back" href="../../grips_app.html#grips.tasks.ConceptDraft">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ConceptDraft</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">thought_process</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Think step-by-step to plan the entry. Identify and resolve ambiguities based on the title and focus hint.&quot;</span><span class="p">)</span>
+    <span class="n">narrative</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;The dense, Markdown-formatted explanation unifying the concept.&quot;</span><span class="p">)</span>
+    <span class="n">source_chunk_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The specific CHUNK ID from the text &quot;</span><span class="p">)</span>
+    <span class="n">claims</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">StructuredClaim</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Atomic facts using strict relational predicates.&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ConceptDraft.clean_narrative">
+<a class="viewcode-back" href="../../grips_app.html#grips.tasks.ConceptDraft.clean_narrative">[docs]</a>
+    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;narrative&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;before&#39;</span><span class="p">)</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clean_narrative</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+        <span class="c1"># Handle cases where the model outputs a list of strings instead of a string</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">v</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="c1"># Clean up literal escaped newlines or incorrect slashes</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">n&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;/n&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">v</span></div>
+</div>
+
+
+
+<span class="nd">@shared_task</span><span class="p">(</span>
+    <span class="n">bind</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">autoretry_for</span><span class="o">=</span><span class="p">(</span><span class="ne">Exception</span><span class="p">,),</span>
+    <span class="n">retry_backoff</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">retry_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;max_retries&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">}</span>
+<span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">generate_concept_narrative</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">concept_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Celery task to generate the narrative_content for a ConceptNode.</span>
+<span class="sd">    This is the core &quot;writer&quot; function for the wiki.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">node</span> <span class="o">=</span> <span class="n">ConceptNode</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">concept_id</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">ConceptNode</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;ConceptNode with id </span><span class="si">{</span><span class="n">concept_id</span><span class="si">}</span><span class="s2"> not found.&quot;</span>
+
+    <span class="n">ai_service</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">ai_service</span>
+    <span class="n">rag_service</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">rag_service</span>
+
+    <span class="c1"># 1. Use the node&#39;s title to find relevant context from our background resources.</span>
+    <span class="c1"># This is a placeholder for a more sophisticated RAG query.</span>
+    <span class="n">query_text</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">title</span>
+    <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">focus_hint</span><span class="p">:</span>
+        <span class="n">query_text</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot; (</span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">focus_hint</span><span class="si">}</span><span class="s2">)&quot;</span>
+    <span class="n">context_chunks</span> <span class="o">=</span> <span class="n">rag_service</span><span class="o">.</span><span class="n">get_context</span><span class="p">(</span><span class="n">query_text</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+    <span class="n">context_text</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">chunk</span><span class="o">.</span><span class="n">page_content</span> <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">context_chunks</span><span class="p">])</span>
+
+    <span class="c1"># 2. Get the style guide from the domain to instruct the LLM.</span>
+    <span class="n">style_guide</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">domain</span><span class="o">.</span><span class="n">style_guide</span> <span class="ow">or</span> <span class="s2">&quot;Write a clear, dense, and encyclopedic entry.&quot;</span>
+
+    <span class="c1"># 3. Construct the prompt.</span>
+    <span class="n">prompt</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    You are an objective, authoritative encyclopedic agent. Your task is to write a definitive wiki entry.</span>
+<span class="s2">    Do NOT act as a conversational assistant. DO NOT include meta-commentary, preambles, or conversational filler.</span>
+
+<span class="s2">    **Topic:** </span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">title</span><span class="si">}</span>
+<span class="s2">    **Domain:** </span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">domain</span><span class="o">.</span><span class="n">name</span><span class="si">}</span>
+<span class="s2">    **Focus Hint/Constraints:** </span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">focus_hint</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s2">&quot;None provided. Interpret based on domain.&quot;</span><span class="si">}</span>
+
+<span class="s2">    **Relevant Context from internal documents:**</span>
+<span class="s2">    ---</span>
+<span class="s2">    </span><span class="si">{</span><span class="n">context_text</span><span class="si">}</span>
+<span class="s2">    ---</span>
+
+<span class="s2">    INSTRUCTIONS:</span>
+<span class="s2">    1. Use `thought_process` to identify ambiguities and synthesize the context.</span>
+<span class="s2">    2. Write the `narrative` as a well-structured Markdown document. </span>
+<span class="s2">       - Do NOT say things like &quot;Based on the provided documents...&quot; or &quot;More information is needed.&quot; Just write the facts objectively.</span>
+<span class="s2">       - Ensure proper use of Markdown headings (##, ###).</span>
+<span class="s2">       - Stop generating when the topic is fully covered. Do not append simulated user prompts.</span>
+<span class="s2">    3. Extract 3 to 5 definitive, atomic facts from your narrative into the `claims` list. </span>
+<span class="s2">       - Example Claim: </span><span class="se">{{</span><span class="s2">&quot;predicate&quot;: &quot;INCLUDES&quot;, &quot;subject&quot;: &quot;Fire Engine&quot;, &quot;object&quot;: &quot;Water Pump&quot;</span><span class="se">}}</span>
+<span class="s2">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># 4. Generate the content.</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">draft</span> <span class="o">=</span> <span class="n">ai_service</span><span class="o">.</span><span class="n">generate_outline</span><span class="p">(</span>
+            <span class="n">messages</span><span class="o">=</span><span class="n">prompt</span><span class="p">,</span>
+            <span class="n">response_schema</span><span class="o">=</span><span class="n">ConceptDraft</span><span class="p">,</span>
+            <span class="n">max_new_tokens</span><span class="o">=</span><span class="mi">1500</span>
+        <span class="p">)</span>
+        <span class="c1"># In case the proxy returns a raw dictionary or string, make sure it&#39;s validated</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">draft</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">if</span> <span class="s2">&quot;error&quot;</span> <span class="ow">in</span> <span class="n">draft</span><span class="p">:</span>
+                <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Generation failed for </span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">draft</span><span class="p">[</span><span class="s1">&#39;details&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">draft</span> <span class="o">=</span> <span class="n">ConceptDraft</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">draft</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">draft</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">draft</span> <span class="o">=</span> <span class="n">ConceptDraft</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="n">draft</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Failed to parse generation for </span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="c1"># 5. Save the result.</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">narrative_content</span> <span class="o">=</span> <span class="n">draft</span><span class="o">.</span><span class="n">narrative</span>
+    <span class="c1"># Convert the pydantic models to dicts for the JSONField</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">structured_claims</span> <span class="o">=</span> <span class="p">[</span><span class="n">claim</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="k">for</span> <span class="n">claim</span> <span class="ow">in</span> <span class="n">draft</span><span class="o">.</span><span class="n">claims</span><span class="p">]</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">update_fields</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;narrative_content&#39;</span><span class="p">,</span> <span class="s1">&#39;structured_claims&#39;</span><span class="p">])</span>
+
+    <span class="c1"># Optional: Immediately queue a linting task.</span>
+    <span class="c1"># lint_concept_node.delay(node.id)</span>
+
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Successfully generated narrative for &#39;</span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">&#39;.&quot;</span>
+
+<span class="c1"># --- NEW CORPUS DIGESTION &amp; LINTING PIPELINES ---</span>
+
+<div class="viewcode-block" id="SubConcept">
+<a class="viewcode-back" href="../../grips_app.html#grips.tasks.SubConcept">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SubConcept</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Name of the concept&quot;</span><span class="p">)</span>
+    <span class="n">focus_hint</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Context or intent for this concept&quot;</span><span class="p">)</span>
+    <span class="n">summary</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;A brief summary of what the document says about this concept&quot;</span><span class="p">)</span>
+    <span class="n">claims</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">StructuredClaim</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Structured claims relating this concept to others.&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="DocumentDigest">
+<a class="viewcode-back" href="../../grips_app.html#grips.tasks.DocumentDigest">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DocumentDigest</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">overall_summary</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;High-level summary of the entire document&quot;</span><span class="p">)</span>
+    <span class="n">concept_nodes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">SubConcept</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Distinct concepts identified in the document&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BatchConceptExtraction">
+<a class="viewcode-back" href="../../grips_app.html#grips.tasks.BatchConceptExtraction">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BatchConceptExtraction</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">concept_nodes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">SubConcept</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Distinct concepts identified in this section of the document&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="ConceptRelationshipEvaluation">
+<a class="viewcode-back" href="../../grips_app.html#grips.tasks.ConceptRelationshipEvaluation">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ConceptRelationshipEvaluation</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">reasoning</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Analyze the relationship between the two concepts.&quot;</span><span class="p">)</span>
+    <span class="n">relationship_action</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;MERGE&quot;</span><span class="p">,</span> <span class="s2">&quot;EDGE&quot;</span><span class="p">,</span> <span class="s2">&quot;DISTINCT&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;MERGE if they describe the exact same core concept. EDGE if they are related but distinct. DISTINCT if unrelated.&quot;</span>
+    <span class="p">)</span>
+    <span class="n">edge_predicate</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;DEPENDS_ON&#39;</span><span class="p">,</span> <span class="s1">&#39;INCLUDES&#39;</span><span class="p">,</span> <span class="s1">&#39;EXEMPLIFIES&#39;</span><span class="p">,</span> <span class="s1">&#39;RELATED_TO&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;RELATED_TO&quot;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;If EDGE, choose the relationship predicate.&quot;</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="UnifiedConceptDraft">
+<a class="viewcode-back" href="../../grips_app.html#grips.tasks.UnifiedConceptDraft">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">UnifiedConceptDraft</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Domain-level title for the unified concept.&quot;</span><span class="p">)</span>
+    <span class="n">narrative</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Unified encyclopedic explanation. MUST cite the source nodes using [[slug]] syntax.&quot;</span><span class="p">)</span>
+    <span class="n">claims</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">StructuredClaim</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">,</span>
+                                          <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Structured claims for the unified concept.&quot;</span><span class="p">)</span></div>
+
+
+<span class="nd">@shared_task</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">task_digest_corpus_level_1</span><span class="p">(</span><span class="n">domain_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">document_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;MASTER TASK: Queues DigestDocumentChunk blueprint for each document chunk.&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">domain</span> <span class="o">=</span> <span class="n">Domain</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">domain_id</span><span class="p">)</span>
+        <span class="n">doc</span> <span class="o">=</span> <span class="n">Document</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">document_id</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Error loading domain/doc: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="n">rag_service</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">rag_service</span>
+
+    <span class="n">chunks</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">existing_ids</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="s1">&#39;grobid_metadata&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">doc</span><span class="o">.</span><span class="n">grobid_metadata</span> <span class="ow">and</span> <span class="n">doc</span><span class="o">.</span><span class="n">grobid_metadata</span><span class="o">.</span><span class="n">tei_xml</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">chunks</span><span class="p">,</span> <span class="n">existing_ids</span> <span class="o">=</span> <span class="n">rag_service</span><span class="o">.</span><span class="n">convert_chunk_store_document_grobid</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Skipping Grobid chunking: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">chunks</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">existing_ids</span><span class="p">:</span>
+        <span class="n">chunks</span><span class="p">,</span> <span class="n">existing_ids</span> <span class="o">=</span> <span class="n">rag_service</span><span class="o">.</span><span class="n">convert_chunk_store_document</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">chunks</span> <span class="ow">and</span> <span class="n">existing_ids</span><span class="p">:</span>
+            <span class="n">chunks</span> <span class="o">=</span> <span class="n">rag_service</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">mget</span><span class="p">(</span><span class="n">existing_ids</span><span class="p">)</span>
+            <span class="n">chunks</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">chunks</span> <span class="k">if</span> <span class="n">c</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">chunks</span><span class="p">:</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;No chunks could be made or found for document </span><span class="si">{</span><span class="n">doc</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="n">batch_size</span> <span class="o">=</span> <span class="mi">15</span>
+        
+        <span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">CognitiveBlueprint</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">task_run_blueprint_async</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">bp</span> <span class="o">=</span> <span class="n">CognitiveBlueprint</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;DigestDocumentChunk&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">CognitiveBlueprint</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;DigestDocumentChunk blueprint not found. Run seed.&quot;</span>
+
+        <span class="n">batch_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">chunks</span><span class="p">),</span> <span class="n">batch_size</span><span class="p">):</span>
+            <span class="n">batch_chunks</span> <span class="o">=</span> <span class="n">chunks</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="n">batch_size</span><span class="p">]</span>
+            <span class="n">batch_text</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">page_content</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="s1">&#39;page_content&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="n">c</span><span class="o">.</span><span class="n">text_content</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">batch_chunks</span><span class="p">])</span>
+            
+            <span class="n">task_prompt</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Digest the following text chunk into the domain of &#39;</span><span class="si">{</span><span class="n">domain</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Document Title: </span><span class="si">{</span><span class="n">doc</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Domain: </span><span class="si">{</span><span class="n">domain</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Content Section:</span><span class="se">\n</span><span class="si">{</span><span class="n">batch_text</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Extract the key operational concepts and their operational logic (claims). Use the `create_concept_nodes_tool` with domain_id=</span><span class="si">{</span><span class="n">domain</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2"> and document_id=</span><span class="si">{</span><span class="n">doc</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+            
+            <span class="n">task_run_blueprint_async</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">bp</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">task_prompt</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">batch_count</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Queued </span><span class="si">{</span><span class="n">batch_count</span><span class="si">}</span><span class="s2"> DigestDocumentChunk blueprint tasks for </span><span class="si">{</span><span class="n">doc</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">.&quot;</span>
+
+<div class="viewcode-block" id="LintingReportSchema">
+<a class="viewcode-back" href="../../grips_app.html#grips.tasks.LintingReportSchema">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">LintingReportSchema</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">is_valid</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;True if narrative has no contradictions or style issues.&quot;</span><span class="p">)</span>
+    <span class="n">style_violations</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;List of domain style guide violations&quot;</span><span class="p">)</span>
+    <span class="n">contradictions</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;List of contradictions within the narrative&quot;</span><span class="p">)</span>
+    <span class="n">missing_cross_references</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Concepts that should be linked&quot;</span><span class="p">)</span>
+    <span class="n">suggested_fixes</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Suggested rewrites to fix issues&quot;</span><span class="p">)</span></div>
+
+
+
+<span class="nd">@shared_task</span><span class="p">(</span><span class="n">autoretry_for</span><span class="o">=</span><span class="p">(</span><span class="ne">Exception</span><span class="p">,),</span> <span class="n">retry_backoff</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">retry_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;max_retries&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">})</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">task_lint_concept_node</span><span class="p">(</span><span class="n">node_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Triggers the LintGripsNode metacognitive blueprint to evaluate and repair a ConceptNode.&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">node</span> <span class="o">=</span> <span class="n">ConceptNode</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">node_id</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">ConceptNode</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;Node not found.&quot;</span>
+
+    <span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">CognitiveBlueprint</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">task_run_blueprint_async</span>
+    
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">bp</span> <span class="o">=</span> <span class="n">CognitiveBlueprint</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;LintGripsNode&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">CognitiveBlueprint</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;LintGripsNode blueprint not found.&quot;</span>
+
+    <span class="n">task_prompt</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;Evaluate this ConceptNode:</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;Domain: </span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">domain</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;Style Guide: </span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">domain</span><span class="o">.</span><span class="n">style_guide</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">&#39;Maintain objective, clear, encyclopedic tone.&#39;</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;Title: </span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;Focus Hint: </span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">focus_hint</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;Narrative: </span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">narrative_content</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;Node ID: </span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="p">)</span>
+    
+    <span class="n">task_run_blueprint_async</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">bp</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">task_prompt</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Triggered linting blueprint for node </span><span class="si">{</span><span class="n">node_id</span><span class="si">}</span><span class="s2">&quot;</span>
+
+
+<span class="nd">@shared_task</span><span class="p">(</span><span class="n">autoretry_for</span><span class="o">=</span><span class="p">(</span><span class="ne">Exception</span><span class="p">,),</span> <span class="n">retry_backoff</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">retry_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;max_retries&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">})</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">task_digest_corpus_level_2</span><span class="p">(</span><span class="n">domain_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">new_node_ids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Level 2 Incremental Consolidation.</span>
+<span class="sd">    Finds semantic neighbors for newly ingested nodes and asks the LLM:</span>
+<span class="sd">    Are these identical (Merge), related (KnowledgeEdge), or distinct?</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">new_node_ids</span><span class="p">:</span>
+        <span class="c1"># Fetch all nodes in the domain if none provided (e.g. from admin trigger)</span>
+        <span class="n">new_node_ids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">ConceptNode</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">domain_id</span><span class="o">=</span><span class="n">domain_id</span><span class="p">)</span><span class="o">.</span><span class="n">values_list</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="n">flat</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">new_node_ids</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;No nodes to consolidate.&quot;</span>
+
+    <span class="n">grips_service</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">grips_service</span>
+    <span class="n">ai_service</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">ai_service</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">domain</span> <span class="o">=</span> <span class="n">Domain</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">domain_id</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">Domain</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;Domain not found.&quot;</span>
+
+    <span class="n">actions_taken</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">node_id</span> <span class="ow">in</span> <span class="n">new_node_ids</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">new_node</span> <span class="o">=</span> <span class="n">ConceptNode</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">node_id</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">ConceptNode</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># 1. Find neighbors in the FAISS index</span>
+        <span class="n">search_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Title: </span><span class="si">{</span><span class="n">new_node</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="se">\n</span><span class="s2">Context: </span><span class="si">{</span><span class="n">new_node</span><span class="o">.</span><span class="n">focus_hint</span><span class="si">}</span><span class="se">\n</span><span class="s2">Narrative: </span><span class="si">{</span><span class="n">new_node</span><span class="o">.</span><span class="n">narrative_content</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">neighbors_docs</span> <span class="o">=</span> <span class="n">grips_service</span><span class="o">.</span><span class="n">get_grips_context</span><span class="p">(</span><span class="n">search_text</span><span class="p">,</span> <span class="n">domain_id</span><span class="o">=</span><span class="n">domain_id</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+
+        <span class="n">neighbor_ids</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">neighbors_docs</span><span class="p">:</span>
+            <span class="n">cid</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;concept_id&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">cid</span> <span class="ow">and</span> <span class="n">cid</span> <span class="o">!=</span> <span class="n">new_node</span><span class="o">.</span><span class="n">id</span> <span class="ow">and</span> <span class="n">cid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">neighbor_ids</span><span class="p">:</span>
+                <span class="n">neighbor_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cid</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">neighbor_id</span> <span class="ow">in</span> <span class="n">neighbor_ids</span><span class="p">[:</span><span class="mi">3</span><span class="p">]:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">neighbor_node</span> <span class="o">=</span> <span class="n">ConceptNode</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">neighbor_id</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">ConceptNode</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># Skip if an edge already exists between these two concepts</span>
+            <span class="k">if</span> <span class="n">KnowledgeEdge</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">source</span><span class="o">=</span><span class="n">new_node</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">neighbor_node</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">or</span> \
+                    <span class="n">KnowledgeEdge</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">source</span><span class="o">=</span><span class="n">neighbor_node</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">new_node</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="k">continue</span>
+
+            <span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">CognitiveBlueprint</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">task_run_blueprint_async</span>
+            
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">bp</span> <span class="o">=</span> <span class="n">CognitiveBlueprint</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;EvaluateConceptNeighbors&quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">CognitiveBlueprint</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;EvaluateConceptNeighbors blueprint not found.&quot;</span><span class="p">)</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># 2. Evaluate relationship via Blueprint</span>
+            <span class="n">task_prompt</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Evaluate the relationship between Concept A and Concept B for domain &#39;</span><span class="si">{</span><span class="n">domain</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Concept A (ID: </span><span class="si">{</span><span class="n">new_node</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">):</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Title: </span><span class="si">{</span><span class="n">new_node</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Narrative: </span><span class="si">{</span><span class="n">new_node</span><span class="o">.</span><span class="n">narrative_content</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Concept B (ID: </span><span class="si">{</span><span class="n">neighbor_node</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">):</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Title: </span><span class="si">{</span><span class="n">neighbor_node</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Narrative: </span><span class="si">{</span><span class="n">neighbor_node</span><span class="o">.</span><span class="n">narrative_content</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Use the `evaluate_relationship_tool` to record your decision with source_id=</span><span class="si">{</span><span class="n">new_node</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2"> and target_id=</span><span class="si">{</span><span class="n">neighbor_node</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+
+            <span class="n">task_run_blueprint_async</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">bp</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">task_prompt</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">actions_taken</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Queued blueprint eval for &#39;</span><span class="si">{</span><span class="n">new_node</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">&#39; and &#39;</span><span class="si">{</span><span class="n">neighbor_node</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+
+    <span class="n">summary</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Level 2 Complete. Queued </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">actions_taken</span><span class="p">)</span><span class="si">}</span><span class="s2"> blueprint tasks. &quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">summary</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">summary</span>
+
+
+<span class="nd">@shared_task</span><span class="p">(</span><span class="n">bind</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autoretry_for</span><span class="o">=</span><span class="p">(</span><span class="ne">Exception</span><span class="p">,),</span> <span class="n">retry_backoff</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">retry_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;max_retries&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">})</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">task_digest_corpus_level_3</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Level 3: Cross-domain concept joins.</span>
+<span class="sd">    Looks for analogous concepts in OTHER domains to bridge silos.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.apps</span><span class="w"> </span><span class="kn">import</span> <span class="n">service_registry</span>
+    
+    <span class="n">grips_service</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">grips_service</span>
+    <span class="n">ai_service</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">ai_service</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">domain</span> <span class="o">=</span> <span class="n">Domain</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">domain_id</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">Domain</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;Domain not found.&quot;</span>
+
+    <span class="n">nodes</span> <span class="o">=</span> <span class="n">ConceptNode</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">domain</span><span class="o">=</span><span class="n">domain</span><span class="p">)</span>
+    <span class="n">actions_taken</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">:</span>
+        <span class="c1"># Search all domains (domain_id=None) to find potential cross-domain analogies</span>
+        <span class="n">search_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Title: </span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="se">\n</span><span class="s2">Context: </span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">focus_hint</span><span class="si">}</span><span class="se">\n</span><span class="s2">Narrative: </span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">narrative_content</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">neighbors_docs</span> <span class="o">=</span> <span class="n">grips_service</span><span class="o">.</span><span class="n">get_grips_context</span><span class="p">(</span><span class="n">search_text</span><span class="p">,</span> <span class="n">domain_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">neighbors_docs</span><span class="p">:</span>
+            <span class="n">match_domain_id</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;domain_id&quot;</span><span class="p">)</span>
+            <span class="n">match_concept_id</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;concept_id&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Skip if it&#39;s in the exact same domain, or we have a missing ID</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">match_concept_id</span> <span class="ow">or</span> <span class="n">match_domain_id</span> <span class="o">==</span> <span class="n">domain</span><span class="o">.</span><span class="n">id</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">neighbor_node</span> <span class="o">=</span> <span class="n">ConceptNode</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">match_concept_id</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">ConceptNode</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># Skip if already linked</span>
+            <span class="k">if</span> <span class="n">KnowledgeEdge</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">source</span><span class="o">=</span><span class="n">node</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">neighbor_node</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">or</span> \
+               <span class="n">KnowledgeEdge</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">source</span><span class="o">=</span><span class="n">neighbor_node</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">node</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="k">continue</span>
+
+            <span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">CognitiveBlueprint</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">task_run_blueprint_async</span>
+            
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">bp</span> <span class="o">=</span> <span class="n">CognitiveBlueprint</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;EvaluateCrossDomain&quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">CognitiveBlueprint</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;EvaluateCrossDomain blueprint not found.&quot;</span><span class="p">)</span>
+                <span class="k">continue</span>
+
+            <span class="n">task_prompt</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Evaluate these two concepts from DIFFERENT domains and determine if they are fundamentally analogous.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Domain A: </span><span class="si">{</span><span class="n">domain</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Concept A (ID: </span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">):</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Title: </span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Narrative: </span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">narrative_content</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Domain B: </span><span class="si">{</span><span class="n">neighbor_node</span><span class="o">.</span><span class="n">domain</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Concept B (ID: </span><span class="si">{</span><span class="n">neighbor_node</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">):</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Title: </span><span class="si">{</span><span class="n">neighbor_node</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Narrative: </span><span class="si">{</span><span class="n">neighbor_node</span><span class="o">.</span><span class="n">narrative_content</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Use the `evaluate_cross_domain_tool` to record your decision with source_id=</span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2"> and target_id=</span><span class="si">{</span><span class="n">neighbor_node</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+
+            <span class="n">task_run_blueprint_async</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">bp</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">task_prompt</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">actions_taken</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Queued cross-domain blueprint for &#39;</span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">&#39; &amp; &#39;</span><span class="si">{</span><span class="n">neighbor_node</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Level 3 Complete. Created </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">actions_taken</span><span class="p">)</span><span class="si">}</span><span class="s2"> cross-domain edges.&quot;</span>
+
+<span class="nd">@shared_task</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">sweep_unlinted_concepts</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Periodic task to sweep for concepts that need linting.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Batch to 20 at a time to keep the queue flowing nicely</span>
+    <span class="n">nodes</span> <span class="o">=</span> <span class="n">ConceptNode</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">needs_linting</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s1">&#39;last_linted_at&#39;</span><span class="p">)[:</span><span class="mi">20</span><span class="p">]</span>
+    
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">nodes</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;No concepts currently require linting.&quot;</span>
+        
+    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">needs_linting</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">update_fields</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;needs_linting&#39;</span><span class="p">])</span>
+        <span class="n">task_lint_concept_node</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Queued </span><span class="si">{</span><span class="n">nodes</span><span class="o">.</span><span class="n">count</span><span class="p">()</span><span class="si">}</span><span class="s2"> concepts for automated linting.&quot;</span>
+
+<span class="nd">@shared_task</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">sweep_dirty_edges</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Periodic task to sweep for edges that contain placeholder scaffold text (&#39;Concept A&#39;)</span>
+<span class="sd">    and trigger the Metacognition LintGripsEdge blueprint.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">CognitiveBlueprint</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">task_run_blueprint_async</span>
+    
+    <span class="n">dirty_edges</span> <span class="o">=</span> <span class="n">KnowledgeEdge</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">justification__icontains</span><span class="o">=</span><span class="s1">&#39;Concept A&#39;</span><span class="p">,</span> <span class="n">needs_linting</span><span class="o">=</span><span class="kc">True</span><span class="p">)[:</span><span class="mi">20</span><span class="p">]</span>
+    
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">dirty_edges</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;No dirty edges currently require linting.&quot;</span>
+        
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">bp</span> <span class="o">=</span> <span class="n">CognitiveBlueprint</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;LintGripsEdge&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">CognitiveBlueprint</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;LintGripsEdge blueprint not found.&quot;</span>
+        
+    <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">dirty_edges</span><span class="p">:</span>
+        <span class="n">edge</span><span class="o">.</span><span class="n">needs_linting</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">edge</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">update_fields</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;needs_linting&#39;</span><span class="p">])</span>
+        
+        <span class="n">task_prompt</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Rewrite this justification:</span><span class="se">\n\n</span><span class="si">{</span><span class="n">edge</span><span class="o">.</span><span class="n">justification</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;The edge is between &#39;</span><span class="si">{</span><span class="n">edge</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">&#39; and &#39;</span><span class="si">{</span><span class="n">edge</span><span class="o">.</span><span class="n">target</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">&#39;.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Edge ID: </span><span class="si">{</span><span class="n">edge</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="n">task_run_blueprint_async</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">bp</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">task_prompt</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Triggered linting blueprint for </span><span class="si">{</span><span class="n">dirty_edges</span><span class="o">.</span><span class="n">count</span><span class="p">()</span><span class="si">}</span><span class="s2"> dirty edges.&quot;</span>
+
+
+
+<span class="nd">@shared_task</span><span class="p">(</span><span class="n">bind</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autoretry_for</span><span class="o">=</span><span class="p">(</span><span class="ne">Exception</span><span class="p">,),</span> <span class="n">retry_backoff</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">retry_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;max_retries&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">})</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">task_index_concept_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Asynchronously indexes a ConceptNode into PGVector for semantic search.</span>
+<span class="sd">    Hooked to ConceptNode post_save signal.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">node</span> <span class="o">=</span> <span class="n">ConceptNode</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">node_id</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">ConceptNode</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Node </span><span class="si">{</span><span class="n">node_id</span><span class="si">}</span><span class="s2"> not found for indexing.&quot;</span>
+
+    <span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.apps</span><span class="w"> </span><span class="kn">import</span> <span class="n">service_registry</span>
+    <span class="k">if</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">grips_service</span><span class="p">:</span>
+        <span class="n">service_registry</span><span class="o">.</span><span class="n">grips_service</span><span class="o">.</span><span class="n">index_concept_node</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Indexed &#39;</span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">&#39; (ID: </span><span class="si">{</span><span class="n">node_id</span><span class="si">}</span><span class="s2">)&quot;</span>
+    <span class="k">return</span> <span class="s2">&quot;Grips service not initialized.&quot;</span>
+
+<span class="nd">@shared_task</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">task_export_okf</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Periodically exports the Grips graph to the OKF workspace.</span>
+<span class="sd">    Runs the export_okf django management command.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">django.core.management</span><span class="w"> </span><span class="kn">import</span> <span class="n">call_command</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">io</span>
+    
+    <span class="n">out</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">StringIO</span><span class="p">()</span>
+    <span class="n">call_command</span><span class="p">(</span><span class="s1">&#39;export_okf&#39;</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">out</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">out</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">out</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Andrew Cruickshank.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

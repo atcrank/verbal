@@ -1,0 +1,1231 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>llm_api.ai_service &mdash; Verbal 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Verbal
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../llm_api_app.html">LLM API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../background_resources_app.html">Background Resources - context documents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grips_app.html">Grips - wiki knowledge banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_app.html">Demo UI</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../using_ollama.html">Ollama as Local AI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tests.html">Testing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Verbal</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">llm_api.ai_service</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for llm_api.ai_service</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+<span class="c1"># Guard: blank HF_ENDPOINT (from .env sourcing) breaks huggingface_hub&#39;s URL builder.</span>
+<span class="c1"># Must be cleaned before any huggingface_hub import.</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;HF_ENDPOINT&quot;</span><span class="p">):</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;HF_ENDPOINT&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">gc</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.conf</span><span class="w"> </span><span class="kn">import</span> <span class="n">settings</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="c1"># Hotfix for transformers/torch compatibility bug with missing fp8 dtypes</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">torch</span><span class="p">,</span> <span class="s2">&quot;float8_e8m0fnu&quot;</span><span class="p">):</span>
+    <span class="nb">setattr</span><span class="p">(</span><span class="n">torch</span><span class="p">,</span> <span class="s2">&quot;float8_e8m0fnu&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">transformers</span><span class="w"> </span><span class="kn">import</span> <span class="n">AutoTokenizer</span><span class="p">,</span> <span class="n">AutoModelForCausalLM</span><span class="p">,</span> <span class="n">pipeline</span><span class="p">,</span> <span class="n">BitsAndBytesConfig</span><span class="p">,</span> <span class="n">GenerationConfig</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">outlines</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">outlines</span><span class="w"> </span><span class="kn">import</span> <span class="n">models</span> <span class="k">as</span> <span class="n">outline_models</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">spacy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">typing</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+
+<div class="viewcode-block" id="GenerationMetrics">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.ai_service.GenerationMetrics">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">GenerationMetrics</span><span class="p">:</span>
+    <span class="n">output_tokens</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">total_duration_ms</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">tokens_per_second</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">time_to_first_token_ms</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">prompt_eval_tokens_per_second</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+<span class="n">_last_generation_metrics</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">local</span><span class="p">()</span>
+
+<div class="viewcode-block" id="get_last_generation_metrics">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.ai_service.get_last_generation_metrics">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_last_generation_metrics</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">GenerationMetrics</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">_last_generation_metrics</span><span class="p">,</span> <span class="s1">&#39;metrics&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_sanitize_messages</span><span class="p">(</span><span class="n">msgs</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">msgs</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">msgs</span>
+    <span class="n">sanitized</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">sys_parts</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">msgs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;role&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;system&#39;</span><span class="p">:</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;content&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">content</span> <span class="ow">and</span> <span class="n">content</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys_parts</span><span class="p">:</span>
+                <span class="n">sys_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sanitized</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">m</span><span class="p">))</span>
+            
+    <span class="n">sys_prompt</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">---</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">sys_parts</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">sys_prompt</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">sanitized</span> <span class="ow">and</span> <span class="n">sanitized</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;role&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;user&#39;</span><span class="p">:</span>
+            <span class="n">sanitized</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;content&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">sys_prompt</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">sanitized</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;content&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sanitized</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">sys_prompt</span><span class="p">})</span>
+            
+    <span class="c1"># Merge consecutive roles for strict alternating templates like Gemma</span>
+    <span class="n">merged</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">sanitized</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">merged</span> <span class="ow">and</span> <span class="n">merged</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;role&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;role&#39;</span><span class="p">):</span>
+            <span class="n">merged</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;content&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;content&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">merged</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">m</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">merged</span>
+
+<span class="n">nlp</span> <span class="o">=</span> <span class="n">spacy</span><span class="o">.</span><span class="n">blank</span><span class="p">(</span><span class="s2">&quot;en&quot;</span><span class="p">)</span>
+<span class="n">nlp</span><span class="o">.</span><span class="n">add_pipe</span><span class="p">(</span><span class="s2">&quot;sentencizer&quot;</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;✅ Success! PyTorch can see the GPU.&#39;</span><span class="p">)</span>
+    <span class="n">device_count</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">device_count</span><span class="p">()</span>
+
+    <span class="c1"># Get the compute capability of the primary GPU (device 0)</span>
+    <span class="n">major</span><span class="p">,</span> <span class="n">minor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">get_device_capability</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># Turing architecture (like 1660 Ti) is 7.5. Ampere (30-series) and newer are 8.0+.</span>
+    <span class="c1"># Flash Attention 2 is only well-supported on Compute Capability 8.0 and higher.</span>
+    <span class="k">if</span> <span class="n">major</span> <span class="o">&lt;</span> <span class="mi">8</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;⚠️ GPU with old compute capability (</span><span class="si">{</span><span class="n">major</span><span class="si">}</span><span class="s1">.</span><span class="si">{</span><span class="n">minor</span><span class="si">}</span><span class="s1">) detected. Disabling Flash Attention for compatibility.&#39;</span><span class="p">)</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">backends</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">enable_flash_sdp</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">backends</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">enable_mem_efficient_sdp</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">backends</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">enable_math_sdp</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># Use the math kernel as a fallback</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;CUDA Devices Available: </span><span class="si">{</span><span class="n">device_count</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">device_count</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Device </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">: </span><span class="si">{</span><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">get_device_name</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="c1"># This shows the CUDA version PyTorch was built with</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;PyTorch was built with CUDA version: </span><span class="si">{</span><span class="n">torch</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">cuda</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;❌ Failure. PyTorch cannot see the GPU.&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="AIService">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.ai_service.AIService">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AIService</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A singleton to hold all our AI models and data.&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="AIService.DefaultOutlineResponse">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.ai_service.AIService.DefaultOutlineResponse">[docs]</a>
+    <span class="k">class</span><span class="w"> </span><span class="nc">DefaultOutlineResponse</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">response_content</span><span class="p">:</span> <span class="nb">str</span></div>
+
+
+    <span class="n">role</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="s2">&quot;VERBAL_ROLE&quot;</span><span class="p">,</span> <span class="s2">&quot;standalone&quot;</span><span class="p">)</span>
+    <span class="n">inference_url</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="s2">&quot;INFERENCE_URL&quot;</span><span class="p">,</span> <span class="s2">&quot;http://127.0.0.1:8001/api/llm&quot;</span><span class="p">)</span>
+    <span class="n">model_id</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">classifier</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">outline_pipeline</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">terminators</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">embedding_model</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">tokenizer</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">default_outline_response</span> <span class="o">=</span> <span class="n">DefaultOutlineResponse</span>
+    <span class="n">_generator_cache</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">RLock</span><span class="p">()</span>  <span class="c1"># &quot;Reentrant thread lock&quot;</span>
+
+
+
+<div class="viewcode-block" id="AIService.load_models">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.ai_service.AIService.load_models">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_models</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">token</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;HF_TOKEN&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_id</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">tokenizer_id</span> <span class="o">=</span> <span class="s2">&quot;google/gemma-4-E2B-it&quot;</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemConfiguration</span>
+            <span class="n">config</span> <span class="o">=</span> <span class="n">SystemConfiguration</span><span class="o">.</span><span class="n">get_solo</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">config</span><span class="p">:</span>
+                <span class="n">tokenizer_id</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">system_tokenizer</span><span class="o">.</span><span class="n">hf_model_id</span> <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">system_tokenizer</span> <span class="k">else</span> <span class="s2">&quot;google/gemma-4-E2B-it&quot;</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loading system tokenizer: </span><span class="si">{</span><span class="n">tokenizer_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                
+                <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="o">==</span> <span class="s1">&#39;vllm&#39;</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;📂 System Config: vLLM is enabled. Bypassing PyTorch load.&#39;</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="o">==</span> <span class="s1">&#39;ollama&#39;</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;📂 System Config: Ollama is enabled. Bypassing PyTorch load.&#39;</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="o">==</span> <span class="s1">&#39;pytorch&#39;</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">active_local_model</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">model_id</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">active_local_model</span><span class="o">.</span><span class="n">hf_model_id</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;📂 System Config requests PyTorch load for: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">model_id</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Warning: Could not fetch SystemConfiguration from DB: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="c1"># If a local model is active and we&#39;re not just a web worker, we MUST use its tokenizer</span>
+        <span class="c1"># Otherwise the generated token IDs will decode to garbage.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_id</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">role</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;web&quot;</span><span class="p">,</span> <span class="s2">&quot;worker&quot;</span><span class="p">]:</span>
+            <span class="n">tokenizer_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_id</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;⚙️ Loading CPU tokenizer: </span><span class="si">{</span><span class="n">tokenizer_id</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span> <span class="o">=</span> <span class="n">AutoTokenizer</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">tokenizer_id</span><span class="p">,</span> <span class="n">token</span><span class="o">=</span><span class="n">token</span><span class="p">)</span>
+        <span class="c1"># Load your main LLM</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">pad_token_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">pad_token_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">eos_token_id</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">role</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;web&quot;</span><span class="p">,</span> <span class="s2">&quot;worker&quot;</span><span class="p">]:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;💻 Running in proxy mode (Role: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">role</span><span class="si">}</span><span class="s1">). Tokenizer loaded, bypassing heavy LLM load.&#39;</span><span class="p">)</span>
+            
+            <span class="c1"># Verify HTTP connection</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">ping_url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">inference_url</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">/internal/ping/&quot;</span>
+                <span class="n">res</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ping_url</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mf">3.0</span><span class="p">)</span>
+                <span class="n">res</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;✅ Successfully connected to inference server.&#39;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">requests</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">RequestException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;⚠️ WARNING: Cannot connect to inference server at </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">inference_url</span><span class="si">}</span><span class="s1">. Ensure it is running! Error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_id</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;🛑 No Local AI Model selected in System Configuration. Bypassing PyTorch to save VRAM.&#39;</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Loading Heavy AI models into VRAM...&#39;</span><span class="p">)</span>
+
+        <span class="n">compute_dtype</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">float16</span>
+        <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="ow">and</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_bf16_supported</span><span class="p">():</span>
+            <span class="n">compute_dtype</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">bfloat16</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Hardware supports bfloat16, using it for compute.&#39;</span><span class="p">)</span>
+
+        <span class="n">quantization_config</span> <span class="o">=</span> <span class="n">BitsAndBytesConfig</span><span class="p">(</span>
+            <span class="n">load_in_4bit</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">bnb_4bit_quant_type</span><span class="o">=</span><span class="s2">&quot;nf4&quot;</span><span class="p">,</span>
+            <span class="n">bnb_4bit_use_double_quant</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">bnb_4bit_compute_dtype</span> <span class="o">=</span> <span class="n">compute_dtype</span>
+        <span class="p">)</span>
+
+
+        <span class="c1"># Ensure the model knows this too</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">AutoModelForCausalLM</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model_id</span><span class="p">,</span>
+            <span class="c1"># dtype=torch.float16,</span>
+            <span class="n">device_map</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
+            <span class="n">quantization_config</span><span class="o">=</span><span class="n">quantization_config</span><span class="p">,</span>
+            <span class="n">low_cpu_mem_usage</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">token</span><span class="o">=</span><span class="n">token</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">pad_token_id</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">,</span> <span class="s1">&#39;pad_token_id&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">eos_token_id</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;✅ LLM model loaded successfully.&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)]]))</span>
+
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">outline_pipeline</span> <span class="o">=</span> <span class="n">outline_models</span><span class="o">.</span><span class="n">Transformers</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;✅ Outline llm wrapper loaded&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outline_pipeline</span><span class="p">)]]))</span>
+
+        <span class="n">terminators</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">eos_token_id</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">token_str</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;&lt;|eot_id|&gt;&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;|im_end|&gt;&quot;</span><span class="p">]:</span>
+            <span class="n">tok_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">convert_tokens_to_ids</span><span class="p">(</span><span class="n">token_str</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">tok_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">tok_id</span> <span class="o">!=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">,</span> <span class="s1">&#39;unk_token_id&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="n">terminators</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tok_id</span><span class="p">)</span>
+                
+        <span class="bp">self</span><span class="o">.</span><span class="n">terminators</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">terminators</span> <span class="k">if</span> <span class="n">t</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">))</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;✅ AI models loaded successfully.&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AIService.unload_models">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.ai_service.AIService.unload_models">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">unload_models</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Frees VRAM for model switching.&quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;🗑️ Unloading AI models...&#39;</span><span class="p">)</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">outline_pipeline</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_generator_cache</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">outline_pipeline</span> <span class="o">=</span> <span class="kc">None</span>
+        
+        <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">empty_cache</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;✅ VRAM cleared.&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AIService.set_active_adapter">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.ai_service.AIService.set_active_adapter">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_active_adapter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adapter_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">adapter_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Swaps the active LoRA adapter on the loaded PyTorch model.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">role</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;web&quot;</span><span class="p">,</span> <span class="s2">&quot;worker&quot;</span><span class="p">]:</span>
+            <span class="k">return</span>
+            
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">adapter_path</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">adapter_name</span><span class="p">:</span>
+            <span class="c1"># Disable adapter if none is requested</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;disable_adapters&quot;</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">disable_adapters</span><span class="p">()</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not disable adapters (perhaps none loaded): </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+            
+        <span class="c1"># If model doesn&#39;t support PEFT natively, it might need to be wrapped.</span>
+        <span class="c1"># But bitsandbytes models loaded via AutoModelForCausalLM usually support load_adapter if peft is installed.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;load_adapter&quot;</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Model does not support PEFT adapters natively. Ensure &#39;peft&#39; is installed.&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+            
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># If it&#39;s already loaded, just set it</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;active_adapters&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">adapter_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">peft_config</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">set_adapter</span><span class="p">(</span><span class="n">adapter_name</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Load from disk/hub</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">load_adapter</span><span class="p">(</span><span class="n">adapter_path</span><span class="p">,</span> <span class="n">adapter_name</span><span class="o">=</span><span class="n">adapter_name</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">set_adapter</span><span class="p">(</span><span class="n">adapter_name</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Successfully activated LoRA adapter: </span><span class="si">{</span><span class="n">adapter_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to load adapter </span><span class="si">{</span><span class="n">adapter_name</span><span class="si">}</span><span class="s2"> from </span><span class="si">{</span><span class="n">adapter_path</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_extract_prompts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">messages</span><span class="p">):</span>
+        <span class="n">system_prompt</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">user_prompt</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">messages</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="s1">&#39;role&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;system&#39;</span> <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="s1">&#39;type&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;system&#39;</span><span class="p">:</span>
+                <span class="n">system_prompt</span> <span class="o">+=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="k">elif</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="s1">&#39;role&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;user&#39;</span> <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="s1">&#39;type&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;human&#39;</span><span class="p">:</span>
+                <span class="n">user_prompt</span> <span class="o">+=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;role&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;system&#39;</span><span class="p">:</span>
+                    <span class="n">system_prompt</span> <span class="o">+=</span> <span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;content&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="k">elif</span> <span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;role&#39;</span><span class="p">)</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="s1">&#39;human&#39;</span><span class="p">]:</span>
+                    <span class="n">user_prompt</span> <span class="o">+=</span> <span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;content&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="n">system_prompt</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span> <span class="n">user_prompt</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_log_generation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">messages</span><span class="p">,</span> <span class="n">generated_texts</span><span class="p">,</span> <span class="n">log_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">model_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">log_kwargs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">log_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;skip_log&quot;</span><span class="p">):</span>
+            <span class="k">return</span>
+
+        <span class="n">system_prompt</span><span class="p">,</span> <span class="n">user_prompt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_prompts</span><span class="p">(</span><span class="n">messages</span><span class="p">)</span>
+        <span class="n">system_prompt</span> <span class="o">=</span> <span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;system_prompt&quot;</span><span class="p">,</span> <span class="n">system_prompt</span><span class="p">)</span>
+        <span class="n">user_prompt</span> <span class="o">=</span> <span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;user_prompt&quot;</span><span class="p">,</span> <span class="n">user_prompt</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">PromptResponseLog</span>  <span class="c1"># Lazy import avoids circular dependency</span>
+            
+            <span class="n">input_tokens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">count_conversation_tokens</span><span class="p">(</span><span class="n">messages</span><span class="p">)</span>
+            
+            <span class="k">for</span> <span class="n">text</span> <span class="ow">in</span> <span class="n">generated_texts</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s1">&#39;model_dump_json&#39;</span><span class="p">):</span>
+                    <span class="n">text_to_save</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">(</span><span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)):</span>
+                    <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+                    <span class="n">text_to_save</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">text_to_save</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+                
+                <span class="n">output_tokens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">count_conversation_tokens</span><span class="p">([{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;assistant&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">text_to_save</span><span class="p">}])</span>
+                
+                <span class="c1"># Fetch metrics if available</span>
+                <span class="n">metrics</span> <span class="o">=</span> <span class="n">get_last_generation_metrics</span><span class="p">()</span>
+                <span class="n">duration_ms</span> <span class="o">=</span> <span class="n">metrics</span><span class="o">.</span><span class="n">total_duration_ms</span> <span class="k">if</span> <span class="n">metrics</span> <span class="k">else</span> <span class="kc">None</span>
+                <span class="n">tps</span> <span class="o">=</span> <span class="n">metrics</span><span class="o">.</span><span class="n">tokens_per_second</span> <span class="k">if</span> <span class="n">metrics</span> <span class="k">else</span> <span class="kc">None</span>
+                
+                <span class="c1"># Fetch model name if not explicitly provided or returned as Unknown</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">model_name</span> <span class="ow">or</span> <span class="n">model_name</span> <span class="o">==</span> <span class="s2">&quot;Unknown&quot;</span><span class="p">:</span>
+                    <span class="n">model_name</span> <span class="o">=</span> <span class="s2">&quot;Unknown&quot;</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="kn">from</span><span class="w"> </span><span class="nn">.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemConfiguration</span>
+                        <span class="n">config</span> <span class="o">=</span> <span class="n">SystemConfiguration</span><span class="o">.</span><span class="n">get_solo</span><span class="p">()</span>
+                        <span class="k">if</span> <span class="n">config</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="o">==</span> <span class="s1">&#39;vllm&#39;</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">active_vllm_model</span><span class="p">:</span>
+                                <span class="n">model_name</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">active_vllm_model</span><span class="o">.</span><span class="n">name</span>
+                            <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="o">==</span> <span class="s1">&#39;ollama&#39;</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">active_ollama_model</span><span class="p">:</span>
+                                <span class="n">model_name</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">active_ollama_model</span><span class="o">.</span><span class="n">name</span>
+                            <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="o">==</span> <span class="s1">&#39;pytorch&#39;</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">active_local_model</span><span class="p">:</span>
+                                <span class="n">model_name</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">active_local_model</span><span class="o">.</span><span class="n">name</span>
+                    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                        <span class="k">pass</span>
+                
+                <span class="c1"># Use proxy provided output tokens if we have it, else our fallback estimation</span>
+                <span class="k">if</span> <span class="n">metrics</span> <span class="ow">and</span> <span class="n">metrics</span><span class="o">.</span><span class="n">output_tokens</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">output_tokens</span> <span class="o">=</span> <span class="n">metrics</span><span class="o">.</span><span class="n">output_tokens</span>
+                
+                <span class="c1"># Retrieve conversation state_tree snapshot if available</span>
+                <span class="n">state_tree_snapshot</span> <span class="o">=</span> <span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;state_tree_snapshot&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">state_tree_snapshot</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;conversation_id&quot;</span><span class="p">):</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Conversation</span>
+                        <span class="n">conv</span> <span class="o">=</span> <span class="n">Conversation</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;conversation_id&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+                        <span class="k">if</span> <span class="n">conv</span> <span class="ow">and</span> <span class="n">conv</span><span class="o">.</span><span class="n">state_tree</span><span class="p">:</span>
+                            <span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+                            <span class="n">state_tree_snapshot</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">conv</span><span class="o">.</span><span class="n">state_tree</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                        <span class="k">pass</span>
+                <span class="k">if</span> <span class="n">state_tree_snapshot</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">state_tree_snapshot</span> <span class="o">=</span> <span class="p">{}</span>
+
+                <span class="n">log</span> <span class="o">=</span> <span class="n">PromptResponseLog</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+                    <span class="n">system_prompt</span><span class="o">=</span><span class="n">system_prompt</span><span class="p">,</span>
+                    <span class="n">user_prompt</span><span class="o">=</span><span class="n">user_prompt</span><span class="p">,</span>
+                    <span class="n">generated_response</span><span class="o">=</span><span class="n">text_to_save</span><span class="p">,</span>
+                    <span class="n">user_id</span><span class="o">=</span><span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;user_id&quot;</span><span class="p">),</span>
+                    <span class="n">conversation_id</span><span class="o">=</span><span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;conversation_id&quot;</span><span class="p">),</span>
+                    <span class="n">rag_selections</span><span class="o">=</span><span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;rag_selections&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                    <span class="n">state_tree_snapshot</span><span class="o">=</span><span class="n">state_tree_snapshot</span><span class="p">,</span>
+                    <span class="n">parent_log_id</span><span class="o">=</span><span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;parent_log_id&quot;</span><span class="p">),</span>
+                    <span class="n">input_tokens</span><span class="o">=</span><span class="n">input_tokens</span><span class="p">,</span>
+                    <span class="n">output_tokens</span><span class="o">=</span><span class="n">output_tokens</span><span class="p">,</span>
+                    <span class="n">generation_duration_ms</span><span class="o">=</span><span class="n">duration_ms</span><span class="p">,</span>
+                    <span class="n">tokens_per_second</span><span class="o">=</span><span class="n">tps</span><span class="p">,</span>
+                    <span class="n">model_name</span><span class="o">=</span><span class="n">model_name</span><span class="p">,</span>
+                    <span class="n">reasoning_step_id</span><span class="o">=</span><span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reasoning_step_id&quot;</span><span class="p">)</span>
+                <span class="p">)</span>
+                <span class="k">if</span> <span class="s2">&quot;log_ids&quot;</span> <span class="ow">in</span> <span class="n">log_kwargs</span><span class="p">:</span>
+                    <span class="n">log_kwargs</span><span class="p">[</span><span class="s2">&quot;log_ids&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">log</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Warning: Failed to log prompt response: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_execute_openai_standard_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">messages</span><span class="p">,</span> <span class="n">max_new_tokens</span><span class="p">,</span> <span class="n">temperature</span><span class="p">,</span> <span class="n">num_return_sequences</span><span class="p">,</span> <span class="n">response_schema</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tools</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lora_adapter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unifies HTTP calls to either external (OpenAI) or internal proxy endpoints.&quot;&quot;&quot;</span>
+        <span class="n">api_url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">inference_url</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">/v1/chat/completions&quot;</span>
+        <span class="n">api_key</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">target_model</span> <span class="o">=</span> <span class="s2">&quot;local-model&quot;</span>
+        
+        <span class="c1"># 0. System Config Defaults (if no user override)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemConfiguration</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">django.conf</span><span class="w"> </span><span class="kn">import</span> <span class="n">settings</span>
+            <span class="n">config</span> <span class="o">=</span> <span class="n">SystemConfiguration</span><span class="o">.</span><span class="n">get_solo</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">config</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="o">==</span> <span class="s1">&#39;vllm&#39;</span><span class="p">:</span>
+                    <span class="n">vllm_url</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="s1">&#39;VLLM_BASE_URL&#39;</span><span class="p">,</span> <span class="s1">&#39;http://vllm:8000&#39;</span><span class="p">)</span>
+                    <span class="n">api_url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">vllm_url</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">/v1/chat/completions&quot;</span>
+                    <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">lora_adapter</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+                        <span class="c1"># Use the mounted volume path as the target model for vLLM</span>
+                        <span class="n">target_model</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;/lora_adapters/</span><span class="si">{</span><span class="n">lora_adapter</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using dynamic LoRA adapter for vLLM: </span><span class="si">{</span><span class="n">target_model</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">target_model</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">active_vllm_model</span><span class="o">.</span><span class="n">hf_model_id</span> <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">active_vllm_model</span> <span class="k">else</span> <span class="n">target_model</span>
+                <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="o">==</span> <span class="s1">&#39;ollama&#39;</span><span class="p">:</span>
+                    <span class="n">ollama_url</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="s1">&#39;OLLAMA_BASE_URL&#39;</span><span class="p">,</span> <span class="s1">&#39;http://ollama:11434&#39;</span><span class="p">)</span>
+                    <span class="n">api_url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ollama_url</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">/v1/chat/completions&quot;</span>
+                    <span class="k">if</span> <span class="n">lora_adapter</span><span class="p">:</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Dynamic LoRA swapping is not supported on the Ollama backend. Falling back to base model.&quot;</span><span class="p">)</span>
+                    <span class="n">target_model</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">active_ollama_model</span><span class="o">.</span><span class="n">hf_model_id</span> <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">active_ollama_model</span> <span class="k">else</span> <span class="n">target_model</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+        
+        <span class="c1"># 1. Inspect User Settings</span>
+        <span class="k">if</span> <span class="n">user</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">user</span><span class="p">,</span> <span class="s1">&#39;is_anonymous&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">UserActiveModel</span><span class="p">,</span> <span class="n">UserAPIKey</span>
+                <span class="n">prefs</span> <span class="o">=</span> <span class="n">UserActiveModel</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">user</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">prefs</span><span class="o">.</span><span class="n">use_external</span> <span class="ow">and</span> <span class="n">prefs</span><span class="o">.</span><span class="n">active_external</span><span class="p">:</span>
+                    <span class="n">api_url</span> <span class="o">=</span> <span class="n">prefs</span><span class="o">.</span><span class="n">active_external</span><span class="o">.</span><span class="n">api_url</span>
+                    <span class="n">target_model</span> <span class="o">=</span> <span class="n">prefs</span><span class="o">.</span><span class="n">active_external</span><span class="o">.</span><span class="n">api_model_name</span>
+                    <span class="n">key_obj</span> <span class="o">=</span> <span class="n">UserAPIKey</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">user</span><span class="p">,</span> <span class="n">provider</span><span class="o">=</span><span class="n">prefs</span><span class="o">.</span><span class="n">active_external</span><span class="o">.</span><span class="n">provider</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="n">key_obj</span><span class="p">:</span>
+                        <span class="n">api_key</span> <span class="o">=</span> <span class="n">key_obj</span><span class="o">.</span><span class="n">api_key</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
+
+        <span class="c1"># 2. Build standard payload</span>
+        <span class="n">payload</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="n">target_model</span><span class="p">,</span>
+            <span class="s2">&quot;messages&quot;</span><span class="p">:</span> <span class="n">messages</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">messages</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">messages</span><span class="p">}],</span>
+            <span class="s2">&quot;temperature&quot;</span><span class="p">:</span> <span class="n">temperature</span><span class="p">,</span>
+            <span class="s2">&quot;max_tokens&quot;</span><span class="p">:</span> <span class="n">max_new_tokens</span><span class="p">,</span>
+            <span class="s2">&quot;n&quot;</span><span class="p">:</span> <span class="n">num_return_sequences</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">tools</span><span class="p">:</span>
+            <span class="n">payload</span><span class="p">[</span><span class="s2">&quot;tools&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tools</span>
+
+        <span class="k">if</span> <span class="n">response_schema</span><span class="p">:</span>
+            <span class="n">schema_json</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">response_schema</span><span class="p">,</span> <span class="s2">&quot;model_json_schema&quot;</span><span class="p">):</span>
+                <span class="n">schema_json</span> <span class="o">=</span> <span class="n">response_schema</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">response_schema</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="n">schema_json</span> <span class="o">=</span> <span class="n">response_schema</span>
+            
+            <span class="k">if</span> <span class="n">schema_json</span><span class="p">:</span>
+                <span class="n">payload</span><span class="p">[</span><span class="s2">&quot;response_format&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;json_schema&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;json_schema&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">response_schema</span><span class="p">,</span> <span class="s2">&quot;__name__&quot;</span><span class="p">,</span> <span class="s2">&quot;json_schema&quot;</span><span class="p">),</span>
+                        <span class="s2">&quot;schema&quot;</span><span class="p">:</span> <span class="n">schema_json</span><span class="p">,</span>
+                        <span class="s2">&quot;strict&quot;</span><span class="p">:</span> <span class="kc">True</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+
+        <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Content-Type&quot;</span><span class="p">:</span> <span class="s2">&quot;application/json&quot;</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">api_key</span><span class="p">:</span>
+            <span class="n">headers</span><span class="p">[</span><span class="s2">&quot;Authorization&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Bearer </span><span class="si">{</span><span class="n">api_key</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🚀 Routing inference request to: </span><span class="si">{</span><span class="n">api_url</span><span class="si">}</span><span class="s2"> (Model: </span><span class="si">{</span><span class="n">target_model</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+            <span class="n">timeout</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;timeout&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="s2">&quot;LLM_REQUEST_TIMEOUT&quot;</span><span class="p">,</span> <span class="mi">120</span><span class="p">)</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">api_url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="n">payload</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
+            <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+            
+            <span class="c1"># Parse OpenAI standard response</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">choice</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;choices&quot;</span><span class="p">,</span> <span class="p">[]):</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="n">choice</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;message&quot;</span><span class="p">,</span> <span class="p">{})</span>
+                <span class="n">content</span> <span class="o">=</span> <span class="n">msg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;content&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+                <span class="k">if</span> <span class="s2">&quot;tool_calls&quot;</span> <span class="ow">in</span> <span class="n">msg</span><span class="p">:</span>
+                    <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">tool_calls</span> <span class="o">=</span> <span class="p">[]</span>
+                        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">tc</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">msg</span><span class="p">[</span><span class="s2">&quot;tool_calls&quot;</span><span class="p">]):</span>
+                            <span class="n">fn</span> <span class="o">=</span> <span class="n">tc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;function&quot;</span><span class="p">,</span> <span class="p">{})</span>
+                            <span class="n">args_str</span> <span class="o">=</span> <span class="n">fn</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;arguments&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">)</span>
+                            <span class="n">tool_calls</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">fn</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">),</span>
+                                <span class="s2">&quot;args&quot;</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">args_str</span><span class="p">),</span>
+                                <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">tc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;call_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                            <span class="p">})</span>
+                        <span class="n">content</span> <span class="o">=</span> <span class="n">tool_calls</span>
+                    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to parse tool_calls from OpenAI API: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+            
+            <span class="c1"># If we are the background worker, pause for a moment so Web UI requests can jump the queue!</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">role</span> <span class="o">==</span> <span class="s2">&quot;worker&quot;</span><span class="p">:</span>
+                <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+                
+            <span class="n">out_res</span> <span class="o">=</span> <span class="n">results</span> <span class="k">if</span> <span class="n">num_return_sequences</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;return_usage&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">out_res</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;usage&quot;</span><span class="p">,</span> <span class="p">{}),</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;model&quot;</span><span class="p">,</span> <span class="s2">&quot;Unknown&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">out_res</span>
+
+        <span class="k">except</span> <span class="n">requests</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">RequestException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ConnectionError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to communicate with API at </span><span class="si">{</span><span class="n">api_url</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_schema_cache_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response_schema</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Helper to create a deterministic cache key for outline schemas.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">response_schema</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;default_outline_response&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">response_schema</span><span class="p">,</span> <span class="s2">&quot;model_json_schema&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">response_schema</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">(),</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">response_schema</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">response_schema</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">response_schema</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_perform_active_rag_search</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">term</span><span class="p">,</span> <span class="n">searched_terms</span><span class="p">,</span> <span class="n">working_messages</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Searches the Grips Knowledge Graph and standard RAG for a term, </span>
+<span class="sd">        injecting the results back into the working_messages.</span>
+<span class="sd">        Returns True if a new search was performed, False if already searched.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">term</span> <span class="ow">in</span> <span class="n">searched_terms</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ Active RAG: Already searched for &#39;</span><span class="si">{</span><span class="n">term</span><span class="si">}</span><span class="s2">&#39;. Ignoring to prevent infinite loop.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span>
+            
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🔍 Active RAG Triggered: Halting validation to search Knowledge Graph and RAG for &#39;</span><span class="si">{</span><span class="n">term</span><span class="si">}</span><span class="s2">&#39;...&quot;</span><span class="p">)</span>
+        <span class="n">searched_terms</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">term</span><span class="p">)</span>
+        
+        <span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.apps</span><span class="w"> </span><span class="kn">import</span> <span class="n">service_registry</span>
+        
+        <span class="n">context_parts</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="c1"># 1. Search Grips Knowledge Graph</span>
+        <span class="n">grips_service</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">grips_service</span>
+        <span class="k">if</span> <span class="n">grips_service</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">grips_docs</span> <span class="o">=</span> <span class="n">grips_service</span><span class="o">.</span><span class="n">get_grips_context</span><span class="p">(</span><span class="n">term</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">grips_docs</span><span class="p">:</span>
+                    <span class="n">context_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;Concept [</span><span class="si">{</span><span class="n">d</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;title&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Unknown&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">]:</span><span class="se">\n</span><span class="si">{</span><span class="n">d</span><span class="o">.</span><span class="n">page_content</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">grips_docs</span><span class="p">]))</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Grips search failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                
+        <span class="c1"># 2. Search Standard RAG</span>
+        <span class="n">rag_service</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">rag_service</span>
+        <span class="k">if</span> <span class="n">rag_service</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">rag_docs</span> <span class="o">=</span> <span class="n">rag_service</span><span class="o">.</span><span class="n">get_context</span><span class="p">(</span><span class="n">term</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">rag_docs</span><span class="p">:</span>
+                    <span class="n">context_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;Source: </span><span class="si">{</span><span class="n">d</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;filename&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Unknown&#39;</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s2">Content: </span><span class="si">{</span><span class="n">d</span><span class="o">.</span><span class="n">page_content</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">rag_docs</span><span class="p">]))</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;RAG search failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                
+        <span class="n">context_str</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">---</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">context_parts</span><span class="p">)</span> <span class="k">if</span> <span class="n">context_parts</span> <span class="k">else</span> <span class="s2">&quot;No specific concepts found.&quot;</span>
+        
+        <span class="c1"># Inject the result and prime the model to continue walking the graph</span>
+        <span class="n">injection</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">[System Search Result for &#39;</span><span class="si">{</span><span class="n">term</span><span class="si">}</span><span class="s2">&#39;:</span><span class="se">\n</span><span class="si">{</span><span class="n">context_str</span><span class="si">}</span><span class="se">\n</span><span class="s2">Note: You may use &lt;SEARCH: new_term&gt; to explore further.]</span><span class="se">\n</span><span class="s2">&quot;</span>
+        
+        <span class="c1"># Append safely to the last user message to preserve chat template structure</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">working_messages</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">working_messages</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;role&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;user&quot;</span><span class="p">:</span>
+                <span class="n">working_messages</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">working_messages</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                <span class="n">working_messages</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;content&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">injection</span>
+                <span class="k">break</span>
+                
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_valid_structured_result</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw_results</span><span class="p">,</span> <span class="n">response_schema</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Attempts to validate a list of results (generated via num_return_sequences &gt; 1) against a schema.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns the first valid result it finds, silently discarding the invalid ones in the batch.</span>
+<span class="sd">        This &quot;shotgun&quot; approach is often faster than running sequential single-generation retries.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">raw_results</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No results were generated to validate.&quot;</span><span class="p">)</span>
+            
+        <span class="n">last_error</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">res</span> <span class="ow">in</span> <span class="n">raw_results</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># Verify validity and return the constructed object!</span>
+                <span class="k">if</span> <span class="n">response_schema</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">response_schema</span><span class="p">,</span> <span class="s2">&quot;model_validate&quot;</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                        <span class="k">return</span> <span class="n">response_schema</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">response_schema</span><span class="p">):</span>
+                            <span class="k">return</span> <span class="n">res</span>
+                        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                            <span class="k">return</span> <span class="n">response_schema</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+                        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="s2">&quot;model_dump&quot;</span><span class="p">):</span>
+                            <span class="k">return</span> <span class="n">response_schema</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="k">return</span> <span class="n">response_schema</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">response_schema</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">or</span> <span class="n">response_schema</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">response_schema</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+                        
+                <span class="c1"># Fallback Success (unstructured strings)</span>
+                <span class="k">return</span> <span class="n">res</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ve</span><span class="p">:</span>
+                <span class="n">last_error</span> <span class="o">=</span> <span class="n">ve</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;⚠️ Validation Error against schema:</span><span class="se">\n</span><span class="si">{</span><span class="n">ve</span><span class="si">}</span><span class="se">\n</span><span class="s1">Raw Output was:</span><span class="se">\n</span><span class="si">{</span><span class="n">res</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="k">continue</span>
+                
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;All generated sequences failed validation. Last error: </span><span class="si">{</span><span class="n">last_error</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_execute_generation_with_retries</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">generated_callable</span><span class="p">,</span> <span class="n">messages</span><span class="p">,</span> <span class="n">response_schema</span><span class="p">,</span> <span class="n">max_new_tokens</span><span class="p">,</span> <span class="n">temperature</span><span class="p">,</span> <span class="n">num_return_sequences</span><span class="p">,</span> <span class="n">log_kwargs</span><span class="p">,</span> <span class="n">is_structured</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Universal executor handling Validation, Retries, Multiples, and Active RAG (Self-Guidance).</span>
+<span class="sd">        Works identically for local/proxy and structured/unstructured generations.</span>
+<span class="sd">        </span>
+<span class="sd">        Architecture of the Execution Loops:</span>
+<span class="sd">        1. Outer Loop (Search Hops): Allows the LLM to halt generation, issue a &lt;SEARCH: term&gt; command,</span>
+<span class="sd">           and restart the generation with new context injected from the Knowledge Graph/RAG.</span>
+<span class="sd">        2. Inner Loop (Validation Attempts): If the generated output fails to match the required </span>
+<span class="sd">           JSON/Pydantic schema, it retries. </span>
+<span class="sd">        3. Candidate Batching (num_return_sequences): On retries, it automatically increases the </span>
+<span class="sd">           batch size (`current_n`) to cast a wider net, increasing the probability of getting at </span>
+<span class="sd">           least one valid response without needing further sequential loops.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">working_messages</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">messages</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">messages</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">messages</span><span class="p">}]</span>
+        <span class="n">max_search_hops</span> <span class="o">=</span> <span class="mi">4</span>
+        <span class="n">max_validation_attempts</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">searched_terms</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        
+        <span class="n">last_error</span> <span class="o">=</span> <span class="kc">None</span>
+        
+        <span class="c1"># OUTER LOOP: Active RAG Hops</span>
+        <span class="c1"># If the LLM generates a &lt;SEARCH:...&gt; tag, we break the inner loop, fetch new context, </span>
+        <span class="c1"># append it to the messages, and start a new hop.</span>
+        <span class="k">for</span> <span class="n">search_hop</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_search_hops</span><span class="p">):</span>
+            <span class="n">did_search</span> <span class="o">=</span> <span class="kc">False</span>
+            
+            <span class="c1"># INNER LOOP: Validation &amp; Generation Retries</span>
+            <span class="k">for</span> <span class="n">attempt</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_validation_attempts</span><span class="p">):</span>
+                <span class="c1"># If we fail the first attempt, increase the number of sequences generated simultaneously.</span>
+                <span class="c1"># Generating 2+ sequences in parallel takes barely more VRAM/Time than generating 1, </span>
+                <span class="c1"># but drastically increases the odds that at least one passes Pydantic validation.</span>
+                <span class="n">current_n</span> <span class="o">=</span> <span class="n">num_return_sequences</span> <span class="k">if</span> <span class="n">attempt</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="nb">max</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">num_return_sequences</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="c1"># Capture proxy model name returned by the callable if available</span>
+                    <span class="n">ret</span> <span class="o">=</span> <span class="n">generated_callable</span><span class="p">(</span><span class="n">working_messages</span><span class="p">,</span> <span class="n">max_new_tokens</span><span class="p">,</span> <span class="n">temperature</span><span class="p">,</span> <span class="n">current_n</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ret</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+                        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ret</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                            <span class="n">raw_results</span><span class="p">,</span> <span class="n">usage</span><span class="p">,</span> <span class="n">model_name</span> <span class="o">=</span> <span class="n">ret</span>
+                        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">ret</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                            <span class="n">raw_results</span><span class="p">,</span> <span class="n">model_name</span> <span class="o">=</span> <span class="n">ret</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">raw_results</span> <span class="o">=</span> <span class="n">ret</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                            <span class="n">model_name</span> <span class="o">=</span> <span class="kc">None</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">raw_results</span> <span class="o">=</span> <span class="n">ret</span>
+                        <span class="n">model_name</span> <span class="o">=</span> <span class="kc">None</span>
+
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Raw results (Hop </span><span class="si">{</span><span class="n">search_hop</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s1">, Attempt </span><span class="si">{</span><span class="n">attempt</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s1">): </span><span class="si">{</span><span class="n">raw_results</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                    
+                    <span class="k">for</span> <span class="n">res</span> <span class="ow">in</span> <span class="n">raw_results</span><span class="p">:</span>
+                        <span class="c1"># 1. Active RAG Check: Look for &lt;SEARCH: concept&gt; anywhere in output</span>
+                        <span class="n">res_str</span> <span class="o">=</span> <span class="n">res</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">()</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="s1">&#39;model_dump_json&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">res</span><span class="p">))</span>
+                        <span class="n">search_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;&lt;SEARCH:\s*([^&gt;]+)&gt;&#39;</span><span class="p">,</span> <span class="n">res_str</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">search_match</span><span class="p">:</span>
+                            <span class="n">term</span> <span class="o">=</span> <span class="n">search_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                            <span class="n">did_search</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_perform_active_rag_search</span><span class="p">(</span><span class="n">term</span><span class="p">,</span> <span class="n">searched_terms</span><span class="p">,</span> <span class="n">working_messages</span><span class="p">)</span>
+                            <span class="k">if</span> <span class="n">did_search</span><span class="p">:</span>
+                                <span class="k">break</span>  <span class="c1"># Break out of result inspection to restart generation with new context!</span>
+                    
+                    <span class="k">if</span> <span class="n">did_search</span><span class="p">:</span>
+                        <span class="k">break</span>  <span class="c1"># Break attempt loop, proceed to next search_hop</span>
+                        
+                    <span class="c1"># 2. Return unstructured immediately if no search was triggered</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">is_structured</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_log_generation</span><span class="p">(</span><span class="n">working_messages</span><span class="p">,</span> <span class="n">raw_results</span><span class="p">,</span> <span class="n">log_kwargs</span><span class="p">,</span> <span class="n">model_name</span><span class="o">=</span><span class="n">model_name</span><span class="p">)</span>
+                        <span class="k">return</span> <span class="n">raw_results</span>
+                        
+                    <span class="c1"># 3. Validation Check for structured outputs</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">valid_res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_valid_structured_result</span><span class="p">(</span><span class="n">raw_results</span><span class="p">,</span> <span class="n">response_schema</span><span class="p">)</span>
+                        <span class="c1"># Success! We log working_messages so the DB reflects the Active RAG injections</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_log_generation</span><span class="p">(</span><span class="n">working_messages</span><span class="p">,</span> <span class="p">[</span><span class="n">valid_res</span><span class="p">],</span> <span class="n">log_kwargs</span><span class="p">,</span> <span class="n">model_name</span><span class="o">=</span><span class="n">model_name</span><span class="p">)</span>
+                        <span class="k">return</span> <span class="n">valid_res</span>
+                    <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">ve</span><span class="p">:</span>
+                        <span class="n">last_error</span> <span class="o">=</span> <span class="n">ve</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;⚠️ Validation error (Attempt </span><span class="si">{</span><span class="n">attempt</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="n">max_validation_attempts</span><span class="si">}</span><span class="s1">): </span><span class="si">{</span><span class="n">ve</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                        <span class="k">continue</span>  <span class="c1"># Schema failed. Let the inner loop try another generation attempt.</span>
+                    
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">last_error</span> <span class="o">=</span> <span class="n">e</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;⚠️ Generation error (Attempt </span><span class="si">{</span><span class="n">attempt</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="n">max_validation_attempts</span><span class="si">}</span><span class="s1">): </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                    <span class="k">continue</span>
+            
+            <span class="k">if</span> <span class="n">did_search</span><span class="p">:</span>
+                <span class="k">continue</span>
+            
+            <span class="k">break</span>  <span class="c1"># Exhausted validation attempts without searching</span>
+                            
+        <span class="c1"># Exhausted all attempts or hops</span>
+        <span class="n">error_msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Generation failed after </span><span class="si">{</span><span class="n">max_validation_attempts</span><span class="si">}</span><span class="s2"> attempts. Last error: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">last_error</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;❌ </span><span class="si">{</span><span class="n">error_msg</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">is_structured</span><span class="p">:</span>
+            <span class="n">err_result</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;GenerationFailed&quot;</span><span class="p">,</span> <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="n">error_msg</span><span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_log_generation</span><span class="p">(</span><span class="n">working_messages</span><span class="p">,</span> <span class="p">[</span><span class="n">err_result</span><span class="p">],</span> <span class="n">log_kwargs</span><span class="p">,</span> <span class="n">model_name</span><span class="o">=</span><span class="s2">&quot;Unknown&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">err_result</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">err_result</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;GenerationFailed: </span><span class="si">{</span><span class="n">error_msg</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_log_generation</span><span class="p">(</span><span class="n">working_messages</span><span class="p">,</span> <span class="p">[</span><span class="n">err_result</span><span class="p">],</span> <span class="n">log_kwargs</span><span class="p">,</span> <span class="n">model_name</span><span class="o">=</span><span class="s2">&quot;Unknown&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">err_result</span><span class="p">]</span>
+
+<div class="viewcode-block" id="AIService.supports_native_tools">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.ai_service.AIService.supports_native_tools">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">supports_native_tools</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns True if the current configuration supports native tool calling (e.g. OpenAI/Ollama proxy).&quot;&quot;&quot;</span>
+        <span class="n">needs_proxy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">role</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;web&quot;</span><span class="p">,</span> <span class="s2">&quot;worker&quot;</span><span class="p">]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemConfiguration</span>
+            <span class="n">config</span> <span class="o">=</span> <span class="n">SystemConfiguration</span><span class="o">.</span><span class="n">get_solo</span><span class="p">()</span>
+            <span class="c1"># Local open-weight models (vLLM, Ollama) typically lack tool-calling chat templates,</span>
+            <span class="c1"># causing the server to reject requests with tools= parameter.</span>
+            <span class="c1"># We rely on XML-injected tool calling for these backends instead.</span>
+            <span class="k">if</span> <span class="n">config</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;vllm&#39;</span><span class="p">,</span> <span class="s1">&#39;ollama&#39;</span><span class="p">,</span> <span class="s1">&#39;pytorch&#39;</span><span class="p">]:</span>
+                <span class="n">needs_proxy</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="k">if</span> <span class="n">user</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">user</span><span class="p">,</span> <span class="s1">&#39;is_anonymous&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">UserActiveModel</span>
+            <span class="k">if</span> <span class="n">UserActiveModel</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">user</span><span class="p">,</span> <span class="n">use_external</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="n">needs_proxy</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="n">needs_proxy</span></div>
+
+
+<div class="viewcode-block" id="AIService.generate_response2">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.ai_service.AIService.generate_response2">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate_response2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">messages</span><span class="p">,</span>
+                           <span class="n">max_new_tokens</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span>
+                           <span class="n">temperature</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
+                           <span class="n">log_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">user</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">num_return_sequences</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                           <span class="n">tools</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">lora_adapter</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generates an unstructured text response.</span>
+<span class="sd">        </span>
+<span class="sd">        Delegates to `_execute_generation_with_retries` to handle proxy routing, local model </span>
+<span class="sd">        VRAM loading, and Active RAG loops. `num_return_sequences` can be used to generate </span>
+<span class="sd">        multiple alternative responses to the same prompt.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">log_kwargs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">log_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="n">needs_proxy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">role</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;web&quot;</span><span class="p">,</span> <span class="s2">&quot;worker&quot;</span><span class="p">]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemConfiguration</span>
+            <span class="n">config</span> <span class="o">=</span> <span class="n">SystemConfiguration</span><span class="o">.</span><span class="n">get_solo</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">config</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;vllm&#39;</span><span class="p">,</span> <span class="s1">&#39;ollama&#39;</span><span class="p">]:</span>
+                <span class="n">needs_proxy</span> <span class="o">=</span> <span class="kc">True</span>
+                
+            <span class="k">if</span> <span class="n">config</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="o">==</span> <span class="s1">&#39;ollama&#39;</span> <span class="ow">and</span> <span class="n">lora_adapter</span><span class="p">:</span>
+                <span class="n">base_model</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">active_ollama_model</span><span class="o">.</span><span class="n">hf_model_id</span> <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">active_ollama_model</span> <span class="k">else</span> <span class="s1">&#39;unknown&#39;</span>
+                <span class="n">sys_prompt</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_prompts</span><span class="p">(</span><span class="n">messages</span><span class="p">)</span>
+                <span class="n">log_kwargs</span><span class="p">[</span><span class="s2">&quot;system_prompt&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;system_prompt&quot;</span><span class="p">,</span> <span class="n">sys_prompt</span><span class="p">)</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">[SYSTEM NOTE: The specialised LoRA adapter &#39;</span><span class="si">{</span><span class="n">lora_adapter</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; for this step was not available on the Ollama backend, so this request fell back to the base model &#39;</span><span class="si">{</span><span class="n">base_model</span><span class="si">}</span><span class="s2">&#39;]&quot;</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="k">if</span> <span class="n">user</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">user</span><span class="p">,</span> <span class="s1">&#39;is_anonymous&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">UserActiveModel</span>
+            <span class="k">if</span> <span class="n">UserActiveModel</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">user</span><span class="p">,</span> <span class="n">use_external</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="n">needs_proxy</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">if</span> <span class="n">needs_proxy</span><span class="p">:</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">proxy_callable</span><span class="p">(</span><span class="n">msgs</span><span class="p">,</span> <span class="n">max_tok</span><span class="p">,</span> <span class="n">temp</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+                <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+                <span class="n">res</span><span class="p">,</span> <span class="n">usage</span><span class="p">,</span> <span class="n">model_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_execute_openai_standard_request</span><span class="p">(</span>
+                    <span class="n">msgs</span><span class="p">,</span> <span class="n">max_tok</span><span class="p">,</span> <span class="n">temp</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="n">user</span><span class="p">,</span> <span class="n">tools</span><span class="o">=</span><span class="n">tools</span><span class="p">,</span> <span class="n">lora_adapter</span><span class="o">=</span><span class="n">lora_adapter</span><span class="p">,</span> <span class="n">return_usage</span><span class="o">=</span><span class="kc">True</span>
+                <span class="p">)</span>
+                <span class="n">duration_ms</span> <span class="o">=</span> <span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1000</span>
+                <span class="n">output_tokens</span> <span class="o">=</span> <span class="n">usage</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;completion_tokens&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">output_tokens</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">res</span><span class="p">:</span>
+                    <span class="c1"># Fallback approximation if proxy does not return usage statistics</span>
+                    <span class="n">as_list</span> <span class="o">=</span> <span class="n">res</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="p">[</span><span class="n">res</span><span class="p">]</span>
+                    <span class="c1"># Simple split by space approximation for raw text to avoid tokenizer overhead</span>
+                    <span class="n">output_tokens</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">r</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">())</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">as_list</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1.3</span>
+                    
+                <span class="n">metrics</span> <span class="o">=</span> <span class="n">GenerationMetrics</span><span class="p">(</span>
+                    <span class="n">output_tokens</span><span class="o">=</span><span class="n">output_tokens</span><span class="p">,</span>
+                    <span class="n">total_duration_ms</span><span class="o">=</span><span class="n">duration_ms</span><span class="p">,</span>
+                    <span class="n">tokens_per_second</span><span class="o">=</span><span class="p">(</span><span class="n">output_tokens</span> <span class="o">/</span> <span class="p">(</span><span class="n">duration_ms</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">))</span> <span class="k">if</span> <span class="n">duration_ms</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">0.0</span>
+                <span class="p">)</span>
+                <span class="n">_last_generation_metrics</span><span class="o">.</span><span class="n">metrics</span> <span class="o">=</span> <span class="n">metrics</span>
+                <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">res</span><span class="p">,</span> <span class="n">model_name</span>
+                <span class="k">return</span> <span class="p">[</span><span class="n">res</span><span class="p">],</span> <span class="n">model_name</span>
+            <span class="n">generate_callable</span> <span class="o">=</span> <span class="n">proxy_callable</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">local_callable</span><span class="p">(</span><span class="n">msgs</span><span class="p">,</span> <span class="n">max_tok</span><span class="p">,</span> <span class="n">temp</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+                <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">load_models</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;No Local AI Model is active in System Configuration, and no External API is configured for this user.&quot;</span><span class="p">)</span>
+                        
+                    <span class="c1"># Load appropriate LoRA adapter if specified</span>
+                    <span class="k">if</span> <span class="n">lora_adapter</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">set_active_adapter</span><span class="p">(</span><span class="n">adapter_path</span><span class="o">=</span><span class="n">lora_adapter</span><span class="o">.</span><span class="n">file_path</span><span class="p">,</span> <span class="n">adapter_name</span><span class="o">=</span><span class="n">lora_adapter</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">set_active_adapter</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+                        
+                    <span class="n">msgs_summary</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">summarize_conversation</span><span class="p">(</span><span class="n">msgs</span><span class="p">)</span>
+                    <span class="n">msgs_summary</span> <span class="o">=</span> <span class="n">_sanitize_messages</span><span class="p">(</span><span class="n">msgs_summary</span><span class="p">)</span>
+
+                    <span class="n">prompt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">apply_chat_template</span><span class="p">(</span>
+                        <span class="n">msgs_summary</span><span class="p">,</span> <span class="n">tokenize</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">add_generation_prompt</span><span class="o">=</span><span class="kc">True</span>
+                    <span class="p">)</span>
+
+                    <span class="n">inputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">(</span><span class="n">prompt</span><span class="p">,</span> <span class="n">return_tensors</span><span class="o">=</span><span class="s2">&quot;pt&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+                    <span class="n">do_sample</span> <span class="o">=</span> <span class="n">temp</span> <span class="o">&gt;</span> <span class="mf">0.0</span>
+
+                    <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+                    <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span>
+                        <span class="o">**</span><span class="n">inputs</span><span class="p">,</span>
+                        <span class="n">max_new_tokens</span><span class="o">=</span><span class="n">max_tok</span><span class="p">,</span>
+                        <span class="n">temperature</span><span class="o">=</span><span class="n">temp</span> <span class="k">if</span> <span class="n">do_sample</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                        <span class="n">top_p</span><span class="o">=</span><span class="mf">0.95</span> <span class="k">if</span> <span class="n">do_sample</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                        <span class="n">do_sample</span><span class="o">=</span><span class="n">do_sample</span><span class="p">,</span>
+                        <span class="n">eos_token_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">terminators</span><span class="p">,</span>
+                        <span class="n">pad_token_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">pad_token_id</span><span class="p">,</span>
+                        <span class="n">num_return_sequences</span><span class="o">=</span><span class="n">n</span><span class="p">,</span>
+                        <span class="n">repetition_penalty</span><span class="o">=</span><span class="mf">1.05</span>
+                    <span class="p">)</span>
+                    <span class="n">duration_ms</span> <span class="o">=</span> <span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1000</span>
+
+                    <span class="n">prompt_length</span> <span class="o">=</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;input_ids&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="n">generated_tokens</span> <span class="o">=</span> <span class="n">outputs</span><span class="p">[:,</span> <span class="n">prompt_length</span><span class="p">:]</span>
+                    <span class="n">output_tokens</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">generated_tokens</span><span class="p">)</span>
+                    
+                    <span class="n">metrics</span> <span class="o">=</span> <span class="n">GenerationMetrics</span><span class="p">(</span>
+                        <span class="n">output_tokens</span><span class="o">=</span><span class="n">output_tokens</span><span class="p">,</span>
+                        <span class="n">total_duration_ms</span><span class="o">=</span><span class="n">duration_ms</span><span class="p">,</span>
+                        <span class="n">tokens_per_second</span><span class="o">=</span><span class="p">(</span><span class="n">output_tokens</span> <span class="o">/</span> <span class="p">(</span><span class="n">duration_ms</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">))</span> <span class="k">if</span> <span class="n">duration_ms</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">0.0</span>
+                    <span class="p">)</span>
+                    <span class="n">_last_generation_metrics</span><span class="o">.</span><span class="n">metrics</span> <span class="o">=</span> <span class="n">metrics</span>
+
+                    <span class="n">results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">batch_decode</span><span class="p">(</span><span class="n">generated_tokens</span><span class="p">,</span> <span class="n">skip_special_tokens</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="n">results</span>
+            <span class="n">generate_callable</span> <span class="o">=</span> <span class="n">local_callable</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_execute_generation_with_retries</span><span class="p">(</span>
+            <span class="n">generate_callable</span><span class="p">,</span> <span class="n">messages</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">max_new_tokens</span><span class="p">,</span> <span class="n">temperature</span><span class="p">,</span> 
+            <span class="n">num_return_sequences</span><span class="p">,</span> <span class="n">log_kwargs</span><span class="p">,</span> <span class="n">is_structured</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AIService.generate_outline">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.ai_service.AIService.generate_outline">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate_outline</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">messages</span><span class="p">,</span>
+                         <span class="n">response_schema</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">max_new_tokens</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span>
+                         <span class="n">temperature</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
+                         <span class="n">log_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">user</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">num_return_sequences</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                         <span class="n">lora_adapter</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Facade for structured generation (JSON/Pydantic) using the `outlines` library.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            messages: The conversation history or prompt.</span>
+<span class="sd">            response_schema: A Pydantic model or JSON dict defining the required output structure.</span>
+<span class="sd">                             The `outlines` library will mathematically constrain the LLM to this schema.</span>
+<span class="sd">            max_new_tokens: Limit on new token generation</span>
+<span class="sd">            temperature: scatter in generation</span>
+<span class="sd">            log_kwargs: keyword variables of any kind to pass through to logging functions</span>
+<span class="sd">            user: the session user resposnsible for the request</span>
+<span class="sd">            num_return_sequences: How many parallel candidates to generate in one inference pass.</span>
+<span class="sd">                                  Generating &gt;1 increases the chance of passing strict Pydantic logic</span>
+<span class="sd">                                  validation (e.g., custom @model_validators) on the very first try.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;Generate Outline Called&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">messages</span><span class="p">),</span> <span class="n">response_schema</span><span class="p">]]))</span>
+
+        <span class="k">if</span> <span class="n">log_kwargs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">log_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="n">needs_proxy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">role</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;web&quot;</span><span class="p">,</span> <span class="s2">&quot;worker&quot;</span><span class="p">]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemConfiguration</span>
+            <span class="n">config</span> <span class="o">=</span> <span class="n">SystemConfiguration</span><span class="o">.</span><span class="n">get_solo</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">config</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;vllm&#39;</span><span class="p">,</span> <span class="s1">&#39;ollama&#39;</span><span class="p">]:</span>
+                <span class="n">needs_proxy</span> <span class="o">=</span> <span class="kc">True</span>
+                
+            <span class="k">if</span> <span class="n">config</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="o">==</span> <span class="s1">&#39;ollama&#39;</span> <span class="ow">and</span> <span class="n">lora_adapter</span><span class="p">:</span>
+                <span class="n">base_model</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">active_ollama_model</span><span class="o">.</span><span class="n">hf_model_id</span> <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">active_ollama_model</span> <span class="k">else</span> <span class="s1">&#39;unknown&#39;</span>
+                <span class="n">sys_prompt</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_prompts</span><span class="p">(</span><span class="n">messages</span><span class="p">)</span>
+                <span class="n">log_kwargs</span><span class="p">[</span><span class="s2">&quot;system_prompt&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;system_prompt&quot;</span><span class="p">,</span> <span class="n">sys_prompt</span><span class="p">)</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">[SYSTEM NOTE: The specialised LoRA adapter &#39;</span><span class="si">{</span><span class="n">lora_adapter</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; for this step was not available on the Ollama backend, so this request fell back to the base model &#39;</span><span class="si">{</span><span class="n">base_model</span><span class="si">}</span><span class="s2">&#39;]&quot;</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="k">if</span> <span class="n">user</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">user</span><span class="p">,</span> <span class="s1">&#39;is_anonymous&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">UserActiveModel</span>
+            <span class="k">if</span> <span class="n">UserActiveModel</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">user</span><span class="p">,</span> <span class="n">use_external</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="n">needs_proxy</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">if</span> <span class="n">needs_proxy</span><span class="p">:</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">proxy_callable</span><span class="p">(</span><span class="n">msgs</span><span class="p">,</span> <span class="n">max_tok</span><span class="p">,</span> <span class="n">temp</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+                <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+                <span class="n">res</span><span class="p">,</span> <span class="n">usage</span><span class="p">,</span> <span class="n">model_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_execute_openai_standard_request</span><span class="p">(</span>
+                    <span class="n">msgs</span><span class="p">,</span> <span class="n">max_tok</span><span class="p">,</span> <span class="n">temp</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">response_schema</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="n">user</span><span class="p">,</span> <span class="n">lora_adapter</span><span class="o">=</span><span class="n">lora_adapter</span><span class="p">,</span> <span class="n">return_usage</span><span class="o">=</span><span class="kc">True</span>
+                <span class="p">)</span>
+                <span class="n">duration_ms</span> <span class="o">=</span> <span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1000</span>
+                <span class="n">output_tokens</span> <span class="o">=</span> <span class="n">usage</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;completion_tokens&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                
+                <span class="n">metrics</span> <span class="o">=</span> <span class="n">GenerationMetrics</span><span class="p">(</span>
+                    <span class="n">output_tokens</span><span class="o">=</span><span class="n">output_tokens</span><span class="p">,</span>
+                    <span class="n">total_duration_ms</span><span class="o">=</span><span class="n">duration_ms</span><span class="p">,</span>
+                    <span class="n">tokens_per_second</span><span class="o">=</span><span class="p">(</span><span class="n">output_tokens</span> <span class="o">/</span> <span class="p">(</span><span class="n">duration_ms</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">))</span> <span class="k">if</span> <span class="n">duration_ms</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">0.0</span>
+                <span class="p">)</span>
+                <span class="n">_last_generation_metrics</span><span class="o">.</span><span class="n">metrics</span> <span class="o">=</span> <span class="n">metrics</span>
+                
+                <span class="n">res_list</span> <span class="o">=</span> <span class="n">res</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="p">[</span><span class="n">res</span><span class="p">]</span>
+                <span class="k">return</span> <span class="n">res_list</span><span class="p">,</span> <span class="n">model_name</span>
+            <span class="n">generate_callable</span> <span class="o">=</span> <span class="n">proxy_callable</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">local_callable</span><span class="p">(</span><span class="n">msgs</span><span class="p">,</span> <span class="n">max_tok</span><span class="p">,</span> <span class="n">temp</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+                <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">outline_pipeline</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">load_models</span><span class="p">()</span>
+                        
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">outline_pipeline</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;No Local AI Model is active in System Configuration.&quot;</span><span class="p">)</span>
+                        
+                    <span class="c1"># Load appropriate LoRA adapter if specified</span>
+                    <span class="k">if</span> <span class="n">lora_adapter</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">set_active_adapter</span><span class="p">(</span><span class="n">adapter_path</span><span class="o">=</span><span class="n">lora_adapter</span><span class="o">.</span><span class="n">file_path</span><span class="p">,</span> <span class="n">adapter_name</span><span class="o">=</span><span class="n">lora_adapter</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">set_active_adapter</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+
+                    <span class="n">cache_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_schema_cache_key</span><span class="p">(</span><span class="n">response_schema</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">cache_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generator_cache</span><span class="p">:</span>
+                        <span class="n">actual_schema</span> <span class="o">=</span> <span class="n">response_schema</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_outline_response</span>
+                        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">actual_schema</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                            <span class="n">schema_str</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">actual_schema</span><span class="p">)</span>
+                            <span class="k">try</span><span class="p">:</span>
+                                <span class="kn">from</span><span class="w"> </span><span class="nn">outlines.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">JsonSchema</span>
+                                <span class="n">actual_schema</span> <span class="o">=</span> <span class="n">JsonSchema</span><span class="p">(</span><span class="n">schema_str</span><span class="p">)</span>
+                            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                                <span class="n">actual_schema</span> <span class="o">=</span> <span class="n">schema_str</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_generator_cache</span><span class="p">[</span><span class="n">cache_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">outlines</span><span class="o">.</span><span class="n">Generator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outline_pipeline</span><span class="p">,</span> <span class="n">actual_schema</span><span class="p">)</span>
+                    
+                    <span class="n">generator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generator_cache</span><span class="p">[</span><span class="n">cache_key</span><span class="p">]</span>
+                    <span class="n">msgs</span> <span class="o">=</span> <span class="n">_sanitize_messages</span><span class="p">(</span><span class="n">msgs</span><span class="p">)</span>
+                    <span class="n">prompt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">apply_chat_template</span><span class="p">(</span><span class="n">msgs</span><span class="p">,</span> <span class="n">tokenize</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">add_generation_prompt</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">msgs</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="n">msgs</span>
+                    
+                    <span class="c1"># outlines does not take huggingface generate kwargs natively. </span>
+                    <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+                    <span class="n">outputs</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+                        <span class="n">outputs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">generator</span><span class="p">(</span><span class="n">prompt</span><span class="p">,</span> <span class="n">max_new_tokens</span><span class="o">=</span><span class="n">max_tok</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="n">temp</span><span class="p">))</span>
+                    <span class="n">duration_ms</span> <span class="o">=</span> <span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1000</span>
+                    
+                    <span class="c1"># Approximate output tokens since outlines just returns strings</span>
+                    <span class="n">output_tokens</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">(</span><span class="n">o</span><span class="p">)[</span><span class="s2">&quot;input_ids&quot;</span><span class="p">])</span> <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">outputs</span><span class="p">)</span>
+                    
+                    <span class="n">metrics</span> <span class="o">=</span> <span class="n">GenerationMetrics</span><span class="p">(</span>
+                        <span class="n">output_tokens</span><span class="o">=</span><span class="n">output_tokens</span><span class="p">,</span>
+                        <span class="n">total_duration_ms</span><span class="o">=</span><span class="n">duration_ms</span><span class="p">,</span>
+                        <span class="n">tokens_per_second</span><span class="o">=</span><span class="p">(</span><span class="n">output_tokens</span> <span class="o">/</span> <span class="p">(</span><span class="n">duration_ms</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">))</span> <span class="k">if</span> <span class="n">duration_ms</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">0.0</span>
+                    <span class="p">)</span>
+                    <span class="n">_last_generation_metrics</span><span class="o">.</span><span class="n">metrics</span> <span class="o">=</span> <span class="n">metrics</span>
+
+                    <span class="k">return</span> <span class="n">outputs</span>
+            <span class="n">generate_callable</span> <span class="o">=</span> <span class="n">local_callable</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_execute_generation_with_retries</span><span class="p">(</span>
+            <span class="n">generate_callable</span><span class="p">,</span> <span class="n">messages</span><span class="p">,</span> <span class="n">response_schema</span><span class="p">,</span> <span class="n">max_new_tokens</span><span class="p">,</span>
+            <span class="n">temperature</span><span class="p">,</span> <span class="n">num_return_sequences</span><span class="p">,</span> <span class="n">log_kwargs</span><span class="p">,</span> <span class="n">is_structured</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AIService.label_single">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.ai_service.AIService.label_single">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">label_single</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">labels</span><span class="p">):</span>
+        <span class="c1"># lazy load</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span> <span class="o">=</span> <span class="n">pipeline</span><span class="p">(</span>
+                    <span class="s2">&quot;zero-shot-classification&quot;</span><span class="p">,</span>
+                    <span class="n">model</span><span class="o">=</span><span class="s2">&quot;facebook/bart-large-mnli&quot;</span><span class="p">,</span>
+                    <span class="n">device</span><span class="o">=</span><span class="mi">0</span>
+                <span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;GPU not found, falling back to CPU. This will be slow.&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span> <span class="o">=</span> <span class="n">pipeline</span><span class="p">(</span>
+                    <span class="s2">&quot;zero-shot-classification&quot;</span><span class="p">,</span>
+                    <span class="n">model</span><span class="o">=</span><span class="s2">&quot;facebook/bart-large-mnli&quot;</span><span class="p">,</span>
+                    <span class="n">device</span><span class="o">=-</span><span class="mi">1</span>  <span class="c1"># Use -1 for CPU</span>
+                <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="AIService.clean_response">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.ai_service.AIService.clean_response">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clean_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response_content</span><span class="p">):</span>
+        <span class="n">assistant_response</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">response_content</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="c1"># Globally remove known special tokens that may leak into generations</span>
+        <span class="n">assistant_response</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;&lt;\|eot_id\|&gt;|&lt;eos&gt;|&lt;turn\|&gt;|&lt;\/s&gt;&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">assistant_response</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;Assistant response&#39;</span><span class="p">,</span> <span class="n">assistant_response</span><span class="p">]]))</span>
+        <span class="n">doc</span> <span class="o">=</span> <span class="n">nlp</span><span class="p">(</span><span class="n">assistant_response</span><span class="p">)</span>
+        <span class="n">sentences</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">doc</span><span class="o">.</span><span class="n">sents</span><span class="p">)</span>  <span class="c1"># Convert the generator to a list</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">sentences</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="c1"># Get the last detected sentence</span>
+        <span class="n">last_sentence</span> <span class="o">=</span> <span class="n">sentences</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="c1"># Check the very last token of the last sentence</span>
+        <span class="c1"># If it&#39;s not punctuation, assume the sentence is a fragment.</span>
+            <span class="c1"># (Removed: Stripping the last sentence blindly destroys generated python</span>
+            <span class="c1"># code or JSON blocks that naturally don&#39;t end in punctuation).</span>
+        <span class="k">return</span> <span class="n">assistant_response</span></div>
+
+
+<div class="viewcode-block" id="AIService.count_conversation_tokens">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.ai_service.AIService.count_conversation_tokens">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">count_conversation_tokens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">messages</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span><span class="nb">int</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">load_models</span><span class="p">()</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># apply_chat_template is the only way to be 100% accurate</span>
+            <span class="c1"># as it includes all special role tokens.</span>
+            <span class="n">token_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">apply_chat_template</span><span class="p">(</span>
+                <span class="n">messages</span><span class="p">,</span>
+                <span class="n">add_generation_prompt</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">token_list</span><span class="p">,</span> <span class="s1">&#39;input_ids&#39;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">token_list</span><span class="o">.</span><span class="n">input_ids</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">token_list</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="s1">&#39;input_ids&#39;</span> <span class="ow">in</span> <span class="n">token_list</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">token_list</span><span class="p">[</span><span class="s1">&#39;input_ids&#39;</span><span class="p">])</span>
+            <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">token_list</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="c1"># A fallback for older models without a chat template.</span>
+            <span class="c1"># This is a *rough estimate* and will be inaccurate.</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Warning: No chat template; falling back to naive token count.&#39;</span><span class="p">)</span>
+            <span class="n">total_tokens</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">msg</span> <span class="ow">in</span> <span class="n">messages</span><span class="p">:</span>
+                <span class="c1"># This misses role tokens, so it will under-count.</span>
+                <span class="n">total_tokens</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">msg</span><span class="p">[</span><span class="s1">&#39;content&#39;</span><span class="p">]))</span>
+            <span class="k">return</span> <span class="n">total_tokens</span></div>
+
+
+<div class="viewcode-block" id="AIService.summarize_conversation">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.ai_service.AIService.summarize_conversation">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">summarize_conversation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">messages</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Condenses conversation history to fit within the active model&#39;s context window.</span>
+
+<span class="sd">        Keeps the system prompt and recent messages intact. If the total token</span>
+<span class="sd">        count exceeds 70% of the context window, older middle messages are</span>
+<span class="sd">        summarized by the LLM and injected as a condensed system note.</span>
+
+<span class="sd">        Returns the (possibly condensed) message list — always a list.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">total_tokens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">count_conversation_tokens</span><span class="p">(</span><span class="n">messages</span><span class="p">)</span>
+
+        <span class="c1"># Read context limit from the active model configuration</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemConfiguration</span>
+            <span class="n">config</span> <span class="o">=</span> <span class="n">SystemConfiguration</span><span class="o">.</span><span class="n">get_solo</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">config</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">active_local_model</span><span class="p">:</span>
+                <span class="n">context_limit</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">active_local_model</span><span class="o">.</span><span class="n">context_window</span> <span class="o">*</span> <span class="mf">0.7</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">context_limit</span> <span class="o">=</span> <span class="mi">3000</span>  <span class="c1"># Conservative fallback</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">context_limit</span> <span class="o">=</span> <span class="mi">3000</span>
+
+        <span class="k">if</span> <span class="n">total_tokens</span> <span class="o">&lt;</span> <span class="n">context_limit</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">messages</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">messages</span>
+
+        <span class="c1"># Partition: system prompt | middle (to summarize) | recent (to keep)</span>
+        <span class="n">system_prompt</span> <span class="o">=</span> <span class="n">messages</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">messages</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;role&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;system&quot;</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="n">keep_recent</span> <span class="o">=</span> <span class="mi">4</span>  <span class="c1"># Keep the last 4 messages verbatim</span>
+        <span class="n">start_idx</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">system_prompt</span> <span class="k">else</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">messages</span><span class="p">)</span> <span class="o">-</span> <span class="n">start_idx</span> <span class="o">&lt;=</span> <span class="n">keep_recent</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">messages</span>  <span class="c1"># Not enough to condense</span>
+
+        <span class="n">summarize_these</span> <span class="o">=</span> <span class="n">messages</span><span class="p">[</span><span class="n">start_idx</span><span class="p">:</span><span class="o">-</span><span class="n">keep_recent</span><span class="p">]</span>
+        <span class="n">recent</span> <span class="o">=</span> <span class="n">messages</span><span class="p">[</span><span class="o">-</span><span class="n">keep_recent</span><span class="p">:]</span>
+
+        <span class="n">summarization_instruction</span> <span class="o">=</span> <span class="p">[{</span>
+            <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;system&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s2">&quot;Condense the following conversation into a brief summary that preserves: &quot;</span>
+                <span class="s2">&quot;(1) the user&#39;s core goals and requirements, &quot;</span>
+                <span class="s2">&quot;(2) key decisions and conclusions reached, &quot;</span>
+                <span class="s2">&quot;(3) any unresolved questions or pending tasks. &quot;</span>
+                <span class="s2">&quot;Be concise — this summary replaces the original messages to save context space.&quot;</span>
+            <span class="p">)</span>
+        <span class="p">}]</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="p">[</span><span class="n">summary_response</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_response2</span><span class="p">(</span>
+                <span class="n">summarization_instruction</span> <span class="o">+</span> <span class="n">summarize_these</span><span class="p">,</span>
+                <span class="n">max_new_tokens</span><span class="o">=</span><span class="mi">400</span>
+            <span class="p">)</span>
+            <span class="n">summary_text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">clean_response</span><span class="p">(</span><span class="n">summary_response</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Summarization failed, truncating instead: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">summary_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">summarize_these</span><span class="p">)</span><span class="si">}</span><span class="s2"> earlier messages were omitted to fit the context window.]&quot;</span>
+
+        <span class="n">summary_msg</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;system&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Summary of earlier conversation:</span><span class="se">\n</span><span class="si">{</span><span class="n">summary_text</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">}</span>
+
+        <span class="n">condensed</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">system_prompt</span><span class="p">:</span>
+            <span class="n">condensed</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">system_prompt</span><span class="p">)</span>
+        <span class="n">condensed</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">summary_msg</span><span class="p">)</span>
+        <span class="n">condensed</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">recent</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">condensed</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Andrew Cruickshank.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

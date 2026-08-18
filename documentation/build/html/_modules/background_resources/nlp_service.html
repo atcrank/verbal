@@ -1,0 +1,286 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>background_resources.nlp_service &mdash; Verbal 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Verbal
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../llm_api_app.html">LLM API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../background_resources_app.html">Background Resources - context documents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grips_app.html">Grips - wiki knowledge banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_app.html">Demo UI</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../using_ollama.html">Ollama as Local AI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tests.html">Testing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Verbal</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">background_resources.nlp_service</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for background_resources.nlp_service</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">spacy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">spacy.language</span><span class="w"> </span><span class="kn">import</span> <span class="n">Language</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scispacy.abbreviation</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbbreviationDetector</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">spellchecker</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpellChecker</span>
+
+<div class="viewcode-block" id="NLPService">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.nlp_service.NLPService">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">NLPService</span><span class="p">:</span>
+
+    <span class="n">primary_nlp</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">abbreviation_model</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">basic_spellcheck_model</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">domain_terms</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;term1&quot;</span><span class="p">,</span> <span class="s2">&quot;term2&quot;</span><span class="p">,</span> <span class="s2">&quot;term3&quot;</span><span class="p">]</span>
+
+<div class="viewcode-block" id="NLPService.get_primary_nlp">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.nlp_service.NLPService.get_primary_nlp">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_primary_nlp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_nlp</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Loading Spacy Model (this should happen once)...&#39;</span><span class="p">)</span>
+            <span class="c1"># Load the base model</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">primary_nlp</span> <span class="o">=</span> <span class="n">spacy</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;en_core_web_sm&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_nlp</span></div>
+
+
+
+<div class="viewcode-block" id="NLPService.get_abbreviation_model">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.nlp_service.NLPService.get_abbreviation_model">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_abbreviation_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Lazy-loads the heavy Spacy model.&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">abbreviation_model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Loading Spacy Model (this should happen once)...&#39;</span><span class="p">)</span>
+            <span class="c1"># Load the base model</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">abbreviation_model</span> <span class="o">=</span> <span class="n">spacy</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;en_core_web_sm&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Add the Abbreviation Detector</span>
+            <span class="c1"># (We add it to the pipe once during load)</span>
+            <span class="k">if</span> <span class="s2">&quot;abbreviation_detector&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">abbreviation_model</span><span class="o">.</span><span class="n">pipe_names</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">abbreviation_model</span><span class="o">.</span><span class="n">add_pipe</span><span class="p">(</span><span class="s2">&quot;abbreviation_detector&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">abbreviation_model</span></div>
+
+
+
+<div class="viewcode-block" id="NLPService.get_basic_spellchecker">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.nlp_service.NLPService.get_basic_spellchecker">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_basic_spellchecker</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">basic_spellcheck_model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">basic_spellcheck_model</span> <span class="o">=</span> <span class="n">SpellChecker</span><span class="p">()</span>
+            <span class="c1"># self.basic_spellcheck_model.word_frequency.load_words() # Optional</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">basic_spellcheck_model</span></div>
+
+
+    <span class="c1"># 2. Functional Interfaces (The &quot;Public API&quot;)</span>
+    <span class="c1"># Your application code calls THESE, never touching &#39;nlp&#39; directly.</span>
+
+<div class="viewcode-block" id="NLPService.extract_acronyms">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.nlp_service.NLPService.extract_acronyms">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">extract_acronyms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a dictionary of {Acronym: Definition}.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">abbreviation_model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_abbreviation_model</span><span class="p">()</span>
+            
+        <span class="n">doc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">abbreviation_model</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+
+        <span class="c1"># Return unique mappings</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="n">abrv</span><span class="o">.</span><span class="n">text</span><span class="p">:</span> <span class="n">abrv</span><span class="o">.</span><span class="n">_</span><span class="o">.</span><span class="n">long_form</span><span class="o">.</span><span class="n">text</span>
+            <span class="k">for</span> <span class="n">abrv</span> <span class="ow">in</span> <span class="n">doc</span><span class="o">.</span><span class="n">_</span><span class="o">.</span><span class="n">abbreviations</span>
+        <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="NLPService.basic_spellcheck">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.nlp_service.NLPService.basic_spellcheck">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">basic_spellcheck</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Takes a raw string, identifies typos, and returns the corrected string.</span>
+<span class="sd">        Note: This is a simple implementation. For complex sentence structures,</span>
+<span class="sd">        be careful not to over-correct.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">basic_spellcheck_model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_basic_spellchecker</span><span class="p">()</span>
+
+        <span class="c1"># Simple tokenization that preserves punctuation usage might be needed,</span>
+        <span class="c1"># but for spell checking, we often just want to fix words.</span>
+        <span class="c1"># A simple regex to find words:</span>
+        <span class="n">tokens</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\b\w+\b&#39;</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+
+        <span class="n">misspelled</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">basic_spellcheck_model</span><span class="o">.</span><span class="n">unknown</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span>
+
+        <span class="n">corrected_text</span> <span class="o">=</span> <span class="n">text</span>
+        <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">misspelled</span><span class="p">:</span>
+            <span class="n">correction</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">basic_spellcheck_model</span><span class="o">.</span><span class="n">correction</span><span class="p">(</span><span class="n">word</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">correction</span> <span class="ow">and</span> <span class="n">correction</span> <span class="o">!=</span> <span class="n">word</span><span class="p">:</span>
+                <span class="c1"># Replace using regex to match whole words only (avoid replacing &#39;th&#39; in &#39;the&#39;)</span>
+                <span class="n">corrected_text</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\b&#39;</span> <span class="o">+</span> <span class="n">re</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">word</span><span class="p">)</span> <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;\b&#39;</span><span class="p">,</span> <span class="n">correction</span><span class="p">,</span> <span class="n">corrected_text</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">corrected_text</span></div>
+
+
+
+
+<div class="viewcode-block" id="NLPService.get_lemmatized_tokens">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.nlp_service.NLPService.get_lemmatized_tokens">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_lemmatized_tokens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Useful for search normalization later.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_nlp</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_primary_nlp</span><span class="p">()</span>
+            
+        <span class="n">doc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_nlp</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">token</span><span class="o">.</span><span class="n">lemma_</span> <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">doc</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">token</span><span class="o">.</span><span class="n">is_stop</span><span class="p">]</span></div>
+
+
+    <span class="n">_intent_matcher</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_cached_domains</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+<div class="viewcode-block" id="NLPService.get_intent_matcher">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.nlp_service.NLPService.get_intent_matcher">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_intent_matcher</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_intent_matcher</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_nlp</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">get_primary_nlp</span><span class="p">()</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">spacy.matcher</span><span class="w"> </span><span class="kn">import</span> <span class="n">PhraseMatcher</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_intent_matcher</span> <span class="o">=</span> <span class="n">PhraseMatcher</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">primary_nlp</span><span class="o">.</span><span class="n">vocab</span><span class="p">,</span> <span class="n">attr</span><span class="o">=</span><span class="s2">&quot;LOWER&quot;</span><span class="p">)</span>
+            <span class="n">research_phrases</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;look up&quot;</span><span class="p">,</span> <span class="s2">&quot;search for&quot;</span><span class="p">,</span> <span class="s2">&quot;find documents&quot;</span><span class="p">,</span> <span class="s2">&quot;according to the library&quot;</span><span class="p">,</span> <span class="s2">&quot;what does the text say&quot;</span><span class="p">,</span> <span class="s2">&quot;search the knowledge base&quot;</span><span class="p">]</span>
+            <span class="n">patterns</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">primary_nlp</span><span class="o">.</span><span class="n">make_doc</span><span class="p">(</span><span class="n">phrase</span><span class="p">)</span> <span class="k">for</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="n">research_phrases</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_intent_matcher</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;RESEARCH_INTENT&quot;</span><span class="p">,</span> <span class="n">patterns</span><span class="p">)</span>
+            
+            <span class="k">try</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">grips.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Domain</span>
+                <span class="n">domains</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">Domain</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">values_list</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="n">flat</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+                <span class="k">if</span> <span class="n">domains</span><span class="p">:</span>
+                    <span class="n">domain_patterns</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">primary_nlp</span><span class="o">.</span><span class="n">make_doc</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">domains</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_intent_matcher</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;DOMAIN_MENTION&quot;</span><span class="p">,</span> <span class="n">domain_patterns</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_cached_domains</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">domains</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error loading domains for intent matcher: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">grips.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Domain</span>
+                <span class="n">current_domains</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">Domain</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">values_list</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="n">flat</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+                <span class="n">new_domains</span> <span class="o">=</span> <span class="n">current_domains</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cached_domains</span>
+                <span class="k">if</span> <span class="n">new_domains</span><span class="p">:</span>
+                    <span class="n">domain_patterns</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">primary_nlp</span><span class="o">.</span><span class="n">make_doc</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">new_domains</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_intent_matcher</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;DOMAIN_MENTION_UPDATE&quot;</span><span class="p">,</span> <span class="n">domain_patterns</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_cached_domains</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">new_domains</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
+                
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_intent_matcher</span></div>
+
+
+<div class="viewcode-block" id="NLPService.requires_research">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.nlp_service.NLPService.requires_research">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">requires_research</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Determines if the prompt expresses an intent to search OR mentions a known Domain.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_nlp</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_primary_nlp</span><span class="p">()</span>
+        <span class="n">doc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_nlp</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+        <span class="n">matcher</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_intent_matcher</span><span class="p">()</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">matcher</span><span class="p">(</span><span class="n">doc</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Andrew Cruickshank.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

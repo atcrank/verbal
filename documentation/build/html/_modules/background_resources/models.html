@@ -1,0 +1,797 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>background_resources.models &mdash; Verbal 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Verbal
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../llm_api_app.html">LLM API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../background_resources_app.html">Background Resources - context documents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grips_app.html">Grips - wiki knowledge banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_app.html">Demo UI</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../using_ollama.html">Ollama as Local AI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tests.html">Testing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Verbal</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">background_resources.models</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for background_resources.models</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="c1"># Create your models here.</span>
+
+
+<span class="c1"># Splitter Name	Splitting Logic	Best For Documents</span>
+<span class="c1"># CharacterTextSplitter	A single, user-defined character (e.g., \n).	Structured files like your glossary, CSVs, or log files.</span>
+<span class="c1"># RecursiveCharacterTextSplitter	A prioritized list of separators (e.g., \n\n, \n, ).	General, unstructured text like articles, books, and web pages.</span>
+<span class="c1"># TokenTextSplitter	The number of LLM tokens.	Precisely managing context window size for a specific model.</span>
+<span class="c1"># SemanticChunker	Shifts in semantic meaning (topic).	Dense, thematically complex documents like academic papers.</span>
+<span class="c1"># MarkdownHeaderTextSplitter	The structure of Markdown headers (#, ##).	Documentation files (README.md), knowledge bases.</span>
+<span class="c1"># CodeTextSplitter	The syntax of a programming language (functions, classes).	Source code files for building RAG systems on codebases.</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">hashlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">uuid</span><span class="w"> </span><span class="kn">import</span> <span class="n">uuid4</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.db</span><span class="w"> </span><span class="kn">import</span> <span class="n">models</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.db.models.signals</span><span class="w"> </span><span class="kn">import</span> <span class="n">pre_delete</span><span class="p">,</span> <span class="n">pre_save</span><span class="p">,</span> <span class="n">post_save</span><span class="p">,</span> <span class="n">post_delete</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.dispatch</span><span class="w"> </span><span class="kn">import</span> <span class="n">receiver</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.contrib.contenttypes.fields</span><span class="w"> </span><span class="kn">import</span> <span class="n">GenericForeignKey</span><span class="p">,</span> <span class="n">GenericRelation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.contrib.contenttypes.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">ContentType</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">timezone</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgvector.django</span><span class="w"> </span><span class="kn">import</span> <span class="n">VectorField</span><span class="p">,</span> <span class="n">HnswIndex</span>
+
+
+<span class="c1"># You will need to have these libraries installed:</span>
+<span class="c1"># pip install langchain langchain-community faiss-cpu sentence-transformers</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langchain_core.documents</span><span class="w"> </span><span class="kn">import</span> <span class="n">Document</span> <span class="k">as</span> <span class="n">LangchainDocument</span>
+
+
+<div class="viewcode-block" id="Document">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.Document">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Document</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A model to store uploaded documents, their content hash, and manage</span>
+<span class="sd">    their inclusion in a PGVector store.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">title</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">)</span>
+    <span class="c1"># Citation / Provenance Information</span>
+    <span class="n">author</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Original author or organization&quot;</span><span class="p">)</span>
+    <span class="n">publication_date</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">DateField</span><span class="p">(</span><span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">citation_text</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;APA/MLA citation string&quot;</span><span class="p">)</span>
+    <span class="n">source_url</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">URLField</span><span class="p">(</span><span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    
+    <span class="n">file</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">FileField</span><span class="p">(</span><span class="n">upload_to</span><span class="o">=</span><span class="s1">&#39;documents/&#39;</span><span class="p">)</span>
+
+    <span class="c1"># --- Indexing</span>
+
+    <span class="n">indexed_hash</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">editable</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">uploaded_at</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="n">auto_now_add</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">currently_indexed</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">metadata</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">JSONField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">chunk_size</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+    <span class="n">chunk_overlap</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">title</span>
+
+<div class="viewcode-block" id="Document.chunking_scheme">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.Document.chunking_scheme">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">chunking_scheme</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">override_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">override_overlap</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="c1"># Allows calculating scheme for specific strategies</span>
+        <span class="n">size</span> <span class="o">=</span> <span class="n">override_size</span> <span class="k">if</span> <span class="n">override_size</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunk_size</span>
+        <span class="n">overlap</span> <span class="o">=</span> <span class="n">override_overlap</span> <span class="k">if</span> <span class="n">override_overlap</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunk_overlap</span>
+        <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">indexed_hash</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">size</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">overlap</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Document.validate_current_index">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.Document.validate_current_index">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">validate_current_index</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">currently_indexed</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;chunking_scheme&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunking_scheme</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">currently_indexed</span></div>
+
+
+<div class="viewcode-block" id="Document.save">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.Document.save">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculates the SHA256 hash of the uploaded file.&quot;&quot;&quot;</span>
+        <span class="n">updated_file</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">hasher</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">()</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s1">&#39;rb&#39;</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="nb">iter</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">4096</span><span class="p">),</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
+            <span class="n">hasher</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexed_hash</span> <span class="o">!=</span> <span class="n">hasher</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">():</span>
+            <span class="c1"># File content has changed. Recalculating hash</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">indexed_hash</span> <span class="o">=</span> <span class="n">hasher</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+            <span class="n">updated_file</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;indexed_hash&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexed_hash</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;filename&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">name</span>
+        
+        <span class="k">if</span> <span class="n">updated_file</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">currently_indexed</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">elif</span> <span class="s1">&#39;currently_indexed&#39;</span> <span class="ow">in</span> <span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;update_fields&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[])</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">currently_indexed</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;chunking_scheme&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunking_scheme</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">currently_indexed</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="delete_document_files">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.delete_document_files">[docs]</a>
+<span class="nd">@receiver</span><span class="p">(</span><span class="n">pre_delete</span><span class="p">,</span> <span class="n">sender</span><span class="o">=</span><span class="n">Document</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">delete_document_files</span><span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Signal to delete files from vector index and file storage</span>
+<span class="sd">    when a ContextDocument is deleted from the database.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Pre-delete signal for </span><span class="si">{</span><span class="n">instance</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s1"> (hash: </span><span class="si">{</span><span class="n">instance</span><span class="o">.</span><span class="n">indexed_hash</span><span class="si">}</span><span class="s1">)...&#39;</span><span class="p">)</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.apps</span><span class="w"> </span><span class="kn">import</span> <span class="n">service_registry</span>
+    <span class="n">rag_service</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">rag_service</span>
+
+    <span class="c1"># 1. Delete the extracted corpus folder if it exists</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">django.conf</span><span class="w"> </span><span class="kn">import</span> <span class="n">settings</span>
+    <span class="n">corpus_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">MEDIA_ROOT</span><span class="p">,</span> <span class="s2">&quot;corpora&quot;</span><span class="p">,</span> <span class="n">instance</span><span class="o">.</span><span class="n">indexed_hash</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">corpus_path</span><span class="p">):</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">corpus_path</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Deleted corpus at </span><span class="si">{</span><span class="n">corpus_path</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="c1"># 2. Delete the actual file (e.g., the PDF/TXT/ZIP) from storage</span>
+    <span class="k">if</span> <span class="n">instance</span><span class="o">.</span><span class="n">file</span><span class="p">:</span>
+        <span class="n">instance</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">save</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>  <span class="c1"># &#39;save=False&#39; prevents re-saving</span></div>
+
+
+<div class="viewcode-block" id="pre_save_handler">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.pre_save_handler">[docs]</a>
+<span class="nd">@receiver</span><span class="p">(</span><span class="n">pre_save</span><span class="p">,</span> <span class="n">sender</span><span class="o">=</span><span class="n">Document</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">pre_save_handler</span><span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="ensure_default_reading_strategy">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.ensure_default_reading_strategy">[docs]</a>
+<span class="nd">@receiver</span><span class="p">(</span><span class="n">post_save</span><span class="p">,</span> <span class="n">sender</span><span class="o">=</span><span class="n">Document</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">ensure_default_reading_strategy</span><span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">created</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">created</span><span class="p">:</span>
+        <span class="n">ReadingStrategy</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">document</span><span class="o">=</span><span class="n">instance</span><span class="p">,</span> <span class="n">strategy_description</span><span class="o">=</span><span class="s2">&quot;Default Chunking&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="VectorIndexExplorer">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.VectorIndexExplorer">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">VectorIndexExplorer</span><span class="p">(</span><span class="n">Document</span><span class="p">):</span>
+    <span class="c1"># this model is for the admin interface that allows users to explore the vector index</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">proxy</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">verbose_name</span> <span class="o">=</span> <span class="s2">&quot;Vector Index Explorer&quot;</span>
+        <span class="n">verbose_name_plural</span> <span class="o">=</span> <span class="s2">&quot;Vector Index Explorer&quot;</span></div>
+
+
+
+<span class="c1"># TODO: Multi-reading: </span>
+<span class="c1">#    - amend doc ingestion to identify indexed terms and chunks by reading_id, rather than chunk_id</span>
+<span class="c1">#    - also change rag_service.index_hashes</span>
+<span class="c1">#    - alternatively additional RAG_Service() instantiations for differing purposes.</span>
+
+<div class="viewcode-block" id="RAGChunk">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.RAGChunk">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">RAGChunk</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Registry of all content chunks in the system. Single Source of Truth.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">chunk_id</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">36</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">db_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">text_content</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">metadata</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">JSONField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">embedding</span> <span class="o">=</span> <span class="n">VectorField</span><span class="p">(</span><span class="n">dimensions</span><span class="o">=</span><span class="mi">384</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># Explicit Storage Status</span>
+    <span class="n">in_vector_index</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Is this chunk indexed in PGVector?&quot;</span><span class="p">)</span>
+    <span class="n">in_byte_store</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Is the full object stored in the ByteStore?&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Usage Stats</span>
+    <span class="n">hit_count</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">last_accessed</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="n">timezone</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+
+    <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">indexes</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">HnswIndex</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="s1">&#39;ragchunk_embed_hnsw&#39;</span><span class="p">,</span>
+                <span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;embedding&#39;</span><span class="p">],</span>
+                <span class="n">m</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>
+                <span class="n">ef_construction</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span>
+                <span class="n">opclasses</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;vector_cosine_ops&#39;</span><span class="p">],</span>
+            <span class="p">),</span>
+        <span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">chunk_id</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">text_content</span><span class="p">[:</span><span class="mi">20</span><span class="p">]</span><span class="si">}</span><span class="s2">...)&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="StrategyChunkUsage">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.StrategyChunkUsage">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">StrategyChunkUsage</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Links a RAGChunk to a Strategy (Polymorphic).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">chunk</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">RAGChunk</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">CASCADE</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;usages&#39;</span><span class="p">)</span>
+
+    <span class="n">content_type</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">ContentType</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">CASCADE</span><span class="p">)</span>
+    <span class="n">object_id</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">UUIDField</span><span class="p">()</span>
+    <span class="n">content_object</span> <span class="o">=</span> <span class="n">GenericForeignKey</span><span class="p">(</span><span class="s1">&#39;content_type&#39;</span><span class="p">,</span> <span class="s1">&#39;object_id&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="StrategyChunkUsage.Role">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.StrategyChunkUsage.Role">[docs]</a>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Role</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">TextChoices</span><span class="p">):</span>
+        <span class="n">REUSED</span> <span class="o">=</span> <span class="s1">&#39;REUSED&#39;</span><span class="p">,</span> <span class="s1">&#39;Reused (Reused Store Content)&#39;</span>
+        <span class="n">CLIPPED</span> <span class="o">=</span> <span class="s1">&#39;CLIPPED&#39;</span><span class="p">,</span> <span class="s1">&#39;Clipped (Verbatim Document Content)&#39;</span>
+        <span class="n">CREATED</span> <span class="o">=</span> <span class="s1">&#39;CREATED&#39;</span><span class="p">,</span> <span class="s1">&#39;Created (Synthetic / Semantic Document Content)&#39;</span></div>
+
+
+    <span class="n">role</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">choices</span><span class="o">=</span><span class="n">Role</span><span class="o">.</span><span class="n">choices</span><span class="p">)</span>
+
+    <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">unique_together</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;chunk&#39;</span><span class="p">,</span> <span class="s1">&#39;content_type&#39;</span><span class="p">,</span> <span class="s1">&#39;object_id&#39;</span><span class="p">,</span> <span class="s1">&#39;role&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ReadingStrategy">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.ReadingStrategy">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ReadingStrategy</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="c1"># These are reusable strategies that can be applied to any document </span>
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">UUIDField</span><span class="p">(</span><span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">uuid4</span><span class="p">,</span> <span class="n">editable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">document</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Document</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">CASCADE</span><span class="p">)</span>
+    <span class="n">document_chunking</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">strategy_description</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">)</span>
+    
+    <span class="c1"># Overrides for specific reading strategies (e.g. Small Fragments vs Big Blocks)</span>
+    <span class="n">chunk_size_override</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;If set, overrides document default&quot;</span><span class="p">)</span>
+    <span class="n">chunk_overlap_override</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">usages</span> <span class="o">=</span> <span class="n">GenericRelation</span><span class="p">(</span><span class="s1">&#39;StrategyChunkUsage&#39;</span><span class="p">)</span>
+    <span class="n">output_role</span> <span class="o">=</span> <span class="n">StrategyChunkUsage</span><span class="o">.</span><span class="n">Role</span><span class="o">.</span><span class="n">CLIPPED</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">document</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">strategy_description</span><span class="si">}</span><span class="s2">&quot;</span>
+
+<div class="viewcode-block" id="ReadingStrategy.read_document">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.ReadingStrategy.read_document">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">read_document</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rag_service_inject</span><span class="p">):</span>
+        <span class="c1"># Pass the overrides to the service</span>
+        <span class="n">chunks</span><span class="p">,</span> <span class="n">chunk_ids</span> <span class="o">=</span> <span class="n">rag_service_inject</span><span class="o">.</span><span class="n">convert_chunk_store_document</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">document</span><span class="p">,</span> 
+            <span class="n">chunk_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">chunk_size_override</span><span class="p">,</span> 
+            <span class="n">chunk_overlap</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">chunk_overlap_override</span>
+        <span class="p">)</span>
+        
+        <span class="c1"># If chunks are reused (chunks is empty but chunk_ids is not), fetch them from store</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">chunks</span> <span class="ow">and</span> <span class="n">chunk_ids</span><span class="p">:</span>
+            <span class="n">chunks</span> <span class="o">=</span> <span class="n">rag_service_inject</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">mget</span><span class="p">(</span><span class="n">chunk_ids</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">chunk_id</span><span class="p">,</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">chunk_ids</span><span class="p">,</span> <span class="n">chunks</span><span class="p">):</span>
+            <span class="n">rag_chunk</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">RAGChunk</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span>
+                <span class="n">chunk_id</span><span class="o">=</span><span class="n">chunk_id</span><span class="p">,</span>
+                <span class="n">defaults</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s1">&#39;text_content&#39;</span><span class="p">:</span> <span class="n">chunk</span><span class="o">.</span><span class="n">page_content</span> <span class="k">if</span> <span class="n">chunk</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                    <span class="s1">&#39;metadata&#39;</span><span class="p">:</span> <span class="n">chunk</span><span class="o">.</span><span class="n">metadata</span> <span class="k">if</span> <span class="n">chunk</span> <span class="k">else</span> <span class="p">{},</span>
+                    <span class="s1">&#39;in_vector_index&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s1">&#39;in_byte_store&#39;</span><span class="p">:</span> <span class="kc">True</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+            <span class="n">StrategyChunkUsage</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">chunk</span><span class="o">=</span><span class="n">rag_chunk</span><span class="p">,</span> <span class="n">content_object</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
+                                              <span class="n">role</span><span class="o">=</span><span class="n">StrategyChunkUsage</span><span class="o">.</span><span class="n">Role</span><span class="o">.</span><span class="n">CLIPPED</span><span class="p">)</span>
+        <span class="n">rag_service_inject</span><span class="o">.</span><span class="n">index_unindexed_chunks</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">[</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s1">] logged </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">chunk_ids</span><span class="p">)</span><span class="si">}</span><span class="s1"> usages to db.&#39;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="ReadingStrategy.get_chunk_ids">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.ReadingStrategy.get_chunk_ids">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_chunk_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">usages</span><span class="o">.</span><span class="n">values_list</span><span class="p">(</span><span class="s1">&#39;chunk__chunk_id&#39;</span><span class="p">,</span> <span class="n">flat</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ReadingStrategy.apply_strategy">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.ReadingStrategy.apply_strategy">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_strategy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rag_service</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">source_chunks</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Consolidated strategy execution:</span>
+<span class="sd">        1. Ensures the document is chunked (base reading).</span>
+<span class="sd">        2. Extracts derived content (summary, terms, etc.) from those chunks.</span>
+<span class="sd">        3. Stores derived content in Vector Store and/or Byte Store.</span>
+<span class="sd">        4. Logs new chunks to the database.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 1. Base Strategy: Perform the actual chunking</span>
+        <span class="n">indexed_hash</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">document</span><span class="o">.</span><span class="n">chunking_scheme</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">chunk_size_override</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunk_overlap_override</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">force</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">document</span><span class="o">.</span><span class="n">indexed_hash</span> <span class="o">!=</span> <span class="n">indexed_hash</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">usages</span><span class="o">.</span><span class="n">count</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">read_document</span><span class="p">(</span><span class="n">rag_service_inject</span><span class="o">=</span><span class="n">rag_service</span><span class="p">)</span>
+        <span class="c1"># Base strategies are done after reading; they don&#39;t extract further content from themselves.</span>
+        <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="ReadingStrategy.extract_content">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.ReadingStrategy.extract_content">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">extract_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chunk</span><span class="p">,</span> <span class="n">rag_service</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[]</span></div>
+</div>
+
+
+<div class="viewcode-block" id="GrobidReadingStrategy">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.GrobidReadingStrategy">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">GrobidReadingStrategy</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Utilizes cached TEI XML from the Grobid client to generate Section-Aware chunks.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">UUIDField</span><span class="p">(</span><span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">uuid4</span><span class="p">,</span> <span class="n">editable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">document</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Document</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">CASCADE</span><span class="p">)</span>
+    <span class="n">strategy_description</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;Grobid Semantic Chunking&quot;</span><span class="p">)</span>
+    
+    <span class="n">usages</span> <span class="o">=</span> <span class="n">GenericRelation</span><span class="p">(</span><span class="s1">&#39;StrategyChunkUsage&#39;</span><span class="p">)</span>
+    <span class="n">output_role</span> <span class="o">=</span> <span class="n">StrategyChunkUsage</span><span class="o">.</span><span class="n">Role</span><span class="o">.</span><span class="n">CLIPPED</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">document</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">strategy_description</span><span class="si">}</span><span class="s2">&quot;</span>
+
+<div class="viewcode-block" id="GrobidReadingStrategy.read_document">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.GrobidReadingStrategy.read_document">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">read_document</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rag_service_inject</span><span class="p">):</span>
+        <span class="n">chunks</span><span class="p">,</span> <span class="n">chunk_ids</span> <span class="o">=</span> <span class="n">rag_service_inject</span><span class="o">.</span><span class="n">convert_chunk_store_document_grobid</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">document</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">chunks</span> <span class="ow">and</span> <span class="n">chunk_ids</span><span class="p">:</span>
+            <span class="n">chunks</span> <span class="o">=</span> <span class="n">rag_service_inject</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">mget</span><span class="p">(</span><span class="n">chunk_ids</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">chunk_id</span><span class="p">,</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">chunk_ids</span><span class="p">,</span> <span class="n">chunks</span><span class="p">):</span>
+            <span class="n">rag_chunk</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">RAGChunk</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span>
+                <span class="n">chunk_id</span><span class="o">=</span><span class="n">chunk_id</span><span class="p">,</span>
+                <span class="n">defaults</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s1">&#39;text_content&#39;</span><span class="p">:</span> <span class="n">chunk</span><span class="o">.</span><span class="n">page_content</span> <span class="k">if</span> <span class="n">chunk</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                    <span class="s1">&#39;metadata&#39;</span><span class="p">:</span> <span class="n">chunk</span><span class="o">.</span><span class="n">metadata</span> <span class="k">if</span> <span class="n">chunk</span> <span class="k">else</span> <span class="p">{},</span>
+                    <span class="s1">&#39;in_vector_index&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s1">&#39;in_byte_store&#39;</span><span class="p">:</span> <span class="kc">True</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+            <span class="n">StrategyChunkUsage</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">chunk</span><span class="o">=</span><span class="n">rag_chunk</span><span class="p">,</span> <span class="n">content_object</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">role</span><span class="o">=</span><span class="n">StrategyChunkUsage</span><span class="o">.</span><span class="n">Role</span><span class="o">.</span><span class="n">CLIPPED</span><span class="p">)</span>
+        <span class="n">rag_service_inject</span><span class="o">.</span><span class="n">index_unindexed_chunks</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">[</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s1">] logged </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">chunk_ids</span><span class="p">)</span><span class="si">}</span><span class="s1"> usages to db.&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="GrobidReadingStrategy.get_chunk_ids">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.GrobidReadingStrategy.get_chunk_ids">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_chunk_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">usages</span><span class="o">.</span><span class="n">values_list</span><span class="p">(</span><span class="s1">&#39;chunk__chunk_id&#39;</span><span class="p">,</span> <span class="n">flat</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="GrobidReadingStrategy.apply_strategy">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.GrobidReadingStrategy.apply_strategy">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_strategy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rag_service</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">source_chunks</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">force</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">usages</span><span class="o">.</span><span class="n">count</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">read_document</span><span class="p">(</span><span class="n">rag_service_inject</span><span class="o">=</span><span class="n">rag_service</span><span class="p">)</span>
+        <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="GrobidReadingStrategy.extract_content">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.GrobidReadingStrategy.extract_content">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">extract_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chunk</span><span class="p">,</span> <span class="n">rag_service</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[]</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="AbstractHigherOrderStrategy">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.AbstractHigherOrderStrategy">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AbstractHigherOrderStrategy</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Abstract base class for strategies that extract content from existing chunks</span>
+<span class="sd">    (e.g. Regex, Prompt, Abbreviations).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">UUIDField</span><span class="p">(</span><span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">uuid4</span><span class="p">,</span> <span class="n">editable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">document</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Document</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">CASCADE</span><span class="p">)</span>
+    <span class="n">strategy_description</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">)</span>
+    
+    <span class="c1"># Overrides: If set, we generate a transient set of chunks to read from.</span>
+    <span class="c1"># If not set, we read from the Document&#39;s Default ReadingStrategy.</span>
+    <span class="n">chunk_size_override</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;If set, re-chunks document for this reading&quot;</span><span class="p">)</span>
+    <span class="n">chunk_overlap_override</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    
+    <span class="n">usages</span> <span class="o">=</span> <span class="n">GenericRelation</span><span class="p">(</span><span class="s1">&#39;StrategyChunkUsage&#39;</span><span class="p">)</span>
+    <span class="n">output_role</span> <span class="o">=</span> <span class="n">StrategyChunkUsage</span><span class="o">.</span><span class="n">Role</span><span class="o">.</span><span class="n">CLIPPED</span>
+
+<div class="viewcode-block" id="AbstractHigherOrderStrategy.Meta">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.AbstractHigherOrderStrategy.Meta">[docs]</a>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">abstract</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">document</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">strategy_description</span><span class="si">}</span><span class="s2">&quot;</span>
+
+<div class="viewcode-block" id="AbstractHigherOrderStrategy.get_chunk_ids">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.AbstractHigherOrderStrategy.get_chunk_ids">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_chunk_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">usages</span><span class="o">.</span><span class="n">values_list</span><span class="p">(</span><span class="s1">&#39;chunk__chunk_id&#39;</span><span class="p">,</span> <span class="n">flat</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AbstractHigherOrderStrategy.apply_strategy">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.AbstractHigherOrderStrategy.apply_strategy">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_strategy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rag_service</span><span class="p">,</span> <span class="n">source_chunks</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Applies the higher-order strategy:</span>
+<span class="sd">        1. Identifies source chunks (Default, Override, or provided).</span>
+<span class="sd">        2. Extracts content.</span>
+<span class="sd">        3. Saves output to Vector/Byte store and logs to Chunk table.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">chunks</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">chunk_ids</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="n">source_chunks</span><span class="p">:</span>
+            <span class="c1"># Case: Benchmarking or manual injection</span>
+            <span class="n">chunks</span> <span class="o">=</span> <span class="n">source_chunks</span>
+            <span class="n">chunk_ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">rag_service</span><span class="o">.</span><span class="n">id_key</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid4</span><span class="p">()))</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">chunks</span><span class="p">]</span>
+        
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunk_size_override</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunk_overlap_override</span><span class="p">:</span>
+            <span class="c1"># Case: Override. Generate transient chunks.</span>
+            <span class="c1"># We don&#39;t save these &quot;source&quot; chunks to DB, we just use them for extraction.</span>
+            <span class="n">chunks</span><span class="p">,</span> <span class="n">chunk_ids</span> <span class="o">=</span> <span class="n">rag_service</span><span class="o">.</span><span class="n">convert_chunk_store_document</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">document</span><span class="p">,</span>
+                <span class="n">chunk_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">chunk_size_override</span><span class="p">,</span>
+                <span class="n">chunk_overlap</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">chunk_overlap_override</span>
+            <span class="p">)</span>
+            <span class="c1"># If reused/cached in store</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">chunks</span> <span class="ow">and</span> <span class="n">chunk_ids</span><span class="p">:</span>
+                <span class="n">chunks</span> <span class="o">=</span> <span class="n">rag_service</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">mget</span><span class="p">(</span><span class="n">chunk_ids</span><span class="p">)</span>
+                <span class="n">chunks</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">chunks</span> <span class="k">if</span> <span class="n">c</span><span class="p">]</span>
+        
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Case: Default. Prefer Grobid Semantic Chunking if available, else standard Default.</span>
+            <span class="n">default_strat</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">document</span><span class="p">,</span> <span class="s1">&#39;grobidreadingstrategy_set&#39;</span><span class="p">):</span>
+                <span class="n">default_strat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">document</span><span class="o">.</span><span class="n">grobidreadingstrategy_set</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+                
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">default_strat</span> <span class="ow">or</span> <span class="n">default_strat</span><span class="o">.</span><span class="n">usages</span><span class="o">.</span><span class="n">count</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">default_strat</span> <span class="o">=</span> <span class="n">ReadingStrategy</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+                    <span class="n">document</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">document</span><span class="p">,</span> 
+                    <span class="n">strategy_description</span><span class="o">=</span><span class="s2">&quot;Default Chunking&quot;</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+            
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">default_strat</span><span class="p">:</span>
+                    <span class="n">default_strat</span> <span class="o">=</span> <span class="n">ReadingStrategy</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">document</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">document</span><span class="p">,</span> <span class="n">strategy_description</span><span class="o">=</span><span class="s2">&quot;Default Chunking&quot;</span><span class="p">)</span>
+                
+                <span class="k">if</span> <span class="n">default_strat</span><span class="o">.</span><span class="n">usages</span><span class="o">.</span><span class="n">count</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">default_strat</span><span class="o">.</span><span class="n">read_document</span><span class="p">(</span><span class="n">rag_service_inject</span><span class="o">=</span><span class="n">rag_service</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">default_strat</span><span class="o">.</span><span class="n">usages</span><span class="o">.</span><span class="n">count</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1"># Existing Grobid strategy, but hasn&#39;t been read yet</span>
+                <span class="n">default_strat</span><span class="o">.</span><span class="n">read_document</span><span class="p">(</span><span class="n">rag_service_inject</span><span class="o">=</span><span class="n">rag_service</span><span class="p">)</span>
+            
+            <span class="n">chunk_ids</span> <span class="o">=</span> <span class="n">default_strat</span><span class="o">.</span><span class="n">get_chunk_ids</span><span class="p">()</span>
+            <span class="n">chunks</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">rag_service</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">mget</span><span class="p">(</span><span class="n">chunk_ids</span><span class="p">)</span> <span class="k">if</span> <span class="n">c</span><span class="p">]</span>
+        
+        <span class="n">vectors_to_add</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">store_docs_to_add</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">vector_ids</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">all_generated_ids</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">id_to_content</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">id_to_metadata</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">chunk_id</span><span class="p">,</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">chunk_ids</span><span class="p">,</span> <span class="n">chunks</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">chunk</span><span class="p">:</span> <span class="k">continue</span>
+
+            <span class="c1"># We check if we already have a usage for this chunk to avoid duplicates</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">usages</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">chunk__chunk_id</span><span class="o">=</span><span class="n">chunk_id</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="c1"># Ensure RAGChunk exists (it should)</span>
+                <span class="n">rag_chunk</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">RAGChunk</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span>
+                    <span class="n">chunk_id</span><span class="o">=</span><span class="n">chunk_id</span><span class="p">,</span>
+                    <span class="n">defaults</span><span class="o">=</span><span class="p">{</span>
+                        <span class="s1">&#39;text_content&#39;</span><span class="p">:</span> <span class="n">chunk</span><span class="o">.</span><span class="n">page_content</span><span class="p">,</span>
+                        <span class="s1">&#39;metadata&#39;</span><span class="p">:</span> <span class="n">chunk</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span>
+                        <span class="s1">&#39;in_vector_index&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                        <span class="s1">&#39;in_byte_store&#39;</span><span class="p">:</span> <span class="kc">True</span>
+                    <span class="p">}</span>
+                <span class="p">)</span>
+                <span class="n">StrategyChunkUsage</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+                    <span class="n">chunk</span><span class="o">=</span><span class="n">rag_chunk</span><span class="p">,</span>
+                    <span class="n">content_object</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
+                    <span class="n">role</span><span class="o">=</span><span class="n">StrategyChunkUsage</span><span class="o">.</span><span class="n">Role</span><span class="o">.</span><span class="n">REUSED</span>
+                <span class="p">)</span>
+            <span class="c1"># 3. Extract Derived Content (Polymorphic)</span>
+            <span class="n">extracted_items</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extract_content</span><span class="p">(</span><span class="n">chunk</span><span class="p">,</span> <span class="n">rag_service</span><span class="p">)</span>
+            
+            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">extracted_items</span><span class="p">:</span>
+                <span class="c1"># Prepare Metadata</span>
+                <span class="n">base_metadata</span> <span class="o">=</span> <span class="n">chunk</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                <span class="n">base_metadata</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;metadata&#39;</span><span class="p">,</span> <span class="p">{}))</span>
+                <span class="n">base_metadata</span><span class="p">[</span><span class="s2">&quot;reading&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+                <span class="n">base_metadata</span><span class="p">[</span><span class="s2">&quot;strat_type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
+                <span class="n">base_metadata</span><span class="p">[</span><span class="s2">&quot;read_from&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">chunk_id</span>
+                
+                <span class="c1"># Determine Target (Store Doc or Original Chunk)</span>
+                <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;store_text&#39;</span><span class="p">):</span>
+                    <span class="c1"># Case: New content for store (e.g. Definition)</span>
+                    <span class="n">store_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid4</span><span class="p">())</span>
+                    <span class="n">in_byte_store</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="n">in_vector_index</span> <span class="o">=</span> <span class="kc">False</span>
+                    
+                    <span class="c1"># Ensure the stored document knows its own ID for hit counting</span>
+                    <span class="n">store_metadata</span> <span class="o">=</span> <span class="n">base_metadata</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                    <span class="n">store_metadata</span><span class="p">[</span><span class="n">rag_service</span><span class="o">.</span><span class="n">id_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">store_id</span>
+                    
+                    <span class="n">store_doc</span> <span class="o">=</span> <span class="n">LangchainDocument</span><span class="p">(</span>
+                        <span class="n">page_content</span><span class="o">=</span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;store_text&#39;</span><span class="p">],</span>
+                        <span class="n">metadata</span><span class="o">=</span><span class="n">store_metadata</span>
+                    <span class="p">)</span>
+                    <span class="n">store_docs_to_add</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">store_id</span><span class="p">,</span> <span class="n">store_doc</span><span class="p">))</span>
+                    <span class="n">target_id</span> <span class="o">=</span> <span class="n">store_id</span>
+                    <span class="n">rag_chunk</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">RAGChunk</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span>
+                        <span class="n">chunk_id</span><span class="o">=</span><span class="n">store_id</span><span class="p">,</span>
+                        <span class="n">defaults</span><span class="o">=</span><span class="p">{</span>
+                            <span class="s1">&#39;text_content&#39;</span><span class="p">:</span> <span class="n">item</span><span class="p">[</span><span class="s1">&#39;store_text&#39;</span><span class="p">],</span>
+                            <span class="s1">&#39;metadata&#39;</span><span class="p">:</span> <span class="n">store_metadata</span><span class="p">,</span>
+                            <span class="s1">&#39;in_vector_index&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                            <span class="s1">&#39;in_byte_store&#39;</span><span class="p">:</span> <span class="kc">True</span>
+                        <span class="p">}</span>
+                    <span class="p">)</span>
+                    <span class="n">StrategyChunkUsage</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">chunk</span><span class="o">=</span><span class="n">rag_chunk</span><span class="p">,</span> <span class="n">content_object</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">role</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">output_role</span><span class="p">)</span>
+
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Case: Vector points to original chunk (e.g. Summary points to Content)</span>
+                    <span class="n">target_id</span> <span class="o">=</span> <span class="n">chunk_id</span>
+
+                <span class="c1"># Create Vector Document</span>
+                <span class="n">vector_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid4</span><span class="p">())</span>
+                <span class="n">vector_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">vector_id</span><span class="p">)</span>
+                <span class="n">all_generated_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">vector_id</span><span class="p">)</span>
+
+                <span class="n">vector_metadata</span> <span class="o">=</span> <span class="n">base_metadata</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                <span class="n">vector_metadata</span><span class="p">[</span><span class="n">rag_service</span><span class="o">.</span><span class="n">id_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">target_id</span>
+                <span class="n">id_to_content</span><span class="p">[</span><span class="n">vector_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s1">&#39;vector_text&#39;</span><span class="p">]</span>
+                <span class="n">id_to_metadata</span><span class="p">[</span><span class="n">vector_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">vector_metadata</span>
+
+                <span class="n">vector_doc</span> <span class="o">=</span> <span class="n">LangchainDocument</span><span class="p">(</span>
+                    <span class="n">page_content</span><span class="o">=</span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;vector_text&#39;</span><span class="p">],</span>
+                    <span class="nb">id</span><span class="o">=</span><span class="n">vector_id</span><span class="p">,</span>
+                    <span class="n">metadata</span><span class="o">=</span><span class="n">vector_metadata</span>
+                <span class="p">)</span>
+                <span class="n">vectors_to_add</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">vector_doc</span><span class="p">)</span>
+                <span class="c1"># Register RAGChunk for the Vector Item</span>
+                <span class="n">rag_chunk</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">RAGChunk</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span>
+                    <span class="n">chunk_id</span><span class="o">=</span><span class="n">vector_id</span><span class="p">,</span>
+                    <span class="n">defaults</span><span class="o">=</span><span class="p">{</span>
+                        <span class="s1">&#39;text_content&#39;</span><span class="p">:</span> <span class="n">item</span><span class="p">[</span><span class="s1">&#39;vector_text&#39;</span><span class="p">],</span>
+                        <span class="s1">&#39;metadata&#39;</span><span class="p">:</span> <span class="n">vector_metadata</span><span class="p">,</span>
+                        <span class="s1">&#39;in_vector_index&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                        <span class="s1">&#39;in_byte_store&#39;</span><span class="p">:</span> <span class="kc">False</span>
+                    <span class="p">}</span>
+                <span class="p">)</span>
+                <span class="n">StrategyChunkUsage</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">chunk</span><span class="o">=</span><span class="n">rag_chunk</span><span class="p">,</span> <span class="n">content_object</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">role</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">output_role</span><span class="p">)</span>
+
+        <span class="c1"># 4. Batch Save</span>
+        <span class="k">if</span> <span class="n">store_docs_to_add</span><span class="p">:</span>
+            <span class="n">rag_service</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">mset</span><span class="p">(</span><span class="n">store_docs_to_add</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">vectors_to_add</span><span class="p">:</span>
+            <span class="n">rag_service</span><span class="o">.</span><span class="n">index_unindexed_chunks</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="AbstractHigherOrderStrategy.extract_content">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.AbstractHigherOrderStrategy.extract_content">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">extract_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chunk</span><span class="p">,</span> <span class="n">rag_service</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[]</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="PromptStrategy">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.PromptStrategy">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PromptStrategy</span><span class="p">(</span><span class="n">AbstractHigherOrderStrategy</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;PromptStrategy uses a custom prompt to an LLM with the chunk to generate key text -</span>
+<span class="sd">       perhaps a summary, perhaps keywords, perhaps hypothetical questions&quot;&quot;&quot;</span>
+    <span class="n">prompt</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s2">&quot;Prompt to use the AI service to generate key text to find this chunk - summaries, keywords, hypothetical questions etc. The chunk text is appended to this prompt with whatever intro you put in this prompt.&quot;</span><span class="p">)</span>
+    <span class="n">output_role</span> <span class="o">=</span> <span class="n">StrategyChunkUsage</span><span class="o">.</span><span class="n">Role</span><span class="o">.</span><span class="n">CREATED</span>
+
+<div class="viewcode-block" id="PromptStrategy.get_query">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.PromptStrategy.get_query">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chunk</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">prompt</span><span class="si">}</span><span class="s2"> </span><span class="se">\n</span><span class="s2"> </span><span class="si">{</span><span class="n">chunk</span><span class="o">.</span><span class="n">page_content</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+
+<div class="viewcode-block" id="PromptStrategy.extract_content">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.PromptStrategy.extract_content">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">extract_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chunk</span><span class="p">,</span> <span class="n">rag_service</span><span class="p">):</span>
+        <span class="c1"># chunk summary returns DocumentRepresentation objects which are long_form, short_form, keywords</span>
+        <span class="n">doc_repr</span> <span class="o">=</span> <span class="n">rag_service</span><span class="o">.</span><span class="n">get_chunk_summary</span><span class="p">(</span><span class="n">chunk</span><span class="o">.</span><span class="n">page_content</span><span class="p">,</span> <span class="n">custom_prompt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">prompt</span><span class="p">)</span>
+        
+        <span class="c1"># Check if we got a valid object (not a fallback string) and it has a summary</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">doc_repr</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">doc_repr</span><span class="o">.</span><span class="n">short_form</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[{</span><span class="s1">&#39;vector_text&#39;</span><span class="p">:</span> <span class="n">doc_repr</span><span class="o">.</span><span class="n">short_form</span><span class="p">,</span> <span class="s1">&#39;store_text&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}]</span>
+        <span class="k">return</span> <span class="p">[]</span></div>
+</div>
+
+
+<div class="viewcode-block" id="RegexStrategy">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.RegexStrategy">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">RegexStrategy</span><span class="p">(</span><span class="n">AbstractHigherOrderStrategy</span><span class="p">):</span>
+    <span class="c1"># used for basic glossaries - very focused captured text</span>
+    <span class="c1"># (.+?)(?:\s*:(?!\/\/)\s*|\s+-\s+)(.+)</span>
+    <span class="n">strategy_details</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;The default glossary grabber - splits lines at colon or hyphen, captures two groups, the indexed text and the corresponding body. Your regex must capture two groups.&quot;</span><span class="p">)</span>
+    <span class="n">regex</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;(.+?)(?:\s*:(?!\/\/)\s*|\s*-\s+)([^\n\r]+)&quot;</span><span class="p">)</span>
+    <span class="n">output_role</span> <span class="o">=</span> <span class="n">StrategyChunkUsage</span><span class="o">.</span><span class="n">Role</span><span class="o">.</span><span class="n">CLIPPED</span>
+
+<div class="viewcode-block" id="RegexStrategy.extract_content">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.RegexStrategy.extract_content">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">extract_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chunk</span><span class="p">,</span> <span class="n">rag_service</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">rag_service</span><span class="o">.</span><span class="n">get_glossary_terms</span><span class="p">(</span><span class="n">chunk</span><span class="o">.</span><span class="n">page_content</span><span class="p">,</span> <span class="n">regex</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">regex</span><span class="p">)</span>
+        <span class="n">items</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">result</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+                <span class="n">items</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                    <span class="s1">&#39;vector_text&#39;</span><span class="p">:</span> <span class="n">item</span><span class="o">.</span><span class="n">term</span><span class="p">,</span>
+                    <span class="s1">&#39;store_text&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">term</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">definition</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="s1">&#39;metadata&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;original_term&#39;</span><span class="p">:</span> <span class="n">item</span><span class="o">.</span><span class="n">term</span><span class="p">}</span>
+                <span class="p">})</span>
+        <span class="k">return</span> <span class="n">items</span></div>
+</div>
+
+
+<div class="viewcode-block" id="AbbreviationsReadingStrategy">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.AbbreviationsReadingStrategy">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AbbreviationsReadingStrategy</span><span class="p">(</span><span class="n">AbstractHigherOrderStrategy</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; reading for inline definitions of acronyms.  Uses Spacy and scispacy.abbreviation&quot;&quot;&quot;</span>
+    <span class="n">output_role</span> <span class="o">=</span> <span class="n">StrategyChunkUsage</span><span class="o">.</span><span class="n">Role</span><span class="o">.</span><span class="n">CLIPPED</span>
+
+<div class="viewcode-block" id="AbbreviationsReadingStrategy.extract_content">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.AbbreviationsReadingStrategy.extract_content">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">extract_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chunk</span><span class="p">,</span> <span class="n">rag_service</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.apps</span><span class="w"> </span><span class="kn">import</span> <span class="n">service_registry</span>
+        <span class="n">nlp_service</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">nlp_service</span>
+        
+        <span class="n">model</span> <span class="o">=</span> <span class="n">nlp_service</span><span class="o">.</span><span class="n">get_abbreviation_model</span><span class="p">()</span>
+        <span class="n">doc</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">chunk</span><span class="o">.</span><span class="n">page_content</span><span class="p">)</span>
+        <span class="n">items</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">doc</span><span class="o">.</span><span class="n">_</span><span class="o">.</span><span class="n">abbreviations</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">abrv</span> <span class="ow">in</span> <span class="n">doc</span><span class="o">.</span><span class="n">_</span><span class="o">.</span><span class="n">abbreviations</span><span class="p">:</span>
+                <span class="n">items</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                    <span class="s1">&#39;vector_text&#39;</span><span class="p">:</span> <span class="n">abrv</span><span class="o">.</span><span class="n">text</span><span class="p">,</span>
+                    <span class="s1">&#39;store_text&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">abrv</span><span class="o">.</span><span class="n">text</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">abrv</span><span class="o">.</span><span class="n">_</span><span class="o">.</span><span class="n">long_form</span><span class="o">.</span><span class="n">text</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="s1">&#39;metadata&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;original_term&#39;</span><span class="p">:</span> <span class="n">abrv</span><span class="o">.</span><span class="n">text</span><span class="p">}</span>
+                <span class="p">})</span>
+        <span class="k">return</span> <span class="n">items</span></div>
+</div>
+
+
+<div class="viewcode-block" id="ZeroShotLabelReadingStrategy">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.ZeroShotLabelReadingStrategy">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ZeroShotLabelReadingStrategy</span><span class="p">(</span><span class="n">AbstractHigherOrderStrategy</span><span class="p">):</span>
+    <span class="c1"># readings for examples of specific content  TODO: Lot of options in this discipline. May need more parameters, a sub-chunking strategy</span>
+    <span class="n">prompt</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s2">&quot;Generate a label for each of these chunks based on the context provided.&quot;</span><span class="p">)</span>
+    <span class="n">label_options</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">JSONField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span></div>
+
+
+
+
+<div class="viewcode-block" id="cleanup_orphaned_ragchunks">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.cleanup_orphaned_ragchunks">[docs]</a>
+<span class="nd">@receiver</span><span class="p">(</span><span class="n">post_delete</span><span class="p">,</span> <span class="n">sender</span><span class="o">=</span><span class="n">StrategyChunkUsage</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">cleanup_orphaned_ragchunks</span><span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">rag_chunk</span> <span class="o">=</span> <span class="n">RAGChunk</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">pk</span><span class="o">=</span><span class="n">instance</span><span class="o">.</span><span class="n">chunk_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">rag_chunk</span><span class="o">.</span><span class="n">usages</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="n">rag_chunk</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>  <span class="c1"># This will trigger the pre_delete signal above!</span>
+
+    <span class="k">except</span> <span class="n">RAGChunk</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+        <span class="k">pass</span></div>
+
+
+
+
+<div class="viewcode-block" id="RAGQueryLog">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.RAGQueryLog">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">RAGQueryLog</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Stores queries and feedback to calculate system quality&quot;&quot;&quot;</span>
+    <span class="n">query_text</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">()</span>
+    <span class="n">timestamp</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="n">auto_now_add</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">user_feedback_score</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;1 to 5 or -1/1&quot;</span><span class="p">)</span>
+    <span class="n">response_generated</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">()</span></div>
+
+
+<span class="c1"># TODO: there is an issue at least in the dev version - the database contains Document entries for the benchmarking examples,</span>
+<span class="c1">#  but the VectorIndex still contains content from Firefighting and Fire Prevention which was uploaded previously.</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Andrew Cruickshank.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

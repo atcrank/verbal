@@ -1,0 +1,1 @@
+.. include:: ../../../metacognition/metacognition_trials/8. proactive_nightmanager.rst
