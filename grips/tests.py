@@ -163,3 +163,35 @@ class TestGripsQualityFiltering(TestCase):
         # Sorted by boosted distance, Doc 1 should be first.
         self.assertEqual(docs[0].metadata["concept_id"], 1)
         self.assertEqual(docs[1].metadata["concept_id"], 2)
+
+
+class TestGripsServiceIntegration(TestCase):
+    """Real database integration tests for GripsService using native pgvector.django."""
+
+    def test_concept_node_embedding_and_retrieval(self):
+        from grips.models import Domain, ConceptNode
+        from grips.services import GripsService
+
+        domain = Domain.objects.create(name="Biology", description="Study of living organisms")
+        node = ConceptNode.objects.create(
+            domain=domain,
+            title="Cell Membrane",
+            slug="cell-membrane",
+            focus_hint="Lipid bilayer structure and transport",
+            narrative_content="The cell membrane is a biological membrane that separates and protects the interior of all cells from the outside environment. It consists of a lipid bilayer with embedded proteins.",
+            structured_claims=[{"subject": "Cell Membrane", "predicate": "is_composed_of", "object": "Lipid Bilayer"}]
+        )
+
+        service = GripsService()
+        service.index_concept_node(node)
+
+        # Refresh from database and verify embedding is stored
+        node.refresh_from_db()
+        self.assertIsNotNone(node.embedding)
+        self.assertEqual(len(node.embedding), 384)
+
+        # Retrieve via get_grips_context
+        results = service.get_grips_context("lipid bilayer and cell protection", domain_id=domain.id, k=3, max_distance=1.5)
+        self.assertTrue(len(results) > 0)
+        self.assertEqual(results[0].metadata["concept_id"], node.id)
+        self.assertEqual(results[0].metadata["title"], "Cell Membrane")

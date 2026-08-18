@@ -317,6 +317,8 @@ def django_shell_script(state: dict, params: dict) -> str:
         redirected_output = sys.stdout = StringIO()
         
         try:
+            from django.db import connection
+            connection.ensure_connection()
             # We must pass globals() and a local dict so the script can import
             # and mutate variables safely.
             local_vars = {}
@@ -542,9 +544,8 @@ def write_django_model(state: dict, params: dict) -> str:
 def manage_dynamic_tools(state: dict, params: dict) -> str:
     """
     Allows the NightManager to write Python scripts to a metacognition/dynamic_tools/ directory and register them as ToolDefinitions.
-    NOTE: Currently disabled due to security concerns regarding unverified dynamic script execution.
+    Enforces requires_approval = True to ensure Human-in-the-Loop authorization prior to execution.
     """
-    return "Error: manage_dynamic_tools is currently disabled pending implementation of human-in-the-loop authorization."
     name = params.get("name")
     description = params.get("description", "")
     script_content = params.get("script_content", "")
@@ -598,10 +599,10 @@ def manage_dynamic_tools(state: dict, params: dict) -> str:
         if output_schema:
             tool.output_schema = output_schema
         tool.created_by = nm_user
-        tool.requires_approval = False
+        tool.requires_approval = True
         tool.is_active = True
         tool.save()
-        return f"Successfully created dynamic tool '{name}'."
+        return f"Successfully created dynamic tool '{name}' (requires human approval before execution)."
     except Exception as e:
         return f"Failed to save tool definition: {e}"
 
@@ -914,3 +915,15 @@ def record_signal(state: dict, params: dict) -> str:
         f.write(entry)
         
     return f"Signal recorded successfully in {filepath}."
+
+
+def inspect_nightmanager_performance(state: dict, params: dict) -> str:
+    """
+    Fetches aggregated diagnostic and quantitative health metrics for the NightManager,
+    including session pass/fail rates, latency, state_tree usage, and knowledge artifacts.
+    """
+    from metacognition.reporting import audit_nightmanager_performance, format_performance_report_markdown
+    days = int(params.get("days", 7))
+    report = audit_nightmanager_performance(since_days=days)
+    return format_performance_report_markdown(report)
+

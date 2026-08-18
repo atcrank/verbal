@@ -50,3 +50,8 @@ class AgentState(TypedDict):
     
     # Token budget tracking
     token_budget_remaining: Annotated[Optional[int], override_last]
+    
+    # Execution session & Human-in-the-Loop approval tracking
+    run_id: Annotated[Optional[str], override_last]
+    pending_approval: Annotated[Optional[Dict[str, Any]], override_last]
+    approved_tools: Annotated[list[str], update_monologue]

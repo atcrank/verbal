@@ -842,3 +842,463 @@ class BlueprintEvolutionTests(TestCase):
         call_args = mock_generate.call_args_list[0]
         log_kwargs = call_args.kwargs.get("log_kwargs", {})
         self.assertEqual(log_kwargs.get("reasoning_step_id"), variant_a.id)
+
+
+class AsyncStreamingAndGovernanceTests(TestCase):
+    """
+    Tests for Level 1 Tasks 5, 6, and 7:
+    - Datastar SSE framing and event dispatch
+    - Human-in-the-loop dynamic tool approval and LangGraph checkpoint resumption
+    - Blueprint stop/interrupt and cancellation flag handling
+    - Async API endpoints
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_user(username='gov_user', password='password123')
+        self.bp = CognitiveBlueprint.objects.create(name="Governance BP", description="Tests governance & streaming")
+        self.step = ReasoningStep.objects.create(
+            blueprint=self.bp,
+            name="Approval Step",
+            is_start_node=True,
+            system_prompt="Run tools if needed",
+            max_retries=1
+        )
+
+    def test_datastar_sse_framing(self):
+        """Task 5: Verifies that DatastarSSE formats SSE events strictly according to protocol."""
+        from metacognition.datastar import DatastarSSE
+
+        # 1. Merge fragments
+        frag_sse = DatastarSSE.merge_fragments("<div id='test'>Hello</div>", selector="#test", merge_mode="morph")
+        self.assertIn("event: datastar-merge-fragments", frag_sse)
+        self.assertIn("data: selector #test", frag_sse)
+        self.assertIn("data: fragments <div id='test'>Hello</div>", frag_sse)
+
+        # 2. Merge signals
+        sig_sse = DatastarSSE.merge_signals({"isRunning": True, "step": 2})
+        self.assertIn("event: datastar-merge-signals", sig_sse)
+        self.assertIn('"isRunning": true', sig_sse)
+
+        # 3. Execute script
+        script_sse = DatastarSSE.execute_script("console.log('test')")
+        self.assertIn("event: datastar-execute-script", script_sse)
+        self.assertIn("data: script console.log('test')", script_sse)
+
+    def test_dynamic_tool_requires_approval_enforcement(self):
+        """Task 6: Verifies that dynamic tools created by manage_dynamic_tools require approval."""
+        from metacognition.meta_tools import manage_dynamic_tools
+
+        script = "def dynamic_multiplier(state, params):\n    return int(params.get('val', 1)) * 2\n"
+        res = manage_dynamic_tools(
+            state={},
+            params={"name": "dynamic_multiplier", "description": "Multiplies numbers", "script_content": script}
+        )
+        self.assertIn("Successfully created dynamic tool", res)
+
+        tool = ToolDefinition.objects.get(name="dynamic_multiplier")
+        self.assertTrue(tool.requires_approval, "Dynamic tool MUST enforce requires_approval = True")
+        self.assertTrue(tool.is_active)
+
+    @patch('llm_api.ai_service.AIService.generate_outline')
+    @patch('llm_api.ai_service.AIService.generate_response2')
+    @patch('llm_api.ai_service.AIService.clean_response')
+    def test_human_in_the_loop_suspension_and_resumption(self, mock_clean, mock_generate, mock_outline):
+        """Task 6: Verifies LangGraph suspends when unapproved tool is called, and resumes on approval."""
+        from metacognition.tasks import run_blueprint, task_resume_blueprint_async
+        from metacognition.models import AgentCheckpoint
+
+        # Create tool with approval requirement
+        restricted_tool = ToolDefinition.objects.create(
+            name="restricted_tool",
+            description="Restricted action",
+            tool_type="builtin",
+            python_path="metacognition.meta_tools.TASK_COMPLETE",
+            requires_approval=True
+        )
+        self.step.available_tools.add(restricted_tool)
+
+        # 1. Model requests to call restricted_tool via outline schema
+        mock_outline.return_value = {"tool_calls": [{"name": "restricted_tool", "args": {"arg1": "val1"}}]}
+        mock_clean.side_effect = lambda x: x
+
+        run_id = "test-hil-run-1"
+        res = run_blueprint(self.bp.id, "Test HIL", user_id=self.user.id, run_id=run_id)
+
+        # Assert graph suspended at USER_INPUT_REQUIRED
+        self.assertEqual(res.get("route_to"), "USER_INPUT_REQUIRED")
+        self.assertIsNotNone(res.get("pending_approval"))
+        self.assertEqual(res["pending_approval"]["tool_name"], "restricted_tool")
+
+        thread_id = res["thread_id"]
+        # Verify checkpoint saved in Postgres
+        checkpoints = AgentCheckpoint.objects.filter(thread_id=thread_id)
+        self.assertTrue(checkpoints.exists(), "Checkpoint must be stored when graph is suspended for approval.")
+
+        # 2. Resume execution by approving tool
+        mock_outline.return_value = {"tool_calls": []}
+        mock_generate.return_value = ["Task finished successfully after authorization."]
+        resume_res = task_resume_blueprint_async(
+            blueprint_id=self.bp.id,
+            thread_id=thread_id,
+            run_id=run_id,
+            approved_tool="restricted_tool"
+        )
+
+        self.assertNotIn("error", resume_res)
+        self.assertEqual(resume_res.get("run_id"), run_id)
+
+    @patch('llm_api.ai_service.AIService.generate_outline')
+    @patch('llm_api.ai_service.AIService.generate_response2')
+    @patch('llm_api.ai_service.AIService.clean_response')
+    def test_blueprint_stop_and_cancellation(self, mock_clean, mock_generate, mock_outline):
+        """Task 7: Verifies that setting the Redis cancellation flag aborts graph execution."""
+        from metacognition.events import set_cancellation_flag, is_cancelled
+        from metacognition.tasks import run_blueprint
+
+        mock_clean.side_effect = lambda x: x
+        mock_generate.return_value = ["Standard generation"]
+        mock_outline.return_value = {}
+
+        run_id = "test-cancel-run-99"
+        set_cancellation_flag(run_id)
+        self.assertTrue(is_cancelled(run_id))
+
+        res = run_blueprint(self.bp.id, "Prompt after cancel", user_id=self.user.id, run_id=run_id)
+
+        # Graph should halt immediately
+        monologue = res.get("internal_monologue", [])
+        self.assertTrue(any("cancelled by user" in m.get("output", "").lower() for m in monologue))
+
+    def test_api_endpoints_dispatch_cancel_approve(self):
+        """Task 5, 6, 7 API Endpoints: Verifies dispatch, cancel, and approve REST endpoints."""
+        from django.test import Client
+        import json
+
+        client = Client()
+        client.force_login(self.user)
+
+        # 1. Dispatch Blueprint
+        resp = client.post(
+            "/api/meta/dispatch_blueprint/",
+            data=json.dumps({"blueprint_id": self.bp.id, "user_prompt": "Async test prompt"}),
+            content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertEqual(data.get("status"), "dispatched")
+        run_id = data.get("run_id")
+        self.assertIsNotNone(run_id)
+        self.assertIn("/api/meta/stream_blueprint/?run_id=", data.get("stream_url"))
+
+        # 2. Cancel Blueprint
+        resp_cancel = client.post(
+            "/api/meta/cancel_blueprint/",
+            data=json.dumps({"run_id": run_id}),
+            content_type="application/json"
+        )
+        self.assertEqual(resp_cancel.status_code, 200)
+        self.assertEqual(resp_cancel.json().get("status"), "cancellation_requested")
+
+        # 3. Approve Tool
+        resp_approve = client.post(
+            "/api/meta/approve_tool/",
+            data=json.dumps({
+                "run_id": run_id,
+                "thread_id": f"conv1_{self.bp.name}",
+                "tool_name": "restricted_tool",
+                "blueprint_id": self.bp.id
+            }),
+            content_type="application/json"
+        )
+        self.assertEqual(resp_approve.status_code, 200)
+        self.assertEqual(resp_approve.json().get("status"), "resumed")
+
+
+class ReasoningStepStateTreeTests(TestCase):
+    """
+    Task 8 Tests for StateTree Formatting and ReasoningStep.include_state_tree flag.
+    """
+
+    def setUp(self):
+        from llm_api.models import Conversation
+        self.user = User.objects.create_user(username='st_user', password='password123')
+        self.conv = Conversation.objects.create(
+            user=self.user,
+            title="StateTree Test",
+            state_tree={
+                "macro_objective": "Optimize RAG Indexing",
+                "active_task": "task_chunk_sweep",
+                "tasks": {
+                    "task_chunk_sweep": {"title": "Scan orphan chunks", "status": "IN_PROGRESS"},
+                    "task_lint": {"title": "Lint concept graph", "status": "PENDING"}
+                },
+                "working_hypotheses": ["Orphan chunks slow down cosine distance filtering"],
+                "open_questions": ["Is HNSW indexing active on all chunks?"]
+            }
+        )
+        self.bp = CognitiveBlueprint.objects.create(name="StateTree BP")
+        self.step = ReasoningStep.objects.create(
+            blueprint=self.bp,
+            name="State Aware Step",
+            is_start_node=True,
+            system_prompt="Analyze current tasks and propose fixes.",
+            include_state_tree=True
+        )
+
+    def test_format_state_tree_helper(self):
+        """Verifies that _format_state_tree produces structured, readable Markdown."""
+        from metacognition.compiler import _format_state_tree
+
+        formatted = _format_state_tree(self.conv.state_tree)
+        self.assertIn("### Conversation State Tree:", formatted)
+        self.assertIn("- **Objective:** Optimize RAG Indexing", formatted)
+        self.assertIn("- **Active Task:** task_chunk_sweep", formatted)
+        self.assertIn("- [IN_PROGRESS] Scan orphan chunks", formatted)
+        self.assertIn("- [PENDING] Lint concept graph", formatted)
+        self.assertIn("- **Working Hypotheses:**", formatted)
+        self.assertIn("- **Open Questions:**", formatted)
+
+    @patch('llm_api.ai_service.AIService.generate_response2')
+    @patch('llm_api.ai_service.AIService.clean_response')
+    def test_include_state_tree_flag_controls_prompt_injection(self, mock_clean, mock_generate):
+        """Verifies include_state_tree=True injects state_tree, while False suppresses it."""
+        from metacognition.compiler import compile_graph_from_blueprint
+        from metacognition.state import AgentState
+        from langchain_core.messages import HumanMessage
+
+        mock_clean.side_effect = lambda x: x
+        mock_generate.return_value = ["Analysis complete."]
+
+        graph = compile_graph_from_blueprint(self.bp)
+
+        # 1. Test with include_state_tree = True
+        state = AgentState(
+            working_memory=[HumanMessage(content="What is my task?")],
+            rag_context="",
+            route_to=None,
+            resume_to=None,
+            conversation_id=str(self.conv.id),
+            user_id=self.user.id,
+            step_count=0,
+            max_steps=5,
+            retries_remaining={},
+            internal_monologue=[],
+            scratch={},
+            token_budget_remaining=8000
+        )
+        config = {"configurable": {"thread_id": "st-test-1"}}
+        res = graph.invoke(state, config)
+
+        call_args = mock_generate.call_args_list[0]
+        prompt_used = call_args.args[0] if call_args.args else call_args.kwargs.get("prompt", "")
+        self.assertIn("Conversation State Tree", str(prompt_used))
+        self.assertIn("Optimize RAG Indexing", str(prompt_used))
+
+        # 2. Test with include_state_tree = False
+        self.step.include_state_tree = False
+        self.step.save()
+        mock_generate.reset_mock()
+
+        graph2 = compile_graph_from_blueprint(self.bp)
+        config2 = {"configurable": {"thread_id": "st-test-2"}}
+        res2 = graph2.invoke(state, config2)
+
+        call_args2 = mock_generate.call_args_list[0]
+        prompt_used2 = call_args2.args[0] if call_args2.args else call_args2.kwargs.get("prompt", "")
+        self.assertNotIn("Conversation State Tree", str(prompt_used2))
+
+
+class NightManagerReportingTests(TestCase):
+    """
+    Tests the diagnostic auditing and reporting functions for NightManager.
+    """
+    def setUp(self):
+        self.nm_user, _ = User.objects.get_or_create(username="NightManager")
+        from llm_api.models import Conversation, PromptResponseLog
+        from grips.models import Domain, ConceptNode
+
+        self.conv = Conversation.objects.create(
+            user=self.nm_user,
+            title="NightManager: NM_Housekeeping",
+            state_tree={
+                "tasks": {
+                    "rag_chunk_optimization": {"status": "COMPLETED"},
+                    "grips_link_verification": {"status": "pending"}
+                },
+                "working_hypotheses": ["Vector index 384 hnsw performs best"],
+                "open_questions": ["Is grobid service reachable?"]
+            }
+        )
+        self.log = PromptResponseLog.objects.create(
+            user=self.nm_user,
+            conversation=self.conv,
+            model_name="Gemma4-2B",
+            user_prompt="Run housekeeping",
+            generated_response="Housekeeping complete",
+            generation_duration_ms=450.0,
+            input_tokens=100,
+            output_tokens=50,
+            step_status="SUCCESS"
+        )
+        self.domain = Domain.objects.create(name="CognitiveArchitecture")
+        self.node = ConceptNode.objects.create(
+            domain=self.domain,
+            title="ReasoningStep Speciation",
+            slug="reasoningstep-speciation",
+            narrative_content="Evolutionary prompt variants",
+            needs_linting=False
+        )
+
+    def test_audit_nightmanager_performance_structure(self):
+        from metacognition.reporting import audit_nightmanager_performance, format_performance_report_markdown
+        report = audit_nightmanager_performance(since_days=7)
+
+        self.assertIn("sessions", report)
+        self.assertIn("state_tree_health", report)
+        self.assertIn("knowledge_artifacts", report)
+        self.assertIn("blueprint_evolution", report)
+
+        self.assertEqual(report["sessions"]["total_lifetime_conversations"], 1)
+        self.assertEqual(report["sessions"]["recent_prompt_logs"], 1)
+        self.assertEqual(report["state_tree_health"]["resolved_tasks"], 1)
+        self.assertEqual(report["state_tree_health"]["pending_tasks"], 1)
+        self.assertEqual(report["knowledge_artifacts"]["total_concept_nodes"], 1)
+
+        md = format_performance_report_markdown(report)
+        self.assertIn("NightManager Performance & Architecture Audit", md)
+        self.assertIn("Gemma4-2B", md)
+        self.assertIn("ReasoningStep Variants Pending Review", md)
+
+    def test_inspect_nightmanager_command(self):
+        from io import StringIO
+        from django.core.management import call_command
+
+        out = StringIO()
+        call_command('inspect_nightmanager', '--days', '7', stdout=out)
+        output_str = out.getvalue()
+        self.assertIn("NightManager Performance & Architecture Audit", output_str)
+
+    def test_inspect_nightmanager_tool(self):
+        from metacognition.meta_tools import inspect_nightmanager_performance
+        res = inspect_nightmanager_performance({}, {"days": 7})
+        self.assertIn("NightManager Performance & Architecture Audit", res)
+
+
+class ActionSchemaPersistenceTests(TestCase):
+    """
+    Tests that structured schema action nodes persist database objects and resolve state_tree tasks.
+    """
+    def setUp(self):
+        self.user, _ = User.objects.get_or_create(username="testuser")
+        from llm_api.models import Conversation
+        self.bp = CognitiveBlueprint.objects.create(name="Schema Test BP")
+        self.step = ReasoningStep.objects.create(
+            blueprint=self.bp,
+            name="Target Step",
+            system_prompt="Original prompt",
+            evaluation_criteria="Original criteria"
+        )
+        self.conv = Conversation.objects.create(
+            user=self.user,
+            title="Schema Conv",
+            state_tree={
+                "tasks": {
+                    "optimize_target_step": {"status": "pending"}
+                }
+            }
+        )
+
+    def test_create_prompt_variant_persists_reasoning_step(self):
+        from metacognition.actions import PromptVariant, create_prompt_variant
+        pv = PromptVariant(
+            target_step_id=self.step.id,
+            variant_intent="Stricter JSON compliance",
+            reasoning="Small model failed to format valid JSON in logs.",
+            new_system_prompt="Refined prompt with strict JSON output.",
+            new_evaluation_criteria="Did the LLM output valid JSON?"
+        )
+        state = {"conversation_id": str(self.conv.id), "user_id": self.user.id}
+        res = create_prompt_variant(state, pv)
+
+        self.assertEqual(res["route_to"], "SUCCESS")
+        self.assertIn("Created pending ReasoningStep variant", res["working_prompt"])
+
+        variant = ReasoningStep.objects.filter(parent_step=self.step, is_pending_review=True).first()
+        self.assertIsNotNone(variant)
+        self.assertEqual(variant.system_prompt, "Refined prompt with strict JSON output.")
+        self.assertEqual(variant.variant_intent, "Stricter JSON compliance")
+        self.assertEqual(variant.proposed_by, "system")
+
+        # Verify state tree task resolution
+        self.conv.refresh_from_db()
+        self.assertEqual(self.conv.state_tree["tasks"]["optimize_target_step"]["status"], "COMPLETED")
+
+    def test_handle_grips_expansion_persists_concept(self):
+        from metacognition.actions import GripsExpansionProposal, handle_grips_expansion
+        from grips.models import ConceptNode, Domain
+
+        proposal = GripsExpansionProposal(
+            domain_name="CognitiveScience",
+            title="State Tree Snapshotting",
+            focus_hint="Immutable DAG conversation audit trails",
+            narrative_content="State trees capture granular cognitive tasks per step.",
+            structured_claims=[{"subject": "State Tree", "predicate": "captures", "object": "Task State"}]
+        )
+        state = {"conversation_id": str(self.conv.id)}
+        res = handle_grips_expansion(state, proposal)
+
+        self.assertEqual(res["route_to"], "SUCCESS")
+        node = ConceptNode.objects.filter(title="State Tree Snapshotting").first()
+        self.assertIsNotNone(node)
+        self.assertEqual(node.domain.name, "CognitiveScience")
+        self.assertTrue(node.needs_linting)
+
+
+class SubBlueprintStateTreePropagationTests(TestCase):
+    """
+    Tests bidirectional state_tree synchronization across parent and child sub-blueprints.
+    """
+    def setUp(self):
+        self.user, _ = User.objects.get_or_create(username="NightManager")
+        from llm_api.models import Conversation
+        self.parent_conv = Conversation.objects.create(
+            user=self.user,
+            title="NightManager: NightManager",
+            state_tree={
+                "tasks": {
+                    "phase0_housekeeping": {"status": "COMPLETED"},
+                    "phase1_eval": {"status": "pending"}
+                },
+                "working_hypotheses": ["Initial hypothesis"]
+            }
+        )
+
+    def test_merge_state_trees_helper(self):
+        from metacognition.compiler import _merge_state_trees
+
+        parent_tree = {
+            "tasks": {
+                "task1": {"status": "pending"},
+                "task2": {"status": "pending"}
+            },
+            "working_hypotheses": ["Hypothesis A"],
+            "open_questions": ["Question 1"]
+        }
+        child_tree = {
+            "tasks": {
+                "task1": {"status": "COMPLETED"},
+                "task3": {"status": "pending"}
+            },
+            "working_hypotheses": ["Hypothesis A", "Hypothesis B"],
+            "open_questions": ["Question 2"]
+        }
+        merged = _merge_state_trees(parent_tree, child_tree)
+
+        self.assertEqual(merged["tasks"]["task1"]["status"], "COMPLETED")
+        self.assertEqual(merged["tasks"]["task2"]["status"], "pending")
+        self.assertEqual(merged["tasks"]["task3"]["status"], "pending")
+        self.assertEqual(merged["working_hypotheses"], ["Hypothesis A", "Hypothesis B"])
+        self.assertEqual(merged["open_questions"], ["Question 1", "Question 2"])
+
+
+

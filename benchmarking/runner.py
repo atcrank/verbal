@@ -477,6 +477,3 @@ def run_benchmark_suite(experiment, corpus, log_callback=None):
     finally:
         # Restore the global RAG service
         service_registry._rag_service = original_rag_service
-        # Cleanup Temp Directory
-        rag_service.db.delete_collection()
-        rag_service.disconnect()

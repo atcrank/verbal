@@ -19,7 +19,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 from dotenv import load_dotenv
 load_dotenv(BASE_DIR / ".env")
 
+import warnings
+warnings.filterwarnings("ignore", message=r".*allowed_objects.*")
+
 VERBAL_ENV = os.environ.get("VERBAL_ENV", "dev")
+
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "django-insecure-di_unz7h49exp@-(oyl0i2v8i-7%-zr@8c@ejl%!%f6b=-vh8-")
@@ -49,7 +53,9 @@ INSTALLED_APPS = [
     'demo_ui.apps.DemoUiConfig',
     'django_celery_beat',
     'sandbox_manager.apps.SandboxManagerConfig',
+    'work_organisation.apps.WorkOrganisationConfig',
 ]
+
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

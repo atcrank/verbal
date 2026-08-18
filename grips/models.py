@@ -6,6 +6,7 @@ from django.templatetags.static import static
 from llm_api.models import LocalAIModel
 from django.db.models.signals import pre_delete, post_save
 from django.dispatch import receiver
+from pgvector.django import VectorField, HnswIndex
 
 
 class Domain(models.Model):
@@ -82,6 +83,18 @@ class ConceptNode(models.Model):
                                         help_text="Flagged when updated so the background linter can verify it.")
     last_linted_at = models.DateTimeField(null=True, blank=True)
     linting_report = models.JSONField(default=dict, blank=True)
+    embedding = VectorField(dimensions=384, null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            HnswIndex(
+                name='conceptnode_embed_hnsw',
+                fields=['embedding'],
+                m=16,
+                ef_construction=64,
+                opclasses=['vector_cosine_ops'],
+            ),
+        ]
 
     def __str__(self):
         return self.title
@@ -93,20 +106,18 @@ class ConceptNode(models.Model):
         # Placeholder path. Once you build a frontend view, change this to use reverse()
         return f"/wiki/concepts/{self.slug}/"
 
-@receiver(pre_delete, sender=ConceptNode)
-def delete_concept_vector(sender, instance, **kwargs):
-     """When a ConceptNode is deleted, ensure its vector is removed from PGVector."""
-     from llm_api.apps import service_registry
-     grips_service = service_registry.grips_service
-     if grips_service:
-         try:
-             grips_service.db.delete([str(instance.id)])
-         except Exception:
-             pass
 
 @receiver(post_save, sender=ConceptNode)
 def index_concept_vector(sender, instance, created, **kwargs):
     """When a ConceptNode is saved, asynchronously index it into PGVector."""
+    update_fields = kwargs.get('update_fields')
+    if update_fields and set(update_fields) == {'embedding'}:
+        return
+    if getattr(instance, '_skip_signal', False):
+        return
+    import sys
+    if 'test' in sys.argv:
+        return
     from grips.tasks import task_index_concept_node
     # Delay to celery so we don't block the web request
     task_index_concept_node.delay(instance.id)

@@ -83,10 +83,18 @@ def unified_retrieve(
             # We need (doc, score) pairs for unified ranking. Since the quality
             # filtering already happened inside get_grips_context, we re-query
             # with scores here for the lineage boost math.
-            grips_scored = grips_service.db.similarity_search_with_score(
-                query, k=grips_k * 2,
-                filter={"domain_id": domain_id} if domain_id else None,
-            )
+            if hasattr(grips_service, 'db') and getattr(grips_service.db, 'similarity_search_with_score', None) is not None:
+                grips_scored = grips_service.db.similarity_search_with_score(
+                    query, k=grips_k * 2,
+                    filter={"domain_id": domain_id} if domain_id else None,
+                )
+            elif hasattr(grips_service, 'similarity_search_with_score'):
+                grips_scored = grips_service.similarity_search_with_score(
+                    query, k=grips_k * 2,
+                    filter={"domain_id": domain_id} if domain_id else None,
+                )
+            else:
+                grips_scored = []
             # Build a lookup of concept_id -> distance for grips docs actually returned
             grips_doc_ids = {d.metadata.get('concept_id') for d in grips_docs}
             grips_score_map = {}
@@ -128,7 +136,12 @@ def unified_retrieve(
             rag_docs = rag_service.get_context(query, k=rag_k, max_distance=max_distance)
             # get_context returns filtered docs; we need distances for ranking.
             # Re-query for scores (same pattern as Grips above)
-            rag_scored = rag_service.db.similarity_search_with_score(query, k=rag_k * 2)
+            if hasattr(rag_service, 'db') and getattr(rag_service.db, 'similarity_search_with_score', None) is not None:
+                rag_scored = rag_service.db.similarity_search_with_score(query, k=rag_k * 2)
+            elif hasattr(rag_service, 'similarity_search_with_score'):
+                rag_scored = rag_service.similarity_search_with_score(query, k=rag_k * 2)
+            else:
+                rag_scored = []
             rag_score_map = {}
             for doc, score in rag_scored:
                 doc_id = str(doc.metadata.get('id', ''))

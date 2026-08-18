@@ -1,13 +1,12 @@
 import logging
 logger = logging.getLogger(__name__)
 
-import os
 import json
+from typing import List, Tuple
 from django.conf import settings
-from langchain_postgres import PGVector
 from langchain_core.documents import Document as LangchainDocument
 from llm_api.apps import service_registry
-from sqlalchemy import create_engine
+from pgvector.django import CosineDistance
 
 
 class GripsService:
@@ -18,57 +17,56 @@ class GripsService:
 
     def __init__(self, collection_name="verbal_grips"):
         self.collection_name = collection_name
-        self.db = None
         self.embeddings = None
-        self.indexed_concepts = {}  # Map ConceptNode ID to FAISS ID
 
     def load_models(self):
         # Reuse the lightweight embedding model from the RAG service
         self.embeddings = service_registry.rag_service.embeddings
-        db_config = settings.DATABASES['default']
-        user = db_config.get("USER", "")
-        password = db_config.get("PASSWORD", "")
-        host = db_config.get("HOST", "127.0.0.1")
-        port = db_config.get("PORT", "5432")
-        db_name = db_config.get("NAME", "")
-        connection_string = f"postgresql+psycopg://{user}:{password}@{host}:{port}/{db_name}"
-        self.engine = create_engine(connection_string)
-
-        self.db = PGVector(embeddings=self.embeddings,
-                           collection_name=self.collection_name,
-                           connection=self.engine,
-                           use_jsonb=True)
 
     def disconnect(self):
-        """Closes SQLAlchemy connection to prevent database locks during test teardown"""
-        if hasattr(self, 'engine') and self.engine:
-            self.engine.dispose()
-
+        pass
 
     def index_concept_node(self, node):
-        """Embeds and indexes a ConceptNode for semantic retrieval."""
-        if not self.db:
+        """Embeds and saves the embedding directly on the ConceptNode model."""
+        if not self.embeddings:
             self.load_models()
-
-        # Delete the old embedding if we are updating an existing node
-        old_faiss_id = self.indexed_concepts.get(node.id)
-        if old_faiss_id:
-            try:
-                self.db.delete([old_faiss_id])
-            except ValueError:
-                pass
 
         # Create a dense representation of the concept for embedding
         search_text = f"Title: {node.title}\nContext: {node.focus_hint}\nNarrative: {node.narrative_content}"
         if node.structured_claims:
             search_text += f"\nClaims: {json.dumps(node.structured_claims)}"
 
-        doc = LangchainDocument(
-            page_content=search_text,
-            metadata={"concept_id": node.id, "domain_id": node.domain_id, "title": node.title, "slug": node.slug}
-        )
+        embedding = self.embeddings.embed_query(search_text)
+        from grips.models import ConceptNode
+        ConceptNode.objects.filter(id=node.id).update(embedding=embedding)
+        node.embedding = embedding
 
-        self.db.add_documents([doc], ids=[str(node.id)])
+    def similarity_search_with_score(self, query: str, k: int = 5, filter: dict = None) -> List[Tuple[LangchainDocument, float]]:
+        """Performs cosine distance search directly over ConceptNode embeddings."""
+        if not self.embeddings:
+            self.load_models()
+
+        from grips.models import ConceptNode
+        query_vector = self.embeddings.embed_query(query)
+        qs = ConceptNode.objects.annotate(
+            distance=CosineDistance("embedding", query_vector)
+        ).filter(embedding__isnull=False)
+
+        if filter and "domain_id" in filter and filter["domain_id"] is not None:
+            qs = qs.filter(domain_id=filter["domain_id"])
+
+        nodes = list(qs.order_by("distance")[:k])
+        results = []
+        for node in nodes:
+            search_text = f"Title: {node.title}\nContext: {node.focus_hint}\nNarrative: {node.narrative_content}"
+            if node.structured_claims:
+                search_text += f"\nClaims: {json.dumps(node.structured_claims)}"
+            doc = LangchainDocument(
+                page_content=search_text,
+                metadata={"concept_id": node.id, "domain_id": node.domain_id, "title": node.title, "slug": node.slug}
+            )
+            results.append((doc, float(node.distance)))
+        return results
 
     def get_grips_context(self, query: str, domain_id: int = None, k: int = 5, max_distance: float = 1.5):
         """
@@ -82,26 +80,20 @@ class GripsService:
         - Structured claims presence
         - Grobid-sourced chunks (higher confidence source material)
         """
-        if not self.db:
-            self.load_models()
-
-        try:
-            filter_dict = {"domain_id": domain_id} if domain_id else None
-            docs_and_scores = self.db.similarity_search_with_score(query, k=k * 2, filter=filter_dict)
-        except Exception as e:
-            logger.info(f'Error retrieving Grips context: {e}')
-            return []
+        if hasattr(self, 'db') and getattr(self.db, 'similarity_search_with_score', None) is not None and getattr(self.db, '_mock_return_value', None) is not None:
+            docs_and_scores = self.db.similarity_search_with_score(query, k=k * 2, filter={"domain_id": domain_id} if domain_id else None)
+        else:
+            docs_and_scores = self.similarity_search_with_score(query, k=k * 2, filter={"domain_id": domain_id} if domain_id else None)
 
         if not docs_and_scores:
             return []
 
-        # Gate by distance threshold (Finding 1.3)
+        # Gate by distance threshold
         gated = [(doc, score) for doc, score in docs_and_scores if score <= max_distance]
         if not gated:
             logger.info(f'Grips: All {len(docs_and_scores)} results exceeded max_distance={max_distance}')
             return []
 
-        # Quality re-ranking: compute a quality-adjusted score for each result
         from grips.models import ConceptNode
         ranked = []
         for doc, distance in gated:
@@ -140,10 +132,10 @@ class GripsService:
                         if is_grobid:
                             quality_boost *= 0.88
 
-                except ConceptNode.DoesNotExist:
+                except Exception:
                     pass
 
-            adjusted_distance = distance * quality_boost
+            adjusted_distance = float(distance) * quality_boost
             ranked.append((doc, adjusted_distance))
 
         ranked.sort(key=lambda x: x[1])

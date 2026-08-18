@@ -39,8 +39,7 @@ def execute_tool(tool_def, state: dict, params: dict, dry_run: bool = False) -> 
                 return f"[DRY RUN SIMULATION]\nWould make API call to: {tool_def.api_url} with params {json.dumps(params)}"
             else:
                 import requests
-                # Extremely simplified HTTP call for now
-                response = requests.post(tool_def.api_url, json=params)
+                response = requests.post(tool_def.api_url, json=params, timeout=30)
                 return response.text
                 
         elif tool_def.tool_type == 'blueprint':

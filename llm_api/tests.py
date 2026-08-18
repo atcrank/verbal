@@ -152,3 +152,170 @@ class LlmApiIntegrationTests(TestCase):
         rag_str = str(log.rag_selections)
         self.assertIn("France", rag_str)
         self.assertIn("Paris", rag_str)
+
+
+class ConversationBranchAndReplayTests(TestCase):
+    """
+    Task 8 Tests:
+    - Eliminates system prompt multiplication in Conversation.as_messages()
+    - Traces true DAG branch paths via leaf_log_id
+    - Universal state_tree_snapshot capturing on PromptResponseLog
+    """
+
+    def setUp(self):
+        from llm_api.models import Conversation
+        self.user = User.objects.create_user(username='branch_user', password='password123')
+        self.conv = Conversation.objects.create(user=self.user, title="Branching Experiment")
+
+    def test_as_messages_no_system_prompt_multiplication(self):
+        """Verifies that multiple step turns never stack intermediate system prompts."""
+        log_0 = PromptResponseLog.objects.create(
+            conversation=self.conv,
+            user=self.user,
+            system_prompt="Root System Persona: You are an experiment designer.",
+            user_prompt="Let's start experiment 1.",
+            generated_response="Starting experiment 1."
+        )
+        log_1 = PromptResponseLog.objects.create(
+            conversation=self.conv,
+            user=self.user,
+            parent_log=log_0,
+            system_prompt="Step 1 Internal Prompt: Analyze chunk outliers.",
+            user_prompt="Here is chunk data.",
+            generated_response="Outlier detected in chunk 4."
+        )
+        log_2 = PromptResponseLog.objects.create(
+            conversation=self.conv,
+            user=self.user,
+            parent_log=log_1,
+            system_prompt="Step 2 Internal Prompt: Synthesize final conclusion.",
+            user_prompt="Synthesize results.",
+            generated_response="Experiment complete."
+        )
+
+        messages = self.conv.as_messages(leaf_log_id=log_2.id)
+
+        # 1. Exactly ONE system prompt at index 0
+        system_msgs = [m for m in messages if m.get("role") == "system"]
+        self.assertEqual(len(system_msgs), 1, "Must have exactly 1 system message at index 0")
+        self.assertEqual(messages[0]["role"], "system")
+        self.assertEqual(messages[0]["content"], "Root System Persona: You are an experiment designer.")
+
+        # 2. Intermediate step system prompts must NOT appear in the chat history
+        for m in messages[1:]:
+            self.assertNotEqual(m.get("role"), "system")
+            self.assertNotIn("Step 1 Internal Prompt", m.get("content", ""))
+            self.assertNotIn("Step 2 Internal Prompt", m.get("content", ""))
+
+        # 3. Turns are in correct chronological sequence
+        self.assertEqual(messages[1]["role"], "user")
+        self.assertEqual(messages[1]["content"], "Let's start experiment 1.")
+        self.assertEqual(messages[2]["role"], "assistant")
+        self.assertEqual(messages[3]["role"], "user")
+        self.assertEqual(messages[4]["role"], "assistant")
+        self.assertEqual(messages[5]["role"], "user")
+        self.assertEqual(messages[6]["role"], "assistant")
+        self.assertEqual(len(messages), 7)
+
+    def test_as_messages_dag_branching_path(self):
+        """Verifies that as_messages(leaf_log_id) traces only the selected branch path back to root."""
+        # Root turn
+        log_root = PromptResponseLog.objects.create(
+            conversation=self.conv,
+            user=self.user,
+            system_prompt="Root System",
+            user_prompt="Root Prompt",
+            generated_response="Root Response"
+        )
+
+        # Branch A: Root -> A1 -> A2
+        log_A1 = PromptResponseLog.objects.create(
+            conversation=self.conv,
+            user=self.user,
+            parent_log=log_root,
+            system_prompt="Branch A1 Prompt",
+            user_prompt="Branch A1 User",
+            generated_response="Branch A1 Assistant"
+        )
+        log_A2 = PromptResponseLog.objects.create(
+            conversation=self.conv,
+            user=self.user,
+            parent_log=log_A1,
+            system_prompt="Branch A2 Prompt",
+            user_prompt="Branch A2 User",
+            generated_response="Branch A2 Assistant"
+        )
+
+        # Branch B: Root -> B1 -> B2
+        log_B1 = PromptResponseLog.objects.create(
+            conversation=self.conv,
+            user=self.user,
+            parent_log=log_root,
+            system_prompt="Branch B1 Prompt",
+            user_prompt="Branch B1 User",
+            generated_response="Branch B1 Assistant"
+        )
+        log_B2 = PromptResponseLog.objects.create(
+            conversation=self.conv,
+            user=self.user,
+            parent_log=log_B1,
+            system_prompt="Branch B2 Prompt",
+            user_prompt="Branch B2 User",
+            generated_response="Branch B2 Assistant"
+        )
+
+        # Trace Branch A
+        msgs_A = self.conv.as_messages(leaf_log_id=log_A2.id)
+        user_contents_A = [m["content"] for m in msgs_A if m.get("role") == "user"]
+        self.assertEqual(user_contents_A, ["Root Prompt", "Branch A1 User", "Branch A2 User"])
+        self.assertNotIn("Branch B1 User", user_contents_A)
+        self.assertNotIn("Branch B2 User", user_contents_A)
+
+        # Trace Branch B
+        msgs_B = self.conv.as_messages(leaf_log_id=log_B2.id)
+        user_contents_B = [m["content"] for m in msgs_B if m.get("role") == "user"]
+        self.assertEqual(user_contents_B, ["Root Prompt", "Branch B1 User", "Branch B2 User"])
+        self.assertNotIn("Branch A1 User", user_contents_B)
+        self.assertNotIn("Branch A2 User", user_contents_B)
+
+    def test_prompt_response_log_state_tree_snapshot(self):
+        """Verifies that logging automatically captures an immutable copy of Conversation.state_tree."""
+        from llm_api.ai_service import AIService
+
+        initial_tree = {
+            "macro_objective": "Test Snapshotting",
+            "active_task": "task_1",
+            "tasks": {
+                "task_1": {"title": "Parse equations", "status": "IN_PROGRESS"}
+            }
+        }
+        self.conv.state_tree = initial_tree
+        self.conv.save()
+
+        # Simulate generation logging
+        from llm_api.ai_service import AIService
+        service = AIService()
+        log_kwargs = {
+            "user_id": self.user.id,
+            "conversation_id": str(self.conv.id),
+            "log_ids": []
+        }
+        service._log_generation(
+            messages=[
+                {"role": "system", "content": "Step prompt"},
+                {"role": "user", "content": "User input"}
+            ],
+            generated_texts=["Assistant output"],
+            log_kwargs=log_kwargs
+        )
+
+        self.assertTrue(len(log_kwargs["log_ids"]) > 0)
+        log = PromptResponseLog.objects.get(id=log_kwargs["log_ids"][0])
+        self.assertEqual(log.state_tree_snapshot, initial_tree)
+
+        # Mutate Conversation.state_tree afterwards; snapshot must remain immutable
+        self.conv.state_tree["active_task"] = "task_2"
+        self.conv.save()
+
+        log.refresh_from_db()
+        self.assertEqual(log.state_tree_snapshot["active_task"], "task_1", "Snapshot must be immutable")

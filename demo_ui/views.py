@@ -155,23 +155,36 @@ def send_message(request):
 
     # 2. Execute Generation (Blueprint or Native)
     if blueprint_id:
-        from metacognition.tasks import run_blueprint
-        result = run_blueprint(blueprint_id, user_prompt, user_id=request.user.id)
-        cleaned_response = result.get('final_response', '')
-        if not cleaned_response and 'error' in result:
-            cleaned_response = f"**Blueprint Error:** {result['error']}"
-            
-        input_tokens = service_registry.ai_service.count_conversation_tokens([{"role": "user", "content": user_prompt}])
-        output_tokens = service_registry.ai_service.count_conversation_tokens([{"role": "assistant", "content": cleaned_response}])
+        from uuid import uuid4
+        from metacognition.tasks import task_run_blueprint_async
+        
+        run_id = str(uuid4())
+        task_run_blueprint_async.delay(
+            blueprint_id=int(blueprint_id),
+            user_prompt=user_prompt,
+            conversation_id=str(conversation.id),
+            user_id=request.user.id,
+            run_id=run_id
+        )
+        
+        streaming_markup = f"""<div id="blueprint-exec-{run_id}" data-signals="{{isStreaming: true}}" data-on-load="@get('/api/meta/stream_blueprint/?run_id={run_id}')">
+<div id="blueprint-status" class="agent-step active">
+    <span class="badge">Dispatched</span>
+    <strong>Executing cognitive blueprint asynchronously...</strong>
+</div>
+<div id="tool-approval-container"></div>
+<div id="monologue-stream"></div>
+<div id="blueprint-final-response"></div>
+</div>"""
         
         log = PromptResponseLog.objects.create(
-            system_prompt="[Blueprint Execution]", 
+            system_prompt="[Async Blueprint Execution]", 
             user_prompt=user_prompt,
             conversation=conversation,
-            generated_response=cleaned_response, 
+            generated_response=streaming_markup, 
             user=request.user,
-            input_tokens=input_tokens,
-            output_tokens=output_tokens
+            input_tokens=0,
+            output_tokens=0
         )
     else:
         messages = conversation.as_messages()

@@ -169,8 +169,6 @@ class BackgroundResourcesIntegrationTest(TestCase):
         self.start_time = 0
         
     def tearDown(self):
-        self.rag_service.db.delete_collection()
-        self.rag_service.disconnect()
         service_registry._rag_service = self.original_rag
 
     def _create_document_obj(self, file_path):
@@ -531,3 +529,126 @@ class BackgroundResourcesIntegrationTest(TestCase):
         self.assertIsNone(in_store_final, "Chunk should be gone from store")
 
         self._generate_report("test_6_robustness", time.perf_counter() - self.start_time)
+
+
+class TestRAGServiceIntegration(TestCase):
+    """Integration test suite for RAGService using pure pgvector.django without SQLAlchemy."""
+
+    def setUp(self):
+        from background_resources.rag_service import RAGService
+        self.rag_service = RAGService()
+
+    def test_ragchunk_embedding_and_similarity_search(self):
+        from background_resources.models import Document, RAGChunk
+        from django.core.files.base import ContentFile
+        from uuid import uuid4
+
+        doc = Document.objects.create(
+            title="Quantum Computing Primer",
+            file=ContentFile(b"Quantum test content", name="quantum.txt"),
+            currently_indexed=False
+        )
+
+        chunk1_id = str(uuid4())
+        chunk1 = RAGChunk.objects.create(
+            chunk_id=chunk1_id,
+            text_content="Quantum computers leverage qubits, superposition, and entanglement to perform complex computations.",
+            metadata={"source": "quantum.txt", "chunk_id": chunk1_id},
+            in_vector_index=False
+        )
+
+        chunk2_id = str(uuid4())
+        chunk2 = RAGChunk.objects.create(
+            chunk_id=chunk2_id,
+            text_content="Sourdough bread relies on wild yeast and lactobacilli for fermentation and crust development.",
+            metadata={"source": "bread.txt", "chunk_id": chunk2_id},
+            in_vector_index=False
+        )
+
+        # Index unindexed chunks into pgvector
+        indexed_count = self.rag_service.index_unindexed_chunks()
+        self.assertEqual(indexed_count, 2)
+
+        # Verify embeddings were persisted
+        chunk1.refresh_from_db()
+        chunk2.refresh_from_db()
+        self.assertTrue(chunk1.in_vector_index)
+        self.assertTrue(chunk2.in_vector_index)
+        self.assertIsNotNone(chunk1.embedding)
+        self.assertEqual(len(chunk1.embedding), 384)
+
+        # Run similarity search
+        results = self.rag_service.similarity_search_with_score("quantum entanglement in qubits", k=1)
+        self.assertEqual(len(results), 1)
+        doc_res, score = results[0]
+        self.assertEqual(doc_res.metadata["chunk_id"], chunk1_id)
+        self.assertLess(score, 0.8)
+
+    def test_document_currently_indexed_flag(self):
+        from background_resources.models import Document
+        from django.core.files.base import ContentFile
+
+        doc = Document.objects.create(
+            title="Indexing Test Doc",
+            file=ContentFile(b"Lineage and document indexing test content for verification.", name="indexing_test.txt"),
+            currently_indexed=False
+        )
+
+        self.assertFalse(doc.currently_indexed)
+        self.rag_service.convert_chunk_store_document(doc)
+        
+        doc.refresh_from_db()
+        self.assertTrue(doc.currently_indexed, "Document currently_indexed flag should be True after indexing")
+
+    def test_unified_retrieve_integration(self):
+        from background_resources.models import Document, RAGChunk
+        from grips.models import Domain, ConceptNode
+        from grips.services import GripsService
+        from background_resources.retrieval import unified_retrieve
+        from django.core.files.base import ContentFile
+        from uuid import uuid4
+
+        # 1. RAG Chunk
+        doc = Document.objects.create(
+            title="Unified Test Doc",
+            file=ContentFile(b"Unified test file content", name="unified.txt")
+        )
+        rag_id = str(uuid4())
+        RAGChunk.objects.create(
+            chunk_id=rag_id,
+            text_content="Neural network architectures include transformers, convolutional networks, and recurrent networks.",
+            metadata={"source": "ml.txt", "chunk_id": rag_id},
+            in_vector_index=False
+        )
+        self.rag_service.index_unindexed_chunks()
+        # Ensure in store for parent lookup
+        from langchain_core.documents import Document as LCDocument
+        self.rag_service.store.mset([(rag_id, LCDocument(page_content="Neural network architectures include transformers, convolutional networks, and recurrent networks.", metadata={"source": "ml.txt", "chunk_id": rag_id}))])
+
+        # 2. Grips Node
+        domain = Domain.objects.create(name="Deep Learning")
+        node = ConceptNode.objects.create(
+            domain=domain,
+            title="Transformer Architecture",
+            slug="transformer-architecture",
+            focus_hint="Self-attention mechanisms in deep neural networks",
+            narrative_content="The Transformer architecture uses multi-head self-attention mechanisms to model long-range sequence dependencies without recurrent connections.",
+            structured_claims=[{"subject": "Transformer", "predicate": "uses", "object": "Self-Attention"}]
+        )
+        grips_service = GripsService()
+        grips_service.index_concept_node(node)
+
+        # 3. Unified Retrieve
+        results = unified_retrieve(
+            query="transformer neural network self-attention",
+            domain_id=domain.id,
+            rag_k=2,
+            grips_k=2,
+            rag_service=self.rag_service,
+            grips_service=grips_service
+        )
+
+        self.assertTrue(len(results) >= 1)
+        sources = [r.source for r in results]
+        self.assertTrue(any(s in ["grips", "rag"] for s in sources))
+

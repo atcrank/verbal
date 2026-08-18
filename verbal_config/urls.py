@@ -28,6 +28,7 @@ from ninja.security import django_auth
 from ninja.openapi.docs import Swagger
 from llm_api.api import router as llm_router
 from metacognition import api as metacognition_api
+from work_organisation import api as whiteboard_api
 
 class LocalSwagger(Swagger):
     def render_page(self, request, api, **kwargs):
@@ -43,6 +44,8 @@ api = NinjaAPI(auth=django_auth, docs=LocalSwagger())
 
 api.add_router("/llm/", llm_router)
 api.add_router("/meta/", metacognition_api.router)
+api.add_router("/whiteboard/", whiteboard_api.router)
+
 @api.post("/csrf")
 @ensure_csrf_cookie
 @csrf_exempt

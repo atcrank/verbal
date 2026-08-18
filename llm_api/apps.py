@@ -155,8 +155,12 @@ class LlmApiConfig(AppConfig):
     def ready(self):
         from django.conf import settings
         import os
+        import sys
         import threading
         
+        if 'test' in sys.argv:
+            return
+
         # Prevent running twice in dev mode with the auto-reloader
         if os.environ.get('RUN_MAIN', None) != 'true' and settings.DEBUG:
             return

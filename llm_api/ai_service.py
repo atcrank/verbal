@@ -46,17 +46,21 @@ def _sanitize_messages(msgs):
     if not isinstance(msgs, list):
         return msgs
     sanitized = []
-    sys_prompt = ""
+    sys_parts = []
     for m in msgs:
         if m.get('role') == 'system':
-            sys_prompt += m.get('content', '') + "\n\n"
+            content = m.get('content', '').strip()
+            if content and content not in sys_parts:
+                sys_parts.append(content)
         else:
             sanitized.append(dict(m))
+            
+    sys_prompt = "\n\n---\n\n".join(sys_parts).strip()
     if sys_prompt:
         if sanitized and sanitized[0].get('role') == 'user':
-            sanitized[0]['content'] = sys_prompt + sanitized[0].get('content', '')
+            sanitized[0]['content'] = f"{sys_prompt}\n\n" + sanitized[0].get('content', '')
         else:
-            sanitized.insert(0, {'role': 'user', 'content': sys_prompt.strip()})
+            sanitized.insert(0, {'role': 'user', 'content': sys_prompt})
             
     # Merge consecutive roles for strict alternating templates like Gemma
     merged = []
@@ -318,6 +322,20 @@ class AIService:
                 if metrics and metrics.output_tokens > 0:
                     output_tokens = metrics.output_tokens
                 
+                # Retrieve conversation state_tree snapshot if available
+                state_tree_snapshot = log_kwargs.get("state_tree_snapshot")
+                if state_tree_snapshot is None and log_kwargs.get("conversation_id"):
+                    try:
+                        from llm_api.models import Conversation
+                        conv = Conversation.objects.filter(id=log_kwargs.get("conversation_id")).first()
+                        if conv and conv.state_tree:
+                            import copy
+                            state_tree_snapshot = copy.deepcopy(conv.state_tree)
+                    except Exception:
+                        pass
+                if state_tree_snapshot is None:
+                    state_tree_snapshot = {}
+
                 log = PromptResponseLog.objects.create(
                     system_prompt=system_prompt,
                     user_prompt=user_prompt,
@@ -325,6 +343,8 @@ class AIService:
                     user_id=log_kwargs.get("user_id"),
                     conversation_id=log_kwargs.get("conversation_id"),
                     rag_selections=log_kwargs.get("rag_selections", ""),
+                    state_tree_snapshot=state_tree_snapshot,
+                    parent_log_id=log_kwargs.get("parent_log_id"),
                     input_tokens=input_tokens,
                     output_tokens=output_tokens,
                     generation_duration_ms=duration_ms,
@@ -416,7 +436,8 @@ class AIService:
 
         try:
             logger.info(f"🚀 Routing inference request to: {api_url} (Model: {target_model})")
-            response = requests.post(api_url, headers=headers, json=payload)
+            timeout = kwargs.get("timeout") or getattr(settings, "LLM_REQUEST_TIMEOUT", 120)
+            response = requests.post(api_url, headers=headers, json=payload, timeout=timeout)
             response.raise_for_status()
             data = response.json()
             

@@ -1,547 +1,547 @@
 # Test Report: test_1_overrides
 
-**Date:** 2026-08-06 10:17:13.182944
-**Duration:** 2.5583 seconds
+**Date:** 2026-08-14 12:35:27.228844
+**Duration:** 8.6824 seconds
 ## Vector Store Contents
 Total Chunks: 135
 
-### Chunk ID: 2f97b56f-dc0e-4f82-a072-5bd7b10202f6
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '2f97b56f-dc0e-4f82-a072-5bd7b10202f6', 'filename': 'documents/long_doc.txt', 'chunk_index': 0, 'page_number': '4%', 'chunk_number': '1/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 4}
+### Chunk ID: 23c16420-f857-49f1-b54a-b756ffbab650
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '23c16420-f857-49f1-b54a-b756ffbab650', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 0, 'page_number': '4%', 'chunk_number': '1/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 4}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. ...
 ---
-### Chunk ID: 45dadfc6-2689-4b12-ab53-28dbc64f0226
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '45dadfc6-2689-4b12-ab53-28dbc64f0226', 'filename': 'documents/long_doc.txt', 'chunk_index': 1, 'page_number': '8%', 'chunk_number': '2/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 8}
+### Chunk ID: 36a94e1e-b34b-464c-96c7-b4dadcc80821
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '36a94e1e-b34b-464c-96c7-b4dadcc80821', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 7, 'page_number': '34%', 'chunk_number': '8/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 34}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a ...
 ---
-### Chunk ID: 2c19dcc8-fed5-4185-b56e-ee892006043d
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '2c19dcc8-fed5-4185-b56e-ee892006043d', 'filename': 'documents/long_doc.txt', 'chunk_index': 2, 'page_number': '13%', 'chunk_number': '3/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 13}
+### Chunk ID: b053e347-dbbc-4518-a7c8-da6c989ba733
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'b053e347-dbbc-4518-a7c8-da6c989ba733', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 13, 'page_number': '60%', 'chunk_number': '14/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 60}
+- **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a ...
+---
+### Chunk ID: c1ea605c-83f5-43c1-b1af-4019d1c2e06f
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'c1ea605c-83f5-43c1-b1af-4019d1c2e06f', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 1, 'page_number': '8%', 'chunk_number': '2/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 8}
+- **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a ...
+---
+### Chunk ID: a8307e88-b340-44fd-8295-ee76a77b73b7
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'a8307e88-b340-44fd-8295-ee76a77b73b7', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 2, 'page_number': '13%', 'chunk_number': '3/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 13}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. ...
 ---
-### Chunk ID: 2fd6f5a4-ea64-4f50-8222-fecf0b9460f5
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '2fd6f5a4-ea64-4f50-8222-fecf0b9460f5', 'filename': 'documents/long_doc.txt', 'chunk_index': 3, 'page_number': '17%', 'chunk_number': '4/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 17}
+### Chunk ID: a3451c55-3b2e-498c-8161-a865fe5fe4ac
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'a3451c55-3b2e-498c-8161-a865fe5fe4ac', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 3, 'page_number': '17%', 'chunk_number': '4/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 17}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a ...
 ---
-### Chunk ID: 822a385a-a9d0-4b5a-bb22-8b3f850c087e
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '822a385a-a9d0-4b5a-bb22-8b3f850c087e', 'filename': 'documents/long_doc.txt', 'chunk_index': 4, 'page_number': '21%', 'chunk_number': '5/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 21}
+### Chunk ID: 6b7fc8c0-ecf9-4ef9-bec6-65460622652b
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '6b7fc8c0-ecf9-4ef9-bec6-65460622652b', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 4, 'page_number': '21%', 'chunk_number': '5/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 21}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. ...
 ---
-### Chunk ID: 322a572c-c642-4bc8-b827-c4cb27d9974b
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '322a572c-c642-4bc8-b827-c4cb27d9974b', 'filename': 'documents/long_doc.txt', 'chunk_index': 5, 'page_number': '26%', 'chunk_number': '6/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 26}
+### Chunk ID: 0bdce885-4951-426e-b2b0-8db5dc641b00
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '0bdce885-4951-426e-b2b0-8db5dc641b00', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 5, 'page_number': '26%', 'chunk_number': '6/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 26}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a ...
 ---
-### Chunk ID: d452e727-c28d-45fa-b3f8-4130feb5eb20
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'd452e727-c28d-45fa-b3f8-4130feb5eb20', 'filename': 'documents/long_doc.txt', 'chunk_index': 6, 'page_number': '30%', 'chunk_number': '7/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 30}
+### Chunk ID: ecbdf072-2b10-4d07-aa6e-4f2dc1d0fe52
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'ecbdf072-2b10-4d07-aa6e-4f2dc1d0fe52', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 6, 'page_number': '30%', 'chunk_number': '7/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 30}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. ...
 ---
-### Chunk ID: 900e9ec9-c3cb-4ebb-bae0-8813d2c412fd
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '900e9ec9-c3cb-4ebb-bae0-8813d2c412fd', 'filename': 'documents/long_doc.txt', 'chunk_index': 7, 'page_number': '34%', 'chunk_number': '8/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 34}
-- **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a ...
----
-### Chunk ID: d2c968f3-63d8-4fc2-82be-c9d00885ba6a
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'd2c968f3-63d8-4fc2-82be-c9d00885ba6a', 'filename': 'documents/long_doc.txt', 'chunk_index': 8, 'page_number': '39%', 'chunk_number': '9/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 39}
+### Chunk ID: 1c52dbc2-eaaf-4faf-a9c9-a71fade59e36
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '1c52dbc2-eaaf-4faf-a9c9-a71fade59e36', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 8, 'page_number': '39%', 'chunk_number': '9/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 39}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. ...
 ---
-### Chunk ID: 3784fae1-fca9-4d16-8f3d-69fbb75f3255
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '3784fae1-fca9-4d16-8f3d-69fbb75f3255', 'filename': 'documents/long_doc.txt', 'chunk_index': 9, 'page_number': '43%', 'chunk_number': '10/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 43}
+### Chunk ID: 7d30540e-cef5-4f90-ba69-c68e9b297c63
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '7d30540e-cef5-4f90-ba69-c68e9b297c63', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 9, 'page_number': '43%', 'chunk_number': '10/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 43}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a ...
 ---
-### Chunk ID: 522c8fd5-9b8f-468a-87ec-310bc0f7c431
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '522c8fd5-9b8f-468a-87ec-310bc0f7c431', 'filename': 'documents/long_doc.txt', 'chunk_index': 10, 'page_number': '47%', 'chunk_number': '11/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 47}
+### Chunk ID: 9cbf144b-9503-46eb-980b-6582fbc55e71
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '9cbf144b-9503-46eb-980b-6582fbc55e71', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 10, 'page_number': '47%', 'chunk_number': '11/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 47}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. ...
 ---
-### Chunk ID: de19532c-17fb-467f-84e4-d3869ab2d389
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'de19532c-17fb-467f-84e4-d3869ab2d389', 'filename': 'documents/long_doc.txt', 'chunk_index': 11, 'page_number': '52%', 'chunk_number': '12/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 52}
+### Chunk ID: acd404ca-5463-4f83-bb21-57c900168876
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'acd404ca-5463-4f83-bb21-57c900168876', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 11, 'page_number': '52%', 'chunk_number': '12/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 52}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a ...
 ---
-### Chunk ID: 51cf105f-40f7-4eff-9fe0-80eafaf140e6
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '51cf105f-40f7-4eff-9fe0-80eafaf140e6', 'filename': 'documents/long_doc.txt', 'chunk_index': 12, 'page_number': '56%', 'chunk_number': '13/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 56}
+### Chunk ID: c191aa98-5344-4b7d-9d9e-e1508fc6066f
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'c191aa98-5344-4b7d-9d9e-e1508fc6066f', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 12, 'page_number': '56%', 'chunk_number': '13/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 56}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. ...
 ---
-### Chunk ID: 25667881-a26f-4b7e-ad92-e4eb067c6d46
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '25667881-a26f-4b7e-ad92-e4eb067c6d46', 'filename': 'documents/long_doc.txt', 'chunk_index': 13, 'page_number': '60%', 'chunk_number': '14/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 60}
-- **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a ...
----
-### Chunk ID: db430560-fd44-479d-8826-6e9b9ac7ef45
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'db430560-fd44-479d-8826-6e9b9ac7ef45', 'filename': 'documents/long_doc.txt', 'chunk_index': 14, 'page_number': '65%', 'chunk_number': '15/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 65}
+### Chunk ID: 48730749-f312-4e0c-97f1-fcc9729df853
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '48730749-f312-4e0c-97f1-fcc9729df853', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 14, 'page_number': '65%', 'chunk_number': '15/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 65}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. ...
 ---
-### Chunk ID: e3a8387c-e7c2-40e0-b6a4-3b7669848c01
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'e3a8387c-e7c2-40e0-b6a4-3b7669848c01', 'filename': 'documents/long_doc.txt', 'chunk_index': 15, 'page_number': '69%', 'chunk_number': '16/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 69}
+### Chunk ID: 9978966c-9d7e-44b9-b2fe-4779272aea32
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '9978966c-9d7e-44b9-b2fe-4779272aea32', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 15, 'page_number': '69%', 'chunk_number': '16/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 69}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a ...
 ---
-### Chunk ID: 26b90017-8ae8-47eb-bcc8-6d0f699aedf1
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '26b90017-8ae8-47eb-bcc8-6d0f699aedf1', 'filename': 'documents/long_doc.txt', 'chunk_index': 16, 'page_number': '73%', 'chunk_number': '17/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 73}
+### Chunk ID: 64f288d7-2996-43df-a44f-7daa3bc66280
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '64f288d7-2996-43df-a44f-7daa3bc66280', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 16, 'page_number': '73%', 'chunk_number': '17/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 73}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. ...
 ---
-### Chunk ID: 586e8814-01e5-4940-9bfc-974055c73717
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '586e8814-01e5-4940-9bfc-974055c73717', 'filename': 'documents/long_doc.txt', 'chunk_index': 17, 'page_number': '78%', 'chunk_number': '18/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 78}
+### Chunk ID: b9d2647a-8ef4-441b-b45b-038ad996b3ba
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'b9d2647a-8ef4-441b-b45b-038ad996b3ba', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 17, 'page_number': '78%', 'chunk_number': '18/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 78}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a ...
 ---
-### Chunk ID: c6841552-7858-4069-b219-081d0a363df7
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'c6841552-7858-4069-b219-081d0a363df7', 'filename': 'documents/long_doc.txt', 'chunk_index': 18, 'page_number': '82%', 'chunk_number': '19/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 82}
+### Chunk ID: fe1a738e-3a5e-4bd6-8361-3dfebf4bc13a
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'fe1a738e-3a5e-4bd6-8361-3dfebf4bc13a', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 18, 'page_number': '82%', 'chunk_number': '19/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 82}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. ...
 ---
-### Chunk ID: 7e107808-a85c-432e-b0f2-df7081cf31ae
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '7e107808-a85c-432e-b0f2-df7081cf31ae', 'filename': 'documents/long_doc.txt', 'chunk_index': 19, 'page_number': '86%', 'chunk_number': '20/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 86}
+### Chunk ID: 6d700336-19dc-4e00-a431-c9988c87924f
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '6d700336-19dc-4e00-a431-c9988c87924f', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 19, 'page_number': '86%', 'chunk_number': '20/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 86}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a ...
 ---
-### Chunk ID: 59797b85-afef-4b96-af6c-2034cf579ad8
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '59797b85-afef-4b96-af6c-2034cf579ad8', 'filename': 'documents/long_doc.txt', 'chunk_index': 20, 'page_number': '91%', 'chunk_number': '21/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 91}
+### Chunk ID: 93fe8265-5c18-409f-87ce-9279863864fe
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '93fe8265-5c18-409f-87ce-9279863864fe', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 20, 'page_number': '91%', 'chunk_number': '21/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 91}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. ...
 ---
-### Chunk ID: 2357ab5c-687a-48ea-ad6f-bb4270134cea
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '2357ab5c-687a-48ea-ad6f-bb4270134cea', 'filename': 'documents/long_doc.txt', 'chunk_index': 21, 'page_number': '95%', 'chunk_number': '22/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 95}
+### Chunk ID: cab19ea2-eb16-42b3-9fcd-a0771ff7b1e3
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'cab19ea2-eb16-42b3-9fcd-a0771ff7b1e3', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 21, 'page_number': '95%', 'chunk_number': '22/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 95}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a ...
 ---
-### Chunk ID: 07b2ef95-e37e-44f3-9b01-2deb9fb57f69
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '07b2ef95-e37e-44f3-9b01-2deb9fb57f69', 'filename': 'documents/long_doc.txt', 'chunk_index': 22, 'page_number': '100%', 'chunk_number': '23/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 100}
+### Chunk ID: b9997acb-2d31-4c9e-a073-411c68701521
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'b9997acb-2d31-4c9e-a073-411c68701521', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 22, 'page_number': '100%', 'chunk_number': '23/23', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-500_50', 'total_chunks': 23, 'location_percent': 100}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 70487820-d8bd-4e8a-b246-7fd0de3e5259
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '70487820-d8bd-4e8a-b246-7fd0de3e5259', 'filename': 'documents/long_doc.txt', 'chunk_index': 0, 'page_number': '0%', 'chunk_number': '1/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 0}
+### Chunk ID: 0f1eeba4-0940-4c5b-867c-628e20a82896
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '0f1eeba4-0940-4c5b-867c-628e20a82896', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 0, 'page_number': '0%', 'chunk_number': '1/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 0}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 1976b33e-a047-4895-8fde-dc63376c1ae5
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '1976b33e-a047-4895-8fde-dc63376c1ae5', 'filename': 'documents/long_doc.txt', 'chunk_index': 1, 'page_number': '1%', 'chunk_number': '2/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 1}
+### Chunk ID: f41f8b2f-5bd8-482c-8de9-aa4812773234
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'f41f8b2f-5bd8-482c-8de9-aa4812773234', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 1, 'page_number': '1%', 'chunk_number': '2/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 1}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 236ef1ff-f61e-46c1-9680-db12ca263fd3
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '236ef1ff-f61e-46c1-9680-db12ca263fd3', 'filename': 'documents/long_doc.txt', 'chunk_index': 2, 'page_number': '2%', 'chunk_number': '3/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 2}
+### Chunk ID: b141894d-cfe2-48e3-bd93-5ecb5bcdaa34
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'b141894d-cfe2-48e3-bd93-5ecb5bcdaa34', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 2, 'page_number': '2%', 'chunk_number': '3/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 2}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 6db01008-7946-45fe-9208-baa0861e4ea0
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '6db01008-7946-45fe-9208-baa0861e4ea0', 'filename': 'documents/long_doc.txt', 'chunk_index': 3, 'page_number': '3%', 'chunk_number': '4/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 3}
+### Chunk ID: 577ef620-890e-4198-8d5a-335b4cce67da
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '577ef620-890e-4198-8d5a-335b4cce67da', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 3, 'page_number': '3%', 'chunk_number': '4/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 3}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 3a78fd82-06b4-49fd-8b8a-77164c7ec5e1
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '3a78fd82-06b4-49fd-8b8a-77164c7ec5e1', 'filename': 'documents/long_doc.txt', 'chunk_index': 4, 'page_number': '4%', 'chunk_number': '5/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 4}
+### Chunk ID: 2e66ed8b-637c-4550-98de-ad12a1fe3aba
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '2e66ed8b-637c-4550-98de-ad12a1fe3aba', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 4, 'page_number': '4%', 'chunk_number': '5/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 4}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 7598f03c-6634-4d7a-829f-4199c050e8e6
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '7598f03c-6634-4d7a-829f-4199c050e8e6', 'filename': 'documents/long_doc.txt', 'chunk_index': 5, 'page_number': '5%', 'chunk_number': '6/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 5}
+### Chunk ID: 4223050e-ab2d-4fda-94c8-bbfa375e2088
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '4223050e-ab2d-4fda-94c8-bbfa375e2088', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 5, 'page_number': '5%', 'chunk_number': '6/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 5}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: fe8923cf-41e2-4deb-b797-b1e5299fe147
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'fe8923cf-41e2-4deb-b797-b1e5299fe147', 'filename': 'documents/long_doc.txt', 'chunk_index': 6, 'page_number': '6%', 'chunk_number': '7/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 6}
+### Chunk ID: 8a908dfe-721e-4d63-8fde-9a777a10282a
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '8a908dfe-721e-4d63-8fde-9a777a10282a', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 6, 'page_number': '6%', 'chunk_number': '7/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 6}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: e8d58342-cb78-407c-b220-91b00de9aa51
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'e8d58342-cb78-407c-b220-91b00de9aa51', 'filename': 'documents/long_doc.txt', 'chunk_index': 7, 'page_number': '7%', 'chunk_number': '8/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 7}
+### Chunk ID: 2a7ea3c0-67f2-470e-8247-0ce987b7f62e
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '2a7ea3c0-67f2-470e-8247-0ce987b7f62e', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 7, 'page_number': '7%', 'chunk_number': '8/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 7}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 5968b255-3280-4368-b1cc-55e91a20c507
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '5968b255-3280-4368-b1cc-55e91a20c507', 'filename': 'documents/long_doc.txt', 'chunk_index': 8, 'page_number': '8%', 'chunk_number': '9/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 8}
+### Chunk ID: 6a36cd5a-9ea0-43a6-80ff-4e79e0fa93cd
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '6a36cd5a-9ea0-43a6-80ff-4e79e0fa93cd', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 8, 'page_number': '8%', 'chunk_number': '9/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 8}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: b8d1cfca-1f97-4355-a186-b3b7d56ef745
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'b8d1cfca-1f97-4355-a186-b3b7d56ef745', 'filename': 'documents/long_doc.txt', 'chunk_index': 9, 'page_number': '8%', 'chunk_number': '10/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 8}
+### Chunk ID: 2d8fd22d-dab0-4030-8f96-a4d30830358e
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '2d8fd22d-dab0-4030-8f96-a4d30830358e', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 9, 'page_number': '8%', 'chunk_number': '10/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 8}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 3d2e2fd3-9e2a-44d6-a891-478d2f6694b9
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '3d2e2fd3-9e2a-44d6-a891-478d2f6694b9', 'filename': 'documents/long_doc.txt', 'chunk_index': 10, 'page_number': '9%', 'chunk_number': '11/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 9}
+### Chunk ID: a17042fd-5a9f-45bf-bdd2-4aaff609a715
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'a17042fd-5a9f-45bf-bdd2-4aaff609a715', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 10, 'page_number': '9%', 'chunk_number': '11/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 9}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: f4e72064-0627-4083-b26e-ab719ee7a24c
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'f4e72064-0627-4083-b26e-ab719ee7a24c', 'filename': 'documents/long_doc.txt', 'chunk_index': 11, 'page_number': '10%', 'chunk_number': '12/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 10}
+### Chunk ID: 8725ef3a-ff88-42d3-a5b8-f15d0a490e85
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '8725ef3a-ff88-42d3-a5b8-f15d0a490e85', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 11, 'page_number': '10%', 'chunk_number': '12/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 10}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: c041ab95-0d78-4a6b-9db1-c7df9588b537
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'c041ab95-0d78-4a6b-9db1-c7df9588b537', 'filename': 'documents/long_doc.txt', 'chunk_index': 12, 'page_number': '11%', 'chunk_number': '13/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 11}
+### Chunk ID: 5050a271-0cfa-4e39-b1ed-1889d22030e1
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '5050a271-0cfa-4e39-b1ed-1889d22030e1', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 12, 'page_number': '11%', 'chunk_number': '13/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 11}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: b179fb22-2093-4d66-afb0-53562a59f535
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'b179fb22-2093-4d66-afb0-53562a59f535', 'filename': 'documents/long_doc.txt', 'chunk_index': 13, 'page_number': '12%', 'chunk_number': '14/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 12}
+### Chunk ID: 50c80b42-331a-420a-887e-100f3c4d8170
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '50c80b42-331a-420a-887e-100f3c4d8170', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 13, 'page_number': '12%', 'chunk_number': '14/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 12}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: fe85a0c9-9382-4017-a0ce-2a954ca4ae65
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'fe85a0c9-9382-4017-a0ce-2a954ca4ae65', 'filename': 'documents/long_doc.txt', 'chunk_index': 14, 'page_number': '13%', 'chunk_number': '15/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 13}
+### Chunk ID: 7ec97c16-66e8-4beb-8eb0-7836ee91ec15
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '7ec97c16-66e8-4beb-8eb0-7836ee91ec15', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 14, 'page_number': '13%', 'chunk_number': '15/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 13}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: cc1311e0-4de1-4170-b0ff-a26e9cc1b474
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'cc1311e0-4de1-4170-b0ff-a26e9cc1b474', 'filename': 'documents/long_doc.txt', 'chunk_index': 15, 'page_number': '14%', 'chunk_number': '16/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 14}
+### Chunk ID: 2ec93b6e-713c-4001-bfff-a5f3f4dc4ff6
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '2ec93b6e-713c-4001-bfff-a5f3f4dc4ff6', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 15, 'page_number': '14%', 'chunk_number': '16/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 14}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 127065c1-a960-4ca9-bdc9-e88b22bdcea5
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '127065c1-a960-4ca9-bdc9-e88b22bdcea5', 'filename': 'documents/long_doc.txt', 'chunk_index': 16, 'page_number': '15%', 'chunk_number': '17/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 15}
+### Chunk ID: 3f44c482-a4ca-448d-a0c9-1f1622da5fee
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '3f44c482-a4ca-448d-a0c9-1f1622da5fee', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 16, 'page_number': '15%', 'chunk_number': '17/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 15}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 1bca25a6-ea21-46fa-afc4-392bdc8b03d8
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '1bca25a6-ea21-46fa-afc4-392bdc8b03d8', 'filename': 'documents/long_doc.txt', 'chunk_index': 17, 'page_number': '16%', 'chunk_number': '18/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 16}
+### Chunk ID: 9d77fca2-92c7-4b2d-a07c-dabd4308a464
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '9d77fca2-92c7-4b2d-a07c-dabd4308a464', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 17, 'page_number': '16%', 'chunk_number': '18/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 16}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 46a900b3-9bb9-4e12-9128-9976b32bc42f
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '46a900b3-9bb9-4e12-9128-9976b32bc42f', 'filename': 'documents/long_doc.txt', 'chunk_index': 18, 'page_number': '16%', 'chunk_number': '19/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 16}
+### Chunk ID: 55a0a296-1d2b-47ba-8841-3be1465fd30e
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '55a0a296-1d2b-47ba-8841-3be1465fd30e', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 18, 'page_number': '16%', 'chunk_number': '19/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 16}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 95d244d2-88f0-4a4c-98da-42e160b1e7a2
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '95d244d2-88f0-4a4c-98da-42e160b1e7a2', 'filename': 'documents/long_doc.txt', 'chunk_index': 19, 'page_number': '17%', 'chunk_number': '20/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 17}
+### Chunk ID: 9c43f7ac-b99a-4340-bd12-77777b9c2c83
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '9c43f7ac-b99a-4340-bd12-77777b9c2c83', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 19, 'page_number': '17%', 'chunk_number': '20/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 17}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 50f54c6e-fa73-47bf-9587-a50052ee44dd
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '50f54c6e-fa73-47bf-9587-a50052ee44dd', 'filename': 'documents/long_doc.txt', 'chunk_index': 20, 'page_number': '18%', 'chunk_number': '21/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 18}
+### Chunk ID: 09414162-dc55-40d1-8780-9be4f121696b
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '09414162-dc55-40d1-8780-9be4f121696b', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 20, 'page_number': '18%', 'chunk_number': '21/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 18}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 33226c01-5a4c-4359-adda-30f1c51dfffd
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '33226c01-5a4c-4359-adda-30f1c51dfffd', 'filename': 'documents/long_doc.txt', 'chunk_index': 21, 'page_number': '19%', 'chunk_number': '22/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 19}
+### Chunk ID: 96e15b6c-8197-4974-a7be-1b343282fb08
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '96e15b6c-8197-4974-a7be-1b343282fb08', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 21, 'page_number': '19%', 'chunk_number': '22/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 19}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 83d78caf-efd7-449a-893b-8efaab420774
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '83d78caf-efd7-449a-893b-8efaab420774', 'filename': 'documents/long_doc.txt', 'chunk_index': 22, 'page_number': '20%', 'chunk_number': '23/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 20}
+### Chunk ID: 8c60af18-3713-4c3a-9fe4-0e27d82e0297
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '8c60af18-3713-4c3a-9fe4-0e27d82e0297', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 22, 'page_number': '20%', 'chunk_number': '23/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 20}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 225d163c-c7db-4177-aaa3-deee8bd6768b
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '225d163c-c7db-4177-aaa3-deee8bd6768b', 'filename': 'documents/long_doc.txt', 'chunk_index': 23, 'page_number': '21%', 'chunk_number': '24/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 21}
+### Chunk ID: c0c63163-827e-4cbd-aef4-bf4029976c3e
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'c0c63163-827e-4cbd-aef4-bf4029976c3e', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 23, 'page_number': '21%', 'chunk_number': '24/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 21}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: c5be96a9-5497-4946-81de-2a3fab4adc2a
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'c5be96a9-5497-4946-81de-2a3fab4adc2a', 'filename': 'documents/long_doc.txt', 'chunk_index': 24, 'page_number': '22%', 'chunk_number': '25/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 22}
+### Chunk ID: 1ad32da9-190c-4523-b322-28ee4167026c
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '1ad32da9-190c-4523-b322-28ee4167026c', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 24, 'page_number': '22%', 'chunk_number': '25/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 22}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: fa4b0d51-7157-4d07-be86-38cb5a32264a
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'fa4b0d51-7157-4d07-be86-38cb5a32264a', 'filename': 'documents/long_doc.txt', 'chunk_index': 25, 'page_number': '23%', 'chunk_number': '26/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 23}
+### Chunk ID: 8df1edff-03b3-4825-9584-98459763a829
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '8df1edff-03b3-4825-9584-98459763a829', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 25, 'page_number': '23%', 'chunk_number': '26/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 23}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 8dfed88c-05cc-4001-a779-fea88d22fe0b
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '8dfed88c-05cc-4001-a779-fea88d22fe0b', 'filename': 'documents/long_doc.txt', 'chunk_index': 26, 'page_number': '24%', 'chunk_number': '27/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 24}
+### Chunk ID: 07178062-dfe7-4e9b-a98a-62209beea831
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '07178062-dfe7-4e9b-a98a-62209beea831', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 26, 'page_number': '24%', 'chunk_number': '27/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 24}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 247ce571-3081-4bb5-8335-8888b2a7edf0
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '247ce571-3081-4bb5-8335-8888b2a7edf0', 'filename': 'documents/long_doc.txt', 'chunk_index': 27, 'page_number': '25%', 'chunk_number': '28/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 25}
+### Chunk ID: 8dffcd60-9e3b-42ba-9df5-a64b0d17b827
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '8dffcd60-9e3b-42ba-9df5-a64b0d17b827', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 27, 'page_number': '25%', 'chunk_number': '28/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 25}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 17d1a439-24d4-4e38-aadd-e29995f47e09
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '17d1a439-24d4-4e38-aadd-e29995f47e09', 'filename': 'documents/long_doc.txt', 'chunk_index': 28, 'page_number': '25%', 'chunk_number': '29/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 25}
+### Chunk ID: ffe12278-f830-480a-b319-35a9e4fc7bb4
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'ffe12278-f830-480a-b319-35a9e4fc7bb4', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 28, 'page_number': '25%', 'chunk_number': '29/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 25}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 7ff31009-aca2-4e7c-bd65-3e9b2305c450
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '7ff31009-aca2-4e7c-bd65-3e9b2305c450', 'filename': 'documents/long_doc.txt', 'chunk_index': 29, 'page_number': '26%', 'chunk_number': '30/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 26}
+### Chunk ID: 2baf7089-e2f1-4649-8a0c-9995d717ed3e
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '2baf7089-e2f1-4649-8a0c-9995d717ed3e', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 29, 'page_number': '26%', 'chunk_number': '30/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 26}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 98b9a0a5-acab-449d-a287-e9680c951dbb
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '98b9a0a5-acab-449d-a287-e9680c951dbb', 'filename': 'documents/long_doc.txt', 'chunk_index': 30, 'page_number': '27%', 'chunk_number': '31/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 27}
+### Chunk ID: 0bb4a0e4-3b59-45f3-9162-1f210abe83db
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '0bb4a0e4-3b59-45f3-9162-1f210abe83db', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 30, 'page_number': '27%', 'chunk_number': '31/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 27}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: abd1864e-7732-4e49-acdf-cc3cd36be5dd
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'abd1864e-7732-4e49-acdf-cc3cd36be5dd', 'filename': 'documents/long_doc.txt', 'chunk_index': 31, 'page_number': '28%', 'chunk_number': '32/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 28}
+### Chunk ID: a6eee2d4-2efd-4bbf-a63c-45a919203c4c
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'a6eee2d4-2efd-4bbf-a63c-45a919203c4c', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 31, 'page_number': '28%', 'chunk_number': '32/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 28}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 263b74b5-38a1-4020-8795-9030193e5b24
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '263b74b5-38a1-4020-8795-9030193e5b24', 'filename': 'documents/long_doc.txt', 'chunk_index': 32, 'page_number': '29%', 'chunk_number': '33/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 29}
+### Chunk ID: a4837a70-c945-492b-8a50-d61043522295
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'a4837a70-c945-492b-8a50-d61043522295', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 32, 'page_number': '29%', 'chunk_number': '33/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 29}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: c0bd1849-33f9-4e23-8a4b-3f790a4b9db7
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'c0bd1849-33f9-4e23-8a4b-3f790a4b9db7', 'filename': 'documents/long_doc.txt', 'chunk_index': 33, 'page_number': '30%', 'chunk_number': '34/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 30}
+### Chunk ID: bbcaa055-981c-456e-abcf-62d87949936e
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'bbcaa055-981c-456e-abcf-62d87949936e', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 33, 'page_number': '30%', 'chunk_number': '34/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 30}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 3407ab2e-796c-4ef9-a07d-816818ecab27
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '3407ab2e-796c-4ef9-a07d-816818ecab27', 'filename': 'documents/long_doc.txt', 'chunk_index': 34, 'page_number': '31%', 'chunk_number': '35/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 31}
+### Chunk ID: 98b56f99-4d54-41ac-aee3-b7e0e8b13ee2
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '98b56f99-4d54-41ac-aee3-b7e0e8b13ee2', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 34, 'page_number': '31%', 'chunk_number': '35/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 31}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 4e2c069f-3654-48d2-a665-2bbc5e69ad20
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '4e2c069f-3654-48d2-a665-2bbc5e69ad20', 'filename': 'documents/long_doc.txt', 'chunk_index': 35, 'page_number': '32%', 'chunk_number': '36/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 32}
+### Chunk ID: 87e11f76-7292-4ff8-b9b2-9fa4fa94e8bc
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '87e11f76-7292-4ff8-b9b2-9fa4fa94e8bc', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 35, 'page_number': '32%', 'chunk_number': '36/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 32}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 4e3353d4-1bbf-4d9e-a5bd-c1cb7853a54f
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '4e3353d4-1bbf-4d9e-a5bd-c1cb7853a54f', 'filename': 'documents/long_doc.txt', 'chunk_index': 36, 'page_number': '33%', 'chunk_number': '37/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 33}
+### Chunk ID: 9cf80f7b-102a-4f7f-b235-d66e1761294b
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '9cf80f7b-102a-4f7f-b235-d66e1761294b', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 36, 'page_number': '33%', 'chunk_number': '37/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 33}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 3931f5fb-0380-4806-bacf-f40a840d4795
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '3931f5fb-0380-4806-bacf-f40a840d4795', 'filename': 'documents/long_doc.txt', 'chunk_index': 37, 'page_number': '33%', 'chunk_number': '38/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 33}
+### Chunk ID: ced2829e-34ae-4614-9185-68af25c2c3ca
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'ced2829e-34ae-4614-9185-68af25c2c3ca', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 37, 'page_number': '33%', 'chunk_number': '38/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 33}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 761ff9ec-eaff-4497-b56c-2264ebd1a07b
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '761ff9ec-eaff-4497-b56c-2264ebd1a07b', 'filename': 'documents/long_doc.txt', 'chunk_index': 38, 'page_number': '34%', 'chunk_number': '39/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 34}
+### Chunk ID: 777b8c97-dad4-49dc-a66c-002a0237d28c
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '777b8c97-dad4-49dc-a66c-002a0237d28c', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 38, 'page_number': '34%', 'chunk_number': '39/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 34}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 680390b4-92a5-44b9-8736-4c384ecef670
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '680390b4-92a5-44b9-8736-4c384ecef670', 'filename': 'documents/long_doc.txt', 'chunk_index': 39, 'page_number': '35%', 'chunk_number': '40/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 35}
+### Chunk ID: 8e4b20ed-cbd6-4c1f-a3b5-943d23f0fb54
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '8e4b20ed-cbd6-4c1f-a3b5-943d23f0fb54', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 39, 'page_number': '35%', 'chunk_number': '40/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 35}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 5f42180e-0327-4fac-bc3c-51ea5e254061
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '5f42180e-0327-4fac-bc3c-51ea5e254061', 'filename': 'documents/long_doc.txt', 'chunk_index': 40, 'page_number': '36%', 'chunk_number': '41/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 36}
+### Chunk ID: 818f41d9-1eea-4650-b959-34ef1cc03968
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '818f41d9-1eea-4650-b959-34ef1cc03968', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 40, 'page_number': '36%', 'chunk_number': '41/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 36}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 6c74b550-43ee-4c8e-97fd-f13954388387
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '6c74b550-43ee-4c8e-97fd-f13954388387', 'filename': 'documents/long_doc.txt', 'chunk_index': 41, 'page_number': '37%', 'chunk_number': '42/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 37}
+### Chunk ID: 6046065b-197f-4be6-a119-cd7ce897695c
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '6046065b-197f-4be6-a119-cd7ce897695c', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 41, 'page_number': '37%', 'chunk_number': '42/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 37}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 039581f8-46f2-4eca-9bb5-71333834bd48
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '039581f8-46f2-4eca-9bb5-71333834bd48', 'filename': 'documents/long_doc.txt', 'chunk_index': 42, 'page_number': '38%', 'chunk_number': '43/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 38}
+### Chunk ID: bef0d305-eefd-4e59-85b5-1d7fa7bbc3a8
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'bef0d305-eefd-4e59-85b5-1d7fa7bbc3a8', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 42, 'page_number': '38%', 'chunk_number': '43/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 38}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: f7cd7255-e6f8-445f-b1c6-c47a1329ecbc
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'f7cd7255-e6f8-445f-b1c6-c47a1329ecbc', 'filename': 'documents/long_doc.txt', 'chunk_index': 43, 'page_number': '39%', 'chunk_number': '44/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 39}
+### Chunk ID: b6963c78-fd22-4ea1-a318-57c24875bf31
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'b6963c78-fd22-4ea1-a318-57c24875bf31', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 43, 'page_number': '39%', 'chunk_number': '44/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 39}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 7c9f7d4f-58d7-4729-a577-95ff272b40af
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '7c9f7d4f-58d7-4729-a577-95ff272b40af', 'filename': 'documents/long_doc.txt', 'chunk_index': 44, 'page_number': '40%', 'chunk_number': '45/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 40}
+### Chunk ID: de49bf01-72fe-4bbc-87c1-c9b5e42cb3a5
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'de49bf01-72fe-4bbc-87c1-c9b5e42cb3a5', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 44, 'page_number': '40%', 'chunk_number': '45/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 40}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: db341d3b-f478-464f-9dda-fcfb3bfb171e
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'db341d3b-f478-464f-9dda-fcfb3bfb171e', 'filename': 'documents/long_doc.txt', 'chunk_index': 45, 'page_number': '41%', 'chunk_number': '46/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 41}
+### Chunk ID: 8d7993fe-cd04-4d49-b2fd-456ff73f9335
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '8d7993fe-cd04-4d49-b2fd-456ff73f9335', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 45, 'page_number': '41%', 'chunk_number': '46/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 41}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 2fb5394e-a778-4c37-a674-4688815fc72b
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '2fb5394e-a778-4c37-a674-4688815fc72b', 'filename': 'documents/long_doc.txt', 'chunk_index': 46, 'page_number': '41%', 'chunk_number': '47/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 41}
+### Chunk ID: 0f6e75b4-f617-4869-a6f0-bb2b59e589b7
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '0f6e75b4-f617-4869-a6f0-bb2b59e589b7', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 46, 'page_number': '41%', 'chunk_number': '47/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 41}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 7c1b2fc3-78d7-4e89-bad4-77c356b2c1f5
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '7c1b2fc3-78d7-4e89-bad4-77c356b2c1f5', 'filename': 'documents/long_doc.txt', 'chunk_index': 47, 'page_number': '42%', 'chunk_number': '48/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 42}
+### Chunk ID: f763164a-0137-4c43-ba60-fea8ecf4029e
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'f763164a-0137-4c43-ba60-fea8ecf4029e', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 47, 'page_number': '42%', 'chunk_number': '48/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 42}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 7c5dabc2-d099-4684-9645-3f8abe09182f
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '7c5dabc2-d099-4684-9645-3f8abe09182f', 'filename': 'documents/long_doc.txt', 'chunk_index': 48, 'page_number': '43%', 'chunk_number': '49/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 43}
+### Chunk ID: 21ee75ec-ed20-4848-875b-0d0d78862650
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '21ee75ec-ed20-4848-875b-0d0d78862650', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 48, 'page_number': '43%', 'chunk_number': '49/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 43}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: b4ebd8f0-38dc-4fb9-868b-a4906e427ad9
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'b4ebd8f0-38dc-4fb9-868b-a4906e427ad9', 'filename': 'documents/long_doc.txt', 'chunk_index': 49, 'page_number': '44%', 'chunk_number': '50/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 44}
+### Chunk ID: 52b331e6-25d3-4da3-b307-f0ca71164767
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '52b331e6-25d3-4da3-b307-f0ca71164767', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 49, 'page_number': '44%', 'chunk_number': '50/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 44}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: d3af3bdc-6af9-49e9-a390-518602516b31
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'd3af3bdc-6af9-49e9-a390-518602516b31', 'filename': 'documents/long_doc.txt', 'chunk_index': 50, 'page_number': '45%', 'chunk_number': '51/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 45}
+### Chunk ID: 34f2488c-4d3a-4ff5-ab9f-5d29ba3dc621
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '34f2488c-4d3a-4ff5-ab9f-5d29ba3dc621', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 50, 'page_number': '45%', 'chunk_number': '51/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 45}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 054ea66c-0940-4d23-9168-7edcbae55ecc
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '054ea66c-0940-4d23-9168-7edcbae55ecc', 'filename': 'documents/long_doc.txt', 'chunk_index': 51, 'page_number': '46%', 'chunk_number': '52/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 46}
+### Chunk ID: b67b18b0-7fa7-47e8-bcb6-81e3ccca94c8
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'b67b18b0-7fa7-47e8-bcb6-81e3ccca94c8', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 51, 'page_number': '46%', 'chunk_number': '52/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 46}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 393a2df1-9f44-4b62-977c-40f8b9bfecc5
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '393a2df1-9f44-4b62-977c-40f8b9bfecc5', 'filename': 'documents/long_doc.txt', 'chunk_index': 52, 'page_number': '47%', 'chunk_number': '53/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 47}
+### Chunk ID: 16ff3975-6119-4259-9f6d-e860f941e094
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '16ff3975-6119-4259-9f6d-e860f941e094', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 52, 'page_number': '47%', 'chunk_number': '53/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 47}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 33bbb324-a416-4c96-8a97-0ddae927bc09
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '33bbb324-a416-4c96-8a97-0ddae927bc09', 'filename': 'documents/long_doc.txt', 'chunk_index': 53, 'page_number': '48%', 'chunk_number': '54/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 48}
+### Chunk ID: ca491962-9853-4d38-842e-bc7490fe8b2e
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'ca491962-9853-4d38-842e-bc7490fe8b2e', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 53, 'page_number': '48%', 'chunk_number': '54/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 48}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: c44459ec-91fa-40b4-943d-45ae30803c23
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'c44459ec-91fa-40b4-943d-45ae30803c23', 'filename': 'documents/long_doc.txt', 'chunk_index': 54, 'page_number': '49%', 'chunk_number': '55/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 49}
+### Chunk ID: 7fb3e631-caa7-47f5-aeca-2034cd16e687
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '7fb3e631-caa7-47f5-aeca-2034cd16e687', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 54, 'page_number': '49%', 'chunk_number': '55/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 49}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: c7b53387-0ea2-402d-8c72-51f1cc2e6956
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'c7b53387-0ea2-402d-8c72-51f1cc2e6956', 'filename': 'documents/long_doc.txt', 'chunk_index': 55, 'page_number': '50%', 'chunk_number': '56/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 50}
+### Chunk ID: a249ea18-da53-46fa-8bfe-9f66b99d6152
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'a249ea18-da53-46fa-8bfe-9f66b99d6152', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 55, 'page_number': '50%', 'chunk_number': '56/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 50}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: f372886b-8a7d-442c-8403-ccb4f8639d9a
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'f372886b-8a7d-442c-8403-ccb4f8639d9a', 'filename': 'documents/long_doc.txt', 'chunk_index': 56, 'page_number': '50%', 'chunk_number': '57/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 50}
+### Chunk ID: c6b4f792-e836-4391-9fdb-3fc92042b167
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'c6b4f792-e836-4391-9fdb-3fc92042b167', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 56, 'page_number': '50%', 'chunk_number': '57/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 50}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: df35ed5b-073f-47e2-a317-eea09cd6d4d8
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'df35ed5b-073f-47e2-a317-eea09cd6d4d8', 'filename': 'documents/long_doc.txt', 'chunk_index': 57, 'page_number': '51%', 'chunk_number': '58/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 51}
+### Chunk ID: 7fd4ef8d-ccbe-4c75-9b63-14f566202c03
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '7fd4ef8d-ccbe-4c75-9b63-14f566202c03', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 57, 'page_number': '51%', 'chunk_number': '58/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 51}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 58a9ae9a-4966-4a60-b24d-7ce671c49782
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '58a9ae9a-4966-4a60-b24d-7ce671c49782', 'filename': 'documents/long_doc.txt', 'chunk_index': 58, 'page_number': '52%', 'chunk_number': '59/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 52}
+### Chunk ID: 451ec42f-0855-4997-9e8f-8dd64bfa4056
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '451ec42f-0855-4997-9e8f-8dd64bfa4056', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 58, 'page_number': '52%', 'chunk_number': '59/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 52}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: b2b61a33-391f-4d97-ae02-a0720f9317da
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'b2b61a33-391f-4d97-ae02-a0720f9317da', 'filename': 'documents/long_doc.txt', 'chunk_index': 59, 'page_number': '53%', 'chunk_number': '60/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 53}
+### Chunk ID: f36ed75d-a08f-4ca6-809c-25e5f4942434
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'f36ed75d-a08f-4ca6-809c-25e5f4942434', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 59, 'page_number': '53%', 'chunk_number': '60/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 53}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 7ea990ca-7995-4d5f-8082-1c4fa35f0ce3
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '7ea990ca-7995-4d5f-8082-1c4fa35f0ce3', 'filename': 'documents/long_doc.txt', 'chunk_index': 60, 'page_number': '54%', 'chunk_number': '61/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 54}
+### Chunk ID: 061e35e4-b8a4-4ffc-8aa5-f55e57099548
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '061e35e4-b8a4-4ffc-8aa5-f55e57099548', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 60, 'page_number': '54%', 'chunk_number': '61/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 54}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 14f8bc13-bd70-4be8-b8c8-5b24b300899e
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '14f8bc13-bd70-4be8-b8c8-5b24b300899e', 'filename': 'documents/long_doc.txt', 'chunk_index': 61, 'page_number': '55%', 'chunk_number': '62/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 55}
+### Chunk ID: 7c6d8fc9-f78a-4a48-8a6e-58df579843b2
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '7c6d8fc9-f78a-4a48-8a6e-58df579843b2', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 61, 'page_number': '55%', 'chunk_number': '62/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 55}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 84f05aad-4b62-41a3-a31b-c6eff661e62e
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '84f05aad-4b62-41a3-a31b-c6eff661e62e', 'filename': 'documents/long_doc.txt', 'chunk_index': 62, 'page_number': '56%', 'chunk_number': '63/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 56}
+### Chunk ID: 745dc34a-362c-4659-97fd-258719170273
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '745dc34a-362c-4659-97fd-258719170273', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 62, 'page_number': '56%', 'chunk_number': '63/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 56}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 11f8ef0e-ce4a-47c4-a8d0-4cbec1d43ea8
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '11f8ef0e-ce4a-47c4-a8d0-4cbec1d43ea8', 'filename': 'documents/long_doc.txt', 'chunk_index': 63, 'page_number': '57%', 'chunk_number': '64/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 57}
+### Chunk ID: f148ecb4-52ef-48c4-a691-1045cfe801a9
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'f148ecb4-52ef-48c4-a691-1045cfe801a9', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 63, 'page_number': '57%', 'chunk_number': '64/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 57}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: f896ae85-abd1-4ad3-b573-bb84ac669921
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'f896ae85-abd1-4ad3-b573-bb84ac669921', 'filename': 'documents/long_doc.txt', 'chunk_index': 64, 'page_number': '58%', 'chunk_number': '65/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 58}
+### Chunk ID: 07824294-0224-4e3d-94e8-0119cf951575
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '07824294-0224-4e3d-94e8-0119cf951575', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 64, 'page_number': '58%', 'chunk_number': '65/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 58}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: e8335a0f-7317-4a5f-b9c4-1b8933809242
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'e8335a0f-7317-4a5f-b9c4-1b8933809242', 'filename': 'documents/long_doc.txt', 'chunk_index': 65, 'page_number': '58%', 'chunk_number': '66/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 58}
+### Chunk ID: 0e274ae9-8b34-4446-9579-9bac34933ae6
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '0e274ae9-8b34-4446-9579-9bac34933ae6', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 65, 'page_number': '58%', 'chunk_number': '66/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 58}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 3039c631-258b-4ab8-99fa-54f8b1fbb621
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '3039c631-258b-4ab8-99fa-54f8b1fbb621', 'filename': 'documents/long_doc.txt', 'chunk_index': 66, 'page_number': '59%', 'chunk_number': '67/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 59}
+### Chunk ID: b52dc894-6a58-4fd5-9db5-c4dc26e33423
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'b52dc894-6a58-4fd5-9db5-c4dc26e33423', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 66, 'page_number': '59%', 'chunk_number': '67/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 59}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 575b048c-1ae9-46d3-a270-55e0b9ce07c5
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '575b048c-1ae9-46d3-a270-55e0b9ce07c5', 'filename': 'documents/long_doc.txt', 'chunk_index': 67, 'page_number': '60%', 'chunk_number': '68/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 60}
+### Chunk ID: 1187b8e6-55cc-43a7-b107-06fc8ccc144f
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '1187b8e6-55cc-43a7-b107-06fc8ccc144f', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 67, 'page_number': '60%', 'chunk_number': '68/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 60}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: c54c1ad5-b234-4cb4-be44-5e7af576fae5
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'c54c1ad5-b234-4cb4-be44-5e7af576fae5', 'filename': 'documents/long_doc.txt', 'chunk_index': 68, 'page_number': '61%', 'chunk_number': '69/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 61}
+### Chunk ID: 21da9164-81e6-4b35-b68a-8e38e4f6de55
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '21da9164-81e6-4b35-b68a-8e38e4f6de55', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 68, 'page_number': '61%', 'chunk_number': '69/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 61}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: d8a735f9-f721-48f3-822a-60669c7b5e49
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'd8a735f9-f721-48f3-822a-60669c7b5e49', 'filename': 'documents/long_doc.txt', 'chunk_index': 69, 'page_number': '62%', 'chunk_number': '70/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 62}
+### Chunk ID: 86992425-c052-48dd-bd8b-a0a2ffb098ac
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '86992425-c052-48dd-bd8b-a0a2ffb098ac', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 69, 'page_number': '62%', 'chunk_number': '70/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 62}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 4c1f2157-b713-471d-bb5f-76180f761891
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '4c1f2157-b713-471d-bb5f-76180f761891', 'filename': 'documents/long_doc.txt', 'chunk_index': 70, 'page_number': '63%', 'chunk_number': '71/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 63}
+### Chunk ID: b3712197-19e5-4909-b4e9-f313c06bc155
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'b3712197-19e5-4909-b4e9-f313c06bc155', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 70, 'page_number': '63%', 'chunk_number': '71/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 63}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 33e20956-2202-48e8-acaf-10d2d9f39911
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '33e20956-2202-48e8-acaf-10d2d9f39911', 'filename': 'documents/long_doc.txt', 'chunk_index': 71, 'page_number': '64%', 'chunk_number': '72/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 64}
+### Chunk ID: 8a681ab1-69d1-43f4-876a-fe81e3210a54
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '8a681ab1-69d1-43f4-876a-fe81e3210a54', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 71, 'page_number': '64%', 'chunk_number': '72/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 64}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 1a1bde93-2be0-4d9c-9a00-51f80ec3190a
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '1a1bde93-2be0-4d9c-9a00-51f80ec3190a', 'filename': 'documents/long_doc.txt', 'chunk_index': 72, 'page_number': '65%', 'chunk_number': '73/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 65}
+### Chunk ID: 2535df8b-1769-473e-a2e8-a725e11942cd
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '2535df8b-1769-473e-a2e8-a725e11942cd', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 72, 'page_number': '65%', 'chunk_number': '73/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 65}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 091ff11b-27d2-4f80-b36e-a1d783184bd2
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '091ff11b-27d2-4f80-b36e-a1d783184bd2', 'filename': 'documents/long_doc.txt', 'chunk_index': 73, 'page_number': '66%', 'chunk_number': '74/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 66}
+### Chunk ID: c9c29913-cf3e-45af-a650-318e63ada377
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'c9c29913-cf3e-45af-a650-318e63ada377', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 73, 'page_number': '66%', 'chunk_number': '74/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 66}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 01b29328-0412-4471-87f7-e9b3a3700cd8
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '01b29328-0412-4471-87f7-e9b3a3700cd8', 'filename': 'documents/long_doc.txt', 'chunk_index': 74, 'page_number': '66%', 'chunk_number': '75/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 66}
+### Chunk ID: 8109cb45-c183-4f8a-a966-48749f63ac86
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '8109cb45-c183-4f8a-a966-48749f63ac86', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 74, 'page_number': '66%', 'chunk_number': '75/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 66}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 09daa2ce-ec7a-410b-892c-1d64c2990141
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '09daa2ce-ec7a-410b-892c-1d64c2990141', 'filename': 'documents/long_doc.txt', 'chunk_index': 75, 'page_number': '67%', 'chunk_number': '76/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 67}
+### Chunk ID: 12333a71-d877-4c98-95d2-a36a63b8b826
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '12333a71-d877-4c98-95d2-a36a63b8b826', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 75, 'page_number': '67%', 'chunk_number': '76/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 67}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 6797d754-b010-42a4-9d1b-bfc379bb81be
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '6797d754-b010-42a4-9d1b-bfc379bb81be', 'filename': 'documents/long_doc.txt', 'chunk_index': 76, 'page_number': '68%', 'chunk_number': '77/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 68}
+### Chunk ID: 8388252d-b791-44b0-874f-9c65699d4a86
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '8388252d-b791-44b0-874f-9c65699d4a86', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 76, 'page_number': '68%', 'chunk_number': '77/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 68}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: aa95e7db-4137-4c52-868e-08225ad29887
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'aa95e7db-4137-4c52-868e-08225ad29887', 'filename': 'documents/long_doc.txt', 'chunk_index': 77, 'page_number': '69%', 'chunk_number': '78/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 69}
+### Chunk ID: 5f8d9870-468a-458d-9dc2-d46132cea7ad
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '5f8d9870-468a-458d-9dc2-d46132cea7ad', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 77, 'page_number': '69%', 'chunk_number': '78/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 69}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: ab5c83e7-a26a-4c99-b32e-bb5d47137adc
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'ab5c83e7-a26a-4c99-b32e-bb5d47137adc', 'filename': 'documents/long_doc.txt', 'chunk_index': 78, 'page_number': '70%', 'chunk_number': '79/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 70}
+### Chunk ID: 264a3ee9-0c1e-471b-a2e7-f22b576fe784
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '264a3ee9-0c1e-471b-a2e7-f22b576fe784', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 78, 'page_number': '70%', 'chunk_number': '79/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 70}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 0ebb560d-69be-482b-a75d-e21e1c19b2b2
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '0ebb560d-69be-482b-a75d-e21e1c19b2b2', 'filename': 'documents/long_doc.txt', 'chunk_index': 79, 'page_number': '71%', 'chunk_number': '80/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 71}
+### Chunk ID: 04dc2216-5185-407c-a707-48ba5d05d660
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '04dc2216-5185-407c-a707-48ba5d05d660', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 79, 'page_number': '71%', 'chunk_number': '80/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 71}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 8dc20ab5-921f-49d8-ae23-01271bc09ef6
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '8dc20ab5-921f-49d8-ae23-01271bc09ef6', 'filename': 'documents/long_doc.txt', 'chunk_index': 80, 'page_number': '72%', 'chunk_number': '81/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 72}
+### Chunk ID: eed0b41d-3cc2-4df5-8663-fd8f6ef03943
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'eed0b41d-3cc2-4df5-8663-fd8f6ef03943', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 80, 'page_number': '72%', 'chunk_number': '81/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 72}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 9351024f-3049-4321-a879-9368f999130a
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '9351024f-3049-4321-a879-9368f999130a', 'filename': 'documents/long_doc.txt', 'chunk_index': 81, 'page_number': '73%', 'chunk_number': '82/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 73}
+### Chunk ID: d4496fa1-b761-4b4f-b78e-952218fcad88
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'd4496fa1-b761-4b4f-b78e-952218fcad88', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 81, 'page_number': '73%', 'chunk_number': '82/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 73}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: c8245581-c9ee-47d1-84fc-07950a66b675
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'c8245581-c9ee-47d1-84fc-07950a66b675', 'filename': 'documents/long_doc.txt', 'chunk_index': 82, 'page_number': '74%', 'chunk_number': '83/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 74}
+### Chunk ID: 6d5fcbea-8fb4-4373-a9f8-23739ebf1aa2
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '6d5fcbea-8fb4-4373-a9f8-23739ebf1aa2', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 82, 'page_number': '74%', 'chunk_number': '83/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 74}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 6c91de28-ca4e-4be8-9a0f-5d8f0d13681e
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '6c91de28-ca4e-4be8-9a0f-5d8f0d13681e', 'filename': 'documents/long_doc.txt', 'chunk_index': 83, 'page_number': '75%', 'chunk_number': '84/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 75}
+### Chunk ID: a5f78932-babc-4e1c-af05-ea560dc5e2ba
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'a5f78932-babc-4e1c-af05-ea560dc5e2ba', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 83, 'page_number': '75%', 'chunk_number': '84/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 75}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 1b009510-ffaf-4e90-896d-f615d3f0a771
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '1b009510-ffaf-4e90-896d-f615d3f0a771', 'filename': 'documents/long_doc.txt', 'chunk_index': 84, 'page_number': '75%', 'chunk_number': '85/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 75}
+### Chunk ID: d9aa900c-8745-47f3-b454-f0082ada8306
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'd9aa900c-8745-47f3-b454-f0082ada8306', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 84, 'page_number': '75%', 'chunk_number': '85/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 75}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 755aa3e7-e45b-4987-8ca0-c465f171cf48
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '755aa3e7-e45b-4987-8ca0-c465f171cf48', 'filename': 'documents/long_doc.txt', 'chunk_index': 85, 'page_number': '76%', 'chunk_number': '86/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 76}
+### Chunk ID: bec39452-ba24-459e-8dc9-9ce94394ef05
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'bec39452-ba24-459e-8dc9-9ce94394ef05', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 85, 'page_number': '76%', 'chunk_number': '86/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 76}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 0df5379e-00d8-4b2a-8b57-5fbd862eb4ac
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '0df5379e-00d8-4b2a-8b57-5fbd862eb4ac', 'filename': 'documents/long_doc.txt', 'chunk_index': 86, 'page_number': '77%', 'chunk_number': '87/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 77}
+### Chunk ID: be1f2ccf-f02d-48ba-a551-04dee508f2fa
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'be1f2ccf-f02d-48ba-a551-04dee508f2fa', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 86, 'page_number': '77%', 'chunk_number': '87/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 77}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 68192520-4ecf-4e30-919e-0d1a33dbe778
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '68192520-4ecf-4e30-919e-0d1a33dbe778', 'filename': 'documents/long_doc.txt', 'chunk_index': 87, 'page_number': '78%', 'chunk_number': '88/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 78}
+### Chunk ID: afb3459a-457a-4ecf-a9af-b886331d984e
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'afb3459a-457a-4ecf-a9af-b886331d984e', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 87, 'page_number': '78%', 'chunk_number': '88/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 78}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 06530c61-f693-41b5-aa16-977725cd7a70
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '06530c61-f693-41b5-aa16-977725cd7a70', 'filename': 'documents/long_doc.txt', 'chunk_index': 88, 'page_number': '79%', 'chunk_number': '89/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 79}
+### Chunk ID: fe81365c-093b-4ce9-ae39-9de2690d3dd1
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'fe81365c-093b-4ce9-ae39-9de2690d3dd1', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 88, 'page_number': '79%', 'chunk_number': '89/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 79}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: c5c5427c-c5ff-41dd-978a-7718dd128cf8
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'c5c5427c-c5ff-41dd-978a-7718dd128cf8', 'filename': 'documents/long_doc.txt', 'chunk_index': 89, 'page_number': '80%', 'chunk_number': '90/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 80}
+### Chunk ID: 3d9663b9-6766-4089-9c39-0506fd494bb8
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '3d9663b9-6766-4089-9c39-0506fd494bb8', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 89, 'page_number': '80%', 'chunk_number': '90/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 80}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: cea0402b-7a4b-4ac0-8e8b-4b570565467a
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'cea0402b-7a4b-4ac0-8e8b-4b570565467a', 'filename': 'documents/long_doc.txt', 'chunk_index': 90, 'page_number': '81%', 'chunk_number': '91/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 81}
+### Chunk ID: cefb2ce9-6441-49fd-9dc8-9d7f6ee5384d
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'cefb2ce9-6441-49fd-9dc8-9d7f6ee5384d', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 90, 'page_number': '81%', 'chunk_number': '91/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 81}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 62d23ba3-1208-4df1-8e91-ce0b0abe417d
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '62d23ba3-1208-4df1-8e91-ce0b0abe417d', 'filename': 'documents/long_doc.txt', 'chunk_index': 91, 'page_number': '82%', 'chunk_number': '92/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 82}
+### Chunk ID: 0f44360a-f181-4876-bbad-dbfea90b6e2c
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '0f44360a-f181-4876-bbad-dbfea90b6e2c', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 91, 'page_number': '82%', 'chunk_number': '92/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 82}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 32546ace-f9b7-461a-9614-67a15d476144
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '32546ace-f9b7-461a-9614-67a15d476144', 'filename': 'documents/long_doc.txt', 'chunk_index': 92, 'page_number': '83%', 'chunk_number': '93/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 83}
+### Chunk ID: a372f794-642f-4489-a423-96a622dc57a3
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'a372f794-642f-4489-a423-96a622dc57a3', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 92, 'page_number': '83%', 'chunk_number': '93/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 83}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 8b6105cc-93bb-49db-ae37-4c1066e3b1be
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '8b6105cc-93bb-49db-ae37-4c1066e3b1be', 'filename': 'documents/long_doc.txt', 'chunk_index': 93, 'page_number': '83%', 'chunk_number': '94/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 83}
+### Chunk ID: e6c8bfeb-eb6d-43c8-8880-6df0c3e114b2
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'e6c8bfeb-eb6d-43c8-8880-6df0c3e114b2', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 93, 'page_number': '83%', 'chunk_number': '94/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 83}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 583e1348-7e45-45d5-a66d-b458a97e6351
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '583e1348-7e45-45d5-a66d-b458a97e6351', 'filename': 'documents/long_doc.txt', 'chunk_index': 94, 'page_number': '84%', 'chunk_number': '95/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 84}
+### Chunk ID: f27aead7-a720-4354-b955-640cba6b548e
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'f27aead7-a720-4354-b955-640cba6b548e', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 94, 'page_number': '84%', 'chunk_number': '95/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 84}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 75d1bee3-03e8-470e-91de-346a1388a57a
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '75d1bee3-03e8-470e-91de-346a1388a57a', 'filename': 'documents/long_doc.txt', 'chunk_index': 95, 'page_number': '85%', 'chunk_number': '96/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 85}
+### Chunk ID: fe992d5d-1ee8-4611-bce8-68178cd49af3
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'fe992d5d-1ee8-4611-bce8-68178cd49af3', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 95, 'page_number': '85%', 'chunk_number': '96/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 85}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 7bc95e98-24c2-49b7-ac0e-131c5c038a9d
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '7bc95e98-24c2-49b7-ac0e-131c5c038a9d', 'filename': 'documents/long_doc.txt', 'chunk_index': 96, 'page_number': '86%', 'chunk_number': '97/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 86}
+### Chunk ID: 289c4475-0e2f-4961-8e12-1e447032a73f
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '289c4475-0e2f-4961-8e12-1e447032a73f', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 96, 'page_number': '86%', 'chunk_number': '97/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 86}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 2ee4dafc-e301-4bf6-9fdc-9a1f15974528
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '2ee4dafc-e301-4bf6-9fdc-9a1f15974528', 'filename': 'documents/long_doc.txt', 'chunk_index': 97, 'page_number': '87%', 'chunk_number': '98/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 87}
+### Chunk ID: 9c8e5954-edc3-4f2a-a973-ad18af7d4190
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '9c8e5954-edc3-4f2a-a973-ad18af7d4190', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 97, 'page_number': '87%', 'chunk_number': '98/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 87}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: bb5bf7d7-1632-4a46-a962-1d8d1ee8bc3d
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'bb5bf7d7-1632-4a46-a962-1d8d1ee8bc3d', 'filename': 'documents/long_doc.txt', 'chunk_index': 98, 'page_number': '88%', 'chunk_number': '99/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 88}
+### Chunk ID: ffd3944b-a398-4c08-bc9f-3e48e1ad7367
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'ffd3944b-a398-4c08-bc9f-3e48e1ad7367', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 98, 'page_number': '88%', 'chunk_number': '99/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 88}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: b0d82869-3c8f-4b39-a096-86109022a698
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'b0d82869-3c8f-4b39-a096-86109022a698', 'filename': 'documents/long_doc.txt', 'chunk_index': 99, 'page_number': '89%', 'chunk_number': '100/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 89}
+### Chunk ID: 58878492-49c9-4995-a595-7d7db22557ee
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '58878492-49c9-4995-a595-7d7db22557ee', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 99, 'page_number': '89%', 'chunk_number': '100/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 89}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 6e671485-1862-4649-ace0-0fed24a67d21
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '6e671485-1862-4649-ace0-0fed24a67d21', 'filename': 'documents/long_doc.txt', 'chunk_index': 100, 'page_number': '90%', 'chunk_number': '101/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 90}
+### Chunk ID: 0b24b738-3463-4eb0-b250-2dedb60d75b8
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '0b24b738-3463-4eb0-b250-2dedb60d75b8', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 100, 'page_number': '90%', 'chunk_number': '101/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 90}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: d25a0891-e555-4898-936d-ad46de9a3a22
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'd25a0891-e555-4898-936d-ad46de9a3a22', 'filename': 'documents/long_doc.txt', 'chunk_index': 101, 'page_number': '91%', 'chunk_number': '102/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 91}
+### Chunk ID: 4badd5f0-1ed7-4aa3-9995-00021058a5ea
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '4badd5f0-1ed7-4aa3-9995-00021058a5ea', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 101, 'page_number': '91%', 'chunk_number': '102/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 91}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 66496b38-6ad0-4cd8-8cd6-f09c0b5a6030
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '66496b38-6ad0-4cd8-8cd6-f09c0b5a6030', 'filename': 'documents/long_doc.txt', 'chunk_index': 102, 'page_number': '91%', 'chunk_number': '103/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 91}
+### Chunk ID: 63c9b544-0dc8-4739-99c4-d7c37a92ef17
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '63c9b544-0dc8-4739-99c4-d7c37a92ef17', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 102, 'page_number': '91%', 'chunk_number': '103/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 91}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: e4f4b190-60ce-49ed-bece-40265865ea60
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'e4f4b190-60ce-49ed-bece-40265865ea60', 'filename': 'documents/long_doc.txt', 'chunk_index': 103, 'page_number': '92%', 'chunk_number': '104/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 92}
+### Chunk ID: a4240b0b-b6f9-4123-abea-ad4e48baea13
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'a4240b0b-b6f9-4123-abea-ad4e48baea13', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 103, 'page_number': '92%', 'chunk_number': '104/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 92}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 28bad781-a02c-4257-a0b1-2f86addad2be
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '28bad781-a02c-4257-a0b1-2f86addad2be', 'filename': 'documents/long_doc.txt', 'chunk_index': 104, 'page_number': '93%', 'chunk_number': '105/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 93}
+### Chunk ID: f997bd80-54c0-4465-af8f-052cd1295522
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'f997bd80-54c0-4465-af8f-052cd1295522', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 104, 'page_number': '93%', 'chunk_number': '105/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 93}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: f2c128e5-4e47-4199-86e4-38c27b2ef9df
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'f2c128e5-4e47-4199-86e4-38c27b2ef9df', 'filename': 'documents/long_doc.txt', 'chunk_index': 105, 'page_number': '94%', 'chunk_number': '106/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 94}
+### Chunk ID: bce9a844-4bda-466c-93be-6643e6a76c5d
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'bce9a844-4bda-466c-93be-6643e6a76c5d', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 105, 'page_number': '94%', 'chunk_number': '106/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 94}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 2d45304e-0a68-4022-a40d-8a0f7ca898d6
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '2d45304e-0a68-4022-a40d-8a0f7ca898d6', 'filename': 'documents/long_doc.txt', 'chunk_index': 106, 'page_number': '95%', 'chunk_number': '107/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 95}
+### Chunk ID: d93594ed-0127-47a3-be23-c4e736760763
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'd93594ed-0127-47a3-be23-c4e736760763', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 106, 'page_number': '95%', 'chunk_number': '107/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 95}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 563e759a-25ab-44db-ac8e-58c9419fdbbb
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '563e759a-25ab-44db-ac8e-58c9419fdbbb', 'filename': 'documents/long_doc.txt', 'chunk_index': 107, 'page_number': '96%', 'chunk_number': '108/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 96}
+### Chunk ID: 7cf89708-769a-4f54-8ab6-3abff7e1ddbb
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '7cf89708-769a-4f54-8ab6-3abff7e1ddbb', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 107, 'page_number': '96%', 'chunk_number': '108/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 96}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 5436a30d-c8b1-49ee-8afe-afb24d66236d
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '5436a30d-c8b1-49ee-8afe-afb24d66236d', 'filename': 'documents/long_doc.txt', 'chunk_index': 108, 'page_number': '97%', 'chunk_number': '109/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 97}
+### Chunk ID: ab607e6a-de4e-4711-8108-bbf63cf2bbd3
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'ab607e6a-de4e-4711-8108-bbf63cf2bbd3', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 108, 'page_number': '97%', 'chunk_number': '109/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 97}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: 10a2ffab-96d3-4934-9770-1d8e6a45425b
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '10a2ffab-96d3-4934-9770-1d8e6a45425b', 'filename': 'documents/long_doc.txt', 'chunk_index': 109, 'page_number': '98%', 'chunk_number': '110/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 98}
+### Chunk ID: 9b8681a3-e0d6-42b8-8f4b-315c01b7dfa1
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '9b8681a3-e0d6-42b8-8f4b-315c01b7dfa1', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 109, 'page_number': '98%', 'chunk_number': '110/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 98}
 - **Store Content:** sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a...
 ---
-### Chunk ID: 15473ccd-497c-41b7-a4dd-deb4ff2c07e0
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': '15473ccd-497c-41b7-a4dd-deb4ff2c07e0', 'filename': 'documents/long_doc.txt', 'chunk_index': 110, 'page_number': '99%', 'chunk_number': '111/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 99}
+### Chunk ID: afcca1dd-eea4-4d0e-88cf-849ed1117d27
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': 'afcca1dd-eea4-4d0e-88cf-849ed1117d27', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 110, 'page_number': '99%', 'chunk_number': '111/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 99}
 - **Store Content:** This is a sentence. This is a sentence. This is a sentence. This is a sentence. This is a sentence....
 ---
-### Chunk ID: ecdbe696-2fc8-4b9b-ba64-10723115b9ea
-- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc.txt', 'chunk_id': 'ecdbe696-2fc8-4b9b-ba64-10723115b9ea', 'filename': 'documents/long_doc.txt', 'chunk_index': 111, 'page_number': '100%', 'chunk_number': '112/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 100}
+### Chunk ID: 14602496-f5a9-45d1-929d-e49c39a5d86d
+- **Metadata:** {'source': '/home/crank/coding/antigrav/verbal/test_data/files/documents/long_doc_07D5PEo.txt', 'chunk_id': '14602496-f5a9-45d1-929d-e49c39a5d86d', 'filename': 'documents/long_doc_07D5PEo.txt', 'chunk_index': 111, 'page_number': '100%', 'chunk_number': '112/112', 'indexed_hash': '6065150f5f0a745a36cccdf0bcc6d1a7356d7e425c04aa73fd63c117e1044297-100_10', 'total_chunks': 112, 'location_percent': 100}
 - **Store Content:** sentence....
 ---

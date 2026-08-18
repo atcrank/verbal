@@ -215,6 +215,7 @@ class ReasoningStep(models.Model):
     
     output_schema = models.ForeignKey(ResponseSchema, on_delete=models.SET_NULL, null=True, blank=True, help_text="Select a structured output format for this step.")
     max_new_tokens = models.IntegerField(default=500, help_text="Maximum tokens to generate for this step. Increase for long-form analysis, decrease for short routing decisions.")
+    include_state_tree = models.BooleanField(default=True, help_text="If True, formats and injects Conversation.state_tree into the working prompt.")
 
     # Quality Control
     evaluation_criteria = models.TextField(blank=True,

@@ -8,6 +8,11 @@ https://docs.djangoproject.com/en/5.2/howto/deployment/asgi/
 """
 
 import os
+import warnings
+
+warnings.filterwarnings("ignore", message=r".*allowed_objects.*")
+warnings.filterwarnings("ignore", category=DeprecationWarning, module=r"langgraph.*")
+warnings.filterwarnings("ignore", category=PendingDeprecationWarning, module=r"langgraph.*")
 
 from django.core.asgi import get_asgi_application
 from django.contrib.staticfiles.handlers import ASGIStaticFilesHandler
@@ -16,8 +21,3 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "verbal_config.settings")
 
 application = get_asgi_application()
 application = ASGIStaticFilesHandler(application)
-
-# # Initialize AI services on startup
-# from llm_api.apps import service_registry
-# service_registry['ai_service'].load_models()
-# service_registry['rag_service'].load_models()

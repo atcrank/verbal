@@ -463,3 +463,16 @@ def task_index_concept_node(self, node_id: int):
         service_registry.grips_service.index_concept_node(node)
         return f"Indexed '{node.title}' (ID: {node_id})"
     return "Grips service not initialized."
+
+@shared_task
+def task_export_okf():
+    """
+    Periodically exports the Grips graph to the OKF workspace.
+    Runs the export_okf django management command.
+    """
+    from django.core.management import call_command
+    import io
+    
+    out = io.StringIO()
+    call_command('export_okf', stdout=out, stderr=out)
+    return out.getvalue()

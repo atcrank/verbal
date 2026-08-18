@@ -57,7 +57,75 @@ def resolve_active_steps(blueprint: CognitiveBlueprint) -> tuple[Dict[int, Reaso
     return resolved, root_mapping
 
 
+def _format_state_tree(state_tree: dict) -> str:
+    """Renders conversation state_tree in clean Markdown or JSON."""
+    if not state_tree or not isinstance(state_tree, dict):
+        return ""
+    lines = ["### Conversation State Tree:"]
+    if "macro_objective" in state_tree:
+        lines.append(f"- **Objective:** {state_tree['macro_objective']}")
+    if "active_task" in state_tree:
+        lines.append(f"- **Active Task:** {state_tree['active_task']}")
+    if "tasks" in state_tree and isinstance(state_tree["tasks"], dict):
+        lines.append("- **Tasks:**")
+        for tid, tinfo in state_tree["tasks"].items():
+            if isinstance(tinfo, dict):
+                status = tinfo.get("status", "PENDING")
+                title = tinfo.get("title", tid)
+                lines.append(f"  - [{status}] {title}")
+            else:
+                lines.append(f"  - {tid}: {tinfo}")
+    if "working_hypotheses" in state_tree and isinstance(state_tree["working_hypotheses"], list):
+        lines.append("- **Working Hypotheses:**")
+        for hyp in state_tree["working_hypotheses"]:
+            lines.append(f"  - {hyp}")
+    if "open_questions" in state_tree and isinstance(state_tree["open_questions"], list):
+        lines.append("- **Open Questions:**")
+        for q in state_tree["open_questions"]:
+            lines.append(f"  - {q}")
+
+    if len(lines) == 1:
+        return f"### Conversation State Tree:\n```json\n{json.dumps(state_tree, indent=2)}\n```"
+    return "\n".join(lines)
+
+
+def _merge_state_trees(parent_tree: dict, child_tree: dict) -> dict:
+    """
+    Merges updates from child sub-blueprint state_tree into parent state_tree.
+    Preserves parent tasks and updates status/resolutions from child.
+    """
+    if not child_tree:
+        return parent_tree or {}
+    if not parent_tree:
+        return dict(child_tree)
+
+    merged = dict(parent_tree)
+    for key, val in child_tree.items():
+        if key in ["working_hypotheses", "open_questions"] and isinstance(val, list):
+            existing = merged.get(key, [])
+            if isinstance(existing, list):
+                merged[key] = list(dict.fromkeys(existing + val))
+            else:
+                merged[key] = val
+        elif key == "tasks" and isinstance(val, dict):
+            existing_tasks = merged.get("tasks", {})
+            if isinstance(existing_tasks, dict):
+                merged_tasks = dict(existing_tasks)
+                merged_tasks.update(val)
+                merged["tasks"] = merged_tasks
+            else:
+                merged["tasks"] = val
+        elif isinstance(val, dict) and isinstance(merged.get(key), dict):
+            nested = dict(merged[key])
+            nested.update(val)
+            merged[key] = nested
+        else:
+            merged[key] = val
+    return merged
+
+
 def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
+
     """
     Creates an action node function closure for a given ReasoningStep.
     """
@@ -72,12 +140,47 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
         retries_remaining = dict(state.get("retries_remaining", {}))
         step_key = str(step.id)
         
+        # --- Task 7: Cancellation / Interrupt Check ---
+        from metacognition.events import is_cancelled, publish_blueprint_event
+        run_id = state.get("run_id") or state.get("conversation_id")
+        if is_cancelled(run_id):
+            logger.info(f"Execution cancelled for run_id={run_id}. Halting graph at step '{step.name}'.")
+            publish_blueprint_event(run_id, "cancelled", {
+                "step_name": step.name,
+                "step_count": step_count,
+                "message": "Execution halted by user request."
+            })
+            return {
+                "route_to": "END",
+                "step_count": step_count,
+                "retries_remaining": retries_remaining,
+                "internal_monologue": [{
+                    "step_name": step.name,
+                    "output": "HALTED: Execution cancelled by user.",
+                    "failed": False,
+                    "step_count": step_count
+                }],
+                "scratch": dict(state.get("scratch", {}))
+            }
+        
+        # Publish step start event
+        publish_blueprint_event(run_id, "step_started", {
+            "step_id": step.id,
+            "step_name": step.name,
+            "step_count": step_count,
+            "max_steps": state.get("max_steps", 50)
+        })
+
         # --- max_steps Safety Brake ---
         # step_count = total node visits across the entire graph (including loop re-visits).
         # max_steps = hard cap on total node visits to prevent runaway execution.
         max_steps = state.get("max_steps", 50)
         if step_count > max_steps:
             logger.warning(f"max_steps ({max_steps}) exceeded at step_count={step_count}. Halting graph.")
+            publish_blueprint_event(run_id, "error", {
+                "step_name": step.name,
+                "error": f"max_steps limit ({max_steps}) exceeded after {step_count} node visits."
+            })
             return {
                 "route_to": "END",
                 "step_count": step_count,
@@ -150,6 +253,10 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                 task_prompt = f"Macro Goal: {step.system_prompt}\n\nWorking Context (Prior Blueprint Conclusions):\n{prior_context}"
                 logger.info(f"Step '{step.name}' bypassing LLM to execute sub-blueprint: {step.sub_blueprint.name}")
                 
+                # Propagate parent state_tree to sub-blueprint conversation
+                parent_conv = Conversation.objects.filter(id=state.get("conversation_id")).first()
+                parent_tree = dict(parent_conv.state_tree) if parent_conv and parent_conv.state_tree else {}
+                
                 # Use a stable, reusable Conversation for each sub-blueprint.
                 # This limits proliferation to exactly 1 Conversation per sub-blueprint,
                 # reused across nightly runs.
@@ -157,8 +264,12 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                 sub_conv, _ = Conversation.objects.get_or_create(
                     title=sub_conv_title,
                     user_id=state.get("user_id"),
-                    defaults={}
+                    defaults={"state_tree": parent_tree}
                 )
+                
+                if parent_tree and not sub_conv.state_tree:
+                    sub_conv.state_tree = parent_tree
+                    sub_conv.save(update_fields=['state_tree'])
                 
                 res = run_blueprint(
                     blueprint_id=step.sub_blueprint_id, 
@@ -167,6 +278,15 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                     user_id=state.get("user_id"),
                     max_steps=150  # Sub-blueprint step budget
                 )
+                
+                # Merge child state_tree updates back into parent conversation
+                sub_conv.refresh_from_db()
+                scratch_merged = dict(state.get("scratch", {}))
+                if sub_conv.state_tree and parent_conv:
+                    merged_tree = _merge_state_trees(parent_conv.state_tree or {}, sub_conv.state_tree)
+                    parent_conv.state_tree = merged_tree
+                    parent_conv.save(update_fields=['state_tree'])
+                    scratch_merged["state_tree"] = merged_tree
                 
                 final_response = res.get("final_response", "")
                 monologue = res.get("internal_monologue", [])
@@ -199,9 +319,10 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                     "step_count": step_count,
                     "retries_remaining": retries_remaining,
                     "internal_monologue": [monologue_entry],
-                    "scratch": dict(state.get("scratch", {})),
+                    "scratch": scratch_merged,
                     "token_budget_remaining": current_budget
                 }
+
                 
             except Exception as e:
                 logger.error(f"Error executing sub-blueprint {step.sub_blueprint_id}: {e}")
@@ -224,21 +345,21 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                     "scratch": dict(state.get("scratch", {})),
                     "token_budget_remaining": current_budget
                 }
-        
         system_prompt = step.system_prompt
         if state.get("rag_context"):
             system_prompt += f"\n\nContext provided:\n{state.get('rag_context')}"
         if state.get("scratch"):
             system_prompt += f"\n\nScratchpad Variables:\n{json.dumps(state.get('scratch'), indent=2)}"
         
-        # Inject Conversation.state_tree into the prompt so the LLM can see
-        # queued tasks, resolved tasks, and accumulated findings.
-        if state.get("conversation_id"):
+        # Inject Conversation.state_tree into the prompt when include_state_tree is enabled
+        if getattr(step, 'include_state_tree', True) and state.get("conversation_id"):
             try:
                 from llm_api.models import Conversation
                 conv = Conversation.objects.get(id=state["conversation_id"])
                 if conv.state_tree:
-                    system_prompt += f"\n\nConversation State Tree:\n{json.dumps(conv.state_tree, indent=2)}"
+                    formatted_tree = _format_state_tree(conv.state_tree)
+                    if formatted_tree:
+                        system_prompt += f"\n\n{formatted_tree}"
             except Exception:
                 pass
             
@@ -458,11 +579,47 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
         else:
             if getattr(result, "__class__", None).__name__ == "list" and len(result) > 0 and isinstance(result[0], dict) and "name" in result[0]:
                 tool_results_str = []
+                approved_tools_list = list(state.get("approved_tools", []))
+                canonical_self_id = root_mapping[step.id]
+                
                 for tool_call in result:
                     tool_name = tool_call["name"]
                     tool_args = tool_call["args"]
                     try:
                         tool_def = ToolDefinition.objects.get(name=tool_name)
+                        
+                        # Task 6: Check Human-in-the-Loop authorization
+                        call_sig = f"{tool_name}:{json.dumps(tool_args, sort_keys=True)}"
+                        if tool_def.requires_approval and call_sig not in approved_tools_list and tool_name not in approved_tools_list:
+                            logger.warning(f"Tool '{tool_name}' requires human approval before execution. Suspending graph.")
+                            approval_payload = {
+                                "tool_name": tool_name,
+                                "tool_args": tool_args,
+                                "tool_description": tool_def.description,
+                                "step_id": step.id,
+                                "step_name": step.name,
+                                "call_signature": call_sig,
+                                "thread_id": f"{state.get('conversation_id')}_{step.blueprint.name}",
+                                "run_id": run_id
+                            }
+                            publish_blueprint_event(run_id, "approval_required", approval_payload)
+                            
+                            monologue_entry["output"] = f"⏸️ Tool '{tool_name}' requires human approval before execution. Graph suspended."
+                            monologue_entry["tool_result"] = "Awaiting human authorization."
+                            
+                            early_memory = summary_remove_msgs + [AIMessage(content=str(result))]
+                            return {
+                                "working_memory": early_memory,
+                                "route_to": "USER_INPUT_REQUIRED",
+                                "resume_to": f"step_{canonical_self_id}_action",
+                                "pending_approval": approval_payload,
+                                "step_count": step_count,
+                                "retries_remaining": retries_remaining,
+                                "internal_monologue": [monologue_entry],
+                                "scratch": scratch_updates,
+                                "token_budget_remaining": current_budget
+                            }
+
                         hook_result = execute_tool(tool_def, state, params=tool_args)
                             
                         if isinstance(hook_result, dict):
@@ -504,16 +661,33 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                 # Text output means we successfully generated an answer, subject to eval
                 
         # Automatically merge any top-level Pydantic schema fields into scratch
-        if hasattr(result, "model_dump"):
+        if hasattr(result, "model_dump") or hasattr(result, "dict"):
             try:
-                scratch_updates.update(result.model_dump())
+                schema_data = result.model_dump() if hasattr(result, "model_dump") else result.dict()
+                scratch_updates.update(schema_data)
             except Exception as e:
                 logger.warning(f"Failed to merge Pydantic result into scratch: {e}")
-        elif hasattr(result, "dict"):
-            try:
-                scratch_updates.update(result.dict())
-            except Exception as e:
-                logger.warning(f"Failed to merge Pydantic v1 result into scratch: {e}")
+
+            from .actions import SCHEMA_ACTION_HANDLERS
+            schema_cls_name = result.__class__.__name__
+            if schema_cls_name in SCHEMA_ACTION_HANDLERS:
+                try:
+                    handler = SCHEMA_ACTION_HANDLERS[schema_cls_name]
+                    action_state = {
+                        "working_prompt": "",
+                        "conversation_id": state.get("conversation_id"),
+                        "user_id": state.get("user_id"),
+                        "scratch": scratch_updates,
+                        "route_to": route_to
+                    }
+                    handled_res = handler(action_state, result)
+                    if handled_res.get("working_prompt"):
+                        additional_messages.append(SystemMessage(content=handled_res["working_prompt"]))
+                    if handled_res.get("route_to"):
+                        route_to = handled_res["route_to"]
+                except Exception as e:
+                    logger.error(f"Error running schema action handler for {schema_cls_name}: {e}")
+
                 
         # Update state
         new_messages = [AIMessage(content=str(result))] + additional_messages
@@ -549,6 +723,14 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                         monologue_entry["model_name"] = config.active_local_model.name
             except Exception:
                 pass
+        
+        publish_blueprint_event(run_id, "step_completed", {
+            "step_id": step.id,
+            "step_name": step.name,
+            "step_count": step_count,
+            "output": monologue_entry.get("output", ""),
+            "route_to": route_to
+        })
         
         return {
             "working_memory": final_memory,  # Reducer will append or overwrite

@@ -32,3 +32,7 @@
 
 - [x] [Feature] Model Admin and System Tokenizer UI (Status: done) -> [Link to note](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260812_model_admin_tokenizer.md)
   *Summary*: Implement "Look at local HuggingFace cache" functionality in LocalAIModel. Add controls to explicitly download/hold/remove cached models, handle progress bars via tqdm interceptors, and show disk usage. Refactor SystemConfiguration.system_tokenizer_id to be a relational field pointing to LocalAIModel.
+
+- [ ] [Feature] Work Organisation & Assisted Experiment Whiteboard (Status: pending) -> [Link to note](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260817_work_organisation_whiteboard_spec.md)
+  *Summary*: Build Project, Workshop, WorkshopSession hierarchy with Django Group scoping, 4 anonymity/access modes, real-time Datastar SSE state sync, whiteboard card/cluster storage, and LLM idea clustering & causal factor extraction endpoints.
+

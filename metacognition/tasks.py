@@ -68,20 +68,77 @@ def parse_structured_response(raw_output, schema_def) -> str:
 
 # --- CORE EXECUTION ---
 
+from uuid import uuid4
+from .events import publish_blueprint_event, clear_cancellation_flag
+
 @shared_task
-def task_run_blueprint_async(blueprint_id: int, user_prompt: str, conversation_id: typing.Optional[str] = None, user_id: typing.Optional[int] = None, max_steps: int = 100):
+def task_run_blueprint_async(blueprint_id: int, user_prompt: str, conversation_id: typing.Optional[str] = None, user_id: typing.Optional[int] = None, max_steps: int = 100, run_id: typing.Optional[str] = None):
     """Asynchronous wrapper for running a blueprint via Celery."""
-    return run_blueprint(blueprint_id, user_prompt, conversation_id, user_id, max_steps=max_steps)
+    return run_blueprint(blueprint_id, user_prompt, conversation_id, user_id, max_steps=max_steps, run_id=run_id)
+
+@shared_task
+def task_resume_blueprint_async(blueprint_id: int, thread_id: str, run_id: str, approved_tool: typing.Optional[str] = None, user_prompt: typing.Optional[str] = None, max_steps: int = 100):
+    """Asynchronously resumes an interrupted LangGraph blueprint from its checkpoint."""
+    try:
+        blueprint = CognitiveBlueprint.objects.get(id=blueprint_id)
+    except CognitiveBlueprint.DoesNotExist:
+        publish_blueprint_event(run_id, "error", {"error": "Blueprint not found."})
+        return {"error": "Blueprint not found.", "status": 404}
+
+    graph = compile_graph_from_blueprint(blueprint)
+    config = {"configurable": {"thread_id": thread_id}, "recursion_limit": max_steps}
+
+    state_updates = {"run_id": run_id}
+    if approved_tool:
+        state_updates["approved_tools"] = [approved_tool]
+    if user_prompt:
+        state_updates["working_memory"] = [HumanMessage(content=user_prompt)]
+
+    try:
+        logger.info(f"Resuming checkpoint thread {thread_id} for {blueprint.name} (run_id={run_id})")
+        graph.update_state(config, state_updates)
+        result_state = graph.invoke(None, config)
+    except Exception as e:
+        import traceback
+        logger.error(f"LangGraph resumption failed: {traceback.format_exc()}")
+        publish_blueprint_event(run_id, "error", {"error": str(e)})
+        return {"error": f"Resumption failed: {str(e)}", "status": 500}
+
+    monologue = result_state.get("internal_monologue", [])
+    final_response = monologue[-1].get("output", monologue[-1].get("result", "No output.")) if monologue else "No output."
+
+    if result_state.get("route_to") == "USER_INPUT_REQUIRED" and result_state.get("pending_approval"):
+        publish_blueprint_event(run_id, "approval_required", result_state["pending_approval"])
+    else:
+        publish_blueprint_event(run_id, "completed", {
+            "blueprint_name": blueprint.name,
+            "final_response": final_response,
+            "internal_monologue": monologue,
+            "thread_id": thread_id,
+            "run_id": run_id
+        })
+
+    return {
+        "blueprint_name": blueprint.name,
+        "final_response": final_response,
+        "internal_monologue": monologue,
+        "thread_id": thread_id,
+        "run_id": run_id
+    }
 
 def run_blueprint(blueprint_id: int, 
                   user_prompt: str, 
                   conversation_id: typing.Optional[str] = None, 
                   user_id: typing.Optional[int] = None,
                   parent_log_id: typing.Optional[str] = None,
-                  max_steps: int = 100):
+                  max_steps: int = 100,
+                  run_id: typing.Optional[str] = None):
+    run_id = run_id or str(uuid4())
+
     try:
         blueprint = CognitiveBlueprint.objects.get(id=blueprint_id)
     except CognitiveBlueprint.DoesNotExist:
+        publish_blueprint_event(run_id, "error", {"error": "Blueprint not found."})
         return {"error": "Blueprint not found.", "status": 404}
 
     # 0. Handle Conversation Tracking
@@ -95,6 +152,7 @@ def run_blueprint(blueprint_id: int,
         try:
             conversation = Conversation.objects.get(id=conversation_id)
         except Conversation.DoesNotExist:
+            publish_blueprint_event(run_id, "error", {"error": "Conversation not found."})
             return {"error": "Conversation not found.", "status": 404}
     else:
         from django.contrib.auth import get_user_model
@@ -123,6 +181,7 @@ def run_blueprint(blueprint_id: int,
         working_memory=[HumanMessage(content=user_prompt)],
         rag_context="",
         route_to=None,
+        resume_to=None,
         conversation_id=str(conversation.id),
         user_id=user_id,
         step_count=0,
@@ -133,6 +192,9 @@ def run_blueprint(blueprint_id: int,
             "current_chunk_index": 0,
         },
         token_budget_remaining=None,
+        run_id=run_id,
+        pending_approval=None,
+        approved_tools=[],
     )
     
     # Key the checkpoint thread_id by conversation + blueprint name
@@ -141,14 +203,17 @@ def run_blueprint(blueprint_id: int,
     config = {"configurable": {"thread_id": thread_id}, "recursion_limit": max_steps}
     
     # 3. Invoke LangGraph
-    logger.info(f"Starting LangGraph execution for blueprint {blueprint.name} (thread_id={thread_id})")
+    logger.info(f"Starting LangGraph execution for blueprint {blueprint.name} (thread_id={thread_id}, run_id={run_id})")
     try:
         current_state = graph.get_state(config)
         if current_state and current_state.next:
             # We are resuming an interrupted graph (e.g. user-input-required).
             # Update the working memory with the new user prompt.
             logger.info(f"Resuming interrupted graph for {blueprint.name}, next={current_state.next}")
-            graph.update_state(config, {"working_memory": [HumanMessage(content=user_prompt)]})
+            graph.update_state(config, {
+                "working_memory": [HumanMessage(content=user_prompt)],
+                "run_id": run_id
+            })
             result_state = graph.invoke(None, config)
         else:
             # First time running or completed prior run.
@@ -165,19 +230,37 @@ def run_blueprint(blueprint_id: int,
     except Exception as e:
         import traceback
         logger.error(f"LangGraph execution failed: {traceback.format_exc()}")
+        publish_blueprint_event(run_id, "error", {"error": str(e)})
         return {"error": f"Execution failed: {str(e)}", "status": 500}
 
     monologue = result_state.get("internal_monologue", [])
+    final_response = monologue[-1].get("output", monologue[-1].get("result", "No output.")) if monologue else "No output."
+    
+    if result_state.get("route_to") == "USER_INPUT_REQUIRED" and result_state.get("pending_approval"):
+        publish_blueprint_event(run_id, "approval_required", result_state["pending_approval"])
+    else:
+        publish_blueprint_event(run_id, "completed", {
+            "blueprint_name": blueprint.name,
+            "conversation_id": str(conversation.id),
+            "final_response": final_response,
+            "internal_monologue": monologue,
+            "thread_id": thread_id,
+            "run_id": run_id
+        })
     
     return {
         "blueprint_name": blueprint.name,
         "conversation_id": str(conversation.id),
-        "final_response": monologue[-1].get("output", monologue[-1].get("result", "No output.")) if monologue else "No output.",
+        "final_response": final_response,
         "internal_monologue": monologue,
         "working_memory": [
             {"role": getattr(m, "type", "unknown"), "content": getattr(m, "content", "")} 
             for m in result_state.get("working_memory", [])
-        ]
+        ],
+        "thread_id": thread_id,
+        "run_id": run_id,
+        "route_to": result_state.get("route_to"),
+        "pending_approval": result_state.get("pending_approval")
     }
 
 @shared_task

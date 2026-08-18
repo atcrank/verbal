@@ -517,12 +517,151 @@ class PromptVariant(BaseModel):
     """
     A proposed fine-tuning of an existing system prompt to address specific failures.
     """
-    reasoning: str = Field(description="Analyze the provided failure logs and the original system prompt. Why did the LLM fail to follow the instructions or achieve the goal?")
+    target_step_id: int = Field(description="The database ID of the ReasoningStep being modified.")
+    variant_intent: str = Field(description="Specific optimization intent (e.g. 'Stricter JSON compliance', 'Spatial Reasoning').")
+    reasoning: str = Field(description="Analysis of failure modes from conversation logs and why this prompt solves it.")
+    new_system_prompt: str = Field(description="The complete proposed refined system prompt.")
+    new_evaluation_criteria: Optional[str] = Field(None, description="Optional updated evaluation criteria for success/failure routing.")
+
 
 def create_prompt_variant(state: dict, llm_output: PromptVariant) -> dict:
-    state["working_prompt"] += f"\n\n[SYSTEM: NightManager proposed variant based on reasoning: {llm_output.reasoning}]\n"
+    from django.utils import timezone
+    from metacognition.models import ReasoningStep
+    from llm_api.models import Conversation
+
+    step_id = getattr(llm_output, 'target_step_id', None)
+    try:
+        parent_step = ReasoningStep.objects.defer('include_state_tree').filter(id=step_id).first()
+        if parent_step:
+            intent_label = getattr(llm_output, 'variant_intent', 'Optimized')[:30]
+            variant = ReasoningStep.objects.create(
+                blueprint_id=parent_step.blueprint_id,
+                name=f"{parent_step.name} (Variant - {intent_label})",
+                parent_step_id=parent_step.id,
+                system_prompt=llm_output.new_system_prompt,
+                evaluation_criteria=llm_output.new_evaluation_criteria or parent_step.evaluation_criteria,
+                variant_intent=llm_output.variant_intent,
+                is_pending_review=True,
+                proposed_by='system',
+                proposed_at=timezone.now(),
+                output_schema_id=parent_step.output_schema_id,
+                max_new_tokens=parent_step.max_new_tokens,
+            )
+            logger.info(f"Created pending ReasoningStep variant {variant.id} for '{parent_step.name}'")
+            state["working_prompt"] = f"\n\n[SYSTEM: Created pending ReasoningStep variant {variant.id} for '{parent_step.name}': {llm_output.variant_intent}]\n"
+        else:
+            state["working_prompt"] = f"\n\n[SYSTEM: Target ReasoningStep {step_id} not found. Proposed variant recorded.]\n"
+    except Exception as e:
+        logger.error(f"Error creating prompt variant: {e}")
+        state["working_prompt"] = f"\n\n[SYSTEM: Error creating variant: {e}]\n"
+
+    # Deterministically mark active/matching task in conversation state_tree as COMPLETED
+    conv_id = state.get("conversation_id")
+    if conv_id:
+        try:
+            conv = Conversation.objects.filter(id=conv_id).first()
+            if conv and conv.state_tree:
+                tree = dict(conv.state_tree)
+                tasks = tree.get("tasks", {})
+                if isinstance(tasks, dict):
+                    for t_key, t_val in tasks.items():
+                        if isinstance(t_val, dict) and t_val.get("status") in ["pending", "active", "in_progress"]:
+                            t_val["status"] = "COMPLETED"
+                            break
+                conv.state_tree = tree
+                conv.save(update_fields=['state_tree'])
+        except Exception as e:
+            logger.warning(f"Failed to update state_tree after prompt variant: {e}")
+
     state["route_to"] = "SUCCESS"
     return state
+
+
+class GripsExpansionProposal(BaseModel):
+    """Proposed new concept node or knowledge expansion in Grips."""
+    domain_name: str = Field(description="The domain name (e.g. 'General', 'Physics', 'Robotics').")
+    title: str = Field(description="The clear, distinct concept title.")
+    focus_hint: str = Field(default="", description="Disambiguating focus hint for retrieval.")
+    narrative_content: str = Field(description="Dense Markdown explanation of the concept.")
+    structured_claims: list[dict] = Field(default_factory=list, description="List of atomic claims (subject, predicate, object).")
+
+
+def handle_grips_expansion(state: dict, llm_output: GripsExpansionProposal) -> dict:
+    from grips.models import Domain, ConceptNode
+    from django.utils.text import slugify
+    import uuid
+
+    try:
+        domain, _ = Domain.objects.get_or_create(
+            name=llm_output.domain_name,
+            defaults={"description": f"Domain for {llm_output.domain_name}"}
+        )
+        base_slug = slugify(llm_output.title) or f"concept-{uuid.uuid4().hex[:8]}"
+        slug = base_slug
+        counter = 1
+        while ConceptNode.objects.filter(slug=slug).exists():
+            slug = f"{base_slug}-{counter}"
+            counter += 1
+
+        node = ConceptNode.objects.create(
+            domain=domain,
+            title=llm_output.title,
+            slug=slug,
+            focus_hint=llm_output.focus_hint,
+            narrative_content=llm_output.narrative_content,
+            structured_claims=llm_output.structured_claims,
+            needs_linting=True
+        )
+        state["working_prompt"] = f"\n\n[SYSTEM: Created ConceptNode {node.id}: '{node.title}' in domain '{domain.name}']\n"
+        logger.info(f"Created ConceptNode {node.id}: {node.title}")
+    except Exception as e:
+        logger.error(f"Error expanding Grips: {e}")
+        state["working_prompt"] = f"\n\n[SYSTEM: Error creating Grips concept: {e}]\n"
+
+    state["route_to"] = "SUCCESS"
+    return state
+
+
+class CognitiveBlueprintProposal(BaseModel):
+    """Proposed new cognitive blueprint for autonomous self-improvement."""
+    name: str = Field(description="Clear, distinct blueprint name (e.g. 'Data Quality Auditor').")
+    description: str = Field(description="Describes when the Router should select this blueprint.")
+    is_autonomous: bool = Field(default=True, description="Whether self-routing on failure is autonomous.")
+    initial_step_prompt: str = Field(description="The starting reasoning step prompt.")
+
+
+def handle_blueprint_proposal(state: dict, llm_output: CognitiveBlueprintProposal) -> dict:
+    from metacognition.models import CognitiveBlueprint, ReasoningStep
+
+    try:
+        bp, created = CognitiveBlueprint.objects.get_or_create(
+            name=llm_output.name,
+            defaults={
+                "description": llm_output.description,
+                "is_autonomous": llm_output.is_autonomous,
+                "is_canonical": False,
+            }
+        )
+        if created:
+            step = ReasoningStep.objects.create(
+                blueprint=bp,
+                name="Start Node",
+                is_start_node=True,
+                is_canonical=False,
+                system_prompt=llm_output.initial_step_prompt,
+                max_retries=3,
+            )
+            state["working_prompt"] = f"\n\n[SYSTEM: Constructed new CognitiveBlueprint {bp.id}: '{bp.name}']\n"
+            logger.info(f"Constructed CognitiveBlueprint {bp.id}: {bp.name}")
+        else:
+            state["working_prompt"] = f"\n\n[SYSTEM: Blueprint '{bp.name}' already exists.]\n"
+    except Exception as e:
+        logger.error(f"Error constructing blueprint proposal: {e}")
+        state["working_prompt"] = f"\n\n[SYSTEM: Error constructing blueprint: {e}]\n"
+
+    state["route_to"] = "SUCCESS"
+    return state
+
 
 
 class TaskItem(BaseModel):
@@ -825,18 +964,29 @@ def handle_evaluate_cross_domain_tool(state: dict, params: dict) -> str:
     return "Evaluated as not related. No edge created."
 
 # ACTION_REGISTRY has been deprecated and replaced by ToolDefinition.
-OUTPUT_TYPES = {"ResearchEvaluation": ResearchEvaluation,
-                "DifficultPromptEvaluation": DifficultPromptEvaluation,
-                "StrategicPlan": StrategicPlan,
-                "ExecutionPlan": ExecutionPlan,
-                "ResultCritique": ResultCritique,
-                "PromptVariant": PromptVariant,
-                "TaskQueue": TaskQueue,
-                "EdgeLintResult": EdgeLintResult,
-                "NodeLintResult": NodeLintResult,
-                "ConceptExtraction": ConceptExtraction,
-                "EvaluateConceptNeighborsResult": EvaluateConceptNeighborsResult,
-                "EvaluateCrossDomainResult": EvaluateCrossDomainResult}
+OUTPUT_TYPES = {
+    "ResearchEvaluation": ResearchEvaluation,
+    "DifficultPromptEvaluation": DifficultPromptEvaluation,
+    "StrategicPlan": StrategicPlan,
+    "ExecutionPlan": ExecutionPlan,
+    "ResultCritique": ResultCritique,
+    "PromptVariant": PromptVariant,
+    "GripsExpansionProposal": GripsExpansionProposal,
+    "CognitiveBlueprintProposal": CognitiveBlueprintProposal,
+    "TaskQueue": TaskQueue,
+    "EdgeLintResult": EdgeLintResult,
+    "NodeLintResult": NodeLintResult,
+    "ConceptExtraction": ConceptExtraction,
+    "EvaluateConceptNeighborsResult": EvaluateConceptNeighborsResult,
+    "EvaluateCrossDomainResult": EvaluateCrossDomainResult
+}
+
+SCHEMA_ACTION_HANDLERS = {
+    "PromptVariant": create_prompt_variant,
+    "GripsExpansionProposal": handle_grips_expansion,
+    "CognitiveBlueprintProposal": handle_blueprint_proposal,
+}
+
 
 # Inject the detailed schema description into the system prompt for the ExecutionPlan
 enhanced_prompt = (

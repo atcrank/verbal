@@ -23,6 +23,7 @@ from django.dispatch import receiver
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
+from pgvector.django import VectorField, HnswIndex
 
 
 # You will need to have these libraries installed:
@@ -86,8 +87,9 @@ class Document(models.Model):
         
         if updated_file:
             self.currently_indexed = False
-
-        if self.metadata.get("chunking_scheme", "") != self.chunking_scheme():
+        elif 'currently_indexed' in (kwargs.get('update_fields') or []) and self.currently_indexed:
+            pass
+        elif self.metadata.get("chunking_scheme", "") != self.chunking_scheme():
             self.currently_indexed = False
 
         super().save(*args, **kwargs)
@@ -144,6 +146,7 @@ class RAGChunk(models.Model):
     chunk_id = models.CharField(max_length=36, unique=True, db_index=True)
     text_content = models.TextField(null=True, blank=True)
     metadata = models.JSONField(default=dict)
+    embedding = VectorField(dimensions=384, null=True, blank=True)
 
     # Explicit Storage Status
     in_vector_index = models.BooleanField(default=False, help_text="Is this chunk indexed in PGVector?")
@@ -152,6 +155,17 @@ class RAGChunk(models.Model):
     # Usage Stats
     hit_count = models.IntegerField(default=0)
     last_accessed = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        indexes = [
+            HnswIndex(
+                name='ragchunk_embed_hnsw',
+                fields=['embedding'],
+                m=16,
+                ef_construction=64,
+                opclasses=['vector_cosine_ops'],
+            ),
+        ]
 
     def __str__(self):
         return f"{self.chunk_id} ({self.text_content[:20]}...)"
@@ -210,12 +224,13 @@ class ReadingStrategy(models.Model):
                 defaults={
                     'text_content': chunk.page_content if chunk else "",
                     'metadata': chunk.metadata if chunk else {},
-                    'in_vector_index': True,
+                    'in_vector_index': False,
                     'in_byte_store': True
                 }
             )
             StrategyChunkUsage.objects.create(chunk=rag_chunk, content_object=self,
                                               role=StrategyChunkUsage.Role.CLIPPED)
+        rag_service_inject.index_unindexed_chunks()
         logger.info(f'{self.__class__.__name__}[{self.id}] logged {len(chunk_ids)} usages to db.')
 
 
@@ -265,11 +280,12 @@ class GrobidReadingStrategy(models.Model):
                 defaults={
                     'text_content': chunk.page_content if chunk else "",
                     'metadata': chunk.metadata if chunk else {},
-                    'in_vector_index': True,
+                    'in_vector_index': False,
                     'in_byte_store': True
                 }
             )
             StrategyChunkUsage.objects.create(chunk=rag_chunk, content_object=self, role=StrategyChunkUsage.Role.CLIPPED)
+        rag_service_inject.index_unindexed_chunks()
         logger.info(f'{self.__class__.__name__}[{self.id}] logged {len(chunk_ids)} usages to db.')
 
     def get_chunk_ids(self):
@@ -454,18 +470,18 @@ class AbstractHigherOrderStrategy(models.Model):
                     defaults={
                         'text_content': item['vector_text'],
                         'metadata': vector_metadata,
-                        'in_vector_index': True,
+                        'in_vector_index': False,
                         'in_byte_store': False
                     }
                 )
                 StrategyChunkUsage.objects.create(chunk=rag_chunk, content_object=self, role=self.output_role)
 
         # 4. Batch Save
-        if vectors_to_add:
-            rag_service.db.add_documents(vectors_to_add, ids=vector_ids)
-        
         if store_docs_to_add:
             rag_service.store.mset(store_docs_to_add)
+
+        if vectors_to_add:
+            rag_service.index_unindexed_chunks()
 
 
     def extract_content(self, chunk, rag_service):
@@ -535,16 +551,6 @@ class ZeroShotLabelReadingStrategy(AbstractHigherOrderStrategy):
     prompt = models.TextField(default="Generate a label for each of these chunks based on the context provided.")
     label_options = models.JSONField(default=dict)
 
-@receiver(pre_delete, sender=RAGChunk)
-def delete_ragchunk_vector(sender, instance, **kwargs):
-     """When a RAGChunk is deleted, explicitly remove its vector from PGVector."""
-     from llm_api.apps import service_registry
-     rag_service = service_registry.rag_service
-     if rag_service and instance.in_vector_index:
-         try:
-             rag_service.db.delete([instance.chunk_id])
-         except Exception:
-             pass
 
 
 @receiver(post_delete, sender=StrategyChunkUsage)

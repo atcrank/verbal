@@ -268,9 +268,11 @@ def seed_tools(ToolDefinition):
         ("run_sub_blueprint", "Executes a sub-blueprint synchronously.", "builtin", "metacognition.meta_tools.run_sub_blueprint"),
         ("discover_django_models", "Inspects the schema of Django models to discover fields and relationships.", "builtin", "metacognition.meta_tools.discover_django_models"),
         ("write_django_model", "Safely creates, updates, or variants a Django model instance.", "builtin", "metacognition.meta_tools.write_django_model"),
+        ("inspect_nightmanager_performance", "Fetches aggregated diagnostic and quantitative health metrics for the NightManager.", "builtin", "metacognition.meta_tools.inspect_nightmanager_performance"),
         # Finding 2.2: TASK_COMPLETE must be a real registered tool with python_path
         ("TASK_COMPLETE", "Signals that the agent has finished all planned work. Use this when done.", "builtin", "metacognition.meta_tools.TASK_COMPLETE"),
     ]
+
 
     for name, desc, ttype, path in meta_tools:
         schema = TOOL_SCHEMAS.get(name)
@@ -465,7 +467,7 @@ def seed_nm_deep_system_evaluation(CognitiveBlueprint, ReasoningStep, ToolDefini
     )
     step_conv_record = ReasoningStep.objects.create(
         blueprint=bp, name="Record Conversation Findings", is_canonical=True,
-        system_prompt="Goal: Queue identified modification tasks based on conversation analysis.\nAction: Use `update_conversation_state` (action: 'add_task', task_path: 'NM_Ideas_for_System_Modifications > [Descriptive Task Name]').\nNote: Do NOT output TASK_COMPLETE. Transition to the next phase will happen automatically.",
+        system_prompt="Goal: Queue identified modification tasks based on conversation analysis.\nAction: Use `update_conversation_state` (action: 'add_task', task_path: 'NM_Ideas_for_System_Modifications > conversation_metrics_optimization').\nNote: Do NOT output TASK_COMPLETE. Transition to the next phase will happen automatically.",
         evaluation_criteria="Did the LLM queue modification tasks or confirm nothing to queue?", max_retries=3, max_new_tokens=400
     )
 
@@ -482,7 +484,7 @@ def seed_nm_deep_system_evaluation(CognitiveBlueprint, ReasoningStep, ToolDefini
     )
     step_bench_record = ReasoningStep.objects.create(
         blueprint=bp, name="Record Benchmark Findings", is_canonical=True,
-        system_prompt="Goal: Queue identified modification tasks based on benchmark analysis.\nAction: Use `update_conversation_state` (action: 'add_task', task_path: 'NM_Ideas_for_System_Modifications > [Descriptive Task Name]').\nNote: Do NOT output TASK_COMPLETE. Transition to the next phase will happen automatically.",
+        system_prompt="Goal: Queue identified modification tasks based on benchmark analysis.\nAction: Use `update_conversation_state` (action: 'add_task', task_path: 'NM_Ideas_for_System_Modifications > benchmark_coverage_audit').\nNote: Do NOT output TASK_COMPLETE. Transition to the next phase will happen automatically.",
         evaluation_criteria="Did the LLM queue modification tasks or confirm nothing to queue?", max_retries=3, max_new_tokens=400
     )
 
@@ -499,7 +501,7 @@ def seed_nm_deep_system_evaluation(CognitiveBlueprint, ReasoningStep, ToolDefini
     )
     step_rag_record = ReasoningStep.objects.create(
         blueprint=bp, name="Record RAG Findings", is_canonical=True,
-        system_prompt="Goal: Queue identified modification tasks based on RAG analysis.\nAction: Use `update_conversation_state` (action: 'add_task', task_path: 'NM_Ideas_for_System_Modifications > [Descriptive Task Name]').\nNote: Do NOT output TASK_COMPLETE. Transition to the next phase will happen automatically.",
+        system_prompt="Goal: Queue identified modification tasks based on RAG analysis.\nAction: Use `update_conversation_state` (action: 'add_task', task_path: 'NM_Ideas_for_System_Modifications > rag_retrieval_refinement').\nNote: Do NOT output TASK_COMPLETE. Transition to the next phase will happen automatically.",
         evaluation_criteria="Did the LLM queue modification tasks or confirm nothing to queue?", max_retries=3, max_new_tokens=400
     )
 
@@ -516,9 +518,10 @@ def seed_nm_deep_system_evaluation(CognitiveBlueprint, ReasoningStep, ToolDefini
     )
     step_grips_record = ReasoningStep.objects.create(
         blueprint=bp, name="Record Grips Findings", is_canonical=True,
-        system_prompt="Goal: Queue identified modification tasks based on Grips analysis.\nAction: Use `update_conversation_state` (action: 'add_task', task_path: 'NM_Ideas_for_System_Modifications > [Descriptive Task Name]').\nNote: Output TASK_COMPLETE when done.",
+        system_prompt="Goal: Queue identified modification tasks based on Grips analysis.\nAction: Use `update_conversation_state` (action: 'add_task', task_path: 'NM_Ideas_for_System_Modifications > grips_knowledge_expansion').\nNote: Output TASK_COMPLETE when done.",
         evaluation_criteria="Did the LLM queue modification tasks or confirm nothing to queue?", max_retries=3, max_new_tokens=400
     )
+
 
     # Chain them sequentially
     steps = [
@@ -609,22 +612,25 @@ def seed_nm_optimize_reasoning(CognitiveBlueprint, ReasoningStep, ToolDefinition
     step4.on_failure_step = step1
     step4.save()
     
-    tool_update, _ = ToolDefinition.objects.get_or_create(name="update_conversation_state")
-    tool_complete, _ = ToolDefinition.objects.get_or_create(name="TASK_COMPLETE")
-    step3.action_hook = 'create_prompt_variant'
-    step3.save()
     step3.available_tools.clear()
     step1.available_tools.clear()
     step2.available_tools.clear()
     step4.available_tools.clear()
 
-def seed_nm_refine_rag_grips(CognitiveBlueprint, ReasoningStep, ToolDefinition):
+def seed_nm_refine_rag_grips(CognitiveBlueprint, ReasoningStep, ToolDefinition, ResponseSchema=None):
     bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="NM_Refine_RAG_Grips",
         defaults={'description': "Sub-blueprint to analyze and refine RAG/Grips nodes.", 'is_autonomous': True, 'is_canonical': True}
     )
     ReasoningStep.objects.filter(blueprint=bp).delete()
     
+    schema_grips = None
+    if ResponseSchema:
+        schema_grips, _ = ResponseSchema.objects.get_or_create(
+            name="GripsExpansion_Schema",
+            defaults={'schema_type': 'pydantic', 'pydantic_model_name': 'GripsExpansionProposal'}
+        )
+
     step1 = ReasoningStep.objects.create(
         blueprint=bp, name="Fetch Next Task & Context", is_start_node=True, is_canonical=True,
         system_prompt="Goal: Read the `state_tree` for the next RAG/Grips task and fetch relevant nodes.\nAction: Fetch context from RAG/Grips.",
@@ -636,8 +642,8 @@ def seed_nm_refine_rag_grips(CognitiveBlueprint, ReasoningStep, ToolDefinition):
         evaluation_criteria="Did the LLM write an analysis?", max_retries=3, max_new_tokens=800
     )
     step3 = ReasoningStep.objects.create(
-        blueprint=bp, name="Act (Save Modifications)", is_canonical=True,
-        system_prompt="Goal: Update Grips/ReadingStrategies and mark task as resolved.\nAction: Apply modifications.",
+        blueprint=bp, name="Act (Save Modifications)", is_canonical=True, output_schema=schema_grips,
+        system_prompt="Goal: Update Grips concepts/claims and mark task as resolved.\nAction: Output the GripsExpansionProposal schema.",
         evaluation_criteria="Did the LLM execute the modifications?", max_retries=3, max_new_tokens=800
     )
     step4 = ReasoningStep.objects.create(
@@ -664,9 +670,8 @@ def seed_nm_refine_rag_grips(CognitiveBlueprint, ReasoningStep, ToolDefinition):
     tool_complete, _ = ToolDefinition.objects.get_or_create(name="TASK_COMPLETE")
     tool_discover, _ = ToolDefinition.objects.get_or_create(name="discover_django_models")
     tool_read, _ = ToolDefinition.objects.get_or_create(name="read_django_models")
-    tool_write, _ = ToolDefinition.objects.get_or_create(name="write_django_model")
     
-    step3.available_tools.add(tool_update, tool_complete, tool_discover, tool_write)
+    step3.available_tools.clear()
     step1.available_tools.add(tool_discover, tool_read)
     step2.available_tools.clear()
     step4.available_tools.clear()
@@ -775,16 +780,23 @@ def seed_nm_system_modifications(CognitiveBlueprint, ReasoningStep, ToolDefiniti
     step3.available_tools.clear()
     step4.available_tools.clear()
 
-def seed_nm_self_improvement(CognitiveBlueprint, ReasoningStep, ToolDefinition):
+def seed_nm_self_improvement(CognitiveBlueprint, ReasoningStep, ToolDefinition, ResponseSchema=None):
     bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="NM_Self-improvement",
         defaults={'description': "Phase 3: Meta-self reflection on NightManager execution patterns across model rotations.", 'is_autonomous': True, 'is_canonical': True}
     )
     ReasoningStep.objects.filter(blueprint=bp).delete()
 
+    schema_bp = None
+    if ResponseSchema:
+        schema_bp, _ = ResponseSchema.objects.get_or_create(
+            name="CognitiveBlueprint_Schema",
+            defaults={'schema_type': 'pydantic', 'pydantic_model_name': 'CognitiveBlueprintProposal'}
+        )
+
     step1 = ReasoningStep.objects.create(
         blueprint=bp, name="Meta-Performance Contemplation", is_start_node=True, is_canonical=True,
-        system_prompt="Goal: Review overall NightManager execution performance across model runs. Measure yourself against the best human. Proactively use the record_signal tool to document long-running but faint signals, to have somewhere to store the small increments of evidence and understanding or good ideas spotted in user prompts, that can accumulate night by night.\nAction: Write a detailed summary.",
+        system_prompt="Goal: Review overall NightManager execution performance across model runs. Measure yourself against the best human. Proactively use `inspect_nightmanager_performance` to analyze quantitative stats, and use `record_signal` to document long-running faint signals.\nAction: Write a detailed summary.",
         evaluation_criteria="Did the LLM write a summary?", max_retries=3, max_new_tokens=800
     )
     step2 = ReasoningStep.objects.create(
@@ -793,9 +805,9 @@ def seed_nm_self_improvement(CognitiveBlueprint, ReasoningStep, ToolDefinition):
         evaluation_criteria="Did the LLM write a proposal?", max_retries=3, max_new_tokens=800
     )
     step3 = ReasoningStep.objects.create(
-        blueprint=bp, name="Act (Construct Blueprints)", is_canonical=True,
-        system_prompt="Goal: Autonomously construct the new cognitive blueprints or tools.\nAction: Call `create_blueprint` or `create_tool` to instantiate your new designs.",
-        evaluation_criteria="Did the LLM construct the new blueprints or tools?", max_retries=3, max_new_tokens=800
+        blueprint=bp, name="Act (Construct Blueprints)", is_canonical=True, output_schema=schema_bp,
+        system_prompt="Goal: Autonomously construct the new cognitive blueprints or tools.\nAction: Output the CognitiveBlueprintProposal schema.",
+        evaluation_criteria="Did the LLM output the blueprint proposal schema?", max_retries=3, max_new_tokens=800
     )
 
     step1.on_success_step = step2
@@ -810,22 +822,28 @@ def seed_nm_self_improvement(CognitiveBlueprint, ReasoningStep, ToolDefinition):
     
     tool_update, _ = ToolDefinition.objects.get_or_create(name="update_conversation_state")
     tool_complete, _ = ToolDefinition.objects.get_or_create(name="TASK_COMPLETE")
-    tool_create_bp, _ = ToolDefinition.objects.get_or_create(name="create_blueprint")
-    tool_create_tool, _ = ToolDefinition.objects.get_or_create(name="create_tool")
-    tool_record_signal, _ = ToolDefinition.objects.get_or_create(name="record_signal", defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.record_signal"})
+    tool_inspect_nm, _ = ToolDefinition.objects.get_or_create(
+        name="inspect_nightmanager_performance",
+        defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.inspect_nightmanager_performance"}
+    )
+    tool_record_signal, _ = ToolDefinition.objects.get_or_create(
+        name="record_signal",
+        defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.record_signal"}
+    )
     
-    step3.available_tools.add(tool_update, tool_complete, tool_create_bp, tool_create_tool)
-    step1.available_tools.add(tool_record_signal)
+    step3.available_tools.clear()
+    step1.available_tools.add(tool_record_signal, tool_inspect_nm)
     step2.available_tools.clear()
 
 def seed_nightmanager(CognitiveBlueprint, ReasoningStep, ResponseSchema, ToolDefinition):
     seed_nm_housekeeping(CognitiveBlueprint, ReasoningStep, ToolDefinition)
     seed_nm_deep_system_evaluation(CognitiveBlueprint, ReasoningStep, ToolDefinition)
     seed_nm_optimize_reasoning(CognitiveBlueprint, ReasoningStep, ToolDefinition, ResponseSchema)
-    seed_nm_refine_rag_grips(CognitiveBlueprint, ReasoningStep, ToolDefinition)
+    seed_nm_refine_rag_grips(CognitiveBlueprint, ReasoningStep, ToolDefinition, ResponseSchema)
     seed_nm_formulate_benchmarks(CognitiveBlueprint, ReasoningStep, ToolDefinition)
     seed_nm_system_modifications(CognitiveBlueprint, ReasoningStep, ToolDefinition, ResponseSchema)
-    seed_nm_self_improvement(CognitiveBlueprint, ReasoningStep, ToolDefinition)
+    seed_nm_self_improvement(CognitiveBlueprint, ReasoningStep, ToolDefinition, ResponseSchema)
+
 
     bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="NightManager",

@@ -74,11 +74,23 @@ def force_proxy_for_tests():
 
 def pytest_sessionstart(session):
     """Verify the inference server is reachable before running tests."""
-    try:
-        # We expect a 405 Method Not Allowed or 400 Bad Request if the server is up and listening.
-        requests.get("http://localhost:8000/api/llm/v1/chat/completions", timeout=2)
-    except requests.exceptions.ConnectionError:
-        logger.info('\n❌ CRITICAL: The local inference server is NOT running. Please start it.\n')
+    from django.conf import settings
+    inf_url = getattr(settings, "INFERENCE_URL", "http://127.0.0.1:8001/api/llm")
+    ping_url = f"{inf_url.rstrip('/')}/internal/ping/"
+    fallback_url = "http://127.0.0.1:8000/api/llm/internal/ping/"
+    
+    server_found = False
+    for url in [ping_url, fallback_url]:
+        try:
+            resp = requests.get(url, timeout=2)
+            if resp.status_code in [200, 400, 404, 405]:
+                server_found = True
+                break
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+            continue
+            
+    if not server_found:
+        logger.info(f'\n❌ CRITICAL: The local inference server is NOT running at {inf_url}. Please start it via start_inference.sh\n')
         sys.exit(1)
 
 def _report_doctest_run(test_name, prompt, result):

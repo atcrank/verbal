@@ -249,7 +249,7 @@ class OpenAIJsonSchema(Schema):
 
 class OpenAIResponseFormat(Schema):
     type: str
-    json_schema: typing.Optional[OpenAIJsonSchema] = None
+    json_schema_format: typing.Optional[OpenAIJsonSchema] = Field(None, alias="json_schema")
 
 class OpenAIChatCompletionIn(Schema):
     model: typing.Optional[str] = "local-model"
@@ -282,8 +282,10 @@ def openai_chat_completions(request, payload: OpenAIChatCompletionIn):
     
     # Route structured output vs standard generation
     if payload.response_format and payload.response_format.type == "json_schema":
-        schema_dict = payload.response_format.json_schema.schema_dict
-        schema_name = payload.response_format.json_schema.name
+        schema_obj = payload.response_format.json_schema_format
+        schema_dict = schema_obj.schema_dict if schema_obj else {}
+        schema_name = schema_obj.name if schema_obj else ""
+
         
         response_schema = schema_dict
         

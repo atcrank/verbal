@@ -2,6 +2,11 @@
 """Django's command-line utility for administrative tasks."""
 import os
 import sys
+import warnings
+
+warnings.filterwarnings("ignore", message=r".*allowed_objects.*")
+warnings.filterwarnings("ignore", category=DeprecationWarning, module=r"langgraph.*")
+warnings.filterwarnings("ignore", category=PendingDeprecationWarning, module=r"langgraph.*")
 
 
 def main():

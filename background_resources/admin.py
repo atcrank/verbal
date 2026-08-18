@@ -301,10 +301,6 @@ class VectorIndexExplorerAdmin(admin.ModelAdmin):
         rag_service = service_registry.rag_service
 
         if request.method == "POST" and "flush_vectors" in request.POST:
-            try:
-                rag_service.db.delete_collection()
-            except Exception:
-                pass
             RAGChunk.objects.all().delete()
             self.message_user(request, "Vector index flushed and all RAG chunks deleted. Please re-ingest your documents.", level=messages.SUCCESS)
 

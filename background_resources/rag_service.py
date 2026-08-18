@@ -21,11 +21,10 @@ from langchain_text_splitters import CharacterTextSplitter, RecursiveCharacterTe
 from langchain_core.documents import Document as LangchainDocument
 from langchain_community.document_loaders import (PyPDFLoader, Docx2txtLoader, UnstructuredPowerPointLoader, RecursiveUrlLoader, DirectoryLoader, BSHTMLLoader, NotebookLoader)
 from bs4 import BeautifulSoup as Soup
-from langchain_postgres import PGVector
 from langchain_huggingface import HuggingFaceEmbeddings
+from pgvector.django import CosineDistance
 from pydantic import BaseModel, Field
 import outlines
-from sqlalchemy import create_engine
 from typing import TYPE_CHECKING, Optional, List, Tuple, Literal
 
 from background_resources.models import (Document as DjangoDocument, 
@@ -91,7 +90,6 @@ class DjangoChunkStore:
 
 class RAGService:
 
-    db = None
     embeddings = None
     hashes_indexed = {}
     store = None
@@ -104,24 +102,7 @@ class RAGService:
         self.reading_ids = set()  # reading_ids
         self.store = DjangoChunkStore()
         self.id_key = "chunk_id"
-
-        # Build the SQLAlchemy connection string from Django's Postgres settings
-        db_config = settings.DATABASES['default']
-        user = db_config.get('USER', '')
-        password = db_config.get('PASSWORD', '')
-        host = db_config.get('HOST', '127.0.0.1')
-        port = db_config.get('PORT', '5432')
-        db_name = db_config.get('NAME', '')
-        self.connection_string = f"postgresql+psycopg://{user}:{password}@{host}:{port}/{db_name}"
-
-        self.engine = create_engine(self.connection_string)
-
-        self.db = PGVector(
-            embeddings=self.embeddings,
-            collection_name=self.collection_name,
-            connection=self.engine,
-            use_jsonb=True,
-        )
+        self.hashes_indexed = {}
         
         # Pre-populate indexed hashes from Django
         for chunk in DjangoChunk.objects.filter(in_vector_index=True):
@@ -131,50 +112,41 @@ class RAGService:
                     self.hashes_indexed[scheme] = []
                 self.hashes_indexed[scheme].append(chunk.chunk_id)
 
-        # initialise summary generator and glossary generator
-
-        logger.info(f'RAG Service db initialized. {self.db}')
-        if not os.path.exists("index_dump.txt"):
-            self.dump_index_to_file()
+        logger.info('RAG Service initialized with native pgvector.django backend.')
 
     def force_reindex_all(self):
         """Resets the vector index status and re-indexes all chunks. Useful for test fixture loads."""
-        DjangoChunk.objects.all().update(in_vector_index=False)
+        DjangoChunk.objects.all().update(in_vector_index=False, embedding=None)
         self.hashes_indexed = {}
         self.index_unindexed_chunks()
 
     def index_unindexed_chunks(self):
-        """Indexes any RAGChunks in Postgres that are not yet in the PGVector index."""
-        unindexed = DjangoChunk.objects.filter(in_vector_index=False)
-        if not unindexed.exists():
-            return
+        """Indexes any RAGChunks in Postgres that do not yet have vector embeddings."""
+        unindexed = list(DjangoChunk.objects.filter(in_vector_index=False, text_content__isnull=False).exclude(text_content=""))
+        if not unindexed:
+            return 0
             
-        lc_docs_to_add = []
-        chunk_ids = []
-        
-        for chunk in unindexed:
-            raw_doc = LangchainDocument(page_content=chunk.text_content or "", metadata=chunk.metadata)
-            lc_docs_to_add.append(raw_doc)
-            chunk_ids.append(str(chunk.chunk_id))
-            
-            scheme = chunk.metadata.get('indexed_hash')
-            if scheme:
-                if scheme not in self.hashes_indexed:
-                    self.hashes_indexed[scheme] = []
-                if str(chunk.chunk_id) not in self.hashes_indexed[scheme]:
-                    self.hashes_indexed[scheme].append(str(chunk.chunk_id))
-                    
-        if lc_docs_to_add:
-            logger.info(f'Indexing {len(lc_docs_to_add)} chunks into PGVector in batches...')
-            batch_size = 500
-            for i in range(0, len(lc_docs_to_add), batch_size):
-                batch_docs = lc_docs_to_add[i:i + batch_size]
-                batch_ids = chunk_ids[i:i + batch_size]
-                logger.info(f'Indexing batch {i // batch_size + 1} of {len(lc_docs_to_add) // batch_size + 1}...')
-                self.db.add_documents(batch_docs, ids=batch_ids)
+        logger.info(f'Embedding {len(unindexed)} chunks into RAGChunk.embedding in batches...')
+        batch_size = 250
+        for i in range(0, len(unindexed), batch_size):
+            batch = unindexed[i:i + batch_size]
+            texts = [c.text_content or "" for c in batch]
+            embeddings = self.embeddings.embed_documents(texts)
+            for chunk, emb in zip(batch, embeddings):
+                chunk.embedding = emb
+                chunk.in_vector_index = True
                 
-            unindexed.update(in_vector_index=True)
-            logger.info('Indexing complete.')
+                scheme = chunk.metadata.get('indexed_hash')
+                if scheme:
+                    if scheme not in self.hashes_indexed:
+                        self.hashes_indexed[scheme] = []
+                    if str(chunk.chunk_id) not in self.hashes_indexed[scheme]:
+                        self.hashes_indexed[scheme].append(str(chunk.chunk_id))
+                        
+            DjangoChunk.objects.bulk_update(batch, fields=['embedding', 'in_vector_index'])
+            
+        logger.info('Indexing complete.')
+        return len(unindexed)
 
     def save_db(self):
         pass # Postgres persists automatically
@@ -183,9 +155,7 @@ class RAGService:
         pass # Postgres persists automatically
 
     def disconnect(self):
-        """Closes SQLAlchemy connection pools to prevent database locks during test teardown."""
-        if hasattr(self, 'engine') and self.engine:
-            self.engine.dispose()
+        pass # No persistent external connection pools to dispose
 
     def delete_document_from_vectorstore(self, document):
         reading_list = document.readingstrategy_set.all()
@@ -212,11 +182,24 @@ class RAGService:
             "has_issues": unindexed_docs.exists()
         }
 
+    def similarity_search_with_score(self, query: str, k: int = 4, filter: dict = None) -> List[Tuple[LangchainDocument, float]]:
+        """Performs cosine distance search directly over RAGChunk embeddings."""
+        query_vector = self.embeddings.embed_query(query)
+        qs = DjangoChunk.objects.annotate(distance=CosineDistance("embedding", query_vector)).filter(embedding__isnull=False)
+        if filter:
+            for key, val in filter.items():
+                qs = qs.filter(**{f"metadata__{key}": val})
+        chunks = list(qs.order_by("distance")[:k])
+        return [
+            (LangchainDocument(page_content=c.text_content or "", metadata=c.metadata), float(c.distance))
+            for c in chunks
+        ]
+
     def get_direct_context(self, query, k=1):
-        retrieved_docs = self.db.similarity_search(query, k=k)  # Get top result page
-        doc_cards = [f"file {i}:" +doc.metadata["filename"] + ": " + doc.page_content for i, doc in enumerate(retrieved_docs)]
+        results = self.similarity_search_with_score(query, k=k)
+        doc_cards = [f"file {i}:" + doc.metadata.get("filename", "unknown") + ": " + doc.page_content for i, (doc, _) in enumerate(results)]
         logger.info(f'Retrieved context: {doc_cards}')
-        retrieved_context =  "Also, this is an arguably relevant excerpt from my document library:" + "\n".join(doc_cards)
+        retrieved_context = "Also, this is an arguably relevant excerpt from my document library:" + "\n".join(doc_cards)
         return retrieved_context
 
     def get_chunk_from_store(self, chunk_id):
@@ -229,13 +212,13 @@ class RAGService:
         Uses PGVector distance (lower = better). Results beyond max_distance are
         dropped before the lexical relevance check to eliminate noise.
         """
-        docs_and_scores = self.db.similarity_search_with_score(query, k=k*2)
+        docs_and_scores = self.similarity_search_with_score(query, k=k*2)
 
         if not docs_and_scores:
             logger.info('Matches: []')
             return []
 
-        # Gate out results that exceed the distance threshold (Finding 1.1)
+        # Gate out results that exceed the distance threshold
         matches = [(doc, score) for doc, score in docs_and_scores if score <= max_distance]
         if not matches:
             logger.info(f'All {len(docs_and_scores)} results exceeded max_distance={max_distance}')
@@ -484,6 +467,12 @@ class RAGService:
         self.hashes_indexed[current_scheme] = chunk_ids
         
         self.index_unindexed_chunks()
+        if not document.currently_indexed:
+            if not document.metadata:
+                document.metadata = {}
+            document.metadata["chunking_scheme"] = current_scheme
+            document.currently_indexed = True
+            document.save(update_fields=['currently_indexed', 'metadata'])
         return chunks, chunk_ids
 
     def convert_chunk_store_document_grobid(self, document: DjangoDocument) -> Tuple[List[LangchainDocument], List[str]]:
@@ -496,6 +485,9 @@ class RAGService:
             existing_ids = self.hashes_indexed[current_scheme]
             if existing_ids and self.store.mget([existing_ids[0]])[0] is not None:
                 logger.info(f'Reusing {len(existing_ids)} existing Grobid chunks for scheme {current_scheme}')
+                if not document.currently_indexed:
+                    document.currently_indexed = True
+                    document.save(update_fields=['currently_indexed'])
                 return [], existing_ids
 
         if not hasattr(document, 'grobid_metadata') or not document.grobid_metadata or not document.grobid_metadata.tei_xml:
@@ -548,6 +540,12 @@ class RAGService:
             self.store.mset(chunks_to_store)
             self.hashes_indexed[current_scheme] = chunk_ids
             self.index_unindexed_chunks()
+            if not document.currently_indexed:
+                if not document.metadata:
+                    document.metadata = {}
+                document.metadata["chunking_scheme"] = current_scheme
+                document.currently_indexed = True
+                document.save(update_fields=['currently_indexed', 'metadata'])
             
         return final_chunks, chunk_ids
 
