@@ -28,11 +28,14 @@ python manage.py collectstatic --noinput
 GRANIAN_ARGS="--interface asgi verbal_config.asgi:application --host 0.0.0.0"
 
 if [ -n "$SSL_CERT_PATH" ] && [ -n "$SSL_KEY_PATH" ]; then
-    echo "SSL enabled: cert=$SSL_CERT_PATH key=$SSL_KEY_PATH"
-    GRANIAN_ARGS="$GRANIAN_ARGS --port 443 --ssl-certificate $SSL_CERT_PATH --ssl-keyfile $SSL_KEY_PATH"
+    PORT="${WEB_PORT:-443}"
+    echo "SSL enabled: cert=$SSL_CERT_PATH key=$SSL_KEY_PATH (port $PORT)"
+    GRANIAN_ARGS="$GRANIAN_ARGS --port $PORT --ssl-certificate $SSL_CERT_PATH --ssl-keyfile $SSL_KEY_PATH"
 else
-    echo "SSL not configured — serving plain HTTP on port 8000"
-    GRANIAN_ARGS="$GRANIAN_ARGS --port 8000"
+    PORT="${WEB_PORT:-8000}"
+    echo "SSL not configured — serving plain HTTP on port $PORT"
+    GRANIAN_ARGS="$GRANIAN_ARGS --port $PORT"
 fi
 
 granian $GRANIAN_ARGS
+

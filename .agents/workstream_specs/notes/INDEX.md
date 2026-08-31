@@ -8,3 +8,5 @@
 * [2026-08-07] [Feature] GRIPS testing and structured claims symbolic computation (Status: pending) -> [20260807_grips_testing_and_claims_computation.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260807_grips_testing_and_claims_computation.md)
 * [2026-08-12] [Feature/Architecture] Model Admin UI & System Tokenizer Improvements (Status: pending) -> [20260812_model_admin_tokenizer.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260812_model_admin_tokenizer.md)
 * [2026-08-17] [Feature/Architecture] Work Organisation, Multi-User Sharing & Whiteboard Architecture (Status: pending) -> [20260817_work_organisation_whiteboard_spec.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260817_work_organisation_whiteboard_spec.md)
+* [2026-08-31] [Feature/Architecture] Migration from Celery / Redis to Native Django Tasks (Status: pending) -> [20260831_django_tasks_migration.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260831_django_tasks_migration.md)
+

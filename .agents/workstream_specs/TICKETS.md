@@ -36,3 +36,7 @@
 - [ ] [Feature] Work Organisation & Assisted Experiment Whiteboard (Status: pending) -> [Link to note](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260817_work_organisation_whiteboard_spec.md)
   *Summary*: Build Project, Workshop, WorkshopSession hierarchy with Django Group scoping, 4 anonymity/access modes, real-time Datastar SSE state sync, whiteboard card/cluster storage, and LLM idea clustering & causal factor extraction endpoints.
 
+- [ ] [Feature/Architecture] Migration from Celery / Redis to Native Django Tasks (Status: pending) -> [Link to note](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260831_django_tasks_migration.md)
+  *Summary*: Migrate background task execution and periodic scheduling from Celery, Celery Beat, and Redis to Django 6.0's native django.tasks module with a PostgreSQL database backend. Eliminates the Redis container dependency and consolidates state in Postgres.
+
+

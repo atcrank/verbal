@@ -37,6 +37,13 @@ class GenerationMetrics:
     time_to_first_token_ms: float | None = None
     prompt_eval_tokens_per_second: float | None = None
 
+DEFAULT_CHAT_TEMPLATE = (
+    "{% for message in messages %}"
+    "{{ '<|im_start|>' + message['role'] + '\n' + message['content'] + '<|im_end|>\n' }}"
+    "{% endfor %}"
+    "{% if add_generation_prompt %}{{ '<|im_start|>assistant\n' }}{% endif %}"
+)
+
 _last_generation_metrics = threading.local()
 
 def get_last_generation_metrics() -> GenerationMetrics | None:
@@ -151,6 +158,9 @@ class AIService:
         # Load your main LLM
         if self.tokenizer.pad_token_id is None:
             self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
+        if getattr(self.tokenizer, 'chat_template', None) is None:
+            logger.info(f"Tokenizer '{tokenizer_id}' has no chat_template defined; injecting default fallback ChatML template.")
+            self.tokenizer.chat_template = DEFAULT_CHAT_TEMPLATE
         if self.role in ["web", "worker"]:
             logger.info(f'💻 Running in proxy mode (Role: {self.role}). Tokenizer loaded, bypassing heavy LLM load.')
             
@@ -270,6 +280,35 @@ class AIService:
                 elif m.get('role') in ['user', 'human']:
                     user_prompt += m.get('content', '') + "\n"
         return system_prompt.strip(), user_prompt.strip()
+
+    def format_chat_prompt(self, messages, add_generation_prompt: bool = True) -> str:
+        """
+        Formats conversation messages into a prompt string using the tokenizer's chat template,
+        falling back gracefully to plain text format if templating fails.
+        """
+        if not isinstance(messages, list):
+            return str(messages)
+            
+        if self.tokenizer:
+            if getattr(self.tokenizer, 'chat_template', None) is None:
+                self.tokenizer.chat_template = DEFAULT_CHAT_TEMPLATE
+            try:
+                return self.tokenizer.apply_chat_template(
+                    messages, tokenize=False, add_generation_prompt=add_generation_prompt
+                )
+            except Exception as e:
+                logger.warning(f"apply_chat_template failed ({e}). Falling back to plain text prompt concatenation.")
+
+        # Naive plain-text fallback
+        sys_p, user_p = self._extract_prompts(messages)
+        parts = []
+        if sys_p:
+            parts.append(f"System: {sys_p}")
+        if user_p:
+            parts.append(f"User: {user_p}")
+        if add_generation_prompt:
+            parts.append("Assistant:")
+        return "\n\n".join(parts)
 
     def _log_generation(self, messages, generated_texts, log_kwargs=None, model_name=None):
         if log_kwargs is None:
@@ -776,8 +815,8 @@ class AIService:
                     msgs_summary = self.summarize_conversation(msgs)
                     msgs_summary = _sanitize_messages(msgs_summary)
 
-                    prompt = self.tokenizer.apply_chat_template(
-                        msgs_summary, tokenize=False, add_generation_prompt=True
+                    prompt = self.format_chat_prompt(
+                        msgs_summary, add_generation_prompt=True
                     )
 
                     inputs = self.tokenizer(prompt, return_tensors="pt").to(self.model.device)
@@ -912,7 +951,7 @@ class AIService:
                     
                     generator = self._generator_cache[cache_key]
                     msgs = _sanitize_messages(msgs)
-                    prompt = self.tokenizer.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True) if isinstance(msgs, list) else msgs
+                    prompt = self.format_chat_prompt(msgs, add_generation_prompt=True) if isinstance(msgs, list) else msgs
                     
                     # outlines does not take huggingface generate kwargs natively. 
                     start = time.perf_counter()
@@ -978,9 +1017,12 @@ class AIService:
             # code or JSON blocks that naturally don't end in punctuation).
         return assistant_response
 
-    def count_conversation_tokens(self, messages: list) ->int:
+    def count_conversation_tokens(self, messages: list) -> int:
         if not self.tokenizer:
             self.load_models()
+
+        if getattr(self.tokenizer, 'chat_template', None) is None:
+            self.tokenizer.chat_template = DEFAULT_CHAT_TEMPLATE
 
         try:
             # apply_chat_template is the only way to be 100% accurate
@@ -997,11 +1039,11 @@ class AIService:
         except Exception as e:
             # A fallback for older models without a chat template.
             # This is a *rough estimate* and will be inaccurate.
-            logger.info('Warning: No chat template; falling back to naive token count.')
+            logger.info(f'Warning: apply_chat_template failed in count_conversation_tokens ({e}); falling back to naive token count.')
             total_tokens = 0
             for msg in messages:
-                # This misses role tokens, so it will under-count.
-                total_tokens += len(self.tokenizer.encode(msg['content']))
+                content = msg.get('content', '') if isinstance(msg, dict) else getattr(msg, 'content', str(msg))
+                total_tokens += len(self.tokenizer.encode(content))
             return total_tokens
 
     def summarize_conversation(self, messages: list) -> list:

@@ -10,7 +10,7 @@ services:
     volumes:
       - redis_data:/data
   db:
-    image: ${DOCKER_POSTGRES_IMAGE:-pgvector/pgvector:pg16}
+    image: ${DOCKER_POSTGRES_IMAGE:-pgvector/pgvector:pg18}
     container_name: verbal_db
     environment:
       POSTGRES_USER: verbal_user
@@ -19,7 +19,7 @@ services:
     ports:
       - "5433:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
   grobid:
     image: ${DOCKER_GROBID_IMAGE:-lfoppiano/grobid:0.8.0}
     container_name: verbal_grobid

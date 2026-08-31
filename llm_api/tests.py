@@ -319,3 +319,42 @@ class ConversationBranchAndReplayTests(TestCase):
 
         log.refresh_from_db()
         self.assertEqual(log.state_tree_snapshot["active_task"], "task_1", "Snapshot must be immutable")
+
+    def test_tokenizer_chat_template_fallback(self):
+        """Verifies that format_chat_prompt and count_conversation_tokens gracefully handle tokenizers without a chat_template."""
+        from unittest.mock import MagicMock
+        from llm_api.ai_service import AIService, DEFAULT_CHAT_TEMPLATE
+
+        service = AIService()
+        mock_tokenizer = MagicMock()
+        mock_tokenizer.chat_template = None
+
+        def mock_apply(msgs, tokenize=False, add_generation_prompt=True):
+            if mock_tokenizer.chat_template is None:
+                raise ValueError("tokenizer.chat_template is not set and no template argument was passed")
+            return "Formatted with fallback template"
+
+        mock_tokenizer.apply_chat_template.side_effect = mock_apply
+        service.tokenizer = mock_tokenizer
+
+        messages = [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": "Hello!"}
+        ]
+
+        # 1. Test format_chat_prompt injects DEFAULT_CHAT_TEMPLATE and formats successfully
+        prompt = service.format_chat_prompt(messages)
+        self.assertEqual(prompt, "Formatted with fallback template")
+        self.assertEqual(mock_tokenizer.chat_template, DEFAULT_CHAT_TEMPLATE)
+
+        # 2. Test plain-text fallback when apply_chat_template raises an unhandled error
+        mock_tokenizer.apply_chat_template.side_effect = RuntimeError("Broken template engine")
+        fallback_prompt = service.format_chat_prompt(messages, add_generation_prompt=True)
+        self.assertIn("System: You are a helpful assistant.", fallback_prompt)
+        self.assertIn("User: Hello!", fallback_prompt)
+        self.assertIn("Assistant:", fallback_prompt)
+
+        # 3. Test count_conversation_tokens fallback
+        mock_tokenizer.encode.return_value = [1, 2, 3]
+        token_count = service.count_conversation_tokens(messages)
+        self.assertEqual(token_count, 6)
