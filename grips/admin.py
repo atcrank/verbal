@@ -5,28 +5,74 @@ from django.template.response import TemplateResponse
 from django.contrib import admin, messages
 from django.utils.safestring import mark_safe
 from .models import Domain, ConceptNode, KnowledgeEdge, CeleryStatus
-from .tasks import generate_concept_narrative, task_lint_concept_node, task_digest_corpus_level_1, task_digest_corpus_level_2, task_digest_corpus_level_3
-from verbal_config.celery import app as celery_app
+from .tasks import (
+    generate_concept_narrative,
+    task_lint_concept_node,
+    task_digest_corpus_level_1,
+    task_digest_corpus_level_2,
+    task_digest_corpus_level_3,
+)
+from background_resources.models import Document
 
 
 @admin.action(description="Generate narrative content for selected concepts")
 def generate_narrative_action(modeladmin, request, queryset):
-    """Admin action to trigger the Celery task for generating narrative content."""
-    # 1. Check if Celery workers are actually running and reachable
-    try:
-        ping_result = celery_app.control.ping(timeout=1.0)
-        if not ping_result:
-            modeladmin.message_user(request, "The Celery queuing service is not available (no workers running). Please run the toggle script.", level=messages.ERROR)
-            return
-    except Exception as e:
-        modeladmin.message_user(request, "The Celery queuing service is not available (Broker connection failed).", level=messages.ERROR)
-        return
-
+    """Admin action to trigger task for generating narrative content."""
     count = 0
     for node in queryset:
-        generate_concept_narrative.delay(node.id)
+        generate_concept_narrative.enqueue(node.id)
         count += 1
     modeladmin.message_user(request, f"Queued content generation for {count} concept(s).", level=messages.SUCCESS)
+
+
+@admin.action(description="Level 1 Digest: Ingest Domain Documents")
+def digest_corpus_level_1_action(modeladmin, request, queryset):
+    """Admin action to trigger the Level 1 corpus digestion task."""
+    count = 0
+    for domain in queryset:
+        doc_ids = list(domain.documents.values_list('id', flat=True))
+        for doc_id in doc_ids:
+            task_digest_corpus_level_1.enqueue(domain.id, doc_id)
+            count += 1
+    modeladmin.message_user(
+        request,
+        f"Queued {count} document(s) across selected domain(s) for Level 1 digestion.",
+        level=messages.SUCCESS
+    )
+
+
+@admin.action(description="Level 2 Digest: In-Domain Synthesis (Unify Overlaps)")
+def digest_corpus_level_2_action(modeladmin, request, queryset):
+    """Admin action to trigger Level 2 synthesis for selected domains."""
+    for domain in queryset:
+        task_digest_corpus_level_2.enqueue(domain.id)
+    modeladmin.message_user(
+        request,
+        f"Queued {queryset.count()} domain(s) for Level 2 in-domain synthesis.",
+        level=messages.SUCCESS
+    )
+
+
+@admin.action(description="Level 3 Digest: Synthesize Cross-Domain Joins")
+def digest_corpus_level_3_action(modeladmin, request, queryset):
+    """Admin action to trigger the Level 3 cross-domain digestion task."""
+    for domain in queryset:
+        task_digest_corpus_level_3.enqueue(domain.id)
+    modeladmin.message_user(
+        request,
+        f"Queued {queryset.count()} domain(s) for Level 3 cross-domain synthesis.",
+        level=messages.SUCCESS
+    )
+
+
+@admin.action(description="Run Automated Linting on selected concepts")
+def lint_concepts_action(modeladmin, request, queryset):
+    """Admin action to trigger the automated LLM linting task."""
+    count = 0
+    for node in queryset:
+        task_lint_concept_node.enqueue(node.id)
+        count += 1
+    modeladmin.message_user(request, f"Queued {count} concept(s) for automated linting.", level=messages.SUCCESS)
 
 
 @admin.register(ConceptNode)
@@ -35,7 +81,7 @@ class ConceptNodeAdmin(admin.ModelAdmin):
     list_filter = ('domain', 'needs_linting')
     search_fields = ('title', 'slug', 'focus_hint', 'narrative_content')
     prepopulated_fields = {'slug': ('title',)}
-    actions = [generate_narrative_action, 'lint_concepts_action']
+    actions = [generate_narrative_action, lint_concepts_action]
     readonly_fields = ('rendered_narrative',)
     raw_id_fields = ('source_chunk', )
     
@@ -74,12 +120,21 @@ class KnowledgeEdgeAdmin(admin.ModelAdmin):
     autocomplete_fields = ('source', 'target')
 
 
-
+@admin.register(Domain)
+class DomainAdmin(admin.ModelAdmin):
+    list_display = ('name', 'created_at', 'document_count')
+    search_fields = ('name', 'description', 'style_guide')
+    filter_horizontal = ('documents',)
+    actions = [digest_corpus_level_1_action, digest_corpus_level_2_action, digest_corpus_level_3_action]
+    
+    def document_count(self, obj):
+        return obj.documents.count()
+    document_count.short_description = "Corpus Size"
 
 
 @admin.register(CeleryStatus)
 class CeleryStatusAdmin(admin.ModelAdmin):
-    # Disable add/change/delete buttons so it behaves purely as a dashboard link
+    """Legacy redirect to the centralized verbal_tasks dashboard."""
     def has_add_permission(self, request): return False
     def has_change_permission(self, request, obj=None): return False
     def has_delete_permission(self, request, obj=None): return False
@@ -92,126 +147,5 @@ class CeleryStatusAdmin(admin.ModelAdmin):
         return my_urls + urls
 
     def dashboard_view(self, request):
-        i = celery_app.control.inspect()
-        worker_stats = {}
-        try:
-            active_tasks = i.active()
-            queued_tasks = i.reserved()
-            if active_tasks:
-                for worker, tasks in active_tasks.items():
-                    worker_stats[worker] = {
-                        'active': tasks,
-                        'queued': queued_tasks.get(worker, []) if queued_tasks else []
-                    }
-        except Exception:
-            pass  # Worker/Broker is down
-
-        log_content = "Log file not found or empty."
-        log_path = os.path.join(settings.BASE_DIR, "celery.log")
-        if os.path.exists(log_path):
-            try:
-                with open(log_path, 'r') as f:
-                    lines = f.readlines()
-                    if lines:
-                        log_content = "".join(lines[-100:])  # Read last 100 lines
-            except Exception as e:
-                log_content = f"Error reading log: {e}"
-
-        context = dict(
-            self.admin_site.each_context(request),
-            title="Celery Status Dashboard",
-            worker_stats=worker_stats,
-            log_content=log_content,
-        )
-        return TemplateResponse(request, "admin/grips/celery_status_dashboard.html", context)
-
-
-from .tasks import task_digest_corpus_level_1, task_digest_corpus_level_2, task_digest_corpus_level_3, \
-    task_lint_concept_node
-from verbal_config.celery import app as celery_app
-from background_resources.models import Document
-
-
-@admin.action(description="Level 1 Digest: Ingest Domain Documents")
-def digest_corpus_level_1_action(modeladmin, request, queryset):
-    """Admin action to trigger the Level 1 corpus digestion task."""
-    try:
-        ping_result = celery_app.control.ping(timeout=1.0)
-        if not ping_result:
-            modeladmin.message_user(request, "The Celery queuing service is not available (no workers running).",
-                                    level=messages.ERROR)
-            return
-    except Exception as e:
-        modeladmin.message_user(request, "The Celery queuing service is not available (Broker connection failed).",
-                                level=messages.ERROR)
-        return
-
-    count = 0
-    for domain in queryset:
-        doc_ids = list(domain.documents.values_list('id', flat=True))
-        for doc_id in doc_ids:
-            task_digest_corpus_level_1.delay(domain.id, doc_id)
-            count += 1
-    modeladmin.message_user(request, f"Queued {count} document(s) across selected domain(s) for Level 1 digestion.",
-                            level=messages.SUCCESS)
-
-
-@admin.action(description="Level 2 Digest: In-Domain Synthesis (Unify Overlaps)")
-def digest_corpus_level_2_action(modeladmin, request, queryset):
-    """Admin action to trigger Level 2 synthesis for selected domains."""
-    try:
-        if not celery_app.control.ping(timeout=1.0):
-            modeladmin.message_user(request, "Celery service not available.", level=messages.ERROR)
-            return
-    except Exception:
-        modeladmin.message_user(request, "Celery service not available.", level=messages.ERROR)
-        return
-
-    for domain in queryset:
-        task_digest_corpus_level_2.delay(domain.id)
-    modeladmin.message_user(request, f"Queued {queryset.count()} domain(s) for Level 2 in-domain synthesis.", level=messages.SUCCESS)
-
-
-@admin.action(description="Level 3 Digest: Synthesize Cross-Domain Joins")
-def digest_corpus_level_3_action(modeladmin, request, queryset):
-    """Admin action to trigger the Level 3 cross-domain digestion task."""
-    try:
-        if not celery_app.control.ping(timeout=1.0):
-            modeladmin.message_user(request, "Celery service not available.", level=messages.ERROR)
-            return
-    except Exception:
-        modeladmin.message_user(request, "Celery service not available.", level=messages.ERROR)
-        return
-
-    for domain in queryset:
-        task_digest_corpus_level_3.delay(domain.id)
-    modeladmin.message_user(request, f"Queued {queryset.count()} domain(s) for Level 3 cross-domain synthesis.", level=messages.SUCCESS)
-
-
-@admin.register(Domain)
-class DomainAdmin(admin.ModelAdmin):
-    list_display = ('name', 'created_at', 'document_count')
-    search_fields = ('name', 'description', 'style_guide')
-    filter_horizontal = ('documents',)
-    actions = [digest_corpus_level_1_action, digest_corpus_level_2_action, digest_corpus_level_3_action]
-    
-    def document_count(self, obj):
-        return obj.documents.count()
-    document_count.short_description = "Corpus Size"
-
-@admin.action(description="Run Automated Linting on selected concepts")
-def lint_concepts_action(modeladmin, request, queryset):
-    """Admin action to trigger the automated LLM linting task."""
-    try:
-        if not celery_app.control.ping(timeout=1.0):
-            modeladmin.message_user(request, "Celery service not available.", level=messages.ERROR)
-            return
-    except Exception:
-        modeladmin.message_user(request, "Celery service not available.", level=messages.ERROR)
-        return
-
-    count = 0
-    for node in queryset:
-        task_lint_concept_node.delay(node.id)
-        count += 1
-    modeladmin.message_user(request, f"Queued {count} concept(s) for automated linting.", level=messages.SUCCESS)
+        from django.shortcuts import redirect
+        return redirect("admin:verbal_tasks_dashboard")

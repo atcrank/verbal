@@ -673,7 +673,7 @@ def start_download_model_cache(request, payload: DownloadModelIn):
     from llm_api.tasks import download_model_cache
     try:
         model = LocalAIModel.objects.get(id=payload.model_id)
-        task = download_model_cache.delay(model.hf_model_id)
+        task = download_model_cache.enqueue(model.hf_model_id)
         return JsonResponse({"task_id": task.id})
     except LocalAIModel.DoesNotExist:
         return JsonResponse({"error": "Model not found."}, status=404)

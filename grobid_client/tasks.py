@@ -1,4 +1,4 @@
-from celery import shared_task
+from django.tasks import task
 import json
 import re
 from llm_api.apps import service_registry
@@ -265,8 +265,8 @@ def _extract_fallback_with_llm(front_text: str, missing_fields: list, ai_service
         }
     return {}
 
-@shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=True, retry_kwargs={'max_retries': 2})
-def task_extract_grobid_metadata(self, document_id: int):
+@task
+def task_extract_grobid_metadata(document_id: int):
     """
     Sends a PDF to Grobid, parses the TEI XML, and populates the Citation Graph.
     """

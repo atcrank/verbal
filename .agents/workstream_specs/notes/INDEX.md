@@ -9,4 +9,6 @@
 * [2026-08-12] [Feature/Architecture] Model Admin UI & System Tokenizer Improvements (Status: pending) -> [20260812_model_admin_tokenizer.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260812_model_admin_tokenizer.md)
 * [2026-08-17] [Feature/Architecture] Work Organisation, Multi-User Sharing & Whiteboard Architecture (Status: pending) -> [20260817_work_organisation_whiteboard_spec.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260817_work_organisation_whiteboard_spec.md)
 * [2026-08-31] [Feature/Architecture] Migration from Celery / Redis to Native Django Tasks (Status: pending) -> [20260831_django_tasks_migration.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260831_django_tasks_migration.md)
+* [2026-09-01] [Feature/UI] Demo UI Evolution & Experience Overhaul (Codename Reason) (Status: completed) -> [20260901_demo_ui_reason_evolution.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260901_demo_ui_reason_evolution.md)
+* [2026-09-02] [Feature/UI] Demo UI Aesthetic & Interactive Refinements (Status: completed) -> [20260902_demo_ui_refinements.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260902_demo_ui_refinements.md)
 

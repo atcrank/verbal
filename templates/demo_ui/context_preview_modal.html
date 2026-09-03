@@ -1,0 +1,21 @@
+<div class="reason-modal-overlay" onclick="if(event.target===this) this.remove()">
+    <div class="reason-modal-dialog">
+        <div class="reason-modal-header">
+            <div>
+                <span style="color: var(--primary); font-size: 0.8rem; text-transform: uppercase; font-weight: 700;">{{ model_type }} Context Preview</span>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #0f172a;">{{ title }}</div>
+            </div>
+            <button type="button" class="chip-delete-btn" style="font-size: 1.4rem;" onclick="this.closest('.reason-modal-overlay').remove()">&times;</button>
+        </div>
+        <div class="reason-modal-body">
+            <div style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; background: #f1f5f9; padding: 6px 12px; border-radius: 6px; font-size: 0.82rem;">
+                <span>Estimated Prompt Tokens:</span>
+                <span class="chip-token-badge" style="font-size: 0.85rem;">~{{ token_count }} tokens</span>
+            </div>
+            <pre style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; white-space: pre-wrap; word-wrap: break-word; font-family: monospace; font-size: 0.85rem; max-height: 400px; overflow-y: auto;">{{ content }}</pre>
+        </div>
+        <div class="reason-modal-footer">
+            <button type="button" class="primary" style="padding: 6px 16px; font-size: 0.85rem;" onclick="this.closest('.reason-modal-overlay').remove()">Close Preview</button>
+        </div>
+    </div>
+</div>

@@ -51,7 +51,7 @@ INSTALLED_APPS = [
     'grips.apps.GripsConfig',
     'grobid_client.apps.GrobidClientConfig',
     'demo_ui.apps.DemoUiConfig',
-    'django_celery_beat',
+    'verbal_tasks.apps.VerbalTasksConfig',
     'sandbox_manager.apps.SandboxManagerConfig',
     'work_organisation.apps.WorkOrganisationConfig',
 ]
@@ -149,7 +149,7 @@ MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 # Test runner
-TEST_RUNNER = 'verbal.test_runner.ForceTeardownTestRunner'
+TEST_RUNNER = 'verbal_tasks.test_runner.ForceTeardownTestRunner'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -182,16 +182,24 @@ OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
 VLLM_BASE_URL = os.environ.get("VLLM_BASE_URL", "http://127.0.0.1:8003")
 
 # ------------------------------------------------------------------------
-# CELERY & REDIS CONFIGURATION
+# DJANGO TASKS CONFIGURATION (PostgreSQL DB Backend)
 # ------------------------------------------------------------------------
 
-CELERY_BROKER_URL = "redis://localhost:6379/0"
-CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
-CELERY_ACCEPT_CONTENT = ["json"]
-CELERY_TASK_SERIALIZER = "json"
-CELERY_RESULT_SERIALIZER = "json"
-CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
-SANDBOX_URL="http://127.0.0.1:8002/execute"   # if django were dockerised, use docker dns "http://sandbox:8000/execute"
+TASKS = {
+    "default": {
+        "BACKEND": "verbal_tasks.task_backend.DatabaseTaskBackend" if VERBAL_ROLE != "standalone" else "django.tasks.backends.immediate.ImmediateBackend",
+        "QUEUES": ["default", "high_priority", "low_priority"],
+    },
+    "immediate": {
+        "BACKEND": "django.tasks.backends.immediate.ImmediateBackend",
+    },
+    "db": {
+        "BACKEND": "verbal_tasks.task_backend.DatabaseTaskBackend",
+        "QUEUES": ["default", "high_priority", "low_priority"],
+    },
+}
+
+SANDBOX_URL = "http://127.0.0.1:8002/execute"   # if django were dockerised, use docker dns "http://sandbox:8000/execute"
 
 LOGGING = {
     "version": 1,

@@ -17,7 +17,7 @@ django.setup()
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'Verbal'
+project = 'reason'
 copyright = '2026, Andrew Cruickshank'
 author = 'Andrew Cruickshank'
 release = '0.1'

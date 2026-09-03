@@ -23,7 +23,7 @@ def update_dict(left: dict, right: dict) -> dict:
     return new_dict
 
 class AgentState(TypedDict):
-    """The shared state for all nodes in a Verbal agent graph."""
+    """The shared state for all nodes in a reason agent graph."""
     
     # Message-based working memory (replaces unbounded string concatenation)
     working_memory: Annotated[list[BaseMessage], add_messages]

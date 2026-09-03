@@ -1,0 +1,544 @@
+<!-- Google Fonts for playful lowercase reason logo -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@600;700&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+
+<div id="reason-universal-header" class="reason-header-bar">
+    <div class="reason-header-inner">
+        <div class="reason-brand-group">
+            <a href="/demo/" class="reason-badge">
+                <span class="reason-logo-text">reason</span>
+            </a>
+            <span class="reason-tagline">study design & reasoning assistant</span>
+        </div>
+
+        <!-- Live Announcement Banner -->
+        <div id="reason-broadcast-banner" class="reason-broadcast-container" style="display: none;">
+            <span class="broadcast-type-tag" id="broadcast-type-tag">NOTICE</span>
+            <span class="broadcast-text" id="broadcast-text"></span>
+            <button type="button" class="broadcast-close" onclick="dismissBroadcast()" title="Dismiss">&times;</button>
+        </div>
+
+        <div class="reason-nav-links">
+            <a href="/demo/" class="reason-nav-link" id="nav-demo-ui">Demo UI</a>
+            {% if request.user.is_staff or request.user.is_superuser %}
+            <a href="/admin/" class="reason-nav-link" id="nav-admin">Admin</a>
+            <a href="/admin/verbal_tasks/taskrecord/dashboard/" class="reason-nav-link" id="nav-task-queue">Task Queue</a>
+            {% endif %}
+            <a href="/docs/" target="_blank" class="reason-nav-link" id="nav-docs">Docs</a>
+            {% if request.user.is_staff or request.user.is_superuser %}
+            <button type="button" class="reason-broadcast-trigger-btn" onclick="openBroadcastModal()" title="Open broadcast transmitter">Broadcast</button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if request.user.is_staff or request.user.is_superuser %}
+<!-- Broadcast Operator Control Modal -->
+<div id="broadcast-operator-modal" class="broadcast-modal-backdrop" style="display: none;" onclick="if(event.target===this) closeBroadcastModal()">
+    <div class="broadcast-modal-box">
+        <div class="broadcast-modal-header">
+            <div>
+                <div style="font-size: 0.75rem; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.05em;">Workshop Controls</div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #1e293b;">Broadcast Transmitter</div>
+            </div>
+            <button type="button" class="broadcast-modal-close" onclick="closeBroadcastModal()">&times;</button>
+        </div>
+        <div class="broadcast-modal-body">
+            <div style="margin-bottom: 12px;">
+                <label style="display: block; font-size: 0.8rem; font-weight: 600; color: #334155; margin-bottom: 4px;">Announcement Message</label>
+                <input type="text" id="bm-message" placeholder="e.g. OK group, 5 minutes remaining." style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.88rem;">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 600; color: #334155; margin-bottom: 4px;">Urgency Level</label>
+                    <select id="bm-level" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem;" onchange="toggleRedirectInput(this.value)">
+                        <option value="info">Info</option>
+                        <option value="warning">Warning</option>
+                        <option value="alert">Alert</option>
+                        <option value="redirect">Exercise Redirect</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 600; color: #334155; margin-bottom: 4px;">Display Duration</label>
+                    <select id="bm-duration" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem;">
+                        <option value="60">1 minute</option>
+                        <option value="300" selected>5 minutes</option>
+                        <option value="600">10 minutes</option>
+                        <option value="1800">30 minutes</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="bm-redirect-group" style="display: none; margin-bottom: 12px;">
+                <label style="display: block; font-size: 0.8rem; font-weight: 600; color: #334155; margin-bottom: 4px;">Target Redirect URL</label>
+                <input type="text" id="bm-redirect-url" placeholder="/demo/ or exercise URL" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.88rem;">
+            </div>
+
+            <div id="bm-feedback" style="font-size: 0.8rem; min-height: 20px;"></div>
+        </div>
+        <div class="broadcast-modal-footer">
+            <button type="button" class="btn-clear-broadcast" onclick="submitClearBroadcast()">Clear Active</button>
+            <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn-cancel-broadcast" onclick="closeBroadcastModal()">Cancel</button>
+                <button type="button" class="btn-send-broadcast" onclick="submitSendBroadcast()">Transmit</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<style>
+    .reason-header-bar {
+        background: #1e293b;
+        color: #f8fafc;
+        border-bottom: 1px solid #334155;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-size: 0.85rem;
+        position: relative;
+        z-index: 100;
+    }
+
+    .reason-header-inner {
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: 6px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .reason-brand-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    /* Playful lowercase reason badge */
+    .reason-badge {
+        display: inline-flex;
+        align-items: center;
+        background: #334155;
+        color: #f8fafc !important;
+        padding: 2px 10px;
+        border-radius: 6px;
+        text-decoration: none;
+        border: 1px solid #475569;
+        transition: background-color 0.15s ease;
+    }
+
+    .reason-badge:hover {
+        background: #475569;
+    }
+
+    .reason-logo-text {
+        font-family: 'Comfortaa', 'Quicksand', -apple-system, sans-serif;
+        font-size: 1.02rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        text-transform: lowercase;
+        color: #f1f5f9;
+    }
+
+    .reason-tagline {
+        color: #94a3b8;
+        font-size: 0.78rem;
+        font-weight: 400;
+        letter-spacing: 0.01em;
+    }
+
+    .reason-nav-links {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .reason-nav-link {
+        color: #cbd5e1 !important;
+        text-decoration: none;
+        font-size: 0.8rem;
+        font-weight: 500;
+        padding: 2px 6px;
+        border-radius: 4px;
+        transition: all 0.15s ease;
+    }
+
+    .reason-nav-link:hover {
+        color: #ffffff !important;
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .reason-broadcast-trigger-btn {
+        background: #334155;
+        color: #cbd5e1;
+        border: 1px solid #475569;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+
+    .reason-broadcast-trigger-btn:hover {
+        background: #475569;
+        color: #ffffff;
+    }
+
+    /* Announcement Banner */
+    .reason-broadcast-container {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #0f172a;
+        border: 1px solid #334155;
+        color: #f1f5f9;
+        padding: 3px 10px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        animation: slideDown 0.25s ease;
+    }
+
+    .broadcast-type-tag {
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        padding: 1px 5px;
+        border-radius: 3px;
+        background: #334155;
+        color: #94a3b8;
+        text-transform: uppercase;
+    }
+
+    .reason-broadcast-container.level-warning .broadcast-type-tag {
+        background: #78350f;
+        color: #fef3c7;
+    }
+
+    .reason-broadcast-container.level-alert .broadcast-type-tag {
+        background: #7f1d1d;
+        color: #fee2e2;
+    }
+
+    .reason-broadcast-container.level-redirect .broadcast-type-tag {
+        background: #1e3a8a;
+        color: #dbeafe;
+    }
+
+    .broadcast-stay-btn {
+        background: #334155;
+        border: 1px solid #475569;
+        color: #f1f5f9;
+        font-size: 0.72rem;
+        font-weight: 600;
+        padding: 1px 6px;
+        border-radius: 3px;
+        cursor: pointer;
+        margin-left: 6px;
+    }
+    .broadcast-stay-btn:hover {
+        background: #475569;
+    }
+
+    .broadcast-close {
+        background: none;
+        border: none;
+        color: #94a3b8;
+        font-size: 1.1rem;
+        cursor: pointer;
+        line-height: 1;
+        padding: 0 2px;
+    }
+    .broadcast-close:hover { color: #ffffff; }
+
+    /* Modal Backdrop and Box */
+    .broadcast-modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(15, 23, 42, 0.45);
+        backdrop-filter: blur(2px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+    }
+
+    .broadcast-modal-box {
+        background: #ffffff;
+        border-radius: 10px;
+        max-width: 480px;
+        width: 90%;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        overflow: hidden;
+        border: 1px solid #cbd5e1;
+    }
+
+    .broadcast-modal-header {
+        padding: 14px 18px;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #f8fafc;
+    }
+
+    .broadcast-modal-close {
+        background: none;
+        border: none;
+        font-size: 1.3rem;
+        color: #64748b;
+        cursor: pointer;
+        line-height: 1;
+    }
+
+    .broadcast-modal-body {
+        padding: 16px 18px;
+    }
+
+    .broadcast-modal-footer {
+        padding: 12px 18px;
+        background: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .btn-send-broadcast {
+        background: #334155;
+        color: #ffffff;
+        border: none;
+        padding: 7px 16px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        cursor: pointer;
+    }
+    .btn-send-broadcast:hover { background: #1e293b; }
+
+    .btn-cancel-broadcast {
+        background: transparent;
+        border: 1px solid #cbd5e1;
+        color: #475569;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        cursor: pointer;
+    }
+
+    .btn-clear-broadcast {
+        background: transparent;
+        border: none;
+        color: #94a3b8;
+        font-size: 0.8rem;
+        cursor: pointer;
+        text-decoration: underline;
+        padding: 0;
+    }
+    .btn-clear-broadcast:hover { color: #dc2626; }
+
+    @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-4px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 768px) {
+        .reason-tagline { display: none; }
+    }
+</style>
+
+<script>
+    function getCsrfToken() {
+        const input = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (input) return input.value;
+        const match = document.cookie.match(/csrftoken=([^;]+)/);
+        return match ? match[1] : '';
+    }
+
+    function openBroadcastModal() {
+        const modal = document.getElementById('broadcast-operator-modal');
+        if (modal) modal.style.display = 'flex';
+    }
+
+    function closeBroadcastModal() {
+        const modal = document.getElementById('broadcast-operator-modal');
+        if (modal) modal.style.display = 'none';
+        const fb = document.getElementById('bm-feedback');
+        if (fb) fb.innerHTML = '';
+    }
+
+    function toggleRedirectInput(val) {
+        const group = document.getElementById('bm-redirect-group');
+        if (group) group.style.display = (val === 'redirect') ? 'block' : 'none';
+    }
+
+    function submitSendBroadcast() {
+        const msg = document.getElementById('bm-message').value.trim();
+        const level = document.getElementById('bm-level').value;
+        const duration = parseInt(document.getElementById('bm-duration').value, 10);
+        const redirectUrl = document.getElementById('bm-redirect-url').value.trim();
+        const fb = document.getElementById('bm-feedback');
+
+        if (!msg) {
+            fb.innerHTML = '<span style="color: #dc2626;">Please enter a message.</span>';
+            return;
+        }
+
+        fetch('/api/broadcasts/send/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({
+                message: msg,
+                level: level,
+                duration: duration,
+                redirect_url: level === 'redirect' ? (redirectUrl || '/demo/') : null
+            })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                fb.innerHTML = '<span style="color: #16a34a;">Broadcast transmitted successfully.</span>';
+                setTimeout(() => { closeBroadcastModal(); }, 900);
+            } else {
+                fb.innerHTML = `<span style="color: #dc2626;">Error: ${data.error || 'Failed to send'}</span>`;
+            }
+        })
+        .catch(err => {
+            fb.innerHTML = `<span style="color: #dc2626;">Network error: ${err}</span>`;
+        });
+    }
+
+    function submitClearBroadcast() {
+        const fb = document.getElementById('bm-feedback');
+        fetch('/api/broadcasts/clear/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            }
+        })
+        .then(r => r.json())
+        .then(data => {
+            fb.innerHTML = '<span style="color: #475569;">Active broadcast cleared.</span>';
+            setTimeout(() => { closeBroadcastModal(); }, 800);
+        })
+        .catch(() => {});
+    }
+
+    (function initReasonBroadcast() {
+        let dismissedId = null;
+        let redirectTimer = null;
+
+        function cancelRedirect() {
+            if (redirectTimer) {
+                clearInterval(redirectTimer);
+                redirectTimer = null;
+            }
+            const stayBtn = document.getElementById('broadcast-cancel-redirect');
+            if (stayBtn) stayBtn.remove();
+            const textSpan = document.getElementById('broadcast-text');
+            if (textSpan) textSpan.textContent += " (Redirect cancelled)";
+        }
+        window.cancelRedirect = cancelRedirect;
+
+        function applyBroadcast(data) {
+            const banner = document.getElementById('reason-broadcast-banner');
+            const textSpan = document.getElementById('broadcast-text');
+            const typeSpan = document.getElementById('broadcast-type-tag');
+            if (!banner || !textSpan) return;
+
+            if (redirectTimer) {
+                clearInterval(redirectTimer);
+                redirectTimer = null;
+            }
+
+            const existingStayBtn = document.getElementById('broadcast-cancel-redirect');
+            if (existingStayBtn) existingStayBtn.remove();
+
+            if (data && data.message && data.id !== dismissedId) {
+                textSpan.textContent = data.message;
+                banner.className = 'reason-broadcast-container' + (data.level ? ' level-' + data.level : '');
+                
+                if (data.level === 'warning') typeSpan.textContent = 'WARNING';
+                else if (data.level === 'alert') typeSpan.textContent = 'ALERT';
+                else if (data.level === 'redirect') typeSpan.textContent = 'REDIRECT';
+                else typeSpan.textContent = 'NOTICE';
+
+                banner.style.display = 'flex';
+
+                if (data.redirect_url && data.level === 'redirect') {
+                    let countdown = 3;
+                    textSpan.textContent = `${data.message} — Redirecting to ${data.redirect_url} in ${countdown}s...`;
+                    
+                    const stayBtn = document.createElement('button');
+                    stayBtn.id = 'broadcast-cancel-redirect';
+                    stayBtn.type = 'button';
+                    stayBtn.textContent = 'Stay Here';
+                    stayBtn.className = 'broadcast-stay-btn';
+                    stayBtn.onclick = cancelRedirect;
+                    banner.insertBefore(stayBtn, banner.querySelector('.broadcast-close'));
+
+                    redirectTimer = setInterval(() => {
+                        countdown--;
+                        if (countdown > 0) {
+                            textSpan.textContent = `${data.message} — Redirecting to ${data.redirect_url} in ${countdown}s...`;
+                        } else {
+                            clearInterval(redirectTimer);
+                            redirectTimer = null;
+                            window.location.href = data.redirect_url;
+                        }
+                    }, 1000);
+                }
+            } else {
+                banner.style.display = 'none';
+            }
+        }
+
+        window.dismissBroadcast = function() {
+            if (redirectTimer) {
+                clearInterval(redirectTimer);
+                redirectTimer = null;
+            }
+            const banner = document.getElementById('reason-broadcast-banner');
+            if (banner) banner.style.display = 'none';
+            fetch('/api/broadcasts/current/')
+                .then(r => r.json())
+                .then(d => { if (d && d.id) dismissedId = d.id; });
+        };
+
+        // Initial fetch
+        fetch('/api/broadcasts/current/')
+            .then(r => r.json())
+            .then(data => { if (data.active !== false) applyBroadcast(data); })
+            .catch(() => {});
+
+        // SSE connection
+        if (window.EventSource) {
+            try {
+                const sse = new EventSource('/api/broadcasts/stream/');
+                sse.onmessage = function(e) {
+                    try {
+                        const data = JSON.parse(e.data);
+                        applyBroadcast(data.active !== false ? data : null);
+                    } catch (err) {}
+                };
+            } catch (e) {
+                setInterval(() => {
+                    fetch('/api/broadcasts/current/')
+                        .then(r => r.json())
+                        .then(data => applyBroadcast(data.active !== false ? data : null));
+                }, 10000);
+            }
+        }
+    })();
+</script>

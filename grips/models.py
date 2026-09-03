@@ -119,8 +119,8 @@ def index_concept_vector(sender, instance, created, **kwargs):
     if 'test' in sys.argv:
         return
     from grips.tasks import task_index_concept_node
-    # Delay to celery so we don't block the web request
-    task_index_concept_node.delay(instance.id)
+    # Delay to background worker so we don't block the web request
+    task_index_concept_node.enqueue(instance.id)
 
 class KnowledgeEdge(models.Model):
     """Defines exact, computable relationships between ConceptNodes."""
@@ -155,7 +155,7 @@ class KnowledgeEdge(models.Model):
 
 
 class CeleryStatus(models.Model):
-    """Dummy model to hook the Celery dashboard into the admin."""
+    """Legacy proxy model to hook the task queue dashboard link into the admin."""
     class Meta:
         managed = False
-        verbose_name_plural = "Celery Status Dashboard"
+        verbose_name_plural = "Task Queue Dashboard (Legacy Link)"

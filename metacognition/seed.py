@@ -931,33 +931,33 @@ def seed_nightmanager(CognitiveBlueprint, ReasoningStep, ResponseSchema, ToolDef
     for s in [step1, step2, step3, step4]:
         s.available_tools.add(tool_update, tool_complete)
 
-    try:
-        from django_celery_beat.models import PeriodicTask, CrontabSchedule
-        import json
-        schedule, _ = CrontabSchedule.objects.get_or_create(
-            minute='0',
-            hour='3',
-            day_of_week='*',
-            day_of_month='*',
-            month_of_year='*'
-        )
-        PeriodicTask.objects.update_or_create(
-            name='NightManager Daily Maintenance',
-            defaults={
-                'crontab': schedule,
-                'task': 'metacognition.tasks.task_run_blueprint_async',
-                'kwargs': json.dumps({'blueprint_id': bp.id, 'user_prompt': 'Perform nightly maintenance.'}),
-            }
-        )
-        PeriodicTask.objects.update_or_create(
-            name='Nightly Performance Scoring',
-            defaults={
-                'crontab': schedule,
-                'task': 'metacognition.tasks.task_update_performance_scores',
-            }
-        )
-    except ImportError:
-        pass
+    from django.apps import apps
+    if apps.is_installed('verbal_tasks'):
+        try:
+            from verbal_tasks.models import ScheduledTask
+            
+            # 1. Performance Scoring at 8:30 PM (prior to NightManager)
+            ScheduledTask.objects.update_or_create(
+                name='Nightly Performance Scoring',
+                defaults={
+                    'task_name': 'metacognition.tasks.task_update_performance_scores',
+                    'cron_expression': '30 20 * * *',
+                    'is_active': True,
+                }
+            )
+
+            # 2. NightManager Daily Maintenance at 9:00 PM (21:00)
+            ScheduledTask.objects.update_or_create(
+                name='NightManager Daily Maintenance',
+                defaults={
+                    'task_name': 'metacognition.tasks.task_run_blueprint_async',
+                    'cron_expression': '0 21 * * *',
+                    'kwargs_json': {'blueprint_id': bp.id, 'user_prompt': 'Perform nightly maintenance.'},
+                    'is_active': True,
+                }
+            )
+        except Exception:
+            pass
 
 def seed_grill_me(CognitiveBlueprint, ReasoningStep):
     bp, _ = CognitiveBlueprint.objects.update_or_create(

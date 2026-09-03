@@ -1,32 +1,36 @@
 {% for doc in documents %}
-<div class="search-card" draggable="true" ondragstart="event.dataTransfer.setData('application/json', JSON.stringify({model: 'Document', id: '{{ doc.id }}', content: '{{ doc.title|escapejs }}', preview: '{{ doc.title|escapejs }}'}))" style="margin-bottom: 8px; padding: 10px; border-radius: 6px; border: 1px solid var(--border); background-color: var(--bg-panel); font-size: 0.85rem;">
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
-        <div style="font-weight: 600; color: var(--text-main); word-break: break-all;">
+<div class="doc-card" draggable="true" ondragstart="event.dataTransfer.setData('application/json', JSON.stringify({model: 'Document', id: '{{ doc.id }}', content: '{{ doc.title|escapejs }}', preview: '{{ doc.title|escapejs }}'}))">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+        <div style="font-weight: 600; color: var(--text-main); word-break: break-word; font-size: 0.85rem;">
             {{ doc.title }}
         </div>
-        {% if doc.currently_indexed %}
-            <div style="flex-shrink: 0; font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; font-weight: 500; background-color: rgba(46, 204, 113, 0.1); color: #2ecc71;">
-        {% else %}
-            <div style="flex-shrink: 0; font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; font-weight: 500; background-color: rgba(241, 196, 15, 0.1); color: #f1c40f;">
-        {% endif %}
-            {% if doc.currently_indexed %}
-                🟢 Indexed
-            {% else %}
-                🟡 Processing
-            {% endif %}
-            </div>
+        <div class="badge-status {{ doc.status_badge_class }}">
+            {{ doc.status_label }}
+        </div>
     </div>
     
-    <div style="color: var(--text-muted); font-size: 0.75rem; margin-top: 5px;">
-        File: {{ doc.file.name|cut:"documents/" }}
+    <div style="color: var(--text-muted); font-size: 0.75rem; margin-top: 5px; line-height: 1.4;">
+        <span style="font-family: monospace;">{{ doc.file.name|cut:"documents/" }}</span>
         {% if doc.author %}
-            <br>Author: {{ doc.author }}
+            <br>Author: <span style="color: var(--text-main);">{{ doc.author }}</span>
         {% endif %}
         <br>Uploaded: {{ doc.uploaded_at|date:"M j, Y - g:i a" }}
     </div>
+
+    {% if doc.ingestion_status != "INDEXED" %}
+    <div style="margin-top: 6px; display: flex; justify-content: flex-end;">
+        <button type="button" class="action-btn-sm"
+            hx-post="{% url 'demo_ui:trigger_document_ingestion' doc.id %}"
+            hx-target="#uploaded-docs-list"
+            hx-swap="innerHTML"
+            onclick="event.stopPropagation();">
+            Ingest Now
+        </button>
+    </div>
+    {% endif %}
 </div>
 {% empty %}
-<div style="text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 15px 10px;">
-    No documents ingested yet.
+<div style="text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 18px 10px;">
+    No documents uploaded yet.
 </div>
 {% endfor %}

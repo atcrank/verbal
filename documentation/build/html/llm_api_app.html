@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LLM API &mdash; Verbal 0.1 documentation</title>
+  <title>LLM API &mdash; reason 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
 
@@ -20,7 +20,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Background Resources - context documents" href="background_resources_app.html" />
-    <link rel="prev" title="Verbal: Computational Study Design Assistant" href="index.html" /> 
+    <link rel="prev" title="reason: Computational Study Design Assistant" href="index.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -32,7 +32,7 @@
           
           
           <a href="index.html" class="icon icon-home">
-            Verbal
+            reason
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -366,6 +366,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#llm_api.ai_service.AIService.count_conversation_tokens"><code class="docutils literal notranslate"><span class="pre">AIService.count_conversation_tokens()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#llm_api.ai_service.AIService.default_outline_response"><code class="docutils literal notranslate"><span class="pre">AIService.default_outline_response</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#llm_api.ai_service.AIService.embedding_model"><code class="docutils literal notranslate"><span class="pre">AIService.embedding_model</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#llm_api.ai_service.AIService.format_chat_prompt"><code class="docutils literal notranslate"><span class="pre">AIService.format_chat_prompt()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#llm_api.ai_service.AIService.generate_outline"><code class="docutils literal notranslate"><span class="pre">AIService.generate_outline()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#llm_api.ai_service.AIService.generate_response2"><code class="docutils literal notranslate"><span class="pre">AIService.generate_response2()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#llm_api.ai_service.AIService.inference_url"><code class="docutils literal notranslate"><span class="pre">AIService.inference_url</span></code></a></li>
@@ -416,7 +417,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="index.html">Verbal</a>
+          <a href="index.html">reason</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -2250,6 +2251,13 @@ allowing it to be embedded in an iframe within the Django admin.</p>
 <dd></dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="llm_api.ai_service.AIService.format_chat_prompt">
+<span class="sig-name descname"><span class="pre">format_chat_prompt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">messages</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_generation_prompt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/llm_api/ai_service.html#AIService.format_chat_prompt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_api.ai_service.AIService.format_chat_prompt" title="Link to this definition"></a></dt>
+<dd><p>Formats conversation messages into a prompt string using the tokenizer’s chat template,
+falling back gracefully to plain text format if templating fails.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="llm_api.ai_service.AIService.generate_outline">
 <span class="sig-name descname"><span class="pre">generate_outline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">messages</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">response_schema</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_new_tokens</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_return_sequences</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lora_adapter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/llm_api/ai_service.html#AIService.generate_outline"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_api.ai_service.AIService.generate_outline" title="Link to this definition"></a></dt>
 <dd><p>Facade for structured generation (JSON/Pydantic) using the <cite>outlines</cite> library.</p>
@@ -2398,7 +2406,7 @@ summarized by the LLM and injected as a condensed system note.</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="index.html" class="btn btn-neutral float-left" title="Verbal: Computational Study Design Assistant" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="index.html" class="btn btn-neutral float-left" title="reason: Computational Study Design Assistant" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="background_resources_app.html" class="btn btn-neutral float-right" title="Background Resources - context documents" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

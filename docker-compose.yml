@@ -1,14 +1,6 @@
 version: '3.8'
 
 services:
-  redis:
-    image: ${DOCKER_REDIS_IMAGE:-redis:alpine}
-    container_name: verbal_redis
-    ports:
-      - "6379:6379"
-    restart: unless-stopped
-    volumes:
-      - redis_data:/data
   db:
     image: ${DOCKER_POSTGRES_IMAGE:-pgvector/pgvector:pg18}
     container_name: verbal_db
@@ -91,7 +83,6 @@ services:
       - internal_network
 
 volumes:
-  redis_data:
   ollama_data:
   postgres_data:
 
