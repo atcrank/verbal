@@ -97,23 +97,72 @@ class DemoUIViewsTestCase(TestCase):
         log2 = PromptResponseLog.objects.create(
             user=self.user,
             conversation=conv,
-            parent_log=log1,
             user_prompt="Step 2: Propose experimental factors",
             generated_response="Factor A: Dose (Low/High), Factor B: Timing (Pre/Post)."
+        )
+        log3 = PromptResponseLog.objects.create(
+            user=self.user,
+            conversation=conv,
+            user_prompt="Step 3: Confounding analysis",
+            generated_response="Potential confounders identified."
         )
 
         url = reverse('demo_ui:branch_conversation', kwargs={'log_id': log2.id})
         response = self.client.post(url)
         self.assertEqual(response.status_code, 200)
         
-        # Check that a new branched conversation was created
+        # Check that a new branched conversation was created with all historical turns back to root
         branches = Conversation.objects.filter(user=self.user).exclude(id=conv.id)
         self.assertEqual(branches.count(), 1)
         branch = branches.first()
-        self.assertTrue(branch.title.startswith("Branch:"))
+        self.assertEqual(branch.title, "Branch: Original Dialogue (Turn 2)")
         self.assertEqual(branch.logs.count(), 2)
+        
+        branch_logs = list(branch.logs.order_by('created_at'))
+        self.assertIsNone(branch_logs[0].parent_log)
+        self.assertEqual(branch_logs[1].parent_log, branch_logs[0])
+        self.assertEqual(branch_logs[0].user_prompt, "Step 1: Define hypothesis")
+        self.assertEqual(branch_logs[1].user_prompt, "Step 2: Propose experimental factors")
         self.assertContains(response, "Factor A: Dose")
         self.assertContains(response, "Branch from here")
+
+    @patch('llm_api.ai_service.AIService.generate_response2', return_value=["Mock assistant reply"])
+    @patch('llm_api.ai_service.AIService.clean_response', side_effect=lambda x: x)
+    @patch('llm_api.ai_service.AIService.count_conversation_tokens', return_value=10)
+    def test_send_message_links_parent_log_and_uses_1500_tokens(self, mock_count, mock_clean, mock_gen):
+        conv = Conversation.objects.create(user=self.user, title="Interactive Chat")
+        
+        # Turn 1
+        url = reverse('demo_ui:send_message')
+        res1 = self.client.post(url, {
+            'conversation_id': str(conv.id),
+            'user_prompt': 'First message',
+        })
+        self.assertEqual(res1.status_code, 200)
+        self.assertEqual(conv.logs.count(), 1)
+        log1 = conv.logs.first()
+        self.assertIsNone(log1.parent_log)
+        
+        # Verify max_new_tokens was 1500
+        mock_gen.assert_called_with(
+            messages=[
+                {"role": "system", "content": "You are a helpful study design assistant."},
+                {"role": "user", "content": "First message"}
+            ],
+            max_new_tokens=1500,
+            log_kwargs={"skip_log": True},
+            user=self.user
+        )
+        
+        # Turn 2
+        res2 = self.client.post(url, {
+            'conversation_id': str(conv.id),
+            'user_prompt': 'Second message',
+        })
+        self.assertEqual(res2.status_code, 200)
+        self.assertEqual(conv.logs.count(), 2)
+        log2 = conv.logs.order_by('-created_at').first()
+        self.assertEqual(log2.parent_log, log1)
 
     def test_preview_context_item(self):
         mock_file = SimpleUploadedFile("guide.txt", b"Guide content.", content_type="text/plain")

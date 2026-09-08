@@ -60,3 +60,14 @@ for trial_file in glob.glob(os.path.join(trials_source_dir, '*.rst')):
     stub_path = os.path.join(trials_dest_dir, filename)
     with open(stub_path, 'w', encoding='utf-8') as f:
         f.write(f".. include:: ../../../metacognition/metacognition_trials/{filename}\n")
+
+# Auto-generate stubs for demo_ui_trials
+demo_trials_source_dir = os.path.abspath(os.path.join(source_dir, '../../demo_ui/demo_ui_trials'))
+demo_trials_dest_dir = os.path.join(source_dir, 'demo_ui_trials')
+os.makedirs(demo_trials_dest_dir, exist_ok=True)
+
+for trial_file in glob.glob(os.path.join(demo_trials_source_dir, '*.rst')):
+    filename = os.path.basename(trial_file)
+    stub_path = os.path.join(demo_trials_dest_dir, filename)
+    with open(stub_path, 'w', encoding='utf-8') as f:
+        f.write(f".. include:: ../../../demo_ui/demo_ui_trials/{filename}\n")

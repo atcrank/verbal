@@ -263,6 +263,8 @@ def run_blueprint(blueprint_id: int,
         "pending_approval": result_state.get("pending_approval")
     }
 
+task_run_blueprint_sync = run_blueprint
+
 @task
 def task_update_performance_scores():
     """

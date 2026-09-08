@@ -53,6 +53,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../using_ollama.html">Ollama as Local AI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_trials.html">Demo UI Interactive Trials &amp; Feature Walkthroughs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../tests.html">Testing</a></li>
 </ul>
 
@@ -137,9 +138,25 @@
     <span class="n">conversations</span> <span class="o">=</span> <span class="n">Conversation</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">)</span><span class="o">.</span><span class="n">exclude</span><span class="p">(</span><span class="n">user__username</span><span class="o">=</span><span class="s2">&quot;NightManager&quot;</span><span class="p">)</span>
     <span class="n">blueprints</span> <span class="o">=</span> <span class="n">CognitiveBlueprint</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">exclude</span><span class="p">(</span><span class="n">name__startswith</span><span class="o">=</span><span class="s2">&quot;NightManager&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">exclude</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;The Architect&quot;</span><span class="p">)</span>
     
+    <span class="n">active_conversation</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">initial_logs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">initial_files</span> <span class="o">=</span> <span class="p">[]</span>
+    
+    <span class="n">conv_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;conversation_id&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">conv_id</span><span class="p">:</span>
+        <span class="n">active_conversation</span> <span class="o">=</span> <span class="n">Conversation</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">conv_id</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">active_conversation</span><span class="p">:</span>
+            <span class="n">initial_logs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">active_conversation</span><span class="o">.</span><span class="n">logs</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s1">&#39;created_at&#39;</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">log</span> <span class="ow">in</span> <span class="n">initial_logs</span><span class="p">:</span>
+                <span class="n">_prepare_log_for_display</span><span class="p">(</span><span class="n">log</span><span class="p">)</span>
+            <span class="n">initial_files</span> <span class="o">=</span> <span class="n">_get_workspace_files_list</span><span class="p">(</span><span class="n">active_conversation</span><span class="p">)</span>
+
     <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;demo_ui/index.html&#39;</span><span class="p">,</span> <span class="p">{</span>
         <span class="s1">&#39;conversations&#39;</span><span class="p">:</span> <span class="n">conversations</span><span class="p">,</span>
         <span class="s1">&#39;blueprints&#39;</span><span class="p">:</span> <span class="n">blueprints</span><span class="p">,</span>
+        <span class="s1">&#39;active_conversation&#39;</span><span class="p">:</span> <span class="n">active_conversation</span><span class="p">,</span>
+        <span class="s1">&#39;initial_logs&#39;</span><span class="p">:</span> <span class="n">initial_logs</span><span class="p">,</span>
+        <span class="s1">&#39;initial_files&#39;</span><span class="p">:</span> <span class="n">initial_files</span><span class="p">,</span>
     <span class="p">})</span></div>
 
 
@@ -242,20 +259,40 @@
         <span class="p">)</span>
 
     <span class="c1"># 2. Execute Generation (Blueprint or Native)</span>
+    <span class="n">parent_log</span> <span class="o">=</span> <span class="n">conversation</span><span class="o">.</span><span class="n">logs</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s1">&#39;-created_at&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">blueprint_id</span><span class="p">:</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">uuid</span><span class="w"> </span><span class="kn">import</span> <span class="n">uuid4</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">task_run_blueprint_async</span>
-        
-        <span class="n">run_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid4</span><span class="p">())</span>
-        <span class="n">task_run_blueprint_async</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span>
-            <span class="n">blueprint_id</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">blueprint_id</span><span class="p">),</span>
-            <span class="n">user_prompt</span><span class="o">=</span><span class="n">user_prompt</span><span class="p">,</span>
-            <span class="n">conversation_id</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">conversation</span><span class="o">.</span><span class="n">id</span><span class="p">),</span>
-            <span class="n">user_id</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
-            <span class="n">run_id</span><span class="o">=</span><span class="n">run_id</span>
-        <span class="p">)</span>
-        
-        <span class="n">streaming_markup</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;&lt;div id=&quot;blueprint-exec-</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">&quot; data-signals=&quot;</span><span class="se">{{</span><span class="s2">isStreaming: true</span><span class="se">}}</span><span class="s2">&quot; data-on-load=&quot;@get(&#39;/api/meta/stream_blueprint/?run_id=</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">&#39;)&quot;&gt;</span>
+        <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;sync&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;true&#39;</span> <span class="ow">or</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;sync&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;true&#39;</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_blueprint</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">run_blueprint</span><span class="p">(</span>
+                <span class="n">blueprint_id</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">blueprint_id</span><span class="p">),</span>
+                <span class="n">user_prompt</span><span class="o">=</span><span class="n">user_prompt</span><span class="p">,</span>
+                <span class="n">conversation_id</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">conversation</span><span class="o">.</span><span class="n">id</span><span class="p">),</span>
+                <span class="n">user_id</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">id</span>
+            <span class="p">)</span>
+            <span class="n">log</span> <span class="o">=</span> <span class="n">conversation</span><span class="o">.</span><span class="n">logs</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s1">&#39;-created_at&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">log</span><span class="p">:</span>
+                <span class="n">log</span> <span class="o">=</span> <span class="n">PromptResponseLog</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+                    <span class="n">conversation</span><span class="o">=</span><span class="n">conversation</span><span class="p">,</span>
+                    <span class="n">parent_log</span><span class="o">=</span><span class="n">parent_log</span><span class="p">,</span>
+                    <span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">,</span>
+                    <span class="n">user_prompt</span><span class="o">=</span><span class="n">user_prompt</span><span class="p">,</span>
+                    <span class="n">generated_response</span><span class="o">=</span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;final_response&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                    <span class="n">model_name</span><span class="o">=</span><span class="s2">&quot;blueprint&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">uuid</span><span class="w"> </span><span class="kn">import</span> <span class="n">uuid4</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">task_run_blueprint_async</span>
+            
+            <span class="n">run_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid4</span><span class="p">())</span>
+            <span class="n">task_run_blueprint_async</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span>
+                <span class="n">blueprint_id</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">blueprint_id</span><span class="p">),</span>
+                <span class="n">user_prompt</span><span class="o">=</span><span class="n">user_prompt</span><span class="p">,</span>
+                <span class="n">conversation_id</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">conversation</span><span class="o">.</span><span class="n">id</span><span class="p">),</span>
+                <span class="n">user_id</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="n">run_id</span><span class="o">=</span><span class="n">run_id</span>
+            <span class="p">)</span>
+            
+            <span class="n">streaming_markup</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;&lt;div id=&quot;blueprint-exec-</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">&quot; data-signals=&quot;</span><span class="se">{{</span><span class="s2">isStreaming: true</span><span class="se">}}</span><span class="s2">&quot; data-on-load=&quot;@get(&#39;/api/meta/stream_blueprint/?run_id=</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">&#39;)&quot;&gt;</span>
 <span class="s2">&lt;div id=&quot;blueprint-status&quot; class=&quot;agent-step active&quot;&gt;</span>
 <span class="s2">    &lt;span class=&quot;badge&quot;&gt;Dispatched&lt;/span&gt;</span>
 <span class="s2">    &lt;strong&gt;Executing cognitive blueprint asynchronously...&lt;/strong&gt;</span>
@@ -264,16 +301,17 @@
 <span class="s2">&lt;div id=&quot;monologue-stream&quot;&gt;&lt;/div&gt;</span>
 <span class="s2">&lt;div id=&quot;blueprint-final-response&quot;&gt;&lt;/div&gt;</span>
 <span class="s2">&lt;/div&gt;&quot;&quot;&quot;</span>
-        
-        <span class="n">log</span> <span class="o">=</span> <span class="n">PromptResponseLog</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
-            <span class="n">system_prompt</span><span class="o">=</span><span class="s2">&quot;[Async Blueprint Execution]&quot;</span><span class="p">,</span> 
-            <span class="n">user_prompt</span><span class="o">=</span><span class="n">user_prompt</span><span class="p">,</span>
-            <span class="n">conversation</span><span class="o">=</span><span class="n">conversation</span><span class="p">,</span>
-            <span class="n">generated_response</span><span class="o">=</span><span class="n">streaming_markup</span><span class="p">,</span> 
-            <span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">,</span>
-            <span class="n">input_tokens</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-            <span class="n">output_tokens</span><span class="o">=</span><span class="mi">0</span>
-        <span class="p">)</span>
+            
+            <span class="n">log</span> <span class="o">=</span> <span class="n">PromptResponseLog</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+                <span class="n">system_prompt</span><span class="o">=</span><span class="s2">&quot;[Async Blueprint Execution]&quot;</span><span class="p">,</span> 
+                <span class="n">user_prompt</span><span class="o">=</span><span class="n">user_prompt</span><span class="p">,</span>
+                <span class="n">conversation</span><span class="o">=</span><span class="n">conversation</span><span class="p">,</span>
+                <span class="n">parent_log</span><span class="o">=</span><span class="n">parent_log</span><span class="p">,</span>
+                <span class="n">generated_response</span><span class="o">=</span><span class="n">streaming_markup</span><span class="p">,</span> 
+                <span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">,</span>
+                <span class="n">input_tokens</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="n">output_tokens</span><span class="o">=</span><span class="mi">0</span>
+            <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">messages</span> <span class="o">=</span> <span class="n">conversation</span><span class="o">.</span><span class="n">as_messages</span><span class="p">()</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">messages</span><span class="p">:</span>
@@ -321,14 +359,15 @@
             <span class="n">messages_for_llm</span> <span class="o">=</span> <span class="n">messages</span> <span class="o">+</span> <span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">user_prompt</span><span class="p">}]</span>
         
         <span class="n">input_tokens</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">ai_service</span><span class="o">.</span><span class="n">count_conversation_tokens</span><span class="p">(</span><span class="n">messages_for_llm</span><span class="p">)</span>
-        <span class="p">[</span><span class="n">response</span><span class="p">]</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">ai_service</span><span class="o">.</span><span class="n">generate_response2</span><span class="p">(</span><span class="n">messages</span><span class="o">=</span><span class="n">messages_for_llm</span><span class="p">,</span> <span class="n">max_new_tokens</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">log_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;skip_log&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span> <span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>
+        <span class="n">max_new_tokens</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;max_new_tokens&#39;</span><span class="p">,</span> <span class="mi">1500</span><span class="p">))</span>
+        <span class="p">[</span><span class="n">response</span><span class="p">]</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">ai_service</span><span class="o">.</span><span class="n">generate_response2</span><span class="p">(</span><span class="n">messages</span><span class="o">=</span><span class="n">messages_for_llm</span><span class="p">,</span> <span class="n">max_new_tokens</span><span class="o">=</span><span class="n">max_new_tokens</span><span class="p">,</span> <span class="n">log_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;skip_log&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span> <span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>
         <span class="n">cleaned_response</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">ai_service</span><span class="o">.</span><span class="n">clean_response</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
         
         <span class="n">output_tokens</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">ai_service</span><span class="o">.</span><span class="n">count_conversation_tokens</span><span class="p">([{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;assistant&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">cleaned_response</span><span class="p">}])</span>
         
         <span class="n">log</span> <span class="o">=</span> <span class="n">PromptResponseLog</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
             <span class="n">system_prompt</span><span class="o">=</span><span class="n">messages</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;content&quot;</span><span class="p">],</span> <span class="n">user_prompt</span><span class="o">=</span><span class="n">user_prompt</span><span class="p">,</span> <span class="n">rag_selections</span><span class="o">=</span><span class="n">rag_selections</span><span class="p">,</span> 
-            <span class="n">conversation</span><span class="o">=</span><span class="n">conversation</span><span class="p">,</span> <span class="n">generated_response</span><span class="o">=</span><span class="n">cleaned_response</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">,</span>
+            <span class="n">conversation</span><span class="o">=</span><span class="n">conversation</span><span class="p">,</span> <span class="n">parent_log</span><span class="o">=</span><span class="n">parent_log</span><span class="p">,</span> <span class="n">generated_response</span><span class="o">=</span><span class="n">cleaned_response</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">,</span>
             <span class="n">input_tokens</span><span class="o">=</span><span class="n">input_tokens</span><span class="p">,</span> <span class="n">output_tokens</span><span class="o">=</span><span class="n">output_tokens</span>
         <span class="p">)</span>
         
@@ -457,17 +496,27 @@
 <span class="nd">@login_required</span>
 <span class="nd">@require_POST</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">branch_conversation</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">log_id</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;HTMX endpoint to fork a conversation DAG from a specific assistant response.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;HTMX endpoint to fork a conversation DAG from a specific assistant response, copying all content back to the start.&quot;&quot;&quot;</span>
     <span class="n">source_log</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span><span class="n">PromptResponseLog</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">log_id</span><span class="p">)</span>
     <span class="n">original_conv</span> <span class="o">=</span> <span class="n">source_log</span><span class="o">.</span><span class="n">conversation</span>
 
-    <span class="c1"># Trace ancestor path from root to source_log</span>
-    <span class="n">ancestor_logs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Trace ancestor path from root to source_log via parent_log DAG</span>
+    <span class="n">ancestor_chain</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">curr</span> <span class="o">=</span> <span class="n">source_log</span>
     <span class="k">while</span> <span class="n">curr</span><span class="p">:</span>
-        <span class="n">ancestor_logs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">curr</span><span class="p">)</span>
+        <span class="n">ancestor_chain</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">curr</span><span class="p">)</span>
         <span class="n">curr</span> <span class="o">=</span> <span class="n">curr</span><span class="o">.</span><span class="n">parent_log</span>
-    <span class="n">ancestor_logs</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+    <span class="n">ancestor_chain</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+
+    <span class="c1"># For flat or unlinked historical logs in original_conv, ensure we copy all logs back to conversation start</span>
+    <span class="k">if</span> <span class="n">original_conv</span><span class="p">:</span>
+        <span class="n">chronological_logs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">original_conv</span><span class="o">.</span><span class="n">logs</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">created_at__lte</span><span class="o">=</span><span class="n">source_log</span><span class="o">.</span><span class="n">created_at</span><span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s1">&#39;created_at&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">chronological_logs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">ancestor_chain</span><span class="p">):</span>
+            <span class="n">ancestor_logs</span> <span class="o">=</span> <span class="n">chronological_logs</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ancestor_logs</span> <span class="o">=</span> <span class="n">ancestor_chain</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ancestor_logs</span> <span class="o">=</span> <span class="n">ancestor_chain</span>
 
     <span class="n">turn_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">ancestor_logs</span><span class="p">)</span>
     <span class="n">base_title</span> <span class="o">=</span> <span class="n">original_conv</span><span class="o">.</span><span class="n">title</span> <span class="k">if</span> <span class="n">original_conv</span> <span class="k">else</span> <span class="s2">&quot;Conversation&quot;</span>
@@ -478,10 +527,11 @@
         <span class="n">title</span><span class="o">=</span><span class="n">branch_title</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="c1"># Clone historical logs into new conversation to isolate the new branch</span>
+    <span class="c1"># Clone historical logs into new conversation to isolate the new branch, ensuring a continuous DAG</span>
     <span class="n">log_map</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">last_cloned</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">for</span> <span class="n">old_log</span> <span class="ow">in</span> <span class="n">ancestor_logs</span><span class="p">:</span>
-        <span class="n">parent_clone</span> <span class="o">=</span> <span class="n">log_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">old_log</span><span class="o">.</span><span class="n">parent_log_id</span><span class="p">)</span>
+        <span class="n">parent_clone</span> <span class="o">=</span> <span class="n">log_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">old_log</span><span class="o">.</span><span class="n">parent_log_id</span><span class="p">)</span> <span class="ow">or</span> <span class="n">last_cloned</span>
         <span class="n">cloned_log</span> <span class="o">=</span> <span class="n">PromptResponseLog</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
             <span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">,</span>
             <span class="n">conversation</span><span class="o">=</span><span class="n">new_conv</span><span class="p">,</span>
@@ -497,6 +547,7 @@
             <span class="n">step_status</span><span class="o">=</span><span class="n">old_log</span><span class="o">.</span><span class="n">step_status</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">log_map</span><span class="p">[</span><span class="n">old_log</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="n">cloned_log</span>
+        <span class="n">last_cloned</span> <span class="o">=</span> <span class="n">cloned_log</span>
 
     <span class="n">logs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">new_conv</span><span class="o">.</span><span class="n">logs</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s1">&#39;created_at&#39;</span><span class="p">))</span>
     <span class="k">for</span> <span class="n">log</span> <span class="ow">in</span> <span class="n">logs</span><span class="p">:</span>
@@ -728,14 +779,29 @@
 <span class="nd">@login_required</span>
 <span class="nd">@require_POST</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">fill_grips_stub</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">concept_id</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Triggers the Grips Stub Filler blueprint for a specific ConceptNode.&quot;&quot;&quot;</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">CognitiveBlueprint</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">task_run_blueprint_async</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Triggers autonomous stub elaboration for a specific ConceptNode.&quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">grips.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConceptNode</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">django.conf</span><span class="w"> </span><span class="kn">import</span> <span class="n">settings</span>
+    <span class="n">node</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span><span class="n">ConceptNode</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">concept_id</span><span class="p">)</span>
+    <span class="n">is_immediate</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="s1">&#39;TASKS&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;default&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;BACKEND&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;django.tasks.backends.immediate.ImmediateBackend&#39;</span>
+    <span class="n">sync</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;sync&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;true&#39;</span> <span class="ow">or</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;sync&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;true&#39;</span> <span class="ow">or</span> <span class="n">is_immediate</span>
+
     <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">sync</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">grips.tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">generate_concept_narrative</span>
+            <span class="n">func</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">generate_concept_narrative</span><span class="p">,</span> <span class="s2">&quot;func&quot;</span><span class="p">,</span> <span class="n">generate_concept_narrative</span><span class="p">)</span>
+            <span class="n">_</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">concept_id</span><span class="p">)</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">refresh_from_db</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s1">&#39;&lt;span style=&quot;color: #047857; font-size: 0.72rem; font-weight: 600;&quot;&gt;Elaborated&lt;/span&gt;&#39;</span><span class="p">)</span>
+
+        <span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">CognitiveBlueprint</span><span class="p">,</span> <span class="n">bypass_canonical_lock</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">task_run_blueprint_async</span>
+
         <span class="n">bp</span> <span class="o">=</span> <span class="n">CognitiveBlueprint</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">name__icontains</span><span class="o">=</span><span class="s2">&quot;Stub Filler&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">bp</span><span class="p">:</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.seed</span><span class="w"> </span><span class="kn">import</span> <span class="n">seed_cognitive_blueprints</span>
-            <span class="n">seed_cognitive_blueprints</span><span class="p">()</span>
+            <span class="k">with</span> <span class="n">bypass_canonical_lock</span><span class="p">():</span>
+                <span class="n">seed_cognitive_blueprints</span><span class="p">()</span>
             <span class="n">bp</span> <span class="o">=</span> <span class="n">CognitiveBlueprint</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Grips Stub Filler&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">bp</span><span class="p">:</span>
@@ -748,7 +814,7 @@
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="s1">&#39;&lt;span style=&quot;color: #047857; font-size: 0.72rem; font-weight: 600;&quot;&gt;Filler queued.&lt;/span&gt;&#39;</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Failed to queue Grips Stub Filler&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Failed to fill Grips stub&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;&lt;span style=&quot;color: #b91c1c; font-size: 0.72rem; font-weight: 500;&quot;&gt;Error: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s1">&lt;/span&gt;&#39;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span></div>
 
 </pre></div>

@@ -1,0 +1,343 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutorial 3: Interactive Conversation Branching and Grips Knowledge Graph &mdash; reason 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Doctest Report: Trial 3: Conversation Branching &amp; Grips Knowledge Graph" href="trial_3_branching_and_grips_expansion_report.html" />
+    <link rel="prev" title="Doctest Report: Trial 2: Multi-Step Cognitive Reasoning &amp; Sandboxed Tools" href="trial_2_multistep_blueprint_and_tools_report.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            reason
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../llm_api_app.html">LLM API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../background_resources_app.html">Background Resources - context documents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../grips_app.html">Grips - wiki knowledge banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo_ui_app.html">Demo UI</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../using_ollama.html">Ollama as Local AI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../demo_ui_trials.html">Demo UI Interactive Trials &amp; Feature Walkthroughs</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="trial_1_ingestion_and_context.html">Tutorial 1: Document Ingestion and Context-Grounded Reasoning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="trial_1_ingestion_and_context_report.html">Doctest Report: Trial 1: Document Ingestion and Context-Grounded Reasoning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="trial_2_multistep_blueprint_and_tools.html">Tutorial 2: Multi-Step Cognitive Reasoning and Sandboxed Tool Execution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="trial_2_multistep_blueprint_and_tools_report.html">Doctest Report: Trial 2: Multi-Step Cognitive Reasoning &amp; Sandboxed Tools</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Tutorial 3: Interactive Conversation Branching and Grips Knowledge Graph</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#execution">Execution</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#step-1-seed-grips-domain-with-a-stub-concept-node">Step 1: Seed Grips Domain with a Stub Concept Node</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-2-live-prompt-ai-response-parent-conversation">Step 2: Live Prompt &amp; AI Response (Parent Conversation)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-3-interactive-conversation-branching">Step 3: Interactive Conversation Branching</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-4-grips-knowledge-graph-navigation">Step 4: Grips Knowledge Graph Navigation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-5-autonomous-stub-elaboration-via-gemma4">Step 5: Autonomous Stub Elaboration via Gemma4</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-6-report-generation">Step 6: Report Generation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="trial_3_branching_and_grips_expansion_report.html">Doctest Report: Trial 3: Conversation Branching &amp; Grips Knowledge Graph</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../demo_ui_trials.html#trial-descriptions">Trial Descriptions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../tests.html">Testing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">reason</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../demo_ui_trials.html">Demo UI Interactive Trials &amp; Feature Walkthroughs</a></li>
+      <li class="breadcrumb-item active">Tutorial 3: Interactive Conversation Branching and Grips Knowledge Graph</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/demo_ui_trials/trial_3_branching_and_grips_expansion.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tutorial-3-interactive-conversation-branching-and-grips-knowledge-graph">
+<h1>Tutorial 3: Interactive Conversation Branching and Grips Knowledge Graph<a class="headerlink" href="#tutorial-3-interactive-conversation-branching-and-grips-knowledge-graph" title="Link to this heading"></a></h1>
+<p>We imagine a researcher who has the following task and resources:
+An autonomous robotics research team is designing an empirical intervention trial for a tracked search-and-rescue robot operating inside a multi-story collapsed structure under heavy smoke and rubble. The researcher uses the Verbal / Reason interface to explore existing literature, formulate causal hypotheses, evaluate statistical and combinatory factor trade-offs, compute factorial parameters in the sandbox, and structure the domain knowledge graph.</p>
+<p>In this third tutorial, the researcher investigates an architectural counterfactual arising from Trial 2:</p>
+<ol class="arabic simple">
+<li><p><strong>Problem Context</strong>: Trial 2 demonstrated that traversing heavy rubble while powering high-draw onboard LiDAR and communications exhausts the battery in 101 minutes, violating the 120-minute mission requirement.</p></li>
+<li><p><strong>Exploratory Hypothesis</strong>: The researcher hypothesizes that offloading communications to lightweight, deployable ad-hoc RF breadcrumb nodes will reduce onboard power draw sufficiently to exceed the 2-hour threshold.</p></li>
+<li><p><strong>Conversation Branching</strong>: The researcher queries Verbal / Reason on relay trade-offs, then clicks <code class="docutils literal notranslate"><span class="pre">Branch</span> <span class="pre">from</span> <span class="pre">here</span></code> to fork an isolated conversation branch exploring this tactical divergence without polluting the parent thread.</p></li>
+<li><p><strong>Knowledge Graph Integration</strong>: The researcher navigates to the Grips Explorer, locates an unelaborated domain stub (<code class="docutils literal notranslate"><span class="pre">Breadcrumb</span> <span class="pre">Relay</span> <span class="pre">Node</span></code>), and triggers autonomous elaboration. Verbal / Reason (Gemma4) synthesizes a dense wiki entry with atomic relational claims, updating the ontology.</p></li>
+</ol>
+<section id="execution">
+<h2>Execution<a class="headerlink" href="#execution" title="Link to this heading"></a></h2>
+<p>First, we set up credentials and seed the domain ontology with an unelaborated concept node.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span><span class="o">,</span><span class="w"> </span><span class="nn">json</span><span class="o">,</span><span class="w"> </span><span class="nn">time</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;DJANGO_ALLOW_ASYNC_UNSAFE&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;true&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">django.contrib.auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_user_model</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Conversation</span><span class="p">,</span> <span class="n">PromptResponseLog</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">grips.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Domain</span><span class="p">,</span> <span class="n">ConceptNode</span><span class="p">,</span> <span class="n">KnowledgeEdge</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">demo_ui.demo_ui_trials.helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">take_ui_screenshot</span><span class="p">,</span> <span class="n">capture_ai_response</span><span class="p">,</span> <span class="n">record_ui_doctest_run</span><span class="p">,</span> <span class="n">timed_step</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">playwright.sync_api</span><span class="w"> </span><span class="kn">import</span> <span class="n">sync_playwright</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">User</span> <span class="o">=</span> <span class="n">get_user_model</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">user</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s2">&quot;robotics_researcher&quot;</span><span class="p">,</span> <span class="n">defaults</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;is_staff&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;is_superuser&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">_</span> <span class="o">=</span> <span class="n">user</span><span class="o">.</span><span class="n">set_password</span><span class="p">(</span><span class="s2">&quot;rescue2026&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">user</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model_name</span> <span class="o">=</span> <span class="n">get_active_model_name</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">trial_t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+</pre></div>
+</div>
+<section id="step-1-seed-grips-domain-with-a-stub-concept-node">
+<h3>Step 1: Seed Grips Domain with a Stub Concept Node<a class="headerlink" href="#step-1-seed-grips-domain-with-a-stub-concept-node" title="Link to this heading"></a></h3>
+<p>The researcher establishes the tactical ontology for emergency robotics, creating an unelaborated stub node for deployable breadcrumb relays.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">django.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">serializers</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">background_resources.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Document</span><span class="p">,</span> <span class="n">RAGChunk</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.apps</span><span class="w"> </span><span class="kn">import</span> <span class="n">service_registry</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fixture_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;demo_ui/demo_ui_trials/fixtures/firefighting_chunks.json&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">if</span> <span class="n">fixture_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+<span class="gp">... </span>    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">fixture_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">serializers</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="s2">&quot;json&quot;</span><span class="p">,</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()):</span>
+<span class="gp">... </span>            <span class="k">try</span><span class="p">:</span>
+<span class="gp">... </span>                <span class="n">obj</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+<span class="gp">... </span>            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+<span class="gp">... </span>                <span class="k">pass</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rag_service</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">rag_service</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">if</span> <span class="n">rag_service</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">_</span> <span class="o">=</span> <span class="n">rag_service</span><span class="o">.</span><span class="n">index_unindexed_chunks</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">domain</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">Domain</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Firefighting Tactics&quot;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">defaults</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Ontology of tactical emergency robotics and incident operations.&quot;</span><span class="p">}</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">stub_node</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">ConceptNode</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">domain</span><span class="o">=</span><span class="n">domain</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Breadcrumb Relay Node&quot;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">slug</span><span class="o">=</span><span class="s2">&quot;breadcrumb-relay-node&quot;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">defaults</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;narrative_content&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;focus_hint&quot;</span><span class="p">:</span> <span class="s2">&quot;Ad-hoc RF mesh repeaters deployed by UGVs in RF-opaque structures&quot;</span><span class="p">}</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">is_stub</span> <span class="o">=</span> <span class="ow">not</span> <span class="nb">bool</span><span class="p">(</span><span class="n">stub_node</span><span class="o">.</span><span class="n">narrative_content</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Concept node initialized: &#39;</span><span class="si">{</span><span class="n">stub_node</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">&#39;, is_stub: </span><span class="si">{</span><span class="n">is_stub</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="go">Concept node initialized: &#39;Breadcrumb Relay Node&#39;, is_stub: True</span>
+</pre></div>
+</div>
+</section>
+<section id="step-2-live-prompt-ai-response-parent-conversation">
+<h3>Step 2: Live Prompt &amp; AI Response (Parent Conversation)<a class="headerlink" href="#step-2-live-prompt-ai-response-parent-conversation" title="Link to this heading"></a></h3>
+<p>The researcher opens the Demo UI and submits a high-level architectural comparison between onboard relays and deployable breadcrumb nodes.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">steps_recorded</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pw</span> <span class="o">=</span> <span class="n">sync_playwright</span><span class="p">()</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">browser</span> <span class="o">=</span> <span class="n">pw</span><span class="o">.</span><span class="n">chromium</span><span class="o">.</span><span class="n">launch</span><span class="p">(</span><span class="n">headless</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">page</span> <span class="o">=</span> <span class="n">browser</span><span class="o">.</span><span class="n">new_page</span><span class="p">(</span><span class="n">viewport</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;width&quot;</span><span class="p">:</span> <span class="mi">1280</span><span class="p">,</span> <span class="s2">&quot;height&quot;</span><span class="p">:</span> <span class="mi">800</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">authenticate_page</span><span class="p">(</span><span class="n">page</span><span class="p">,</span> <span class="n">user</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">timed_step</span><span class="p">(</span><span class="s2">&quot;Parent Inquiry: Communication Relays vs Breadcrumbs&quot;</span><span class="p">,</span> <span class="n">steps_recorded</span><span class="p">)</span> <span class="k">as</span> <span class="n">step</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">_</span> <span class="o">=</span> <span class="n">page</span><span class="o">.</span><span class="n">goto</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">live_server_url</span><span class="si">}</span><span class="s2">/demo/&quot;</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">_</span> <span class="o">=</span> <span class="n">page</span><span class="o">.</span><span class="n">wait_for_selector</span><span class="p">(</span><span class="s2">&quot;#chat-form&quot;</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">6000</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">prompt_text</span> <span class="o">=</span> <span class="s2">&quot;Compare heavy tracked UGV communication relays vs. deployable ad-hoc RF breadcrumb nodes in reinforced concrete basements.&quot;</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;researcher_thinking&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>        <span class="s2">&quot;In Trial 2, heavy rubble limited robot endurance to 101 minutes with full sensor/comms payloads. &quot;</span>
+<span class="gp">... </span>        <span class="s2">&quot;We must determine whether offloading communications to ad-hoc breadcrumb nodes provides sufficient &quot;</span>
+<span class="gp">... </span>        <span class="s2">&quot;RF signal reliability through reinforced concrete while reducing vehicle payload power draw.&quot;</span>
+<span class="gp">... </span>    <span class="p">)</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;researcher_inquiry&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prompt_text</span>
+<span class="gp">... </span>    <span class="n">page</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="s1">&#39;textarea[name=&quot;user_prompt&quot;]&#39;</span><span class="p">,</span> <span class="n">prompt_text</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">page</span><span class="o">.</span><span class="n">click</span><span class="p">(</span><span class="s2">&quot;#send-btn&quot;</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">_</span> <span class="o">=</span> <span class="n">page</span><span class="o">.</span><span class="n">wait_for_selector</span><span class="p">(</span><span class="s2">&quot;#active-thinking-bubble&quot;</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">4000</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">_</span> <span class="o">=</span> <span class="n">page</span><span class="o">.</span><span class="n">wait_for_selector</span><span class="p">(</span><span class="s2">&quot;.chat-message.ai .bubble&quot;</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">3600000</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">ai_response</span> <span class="o">=</span> <span class="n">capture_ai_response</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">img1</span> <span class="o">=</span> <span class="n">take_ui_screenshot</span><span class="p">(</span><span class="n">page</span><span class="p">,</span> <span class="s2">&quot;trial_3_parent_conversation&quot;</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">img1</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;response_text&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ai_response</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;model_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">model_name</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;description&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Local LLM (</span><span class="si">{</span><span class="n">model_name</span><span class="si">}</span><span class="s2">) synthesized trade-off comparison between UGV relays and breadcrumb nodes.&quot;</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">ai_response</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">30</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Expected non-trivial response, got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">ai_response</span><span class="p">)</span><span class="si">}</span><span class="s2"> chars&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="step-3-interactive-conversation-branching">
+<h3>Step 3: Interactive Conversation Branching<a class="headerlink" href="#step-3-interactive-conversation-branching" title="Link to this heading"></a></h3>
+<p>The researcher clicks <code class="docutils literal notranslate"><span class="pre">Branch</span> <span class="pre">from</span> <span class="pre">here</span></code> directly on the assistant turn, spawning an isolated DAG branch to investigate breadcrumb deployment protocols without polluting the baseline trial.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">timed_step</span><span class="p">(</span><span class="s2">&quot;Interactive Conversation Branching&quot;</span><span class="p">,</span> <span class="n">steps_recorded</span><span class="p">)</span> <span class="k">as</span> <span class="n">step</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">conv</span> <span class="o">=</span> <span class="n">Conversation</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">user</span><span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s2">&quot;-start_time&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;researcher_thinking&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>        <span class="s2">&quot;We want to explore the specific operational mechanics of breadcrumb dropping intervals. &quot;</span>
+<span class="gp">... </span>        <span class="s2">&quot;Rather than cluttering our primary experimental log, we fork an exploratory branch in the Reason UI.&quot;</span>
+<span class="gp">... </span>    <span class="p">)</span>
+<span class="gp">... </span>    <span class="n">page</span><span class="o">.</span><span class="n">click</span><span class="p">(</span><span class="s2">&quot;.branch-btn&quot;</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">_</span> <span class="o">=</span> <span class="n">page</span><span class="o">.</span><span class="n">wait_for_selector</span><span class="p">(</span><span class="s2">&quot;.conv-item.active&quot;</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">6000</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">img2</span> <span class="o">=</span> <span class="n">take_ui_screenshot</span><span class="p">(</span><span class="n">page</span><span class="p">,</span> <span class="s2">&quot;trial_3_branched_conversation&quot;</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">img2</span>
+<span class="gp">... </span>    <span class="n">branched_conv</span> <span class="o">=</span> <span class="n">Conversation</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">user</span><span class="p">)</span><span class="o">.</span><span class="n">exclude</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">conv</span><span class="o">.</span><span class="n">id</span><span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s2">&quot;-start_time&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+<span class="gp">... </span>    <span class="n">branch_ok</span> <span class="o">=</span> <span class="n">branched_conv</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;description&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Forked conversation branch from AI response. Branch created: </span><span class="si">{</span><span class="n">branch_ok</span><span class="si">}</span><span class="s2">.&quot;</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;researcher_evaluation&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>        <span class="s2">&quot;A child conversation branch was created and set as active in the Demo UI sidebar. &quot;</span>
+<span class="gp">... </span>        <span class="s2">&quot;All subsequent prompts in this branch remain isolated from the parent baseline analysis.&quot;</span>
+<span class="gp">... </span>    <span class="p">)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Conversation successfully forked: </span><span class="si">{</span><span class="n">branched_conv</span><span class="w"> </span><span class="ow">is</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="kc">None</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="go">Conversation successfully forked: True</span>
+</pre></div>
+</div>
+</section>
+<section id="step-4-grips-knowledge-graph-navigation">
+<h3>Step 4: Grips Knowledge Graph Navigation<a class="headerlink" href="#step-4-grips-knowledge-graph-navigation" title="Link to this heading"></a></h3>
+<p>The researcher navigates to the Grips Explorer tab and expands the <code class="docutils literal notranslate"><span class="pre">Firefighting</span> <span class="pre">Tactics</span></code> domain to locate the unelaborated <code class="docutils literal notranslate"><span class="pre">Breadcrumb</span> <span class="pre">Relay</span> <span class="pre">Node</span></code> stub.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">timed_step</span><span class="p">(</span><span class="s2">&quot;Grips Explorer Navigation&quot;</span><span class="p">,</span> <span class="n">steps_recorded</span><span class="p">)</span> <span class="k">as</span> <span class="n">step</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">page</span><span class="o">.</span><span class="n">click</span><span class="p">(</span><span class="s1">&#39;button:has-text(&quot;Grips Explorer&quot;)&#39;</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">_</span> <span class="o">=</span> <span class="n">page</span><span class="o">.</span><span class="n">wait_for_selector</span><span class="p">(</span><span class="s2">&quot;#grips-tab.active&quot;</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">6000</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">_</span> <span class="o">=</span> <span class="n">page</span><span class="o">.</span><span class="n">wait_for_selector</span><span class="p">(</span><span class="s2">&quot;.domain-section summary&quot;</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">6000</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">page</span><span class="o">.</span><span class="n">click</span><span class="p">(</span><span class="s1">&#39;.domain-section summary&#39;</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">_</span> <span class="o">=</span> <span class="n">page</span><span class="o">.</span><span class="n">wait_for_selector</span><span class="p">(</span><span class="s1">&#39;button:has-text(&quot;Fill Stub&quot;)&#39;</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">6000</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">img3</span> <span class="o">=</span> <span class="n">take_ui_screenshot</span><span class="p">(</span><span class="n">page</span><span class="p">,</span> <span class="s2">&quot;trial_3_grips_explorer&quot;</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">img3</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;description&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Navigated to Grips Explorer, expanded domain hierarchy, located unelaborated stub node with &#39;Fill Stub&#39; button.&quot;</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;researcher_thinking&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>        <span class="s2">&quot;Our domain ontology contains an unelaborated concept for &#39;Breadcrumb Relay Node&#39;. &quot;</span>
+<span class="gp">... </span>        <span class="s2">&quot;We will trigger Reason&#39;s autonomous stub filler to synthesize an authoritative wiki entry &quot;</span>
+<span class="gp">... </span>        <span class="s2">&quot;and extract relational claims directly into our knowledge graph.&quot;</span>
+<span class="gp">... </span>    <span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="step-5-autonomous-stub-elaboration-via-gemma4">
+<h3>Step 5: Autonomous Stub Elaboration via Gemma4<a class="headerlink" href="#step-5-autonomous-stub-elaboration-via-gemma4" title="Link to this heading"></a></h3>
+<p>The researcher clicks the <code class="docutils literal notranslate"><span class="pre">Fill</span> <span class="pre">Stub</span></code> button. Verbal / Reason (Gemma4) processes the node, searches internal literature, generates an encyclopedic narrative with structured claims, and saves it to the database.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">timed_step</span><span class="p">(</span><span class="s2">&quot;Autonomous Stub Elaboration via Gemma4&quot;</span><span class="p">,</span> <span class="n">steps_recorded</span><span class="p">)</span> <span class="k">as</span> <span class="n">step</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="c1"># Click Fill Stub in the UI</span>
+<span class="gp">... </span>    <span class="n">page</span><span class="o">.</span><span class="n">click</span><span class="p">(</span><span class="s1">&#39;button:has-text(&quot;Fill Stub&quot;)&#39;</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="c1"># Wait for HTMX button swap to complete</span>
+<span class="gp">... </span>    <span class="n">_</span> <span class="o">=</span> <span class="n">page</span><span class="o">.</span><span class="n">wait_for_selector</span><span class="p">(</span><span class="s1">&#39;span:has-text(&quot;Elaborated&quot;)&#39;</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="s2">&quot;attached&quot;</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">3600000</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">stub_node</span><span class="o">.</span><span class="n">refresh_from_db</span><span class="p">()</span>
+<span class="gp">... </span>    <span class="c1"># Refresh the Grips tab to show the fully populated concept</span>
+<span class="gp">... </span>    <span class="n">_</span> <span class="o">=</span> <span class="n">page</span><span class="o">.</span><span class="n">goto</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">live_server_url</span><span class="si">}</span><span class="s2">/demo/&quot;</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">page</span><span class="o">.</span><span class="n">click</span><span class="p">(</span><span class="s1">&#39;button:has-text(&quot;Grips Explorer&quot;)&#39;</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">_</span> <span class="o">=</span> <span class="n">page</span><span class="o">.</span><span class="n">wait_for_selector</span><span class="p">(</span><span class="s2">&quot;#grips-tab.active&quot;</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">6000</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">page</span><span class="o">.</span><span class="n">click</span><span class="p">(</span><span class="s1">&#39;.domain-section summary&#39;</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">_</span> <span class="o">=</span> <span class="n">page</span><span class="o">.</span><span class="n">wait_for_selector</span><span class="p">(</span><span class="s2">&quot;.search-card-title&quot;</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">6000</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">img4</span> <span class="o">=</span> <span class="n">take_ui_screenshot</span><span class="p">(</span><span class="n">page</span><span class="p">,</span> <span class="s2">&quot;trial_3_grips_elaborated&quot;</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">img4</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;model_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">model_name</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;response_text&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">stub_node</span><span class="o">.</span><span class="n">narrative_content</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;description&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Gemma4 generated </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">stub_node</span><span class="o">.</span><span class="n">narrative_content</span><span class="p">)</span><span class="si">}</span><span class="s2"> characters for &#39;</span><span class="si">{</span><span class="n">stub_node</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">&#39; with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">stub_node</span><span class="o">.</span><span class="n">structured_claims</span><span class="p">)</span><span class="si">}</span><span class="s2"> claims.&quot;</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;researcher_evaluation&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>        <span class="sa">f</span><span class="s2">&quot;The &#39;</span><span class="si">{</span><span class="n">stub_node</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">&#39; stub was successfully elaborated by Gemma4 into an authoritative wiki article. &quot;</span>
+<span class="gp">... </span>        <span class="sa">f</span><span class="s2">&quot;The model extracted </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">stub_node</span><span class="o">.</span><span class="n">structured_claims</span><span class="p">)</span><span class="si">}</span><span class="s2"> structured relational claims connecting breadcrumb &quot;</span>
+<span class="gp">... </span>        <span class="s2">&quot;nodes to our tactical robotics ontology.&quot;</span>
+<span class="gp">... </span>    <span class="p">)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Stub node elaborated: </span><span class="si">{</span><span class="nb">bool</span><span class="p">(</span><span class="n">stub_node</span><span class="o">.</span><span class="n">narrative_content</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="go">Stub node elaborated: True</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">browser</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pw</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="step-6-report-generation">
+<h3>Step 6: Report Generation<a class="headerlink" href="#step-6-report-generation" title="Link to this heading"></a></h3>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">total_duration</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">trial_t0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">report_path</span> <span class="o">=</span> <span class="n">record_ui_doctest_run</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="s2">&quot;trial_3_branching_and_grips_expansion&quot;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="s2">&quot;Trial 3: Conversation Branching &amp; Grips Knowledge Graph&quot;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">steps_recorded</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">model_name</span><span class="o">=</span><span class="n">model_name</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">total_duration_s</span><span class="o">=</span><span class="n">total_duration</span><span class="p">,</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;- complete attempt: </span><span class="si">{</span><span class="mi">1</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">report_path</span><span class="p">)</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="mi">0</span><span class="si">}</span><span class="s2">/1&quot;</span><span class="p">)</span>
+<span class="go">- complete attempt: 1/1</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="trial_2_multistep_blueprint_and_tools_report.html" class="btn btn-neutral float-left" title="Doctest Report: Trial 2: Multi-Step Cognitive Reasoning &amp; Sandboxed Tools" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="trial_3_branching_and_grips_expansion_report.html" class="btn btn-neutral float-right" title="Doctest Report: Trial 3: Conversation Branching &amp; Grips Knowledge Graph" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Andrew Cruickshank.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

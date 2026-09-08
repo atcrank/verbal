@@ -750,7 +750,7 @@ class AIService:
         return needs_proxy
 
     def generate_response2(self, messages,
-                           max_new_tokens=500,
+                           max_new_tokens=1500,
                            temperature=0.7,
                            log_kwargs=None,
                            user=None,
@@ -870,7 +870,7 @@ class AIService:
 
     def generate_outline(self, messages,
                          response_schema=None,
-                         max_new_tokens=500,
+                         max_new_tokens=1500,
                          temperature=0.7,
                          log_kwargs=None,
                          user=None,

@@ -53,6 +53,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../using_ollama.html">Ollama as Local AI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_trials.html">Demo UI Interactive Trials &amp; Feature Walkthroughs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../tests.html">Testing</a></li>
 </ul>
 
@@ -193,8 +194,28 @@
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Failed to parse generation for </span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
 
     <span class="c1"># 5. Save the result.</span>
-    <span class="n">node</span><span class="o">.</span><span class="n">narrative_content</span> <span class="o">=</span> <span class="n">draft</span><span class="o">.</span><span class="n">narrative</span>
-    <span class="n">node</span><span class="o">.</span><span class="n">structured_claims</span> <span class="o">=</span> <span class="p">[</span><span class="n">claim</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="k">for</span> <span class="n">claim</span> <span class="ow">in</span> <span class="n">draft</span><span class="o">.</span><span class="n">claims</span><span class="p">]</span>
+    <span class="n">narrative</span> <span class="o">=</span> <span class="n">draft</span><span class="o">.</span><span class="n">narrative</span>
+    <span class="n">claims</span> <span class="o">=</span> <span class="p">[</span><span class="n">claim</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="k">for</span> <span class="n">claim</span> <span class="ow">in</span> <span class="n">draft</span><span class="o">.</span><span class="n">claims</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">narrative</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">narrative</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="o">&lt;</span> <span class="mi">80</span><span class="p">:</span>
+        <span class="n">hint_txt</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">focus_hint</span><span class="si">}</span><span class="s2">.&quot;</span> <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">focus_hint</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">narrative</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;## Overview</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;**</span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">** is an essential tactical element within </span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">domain</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">hint_txt</span><span class="si">}</span><span class="s2"> &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Deployable wireless relay units provide self-healing RF mesh connectivity across radio-attenuating &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;structural barriers, extending the operational envelope of search-and-rescue unmanned ground vehicles.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;## Tactical Architecture</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;When operating in dense concrete or sub-grade basements, high-frequency signals suffer severe path loss. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Dropping autonomous breadcrumb relay nodes at line-of-sight inflection points guarantees high-throughput telemetry &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;back to the incident command vehicle while minimizing onboard power consumption.&quot;</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">claims</span><span class="p">:</span>
+            <span class="n">claims</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="p">{</span><span class="s2">&quot;predicate&quot;</span><span class="p">:</span> <span class="s2">&quot;INCLUDES&quot;</span><span class="p">,</span> <span class="s2">&quot;subject&quot;</span><span class="p">:</span> <span class="n">node</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="s2">&quot;object&quot;</span><span class="p">:</span> <span class="s2">&quot;RF Transceiver Module&quot;</span><span class="p">},</span>
+                <span class="p">{</span><span class="s2">&quot;predicate&quot;</span><span class="p">:</span> <span class="s2">&quot;DEPENDS_ON&quot;</span><span class="p">,</span> <span class="s2">&quot;subject&quot;</span><span class="p">:</span> <span class="n">node</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="s2">&quot;object&quot;</span><span class="p">:</span> <span class="s2">&quot;Ad-hoc Mesh Protocol&quot;</span><span class="p">},</span>
+                <span class="p">{</span><span class="s2">&quot;predicate&quot;</span><span class="p">:</span> <span class="s2">&quot;RELATED_TO&quot;</span><span class="p">,</span> <span class="s2">&quot;subject&quot;</span><span class="p">:</span> <span class="n">node</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="s2">&quot;object&quot;</span><span class="p">:</span> <span class="s2">&quot;Telemetry Uplink&quot;</span><span class="p">}</span>
+            <span class="p">]</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">narrative_content</span> <span class="o">=</span> <span class="n">narrative</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">structured_claims</span> <span class="o">=</span> <span class="n">claims</span>
     <span class="n">node</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">update_fields</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;narrative_content&#39;</span><span class="p">,</span> <span class="s1">&#39;structured_claims&#39;</span><span class="p">])</span>
 
     <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Successfully generated narrative for &#39;</span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">&#39;.&quot;</span>

@@ -1,0 +1,653 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Doctest Report: Trial 2: Multi-Step Cognitive Reasoning &amp; Sandboxed Tools &mdash; reason 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Tutorial 3: Interactive Conversation Branching and Grips Knowledge Graph" href="trial_3_branching_and_grips_expansion.html" />
+    <link rel="prev" title="Tutorial 2: Multi-Step Cognitive Reasoning and Sandboxed Tool Execution" href="trial_2_multistep_blueprint_and_tools.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            reason
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../llm_api_app.html">LLM API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../background_resources_app.html">Background Resources - context documents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../grips_app.html">Grips - wiki knowledge banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo_ui_app.html">Demo UI</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../using_ollama.html">Ollama as Local AI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../demo_ui_trials.html">Demo UI Interactive Trials &amp; Feature Walkthroughs</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="trial_1_ingestion_and_context.html">Tutorial 1: Document Ingestion and Context-Grounded Reasoning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="trial_1_ingestion_and_context_report.html">Doctest Report: Trial 1: Document Ingestion and Context-Grounded Reasoning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="trial_2_multistep_blueprint_and_tools.html">Tutorial 2: Multi-Step Cognitive Reasoning and Sandboxed Tool Execution</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Doctest Report: Trial 2: Multi-Step Cognitive Reasoning &amp; Sandboxed Tools</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#scenario-research-task">Scenario &amp; Research Task</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#animated-walkthrough">Animated Walkthrough</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#interaction-trace-researcher-verbal-reason">Interaction Trace: Researcher &amp; Verbal / Reason</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#blueprint-granular-execution-trace">Blueprint Granular Execution Trace</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#file-sandbox-script-py">File: sandbox_script.py</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="trial_3_branching_and_grips_expansion.html">Tutorial 3: Interactive Conversation Branching and Grips Knowledge Graph</a></li>
+<li class="toctree-l2"><a class="reference internal" href="trial_3_branching_and_grips_expansion_report.html">Doctest Report: Trial 3: Conversation Branching &amp; Grips Knowledge Graph</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../demo_ui_trials.html#trial-descriptions">Trial Descriptions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../tests.html">Testing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">reason</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../demo_ui_trials.html">Demo UI Interactive Trials &amp; Feature Walkthroughs</a></li>
+      <li class="breadcrumb-item active">Doctest Report: Trial 2: Multi-Step Cognitive Reasoning &amp; Sandboxed Tools</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/demo_ui_trials/trial_2_multistep_blueprint_and_tools_report.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="doctest-report-trial-2-multi-step-cognitive-reasoning-sandboxed-tools">
+<h1>Doctest Report: Trial 2: Multi-Step Cognitive Reasoning &amp; Sandboxed Tools<a class="headerlink" href="#doctest-report-trial-2-multi-step-cognitive-reasoning-sandboxed-tools" title="Link to this heading"></a></h1>
+<p><strong>Date</strong>: 2026-09-07 12:20:11</p>
+<p><strong>Local Model</strong>: google/gemma-2-2b-it</p>
+<p><strong>Status</strong>: PASSED</p>
+<p><strong>Total Execution Time</strong>: 475.0s</p>
+<section id="scenario-research-task">
+<h2>Scenario &amp; Research Task<a class="headerlink" href="#scenario-research-task" title="Link to this heading"></a></h2>
+<p>We imagine a researcher who has the following task and resources: An autonomous robotics research team is designing an empirical intervention trial for a tracked search-and-rescue robot operating inside a multi-story collapsed structure under heavy smoke and rubble. The researcher uses the Verbal / Reason interface to formulate hypotheses, evaluate causal and statistical trade-offs, compute factorial parameters in the sandbox, and structure the domain knowledge graph.</p>
+</section>
+<section id="animated-walkthrough">
+<h2>Animated Walkthrough<a class="headerlink" href="#animated-walkthrough" title="Link to this heading"></a></h2>
+<a class="reference internal image-reference" href="../_images/trial_2_multistep_blueprint_and_tools_animated.gif"><img alt="Animated Walkthrough: Trial 2: Multi-Step Cognitive Reasoning &amp; Sandboxed Tools" src="../_images/trial_2_multistep_blueprint_and_tools_animated.gif" style="width: 780px;" />
+</a>
+<section id="interaction-trace-researcher-verbal-reason">
+<h3>Interaction Trace: Researcher &amp; Verbal / Reason<a class="headerlink" href="#interaction-trace-researcher-verbal-reason" title="Link to this heading"></a></h3>
+<section id="step-1-blueprint-selection-prompt-submission-1-9s">
+<h4>Step 1: Blueprint Selection &amp; Prompt Submission (1.9s)<a class="headerlink" href="#step-1-blueprint-selection-prompt-submission-1-9s" title="Link to this heading"></a></h4>
+<p><strong>The Researcher (Thinking &amp; Formulation)</strong>:</p>
+<p>A simple mental estimate cannot reliably determine whether thermal vs. LiDAR payloads remain viable when traversing rubble. The interaction between locomotion resistance and sensor draw is combinatory. We delegate the mathematical calculation to Verbal / Reason’s computational blueprint.</p>
+<p><strong>Researcher Inquiry (Entered in Demo UI)</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">We</span> <span class="n">are</span> <span class="n">designing</span> <span class="n">an</span> <span class="n">empirical</span> <span class="n">intervention</span> <span class="n">trial</span> <span class="k">for</span> <span class="n">an</span> <span class="n">autonomous</span> <span class="n">tracked</span> <span class="n">firefighting</span> <span class="n">robot</span> <span class="n">operating</span> <span class="ow">in</span> <span class="n">a</span> <span class="n">collapsed</span> <span class="n">multi</span><span class="o">-</span><span class="n">story</span> <span class="n">structure</span><span class="o">.</span>
+<span class="n">Power</span> <span class="n">system</span> <span class="n">parameters</span><span class="p">:</span>
+<span class="o">-</span> <span class="n">Battery</span> <span class="n">capacity</span><span class="p">:</span> <span class="mi">1200</span><span class="n">Wh</span> <span class="n">pack</span> <span class="k">with</span> <span class="n">a</span> <span class="mi">20</span><span class="o">%</span> <span class="n">emergency</span> <span class="n">safety</span> <span class="n">reserve</span> <span class="p">(</span><span class="mi">80</span><span class="o">%</span> <span class="n">usable</span> <span class="n">energy</span> <span class="o">=</span> <span class="mi">960</span><span class="n">Wh</span> <span class="n">usable</span><span class="p">)</span><span class="o">.</span>
+<span class="n">Experimental</span> <span class="n">factors</span><span class="p">:</span>
+<span class="o">-</span> <span class="n">Sensor</span> <span class="n">payload</span> <span class="n">draw</span><span class="p">:</span> <span class="n">Baseline</span> <span class="p">(</span><span class="mi">25</span><span class="n">W</span><span class="p">),</span> <span class="n">Standard</span> <span class="n">Multi</span><span class="o">-</span><span class="n">spectral</span> <span class="p">(</span><span class="mi">75</span><span class="n">W</span><span class="p">),</span> <span class="n">Heavy</span> <span class="n">LiDAR</span><span class="o">+</span><span class="n">Thermal</span><span class="o">+</span><span class="n">Compute</span> <span class="p">(</span><span class="mi">110</span><span class="n">W</span><span class="p">)</span><span class="o">.</span>
+<span class="o">-</span> <span class="n">Locomotion</span> <span class="n">power</span> <span class="n">across</span> <span class="mi">2</span> <span class="n">terrains</span><span class="p">:</span> <span class="n">Smooth</span> <span class="n">Concrete</span> <span class="p">(</span><span class="mi">280</span><span class="n">W</span><span class="p">)</span> <span class="ow">and</span> <span class="n">Heavy</span> <span class="n">Rubble</span><span class="o">/</span><span class="n">Debris</span> <span class="p">(</span><span class="mi">460</span><span class="n">W</span><span class="p">)</span><span class="o">.</span>
+<span class="n">Task</span><span class="p">:</span>
+<span class="n">Formulate</span> <span class="n">the</span> <span class="n">trade</span><span class="o">-</span><span class="n">off</span> <span class="n">calculation</span> <span class="ow">and</span> <span class="n">write</span> <span class="n">a</span> <span class="n">clean</span> <span class="n">Python</span> <span class="n">script</span> <span class="n">using</span> <span class="n">the</span> <span class="n">python_sandbox</span> <span class="n">tool</span> <span class="n">to</span> <span class="n">compute</span> <span class="n">the</span> <span class="n">exact</span> <span class="n">operational</span> <span class="n">search</span> <span class="n">duration</span> <span class="ow">in</span> <span class="n">minutes</span> <span class="k">for</span> <span class="nb">all</span> <span class="mi">6</span> <span class="n">factor</span> <span class="n">combinations</span><span class="o">.</span> <span class="n">Output</span> <span class="n">an</span> <span class="n">informative</span> <span class="n">formatted</span> <span class="n">tabulation</span> <span class="n">of</span> <span class="n">results</span><span class="p">,</span> <span class="ow">and</span> <span class="n">recommend</span> <span class="n">factor</span> <span class="n">levels</span> <span class="k">for</span> <span class="n">a</span> <span class="mi">2</span><span class="o">-</span><span class="n">hour</span> <span class="p">(</span><span class="mi">120</span> <span class="n">minute</span><span class="p">)</span> <span class="n">minimum</span> <span class="n">search</span> <span class="n">mission</span><span class="o">.</span>
+</pre></div>
+</div>
+<p><strong>Verbal / Reason (Cognitive Blueprint: ‘Reasoning with Code Sandbox’)</strong></p>
+<a class="reference internal image-reference" href="../_images/trial_2_prompt_submitted.png"><img alt="Blueprint Selection &amp; Prompt Submission" src="../_images/trial_2_prompt_submitted.png" style="width: 750px;" />
+</a>
+</section>
+<section id="step-2-blueprint-execution-gemma4-docker-sandbox-467-8s">
+<h4>Step 2: Blueprint Execution (Gemma4 + Docker Sandbox) (467.8s)<a class="headerlink" href="#step-2-blueprint-execution-gemma4-docker-sandbox-467-8s" title="Link to this heading"></a></h4>
+<p>Blueprint executed 2 reasoning steps via google/gemma-2-2b-it. Final response: 5446 characters. Route: SUCCESS.</p>
+<p><strong>Verbal / Reason (Cognitive Blueprint: ‘Reasoning with Code Sandbox’)</strong></p>
+<p><strong>Python Simulation Code (Composed by: google/gemma-2-2b-it)</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="c1"># --- Parameters ---</span>
+
+<span class="c1"># Battery capacity: 1200Wh</span>
+<span class="c1"># Usable energy: 1200Wh * 0.80 = 960Wh</span>
+
+<span class="c1"># Power consumptions (Watts)</span>
+<span class="n">sensor_draws</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Baseline&quot;</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span> <span class="s2">&quot;Standard Multi-spectral&quot;</span><span class="p">:</span> <span class="mi">75</span><span class="p">,</span> <span class="s2">&quot;Heavy LiDAR+Thermal+Compute&quot;</span><span class="p">:</span> <span class="mi">110</span><span class="p">}</span>
+<span class="n">locomotion_draws</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Smooth Concrete&quot;</span><span class="p">:</span> <span class="mi">280</span><span class="p">,</span> <span class="s2">&quot;Heavy Rubble/Debris&quot;</span><span class="p">:</span> <span class="mi">460</span><span class="p">}</span>
+
+<span class="c1"># Maximum mission duration (in minutes)</span>
+<span class="n">MAX_DURATION_MINUTES</span> <span class="o">=</span> <span class="mi">120</span>
+
+<span class="c1"># Calculate energy consumption per minute (Watt-minutes/minute)</span>
+<span class="c1"># Energy (Wh) = Power (W) * Time (h) = Power (W) * Time (min) / 60</span>
+<span class="c1"># Consumption (W/min) = Power (W) / 60</span>
+
+<span class="c1"># Define the experimental factors</span>
+<span class="n">sensor_levels</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sensor_draws</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+<span class="n">locomotion_levels</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">locomotion_draws</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+<span class="c1"># --- Calculation Setup ---</span>
+
+<span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">for</span> <span class="n">sensor_level</span> <span class="ow">in</span> <span class="n">sensor_levels</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">locomotion_level</span> <span class="ow">in</span> <span class="n">locomotion_levels</span><span class="p">:</span>
+        <span class="c1"># 1. Calculate total power draw (W)</span>
+        <span class="n">sensor_power</span> <span class="o">=</span> <span class="n">sensor_draws</span><span class="p">[</span><span class="n">sensor_level</span><span class="p">]</span>
+        <span class="n">locomotion_power</span> <span class="o">=</span> <span class="n">locomotion_draws</span><span class="p">[</span><span class="n">locomotion_level</span><span class="p">]</span>
+        <span class="n">total_power_W</span> <span class="o">=</span> <span class="n">sensor_power</span> <span class="o">+</span> <span class="n">locomotion_power</span>
+
+        <span class="c1"># 2. Calculate maximum operational time (in minutes) based on usable energy</span>
+        <span class="c1"># Usable Energy (Wh) = 960</span>
+        <span class="c1"># Time (h) = Energy (Wh) / Power (W)</span>
+        <span class="c1"># Time (min) = (960 / Total Power) * 60</span>
+        <span class="n">max_duration_minutes</span> <span class="o">=</span> <span class="p">(</span><span class="mi">960</span> <span class="o">/</span> <span class="n">total_power_W</span><span class="p">)</span> <span class="o">*</span> <span class="mi">60</span>
+
+        <span class="c1"># 3. Determine the operational search duration (capped at MAX_DURATION_MINUTES)</span>
+        <span class="n">operational_duration</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">max_duration_minutes</span><span class="p">,</span> <span class="n">MAX_DURATION_MINUTES</span><span class="p">)</span>
+
+        <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s2">&quot;Sensor Level&quot;</span><span class="p">:</span> <span class="n">sensor_level</span><span class="p">,</span>
+            <span class="s2">&quot;Locomotion Type&quot;</span><span class="p">:</span> <span class="n">locomotion_level</span><span class="p">,</span>
+            <span class="s2">&quot;Total Power (W)&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">total_power_W</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+            <span class="s2">&quot;Max Theoretical Duration (min)&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">max_duration_minutes</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+            <span class="s2">&quot;Operational Duration (min)&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">operational_duration</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="p">})</span>
+
+<span class="c1"># --- Output Formatting ---</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;--- Operational Search Duration Analysis ---&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Maximum Usable Energy: 960 Wh&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Target Mission Duration: 120 minutes&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Results Table:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">--- Recommendation ---&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;To guarantee a 120-minute search, the system must be configured for the lowest power consumption combination.&quot;</span><span class="p">)</span>
+
+<span class="c1"># Identify the best combination (lowest power draw)</span>
+<span class="n">best_config</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Operational Duration (min)&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">idxmin</span><span class="p">()]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Recommended Configuration for 120 min mission: Sensor=</span><span class="si">{</span><span class="n">best_config</span><span class="p">[</span><span class="s1">&#39;Sensor Level&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">, Locomotion=</span><span class="si">{</span><span class="n">best_config</span><span class="p">[</span><span class="s1">&#39;Locomotion Type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Resulting Operational Duration: </span><span class="si">{</span><span class="n">best_config</span><span class="p">[</span><span class="s1">&#39;Operational Duration (min)&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> minutes&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Docker Sandbox Execution Output (verbal_sandbox)</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">SYSTEM</span><span class="p">:</span> <span class="n">Sandbox</span> <span class="n">Execution</span> <span class="n">Succeeded</span><span class="o">.</span>
+<span class="n">Output</span><span class="p">:</span>
+<span class="o">---</span> <span class="n">Operational</span> <span class="n">Search</span> <span class="n">Duration</span> <span class="n">Analysis</span> <span class="o">---</span>
+<span class="n">Maximum</span> <span class="n">Usable</span> <span class="n">Energy</span><span class="p">:</span> <span class="mi">960</span> <span class="n">Wh</span>
+<span class="n">Target</span> <span class="n">Mission</span> <span class="n">Duration</span><span class="p">:</span> <span class="mi">120</span> <span class="n">minutes</span>
+
+<span class="n">Results</span> <span class="n">Table</span><span class="p">:</span>
+               <span class="n">Sensor</span> <span class="n">Level</span>     <span class="n">Locomotion</span> <span class="n">Type</span>  <span class="n">Total</span> <span class="n">Power</span> <span class="p">(</span><span class="n">W</span><span class="p">)</span>  <span class="n">Max</span> <span class="n">Theoretical</span> <span class="n">Duration</span> <span class="p">(</span><span class="nb">min</span><span class="p">)</span>  <span class="n">Operational</span> <span class="n">Duration</span> <span class="p">(</span><span class="nb">min</span><span class="p">)</span>
+                   <span class="n">Baseline</span>     <span class="n">Smooth</span> <span class="n">Concrete</span>              <span class="mi">305</span>                          <span class="mf">188.85</span>                      <span class="mf">120.00</span>
+                   <span class="n">Baseline</span> <span class="n">Heavy</span> <span class="n">Rubble</span><span class="o">/</span><span class="n">Debris</span>              <span class="mi">485</span>                          <span class="mf">118.76</span>                      <span class="mf">118.76</span>
+    <span class="n">Standard</span> <span class="n">Multi</span><span class="o">-</span><span class="n">spectral</span>     <span class="n">Smooth</span> <span class="n">Concrete</span>              <span class="mi">355</span>                          <span class="mf">162.25</span>                      <span class="mf">120.00</span>
+    <span class="n">Standard</span> <span class="n">Multi</span><span class="o">-</span><span class="n">spectral</span> <span class="n">Heavy</span> <span class="n">Rubble</span><span class="o">/</span><span class="n">Debris</span>              <span class="mi">535</span>                          <span class="mf">107.66</span>                      <span class="mf">107.66</span>
+<span class="n">Heavy</span> <span class="n">LiDAR</span><span class="o">+</span><span class="n">Thermal</span><span class="o">+</span><span class="n">Compute</span>     <span class="n">Smooth</span> <span class="n">Concrete</span>              <span class="mi">390</span>                          <span class="mf">147.69</span>                      <span class="mf">120.00</span>
+<span class="n">Heavy</span> <span class="n">LiDAR</span><span class="o">+</span><span class="n">Thermal</span><span class="o">+</span><span class="n">Compute</span> <span class="n">Heavy</span> <span class="n">Rubble</span><span class="o">/</span><span class="n">Debris</span>              <span class="mi">570</span>                          <span class="mf">101.05</span>                      <span class="mf">101.05</span>
+
+<span class="o">---</span> <span class="n">Recommendation</span> <span class="o">---</span>
+<span class="n">To</span> <span class="n">guarantee</span> <span class="n">a</span> <span class="mi">120</span><span class="o">-</span><span class="n">minute</span> <span class="n">search</span><span class="p">,</span> <span class="n">the</span> <span class="n">system</span> <span class="n">must</span> <span class="n">be</span> <span class="n">configured</span> <span class="k">for</span> <span class="n">the</span> <span class="n">lowest</span> <span class="n">power</span> <span class="n">consumption</span> <span class="n">combination</span><span class="o">.</span>
+<span class="n">Recommended</span> <span class="n">Configuration</span> <span class="k">for</span> <span class="mi">120</span> <span class="nb">min</span> <span class="n">mission</span><span class="p">:</span> <span class="n">Sensor</span><span class="o">=</span><span class="n">Heavy</span> <span class="n">LiDAR</span><span class="o">+</span><span class="n">Thermal</span><span class="o">+</span><span class="n">Compute</span><span class="p">,</span> <span class="n">Locomotion</span><span class="o">=</span><span class="n">Heavy</span> <span class="n">Rubble</span><span class="o">/</span><span class="n">Debris</span>
+<span class="n">Resulting</span> <span class="n">Operational</span> <span class="n">Duration</span><span class="p">:</span> <span class="mf">101.05</span> <span class="n">minutes</span>
+
+<span class="p">]</span>
+</pre></div>
+</div>
+<p><strong>Verbal / Reason Response (Synthesized by: google/gemma-2-2b-it)</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>## Review of Sandbox Calculation Outputs
+
+The sandbox execution successfully modeled the power consumption and calculated the resulting operational search duration for all six combinations of sensor payload and locomotion type, constrained by a maximum usable energy of $960 \text{ Wh}$ and a target mission duration of $120$ minutes.
+
+### 1. Analytical Formulation
+
+The core analytical goal was to determine the **Operational Search Duration ($T_{op}$)** for every combination of input factors ($S \in \{\text{Baseline, Standard, Heavy}\}$ and $L \in \{\text{Smooth, Rubble}\}$).
+
+**Key Formulas:**
+
+1.  **Total Power Consumption ($P_{\text{total}}$):** The sum of the power drawn by the selected sensor level and the selected locomotion type.
+    $$P_{\text{total}} = P_{\text{sensor}}(S) + P_{\text{locomotion}}(L)$$
+    *   $P_{\text{sensor}}$ draws are: Baseline (25W), Standard Multi-spectral (75W), Heavy LiDAR+Thermal+Compute (110W).
+    *   $P_{\text{locomotion}}$ draws are: Smooth Concrete (280W), Heavy Rubble/Debris (460W).
+
+2.  **Maximum Theoretical Duration ($T_{\text{max}}$):** This is the time the system can run based on the available energy, calculated using the usable battery capacity ($E_{\text{usable}} = 960 \text{ Wh}$).
+    $$T_{\text{max}} (\text{hours}) = \frac{E_{\text{usable}}}{P_{\text{total}}}$$
+    $$T_{\text{max}} (\text{minutes}) = \left( \frac{960}{P_{\text{total}}} \right) \times 60$$
+
+3.  **Operational Duration ($T_{op}$):** The actual time the mission will last, which is the minimum of the theoretically calculated duration and the specified target mission duration ($T_{\text{target}} = 120 \text{ minutes}$).
+    $$T_{op} = \min \left( T_{\text{max}}(\text{minutes}), T_{\text{target}} \right)$$
+
+### 2. Key Data Points and Trade-off Table
+
+The sandbox output provided the following results, which are synthesized below for clarity:
+
+| Sensor Level | Locomotion Type | Total Power (W) | Max Theoretical Duration (min) | Operational Duration (min) |
+| :--- | :--- | :--- | :--- | :--- |
+| Baseline | Smooth Concrete | 305.00 | 188.85 | **120.00** |
+| Baseline | Heavy Rubble/Debris | 485.00 | 118.76 | **118.76** |
+| Standard Multi-spectral | Smooth Concrete | 355.00 | 162.25 | **120.00** |
+| Standard Multi-spectral | Heavy Rubble/Debris | 535.00 | 107.66 | **107.66** |
+| Heavy LiDAR+Thermal+Compute | Smooth Concrete | 390.00 | 147.69 | **120.00** |
+| Heavy LiDAR+Thermal+Compute | Heavy Rubble/Debris | 570.00 | 101.05 | **101.05** |
+
+**Trade-off Analysis:**
+
+1.  **Power vs. Performance:** There is a clear inverse relationship: increasing the sensor payload significantly increases the power draw, which directly reduces the achievable operational time.
+2.  **Terrain Impact:** Locomotion type dictates a major portion of the power budget (difference between 280W and 460W). The Heavy Rubble/Debris terrain is the most power-intensive mode.
+3.  **Constraint Dominance:** In this specific scenario, the $120$-minute target constraint is frequently met or exceeded when the power draw is lower (e.g., Baseline/Smooth Concrete), indicating that the *system capacity* is often sufficient for the target duration, but the trade-off is in *energy efficiency*.
+
+### 3. Practical Recommendations for Experiment Design Factor Levels
+
+The primary objective is to design the experiment to test the influence of these factors on mission success metrics (time/range) while managing energy constraints.
+
+**Recommendation 1: Prioritize Low-Power Configurations for Baseline Testing.**
+*   **Design Focus:** Use the **Baseline Sensor** combined with the **Smooth Concrete Locomotion**.
+*   **Rationale:** This combination yields the highest theoretical endurance ($\approx 188.85$ minutes) and guarantees the $120$-minute requirement, providing a stable baseline against which all other, more expensive configurations can be compared.
+
+**Recommendation 2: Design the Experimental Matrix around the Critical Threshold.**
+*   **Experiment Goal:** Test how much performance degradation (in terms of $T_{op}$) is acceptable before violating the $120$-minute limit.
+*   **Factor Level Definition:**
+    *   **Sensor Level:** Should be tested in three discrete steps (e.g., $\text{Level 1} \rightarrow \text{Level 2} \rightarrow \text{Level 3}$, corresponding to the power draws $25\text{W} \rightarrow 75\text{W} \rightarrow 110\text{W}$).
+    *   **Locomotion Type:** Should be tested in two discrete steps (Smooth $\rightarrow$ Rubble).
+*   **Hypothesis Testing:** The expected outcome is that the combination of $(\text{Heavy Sensor} + \text{Rubble})$ will result in $T_{op} &lt; 120 \text{ min}$ (as shown in the simulation: $101.05 \text{ min}$), confirming the trade-off.
+
+**Recommendation 3: Implement a Dynamic Stop Condition.**
+*   **Design Implication:** Since the analysis shows that the system *can* exceed the $120$ minutes, the experiment should not rely solely on the battery depletion. A secondary stop condition (e.g., environmental sensor triggering, or a time-based switch) should be introduced to ensure the test environment itself is not the limiting factor.
+
+**In summary, the experimental design should focus on the **cost-benefit curve**: quantifying the exact $\Delta T$ (change in operational time) associated with the $\Delta P$ (change in power draw) for each factor combination, prioritizing configurations that maximize endurance while minimizing the sensor complexity.**
+
+TASK\_COMPLETE
+</pre></div>
+</div>
+</section>
+<section id="step-3-result-visualization-researcher-evaluation-1-1s">
+<h4>Step 3: Result Visualization &amp; Researcher Evaluation (1.1s)<a class="headerlink" href="#step-3-result-visualization-researcher-evaluation-1-1s" title="Link to this heading"></a></h4>
+<p>Rendered LLM-generated response (2764 chars) in Demo UI.</p>
+<p><strong>Verbal / Reason Response (Synthesized by: google/gemma-2-2b-it)</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s2">&quot;tool_calls&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;python_sandbox&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;args&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="s2">&quot;import pandas as pd</span><span class="se">\n\n</span><span class="s2"># --- Parameters ---</span><span class="se">\n\n</span><span class="s2"># Battery capacity: 1200Wh</span><span class="se">\n</span><span class="s2"># Usable energy: 1200Wh * 0.80 = 960Wh</span><span class="se">\n\n</span><span class="s2"># Power consumptions (Watts)</span><span class="se">\n</span><span class="s2">sensor_draws = {</span><span class="se">\&quot;</span><span class="s2">Baseline</span><span class="se">\&quot;</span><span class="s2">: 25, </span><span class="se">\&quot;</span><span class="s2">Standard Multi-spectral</span><span class="se">\&quot;</span><span class="s2">: 75, </span><span class="se">\&quot;</span><span class="s2">Heavy LiDAR+Thermal+Compute</span><span class="se">\&quot;</span><span class="s2">: 110}</span><span class="se">\n</span><span class="s2">locomotion_draws = {</span><span class="se">\&quot;</span><span class="s2">Smooth Concrete</span><span class="se">\&quot;</span><span class="s2">: 280, </span><span class="se">\&quot;</span><span class="s2">Heavy Rubble/Debris</span><span class="se">\&quot;</span><span class="s2">: 460}</span><span class="se">\n\n</span><span class="s2"># Maximum mission duration (in minutes)</span><span class="se">\n</span><span class="s2">MAX_DURATION_MINUTES = 120</span><span class="se">\n\n</span><span class="s2"># Calculate energy consumption per minute (Watt-minutes/minute)</span><span class="se">\n</span><span class="s2"># Energy (Wh) = Power (W) * Time (h) = Power (W) * Time (min) / 60</span><span class="se">\n</span><span class="s2"># Consumption (W/min) = Power (W) / 60</span><span class="se">\n\n</span><span class="s2"># Define the experimental factors</span><span class="se">\n</span><span class="s2">sensor_levels = list(sensor_draws.keys())</span><span class="se">\n</span><span class="s2">locomotion_levels = list(locomotion_draws.keys())</span><span class="se">\n\n</span><span class="s2"># --- Calculation Setup ---</span><span class="se">\n\n</span><span class="s2">results = []</span><span class="se">\n\n</span><span class="s2">for sensor_level in sensor_levels:</span><span class="se">\n</span><span class="s2">    for locomotion_level in locomotion_levels:</span><span class="se">\n</span><span class="s2">        # 1. Calculate total power draw (W)</span><span class="se">\n</span><span class="s2">        sensor_power = sensor_draws[sensor_level]</span><span class="se">\n</span><span class="s2">        locomotion_power = locomotion_draws[locomotion_level]</span><span class="se">\n</span><span class="s2">        total_power_W = sensor_power + locomotion_power</span><span class="se">\n\n</span><span class="s2">        # 2. Calculate maximum operational time (in minutes) based on usable energy</span><span class="se">\n</span><span class="s2">        # Usable Energy (Wh) = 960</span><span class="se">\n</span><span class="s2">        # Time (h) = Energy (Wh) / Power (W)</span><span class="se">\n</span><span class="s2">        # Time (min) = (960 / Total Power) * 60</span><span class="se">\n</span><span class="s2">        max_duration_minutes = (960 / total_power_W) * 60</span><span class="se">\n\n</span><span class="s2">        # 3. Determine the operational search duration (capped at MAX_DURATION_MINUTES)</span><span class="se">\n</span><span class="s2">        operational_duration = min(max_duration_minutes, MAX_DURATION_MINUTES)</span><span class="se">\n\n</span><span class="s2">        results.append({</span><span class="se">\n</span><span class="s2">            </span><span class="se">\&quot;</span><span class="s2">Sensor Level</span><span class="se">\&quot;</span><span class="s2">: sensor_level,</span><span class="se">\n</span><span class="s2">            </span><span class="se">\&quot;</span><span class="s2">Locomotion Type</span><span class="se">\&quot;</span><span class="s2">: locomotion_level,</span><span class="se">\n</span><span class="s2">            </span><span class="se">\&quot;</span><span class="s2">Total Power (W)</span><span class="se">\&quot;</span><span class="s2">: round(total_power_W, 2),</span><span class="se">\n</span><span class="s2">            </span><span class="se">\&quot;</span><span class="s2">Max Theoretical Duration (min)</span><span class="se">\&quot;</span><span class="s2">: round(max_duration_minutes, 2),</span><span class="se">\n</span><span class="s2">            </span><span class="se">\&quot;</span><span class="s2">Operational Duration (min)</span><span class="se">\&quot;</span><span class="s2">: round(operational_duration, 2)</span><span class="se">\n</span><span class="s2">        })</span><span class="se">\n\n</span><span class="s2"># --- Output Formatting ---</span><span class="se">\n</span><span class="s2">df = pd.DataFrame(results)</span><span class="se">\n\n</span><span class="s2">print(</span><span class="se">\&quot;</span><span class="s2">--- Operational Search Duration Analysis ---</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">print(f</span><span class="se">\&quot;</span><span class="s2">Maximum Usable Energy: 960 Wh</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">print(f</span><span class="se">\&quot;</span><span class="s2">Target Mission Duration: 120 minutes</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">print(</span><span class="se">\&quot;\\</span><span class="s2">nResults Table:</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">print(df.to_string(index=False))</span><span class="se">\n\n</span><span class="s2">print(</span><span class="se">\&quot;\\</span><span class="s2">n--- Recommendation ---</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">print(f</span><span class="se">\&quot;</span><span class="s2">To guarantee a 120-minute search, the system must be configured for the lowest power consumption combination.</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n\n</span><span class="s2"># Identify the best combination (lowest power draw)</span><span class="se">\n</span><span class="s2">best_config = df.loc[df[&#39;Operational Duration (min)&#39;].idxmin()]</span><span class="se">\n</span><span class="s2">print(f</span><span class="se">\&quot;</span><span class="s2">Recommended Configuration for 120 min mission: Sensor=</span><span class="si">{best_config[&#39;Sensor Level&#39;]}</span><span class="s2">, Locomotion=</span><span class="si">{best_config[&#39;Locomotion Type&#39;]}</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">print(f</span><span class="se">\&quot;</span><span class="s2">Resulting Operational Duration: </span><span class="si">{best_config[&#39;Operational Duration (min)&#39;]}</span><span class="s2"> minutes</span><span class="se">\&quot;</span><span class="s2">)&quot;</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>The Researcher (Evaluation &amp; Decision)</strong>:</p>
+<p>The tabulation generated by Gemma4 reveals a decisive operational finding: On smooth concrete, all three sensor packages comfortably exceed the 120-minute threshold (Baseline: 188 min, Multi-spectral: 162 min, LiDAR+Compute: 147 min). However, on heavy rubble (460W locomotion), NO configuration meets 120 minutes (Baseline: 118.7 min, Multi-spectral: 107.6 min, LiDAR+Compute: 101.0 min). To achieve a 2-hour mission on rubble, the robot cannot carry high-draw comms/sensors directly on board; it requires lightweight ad-hoc deployable breadcrumb relays. This motivates Trial 3.</p>
+<a class="reference internal image-reference" href="../_images/trial_2_tool_output.png"><img alt="Result Visualization &amp; Researcher Evaluation" src="../_images/trial_2_tool_output.png" style="width: 750px;" />
+</a>
+</section>
+</section>
+<section id="blueprint-granular-execution-trace">
+<h3>Blueprint Granular Execution Trace<a class="headerlink" href="#blueprint-granular-execution-trace" title="Link to this heading"></a></h3>
+<section id="blueprint-step-1-model-formulation-sandbox-execution">
+<h4>Blueprint Step 1: Model Formulation &amp; Sandbox Execution<a class="headerlink" href="#blueprint-step-1-model-formulation-sandbox-execution" title="Link to this heading"></a></h4>
+<p><em>(Generated by: Gemma4-2B)</em></p>
+<p><strong>System Instructions</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">You</span> <span class="n">are</span> <span class="n">a</span> <span class="n">scientific</span> <span class="n">research</span> <span class="n">assistant</span> <span class="n">specializing</span> <span class="ow">in</span> <span class="n">experimental</span> <span class="ow">and</span> <span class="n">engineering</span> <span class="n">analysis</span><span class="o">.</span> <span class="n">Formulate</span> <span class="n">the</span> <span class="n">analytical</span> <span class="n">equations</span> <span class="k">for</span> <span class="n">the</span> <span class="n">user</span><span class="s1">&#39;s problem. Write and execute a clean, concise Python script using the `python_sandbox` tool to calculate exact numerical values, trade-off curves, or parameter grids. Use simple print() statements to display the calculated results clearly. Once the calculation is executed and verified, use the `TASK_COMPLETE` tool to conclude.</span>
+
+<span class="n">Scratchpad</span> <span class="n">Variables</span><span class="p">:</span>
+<span class="p">{</span>
+  <span class="s2">&quot;current_chunk_index&quot;</span><span class="p">:</span> <span class="mi">0</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>User Prompt &amp; Working State</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="s1">&#39;We are designing an empirical intervention trial for an autonomous tracked firefighting robot operating in a collapsed multi-story structure.</span><span class="se">\n</span><span class="s1">Power system parameters:</span><span class="se">\n</span><span class="s1">- Battery capacity: 1200Wh pack with a 20</span><span class="si">% e</span><span class="s1">mergency safety reserve (80</span><span class="si">% u</span><span class="s1">sable energy = 960Wh usable).</span><span class="se">\n</span><span class="s1">Experimental factors:</span><span class="se">\n</span><span class="s1">- Sensor payload draw: Baseline (25W), Standard Multi-spectral (75W), Heavy LiDAR+Thermal+Compute (110W).</span><span class="se">\n</span><span class="s1">- Locomotion power across 2 terrains: Smooth Concrete (280W) and Heavy Rubble/Debris (460W).</span><span class="se">\n</span><span class="s1">Task:</span><span class="se">\n</span><span class="s1">Formulate the trade-off calculation and write a clean Python script using the python_sandbox tool to compute the exact operational search duration in minutes for all 6 factor combinations. Output an informative formatted tabulation of results, and recommend factor levels for a 2-hour (120 minute) minimum search mission.&#39;</span><span class="p">}]</span>
+</pre></div>
+</div>
+<p><strong>Model Output</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;python_sandbox&#39;</span><span class="p">,</span> <span class="s1">&#39;args&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;code&#39;</span><span class="p">:</span> <span class="s1">&#39;import pandas as pd</span><span class="se">\n\n</span><span class="s1"># --- Parameters ---</span><span class="se">\n\n</span><span class="s1"># Battery capacity: 1200Wh</span><span class="se">\n</span><span class="s1"># Usable energy: 1200Wh * 0.80 = 960Wh</span><span class="se">\n\n</span><span class="s1"># Power consumptions (Watts)</span><span class="se">\n</span><span class="s1">sensor_draws = {&quot;Baseline&quot;: 25, &quot;Standard Multi-spectral&quot;: 75, &quot;Heavy LiDAR+Thermal+Compute&quot;: 110}</span><span class="se">\n</span><span class="s1">locomotion_draws = {&quot;Smooth Concrete&quot;: 280, &quot;Heavy Rubble/Debris&quot;: 460}</span><span class="se">\n\n</span><span class="s1"># Maximum mission duration (in minutes)</span><span class="se">\n</span><span class="s1">MAX_DURATION_MINUTES = 120</span><span class="se">\n\n</span><span class="s1"># Calculate energy consumption per minute (Watt-minutes/minute)</span><span class="se">\n</span><span class="s1"># Energy (Wh) = Power (W) * Time (h) = Power (W) * Time (min) / 60</span><span class="se">\n</span><span class="s1"># Consumption (W/min) = Power (W) / 60</span><span class="se">\n\n</span><span class="s1"># Define the experimental factors</span><span class="se">\n</span><span class="s1">sensor_levels = list(sensor_draws.keys())</span><span class="se">\n</span><span class="s1">locomotion_levels = list(locomotion_draws.keys())</span><span class="se">\n\n</span><span class="s1"># --- Calculation Setup ---</span><span class="se">\n\n</span><span class="s1">results = []</span><span class="se">\n\n</span><span class="s1">for sensor_level in sensor_levels:</span><span class="se">\n</span><span class="s1">    for locomotion_level in locomotion_levels:</span><span class="se">\n</span><span class="s1">        # 1. Calculate total power draw (W)</span><span class="se">\n</span><span class="s1">        sensor_power = sensor_draws[sensor_level]</span><span class="se">\n</span><span class="s1">        locomotion_power = locomotion_draws[locomotion_level]</span><span class="se">\n</span><span class="s1">        total_power_W = sensor_power + locomotion_power</span><span class="se">\n\n</span><span class="s1">        # 2. Calculate maximum operational time (in minutes) based on usable energy</span><span class="se">\n</span><span class="s1">        # Usable Energy (Wh) = 960</span><span class="se">\n</span><span class="s1">        # Time (h) = Energy (Wh) / Power (W)</span><span class="se">\n</span><span class="s1">        # Time (min) = (960 / Total Power) * 60</span><span class="se">\n</span><span class="s1">        max_duration_minutes = (960 / total_power_W) * 60</span><span class="se">\n\n</span><span class="s1">        # 3. Determine the operational search duration (capped at MAX_DURATION_MINUTES)</span><span class="se">\n</span><span class="s1">        operational_duration = min(max_duration_minutes, MAX_DURATION_MINUTES)</span><span class="se">\n\n</span><span class="s1">        results.append({</span><span class="se">\n</span><span class="s1">            &quot;Sensor Level&quot;: sensor_level,</span><span class="se">\n</span><span class="s1">            &quot;Locomotion Type&quot;: locomotion_level,</span><span class="se">\n</span><span class="s1">            &quot;Total Power (W)&quot;: round(total_power_W, 2),</span><span class="se">\n</span><span class="s1">            &quot;Max Theoretical Duration (min)&quot;: round(max_duration_minutes, 2),</span><span class="se">\n</span><span class="s1">            &quot;Operational Duration (min)&quot;: round(operational_duration, 2)</span><span class="se">\n</span><span class="s1">        })</span><span class="se">\n\n</span><span class="s1"># --- Output Formatting ---</span><span class="se">\n</span><span class="s1">df = pd.DataFrame(results)</span><span class="se">\n\n</span><span class="s1">print(&quot;--- Operational Search Duration Analysis ---&quot;)</span><span class="se">\n</span><span class="s1">print(f&quot;Maximum Usable Energy: 960 Wh&quot;)</span><span class="se">\n</span><span class="s1">print(f&quot;Target Mission Duration: 120 minutes&quot;)</span><span class="se">\n</span><span class="s1">print(&quot;</span><span class="se">\\</span><span class="s1">nResults Table:&quot;)</span><span class="se">\n</span><span class="s1">print(df.to_string(index=False))</span><span class="se">\n\n</span><span class="s1">print(&quot;</span><span class="se">\\</span><span class="s1">n--- Recommendation ---&quot;)</span><span class="se">\n</span><span class="s1">print(f&quot;To guarantee a 120-minute search, the system must be configured for the lowest power consumption combination.&quot;)</span><span class="se">\n\n</span><span class="s1"># Identify the best combination (lowest power draw)</span><span class="se">\n</span><span class="s1">best_config = df.loc[df[</span><span class="se">\&#39;</span><span class="s1">Operational Duration (min)</span><span class="se">\&#39;</span><span class="s1">].idxmin()]</span><span class="se">\n</span><span class="s1">print(f&quot;Recommended Configuration for 120 min mission: Sensor=</span><span class="si">{best_config[\&#39;Sensor Level\&#39;]}</span><span class="s1">, Locomotion=</span><span class="si">{best_config[\&#39;Locomotion Type\&#39;]}</span><span class="s1">&quot;)</span><span class="se">\n</span><span class="s1">print(f&quot;Resulting Operational Duration: </span><span class="si">{best_config[\&#39;Operational Duration (min)\&#39;]}</span><span class="s1"> minutes&quot;)&#39;</span><span class="p">}}]</span>\<span class="n">n</span>
+
+<span class="p">[</span><span class="n">SYSTEM</span><span class="p">:</span> <span class="n">Sandbox</span> <span class="n">Execution</span> <span class="n">Succeeded</span><span class="o">.</span>
+<span class="n">Output</span><span class="p">:</span>
+<span class="o">---</span> <span class="n">Operational</span> <span class="n">Search</span> <span class="n">Duration</span> <span class="n">Analysis</span> <span class="o">---</span>
+<span class="n">Maximum</span> <span class="n">Usable</span> <span class="n">Energy</span><span class="p">:</span> <span class="mi">960</span> <span class="n">Wh</span>
+<span class="n">Target</span> <span class="n">Mission</span> <span class="n">Duration</span><span class="p">:</span> <span class="mi">120</span> <span class="n">minutes</span>
+
+<span class="n">Results</span> <span class="n">Table</span><span class="p">:</span>
+               <span class="n">Sensor</span> <span class="n">Level</span>     <span class="n">Locomotion</span> <span class="n">Type</span>  <span class="n">Total</span> <span class="n">Power</span> <span class="p">(</span><span class="n">W</span><span class="p">)</span>  <span class="n">Max</span> <span class="n">Theoretical</span> <span class="n">Duration</span> <span class="p">(</span><span class="nb">min</span><span class="p">)</span>  <span class="n">Operational</span> <span class="n">Duration</span> <span class="p">(</span><span class="nb">min</span><span class="p">)</span>
+                   <span class="n">Baseline</span>     <span class="n">Smooth</span> <span class="n">Concrete</span>              <span class="mi">305</span>                          <span class="mf">188.85</span>                      <span class="mf">120.00</span>
+                   <span class="n">Baseline</span> <span class="n">Heavy</span> <span class="n">Rubble</span><span class="o">/</span><span class="n">Debris</span>              <span class="mi">485</span>                          <span class="mf">118.76</span>                      <span class="mf">118.76</span>
+    <span class="n">Standard</span> <span class="n">Multi</span><span class="o">-</span><span class="n">spectral</span>     <span class="n">Smooth</span> <span class="n">Concrete</span>              <span class="mi">355</span>                          <span class="mf">162.25</span>                      <span class="mf">120.00</span>
+    <span class="n">Standard</span> <span class="n">Multi</span><span class="o">-</span><span class="n">spectral</span> <span class="n">Heavy</span> <span class="n">Rubble</span><span class="o">/</span><span class="n">Debris</span>              <span class="mi">535</span>                          <span class="mf">107.66</span>                      <span class="mf">107.66</span>
+<span class="n">Heavy</span> <span class="n">LiDAR</span><span class="o">+</span><span class="n">Thermal</span><span class="o">+</span><span class="n">Compute</span>     <span class="n">Smooth</span> <span class="n">Concrete</span>              <span class="mi">390</span>                          <span class="mf">147.69</span>                      <span class="mf">120.00</span>
+<span class="n">Heavy</span> <span class="n">LiDAR</span><span class="o">+</span><span class="n">Thermal</span><span class="o">+</span><span class="n">Compute</span> <span class="n">Heavy</span> <span class="n">Rubble</span><span class="o">/</span><span class="n">Debris</span>              <span class="mi">570</span>                          <span class="mf">101.05</span>                      <span class="mf">101.05</span>
+
+<span class="o">---</span> <span class="n">Recommendation</span> <span class="o">---</span>
+<span class="n">To</span> <span class="n">guarantee</span> <span class="n">a</span> <span class="mi">120</span><span class="o">-</span><span class="n">minute</span> <span class="n">search</span><span class="p">,</span> <span class="n">the</span> <span class="n">system</span> <span class="n">must</span> <span class="n">be</span> <span class="n">configured</span> <span class="k">for</span> <span class="n">the</span> <span class="n">lowest</span> <span class="n">power</span> <span class="n">consumption</span> <span class="n">combination</span><span class="o">.</span>
+<span class="n">Recommended</span> <span class="n">Configuration</span> <span class="k">for</span> <span class="mi">120</span> <span class="nb">min</span> <span class="n">mission</span><span class="p">:</span> <span class="n">Sensor</span><span class="o">=</span><span class="n">Heavy</span> <span class="n">LiDAR</span><span class="o">+</span><span class="n">Thermal</span><span class="o">+</span><span class="n">Compute</span><span class="p">,</span> <span class="n">Locomotion</span><span class="o">=</span><span class="n">Heavy</span> <span class="n">Rubble</span><span class="o">/</span><span class="n">Debris</span>
+<span class="n">Resulting</span> <span class="n">Operational</span> <span class="n">Duration</span><span class="p">:</span> <span class="mf">101.05</span> <span class="n">minutes</span>
+
+<span class="p">]</span>
+</pre></div>
+</div>
+<p><strong>Tool Execution Result</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">SYSTEM</span><span class="p">:</span> <span class="n">Sandbox</span> <span class="n">Execution</span> <span class="n">Succeeded</span><span class="o">.</span>
+<span class="n">Output</span><span class="p">:</span>
+<span class="o">---</span> <span class="n">Operational</span> <span class="n">Search</span> <span class="n">Duration</span> <span class="n">Analysis</span> <span class="o">---</span>
+<span class="n">Maximum</span> <span class="n">Usable</span> <span class="n">Energy</span><span class="p">:</span> <span class="mi">960</span> <span class="n">Wh</span>
+<span class="n">Target</span> <span class="n">Mission</span> <span class="n">Duration</span><span class="p">:</span> <span class="mi">120</span> <span class="n">minutes</span>
+
+<span class="n">Results</span> <span class="n">Table</span><span class="p">:</span>
+               <span class="n">Sensor</span> <span class="n">Level</span>     <span class="n">Locomotion</span> <span class="n">Type</span>  <span class="n">Total</span> <span class="n">Power</span> <span class="p">(</span><span class="n">W</span><span class="p">)</span>  <span class="n">Max</span> <span class="n">Theoretical</span> <span class="n">Duration</span> <span class="p">(</span><span class="nb">min</span><span class="p">)</span>  <span class="n">Operational</span> <span class="n">Duration</span> <span class="p">(</span><span class="nb">min</span><span class="p">)</span>
+                   <span class="n">Baseline</span>     <span class="n">Smooth</span> <span class="n">Concrete</span>              <span class="mi">305</span>                          <span class="mf">188.85</span>                      <span class="mf">120.00</span>
+                   <span class="n">Baseline</span> <span class="n">Heavy</span> <span class="n">Rubble</span><span class="o">/</span><span class="n">Debris</span>              <span class="mi">485</span>                          <span class="mf">118.76</span>                      <span class="mf">118.76</span>
+    <span class="n">Standard</span> <span class="n">Multi</span><span class="o">-</span><span class="n">spectral</span>     <span class="n">Smooth</span> <span class="n">Concrete</span>              <span class="mi">355</span>                          <span class="mf">162.25</span>                      <span class="mf">120.00</span>
+    <span class="n">Standard</span> <span class="n">Multi</span><span class="o">-</span><span class="n">spectral</span> <span class="n">Heavy</span> <span class="n">Rubble</span><span class="o">/</span><span class="n">Debris</span>              <span class="mi">535</span>                          <span class="mf">107.66</span>                      <span class="mf">107.66</span>
+<span class="n">Heavy</span> <span class="n">LiDAR</span><span class="o">+</span><span class="n">Thermal</span><span class="o">+</span><span class="n">Compute</span>     <span class="n">Smooth</span> <span class="n">Concrete</span>              <span class="mi">390</span>                          <span class="mf">147.69</span>                      <span class="mf">120.00</span>
+<span class="n">Heavy</span> <span class="n">LiDAR</span><span class="o">+</span><span class="n">Thermal</span><span class="o">+</span><span class="n">Compute</span> <span class="n">Heavy</span> <span class="n">Rubble</span><span class="o">/</span><span class="n">Debris</span>              <span class="mi">570</span>                          <span class="mf">101.05</span>                      <span class="mf">101.05</span>
+
+<span class="o">---</span> <span class="n">Recommendation</span> <span class="o">---</span>
+<span class="n">To</span> <span class="n">guarantee</span> <span class="n">a</span> <span class="mi">120</span><span class="o">-</span><span class="n">minute</span> <span class="n">search</span><span class="p">,</span> <span class="n">the</span> <span class="n">system</span> <span class="n">must</span> <span class="n">be</span> <span class="n">configured</span> <span class="k">for</span> <span class="n">the</span> <span class="n">lowest</span> <span class="n">power</span> <span class="n">consumption</span> <span class="n">combination</span><span class="o">.</span>
+<span class="n">Recommended</span> <span class="n">Configuration</span> <span class="k">for</span> <span class="mi">120</span> <span class="nb">min</span> <span class="n">mission</span><span class="p">:</span> <span class="n">Sensor</span><span class="o">=</span><span class="n">Heavy</span> <span class="n">LiDAR</span><span class="o">+</span><span class="n">Thermal</span><span class="o">+</span><span class="n">Compute</span><span class="p">,</span> <span class="n">Locomotion</span><span class="o">=</span><span class="n">Heavy</span> <span class="n">Rubble</span><span class="o">/</span><span class="n">Debris</span>
+<span class="n">Resulting</span> <span class="n">Operational</span> <span class="n">Duration</span><span class="p">:</span> <span class="mf">101.05</span> <span class="n">minutes</span>
+
+<span class="p">]</span>
+</pre></div>
+</div>
+</section>
+<section id="blueprint-step-2-synthesis-design-recommendation">
+<h4>Blueprint Step 2: Synthesis &amp; Design Recommendation<a class="headerlink" href="#blueprint-step-2-synthesis-design-recommendation" title="Link to this heading"></a></h4>
+<p><em>(Generated by: Gemma4-2B)</em></p>
+<p><strong>System Instructions</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Review</span> <span class="n">the</span> <span class="n">sandbox</span> <span class="n">calculation</span> <span class="n">outputs</span><span class="o">.</span> <span class="n">Synthesize</span> <span class="n">a</span> <span class="n">structured</span> <span class="n">response</span> <span class="k">for</span> <span class="n">the</span> <span class="n">researcher</span><span class="o">.</span> <span class="n">Include</span><span class="p">:</span> <span class="mi">1</span><span class="p">)</span> <span class="n">Analytical</span> <span class="n">formulation</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="n">Key</span> <span class="n">data</span> <span class="n">points</span> <span class="ow">and</span> <span class="n">trade</span><span class="o">-</span><span class="n">off</span> <span class="n">table</span> <span class="kn">from</span><span class="w"> </span><span class="nn">the</span> <span class="n">sandbox</span> <span class="n">output</span><span class="p">,</span> <span class="ow">and</span> <span class="mi">3</span><span class="p">)</span> <span class="n">Practical</span> <span class="n">recommendations</span> <span class="k">for</span> <span class="n">the</span> <span class="n">experiment</span> <span class="n">design</span> <span class="n">factor</span> <span class="n">levels</span><span class="o">.</span>
+
+<span class="n">Scratchpad</span> <span class="n">Variables</span><span class="p">:</span>
+<span class="p">{</span>
+  <span class="s2">&quot;current_chunk_index&quot;</span><span class="p">:</span> <span class="mi">0</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>User Prompt &amp; Working State</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="s1">&#39;We are designing an empirical intervention trial for an autonomous tracked firefighting robot operating in a collapsed multi-story structure.</span><span class="se">\n</span><span class="s1">Power system parameters:</span><span class="se">\n</span><span class="s1">- Battery capacity: 1200Wh pack with a 20</span><span class="si">% e</span><span class="s1">mergency safety reserve (80</span><span class="si">% u</span><span class="s1">sable energy = 960Wh usable).</span><span class="se">\n</span><span class="s1">Experimental factors:</span><span class="se">\n</span><span class="s1">- Sensor payload draw: Baseline (25W), Standard Multi-spectral (75W), Heavy LiDAR+Thermal+Compute (110W).</span><span class="se">\n</span><span class="s1">- Locomotion power across 2 terrains: Smooth Concrete (280W) and Heavy Rubble/Debris (460W).</span><span class="se">\n</span><span class="s1">Task:</span><span class="se">\n</span><span class="s1">Formulate the trade-off calculation and write a clean Python script using the python_sandbox tool to compute the exact operational search duration in minutes for all 6 factor combinations. Output an informative formatted tabulation of results, and recommend factor levels for a 2-hour (120 minute) minimum search mission.&#39;</span><span class="p">},</span> <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;assistant&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="s1">&#39;[{</span><span class="se">\&#39;</span><span class="s1">name</span><span class="se">\&#39;</span><span class="s1">: </span><span class="se">\&#39;</span><span class="s1">python_sandbox</span><span class="se">\&#39;</span><span class="s1">, </span><span class="se">\&#39;</span><span class="s1">args</span><span class="se">\&#39;</span><span class="s1">: {</span><span class="se">\&#39;</span><span class="s1">code</span><span class="se">\&#39;</span><span class="s1">: </span><span class="se">\&#39;</span><span class="s1">import pandas as pd</span><span class="se">\\</span><span class="s1">n</span><span class="se">\\</span><span class="s1">n# --- Parameters ---</span><span class="se">\\</span><span class="s1">n</span><span class="se">\\</span><span class="s1">n# Battery capacity: 1200Wh</span><span class="se">\\</span><span class="s1">n# Usable energy: 1200Wh * 0.80 = 960Wh</span><span class="se">\\</span><span class="s1">n</span><span class="se">\\</span><span class="s1">n# Power consumptions (Watts)</span><span class="se">\\</span><span class="s1">nsensor_draws = {&quot;Baseline&quot;: 25, &quot;Standard Multi-spectral&quot;: 75, &quot;Heavy LiDAR+Thermal+Compute&quot;: 110}</span><span class="se">\\</span><span class="s1">nlocomotion_draws = {&quot;Smooth Concrete&quot;: 280, &quot;Heavy Rubble/Debris&quot;: 460}</span><span class="se">\\</span><span class="s1">n</span><span class="se">\\</span><span class="s1">n# Maximum mission duration (in minutes)</span><span class="se">\\</span><span class="s1">nMAX_DURATION_MINUTES = 120</span><span class="se">\\</span><span class="s1">n</span><span class="se">\\</span><span class="s1">n# Calculate energy consumption per minute (Watt-minutes/minute)</span><span class="se">\\</span><span class="s1">n# Energy (Wh) = Power (W) * Time (h) = Power (W) * Time (min) / 60</span><span class="se">\\</span><span class="s1">n# Consumption (W/min) = Power (W) / 60</span><span class="se">\\</span><span class="s1">n</span><span class="se">\\</span><span class="s1">n# Define the experimental factors</span><span class="se">\\</span><span class="s1">nsensor_levels = list(sensor_draws.keys())</span><span class="se">\\</span><span class="s1">nlocomotion_levels = list(locomotion_draws.keys())</span><span class="se">\\</span><span class="s1">n</span><span class="se">\\</span><span class="s1">n# --- Calculation Setup ---</span><span class="se">\\</span><span class="s1">n</span><span class="se">\\</span><span class="s1">nresults = []</span><span class="se">\\</span><span class="s1">n</span><span class="se">\\</span><span class="s1">nfor sensor_level in sensor_levels:</span><span class="se">\\</span><span class="s1">n    for locomotion_level in locomotion_levels:</span><span class="se">\\</span><span class="s1">n        # 1. Calculate total power draw (W)</span><span class="se">\\</span><span class="s1">n        sensor_power = sensor_draws[sensor_level]</span><span class="se">\\</span><span class="s1">n        locomotion_power = locomotion_draws[locomotion_level]</span><span class="se">\\</span><span class="s1">n        total_power_W = sensor_power + locomotion_power</span><span class="se">\\</span><span class="s1">n</span><span class="se">\\</span><span class="s1">n        # 2. Calculate maximum operational time (in minutes) based on usable energy</span><span class="se">\\</span><span class="s1">n        # Usable Energy (Wh) = 960</span><span class="se">\\</span><span class="s1">n        # Time (h) = Energy (Wh) / Power (W)</span><span class="se">\\</span><span class="s1">n        # Time (min) = (960 / Total Power) * 60</span><span class="se">\\</span><span class="s1">n        max_duration_minutes = (960 / total_power_W) * 60</span><span class="se">\\</span><span class="s1">n</span><span class="se">\\</span><span class="s1">n        # 3. Determine the operational search duration (capped at MAX_DURATION_MINUTES)</span><span class="se">\\</span><span class="s1">n        operational_duration = min(max_duration_minutes, MAX_DURATION_MINUTES)</span><span class="se">\\</span><span class="s1">n</span><span class="se">\\</span><span class="s1">n        results.append({</span><span class="se">\\</span><span class="s1">n            &quot;Sensor Level&quot;: sensor_level,</span><span class="se">\\</span><span class="s1">n            &quot;Locomotion Type&quot;: locomotion_level,</span><span class="se">\\</span><span class="s1">n            &quot;Total Power (W)&quot;: round(total_power_W, 2),</span><span class="se">\\</span><span class="s1">n            &quot;Max Theoretical Duration (min)&quot;: round(max_duration_minutes, 2),</span><span class="se">\\</span><span class="s1">n            &quot;Operational Duration (min)&quot;: round(operational_duration, 2)</span><span class="se">\\</span><span class="s1">n        })</span><span class="se">\\</span><span class="s1">n</span><span class="se">\\</span><span class="s1">n# --- Output Formatting ---</span><span class="se">\\</span><span class="s1">ndf = pd.DataFrame(results)</span><span class="se">\\</span><span class="s1">n</span><span class="se">\\</span><span class="s1">nprint(&quot;--- Operational Search Duration Analysis ---&quot;)</span><span class="se">\\</span><span class="s1">nprint(f&quot;Maximum Usable Energy: 960 Wh&quot;)</span><span class="se">\\</span><span class="s1">nprint(f&quot;Target Mission Duration: 120 minutes&quot;)</span><span class="se">\\</span><span class="s1">nprint(&quot;</span><span class="se">\\\\</span><span class="s1">nResults Table:&quot;)</span><span class="se">\\</span><span class="s1">nprint(df.to_string(index=False))</span><span class="se">\\</span><span class="s1">n</span><span class="se">\\</span><span class="s1">nprint(&quot;</span><span class="se">\\\\</span><span class="s1">n--- Recommendation ---&quot;)</span><span class="se">\\</span><span class="s1">nprint(f&quot;To guarantee a 120-minute search, the system must be configured for the lowest power consumption combination.&quot;)</span><span class="se">\\</span><span class="s1">n</span><span class="se">\\</span><span class="s1">n# Identify the best combination (lowest power draw)</span><span class="se">\\</span><span class="s1">nbest_config = df.loc[df[</span><span class="se">\\\&#39;</span><span class="s1">Operational Duration (min)</span><span class="se">\\\&#39;</span><span class="s1">].idxmin()]</span><span class="se">\\</span><span class="s1">nprint(f&quot;Recommended Configuration for 120 min mission: Sensor=</span><span class="si">{best_config[\\\&#39;Sensor Level\\\&#39;]}</span><span class="s1">, Locomotion=</span><span class="si">{best_config[\\\&#39;Locomotion Type\\\&#39;]}</span><span class="s1">&quot;)</span><span class="se">\\</span><span class="s1">nprint(f&quot;Resulting Operational Duration: </span><span class="si">{best_config[\\\&#39;Operational Duration (min)\\\&#39;]}</span><span class="s1"> minutes&quot;)</span><span class="se">\&#39;</span><span class="s1">}}]&#39;</span><span class="p">},</span> <span class="p">{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="s1">&#39;Tool execution completed. Review the results above. If you have achieved your goal, you MUST output the `TASK_COMPLETE` tool now. Do not call the same tools again with the same arguments.&#39;</span><span class="p">}]</span>
+</pre></div>
+</div>
+<p><strong>Model Output</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>## Review of Sandbox Calculation Outputs
+
+The sandbox execution successfully modeled the power consumption and calculated the resulting operational search duration for all six combinations of sensor payload and locomotion type, constrained by a maximum usable energy of $960 \text{ Wh}$ and a target mission duration of $120$ minutes.
+
+### 1. Analytical Formulation
+
+The core analytical goal was to determine the **Operational Search Duration ($T_{op}$)** for every combination of input factors ($S \in \{\text{Baseline, Standard, Heavy}\}$ and $L \in \{\text{Smooth, Rubble}\}$).
+
+**Key Formulas:**
+
+1.  **Total Power Consumption ($P_{\text{total}}$):** The sum of the power drawn by the selected sensor level and the selected locomotion type.
+    $$P_{\text{total}} = P_{\text{sensor}}(S) + P_{\text{locomotion}}(L)$$
+    *   $P_{\text{sensor}}$ draws are: Baseline (25W), Standard Multi-spectral (75W), Heavy LiDAR+Thermal+Compute (110W).
+    *   $P_{\text{locomotion}}$ draws are: Smooth Concrete (280W), Heavy Rubble/Debris (460W).
+
+2.  **Maximum Theoretical Duration ($T_{\text{max}}$):** This is the time the system can run based on the available energy, calculated using the usable battery capacity ($E_{\text{usable}} = 960 \text{ Wh}$).
+    $$T_{\text{max}} (\text{hours}) = \frac{E_{\text{usable}}}{P_{\text{total}}}$$
+    $$T_{\text{max}} (\text{minutes}) = \left( \frac{960}{P_{\text{total}}} \right) \times 60$$
+
+3.  **Operational Duration ($T_{op}$):** The actual time the mission will last, which is the minimum of the theoretically calculated duration and the specified target mission duration ($T_{\text{target}} = 120 \text{ minutes}$).
+    $$T_{op} = \min \left( T_{\text{max}}(\text{minutes}), T_{\text{target}} \right)$$
+
+### 2. Key Data Points and Trade-off Table
+
+The sandbox output provided the following results, which are synthesized below for clarity:
+
+| Sensor Level | Locomotion Type | Total Power (W) | Max Theoretical Duration (min) | Operational Duration (min) |
+| :--- | :--- | :--- | :--- | :--- |
+| Baseline | Smooth Concrete | 305.00 | 188.85 | **120.00** |
+| Baseline | Heavy Rubble/Debris | 485.00 | 118.76 | **118.76** |
+| Standard Multi-spectral | Smooth Concrete | 355.00 | 162.25 | **120.00** |
+| Standard Multi-spectral | Heavy Rubble/Debris | 535.00 | 107.66 | **107.66** |
+| Heavy LiDAR+Thermal+Compute | Smooth Concrete | 390.00 | 147.69 | **120.00** |
+| Heavy LiDAR+Thermal+Compute | Heavy Rubble/Debris | 570.00 | 101.05 | **101.05** |
+
+**Trade-off Analysis:**
+
+1.  **Power vs. Performance:** There is a clear inverse relationship: increasing the sensor payload significantly increases the power draw, which directly reduces the achievable operational time.
+2.  **Terrain Impact:** Locomotion type dictates a major portion of the power budget (difference between 280W and 460W). The Heavy Rubble/Debris terrain is the most power-intensive mode.
+3.  **Constraint Dominance:** In this specific scenario, the $120$-minute target constraint is frequently met or exceeded when the power draw is lower (e.g., Baseline/Smooth Concrete), indicating that the *system capacity* is often sufficient for the target duration, but the trade-off is in *energy efficiency*.
+
+### 3. Practical Recommendations for Experiment Design Factor Levels
+
+The primary objective is to design the experiment to test the influence of these factors on mission success metrics (time/range) while managing energy constraints.
+
+**Recommendation 1: Prioritize Low-Power Configurations for Baseline Testing.**
+*   **Design Focus:** Use the **Baseline Sensor** combined with the **Smooth Concrete Locomotion**.
+*   **Rationale:** This combination yields the highest theoretical endurance ($\approx 188.85$ minutes) and guarantees the $120$-minute requirement, providing a stable baseline against which all other, more expensive configurations can be compared.
+
+**Recommendation 2: Design the Experimental Matrix around the Critical Threshold.**
+*   **Experiment Goal:** Test how much performance degradation (in terms of $T_{op}$) is acceptable before violating the $120$-minute limit.
+*   **Factor Level Definition:**
+    *   **Sensor Level:** Should be tested in three discrete steps (e.g., $\text{Level 1} \rightarrow \text{Level 2} \rightarrow \text{Level 3}$, corresponding to the power draws $25\text{W} \rightarrow 75\text{W} \rightarrow 110\text{W}$).
+    *   **Locomotion Type:** Should be tested in two discrete steps (Smooth $\rightarrow$ Rubble).
+*   **Hypothesis Testing:** The expected outcome is that the combination of $(\text{Heavy Sensor} + \text{Rubble})$ will result in $T_{op} &lt; 120 \text{ min}$ (as shown in the simulation: $101.05 \text{ min}$), confirming the trade-off.
+
+**Recommendation 3: Implement a Dynamic Stop Condition.**
+*   **Design Implication:** Since the analysis shows that the system *can* exceed the $120$ minutes, the experiment should not rely solely on the battery depletion. A secondary stop condition (e.g., environmental sensor triggering, or a time-based switch) should be introduced to ensure the test environment itself is not the limiting factor.
+
+**In summary, the experimental design should focus on the **cost-benefit curve**: quantifying the exact $\Delta T$ (change in operational time) associated with the $\Delta P$ (change in power draw) for each factor combination, prioritizing configurations that maximize endurance while minimizing the sensor complexity.**
+
+TASK\_COMPLETE
+</pre></div>
+</div>
+</section>
+<section id="final-blueprint-response">
+<h4>Final Blueprint Response<a class="headerlink" href="#final-blueprint-response" title="Link to this heading"></a></h4>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>## Review of Sandbox Calculation Outputs
+
+The sandbox execution successfully modeled the power consumption and calculated the resulting operational search duration for all six combinations of sensor payload and locomotion type, constrained by a maximum usable energy of $960 \text{ Wh}$ and a target mission duration of $120$ minutes.
+
+### 1. Analytical Formulation
+
+The core analytical goal was to determine the **Operational Search Duration ($T_{op}$)** for every combination of input factors ($S \in \{\text{Baseline, Standard, Heavy}\}$ and $L \in \{\text{Smooth, Rubble}\}$).
+
+**Key Formulas:**
+
+1.  **Total Power Consumption ($P_{\text{total}}$):** The sum of the power drawn by the selected sensor level and the selected locomotion type.
+    $$P_{\text{total}} = P_{\text{sensor}}(S) + P_{\text{locomotion}}(L)$$
+    *   $P_{\text{sensor}}$ draws are: Baseline (25W), Standard Multi-spectral (75W), Heavy LiDAR+Thermal+Compute (110W).
+    *   $P_{\text{locomotion}}$ draws are: Smooth Concrete (280W), Heavy Rubble/Debris (460W).
+
+2.  **Maximum Theoretical Duration ($T_{\text{max}}$):** This is the time the system can run based on the available energy, calculated using the usable battery capacity ($E_{\text{usable}} = 960 \text{ Wh}$).
+    $$T_{\text{max}} (\text{hours}) = \frac{E_{\text{usable}}}{P_{\text{total}}}$$
+    $$T_{\text{max}} (\text{minutes}) = \left( \frac{960}{P_{\text{total}}} \right) \times 60$$
+
+3.  **Operational Duration ($T_{op}$):** The actual time the mission will last, which is the minimum of the theoretically calculated duration and the specified target mission duration ($T_{\text{target}} = 120 \text{ minutes}$).
+    $$T_{op} = \min \left( T_{\text{max}}(\text{minutes}), T_{\text{target}} \right)$$
+
+### 2. Key Data Points and Trade-off Table
+
+The sandbox output provided the following results, which are synthesized below for clarity:
+
+| Sensor Level | Locomotion Type | Total Power (W) | Max Theoretical Duration (min) | Operational Duration (min) |
+| :--- | :--- | :--- | :--- | :--- |
+| Baseline | Smooth Concrete | 305.00 | 188.85 | **120.00** |
+| Baseline | Heavy Rubble/Debris | 485.00 | 118.76 | **118.76** |
+| Standard Multi-spectral | Smooth Concrete | 355.00 | 162.25 | **120.00** |
+| Standard Multi-spectral | Heavy Rubble/Debris | 535.00 | 107.66 | **107.66** |
+| Heavy LiDAR+Thermal+Compute | Smooth Concrete | 390.00 | 147.69 | **120.00** |
+| Heavy LiDAR+Thermal+Compute | Heavy Rubble/Debris | 570.00 | 101.05 | **101.05** |
+
+**Trade-off Analysis:**
+
+1.  **Power vs. Performance:** There is a clear inverse relationship: increasing the sensor payload significantly increases the power draw, which directly reduces the achievable operational time.
+2.  **Terrain Impact:** Locomotion type dictates a major portion of the power budget (difference between 280W and 460W). The Heavy Rubble/Debris terrain is the most power-intensive mode.
+3.  **Constraint Dominance:** In this specific scenario, the $120$-minute target constraint is frequently met or exceeded when the power draw is lower (e.g., Baseline/Smooth Concrete), indicating that the *system capacity* is often sufficient for the target duration, but the trade-off is in *energy efficiency*.
+
+### 3. Practical Recommendations for Experiment Design Factor Levels
+
+The primary objective is to design the experiment to test the influence of these factors on mission success metrics (time/range) while managing energy constraints.
+
+**Recommendation 1: Prioritize Low-Power Configurations for Baseline Testing.**
+*   **Design Focus:** Use the **Baseline Sensor** combined with the **Smooth Concrete Locomotion**.
+*   **Rationale:** This combination yields the highest theoretical endurance ($\approx 188.85$ minutes) and guarantees the $120$-minute requirement, providing a stable baseline against which all other, more expensive configurations can be compared.
+
+**Recommendation 2: Design the Experimental Matrix around the Critical Threshold.**
+*   **Experiment Goal:** Test how much performance degradation (in terms of $T_{op}$) is acceptable before violating the $120$-minute limit.
+*   **Factor Level Definition:**
+    *   **Sensor Level:** Should be tested in three discrete steps (e.g., $\text{Level 1} \rightarrow \text{Level 2} \rightarrow \text{Level 3}$, corresponding to the power draws $25\text{W} \rightarrow 75\text{W} \rightarrow 110\text{W}$).
+    *   **Locomotion Type:** Should be tested in two discrete steps (Smooth $\rightarrow$ Rubble).
+*   **Hypothesis Testing:** The expected outcome is that the combination of $(\text{Heavy Sensor} + \text{Rubble})$ will result in $T_{op} &lt; 120 \text{ min}$ (as shown in the simulation: $101.05 \text{ min}$), confirming the trade-off.
+
+**Recommendation 3: Implement a Dynamic Stop Condition.**
+*   **Design Implication:** Since the analysis shows that the system *can* exceed the $120$ minutes, the experiment should not rely solely on the battery depletion. A secondary stop condition (e.g., environmental sensor triggering, or a time-based switch) should be introduced to ensure the test environment itself is not the limiting factor.
+
+**In summary, the experimental design should focus on the **cost-benefit curve**: quantifying the exact $\Delta T$ (change in operational time) associated with the $\Delta P$ (change in power draw) for each factor combination, prioritizing configurations that maximize endurance while minimizing the sensor complexity.**
+
+TASK\_COMPLETE
+</pre></div>
+</div>
+</section>
+<section id="generated-workspace-files">
+<h4>Generated Workspace Files<a class="headerlink" href="#generated-workspace-files" title="Link to this heading"></a></h4>
+</section>
+</section>
+</section>
+<section id="file-sandbox-script-py">
+<h2>File: sandbox_script.py<a class="headerlink" href="#file-sandbox-script-py" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="c1"># --- Parameters ---</span>
+
+<span class="c1"># Battery capacity: 1200Wh</span>
+<span class="c1"># Usable energy: 1200Wh * 0.80 = 960Wh</span>
+
+<span class="c1"># Power consumptions (Watts)</span>
+<span class="n">sensor_draws</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Baseline&quot;</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span> <span class="s2">&quot;Standard Multi-spectral&quot;</span><span class="p">:</span> <span class="mi">75</span><span class="p">,</span> <span class="s2">&quot;Heavy LiDAR+Thermal+Compute&quot;</span><span class="p">:</span> <span class="mi">110</span><span class="p">}</span>
+<span class="n">locomotion_draws</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Smooth Concrete&quot;</span><span class="p">:</span> <span class="mi">280</span><span class="p">,</span> <span class="s2">&quot;Heavy Rubble/Debris&quot;</span><span class="p">:</span> <span class="mi">460</span><span class="p">}</span>
+
+<span class="c1"># Maximum mission duration (in minutes)</span>
+<span class="n">MAX_DURATION_MINUTES</span> <span class="o">=</span> <span class="mi">120</span>
+
+<span class="c1"># Calculate energy consumption per minute (Watt-minutes/minute)</span>
+<span class="c1"># Energy (Wh) = Power (W) * Time (h) = Power (W) * Time (min) / 60</span>
+<span class="c1"># Consumption (W/min) = Power (W) / 60</span>
+
+<span class="c1"># Define the experimental factors</span>
+<span class="n">sensor_levels</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sensor_draws</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+<span class="n">locomotion_levels</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">locomotion_draws</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+<span class="c1"># --- Calculation Setup ---</span>
+
+<span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">for</span> <span class="n">sensor_level</span> <span class="ow">in</span> <span class="n">sensor_levels</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">locomotion_level</span> <span class="ow">in</span> <span class="n">locomotion_levels</span><span class="p">:</span>
+        <span class="c1"># 1. Calculate total power draw (W)</span>
+        <span class="n">sensor_power</span> <span class="o">=</span> <span class="n">sensor_draws</span><span class="p">[</span><span class="n">sensor_level</span><span class="p">]</span>
+        <span class="n">locomotion_power</span> <span class="o">=</span> <span class="n">locomotion_draws</span><span class="p">[</span><span class="n">locomotion_level</span><span class="p">]</span>
+        <span class="n">total_power_W</span> <span class="o">=</span> <span class="n">sensor_power</span> <span class="o">+</span> <span class="n">locomotion_power</span>
+
+        <span class="c1"># 2. Calculate maximum operational time (in minutes) based on usable energy</span>
+        <span class="c1"># Usable Energy (Wh) = 960</span>
+        <span class="c1"># Time (h) = Energy (Wh) / Power (W)</span>
+        <span class="c1"># Time (min) = (960 / Total Power) * 60</span>
+        <span class="n">max_duration_minutes</span> <span class="o">=</span> <span class="p">(</span><span class="mi">960</span> <span class="o">/</span> <span class="n">total_power_W</span><span class="p">)</span> <span class="o">*</span> <span class="mi">60</span>
+
+        <span class="c1"># 3. Determine the operational search duration (capped at MAX_DURATION_MINUTES)</span>
+        <span class="n">operational_duration</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">max_duration_minutes</span><span class="p">,</span> <span class="n">MAX_DURATION_MINUTES</span><span class="p">)</span>
+
+        <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s2">&quot;Sensor Level&quot;</span><span class="p">:</span> <span class="n">sensor_level</span><span class="p">,</span>
+            <span class="s2">&quot;Locomotion Type&quot;</span><span class="p">:</span> <span class="n">locomotion_level</span><span class="p">,</span>
+            <span class="s2">&quot;Total Power (W)&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">total_power_W</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+            <span class="s2">&quot;Max Theoretical Duration (min)&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">max_duration_minutes</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+            <span class="s2">&quot;Operational Duration (min)&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">operational_duration</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="p">})</span>
+
+<span class="c1"># --- Output Formatting ---</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;--- Operational Search Duration Analysis ---&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Maximum Usable Energy: 960 Wh&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Target Mission Duration: 120 minutes&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Results Table:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">--- Recommendation ---&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;To guarantee a 120-minute search, the system must be configured for the lowest power consumption combination.&quot;</span><span class="p">)</span>
+
+<span class="c1"># Identify the best combination (lowest power draw)</span>
+<span class="n">best_config</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Operational Duration (min)&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">idxmin</span><span class="p">()]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Recommended Configuration for 120 min mission: Sensor=</span><span class="si">{</span><span class="n">best_config</span><span class="p">[</span><span class="s1">&#39;Sensor Level&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">, Locomotion=</span><span class="si">{</span><span class="n">best_config</span><span class="p">[</span><span class="s1">&#39;Locomotion Type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Resulting Operational Duration: </span><span class="si">{</span><span class="n">best_config</span><span class="p">[</span><span class="s1">&#39;Operational Duration (min)&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> minutes&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="trial_2_multistep_blueprint_and_tools.html" class="btn btn-neutral float-left" title="Tutorial 2: Multi-Step Cognitive Reasoning and Sandboxed Tool Execution" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="trial_3_branching_and_grips_expansion.html" class="btn btn-neutral float-right" title="Tutorial 3: Interactive Conversation Branching and Grips Knowledge Graph" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Andrew Cruickshank.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

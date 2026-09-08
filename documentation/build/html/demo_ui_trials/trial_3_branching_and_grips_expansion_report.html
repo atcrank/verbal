@@ -1,0 +1,334 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Doctest Report: Trial 3: Conversation Branching &amp; Grips Knowledge Graph &mdash; reason 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Testing" href="../tests.html" />
+    <link rel="prev" title="Tutorial 3: Interactive Conversation Branching and Grips Knowledge Graph" href="trial_3_branching_and_grips_expansion.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            reason
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../llm_api_app.html">LLM API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../background_resources_app.html">Background Resources - context documents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../grips_app.html">Grips - wiki knowledge banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo_ui_app.html">Demo UI</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../using_ollama.html">Ollama as Local AI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../demo_ui_trials.html">Demo UI Interactive Trials &amp; Feature Walkthroughs</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="trial_1_ingestion_and_context.html">Tutorial 1: Document Ingestion and Context-Grounded Reasoning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="trial_1_ingestion_and_context_report.html">Doctest Report: Trial 1: Document Ingestion and Context-Grounded Reasoning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="trial_2_multistep_blueprint_and_tools.html">Tutorial 2: Multi-Step Cognitive Reasoning and Sandboxed Tool Execution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="trial_2_multistep_blueprint_and_tools_report.html">Doctest Report: Trial 2: Multi-Step Cognitive Reasoning &amp; Sandboxed Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="trial_3_branching_and_grips_expansion.html">Tutorial 3: Interactive Conversation Branching and Grips Knowledge Graph</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Doctest Report: Trial 3: Conversation Branching &amp; Grips Knowledge Graph</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#scenario-research-task">Scenario &amp; Research Task</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#animated-walkthrough">Animated Walkthrough</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#interaction-trace-researcher-verbal-reason">Interaction Trace: Researcher &amp; Verbal / Reason</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../demo_ui_trials.html#trial-descriptions">Trial Descriptions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../tests.html">Testing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">reason</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../demo_ui_trials.html">Demo UI Interactive Trials &amp; Feature Walkthroughs</a></li>
+      <li class="breadcrumb-item active">Doctest Report: Trial 3: Conversation Branching &amp; Grips Knowledge Graph</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/demo_ui_trials/trial_3_branching_and_grips_expansion_report.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="doctest-report-trial-3-conversation-branching-grips-knowledge-graph">
+<h1>Doctest Report: Trial 3: Conversation Branching &amp; Grips Knowledge Graph<a class="headerlink" href="#doctest-report-trial-3-conversation-branching-grips-knowledge-graph" title="Link to this heading"></a></h1>
+<p><strong>Date</strong>: 2026-09-08 10:26:28</p>
+<p><strong>Local Model</strong>: google/gemma-2-2b-it</p>
+<p><strong>Status</strong>: PASSED</p>
+<p><strong>Total Execution Time</strong>: 360.5s</p>
+<section id="scenario-research-task">
+<h2>Scenario &amp; Research Task<a class="headerlink" href="#scenario-research-task" title="Link to this heading"></a></h2>
+<p>We imagine a researcher who has the following task and resources: An autonomous robotics research team is designing an empirical intervention trial for a tracked search-and-rescue robot operating inside a multi-story collapsed structure under heavy smoke and rubble. The researcher uses the Verbal / Reason interface to formulate hypotheses, evaluate causal and statistical trade-offs, compute factorial parameters in the sandbox, and structure the domain knowledge graph.</p>
+</section>
+<section id="animated-walkthrough">
+<h2>Animated Walkthrough<a class="headerlink" href="#animated-walkthrough" title="Link to this heading"></a></h2>
+<a class="reference internal image-reference" href="../_images/trial_3_branching_and_grips_expansion_animated.gif"><img alt="Animated Walkthrough: Trial 3: Conversation Branching &amp; Grips Knowledge Graph" src="../_images/trial_3_branching_and_grips_expansion_animated.gif" style="width: 780px;" />
+</a>
+<section id="interaction-trace-researcher-verbal-reason">
+<h3>Interaction Trace: Researcher &amp; Verbal / Reason<a class="headerlink" href="#interaction-trace-researcher-verbal-reason" title="Link to this heading"></a></h3>
+<section id="step-1-parent-inquiry-communication-relays-vs-breadcrumbs-296-2s">
+<h4>Step 1: Parent Inquiry: Communication Relays vs Breadcrumbs (296.2s)<a class="headerlink" href="#step-1-parent-inquiry-communication-relays-vs-breadcrumbs-296-2s" title="Link to this heading"></a></h4>
+<p><strong>The Researcher (Thinking &amp; Formulation)</strong>:</p>
+<p>In Trial 2, heavy rubble limited robot endurance to 101 minutes with full sensor/comms payloads. We must determine whether offloading communications to ad-hoc breadcrumb nodes provides sufficient RF signal reliability through reinforced concrete while reducing vehicle payload power draw.</p>
+<p><strong>Researcher Inquiry (Entered in Demo UI)</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Compare</span> <span class="n">heavy</span> <span class="n">tracked</span> <span class="n">UGV</span> <span class="n">communication</span> <span class="n">relays</span> <span class="n">vs</span><span class="o">.</span> <span class="n">deployable</span> <span class="n">ad</span><span class="o">-</span><span class="n">hoc</span> <span class="n">RF</span> <span class="n">breadcrumb</span> <span class="n">nodes</span> <span class="ow">in</span> <span class="n">reinforced</span> <span class="n">concrete</span> <span class="n">basements</span><span class="o">.</span>
+</pre></div>
+</div>
+<p><strong>Verbal / Reason Response (Synthesized by: google/gemma-2-2b-it)</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>This is a fascinating comparison that pits robust, dedicated infrastructure against flexible, opportunistic networking in a challenging environment (reinforced concrete basements).
+To give you the best analysis, I&#39;ll break down the comparison based on key study design criteria: Performance Metrics, Deployment &amp; Maintenance, Resilience &amp; Survivability, Cost &amp; Complexity, and Suitability for Specific Mission Profiles.
+
+Comparative Analysis: Heavy Tracked UGV Relays vs. Deployable Ad-Hoc RF Breadcrumbs
+1. Performance Metrics Comparison
+
+
+
+Feature
+Heavy Tracked UGV Communication Relays
+Deployable Ad-Hoc RF Breadcrumb Nodes
+
+
+
+
+Throughput/Bandwidth
+High &amp; Consistent: Dedicated, high-power links (e.g., SATCOM, dedicated radio) ensure predictable data rates.
+Variable &amp; Lower: Dependent on RF propagation, interference, and node density. Can suffer from high packet loss during dense operation.
+
+
+Latency
+Low &amp; Predictable: Dedicated physical pathways minimize queuing delay; latency is determined by link distance/medium.
+Variable &amp; Potentially High: Latency depends heavily on routing efficiency and the number of hops required.
+
+
+Range &amp; Coverage
+Excellent (Line-of-Sight): Excellent for point-to-point or fixed-path relaying, provided line-of-sight is maintained.
+Good (Mesh-based): Excellent for filling coverage gaps, but range is limited by power budget and attenuation through concrete.
+
+
+Power Consumption
+High (Continuous Operation): Requires significant power for locomotion and continuous transmission.
+Low (Intermittent Operation): Nodes can be powered down when not transmitting, leading to better energy efficiency if deployed sparsely.
+
+
+Data Security
+Strong: Relies on established, potentially encrypted, hardware and protocols.
+Weaker: Security relies entirely on the individual node&#39;s hardware and the security of the temporary network topology.
+
+
+
+Verdict on Performance: The UGV Relay wins on guaranteed performance and predictability. The Ad-Hoc system wins on scalability (can add more nodes), but sacrifices guaranteed performance for flexibility.
+2. Deployment and Maintenance Comparison
+
+
+
+Aspect
+Heavy Tracked UGV Relays
+Deployable Ad-Hoc RF Breadcrumbs
+
+
+
+
+Deployment Time
+Slow/Complex: Requires pre-staging, mechanical deployment, and integration with the UGV platform.
+Fast/Simple: Can be rapidly deployed by any available unit, often just requiring placement and activation.
+
+
+Maintenance Burden
+High: Mechanical systems require regular inspection, lubrication, and repair; susceptible to mechanical failure.
+Low: Maintenance is primarily software/firmware updates or simple replacement of failed nodes (if designed modularly).
+
+
+Adaptability to Change
+Low: Fixed infrastructure; difficult to reconfigure paths quickly if the mission changes.
+High: Network topology can be reconfigured instantly by simply changing which nodes are activated (dynamic routing).
+
+
+Vulnerability During Deployment
+Vulnerable during the physical setup phase.
+Vulnerable during the initial setup phase, but the system itself is inherently more robust to single-point failures.
+
+
+
+Verdict on Deployment: Ad-Hoc is vastly superior in terms of speed and adaptability. The UGV Relay is superior in long-term, reliable operational uptime once deployed.
+3. Resilience and Survivability in Reinforced Concrete Basements
+The environment (reinforced concrete) is the critical constraint here:
+
+UGV Relay:
+Pros: If the relay is built robustly enough to survive the environment (e.g., sealed housing), it provides a persistent backbone. Its durability means it is less likely to fail due to environmental stress than a temporary node.
+Cons: If the concrete structure itself is compromised (e.g., water ingress affecting electronics), the entire relay fails. It is a single point of failure if its path is blocked.
+
+
+Ad-Hoc RF Breadcrumbs:
+Pros: High Redundancy (Self-Healing): If one node fails, the remaining nodes can immediately reroute the traffic around the failure (self-healing mesh capability). This makes it highly resilient to localized damage or node loss.
+Cons: Environmental Sensitivity: RF signals are heavily attenuated and distorted by dense, reflective materials like concrete. A minor structural shift or moisture ingress could severely degrade the RF link quality, potentially causing widespread connectivity loss.
+
+
+
+Verdict on Resilience: For network survivability (maintaining connectivity despite node loss), Ad-Hoc has the edge due to its inherent mesh redundancy. For physical survivability (withstanding environmental stress), the UGV Relay (if built ruggedly) might be safer, but the Ad-Hoc system is more fault-tolerant at the network layer.
+4. Study Design Implications (Which should you test?)
+Your choice depends entirely on the research question:
+
+
+
+If your research focuses on...
+Recommended Design
+Rationale
+
+
+
+
+Reliability under harsh, long-duration missions.
+UGV Relays
+Test the limits of mechanical endurance and sustained high-throughput links.
+
+
+Scalability, rapid response, and dynamic reconfiguration.
+Ad-Hoc Nodes
+Test how quickly the system can adapt to changing operational needs and how efficiently it utilizes sparse resources.
+
+
+Trade-off analysis between upfront cost/setup time vs. operational uptime.
+Comparative Study
+Design a full simulation or physical test where you vary the resource allocation (e.g., &quot;What is the minimum number of UGV relays needed to match the throughput of 10 ad-hoc nodes?&quot;).
+
+
+Impact of environmental attenuation on different communication technologies.
+Ad-Hoc Focus
+Ideal for testing how different RF techniques (e.g., LoRa vs. Wi-Fi) perform through concrete.
+
+
+
+
+Summary Recommendation
+For a study focused on maximizing operational flexibility, rapid mission change, and fault tolerance in a dynamic environment, the $\text{Deployable Ad-Hoc RF Breadcrumb Nodes}$ are the superior design.
+However, if the study demands a guaranteed, high-bandwidth communication backbone that must operate continuously regardless of network topology changes, the $\text{Heavy Tracked UGV Relays}$ provide a more robust, albeit less flexible, solution.
+Recommendation for a Comprehensive Study: Design an experiment that compares these two as complementary solutions rather than competitors. Test scenarios where:
+1. Scenario A (UGV): High-demand, low-frequency mission profile.
+2. Scenario B (Ad-Hoc): Low-demand, high-scalability/re-tasking mission profile.
+3. **
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../_images/trial_3_parent_conversation.png"><img alt="Parent Inquiry: Communication Relays vs Breadcrumbs" src="../_images/trial_3_parent_conversation.png" style="width: 750px;" />
+</a>
+</section>
+<section id="step-2-interactive-conversation-branching-0-3s">
+<h4>Step 2: Interactive Conversation Branching (0.3s)<a class="headerlink" href="#step-2-interactive-conversation-branching-0-3s" title="Link to this heading"></a></h4>
+<p><strong>The Researcher (Thinking &amp; Formulation)</strong>:</p>
+<p>We want to explore the specific operational mechanics of breadcrumb dropping intervals. Rather than cluttering our primary experimental log, we fork an exploratory branch in the Reason UI.</p>
+<p><strong>The Researcher (Evaluation &amp; Decision)</strong>:</p>
+<p>A child conversation branch was created and set as active in the Demo UI sidebar. All subsequent prompts in this branch remain isolated from the parent baseline analysis.</p>
+<a class="reference internal image-reference" href="../_images/trial_3_branched_conversation.png"><img alt="Interactive Conversation Branching" src="../_images/trial_3_branched_conversation.png" style="width: 750px;" />
+</a>
+</section>
+<section id="step-3-grips-explorer-navigation-0-3s">
+<h4>Step 3: Grips Explorer Navigation (0.3s)<a class="headerlink" href="#step-3-grips-explorer-navigation-0-3s" title="Link to this heading"></a></h4>
+<p><strong>The Researcher (Thinking &amp; Formulation)</strong>:</p>
+<p>Our domain ontology contains an unelaborated concept for ‘Breadcrumb Relay Node’. We will trigger Reason’s autonomous stub filler to synthesize an authoritative wiki entry and extract relational claims directly into our knowledge graph.</p>
+<a class="reference internal image-reference" href="../_images/trial_3_grips_explorer.png"><img alt="Grips Explorer Navigation" src="../_images/trial_3_grips_explorer.png" style="width: 750px;" />
+</a>
+</section>
+<section id="step-4-autonomous-stub-elaboration-via-gemma4-13-2s">
+<h4>Step 4: Autonomous Stub Elaboration via Gemma4 (13.2s)<a class="headerlink" href="#step-4-autonomous-stub-elaboration-via-gemma4-13-2s" title="Link to this heading"></a></h4>
+<p>Gemma4 generated 697 characters for ‘Breadcrumb Relay Node’ with 3 claims.</p>
+<p><strong>Verbal / Reason Response (Synthesized by: google/gemma-2-2b-it)</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">## Overview</span>
+
+<span class="o">**</span><span class="n">Breadcrumb</span> <span class="n">Relay</span> <span class="n">Node</span><span class="o">**</span> <span class="ow">is</span> <span class="n">an</span> <span class="n">essential</span> <span class="n">tactical</span> <span class="n">element</span> <span class="n">within</span> <span class="n">Firefighting</span> <span class="n">Tactics</span><span class="o">.</span> <span class="n">Ad</span><span class="o">-</span><span class="n">hoc</span> <span class="n">RF</span> <span class="n">mesh</span> <span class="n">repeaters</span> <span class="n">deployed</span> <span class="n">by</span> <span class="n">UGVs</span> <span class="ow">in</span> <span class="n">RF</span><span class="o">-</span><span class="n">opaque</span> <span class="n">structures</span><span class="o">.</span> <span class="n">Deployable</span> <span class="n">wireless</span> <span class="n">relay</span> <span class="n">units</span> <span class="n">provide</span> <span class="bp">self</span><span class="o">-</span><span class="n">healing</span> <span class="n">RF</span> <span class="n">mesh</span> <span class="n">connectivity</span> <span class="n">across</span> <span class="n">radio</span><span class="o">-</span><span class="n">attenuating</span> <span class="n">structural</span> <span class="n">barriers</span><span class="p">,</span> <span class="n">extending</span> <span class="n">the</span> <span class="n">operational</span> <span class="n">envelope</span> <span class="n">of</span> <span class="n">search</span><span class="o">-</span><span class="ow">and</span><span class="o">-</span><span class="n">rescue</span> <span class="n">unmanned</span> <span class="n">ground</span> <span class="n">vehicles</span><span class="o">.</span>
+
+<span class="c1">## Tactical Architecture</span>
+
+<span class="n">When</span> <span class="n">operating</span> <span class="ow">in</span> <span class="n">dense</span> <span class="n">concrete</span> <span class="ow">or</span> <span class="n">sub</span><span class="o">-</span><span class="n">grade</span> <span class="n">basements</span><span class="p">,</span> <span class="n">high</span><span class="o">-</span><span class="n">frequency</span> <span class="n">signals</span> <span class="n">suffer</span> <span class="n">severe</span> <span class="n">path</span> <span class="n">loss</span><span class="o">.</span> <span class="n">Dropping</span> <span class="n">autonomous</span> <span class="n">breadcrumb</span> <span class="n">relay</span> <span class="n">nodes</span> <span class="n">at</span> <span class="n">line</span><span class="o">-</span><span class="n">of</span><span class="o">-</span><span class="n">sight</span> <span class="n">inflection</span> <span class="n">points</span> <span class="n">guarantees</span> <span class="n">high</span><span class="o">-</span><span class="n">throughput</span> <span class="n">telemetry</span> <span class="n">back</span> <span class="n">to</span> <span class="n">the</span> <span class="n">incident</span> <span class="n">command</span> <span class="n">vehicle</span> <span class="k">while</span> <span class="n">minimizing</span> <span class="n">onboard</span> <span class="n">power</span> <span class="n">consumption</span><span class="o">.</span>
+</pre></div>
+</div>
+<p><strong>The Researcher (Evaluation &amp; Decision)</strong>:</p>
+<p>The ‘Breadcrumb Relay Node’ stub was successfully elaborated by Gemma4 into an authoritative wiki article. The model extracted 3 structured relational claims connecting breadcrumb nodes to our tactical robotics ontology.</p>
+<a class="reference internal image-reference" href="../_images/trial_3_grips_elaborated.png"><img alt="Autonomous Stub Elaboration via Gemma4" src="../_images/trial_3_grips_elaborated.png" style="width: 750px;" />
+</a>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="trial_3_branching_and_grips_expansion.html" class="btn btn-neutral float-left" title="Tutorial 3: Interactive Conversation Branching and Grips Knowledge Graph" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../tests.html" class="btn btn-neutral float-right" title="Testing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Andrew Cruickshank.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

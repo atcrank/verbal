@@ -52,9 +52,25 @@ def index(request):
     conversations = Conversation.objects.filter(user=request.user).exclude(user__username="NightManager")
     blueprints = CognitiveBlueprint.objects.exclude(name__startswith="NightManager").exclude(name="The Architect")
     
+    active_conversation = None
+    initial_logs = []
+    initial_files = []
+    
+    conv_id = request.GET.get('conversation_id')
+    if conv_id:
+        active_conversation = Conversation.objects.filter(id=conv_id, user=request.user).first()
+        if active_conversation:
+            initial_logs = list(active_conversation.logs.order_by('created_at'))
+            for log in initial_logs:
+                _prepare_log_for_display(log)
+            initial_files = _get_workspace_files_list(active_conversation)
+
     return render(request, 'demo_ui/index.html', {
         'conversations': conversations,
         'blueprints': blueprints,
+        'active_conversation': active_conversation,
+        'initial_logs': initial_logs,
+        'initial_files': initial_files,
     })
 
 @login_required
@@ -148,20 +164,40 @@ def send_message(request):
         )
 
     # 2. Execute Generation (Blueprint or Native)
+    parent_log = conversation.logs.order_by('-created_at').first()
     if blueprint_id:
-        from uuid import uuid4
-        from metacognition.tasks import task_run_blueprint_async
-        
-        run_id = str(uuid4())
-        task_run_blueprint_async.enqueue(
-            blueprint_id=int(blueprint_id),
-            user_prompt=user_prompt,
-            conversation_id=str(conversation.id),
-            user_id=request.user.id,
-            run_id=run_id
-        )
-        
-        streaming_markup = f"""<div id="blueprint-exec-{run_id}" data-signals="{{isStreaming: true}}" data-on-load="@get('/api/meta/stream_blueprint/?run_id={run_id}')">
+        if request.POST.get('sync') == 'true' or request.GET.get('sync') == 'true':
+            from metacognition.tasks import run_blueprint
+            result = run_blueprint(
+                blueprint_id=int(blueprint_id),
+                user_prompt=user_prompt,
+                conversation_id=str(conversation.id),
+                user_id=request.user.id
+            )
+            log = conversation.logs.order_by('-created_at').first()
+            if not log:
+                log = PromptResponseLog.objects.create(
+                    conversation=conversation,
+                    parent_log=parent_log,
+                    user=request.user,
+                    user_prompt=user_prompt,
+                    generated_response=result.get("final_response", ""),
+                    model_name="blueprint",
+                )
+        else:
+            from uuid import uuid4
+            from metacognition.tasks import task_run_blueprint_async
+            
+            run_id = str(uuid4())
+            task_run_blueprint_async.enqueue(
+                blueprint_id=int(blueprint_id),
+                user_prompt=user_prompt,
+                conversation_id=str(conversation.id),
+                user_id=request.user.id,
+                run_id=run_id
+            )
+            
+            streaming_markup = f"""<div id="blueprint-exec-{run_id}" data-signals="{{isStreaming: true}}" data-on-load="@get('/api/meta/stream_blueprint/?run_id={run_id}')">
 <div id="blueprint-status" class="agent-step active">
     <span class="badge">Dispatched</span>
     <strong>Executing cognitive blueprint asynchronously...</strong>
@@ -170,16 +206,17 @@ def send_message(request):
 <div id="monologue-stream"></div>
 <div id="blueprint-final-response"></div>
 </div>"""
-        
-        log = PromptResponseLog.objects.create(
-            system_prompt="[Async Blueprint Execution]", 
-            user_prompt=user_prompt,
-            conversation=conversation,
-            generated_response=streaming_markup, 
-            user=request.user,
-            input_tokens=0,
-            output_tokens=0
-        )
+            
+            log = PromptResponseLog.objects.create(
+                system_prompt="[Async Blueprint Execution]", 
+                user_prompt=user_prompt,
+                conversation=conversation,
+                parent_log=parent_log,
+                generated_response=streaming_markup, 
+                user=request.user,
+                input_tokens=0,
+                output_tokens=0
+            )
     else:
         messages = conversation.as_messages()
         if not messages:
@@ -227,14 +264,15 @@ def send_message(request):
             messages_for_llm = messages + [{"role": "user", "content": user_prompt}]
         
         input_tokens = service_registry.ai_service.count_conversation_tokens(messages_for_llm)
-        [response] = service_registry.ai_service.generate_response2(messages=messages_for_llm, max_new_tokens=1000, log_kwargs={"skip_log": True}, user=request.user)
+        max_new_tokens = int(request.POST.get('max_new_tokens', 1500))
+        [response] = service_registry.ai_service.generate_response2(messages=messages_for_llm, max_new_tokens=max_new_tokens, log_kwargs={"skip_log": True}, user=request.user)
         cleaned_response = service_registry.ai_service.clean_response(response)
         
         output_tokens = service_registry.ai_service.count_conversation_tokens([{"role": "assistant", "content": cleaned_response}])
         
         log = PromptResponseLog.objects.create(
             system_prompt=messages[0]["content"], user_prompt=user_prompt, rag_selections=rag_selections, 
-            conversation=conversation, generated_response=cleaned_response, user=request.user,
+            conversation=conversation, parent_log=parent_log, generated_response=cleaned_response, user=request.user,
             input_tokens=input_tokens, output_tokens=output_tokens
         )
         
@@ -351,17 +389,27 @@ def trigger_document_ingestion(request, document_id):
 @login_required
 @require_POST
 def branch_conversation(request, log_id):
-    """HTMX endpoint to fork a conversation DAG from a specific assistant response."""
+    """HTMX endpoint to fork a conversation DAG from a specific assistant response, copying all content back to the start."""
     source_log = get_object_or_404(PromptResponseLog, id=log_id)
     original_conv = source_log.conversation
 
-    # Trace ancestor path from root to source_log
-    ancestor_logs = []
+    # Trace ancestor path from root to source_log via parent_log DAG
+    ancestor_chain = []
     curr = source_log
     while curr:
-        ancestor_logs.append(curr)
+        ancestor_chain.append(curr)
         curr = curr.parent_log
-    ancestor_logs.reverse()
+    ancestor_chain.reverse()
+
+    # For flat or unlinked historical logs in original_conv, ensure we copy all logs back to conversation start
+    if original_conv:
+        chronological_logs = list(original_conv.logs.filter(created_at__lte=source_log.created_at).order_by('created_at'))
+        if len(chronological_logs) > len(ancestor_chain):
+            ancestor_logs = chronological_logs
+        else:
+            ancestor_logs = ancestor_chain
+    else:
+        ancestor_logs = ancestor_chain
 
     turn_count = len(ancestor_logs)
     base_title = original_conv.title if original_conv else "Conversation"
@@ -372,10 +420,11 @@ def branch_conversation(request, log_id):
         title=branch_title,
     )
 
-    # Clone historical logs into new conversation to isolate the new branch
+    # Clone historical logs into new conversation to isolate the new branch, ensuring a continuous DAG
     log_map = {}
+    last_cloned = None
     for old_log in ancestor_logs:
-        parent_clone = log_map.get(old_log.parent_log_id)
+        parent_clone = log_map.get(old_log.parent_log_id) or last_cloned
         cloned_log = PromptResponseLog.objects.create(
             user=request.user,
             conversation=new_conv,
@@ -391,6 +440,7 @@ def branch_conversation(request, log_id):
             step_status=old_log.step_status,
         )
         log_map[old_log.id] = cloned_log
+        last_cloned = cloned_log
 
     logs = list(new_conv.logs.order_by('created_at'))
     for log in logs:
@@ -604,14 +654,29 @@ def grips_concept_children(request, concept_id):
 @login_required
 @require_POST
 def fill_grips_stub(request, concept_id):
-    """Triggers the Grips Stub Filler blueprint for a specific ConceptNode."""
-    from metacognition.models import CognitiveBlueprint
-    from metacognition.tasks import task_run_blueprint_async
+    """Triggers autonomous stub elaboration for a specific ConceptNode."""
+    from grips.models import ConceptNode
+    from django.conf import settings
+    node = get_object_or_404(ConceptNode, id=concept_id)
+    is_immediate = getattr(settings, 'TASKS', {}).get('default', {}).get('BACKEND') == 'django.tasks.backends.immediate.ImmediateBackend'
+    sync = request.GET.get('sync') == 'true' or request.POST.get('sync') == 'true' or is_immediate
+
     try:
+        if sync:
+            from grips.tasks import generate_concept_narrative
+            func = getattr(generate_concept_narrative, "func", generate_concept_narrative)
+            _ = func(concept_id)
+            node.refresh_from_db()
+            return HttpResponse('<span style="color: #047857; font-size: 0.72rem; font-weight: 600;">Elaborated</span>')
+
+        from metacognition.models import CognitiveBlueprint, bypass_canonical_lock
+        from metacognition.tasks import task_run_blueprint_async
+
         bp = CognitiveBlueprint.objects.filter(name__icontains="Stub Filler").first()
         if not bp:
             from metacognition.seed import seed_cognitive_blueprints
-            seed_cognitive_blueprints()
+            with bypass_canonical_lock():
+                seed_cognitive_blueprints()
             bp = CognitiveBlueprint.objects.filter(name="Grips Stub Filler").first()
 
         if not bp:
@@ -624,5 +689,5 @@ def fill_grips_stub(request, concept_id):
         )
         return HttpResponse('<span style="color: #047857; font-size: 0.72rem; font-weight: 600;">Filler queued.</span>')
     except Exception as e:
-        logger.exception("Failed to queue Grips Stub Filler")
+        logger.exception("Failed to fill Grips stub")
         return HttpResponse(f'<span style="color: #b91c1c; font-size: 0.72rem; font-weight: 500;">Error: {str(e)}</span>', status=500)

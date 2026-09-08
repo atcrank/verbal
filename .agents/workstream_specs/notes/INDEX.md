@@ -11,4 +11,6 @@
 * [2026-08-31] [Feature/Architecture] Migration from Celery / Redis to Native Django Tasks (Status: pending) -> [20260831_django_tasks_migration.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260831_django_tasks_migration.md)
 * [2026-09-01] [Feature/UI] Demo UI Evolution & Experience Overhaul (Codename Reason) (Status: completed) -> [20260901_demo_ui_reason_evolution.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260901_demo_ui_reason_evolution.md)
 * [2026-09-02] [Feature/UI] Demo UI Aesthetic & Interactive Refinements (Status: completed) -> [20260902_demo_ui_refinements.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260902_demo_ui_refinements.md)
-
+* [2026-09-03] [Feature/Testing/UI] Demo UI Shakedown Cruise & Firefighting Robotics Walkthrough (Status: completed) -> [20260903_demo_ui_shakedown.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260903_demo_ui_shakedown.md)
+* [2026-09-04] [Feature/Testing/UI] Demo UI Remediation & Real Capability Shakedown (Status: completed) -> [20260904_demo_ui_remediation.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260904_demo_ui_remediation.md)
+* [2026-09-08] [Critique/Architecture] Empirical Rigor & Adversarial Verification in Demo UI Trials (Status: pending) -> [20260908_empirical_rigor_trials_audit.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260908_empirical_rigor_trials_audit.md)

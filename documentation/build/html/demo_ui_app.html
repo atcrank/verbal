@@ -85,6 +85,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="using_ollama.html">Ollama as Local AI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo_ui_trials.html">Demo UI Interactive Trials &amp; Feature Walkthroughs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tests.html">Testing</a></li>
 </ul>
 
@@ -168,7 +169,7 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="demo_ui.views.branch_conversation">
 <span class="sig-prename descclassname"><span class="pre">demo_ui.views.</span></span><span class="sig-name descname"><span class="pre">branch_conversation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/demo_ui/views.html#branch_conversation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#demo_ui.views.branch_conversation" title="Link to this definition"></a></dt>
-<dd><p>HTMX endpoint to fork a conversation DAG from a specific assistant response.</p>
+<dd><p>HTMX endpoint to fork a conversation DAG from a specific assistant response, copying all content back to the start.</p>
 </dd></dl>
 
 <dl class="py function">
@@ -186,7 +187,7 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="demo_ui.views.fill_grips_stub">
 <span class="sig-prename descclassname"><span class="pre">demo_ui.views.</span></span><span class="sig-name descname"><span class="pre">fill_grips_stub</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">concept_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/demo_ui/views.html#fill_grips_stub"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#demo_ui.views.fill_grips_stub" title="Link to this definition"></a></dt>
-<dd><p>Triggers the Grips Stub Filler blueprint for a specific ConceptNode.</p>
+<dd><p>Triggers autonomous stub elaboration for a specific ConceptNode.</p>
 </dd></dl>
 
 <dl class="py function">

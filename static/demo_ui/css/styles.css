@@ -476,7 +476,69 @@ button.primary:hover {
 
 @keyframes shimmer {
     0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
+}
+
+/* Continuous Indeterminate Thinking Progress Bar */
+.thinking-progress-bar {
+    height: 4px;
+    width: 100%;
+    background: #e2e8f0;
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.thinking-progress-indeterminate {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, var(--primary), #6366f1, #38bdf8, var(--primary));
+    background-size: 200% 100%;
+    animation: progressIndeterminate 1.8s infinite cubic-bezier(0.65, 0.05, 0.36, 1);
+    width: 40%;
+    border-radius: 2px;
+}
+
+@keyframes progressIndeterminate {
+    0% { left: -40%; width: 30%; }
+    50% { width: 50%; }
+    100% { left: 100%; width: 30%; }
+}
+
+/* Disabled & Busy States for Form Controls */
+#send-btn:disabled {
+    opacity: 0.72;
+    cursor: not-allowed;
+    background-color: #475569;
+    box-shadow: none;
+    transform: none;
+    pointer-events: none;
+}
+
+.btn-spinner {
+    display: inline-block;
+    width: 11px;
+    height: 11px;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    border-radius: 50%;
+    border-top-color: #ffffff;
+    animation: btnSpin 0.75s linear infinite;
+    margin-right: 5px;
+    vertical-align: middle;
+}
+
+@keyframes btnSpin {
+    to { transform: rotate(360deg); }
+}
+
+.chat-input-area textarea:disabled {
+    background-color: #f8fafc;
+    color: #64748b;
+    cursor: not-allowed;
+    border-color: #cbd5e1;
 }
 
 /* --- Document Ingestion Cards --- */

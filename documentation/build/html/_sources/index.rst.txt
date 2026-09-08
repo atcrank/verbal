@@ -25,6 +25,7 @@ Welcome to the documentation for **reason**, Django handles for gripping your La
 
    using_ollama
    metacognition_trials
+   demo_ui_trials
    tests
 
 

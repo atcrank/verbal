@@ -1,0 +1,180 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Demo UI Interactive Trials &amp; Feature Walkthroughs &mdash; reason 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=2709fde1"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Tutorial 1: Document Ingestion and Context-Grounded Reasoning" href="demo_ui_trials/trial_1_ingestion_and_context.html" />
+    <link rel="prev" title="Metacognition Trials &amp; Reports" href="metacognition_trials.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            reason
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="llm_api_app.html">LLM API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="background_resources_app.html">Background Resources - context documents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grips_app.html">Grips - wiki knowledge banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo_ui_app.html">Demo UI</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="using_ollama.html">Ollama as Local AI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Demo UI Interactive Trials &amp; Feature Walkthroughs</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="demo_ui_trials/trial_1_ingestion_and_context.html">Tutorial 1: Document Ingestion and Context-Grounded Reasoning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="demo_ui_trials/trial_1_ingestion_and_context_report.html">Doctest Report: Trial 1: Document Ingestion and Context-Grounded Reasoning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="demo_ui_trials/trial_2_multistep_blueprint_and_tools.html">Tutorial 2: Multi-Step Cognitive Reasoning and Sandboxed Tool Execution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="demo_ui_trials/trial_2_multistep_blueprint_and_tools_report.html">Doctest Report: Trial 2: Multi-Step Cognitive Reasoning &amp; Sandboxed Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="demo_ui_trials/trial_3_branching_and_grips_expansion.html">Tutorial 3: Interactive Conversation Branching and Grips Knowledge Graph</a></li>
+<li class="toctree-l2"><a class="reference internal" href="demo_ui_trials/trial_3_branching_and_grips_expansion_report.html">Doctest Report: Trial 3: Conversation Branching &amp; Grips Knowledge Graph</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#trial-descriptions">Trial Descriptions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tests.html">Testing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">reason</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Demo UI Interactive Trials &amp; Feature Walkthroughs</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/demo_ui_trials.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="demo-ui-interactive-trials-feature-walkthroughs">
+<h1>Demo UI Interactive Trials &amp; Feature Walkthroughs<a class="headerlink" href="#demo-ui-interactive-trials-feature-walkthroughs" title="Link to this heading"></a></h1>
+<p>This suite of executable doctests provides an interactive, visual walkthrough of the <strong>Reason</strong> (<cite>demo_ui</cite>) application.
+They exercise the full feature set—from real-world scientific literature ingestion to multi-step reasoning, conversation branching, and knowledge graph ontology expansion—grounded in the domain of <strong>Autonomous Drones and Ground Robots in Firefighting</strong>.</p>
+<p>These trials serve a dual purpose:
+1. <strong>Verifiable Automated End-to-End Tests</strong>: Executed directly with <code class="docutils literal notranslate"><span class="pre">pytest</span> <span class="pre">demo_ui/demo_ui_trials/</span></code>.
+2. <strong>Offline Presentation Deck</strong>: If presenting without live GPU inference or network access, these compiled walkthroughs and their high-resolution screenshots provide a complete, verified case study of the system’s capabilities.</p>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Walkthrough Trials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="demo_ui_trials/trial_1_ingestion_and_context.html">Tutorial 1: Document Ingestion and Context-Grounded Reasoning</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="demo_ui_trials/trial_1_ingestion_and_context.html#execution">Execution</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="demo_ui_trials/trial_1_ingestion_and_context_report.html">Doctest Report: Trial 1: Document Ingestion and Context-Grounded Reasoning</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="demo_ui_trials/trial_1_ingestion_and_context_report.html#scenario-research-task">Scenario &amp; Research Task</a></li>
+<li class="toctree-l2"><a class="reference internal" href="demo_ui_trials/trial_1_ingestion_and_context_report.html#animated-walkthrough">Animated Walkthrough</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="demo_ui_trials/trial_2_multistep_blueprint_and_tools.html">Tutorial 2: Multi-Step Cognitive Reasoning and Sandboxed Tool Execution</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="demo_ui_trials/trial_2_multistep_blueprint_and_tools.html#execution">Execution</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="demo_ui_trials/trial_2_multistep_blueprint_and_tools_report.html">Doctest Report: Trial 2: Multi-Step Cognitive Reasoning &amp; Sandboxed Tools</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="demo_ui_trials/trial_2_multistep_blueprint_and_tools_report.html#scenario-research-task">Scenario &amp; Research Task</a></li>
+<li class="toctree-l2"><a class="reference internal" href="demo_ui_trials/trial_2_multistep_blueprint_and_tools_report.html#animated-walkthrough">Animated Walkthrough</a></li>
+<li class="toctree-l2"><a class="reference internal" href="demo_ui_trials/trial_2_multistep_blueprint_and_tools_report.html#file-sandbox-script-py">File: sandbox_script.py</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="demo_ui_trials/trial_3_branching_and_grips_expansion.html">Tutorial 3: Interactive Conversation Branching and Grips Knowledge Graph</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="demo_ui_trials/trial_3_branching_and_grips_expansion.html#execution">Execution</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="demo_ui_trials/trial_3_branching_and_grips_expansion_report.html">Doctest Report: Trial 3: Conversation Branching &amp; Grips Knowledge Graph</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="demo_ui_trials/trial_3_branching_and_grips_expansion_report.html#scenario-research-task">Scenario &amp; Research Task</a></li>
+<li class="toctree-l2"><a class="reference internal" href="demo_ui_trials/trial_3_branching_and_grips_expansion_report.html#animated-walkthrough">Animated Walkthrough</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<section id="trial-descriptions">
+<h2>Trial Descriptions<a class="headerlink" href="#trial-descriptions" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p><a class="reference internal" href="demo_ui_trials/trial_1_ingestion_and_context.html"><span class="doc">Trial 1: Document Ingestion and Context Dropping</span></a>
+Demonstrates document upload, micro status badge transitions (<code class="docutils literal notranslate"><span class="pre">INDEXED</span> <span class="pre">(N)</span></code>), token estimation, and context chips in the prompt interface.</p></li>
+<li><p><a class="reference internal" href="demo_ui_trials/trial_2_multistep_blueprint_and_tools.html"><span class="doc">Trial 2: Multi-Step Cognitive Reasoning and Sandboxed Tools</span></a>
+Demonstrates engineering calculations using agentic cognitive blueprints and the Python code execution sandbox, capturing live elapsed thinking state.</p></li>
+<li><p><a class="reference internal" href="demo_ui_trials/trial_3_branching_and_grips_expansion.html"><span class="doc">Trial 3: Interactive Conversation Branching and Grips Knowledge Graph</span></a>
+Demonstrates exploratory branching from assistant messages and navigating/elaborating the Grips conceptual ontology.</p></li>
+</ol>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="metacognition_trials.html" class="btn btn-neutral float-left" title="Metacognition Trials &amp; Reports" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="demo_ui_trials/trial_1_ingestion_and_context.html" class="btn btn-neutral float-right" title="Tutorial 1: Document Ingestion and Context-Grounded Reasoning" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Andrew Cruickshank.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

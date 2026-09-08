@@ -31,7 +31,14 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "django-insecure-di_unz7h49exp@
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = VERBAL_ENV == "dev"
 
-ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,reason.andrew.com").split(",")
+if "testserver" not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append("testserver")
+
+# Reverse proxy SSL & Host headers (when running behind Nginx)
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_PORT = True
 
 
 # Application definition
@@ -176,6 +183,7 @@ VERBAL_ROLE = os.environ.get("VERBAL_ROLE", "standalone")
 
 # If acting as a web/worker client, where is the inference server?
 INFERENCE_URL = os.environ.get("INFERENCE_URL", "http://127.0.0.1:8001/api/llm")
+LLM_REQUEST_TIMEOUT = int(os.environ.get("LLM_REQUEST_TIMEOUT", "3600"))
 
 # Base URLs for external containerized inference endpoints
 OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
@@ -262,3 +270,5 @@ LOGGING = {
         },
     },
 }
+
+DEFAULT_MAX_NEW_TOKENS = 1500

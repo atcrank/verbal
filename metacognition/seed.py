@@ -1000,6 +1000,45 @@ def seed_computational_logic(CognitiveBlueprint, ReasoningStep, ToolDefinition):
         step.available_tools.add(python_sandbox_tool)
     step.available_tools.add(tool_complete)
 
+def seed_reasoning_with_code_sandbox(CognitiveBlueprint, ReasoningStep, ToolDefinition):
+    bp, _ = CognitiveBlueprint.objects.update_or_create(
+        name="Reasoning with Code Sandbox",
+        defaults={'description': "Multi-step analytical reasoning and mathematical verification using the Python code sandbox.", 'is_canonical': True}
+    )
+    ReasoningStep.objects.filter(blueprint=bp).delete()
+    python_sandbox_tool = ToolDefinition.objects.filter(name="python_sandbox").first()
+    tool_complete, _ = ToolDefinition.objects.get_or_create(name="TASK_COMPLETE")
+
+    step1 = ReasoningStep.objects.create(
+        blueprint=bp,
+        name="Model Formulation & Sandbox Execution",
+        system_prompt=(
+            "You are a scientific research assistant specializing in experimental and engineering analysis. "
+            "Formulate the analytical equations for the user's problem. "
+            "Write and execute a clean, concise Python script using the `python_sandbox` tool to calculate exact numerical values, "
+            "trade-off curves, or parameter grids. Use simple print() statements to display the calculated results clearly. "
+            "Once the calculation is executed and verified, use the `TASK_COMPLETE` tool to conclude."
+        ),
+        is_start_node=True,
+        max_new_tokens=1500,
+    )
+    if python_sandbox_tool:
+        step1.available_tools.add(python_sandbox_tool)
+    step1.available_tools.add(tool_complete)
+
+    step2 = ReasoningStep.objects.create(
+        blueprint=bp,
+        name="Synthesis & Design Recommendation",
+        system_prompt=(
+            "Review the sandbox calculation outputs. Synthesize a structured response for the researcher. "
+            "Include: 1) Analytical formulation, 2) Key data points and trade-off table from the sandbox output, "
+            "and 3) Practical recommendations for the experiment design factor levels."
+        ),
+        max_new_tokens=1500,
+    )
+    step1.on_success_step = step2
+    step1.save()
+
 def seed_escalation_of_effort(CognitiveBlueprint, ReasoningStep, ToolDefinition):
     bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="Escalation of Effort",
@@ -1056,6 +1095,7 @@ def seed_all():
         seed_grill_me(CognitiveBlueprint, ReasoningStep)
         seed_escalation_of_effort(CognitiveBlueprint, ReasoningStep, ToolDefinition)
         seed_computational_logic(CognitiveBlueprint, ReasoningStep, ToolDefinition)
+        seed_reasoning_with_code_sandbox(CognitiveBlueprint, ReasoningStep, ToolDefinition)
         seed_lint_grips_node(CognitiveBlueprint, ReasoningStep, ResponseSchema)
         seed_digest_document_chunk(CognitiveBlueprint, ReasoningStep, ResponseSchema)
         seed_evaluate_concept_neighbors(CognitiveBlueprint, ReasoningStep, ResponseSchema)
