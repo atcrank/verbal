@@ -278,7 +278,7 @@ def internal_ping(request):
 @csrf_exempt
 def openai_chat_completions(request, payload: OpenAIChatCompletionIn):
     messages = [{"role": m.role, "content": m.content} for m in payload.messages]
-    max_tokens = payload.max_tokens or 1024
+    max_tokens = payload.max_tokens or 1500
     
     # Route structured output vs standard generation
     if payload.response_format and payload.response_format.type == "json_schema":
@@ -313,6 +313,14 @@ def openai_chat_completions(request, payload: OpenAIChatCompletionIn):
                     import metacognition.actions as ma
                     if hasattr(ma, schema_name):
                         response_schema = getattr(ma, schema_name)
+                except ImportError:
+                    pass
+
+            if response_schema == schema_dict:
+                try:
+                    import grips.tasks as gt
+                    if hasattr(gt, schema_name):
+                        response_schema = getattr(gt, schema_name)
                 except ImportError:
                     pass
         
@@ -673,7 +681,7 @@ def start_download_model_cache(request, payload: DownloadModelIn):
     from llm_api.tasks import download_model_cache
     try:
         model = LocalAIModel.objects.get(id=payload.model_id)
-        task = download_model_cache.delay(model.hf_model_id)
+        task = download_model_cache.enqueue(model.hf_model_id)
         return JsonResponse({"task_id": task.id})
     except LocalAIModel.DoesNotExist:
         return JsonResponse({"error": "Model not found."}, status=404)

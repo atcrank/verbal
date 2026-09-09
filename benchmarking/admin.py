@@ -87,7 +87,7 @@ def export_to_dataset(modeladmin, request, queryset):
         )
         
         from .tasks import task_calculate_dataset_metrics
-        task_calculate_dataset_metrics.delay(dataset.id)
+        task_calculate_dataset_metrics.enqueue(dataset.id)
         
         count += 1
         
@@ -108,9 +108,9 @@ from .tasks import task_train_lora
 def train_lora_on_dataset(modeladmin, request, queryset):
     count = 0
     for dataset in queryset:
-        task_train_lora.delay(dataset.id)
+        task_train_lora.enqueue(dataset.id)
         count += 1
-    modeladmin.message_user(request, f"Dispatched {count} LoRA training tasks to Celery.", level=messages.SUCCESS)
+    modeladmin.message_user(request, f"Dispatched {count} LoRA training task(s).", level=messages.SUCCESS)
 
 @admin.register(FineTuningDataset)
 class FineTuningDatasetAdmin(admin.ModelAdmin):

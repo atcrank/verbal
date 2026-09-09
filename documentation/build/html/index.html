@@ -6,9 +6,10 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Verbal: Computational Study Design Assistant &mdash; Verbal 0.1 documentation</title>
+  <title>reason: Computational Study Design Assistant &mdash; reason 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=aaf24e6f" />
 
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
@@ -31,7 +32,7 @@
           
           
           <a href="#" class="icon icon-home">
-            Verbal
+            reason
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -55,6 +56,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="using_ollama.html">Ollama as Local AI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo_ui_trials.html">Demo UI Empirical Trials &amp; Verification Reports</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tests.html">Testing</a></li>
 </ul>
 
@@ -64,7 +66,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="#">Verbal</a>
+          <a href="#">reason</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -72,7 +74,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Verbal: Computational Study Design Assistant</li>
+      <li class="breadcrumb-item active">reason: Computational Study Design Assistant</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -82,10 +84,10 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="verbal-computational-study-design-assistant">
-<h1>Verbal: Computational Study Design Assistant<a class="headerlink" href="#verbal-computational-study-design-assistant" title="Link to this heading"></a></h1>
-<p>Welcome to the documentation for <strong>Verbal</strong>, Django handles for gripping your Large Language Models.</p>
-<p>Verbal is what is presently known as a “harness”, a set of tools to help a human interact with and make use of Large Language Models. The motivating example is support for study designers in documenting, organizing, and expanding research questions, their scopes, constraints, and the underlying causal or structural relationships among factors. It aims to develop standard Retrieval-Augmented Generation (RAG) into a structured knowledge graph and agentic reasoning framework. This is used by users and the model’s capabilities to understand, underpin and handle the domains of interest and the skilful action to</p>
+  <section id="reason-computational-study-design-assistant">
+<h1>reason: Computational Study Design Assistant<a class="headerlink" href="#reason-computational-study-design-assistant" title="Link to this heading"></a></h1>
+<p>Welcome to the documentation for <strong>reason</strong>, Django handles for gripping your Large Language Models.</p>
+<p><strong>reason</strong> is what is presently known as a “harness”, a set of tools to help a human interact with and make use of Large Language Models. The motivating example is support for study designers in documenting, organizing, and expanding research questions, their scopes, constraints, and the underlying causal or structural relationships among factors. It aims to develop standard Retrieval-Augmented Generation (RAG) into a structured knowledge graph and agentic reasoning framework. This is used by users and the model’s capabilities to understand, underpin and handle the domains of interest and the skilful action to support research design.</p>
 <div class="toctree-wrapper compound">
 <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
 <ul>
@@ -165,6 +167,11 @@
 <li class="toctree-l2"><a class="reference internal" href="metacognition_trials.html#running-the-trials-as-doctests">Running the trials as doctests</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="demo_ui_trials.html">Demo UI Empirical Trials &amp; Verification Reports</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="demo_ui_trials.html#methodology-executable-doctests-as-verifiable-reports">Methodology: Executable Doctests as Verifiable Reports</a></li>
+<li class="toctree-l2"><a class="reference internal" href="demo_ui_trials.html#the-four-trial-reports">The Four Trial Reports</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="tests.html">Testing</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="tests.html#philosophy">Philosophy</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tests.html#running-tests">Running tests</a></li>
@@ -174,12 +181,13 @@
 </div>
 <section id="quickstart">
 <h2>Quickstart<a class="headerlink" href="#quickstart" title="Link to this heading"></a></h2>
-<p>Verbal uses a modern distributed architecture to ensure heavy AI inference does not block the web interface or background workers.</p>
+<p><strong>reason</strong> uses a modern distributed architecture to ensure heavy AI inference does not block the web interface or background workers.</p>
 <p>To start the full system locally:</p>
 <ol class="arabic">
-<li><p><strong>Start the Background Services (Redis &amp; Celery):</strong>
-Ensure you have Docker running, then execute the toggle script. This spins up Redis and a watchmedo-wrapped Celery worker.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./toggle_background_task_service.sh
+<li><p><strong>Start the Background Worker &amp; Scheduler:</strong>
+Start the native database-backed task worker and periodic scheduler:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>manage.py<span class="w"> </span>runtaskworker
+python<span class="w"> </span>manage.py<span class="w"> </span>runtaskscheduler
 </pre></div>
 </div>
 </li>
@@ -191,25 +199,25 @@ python<span class="w"> </span>manage.py<span class="w"> </span>runserver<span cl
 </div>
 </li>
 <li><p><strong>Start the Web Interface:</strong>
-Open a third terminal, activate your environment, and start the lightweight Django web/admin server on port 8000.</p>
+Open another terminal, activate your environment, and start the lightweight Django web/admin server on port 8000.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">VERBAL_ROLE</span><span class="o">=</span>web
 python<span class="w"> </span>manage.py<span class="w"> </span>runserver<span class="w"> </span><span class="m">8000</span>
 </pre></div>
 </div>
 </li>
 </ol>
-<p>You can now navigate to <code class="docutils literal notranslate"><span class="pre">http://localhost:8000/admin/</span></code> to access the system.</p>
-<p>Interactive API self-description (OpenAPI standard) is at <code class="docutils literal notranslate"><span class="pre">http:/localhost:8000/api/docs/</span></code></p>
+<p>You can now navigate to <code class="docutils literal notranslate"><span class="pre">http://localhost:8000/demo/</span></code> or <code class="docutils literal notranslate"><span class="pre">http://localhost:8000/admin/</span></code> to access the system.</p>
+<p>Interactive API self-description (OpenAPI standard) is at <code class="docutils literal notranslate"><span class="pre">http://localhost:8000/api/docs/</span></code></p>
 </section>
 <section id="configuration-guide">
 <h2>Configuration Guide<a class="headerlink" href="#configuration-guide" title="Link to this heading"></a></h2>
-<p>Verbal utilizes environment variables to dictate how the current process interacts with the AI pipelines.</p>
+<p><strong>reason</strong> utilizes environment variables to dictate how the current process interacts with the AI pipelines.</p>
 <section id="role-management-verbal-role">
 <h3>Role Management (<code class="docutils literal notranslate"><span class="pre">VERBAL_ROLE</span></code>)<a class="headerlink" href="#role-management-verbal-role" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">inference</span></code>: Loads massive HuggingFace models (e.g., Qwen, Gemma) directly into GPU VRAM. It acts as an internal microservice.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">web</span></code>: Bypasses heavy model loading. Acts as a lightweight HTTP client routing generation requests to the inference server.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">worker</span></code>: Used by Celery. Identical to the <code class="docutils literal notranslate"><span class="pre">web</span></code> role but includes small pauses to allow the UI to interleave requests.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">worker</span></code>: Used by background task workers. Identical to the <code class="docutils literal notranslate"><span class="pre">web</span></code> role but includes small pauses to allow the UI to interleave requests.</p></li>
 </ul>
 </section>
 <section id="inference-routing-inference-url">
@@ -218,7 +226,7 @@ python<span class="w"> </span>manage.py<span class="w"> </span>runserver<span cl
 </section>
 <section id="external-models-openai-ollama">
 <h3>External Models (OpenAI, Ollama)<a class="headerlink" href="#external-models-openai-ollama" title="Link to this heading"></a></h3>
-<p>Verbal natively supports standard OpenAI <code class="docutils literal notranslate"><span class="pre">/v1/chat/completions</span></code> endpoints. To route traffic to an external provider or a containerized Ollama instance, configure an <strong>External AI Model</strong> in the Django Admin and assign it via the <strong>User Active Models</strong> table. See the <a class="reference internal" href="using_ollama.html"><span class="doc">Ollama as Local AI</span></a> guide for a complete walkthrough.</p>
+<p><strong>reason</strong> natively supports standard OpenAI <code class="docutils literal notranslate"><span class="pre">/v1/chat/completions</span></code> endpoints. To route traffic to an external provider or a containerized Ollama instance, configure an <strong>External AI Model</strong> in the Django Admin and assign it via the <strong>User Active Models</strong> table. See the <a class="reference internal" href="using_ollama.html"><span class="doc">Ollama as Local AI</span></a> guide for a complete walkthrough.</p>
 </section>
 </section>
 </section>

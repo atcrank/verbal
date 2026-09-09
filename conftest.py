@@ -11,11 +11,15 @@ from django.core.management import call_command
 from llm_api.models import Conversation
 
 
+from django.core.signals import request_finished
+from django.db import close_old_connections
+
 @pytest.fixture(autouse=True)
-def enable_db_access_for_doctests(db):
+def enable_db_access_for_doctests(transactional_db):
     """
     pytest-django strictly blocks database access by default.
-    This autouse fixture grants DB access to all tests, including our .rst doctests.
+    Using transactional_db allows real database commits across requests,
+    test Client calls, and headless Playwright browser rendering.
     """
     pass
 
@@ -73,7 +77,15 @@ def force_proxy_for_tests():
     AIService.role = original_role
 
 def pytest_sessionstart(session):
-    """Verify the inference server is reachable before running tests."""
+    """Verify the inference server is reachable before running tests, and enforce web proxy role."""
+    import os
+    os.environ["VERBAL_ROLE"] = "web"
+    try:
+        from llm_api.ai_service import AIService
+        AIService.role = "web"
+    except Exception:
+        pass
+
     from django.conf import settings
     inf_url = getattr(settings, "INFERENCE_URL", "http://127.0.0.1:8001/api/llm")
     ping_url = f"{inf_url.rstrip('/')}/internal/ping/"

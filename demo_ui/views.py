@@ -4,6 +4,7 @@ logger = logging.getLogger(__name__)
 
 import json
 from django.shortcuts import render, HttpResponse, get_object_or_404
+from django.http import JsonResponse, FileResponse, Http404, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 from django.utils.safestring import mark_safe
 from llm_api.models import Conversation, PromptResponseLog
@@ -51,9 +52,25 @@ def index(request):
     conversations = Conversation.objects.filter(user=request.user).exclude(user__username="NightManager")
     blueprints = CognitiveBlueprint.objects.exclude(name__startswith="NightManager").exclude(name="The Architect")
     
+    active_conversation = None
+    initial_logs = []
+    initial_files = []
+    
+    conv_id = request.GET.get('conversation_id')
+    if conv_id:
+        active_conversation = Conversation.objects.filter(id=conv_id, user=request.user).first()
+        if active_conversation:
+            initial_logs = list(active_conversation.logs.order_by('created_at'))
+            for log in initial_logs:
+                _prepare_log_for_display(log)
+            initial_files = _get_workspace_files_list(active_conversation)
+
     return render(request, 'demo_ui/index.html', {
         'conversations': conversations,
         'blueprints': blueprints,
+        'active_conversation': active_conversation,
+        'initial_logs': initial_logs,
+        'initial_files': initial_files,
     })
 
 @login_required
@@ -145,29 +162,42 @@ def send_message(request):
             user=request.user, 
             title=user_prompt[:50] + ("..." if len(user_prompt) > 50 else "")
         )
-        if blueprint_id:
-            try:
-                bp = CognitiveBlueprint.objects.get(id=blueprint_id)
-                conversation.blueprint = bp
-                conversation.save()
-            except CognitiveBlueprint.DoesNotExist:
-                pass
 
     # 2. Execute Generation (Blueprint or Native)
+    parent_log = conversation.logs.order_by('-created_at').first()
     if blueprint_id:
-        from uuid import uuid4
-        from metacognition.tasks import task_run_blueprint_async
-        
-        run_id = str(uuid4())
-        task_run_blueprint_async.delay(
-            blueprint_id=int(blueprint_id),
-            user_prompt=user_prompt,
-            conversation_id=str(conversation.id),
-            user_id=request.user.id,
-            run_id=run_id
-        )
-        
-        streaming_markup = f"""<div id="blueprint-exec-{run_id}" data-signals="{{isStreaming: true}}" data-on-load="@get('/api/meta/stream_blueprint/?run_id={run_id}')">
+        if request.POST.get('sync') == 'true' or request.GET.get('sync') == 'true':
+            from metacognition.tasks import run_blueprint
+            result = run_blueprint(
+                blueprint_id=int(blueprint_id),
+                user_prompt=user_prompt,
+                conversation_id=str(conversation.id),
+                user_id=request.user.id
+            )
+            log = conversation.logs.order_by('-created_at').first()
+            if not log:
+                log = PromptResponseLog.objects.create(
+                    conversation=conversation,
+                    parent_log=parent_log,
+                    user=request.user,
+                    user_prompt=user_prompt,
+                    generated_response=result.get("final_response", ""),
+                    model_name="blueprint",
+                )
+        else:
+            from uuid import uuid4
+            from metacognition.tasks import task_run_blueprint_async
+            
+            run_id = str(uuid4())
+            task_run_blueprint_async.enqueue(
+                blueprint_id=int(blueprint_id),
+                user_prompt=user_prompt,
+                conversation_id=str(conversation.id),
+                user_id=request.user.id,
+                run_id=run_id
+            )
+            
+            streaming_markup = f"""<div id="blueprint-exec-{run_id}" data-signals="{{isStreaming: true}}" data-on-load="@get('/api/meta/stream_blueprint/?run_id={run_id}')">
 <div id="blueprint-status" class="agent-step active">
     <span class="badge">Dispatched</span>
     <strong>Executing cognitive blueprint asynchronously...</strong>
@@ -176,16 +206,17 @@ def send_message(request):
 <div id="monologue-stream"></div>
 <div id="blueprint-final-response"></div>
 </div>"""
-        
-        log = PromptResponseLog.objects.create(
-            system_prompt="[Async Blueprint Execution]", 
-            user_prompt=user_prompt,
-            conversation=conversation,
-            generated_response=streaming_markup, 
-            user=request.user,
-            input_tokens=0,
-            output_tokens=0
-        )
+            
+            log = PromptResponseLog.objects.create(
+                system_prompt="[Async Blueprint Execution]", 
+                user_prompt=user_prompt,
+                conversation=conversation,
+                parent_log=parent_log,
+                generated_response=streaming_markup, 
+                user=request.user,
+                input_tokens=0,
+                output_tokens=0
+            )
     else:
         messages = conversation.as_messages()
         if not messages:
@@ -205,42 +236,71 @@ def send_message(request):
             item_id = item.get("id")
             
             if model_type == "RAGChunk" and service_registry.rag_service:
+                from background_resources.models import RAGChunk
                 docs = service_registry.rag_service.store.mget([item_id])
                 if docs and docs[0]:
                     d = docs[0]
-                    rag_selections.append({"model": "RAGChunk", "id": item_id, "preview": d.page_content[:150] + "..."})
-                    rag_text += f"\nSource: {d.metadata.get('filename', 'Unknown')}\nContent: {d.page_content}\n"
+                    chunk_obj = RAGChunk.objects.filter(chunk_id=str(item_id)).first()
+                    if chunk_obj:
+                        citation = chunk_obj.get_citation()
+                    else:
+                        meta = d.metadata or {}
+                        author_str = meta.get('authors') or meta.get('filename', 'Unknown Source')
+                        year_str = f" ({meta.get('year')})" if meta.get('year') else ""
+                        sec_str = f" — Section: {meta.get('section_title')}" if meta.get('section_title') else ""
+                        citation = f"{author_str}{year_str}{sec_str}".strip()
+
+                    rag_selections.append({
+                        "model": "RAGChunk",
+                        "id": item_id,
+                        "citation": citation,
+                        "preview": d.page_content[:150] + "..."
+                    })
+                    rag_text += f"\n[Reference: {citation}]\nExcerpt:\n{d.page_content}\n"
                     
             elif model_type == "ConceptNode":
                 content = item.get("content", "Concept content unavailable")
                 rag_selections.append({"model": "ConceptNode", "id": item_id, "preview": content[:150] + "..."})
-                rag_text += f"\nConcept:\n{content}\n"
+                rag_text += f"\n[Concept Node: {item.get('preview', 'Concept')}]\n{content}\n"
                 
             elif model_type == "Document" and service_registry.rag_service:
-                # If they dropped a whole document, maybe just add a reference to it
-                content = item.get("content", "Document dropped")
-                rag_selections.append({"model": "Document", "id": item_id, "preview": content})
-                rag_text += f"\nReference Document: {content}\n"
+                from background_resources.models import Document
+                try:
+                    doc_obj = Document.objects.get(id=int(item_id))
+                    doc_citation = doc_obj.get_citation()
+                except Exception:
+                    doc_citation = item.get("content", "Document dropped")
+                rag_selections.append({"model": "Document", "id": item_id, "citation": doc_citation, "preview": doc_citation})
+                rag_text += f"\n[Reference Document: {doc_citation}]\n"
                 
             elif model_type == "Conversation":
                 content = item.get("content", "Conversation dropped")
                 rag_selections.append({"model": "Conversation", "id": item_id, "preview": content})
-                rag_text += f"\nPrevious Conversation Reference: {content}\n"
+                rag_text += f"\n[Previous Conversation Reference: {content}]\n"
         
         if rag_text:
-            messages_for_llm = messages + [{"role": "user", "content": user_prompt + "\n\nRelevant Context:\n" + rag_text}]
+            context_prompt = (
+                f"{user_prompt}\n\n"
+                "--- Relevant Literature & Empirical Context ---\n"
+                f"{rag_text}\n"
+                "--- End of Context ---\n"
+                "Ground your response in the provided reference excerpts where relevant. "
+                "If an excerpt is not directly relevant to the user's specific experimental design question, do not focus on it."
+            )
+            messages_for_llm = messages + [{"role": "user", "content": context_prompt}]
         else:
             messages_for_llm = messages + [{"role": "user", "content": user_prompt}]
         
         input_tokens = service_registry.ai_service.count_conversation_tokens(messages_for_llm)
-        [response] = service_registry.ai_service.generate_response2(messages=messages_for_llm, max_new_tokens=1000, log_kwargs={"skip_log": True}, user=request.user)
+        max_new_tokens = int(request.POST.get('max_new_tokens', 1500))
+        [response] = service_registry.ai_service.generate_response2(messages=messages_for_llm, max_new_tokens=max_new_tokens, log_kwargs={"skip_log": True}, user=request.user)
         cleaned_response = service_registry.ai_service.clean_response(response)
         
         output_tokens = service_registry.ai_service.count_conversation_tokens([{"role": "assistant", "content": cleaned_response}])
         
         log = PromptResponseLog.objects.create(
             system_prompt=messages[0]["content"], user_prompt=user_prompt, rag_selections=rag_selections, 
-            conversation=conversation, generated_response=cleaned_response, user=request.user,
+            conversation=conversation, parent_log=parent_log, generated_response=cleaned_response, user=request.user,
             input_tokens=input_tokens, output_tokens=output_tokens
         )
         
@@ -282,10 +342,10 @@ def upload_document(request):
             file=uploaded_file
         )
         
-        # Trigger Celery task asynchronously
-        task_process_documents.delay([doc.id])
+        # Trigger task asynchronously
+        task_process_documents.enqueue([doc.id])
         
-        return HttpResponse('<span style="color: #2ecc71; font-weight: 500;">✓ Ingestion started.</span>')
+        return HttpResponse('<span style="color: #059669; font-weight: 500;">Ingestion started.</span>')
     except Exception as e:
         logger.exception("Failed to upload document")
         return HttpResponse(f'<span style="color: #ea5322; font-weight: 500;">Upload failed: {str(e)}</span>', status=500)
@@ -293,15 +353,233 @@ def upload_document(request):
 
 @login_required
 def list_documents(request):
-    """HTMX endpoint to render the recent uploaded documents list."""
-    documents = list(Document.objects.all().order_by('-uploaded_at')[:15])
-    
-    # Workaround: since backend ingestion never sets currently_indexed to True,
-    # we dynamically check if any reading strategies have chunk usages in the DB.
+    """HTMX endpoint to render the recent uploaded documents list with accurate status."""
+    from background_resources.models import Document, RAGChunk
+    from verbal_tasks.models import TaskRecord, TaskRecordStatus
+
+    documents = list(Document.objects.all().order_by('-uploaded_at')[:20])
+
     for doc in documents:
-        doc.currently_indexed = doc.readingstrategy_set.filter(usages__isnull=False).exists()
-        
+        # Check if chunks exist in database
+        chunk_count = RAGChunk.objects.filter(metadata__document_id=str(doc.id)).count()
+        if chunk_count == 0:
+            chunk_count = doc.readingstrategy_set.filter(usages__isnull=False).count()
+
+        doc.chunk_count = chunk_count
+
+        if doc.currently_indexed or chunk_count > 0:
+            doc.ingestion_status = "INDEXED"
+            doc.status_badge_class = "badge-indexed"
+            doc.status_label = f"Indexed ({chunk_count})" if chunk_count > 0 else "Indexed"
+        else:
+            # Check TaskRecord for active or queued jobs
+            task = TaskRecord.objects.filter(
+                task_path__contains='task_process_documents',
+                args_json__contains=doc.id
+            ).order_by('-enqueued_at').first()
+
+            if task:
+                if task.status == TaskRecordStatus.RUNNING:
+                    doc.ingestion_status = "INGESTING"
+                    doc.status_badge_class = "badge-ingesting"
+                    doc.status_label = "Ingesting"
+                elif task.status == TaskRecordStatus.READY:
+                    doc.ingestion_status = "QUEUED"
+                    doc.status_badge_class = "badge-queued"
+                    doc.status_label = "Queued"
+                elif task.status == TaskRecordStatus.FAILED:
+                    doc.ingestion_status = "FAILED"
+                    doc.status_badge_class = "badge-failed"
+                    doc.status_label = "Failed"
+                else:
+                    doc.ingestion_status = "INDEXED"
+                    doc.status_badge_class = "badge-indexed"
+                    doc.status_label = f"Indexed ({chunk_count})" if chunk_count > 0 else "Indexed"
+            else:
+                doc.ingestion_status = "PENDING"
+                doc.status_badge_class = "badge-queued"
+                doc.status_label = "Pending"
+
     return render(request, 'demo_ui/document_list.html', {'documents': documents})
+
+
+@login_required
+@require_POST
+def trigger_document_ingestion(request, document_id):
+    """HTMX endpoint to manually trigger or re-enqueue ingestion for a document."""
+    from background_resources.models import Document
+
+    doc = get_object_or_404(Document, id=document_id)
+    task_process_documents.enqueue([doc.id])
+    return list_documents(request)
+
+
+@login_required
+@require_POST
+def branch_conversation(request, log_id):
+    """HTMX endpoint to fork a conversation DAG from a specific assistant response, copying all content back to the start."""
+    source_log = get_object_or_404(PromptResponseLog, id=log_id)
+    original_conv = source_log.conversation
+
+    # Trace ancestor path from root to source_log via parent_log DAG
+    ancestor_chain = []
+    curr = source_log
+    while curr:
+        ancestor_chain.append(curr)
+        curr = curr.parent_log
+    ancestor_chain.reverse()
+
+    # For flat or unlinked historical logs in original_conv, ensure we copy all logs back to conversation start
+    if original_conv:
+        chronological_logs = list(original_conv.logs.filter(created_at__lte=source_log.created_at).order_by('created_at'))
+        if len(chronological_logs) > len(ancestor_chain):
+            ancestor_logs = chronological_logs
+        else:
+            ancestor_logs = ancestor_chain
+    else:
+        ancestor_logs = ancestor_chain
+
+    turn_count = len(ancestor_logs)
+    base_title = original_conv.title if original_conv else "Conversation"
+    branch_title = f"Branch: {base_title[:28]} (Turn {turn_count})"
+
+    new_conv = Conversation.objects.create(
+        user=request.user,
+        title=branch_title,
+    )
+
+    # Clone historical logs into new conversation to isolate the new branch, ensuring a continuous DAG
+    log_map = {}
+    last_cloned = None
+    for old_log in ancestor_logs:
+        parent_clone = log_map.get(old_log.parent_log_id) or last_cloned
+        cloned_log = PromptResponseLog.objects.create(
+            user=request.user,
+            conversation=new_conv,
+            parent_log=parent_clone,
+            system_prompt=old_log.system_prompt,
+            user_prompt=old_log.user_prompt,
+            generated_response=old_log.generated_response,
+            rag_selections=old_log.rag_selections,
+            input_tokens=old_log.input_tokens,
+            output_tokens=old_log.output_tokens,
+            model_name=old_log.model_name,
+            reasoning_step=old_log.reasoning_step,
+            step_status=old_log.step_status,
+        )
+        log_map[old_log.id] = cloned_log
+        last_cloned = cloned_log
+
+    logs = list(new_conv.logs.order_by('created_at'))
+    for log in logs:
+        _prepare_log_for_display(log)
+
+    chat_html = render(request, 'demo_ui/chat_history.html', {
+        'conversation': new_conv,
+        'logs': logs,
+    }).content.decode('utf-8')
+
+    # Update conversation list in left sidebar via OOB swap
+    user_conversations = Conversation.objects.filter(user=request.user).exclude(user__username="NightManager")
+    sidebar_items_html = ""
+    for conv in user_conversations:
+        active_cls = " active" if conv.id == new_conv.id else ""
+        sidebar_items_html += f"""
+        <div class="conv-item{active_cls}" draggable="true"
+            ondragstart="event.dataTransfer.setData('application/json', JSON.stringify({{model: 'Conversation', id: '{conv.id}', content: 'Conversation id {conv.id}', preview: '{conv.title}'}}))"
+            hx-get="/demo/conversation/{conv.id}/" hx-target="#chat-history" hx-swap="innerHTML">
+            <div class="conv-title">{conv.title}</div>
+            <div class="conv-date">{conv.start_time.strftime('%b %d, %Y - %I:%M %p')}</div>
+        </div>
+        """
+
+    sidebar_oob = f'<div class="sidebar-content" id="conversation-list" hx-swap-oob="innerHTML">{sidebar_items_html}</div>'
+
+    # Workspace files OOB swap
+    files = _get_workspace_files_list(new_conv)
+    files_html = render(request, 'demo_ui/workspace_files.html', {
+        'files': files,
+        'conversation_id': str(new_conv.id)
+    }).content.decode('utf-8')
+
+    return HttpResponse(chat_html + "\n" + sidebar_oob + "\n" + files_html)
+
+
+@login_required
+def preview_context_item(request):
+    """HTMX endpoint returning content preview and estimated token count for a dropped item."""
+    model_type = request.GET.get('model', '')
+    item_id = request.GET.get('id', '')
+
+    title = f"{model_type} ({item_id})"
+    content = ""
+
+    if model_type == "RAGChunk":
+        from background_resources.models import RAGChunk
+        chunk = RAGChunk.objects.filter(id=item_id).first()
+        if chunk:
+            title = f"RAG Chunk: {chunk.metadata.get('filename', 'Unknown Document')}"
+            content = chunk.page_content
+    elif model_type == "ConceptNode":
+        from grips.models import ConceptNode
+        node = ConceptNode.objects.filter(id=item_id).first()
+        if node:
+            title = f"Concept: {node.title}"
+            content = f"Title: {node.title}\nDomain: {node.domain.name}\n\nNarrative:\n{node.narrative_content or 'No narrative generated yet.'}\n\nStructured Claims:\n{json.dumps(node.structured_claims or [], indent=2)}"
+    elif model_type == "Document":
+        from background_resources.models import Document
+        doc = Document.objects.filter(id=item_id).first()
+        if doc:
+            title = f"Document: {doc.title}"
+            content = f"Title: {doc.title}\nAuthor: {doc.author or 'Unknown'}\nFile: {doc.file.name}\nUploaded: {doc.uploaded_at.strftime('%Y-%m-%d %H:%M')}"
+    elif model_type == "Conversation":
+        conv = Conversation.objects.filter(id=item_id).first()
+        if conv:
+            title = f"Conversation: {conv.title}"
+            logs = list(conv.logs.order_by('created_at')[:5])
+            content = "\n\n".join([f"User: {l.user_prompt}\nAssistant: {str(l.generated_response)[:300]}..." for l in logs])
+
+    # Count tokens
+    try:
+        from llm_api.apps import service_registry
+        token_count = service_registry.ai_service.count_conversation_tokens([{"role": "user", "content": content}])
+    except Exception:
+        token_count = max(1, len(content.split()))
+
+    return render(request, 'demo_ui/context_preview_modal.html', {
+        'title': title,
+        'model_type': model_type,
+        'item_id': item_id,
+        'content': content,
+        'token_count': token_count,
+    })
+
+
+@login_required
+def calculate_context_tokens(request):
+    """JSON helper endpoint to calculate token counts for an array of dropped context items."""
+    try:
+        items = json.loads(request.POST.get('included_context', '[]'))
+    except Exception:
+        items = []
+
+    total_tokens = 0
+    item_tokens = {}
+
+    for item in items:
+        m = item.get('model')
+        i_id = item.get('id')
+        txt = item.get('content', '') or item.get('preview', '')
+        try:
+            from llm_api.apps import service_registry
+            t = service_registry.ai_service.count_conversation_tokens([{"role": "user", "content": txt}])
+        except Exception:
+            t = max(1, len(txt.split()))
+        key = f"{m}_{i_id}"
+        item_tokens[key] = t
+        total_tokens += t
+
+    return JsonResponse({'total_tokens': total_tokens, 'item_tokens': item_tokens})
 
 
 from django.http import FileResponse, Http404, HttpResponseForbidden
@@ -404,20 +682,40 @@ def grips_concept_children(request, concept_id):
 @login_required
 @require_POST
 def fill_grips_stub(request, concept_id):
-    """Triggers the Grips Stub Filler blueprint for a specific ConceptNode."""
-    from metacognition.models import CognitiveBlueprint
-    from metacognition.tasks import task_run_blueprint_async
+    """Triggers autonomous stub elaboration for a specific ConceptNode."""
+    from grips.models import ConceptNode
+    from django.conf import settings
+    node = get_object_or_404(ConceptNode, id=concept_id)
+    is_immediate = getattr(settings, 'TASKS', {}).get('default', {}).get('BACKEND') == 'django.tasks.backends.immediate.ImmediateBackend'
+    sync = request.GET.get('sync') == 'true' or request.POST.get('sync') == 'true' or is_immediate
+
     try:
-        bp = CognitiveBlueprint.objects.get(name="Grips Stub Filler")
-        # Trigger the async task
-        task_run_blueprint_async.delay(
+        if sync:
+            from grips.tasks import generate_concept_narrative
+            func = getattr(generate_concept_narrative, "func", generate_concept_narrative)
+            _ = func(concept_id)
+            node.refresh_from_db()
+            return HttpResponse('<span style="color: #047857; font-size: 0.72rem; font-weight: 600;">Elaborated</span>')
+
+        from metacognition.models import CognitiveBlueprint, bypass_canonical_lock
+        from metacognition.tasks import task_run_blueprint_async
+
+        bp = CognitiveBlueprint.objects.filter(name__icontains="Stub Filler").first()
+        if not bp:
+            from metacognition.seed import seed_cognitive_blueprints
+            with bypass_canonical_lock():
+                seed_cognitive_blueprints()
+            bp = CognitiveBlueprint.objects.filter(name="Grips Stub Filler").first()
+
+        if not bp:
+            return HttpResponse('<span style="color: #b91c1c; font-size: 0.72rem; font-weight: 500;">Blueprint missing.</span>', status=404)
+
+        task_run_blueprint_async.enqueue(
             blueprint_id=bp.id,
             user_prompt=str(concept_id),
             user_id=request.user.id
         )
-        return HttpResponse('<span style="color: #2ecc71; font-weight: 500;">✓ Filler Queued.</span>')
-    except CognitiveBlueprint.DoesNotExist:
-        return HttpResponse('<span style="color: #ea5322; font-weight: 500;">Blueprint missing.</span>', status=404)
+        return HttpResponse('<span style="color: #047857; font-size: 0.72rem; font-weight: 600;">Filler queued.</span>')
     except Exception as e:
-        logger.exception("Failed to queue Grips Stub Filler")
-        return HttpResponse(f'<span style="color: #ea5322; font-weight: 500;">Error: {str(e)}</span>', status=500)
+        logger.exception("Failed to fill Grips stub")
+        return HttpResponse(f'<span style="color: #b91c1c; font-size: 0.72rem; font-weight: 500;">Error: {str(e)}</span>', status=500)

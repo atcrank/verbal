@@ -1,0 +1,160 @@
+{% extends "admin/change_form.html" %}
+{% load i18n admin_urls static %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+    .task-hero-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 20px 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .task-hero-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 16px;
+    }
+    .task-hero-title {
+        font-family: monospace;
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #0f172a;
+    }
+    .task-meta-pills {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    .task-pill {
+        background: #f8fafc;
+        border: 1px solid #cbd5e1;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .task-pill-label {
+        color: #64748b;
+        font-weight: 500;
+    }
+    .task-pill-value {
+        color: #0f172a;
+        font-weight: 700;
+    }
+    /* Stepper Timeline */
+    .task-timeline {
+        display: flex;
+        align-items: center;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 14px 20px;
+        margin-top: 14px;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .timeline-step {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    .timeline-step-title {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        font-weight: 700;
+        color: #64748b;
+    }
+    .timeline-step-time {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #1e293b;
+    }
+    .timeline-arrow {
+        color: #94a3b8;
+        font-size: 0.9rem;
+        padding: 0 8px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .timeline-delay {
+        font-size: 0.75rem;
+        background: #e2e8f0;
+        padding: 2px 6px;
+        border-radius: 4px;
+        color: #475569;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% if original %}
+<div class="task-hero-card">
+    <div class="task-hero-header">
+        <div>
+            <div style="font-size: 0.8rem; text-transform: uppercase; color: #64748b; font-weight: 600; letter-spacing: 0.05em;">Task Identifier: {{ original.id }}</div>
+            <div class="task-hero-title">{{ original.task_path }}</div>
+        </div>
+        <div>
+            {{ original_status_badge }}
+        </div>
+    </div>
+
+    <div class="task-meta-pills">
+        <div class="task-pill">
+            <span class="task-pill-label">Queue:</span>
+            <span class="task-pill-value">{{ original.queue_name }} (Pri: {{ original.priority }})</span>
+        </div>
+        <div class="task-pill">
+            <span class="task-pill-label">Duration:</span>
+            <span class="task-pill-value" style="color: #16a34a;">{{ original.duration_formatted }}</span>
+        </div>
+        <div class="task-pill">
+            <span class="task-pill-label">LLM Tokens:</span>
+            <span class="task-pill-value" style="color: #4338ca;">{{ original.tokens_formatted }}</span>
+        </div>
+        <div class="task-pill">
+            <span class="task-pill-label">Worker:</span>
+            <span class="task-pill-value"><code style="font-size: 0.8rem;">{{ original.worker_id|default:"-" }}</code></span>
+        </div>
+        <div class="task-pill">
+            <span class="task-pill-label">Attempts:</span>
+            <span class="task-pill-value">{{ original.attempts }}</span>
+        </div>
+    </div>
+
+    <!-- Timeline Stepper -->
+    <div class="task-timeline">
+        <div class="timeline-step">
+            <span class="timeline-step-title">1. Enqueued</span>
+            <span class="timeline-step-time">{{ original.enqueued_at|date:"H:i:s.u" }}</span>
+        </div>
+        <div class="timeline-arrow">
+            ➔ <span class="timeline-delay">Queue: {{ original.queue_latency_formatted }}</span> ➔
+        </div>
+        <div class="timeline-step">
+            <span class="timeline-step-title">2. Execution Started</span>
+            <span class="timeline-step-time">{{ original.started_at|date:"H:i:s.u"|default:"Pending" }}</span>
+        </div>
+        <div class="timeline-arrow">
+            ➔ <span class="timeline-delay">Runtime: {{ original.duration_formatted }}</span> ➔
+        </div>
+        <div class="timeline-step">
+            <span class="timeline-step-title">3. Finished</span>
+            <span class="timeline-step-time">{{ original.finished_at|date:"H:i:s.u"|default:"Running / In-Flight" }}</span>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{{ block.super }}
+{% endblock %}

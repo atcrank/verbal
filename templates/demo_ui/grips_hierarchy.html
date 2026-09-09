@@ -1,33 +1,32 @@
 {% if not domain_data %}
-    <div class="conv-date" style="text-align: center; margin-top: 20px;">No Domains Found in Knowledge Base.</div>
+    <div class="conv-date" style="text-align: center; margin-top: 15px;">No Domains Found in Knowledge Base.</div>
 {% else %}
-    <div style="margin-bottom: 15px; font-size: 0.95rem; font-weight: 600; color: var(--text-main);">Knowledge Graph Hierarchy</div>
+    <div style="margin-bottom: 12px; font-size: 0.88rem; font-weight: 600; color: var(--text-main);">Knowledge Graph Hierarchy</div>
     
     {% for item in domain_data %}
-        <details class="domain-section" style="margin-bottom: 15px;">
-            <summary style="font-weight: 600; font-size: 0.9rem; cursor: pointer; color: var(--primary); outline: none;">
-                📁 {{ item.domain.name }}
+        <details class="domain-section" style="margin-bottom: 12px;">
+            <summary style="font-weight: 600; font-size: 0.85rem; cursor: pointer; color: var(--text-main); outline: none;">
+                Domain: {{ item.domain.name }}
             </summary>
             
-            <div style="margin-left: 14px; margin-top: 8px; border-left: 1px solid var(--border); padding-left: 10px;">
+            <div style="margin-left: 12px; margin-top: 6px; border-left: 1px solid var(--border); padding-left: 8px;">
                 {% if not item.concepts %}
-                    <div style="font-size: 0.8rem; color: var(--text-muted);">No root concepts found in this domain.</div>
+                    <div style="font-size: 0.78rem; color: var(--text-muted);">No root concepts found in this domain.</div>
                 {% else %}
                     {% for node in item.concepts %}
-                        <div class="search-card" style="border-left: 3px solid var(--primary); margin-bottom: 8px; padding: 10px;" draggable="true" ondragstart="event.dataTransfer.setData('application/json', JSON.stringify({model: 'ConceptNode', id: '{{ node.slug }}', content: '{{ node.narrative_content|escapejs }}', preview: '{{ node.title|escapejs }}'}))">
+                        <div class="search-card" style="border-left: 3px solid #64748b; margin-bottom: 6px; padding: 8px 10px;" draggable="true" ondragstart="event.dataTransfer.setData('application/json', JSON.stringify({model: 'ConceptNode', id: '{{ node.slug }}', content: '{{ node.narrative_content|escapejs }}', preview: '{{ node.title|escapejs }}'}))">
                             <details hx-get="{% url 'demo_ui:grips_concept_children' node.id %}" hx-trigger="toggle once" hx-target="#children-{{ node.id }}" hx-swap="innerHTML">
-                                <summary class="search-card-title" style="font-size: 0.85rem; color: var(--text-main); cursor: pointer; outline: none;">
-                                    ✨ {{ node.title }}
+                                <summary class="search-card-title" style="font-size: 0.82rem; color: var(--text-main); cursor: pointer; outline: none; display: flex; justify-content: space-between; align-items: center;">
+                                    <span>{{ node.title }}</span>
                                     {% if not node.narrative_content %}
-                                        <button hx-post="{% url 'demo_ui:fill_grips_stub' node.id %}" hx-swap="outerHTML" style="margin-left: 10px; font-size: 0.7rem; padding: 2px 6px; cursor: pointer; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; color: var(--text-main);">Fill Stub</button>
+                                        <button type="button" class="action-btn-sm" hx-post="{% url 'demo_ui:fill_grips_stub' node.id %}" hx-swap="outerHTML" onclick="event.stopPropagation();" title="Trigger Stub Filler blueprint">Fill Stub</button>
                                     {% endif %}
                                 </summary>
-                                <div style="margin-top: 5px; font-size: 0.8rem; color: var(--text-muted); padding-bottom: 8px;">
-                                    {{ node.narrative_content|truncatechars:150 }}
+                                <div style="margin-top: 4px; font-size: 0.78rem; color: var(--text-muted); padding-bottom: 6px;">
+                                    {{ node.narrative_content|truncatechars:150|default:"(Empty stub concept - click Fill Stub to populate)" }}
                                 </div>
-                                <div id="children-{{ node.id }}" style="margin-left: 10px; border-left: 1px solid var(--border); padding-left: 10px;">
-                                    <!-- Children load here via HTMX when expanded -->
-                                    <div style="font-size: 0.75rem; color: var(--text-muted);">Loading sub-concepts...</div>
+                                <div id="children-{{ node.id }}" style="margin-left: 8px; border-left: 1px solid var(--border); padding-left: 8px;">
+                                    <div style="font-size: 0.72rem; color: var(--text-muted);">Loading sub-concepts...</div>
                                 </div>
                             </details>
                         </div>

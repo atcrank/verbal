@@ -3,7 +3,7 @@ logger = logging.getLogger(__name__)
 
 import json
 import typing
-from celery import shared_task
+from django.tasks import task
 from .models import CognitiveBlueprint, OUTPUT_TYPES
 from llm_api.models import Conversation, PromptResponseLog
 from llm_api.apps import service_registry
@@ -71,12 +71,12 @@ def parse_structured_response(raw_output, schema_def) -> str:
 from uuid import uuid4
 from .events import publish_blueprint_event, clear_cancellation_flag
 
-@shared_task
+@task
 def task_run_blueprint_async(blueprint_id: int, user_prompt: str, conversation_id: typing.Optional[str] = None, user_id: typing.Optional[int] = None, max_steps: int = 100, run_id: typing.Optional[str] = None):
-    """Asynchronous wrapper for running a blueprint via Celery."""
+    """Asynchronous wrapper for running a blueprint."""
     return run_blueprint(blueprint_id, user_prompt, conversation_id, user_id, max_steps=max_steps, run_id=run_id)
 
-@shared_task
+@task
 def task_resume_blueprint_async(blueprint_id: int, thread_id: str, run_id: str, approved_tool: typing.Optional[str] = None, user_prompt: typing.Optional[str] = None, max_steps: int = 100):
     """Asynchronously resumes an interrupted LangGraph blueprint from its checkpoint."""
     try:
@@ -263,7 +263,9 @@ def run_blueprint(blueprint_id: int,
         "pending_approval": result_state.get("pending_approval")
     }
 
-@shared_task
+task_run_blueprint_sync = run_blueprint
+
+@task
 def task_update_performance_scores():
     """
     Periodic task to compute EWMA for ReasoningSteps based on their recent PromptResponseLogs.

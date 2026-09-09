@@ -6,9 +6,10 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Background Resources - context documents &mdash; Verbal 0.1 documentation</title>
+  <title>Background Resources - context documents &mdash; reason 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=aaf24e6f" />
 
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
@@ -32,7 +33,7 @@
           
           
           <a href="index.html" class="icon icon-home">
-            Verbal
+            reason
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -63,6 +64,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#background_resources.models.Document.metadata"><code class="docutils literal notranslate"><span class="pre">Document.metadata</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#background_resources.models.Document.chunk_size"><code class="docutils literal notranslate"><span class="pre">Document.chunk_size</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#background_resources.models.Document.chunk_overlap"><code class="docutils literal notranslate"><span class="pre">Document.chunk_overlap</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#background_resources.models.Document.get_citation"><code class="docutils literal notranslate"><span class="pre">Document.get_citation()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#background_resources.models.Document.chunking_scheme"><code class="docutils literal notranslate"><span class="pre">Document.chunking_scheme()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#background_resources.models.Document.validate_current_index"><code class="docutils literal notranslate"><span class="pre">Document.validate_current_index()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#background_resources.models.Document.save"><code class="docutils literal notranslate"><span class="pre">Document.save()</span></code></a></li>
@@ -103,6 +105,9 @@
 <li class="toctree-l4"><a class="reference internal" href="#background_resources.models.RAGChunk.in_byte_store"><code class="docutils literal notranslate"><span class="pre">RAGChunk.in_byte_store</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#background_resources.models.RAGChunk.hit_count"><code class="docutils literal notranslate"><span class="pre">RAGChunk.hit_count</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#background_resources.models.RAGChunk.last_accessed"><code class="docutils literal notranslate"><span class="pre">RAGChunk.last_accessed</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#background_resources.models.RAGChunk.document"><code class="docutils literal notranslate"><span class="pre">RAGChunk.document</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#background_resources.models.RAGChunk.reference"><code class="docutils literal notranslate"><span class="pre">RAGChunk.reference</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#background_resources.models.RAGChunk.get_citation"><code class="docutils literal notranslate"><span class="pre">RAGChunk.get_citation()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#background_resources.models.RAGChunk.DoesNotExist"><code class="docutils literal notranslate"><span class="pre">RAGChunk.DoesNotExist</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#background_resources.models.RAGChunk.MultipleObjectsReturned"><code class="docutils literal notranslate"><span class="pre">RAGChunk.MultipleObjectsReturned</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#background_resources.models.RAGChunk.NotUpdated"><code class="docutils literal notranslate"><span class="pre">RAGChunk.NotUpdated</span></code></a></li>
@@ -362,6 +367,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="using_ollama.html">Ollama as Local AI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo_ui_trials.html">Demo UI Empirical Trials &amp; Verification Reports</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tests.html">Testing</a></li>
 </ul>
 
@@ -371,7 +377,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="index.html">Verbal</a>
+          <a href="index.html">reason</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -522,6 +528,14 @@ object the first time, the query is executed.</p>
 <span class="sig-name descname"><span class="pre">chunk_overlap</span></span><a class="headerlink" href="#background_resources.models.Document.chunk_overlap" title="Link to this definition"></a></dt>
 <dd><p>A wrapper for a deferred-loading field. When the value is read from this
 object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="background_resources.models.Document.get_citation">
+<span class="sig-name descname"><span class="pre">get_citation</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/background_resources/models.html#Document.get_citation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#background_resources.models.Document.get_citation" title="Link to this definition"></a></dt>
+<dd><p>Returns an authoritative academic citation for this document.
+Uses citation_text if present, falls back to grobid_metadata Reference,
+or constructs from author/title.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -832,6 +846,25 @@ object the first time, the query is executed.</p>
 <span class="sig-name descname"><span class="pre">last_accessed</span></span><a class="headerlink" href="#background_resources.models.RAGChunk.last_accessed" title="Link to this definition"></a></dt>
 <dd><p>A wrapper for a deferred-loading field. When the value is read from this
 object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="background_resources.models.RAGChunk.document">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">document</span></span><a class="headerlink" href="#background_resources.models.RAGChunk.document" title="Link to this definition"></a></dt>
+<dd><p>Resolves the parent Document for this chunk via StrategyChunkUsage or metadata.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="background_resources.models.RAGChunk.reference">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">reference</span></span><a class="headerlink" href="#background_resources.models.RAGChunk.reference" title="Link to this definition"></a></dt>
+<dd><p>Returns the Grobid Reference object associated with this chunk’s parent document.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="background_resources.models.RAGChunk.get_citation">
+<span class="sig-name descname"><span class="pre">get_citation</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/background_resources/models.html#RAGChunk.get_citation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#background_resources.models.RAGChunk.get_citation" title="Link to this definition"></a></dt>
+<dd><p>Returns an academic citation identifying the source paper and section:
+e.g. “Talavera et al. (2023) — Section: ARCHITECTURE”</p>
 </dd></dl>
 
 <dl class="py exception">

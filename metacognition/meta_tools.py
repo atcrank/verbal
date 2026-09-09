@@ -262,7 +262,7 @@ def delegate_task(state: dict, params: dict) -> str:
     conversation_id = params.get('conversation_id')
     from metacognition.tasks import task_run_blueprint_async
     try:
-        task_run_blueprint_async.delay(
+        task_run_blueprint_async.enqueue(
             blueprint_id=1, # Note: Needs name -> ID resolution, simplified here
             user_prompt=task_prompt
         )

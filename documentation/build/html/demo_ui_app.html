@@ -6,9 +6,10 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Demo UI &mdash; Verbal 0.1 documentation</title>
+  <title>Demo UI &mdash; reason 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=aaf24e6f" />
 
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
@@ -32,7 +33,7 @@
           
           
           <a href="index.html" class="icon icon-home">
-            Verbal
+            reason
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -62,6 +63,8 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#module-demo_ui.views">Demo UI Views</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.branch_conversation"><code class="docutils literal notranslate"><span class="pre">branch_conversation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.calculate_context_tokens"><code class="docutils literal notranslate"><span class="pre">calculate_context_tokens()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.download_file"><code class="docutils literal notranslate"><span class="pre">download_file()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.fill_grips_stub"><code class="docutils literal notranslate"><span class="pre">fill_grips_stub()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.get_conversation"><code class="docutils literal notranslate"><span class="pre">get_conversation()</span></code></a></li>
@@ -69,8 +72,10 @@
 <li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.grips_explorer_tab"><code class="docutils literal notranslate"><span class="pre">grips_explorer_tab()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.index"><code class="docutils literal notranslate"><span class="pre">index()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.list_documents"><code class="docutils literal notranslate"><span class="pre">list_documents()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.preview_context_item"><code class="docutils literal notranslate"><span class="pre">preview_context_item()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.search_knowledge_base"><code class="docutils literal notranslate"><span class="pre">search_knowledge_base()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.send_message"><code class="docutils literal notranslate"><span class="pre">send_message()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.trigger_document_ingestion"><code class="docutils literal notranslate"><span class="pre">trigger_document_ingestion()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.upload_document"><code class="docutils literal notranslate"><span class="pre">upload_document()</span></code></a></li>
 </ul>
 </li>
@@ -81,6 +86,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="using_ollama.html">Ollama as Local AI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo_ui_trials.html">Demo UI Empirical Trials &amp; Verification Reports</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tests.html">Testing</a></li>
 </ul>
 
@@ -90,7 +96,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="index.html">Verbal</a>
+          <a href="index.html">reason</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -143,7 +149,7 @@
 <section id="ai-response">
 <h3>3. AI Response<a class="headerlink" href="#ai-response" title="Link to this heading"></a></h3>
 <p>The AI streams its response directly into the chat bubble.</p>
-<a class="reference internal image-reference" href="../../documents/walkthroughs/screenshots/03_chat_response.png"><img alt="Chat Response" src="../../documents/walkthroughs/screenshots/03_chat_response.png" style="width: 800px;" />
+<a class="reference internal image-reference" href="_images/03_chat_response.png"><img alt="Chat Response" src="_images/03_chat_response.png" style="width: 800px;" />
 </a>
 </section>
 <section id="document-management">
@@ -162,6 +168,18 @@
 <section id="module-demo_ui.views">
 <span id="demo-ui-views"></span><h2>Demo UI Views<a class="headerlink" href="#module-demo_ui.views" title="Link to this heading"></a></h2>
 <dl class="py function">
+<dt class="sig sig-object py" id="demo_ui.views.branch_conversation">
+<span class="sig-prename descclassname"><span class="pre">demo_ui.views.</span></span><span class="sig-name descname"><span class="pre">branch_conversation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/demo_ui/views.html#branch_conversation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#demo_ui.views.branch_conversation" title="Link to this definition"></a></dt>
+<dd><p>HTMX endpoint to fork a conversation DAG from a specific assistant response, copying all content back to the start.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="demo_ui.views.calculate_context_tokens">
+<span class="sig-prename descclassname"><span class="pre">demo_ui.views.</span></span><span class="sig-name descname"><span class="pre">calculate_context_tokens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/demo_ui/views.html#calculate_context_tokens"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#demo_ui.views.calculate_context_tokens" title="Link to this definition"></a></dt>
+<dd><p>JSON helper endpoint to calculate token counts for an array of dropped context items.</p>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="demo_ui.views.download_file">
 <span class="sig-prename descclassname"><span class="pre">demo_ui.views.</span></span><span class="sig-name descname"><span class="pre">download_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conversation_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/demo_ui/views.html#download_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#demo_ui.views.download_file" title="Link to this definition"></a></dt>
 <dd><p>Secure endpoint to download a generated file from a conversation workspace.</p>
@@ -170,7 +188,7 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="demo_ui.views.fill_grips_stub">
 <span class="sig-prename descclassname"><span class="pre">demo_ui.views.</span></span><span class="sig-name descname"><span class="pre">fill_grips_stub</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">concept_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/demo_ui/views.html#fill_grips_stub"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#demo_ui.views.fill_grips_stub" title="Link to this definition"></a></dt>
-<dd><p>Triggers the Grips Stub Filler blueprint for a specific ConceptNode.</p>
+<dd><p>Triggers autonomous stub elaboration for a specific ConceptNode.</p>
 </dd></dl>
 
 <dl class="py function">
@@ -200,7 +218,13 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="demo_ui.views.list_documents">
 <span class="sig-prename descclassname"><span class="pre">demo_ui.views.</span></span><span class="sig-name descname"><span class="pre">list_documents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/demo_ui/views.html#list_documents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#demo_ui.views.list_documents" title="Link to this definition"></a></dt>
-<dd><p>HTMX endpoint to render the recent uploaded documents list.</p>
+<dd><p>HTMX endpoint to render the recent uploaded documents list with accurate status.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="demo_ui.views.preview_context_item">
+<span class="sig-prename descclassname"><span class="pre">demo_ui.views.</span></span><span class="sig-name descname"><span class="pre">preview_context_item</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/demo_ui/views.html#preview_context_item"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#demo_ui.views.preview_context_item" title="Link to this definition"></a></dt>
+<dd><p>HTMX endpoint returning content preview and estimated token count for a dropped item.</p>
 </dd></dl>
 
 <dl class="py function">
@@ -213,6 +237,12 @@
 <dt class="sig sig-object py" id="demo_ui.views.send_message">
 <span class="sig-prename descclassname"><span class="pre">demo_ui.views.</span></span><span class="sig-name descname"><span class="pre">send_message</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/demo_ui/views.html#send_message"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#demo_ui.views.send_message" title="Link to this definition"></a></dt>
 <dd><p>HTMX endpoint to process a prompt, run AI/Blueprint, and return the new bubbles.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="demo_ui.views.trigger_document_ingestion">
+<span class="sig-prename descclassname"><span class="pre">demo_ui.views.</span></span><span class="sig-name descname"><span class="pre">trigger_document_ingestion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">document_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/demo_ui/views.html#trigger_document_ingestion"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#demo_ui.views.trigger_document_ingestion" title="Link to this definition"></a></dt>
+<dd><p>HTMX endpoint to manually trigger or re-enqueue ingestion for a document.</p>
 </dd></dl>
 
 <dl class="py function">

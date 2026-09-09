@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>llm_api.api &mdash; Verbal 0.1 documentation</title>
+  <title>llm_api.api &mdash; reason 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
 
@@ -29,7 +29,7 @@
           
           
           <a href="../../index.html" class="icon icon-home">
-            Verbal
+            reason
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -53,6 +53,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../using_ollama.html">Ollama as Local AI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_trials.html">Demo UI Interactive Trials &amp; Feature Walkthroughs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../tests.html">Testing</a></li>
 </ul>
 
@@ -62,7 +63,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../index.html">Verbal</a>
+          <a href="../../index.html">reason</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -423,7 +424,7 @@
 <span class="nd">@csrf_exempt</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">openai_chat_completions</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">OpenAIChatCompletionIn</span><span class="p">):</span>
     <span class="n">messages</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="n">m</span><span class="o">.</span><span class="n">role</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">m</span><span class="o">.</span><span class="n">content</span><span class="p">}</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">payload</span><span class="o">.</span><span class="n">messages</span><span class="p">]</span>
-    <span class="n">max_tokens</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">max_tokens</span> <span class="ow">or</span> <span class="mi">1024</span>
+    <span class="n">max_tokens</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">max_tokens</span> <span class="ow">or</span> <span class="mi">1500</span>
     
     <span class="c1"># Route structured output vs standard generation</span>
     <span class="k">if</span> <span class="n">payload</span><span class="o">.</span><span class="n">response_format</span> <span class="ow">and</span> <span class="n">payload</span><span class="o">.</span><span class="n">response_format</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;json_schema&quot;</span><span class="p">:</span>
@@ -458,6 +459,14 @@
                     <span class="kn">import</span><span class="w"> </span><span class="nn">metacognition.actions</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ma</span>
                     <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ma</span><span class="p">,</span> <span class="n">schema_name</span><span class="p">):</span>
                         <span class="n">response_schema</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ma</span><span class="p">,</span> <span class="n">schema_name</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+                    <span class="k">pass</span>
+
+            <span class="k">if</span> <span class="n">response_schema</span> <span class="o">==</span> <span class="n">schema_dict</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="kn">import</span><span class="w"> </span><span class="nn">grips.tasks</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gt</span>
+                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">gt</span><span class="p">,</span> <span class="n">schema_name</span><span class="p">):</span>
+                        <span class="n">response_schema</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">gt</span><span class="p">,</span> <span class="n">schema_name</span><span class="p">)</span>
                 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
                     <span class="k">pass</span>
         
@@ -854,7 +863,7 @@
     <span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">download_model_cache</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">model</span> <span class="o">=</span> <span class="n">LocalAIModel</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">model_id</span><span class="p">)</span>
-        <span class="n">task</span> <span class="o">=</span> <span class="n">download_model_cache</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">hf_model_id</span><span class="p">)</span>
+        <span class="n">task</span> <span class="o">=</span> <span class="n">download_model_cache</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">hf_model_id</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;task_id&quot;</span><span class="p">:</span> <span class="n">task</span><span class="o">.</span><span class="n">id</span><span class="p">})</span>
     <span class="k">except</span> <span class="n">LocalAIModel</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;Model not found.&quot;</span><span class="p">},</span> <span class="n">status</span><span class="o">=</span><span class="mi">404</span><span class="p">)</span></div>

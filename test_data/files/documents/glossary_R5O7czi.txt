@@ -1,5 +1,0 @@
-
-        GLOSSARY
-        Alpha-Code: The first code in the sequence.
-        Beta-Code - The second code in the sequence.
-        

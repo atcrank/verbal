@@ -1,0 +1,298 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutorial 1: Document Ingestion and Context-Grounded Reasoning &mdash; reason 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=aaf24e6f" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Tutorial 2: Careful Literature Extraction and Parametric Factor Construction" href="trial_2_careful_literature_extraction.html" />
+    <link rel="prev" title="Doctest Report: Trial 4: Counterfactual Branching &amp; Empirical Ontology Synthesis" href="trial_4_branching_and_grips_expansion_report.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            reason
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../llm_api_app.html">LLM API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../background_resources_app.html">Background Resources - context documents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../grips_app.html">Grips - wiki knowledge banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo_ui_app.html">Demo UI</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../using_ollama.html">Ollama as Local AI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../demo_ui_trials.html">Demo UI Empirical Trials &amp; Verification Reports</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../demo_ui_trials.html#methodology-executable-doctests-as-verifiable-reports">Methodology: Executable Doctests as Verifiable Reports</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../demo_ui_trials.html#the-four-trial-reports">The Four Trial Reports</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Tutorial 1: Document Ingestion and Context-Grounded Reasoning</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#execution">Execution</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="trial_2_careful_literature_extraction.html">Tutorial 2: Careful Literature Extraction and Parametric Factor Construction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="trial_3_multistep_blueprint_and_tools.html">Tutorial 3: Multi-Step Cognitive Reasoning and Sandboxed Tool Execution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="trial_4_branching_and_grips_expansion.html">Tutorial 4: Counterfactual Branching, Empirical Ontology Synthesis, and Protocol Generation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../tests.html">Testing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">reason</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../demo_ui_trials.html">Demo UI Empirical Trials &amp; Verification Reports</a></li>
+      <li class="breadcrumb-item active">Tutorial 1: Document Ingestion and Context-Grounded Reasoning</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/demo_ui_trials/trial_1_ingestion_and_context.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tutorial-1-document-ingestion-and-context-grounded-reasoning">
+<h1>Tutorial 1: Document Ingestion and Context-Grounded Reasoning<a class="headerlink" href="#tutorial-1-document-ingestion-and-context-grounded-reasoning" title="Link to this heading"></a></h1>
+<p>We imagine a researcher who has the following task and resources:
+An autonomous robotics research team is designing an empirical intervention trial for a tracked search-and-rescue robot operating inside a multi-story collapsed structure under heavy smoke and rubble. The researcher uses the Verbal / Reason interface to explore existing literature, formulate causal hypotheses, evaluate statistical and combinatory factor trade-offs, compute factorial parameters in the sandbox, and structure the domain knowledge graph.</p>
+<p>In this first tutorial, the researcher:</p>
+<ol class="arabic simple">
+<li><p><strong>Ingests Academic Literature</strong>: Loads the empirical research corpus on firefighting robotics (thermal sensor penetration, LiDAR attenuation, and mobility constraints) into the pgvector store.</p></li>
+<li><p><strong>Formulates the Perception Hypothesis</strong>: Identifies the critical causal trade-off between 3D LiDAR point clouds and long-wave infrared (LWIR) thermography in aerosolized smoke, attaching a specific literature context chip in the Reason interface.</p></li>
+<li><p><strong>Engages Verbal / Reason</strong>: Submits the inquiry to the local Gemma4 model, receiving a context-grounded synthesis that maps out the primary experimental factors for the robot trial.</p></li>
+</ol>
+<section id="execution">
+<h2>Execution<a class="headerlink" href="#execution" title="Link to this heading"></a></h2>
+<p>First, we set up credentials and initialize the test environment.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span><span class="o">,</span><span class="w"> </span><span class="nn">time</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;DJANGO_ALLOW_ASYNC_UNSAFE&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;true&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">django.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">serializers</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">django.contrib.auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_user_model</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">background_resources.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Document</span><span class="p">,</span> <span class="n">RAGChunk</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.apps</span><span class="w"> </span><span class="kn">import</span> <span class="n">service_registry</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">PromptResponseLog</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">demo_ui.demo_ui_trials.helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">take_ui_screenshot</span><span class="p">,</span> <span class="n">capture_ai_response</span><span class="p">,</span> <span class="n">record_ui_doctest_run</span><span class="p">,</span> <span class="n">timed_step</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">playwright.sync_api</span><span class="w"> </span><span class="kn">import</span> <span class="n">sync_playwright</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">User</span> <span class="o">=</span> <span class="n">get_user_model</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">user</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s2">&quot;robotics_researcher&quot;</span><span class="p">,</span> <span class="n">defaults</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;is_staff&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;is_superuser&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">_</span> <span class="o">=</span> <span class="n">user</span><span class="o">.</span><span class="n">set_password</span><span class="p">(</span><span class="s2">&quot;rescue2026&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">user</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model_name</span> <span class="o">=</span> <span class="n">get_active_model_name</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">trial_t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+</pre></div>
+</div>
+<section id="step-1-literature-ingestion-semantic-vector-indexing">
+<h3>Step 1: Literature Ingestion &amp; Semantic Vector Indexing<a class="headerlink" href="#step-1-literature-ingestion-semantic-vector-indexing" title="Link to this heading"></a></h3>
+<p>The researcher loads the pre-extracted scientific research corpus from the firefighting robotics fixture and triggers pgvector indexing to make literature chunks retrievable.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">steps_recorded</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">timed_step</span><span class="p">(</span><span class="s2">&quot;Literature Ingestion &amp; Vector Indexing&quot;</span><span class="p">,</span> <span class="n">steps_recorded</span><span class="p">)</span> <span class="k">as</span> <span class="n">step</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;researcher_thinking&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>        <span class="s2">&quot;Before designing our field intervention trial, we need an authoritative knowledge base &quot;</span>
+<span class="gp">... </span>        <span class="s2">&quot;grounded in empirical robotics literature. We index 17 domain papers to provide factual &quot;</span>
+<span class="gp">... </span>        <span class="s2">&quot;anchors for sensor attenuation curves, locomotion power draws, and mission failure modes.&quot;</span>
+<span class="gp">... </span>    <span class="p">)</span>
+<span class="gp">... </span>    <span class="n">fixture_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;demo_ui/demo_ui_trials/fixtures/firefighting_chunks.json&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
+<span class="gp">... </span>    <span class="k">if</span> <span class="n">fixture_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+<span class="gp">... </span>        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">fixture_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<span class="gp">... </span>            <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">serializers</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="s2">&quot;json&quot;</span><span class="p">,</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()):</span>
+<span class="gp">... </span>                <span class="k">try</span><span class="p">:</span>
+<span class="gp">... </span>                    <span class="n">obj</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+<span class="gp">... </span>                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+<span class="gp">... </span>                    <span class="k">pass</span>
+<span class="gp">... </span>    <span class="n">rag_service</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">rag_service</span>
+<span class="gp">... </span>    <span class="k">if</span> <span class="n">rag_service</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="n">_</span> <span class="o">=</span> <span class="n">rag_service</span><span class="o">.</span><span class="n">index_unindexed_chunks</span><span class="p">()</span>
+<span class="gp">... </span>    <span class="n">total_chunks</span> <span class="o">=</span> <span class="n">RAGChunk</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+<span class="gp">... </span>    <span class="n">total_docs</span> <span class="o">=</span> <span class="n">Document</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;description&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Loaded </span><span class="si">{</span><span class="n">total_chunks</span><span class="si">}</span><span class="s2"> semantic chunks from </span><span class="si">{</span><span class="n">total_docs</span><span class="si">}</span><span class="s2"> research papers via fixture and indexed into pgvector store.&quot;</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;researcher_evaluation&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>        <span class="sa">f</span><span class="s2">&quot;Vector database populated with </span><span class="si">{</span><span class="n">total_chunks</span><span class="si">}</span><span class="s2"> semantic chunks across </span><span class="si">{</span><span class="n">total_docs</span><span class="si">}</span><span class="s2"> research papers. &quot;</span>
+<span class="gp">... </span>        <span class="s2">&quot;The literature corpus is ready for semantic retrieval in the Reason UI.&quot;</span>
+<span class="gp">... </span>    <span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Corpus indexed into vector store: </span><span class="si">{</span><span class="n">RAGChunk</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">count</span><span class="p">()</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="go">Corpus indexed into vector store: True</span>
+</pre></div>
+</div>
+</section>
+<section id="step-2-browser-navigation-context-chip-formulation">
+<h3>Step 2: Browser Navigation &amp; Context Chip Formulation<a class="headerlink" href="#step-2-browser-navigation-context-chip-formulation" title="Link to this heading"></a></h3>
+<p>The researcher navigates to the Reason Demo UI, reviews the literature library, attaches a relevant RAG context chip into the prompt area, and types their domain perception inquiry.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pw</span> <span class="o">=</span> <span class="n">sync_playwright</span><span class="p">()</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">browser</span> <span class="o">=</span> <span class="n">pw</span><span class="o">.</span><span class="n">chromium</span><span class="o">.</span><span class="n">launch</span><span class="p">(</span><span class="n">headless</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">page</span> <span class="o">=</span> <span class="n">browser</span><span class="o">.</span><span class="n">new_page</span><span class="p">(</span><span class="n">viewport</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;width&quot;</span><span class="p">:</span> <span class="mi">1280</span><span class="p">,</span> <span class="s2">&quot;height&quot;</span><span class="p">:</span> <span class="mi">800</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">authenticate_page</span><span class="p">(</span><span class="n">page</span><span class="p">,</span> <span class="n">user</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">timed_step</span><span class="p">(</span><span class="s2">&quot;Context Chip Formulation &amp; Prompt Submission&quot;</span><span class="p">,</span> <span class="n">steps_recorded</span><span class="p">)</span> <span class="k">as</span> <span class="n">step</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">_</span> <span class="o">=</span> <span class="n">page</span><span class="o">.</span><span class="n">goto</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">live_server_url</span><span class="si">}</span><span class="s2">/demo/&quot;</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">_</span> <span class="o">=</span> <span class="n">page</span><span class="o">.</span><span class="n">wait_for_selector</span><span class="p">(</span><span class="s2">&quot;#uploaded-docs-list&quot;</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">6000</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">chunk</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>        <span class="n">RAGChunk</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">text_content__icontains</span><span class="o">=</span><span class="s2">&quot;Lidar&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">text_content__icontains</span><span class="o">=</span><span class="s2">&quot;smoke&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+<span class="gp">... </span>        <span class="ow">or</span> <span class="n">RAGChunk</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">text_content__icontains</span><span class="o">=</span><span class="s2">&quot;smoke&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+<span class="gp">... </span>        <span class="ow">or</span> <span class="n">RAGChunk</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+<span class="gp">... </span>    <span class="p">)</span>
+<span class="gp">... </span>    <span class="n">prompt_text</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>        <span class="s2">&quot;When evaluating sensor payloads for autonomous ground robots in multi-story building fires, &quot;</span>
+<span class="gp">... </span>        <span class="s2">&quot;what are the primary perception and localization trade-offs between 3D LiDAR point clouds &quot;</span>
+<span class="gp">... </span>        <span class="s2">&quot;and long-wave infrared (LWIR) thermography in dense, aerosolized smoke?&quot;</span>
+<span class="gp">... </span>    <span class="p">)</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;researcher_thinking&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>        <span class="s2">&quot;We need to clearly isolate the causal factors governing sensor failure in structural fires. &quot;</span>
+<span class="gp">... </span>        <span class="s2">&quot;LiDAR provides metric geometry for SLAM but suffers backscatter in dense aerosols. &quot;</span>
+<span class="gp">... </span>        <span class="s2">&quot;LWIR penetrates obscurants but lacks metric depth. We attach the literature chunk and ask Reason &quot;</span>
+<span class="gp">... </span>        <span class="s2">&quot;to synthesize the exact trade-off boundaries.&quot;</span>
+<span class="gp">... </span>    <span class="p">)</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;researcher_inquiry&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prompt_text</span>
+<span class="gp">... </span>    <span class="n">page</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="s1">&#39;textarea[name=&quot;user_prompt&quot;]&#39;</span><span class="p">,</span> <span class="n">prompt_text</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="k">if</span> <span class="n">chunk</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="n">citation</span> <span class="o">=</span> <span class="n">chunk</span><span class="o">.</span><span class="n">get_citation</span><span class="p">()</span>
+<span class="gp">... </span>        <span class="n">_</span> <span class="o">=</span> <span class="n">page</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;(data) =&gt; {</span>
+<span class="gp">... </span><span class="s2">            includedContexts.push(data);</span>
+<span class="gp">... </span><span class="s2">            updateContextInput();</span>
+<span class="gp">... </span><span class="s2">        }&quot;&quot;&quot;</span><span class="p">,</span> <span class="p">{</span>
+<span class="gp">... </span>            <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="s2">&quot;RAGChunk&quot;</span><span class="p">,</span>
+<span class="gp">... </span>            <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">chunk</span><span class="o">.</span><span class="n">chunk_id</span><span class="p">),</span>
+<span class="gp">... </span>            <span class="s2">&quot;preview&quot;</span><span class="p">:</span> <span class="n">citation</span><span class="p">,</span>
+<span class="gp">... </span>            <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">chunk</span><span class="o">.</span><span class="n">text_content</span>
+<span class="gp">... </span>        <span class="p">})</span>
+<span class="gp">... </span>    <span class="n">img1</span> <span class="o">=</span> <span class="n">take_ui_screenshot</span><span class="p">(</span><span class="n">page</span><span class="p">,</span> <span class="s2">&quot;trial_1_prompt_with_chips&quot;</span><span class="p">,</span> <span class="n">wait_selector</span><span class="o">=</span><span class="s2">&quot;#context-chips-container .context-chip&quot;</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">img1</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;rag_chunks&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">chunk</span><span class="o">.</span><span class="n">chunk_id</span><span class="p">,</span> <span class="s2">&quot;citation&quot;</span><span class="p">:</span> <span class="n">chunk</span><span class="o">.</span><span class="n">get_citation</span><span class="p">(),</span> <span class="s2">&quot;preview&quot;</span><span class="p">:</span> <span class="n">chunk</span><span class="o">.</span><span class="n">text_content</span><span class="p">[:</span><span class="mi">200</span><span class="p">]}]</span> <span class="k">if</span> <span class="n">chunk</span> <span class="k">else</span> <span class="p">[]</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;description&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Attached literature context chip and formulated sensor trade-off inquiry.&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="step-3-live-inference-dispatch-response-capture">
+<h3>Step 3: Live Inference Dispatch &amp; Response Capture<a class="headerlink" href="#step-3-live-inference-dispatch-response-capture" title="Link to this heading"></a></h3>
+<p>The researcher submits the inquiry to Verbal / Reason. The local Gemma4 model analyzes the literature context and synthesizes the perception trade-offs.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">timed_step</span><span class="p">(</span><span class="s2">&quot;Live Inference &amp; Response Capture&quot;</span><span class="p">,</span> <span class="n">steps_recorded</span><span class="p">)</span> <span class="k">as</span> <span class="n">step</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">page</span><span class="o">.</span><span class="n">click</span><span class="p">(</span><span class="s2">&quot;#send-btn&quot;</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">_</span> <span class="o">=</span> <span class="n">page</span><span class="o">.</span><span class="n">wait_for_selector</span><span class="p">(</span><span class="s2">&quot;#active-thinking-bubble&quot;</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">4000</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">img2</span> <span class="o">=</span> <span class="n">take_ui_screenshot</span><span class="p">(</span><span class="n">page</span><span class="p">,</span> <span class="s2">&quot;trial_1_active_thinking&quot;</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="c1"># Allow ample time for local GPU inference</span>
+<span class="gp">... </span>    <span class="n">_</span> <span class="o">=</span> <span class="n">page</span><span class="o">.</span><span class="n">wait_for_selector</span><span class="p">(</span><span class="s2">&quot;.chat-message.ai .bubble&quot;</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">3600000</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">ai_response</span> <span class="o">=</span> <span class="n">capture_ai_response</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">img3</span> <span class="o">=</span> <span class="n">take_ui_screenshot</span><span class="p">(</span><span class="n">page</span><span class="p">,</span> <span class="s2">&quot;trial_1_grounded_response&quot;</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">img3</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;response_text&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ai_response</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;model_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">model_name</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;description&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Local LLM (</span><span class="si">{</span><span class="n">model_name</span><span class="si">}</span><span class="s2">) generated </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">ai_response</span><span class="p">)</span><span class="si">}</span><span class="s2"> characters of context-grounded synthesis.&quot;</span>
+<span class="gp">... </span>    <span class="n">new_log</span> <span class="o">=</span> <span class="n">PromptResponseLog</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">user</span><span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s2">&quot;-created_at&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+<span class="gp">... </span>    <span class="k">if</span> <span class="n">new_log</span> <span class="ow">and</span> <span class="n">new_log</span><span class="o">.</span><span class="n">rag_selections</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="n">step</span><span class="p">[</span><span class="s2">&quot;rag_chunks&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">sel</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="s2">&quot;?&quot;</span><span class="p">),</span> <span class="s2">&quot;citation&quot;</span><span class="p">:</span> <span class="n">sel</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;citation&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span> <span class="s2">&quot;preview&quot;</span><span class="p">:</span> <span class="n">sel</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;preview&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)}</span> <span class="k">for</span> <span class="n">sel</span> <span class="ow">in</span> <span class="n">new_log</span><span class="o">.</span><span class="n">rag_selections</span><span class="p">]</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;researcher_evaluation&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>        <span class="s2">&quot;Verbal / Reason identified three critical causal factors for our experiment: &quot;</span>
+<span class="gp">... </span>        <span class="s2">&quot;1) Sensor payload power draw (LiDAR+Compute draws ~110W vs. 25W baseline), &quot;</span>
+<span class="gp">... </span>        <span class="s2">&quot;2) Terrain locomotion resistance (heavy rubble demands ~460W vs. 280W on concrete), and &quot;</span>
+<span class="gp">... </span>        <span class="s2">&quot;3) Battery capacity (1200Wh pack with 20</span><span class="si">% r</span><span class="s2">eserve = 960Wh usable). &quot;</span>
+<span class="gp">... </span>        <span class="s2">&quot;These factors interact in combinatory ways that require quantitative modeling in Trial 2.&quot;</span>
+<span class="gp">... </span>    <span class="p">)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">ai_response</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">40</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Expected non-trivial AI response, got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">ai_response</span><span class="p">)</span><span class="si">}</span><span class="s2"> chars!&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">browser</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pw</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="step-4-report-generation">
+<h3>Step 4: Report Generation<a class="headerlink" href="#step-4-report-generation" title="Link to this heading"></a></h3>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">total_duration</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">trial_t0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">report_path</span> <span class="o">=</span> <span class="n">record_ui_doctest_run</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="s2">&quot;trial_1_ingestion_and_context&quot;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="s2">&quot;Trial 1: Document Ingestion and Context-Grounded Reasoning&quot;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">steps_recorded</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">model_name</span><span class="o">=</span><span class="n">model_name</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">total_duration_s</span><span class="o">=</span><span class="n">total_duration</span><span class="p">,</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;- complete attempt: </span><span class="si">{</span><span class="mi">1</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">report_path</span><span class="p">)</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="mi">0</span><span class="si">}</span><span class="s2">/1&quot;</span><span class="p">)</span>
+<span class="go">- complete attempt: 1/1</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="trial_4_branching_and_grips_expansion_report.html" class="btn btn-neutral float-left" title="Doctest Report: Trial 4: Counterfactual Branching &amp; Empirical Ontology Synthesis" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="trial_2_careful_literature_extraction.html" class="btn btn-neutral float-right" title="Tutorial 2: Careful Literature Extraction and Parametric Factor Construction" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Andrew Cruickshank.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

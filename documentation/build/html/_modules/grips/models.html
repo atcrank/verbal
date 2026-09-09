@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>grips.models &mdash; Verbal 0.1 documentation</title>
+  <title>grips.models &mdash; reason 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
 
@@ -29,7 +29,7 @@
           
           
           <a href="../../index.html" class="icon icon-home">
-            Verbal
+            reason
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -62,7 +62,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../index.html">Verbal</a>
+          <a href="../../index.html">reason</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -222,8 +222,8 @@
     <span class="k">if</span> <span class="s1">&#39;test&#39;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">:</span>
         <span class="k">return</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">grips.tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">task_index_concept_node</span>
-    <span class="c1"># Delay to celery so we don&#39;t block the web request</span>
-    <span class="n">task_index_concept_node</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">instance</span><span class="o">.</span><span class="n">id</span><span class="p">)</span></div>
+    <span class="c1"># Delay to background worker so we don&#39;t block the web request</span>
+    <span class="n">task_index_concept_node</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="n">instance</span><span class="o">.</span><span class="n">id</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="KnowledgeEdge">
@@ -267,10 +267,10 @@
 <div class="viewcode-block" id="CeleryStatus">
 <a class="viewcode-back" href="../../grips_app.html#grips.models.CeleryStatus">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">CeleryStatus</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dummy model to hook the Celery dashboard into the admin.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Legacy proxy model to hook the task queue dashboard link into the admin.&quot;&quot;&quot;</span>
     <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
         <span class="n">managed</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="n">verbose_name_plural</span> <span class="o">=</span> <span class="s2">&quot;Celery Status Dashboard&quot;</span></div>
+        <span class="n">verbose_name_plural</span> <span class="o">=</span> <span class="s2">&quot;Task Queue Dashboard (Legacy Link)&quot;</span></div>
 
 </pre></div>
 

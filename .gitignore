@@ -2,6 +2,9 @@
 
 documents/**
 vector_store/
+media/
+*.Zone.Identifier
+demo_ui/demo_ui_trials/doctest_fodder/*.pdf
 
 *.zip
 

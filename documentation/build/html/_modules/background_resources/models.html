@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>background_resources.models &mdash; Verbal 0.1 documentation</title>
+  <title>background_resources.models &mdash; reason 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
 
@@ -29,7 +29,7 @@
           
           
           <a href="../../index.html" class="icon icon-home">
-            Verbal
+            reason
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -53,6 +53,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../using_ollama.html">Ollama as Local AI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_trials.html">Demo UI Interactive Trials &amp; Feature Walkthroughs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../tests.html">Testing</a></li>
 </ul>
 
@@ -62,7 +63,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../index.html">Verbal</a>
+          <a href="../../index.html">reason</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -143,6 +144,39 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">title</span>
 
+<div class="viewcode-block" id="Document.get_citation">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.Document.get_citation">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_citation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns an authoritative academic citation for this document.</span>
+<span class="sd">        Uses citation_text if present, falls back to grobid_metadata Reference,</span>
+<span class="sd">        or constructs from author/title.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">citation_text</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">citation_text</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">citation_text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        
+        <span class="c1"># Check reverse relation to Reference (grobid_metadata)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;grobid_metadata&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">grobid_metadata</span><span class="p">:</span>
+            <span class="n">ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grobid_metadata</span>
+            <span class="n">parts</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">if</span> <span class="n">ref</span><span class="o">.</span><span class="n">authors</span><span class="p">:</span>
+                <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ref</span><span class="o">.</span><span class="n">authors</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+            <span class="k">if</span> <span class="n">ref</span><span class="o">.</span><span class="n">year</span><span class="p">:</span>
+                <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">ref</span><span class="o">.</span><span class="n">year</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+            <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ref</span><span class="o">.</span><span class="n">title</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">ref</span><span class="o">.</span><span class="n">journal</span><span class="p">:</span>
+                <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ref</span><span class="o">.</span><span class="n">journal</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">ref</span><span class="o">.</span><span class="n">doi</span><span class="p">:</span>
+                <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;DOI: </span><span class="si">{</span><span class="n">ref</span><span class="o">.</span><span class="n">doi</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">citation</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">citation</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">citation</span>
+                
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">author</span><span class="p">:</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">author</span><span class="si">}</span><span class="s2">. </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">title</span></div>
+
+
 <div class="viewcode-block" id="Document.chunking_scheme">
 <a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.Document.chunking_scheme">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">chunking_scheme</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">override_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">override_overlap</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -164,6 +198,10 @@
 <a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.Document.save">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculates the SHA256 hash of the uploaded file.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file</span><span class="p">):</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">return</span>
+
         <span class="n">updated_file</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">hasher</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">()</span>
         <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s1">&#39;rb&#39;</span><span class="p">)</span>
@@ -277,7 +315,68 @@
         <span class="p">]</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">chunk_id</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">text_content</span><span class="p">[:</span><span class="mi">20</span><span class="p">]</span><span class="si">}</span><span class="s2">...)&quot;</span></div>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">chunk_id</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">text_content</span><span class="p">[:</span><span class="mi">20</span><span class="p">]</span><span class="si">}</span><span class="s2">...)&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">document</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resolves the parent Document for this chunk via StrategyChunkUsage or metadata.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">usage</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">usages</span><span class="o">.</span><span class="n">select_related</span><span class="p">(</span><span class="s1">&#39;content_type&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="n">usage</span><span class="o">.</span><span class="n">content_object</span>
+            <span class="k">if</span> <span class="n">obj</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s1">&#39;document&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">obj</span><span class="o">.</span><span class="n">document</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">document</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;document_id&#39;</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">Document</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;document_id&#39;</span><span class="p">]))</span>
+            <span class="k">except</span> <span class="p">(</span><span class="n">Document</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+                <span class="k">pass</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">reference</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the Grobid Reference object associated with this chunk&#39;s parent document.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">doc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">document</span>
+        <span class="k">if</span> <span class="n">doc</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="s1">&#39;grobid_metadata&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">doc</span><span class="o">.</span><span class="n">grobid_metadata</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">doc</span><span class="o">.</span><span class="n">grobid_metadata</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="RAGChunk.get_citation">
+<a class="viewcode-back" href="../../background_resources_app.html#background_resources.models.RAGChunk.get_citation">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_citation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns an academic citation identifying the source paper and section:</span>
+<span class="sd">        e.g. &quot;Talavera et al. (2023) — Section: ARCHITECTURE&quot;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">meta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="n">authors</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;authors&#39;</span><span class="p">)</span>
+        <span class="n">year</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;year&#39;</span><span class="p">)</span>
+        <span class="n">section_title</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;section_title&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;section&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;title&#39;</span><span class="p">)</span>
+        <span class="n">doi</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;doi&#39;</span><span class="p">)</span>
+        
+        <span class="n">doc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">document</span>
+        <span class="n">ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reference</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">authors</span> <span class="ow">and</span> <span class="n">ref</span> <span class="ow">and</span> <span class="n">ref</span><span class="o">.</span><span class="n">authors</span><span class="p">:</span>
+            <span class="n">authors</span> <span class="o">=</span> <span class="n">ref</span><span class="o">.</span><span class="n">authors</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="n">authors</span> <span class="ow">and</span> <span class="n">doc</span> <span class="ow">and</span> <span class="n">doc</span><span class="o">.</span><span class="n">author</span><span class="p">:</span>
+            <span class="n">authors</span> <span class="o">=</span> <span class="n">doc</span><span class="o">.</span><span class="n">author</span>
+            
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">year</span> <span class="ow">and</span> <span class="n">ref</span> <span class="ow">and</span> <span class="n">ref</span><span class="o">.</span><span class="n">year</span><span class="p">:</span>
+            <span class="n">year</span> <span class="o">=</span> <span class="n">ref</span><span class="o">.</span><span class="n">year</span>
+            
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">doi</span> <span class="ow">and</span> <span class="n">ref</span> <span class="ow">and</span> <span class="n">ref</span><span class="o">.</span><span class="n">doi</span><span class="p">:</span>
+            <span class="n">doi</span> <span class="o">=</span> <span class="n">ref</span><span class="o">.</span><span class="n">doi</span>
+
+        <span class="n">author_str</span> <span class="o">=</span> <span class="n">authors</span> <span class="ow">or</span> <span class="p">(</span><span class="n">doc</span><span class="o">.</span><span class="n">title</span> <span class="k">if</span> <span class="n">doc</span> <span class="k">else</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;filename&#39;</span><span class="p">,</span> <span class="s1">&#39;Unknown Source&#39;</span><span class="p">))</span>
+        <span class="n">year_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot; (</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">)&quot;</span> <span class="k">if</span> <span class="n">year</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">section_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot; — Section: </span><span class="si">{</span><span class="n">section_title</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">section_title</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">doi_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot; (DOI: </span><span class="si">{</span><span class="n">doi</span><span class="si">}</span><span class="s2">)&quot;</span> <span class="k">if</span> <span class="n">doi</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">author_str</span><span class="si">}{</span><span class="n">year_str</span><span class="si">}{</span><span class="n">section_str</span><span class="si">}{</span><span class="n">doi_str</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span></div>
+</div>
 
 
 
@@ -348,8 +447,8 @@
                     <span class="s1">&#39;in_byte_store&#39;</span><span class="p">:</span> <span class="kc">True</span>
                 <span class="p">}</span>
             <span class="p">)</span>
-            <span class="n">StrategyChunkUsage</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">chunk</span><span class="o">=</span><span class="n">rag_chunk</span><span class="p">,</span> <span class="n">content_object</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
-                                              <span class="n">role</span><span class="o">=</span><span class="n">StrategyChunkUsage</span><span class="o">.</span><span class="n">Role</span><span class="o">.</span><span class="n">CLIPPED</span><span class="p">)</span>
+            <span class="n">StrategyChunkUsage</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span><span class="n">chunk</span><span class="o">=</span><span class="n">rag_chunk</span><span class="p">,</span> <span class="n">content_object</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
+                                                     <span class="n">role</span><span class="o">=</span><span class="n">StrategyChunkUsage</span><span class="o">.</span><span class="n">Role</span><span class="o">.</span><span class="n">CLIPPED</span><span class="p">)</span>
         <span class="n">rag_service_inject</span><span class="o">.</span><span class="n">index_unindexed_chunks</span><span class="p">()</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">[</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s1">] logged </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">chunk_ids</span><span class="p">)</span><span class="si">}</span><span class="s1"> usages to db.&#39;</span><span class="p">)</span></div>
 
@@ -419,7 +518,7 @@
                     <span class="s1">&#39;in_byte_store&#39;</span><span class="p">:</span> <span class="kc">True</span>
                 <span class="p">}</span>
             <span class="p">)</span>
-            <span class="n">StrategyChunkUsage</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">chunk</span><span class="o">=</span><span class="n">rag_chunk</span><span class="p">,</span> <span class="n">content_object</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">role</span><span class="o">=</span><span class="n">StrategyChunkUsage</span><span class="o">.</span><span class="n">Role</span><span class="o">.</span><span class="n">CLIPPED</span><span class="p">)</span>
+            <span class="n">StrategyChunkUsage</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span><span class="n">chunk</span><span class="o">=</span><span class="n">rag_chunk</span><span class="p">,</span> <span class="n">content_object</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">role</span><span class="o">=</span><span class="n">StrategyChunkUsage</span><span class="o">.</span><span class="n">Role</span><span class="o">.</span><span class="n">CLIPPED</span><span class="p">)</span>
         <span class="n">rag_service_inject</span><span class="o">.</span><span class="n">index_unindexed_chunks</span><span class="p">()</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">[</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s1">] logged </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">chunk_ids</span><span class="p">)</span><span class="si">}</span><span class="s1"> usages to db.&#39;</span><span class="p">)</span></div>
 

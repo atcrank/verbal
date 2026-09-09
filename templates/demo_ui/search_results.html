@@ -1,25 +1,31 @@
 {% if not unified_results %}
-    <div class="conv-date" style="text-align: center; margin-top: 20px;">No results found for "{{ query }}".</div>
+    <div class="conv-date" style="text-align: center; margin-top: 15px;">No results found for "{{ query }}".</div>
 {% else %}
-    <h4 style="margin-bottom: 10px; font-size: 0.9rem; color: var(--text-main);">Unified Results</h4>
+    <h4 style="margin-bottom: 8px; font-size: 0.85rem; color: var(--text-main);">Unified Results</h4>
     {% for item in unified_results %}
         {% if item.type == 'grip' %}
-            <div class="search-card" style="border-left: 3px solid var(--primary);" draggable="true" ondragstart="event.dataTransfer.setData('application/json', JSON.stringify({model: 'ConceptNode', id: '{{ item.doc.metadata.concept_id }}', content: '{{ item.doc.page_content|escapejs }}', preview: '{{ item.doc.metadata.title|escapejs }}'}))">
-                <div class="search-card-title" style="color: var(--primary);">✨ {{ item.doc.metadata.title|default:"Concept" }}</div>
+            <div class="search-card" style="border-left: 3px solid #64748b;" draggable="true" ondragstart="event.dataTransfer.setData('application/json', JSON.stringify({model: 'ConceptNode', id: '{{ item.doc.metadata.concept_id }}', content: '{{ item.doc.page_content|escapejs }}', preview: '{{ item.doc.metadata.title|escapejs }}'}))">
+                <div class="search-card-title">Concept: {{ item.doc.metadata.title|default:"Concept" }}</div>
                 {% if item.source_doc_name %}
                     <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">Derived from: {{ item.source_doc_name }}</div>
                 {% endif %}
-                <details>
-                    <summary class="search-card-body" style="cursor: pointer; outline: none;">{{ item.doc.page_content|truncatechars:80 }}</summary>
-                    <div style="margin-top: 8px; padding-left: 14px; font-size: 0.85rem; color: var(--text-main); white-space: pre-wrap; word-break: break-word;">{{ item.doc.page_content }}</div>
+                <details style="margin-top: 4px;">
+                    <summary class="search-card-body" style="cursor: pointer; outline: none; font-size: 0.78rem;">{{ item.doc.page_content|truncatechars:80 }}</summary>
+                    <div style="margin-top: 6px; padding-left: 10px; font-size: 0.8rem; color: var(--text-main); white-space: pre-wrap; word-break: break-word;">{{ item.doc.page_content }}</div>
                 </details>
             </div>
         {% else %}
-            <div class="search-card" draggable="true" ondragstart="event.dataTransfer.setData('application/json', JSON.stringify({model: 'RAGChunk', id: '{% if item.doc.metadata.chunk_id %}{{ item.doc.metadata.chunk_id }}{% else %}{{ item.doc.metadata.id }}{% endif %}', content: '{{ item.doc.page_content|escapejs }}', preview: '{{ item.doc.metadata.filename|escapejs }}'}))">
-                <div class="search-card-title">📄 {{ item.doc.metadata.filename|default:"Document" }} ({{ item.doc.metadata.page_number|default:"-" }})</div>
-                <details>
-                    <summary class="search-card-body" style="cursor: pointer; outline: none;">{{ item.doc.page_content|truncatechars:80 }}</summary>
-                    <div style="margin-top: 8px; padding-left: 14px; font-size: 0.85rem; color: var(--text-main); white-space: pre-wrap; word-break: break-word;">{{ item.doc.page_content }}</div>
+            <div class="search-card" draggable="true" ondragstart="event.dataTransfer.setData('application/json', JSON.stringify({model: 'RAGChunk', id: '{% if item.doc.metadata.chunk_id %}{{ item.doc.metadata.chunk_id }}{% else %}{{ item.doc.metadata.id }}{% endif %}', content: '{{ item.doc.page_content|escapejs }}', preview: '{% if item.doc.metadata.authors %}{{ item.doc.metadata.authors|escapejs }} ({{ item.doc.metadata.year|default:\'-\' }}){% else %}{{ item.doc.metadata.filename|escapejs }}{% endif %}'}))">
+                <div class="search-card-title">
+                    {% if item.doc.metadata.authors %}
+                        {{ item.doc.metadata.authors }} ({{ item.doc.metadata.year|default:"-" }}){% if item.doc.metadata.section_title %} — <span style="font-weight: 500;">{{ item.doc.metadata.section_title }}</span>{% endif %}
+                    {% else %}
+                        {{ item.doc.metadata.filename|default:"Document" }} ({{ item.doc.metadata.page_number|default:"-" }})
+                    {% endif %}
+                </div>
+                <details style="margin-top: 4px;">
+                    <summary class="search-card-body" style="cursor: pointer; outline: none; font-size: 0.78rem;">{{ item.doc.page_content|truncatechars:80 }}</summary>
+                    <div style="margin-top: 6px; padding-left: 10px; font-size: 0.8rem; color: var(--text-main); white-space: pre-wrap; word-break: break-word;">{{ item.doc.page_content }}</div>
                 </details>
             </div>
         {% endif %}

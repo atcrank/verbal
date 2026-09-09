@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>background_resources.rag_service &mdash; Verbal 0.1 documentation</title>
+  <title>background_resources.rag_service &mdash; reason 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
 
@@ -29,7 +29,7 @@
           
           
           <a href="../../index.html" class="icon icon-home">
-            Verbal
+            reason
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -53,6 +53,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../using_ollama.html">Ollama as Local AI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_trials.html">Demo UI Interactive Trials &amp; Feature Walkthroughs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../tests.html">Testing</a></li>
 </ul>
 
@@ -62,7 +63,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../index.html">Verbal</a>
+          <a href="../../index.html">reason</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -207,7 +208,10 @@
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">collection_name</span><span class="o">=</span><span class="s2">&quot;verbal_background_resources&quot;</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">collection_name</span> <span class="o">=</span> <span class="n">collection_name</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span> <span class="o">=</span> <span class="n">HuggingFaceEmbeddings</span><span class="p">(</span><span class="n">model_name</span><span class="o">=</span><span class="s2">&quot;all-MiniLM-L6-v2&quot;</span><span class="p">)</span>
+        <span class="n">embed_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;VERBAL_ROLE&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;web&quot;</span><span class="p">:</span>
+            <span class="n">embed_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;device&quot;</span><span class="p">:</span> <span class="s2">&quot;cpu&quot;</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span> <span class="o">=</span> <span class="n">HuggingFaceEmbeddings</span><span class="p">(</span><span class="n">model_name</span><span class="o">=</span><span class="s2">&quot;all-MiniLM-L6-v2&quot;</span><span class="p">,</span> <span class="n">model_kwargs</span><span class="o">=</span><span class="n">embed_kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">reading_ids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>  <span class="c1"># reading_ids</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">store</span> <span class="o">=</span> <span class="n">DjangoChunkStore</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">id_key</span> <span class="o">=</span> <span class="s2">&quot;chunk_id&quot;</span>
@@ -670,9 +674,17 @@
         <span class="n">final_chunks</span> <span class="o">=</span> <span class="n">grobid_tei_to_semantic_chunks</span><span class="p">(</span><span class="n">tei_xml</span><span class="p">,</span> <span class="n">document_title</span><span class="o">=</span><span class="n">document</span><span class="o">.</span><span class="n">title</span><span class="p">)</span>
         
         <span class="n">total_chunks</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">final_chunks</span><span class="p">)</span>
+        <span class="n">ref</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">document</span><span class="p">,</span> <span class="s1">&#39;grobid_metadata&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">vec_doc</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">final_chunks</span><span class="p">):</span>
             <span class="n">global_meta</span> <span class="o">=</span> <span class="n">document</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">if</span> <span class="n">document</span><span class="o">.</span><span class="n">metadata</span> <span class="k">else</span> <span class="p">{}</span>
             <span class="n">vec_doc</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">global_meta</span><span class="p">)</span>
+            <span class="n">vec_doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;document_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">document</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">ref</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="s1">&#39;authors&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span> <span class="n">vec_doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;authors&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ref</span><span class="o">.</span><span class="n">authors</span>
+                <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="s1">&#39;year&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span> <span class="n">vec_doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;year&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">ref</span><span class="o">.</span><span class="n">year</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="s1">&#39;doi&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span> <span class="n">vec_doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;doi&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ref</span><span class="o">.</span><span class="n">doi</span>
+                <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="s1">&#39;journal&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span> <span class="n">vec_doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;journal&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ref</span><span class="o">.</span><span class="n">journal</span>
+                <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span> <span class="n">vec_doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;paper_title&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ref</span><span class="o">.</span><span class="n">title</span>
             <span class="n">vec_doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;chunk_index&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">index</span>
             <span class="n">vec_doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;total_chunks&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">total_chunks</span>
             <span class="n">vec_doc</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;location_percent&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(((</span><span class="n">index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">total_chunks</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span> <span class="k">if</span> <span class="n">total_chunks</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
@@ -689,6 +701,13 @@
             <span class="n">chunk</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;filename&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">document</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">name</span>
             <span class="n">chunk</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;chunk_number&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">final_chunks</span><span class="p">))</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="n">chunk</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;indexed_hash&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">current_scheme</span>
+            <span class="n">chunk</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;document_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">document</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">ref</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="s1">&#39;authors&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span> <span class="n">chunk</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;authors&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ref</span><span class="o">.</span><span class="n">authors</span>
+                <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="s1">&#39;year&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span> <span class="n">chunk</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;year&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">ref</span><span class="o">.</span><span class="n">year</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="s1">&#39;doi&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span> <span class="n">chunk</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;doi&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ref</span><span class="o">.</span><span class="n">doi</span>
+                <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="s1">&#39;journal&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span> <span class="n">chunk</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;journal&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ref</span><span class="o">.</span><span class="n">journal</span>
+                <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span> <span class="n">chunk</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;paper_title&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ref</span><span class="o">.</span><span class="n">title</span>
             
             <span class="n">chunks_to_store</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">chunk_id</span><span class="p">,</span> <span class="n">chunk</span><span class="p">))</span>
             
@@ -934,52 +953,89 @@
         <span class="n">nlp_service</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">nlp_service</span>
 
         <span class="c1"># 1. Get core concepts from query</span>
-        <span class="c1"># Query: &quot;How do I fix memory leaks?&quot; -&gt; {&#39;fix&#39;, &#39;memory&#39;, &#39;leak&#39;}</span>
-        <span class="c1"># Lowercase lemmas to ensure case-insensitive matching (e.g. &quot;Water&quot; vs &quot;water&quot;)</span>
+        <span class="c1"># Lowercase lemmas to ensure case-insensitive matching</span>
         <span class="n">query_lemmas</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">t</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">nlp_service</span><span class="o">.</span><span class="n">get_lemmatized_tokens</span><span class="p">(</span><span class="n">user_query</span><span class="p">)])</span>
+        
+        <span class="c1"># Detect explicit request for definitions/terminology</span>
+        <span class="n">query_lower</span> <span class="o">=</span> <span class="n">user_query</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="n">is_definition_query</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="n">phrase</span> <span class="ow">in</span> <span class="n">query_lower</span> <span class="k">for</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="p">[</span>
+            <span class="s2">&quot;what is&quot;</span><span class="p">,</span> <span class="s2">&quot;what are&quot;</span><span class="p">,</span> <span class="s2">&quot;define&quot;</span><span class="p">,</span> <span class="s2">&quot;definition&quot;</span><span class="p">,</span> <span class="s2">&quot;meaning of&quot;</span><span class="p">,</span> <span class="s2">&quot;stands for&quot;</span><span class="p">,</span> <span class="s2">&quot;acronym&quot;</span>
+        <span class="p">])</span>
+        
+        <span class="c1"># Domain stop-concepts: generic domain unigrams that should NOT trigger glossary definition priority</span>
+        <span class="n">DOMAIN_STOPWORDS</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;fire&quot;</span><span class="p">,</span> <span class="s2">&quot;smoke&quot;</span><span class="p">,</span> <span class="s2">&quot;system&quot;</span><span class="p">,</span> <span class="s2">&quot;water&quot;</span><span class="p">,</span> <span class="s2">&quot;foam&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">,</span> <span class="s2">&quot;device&quot;</span><span class="p">,</span> <span class="s2">&quot;equipment&quot;</span><span class="p">,</span> 
+            <span class="s2">&quot;operation&quot;</span><span class="p">,</span> <span class="s2">&quot;datum&quot;</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="s2">&quot;model&quot;</span><span class="p">,</span> <span class="s2">&quot;use&quot;</span><span class="p">,</span> <span class="s2">&quot;method&quot;</span><span class="p">,</span> <span class="s2">&quot;result&quot;</span><span class="p">,</span> <span class="s2">&quot;paper&quot;</span><span class="p">,</span> 
+            <span class="s2">&quot;study&quot;</span><span class="p">,</span> <span class="s2">&quot;research&quot;</span><span class="p">,</span> <span class="s2">&quot;area&quot;</span><span class="p">,</span> <span class="s2">&quot;scene&quot;</span><span class="p">,</span> <span class="s2">&quot;unit&quot;</span><span class="p">,</span> <span class="s2">&quot;level&quot;</span><span class="p">,</span> <span class="s2">&quot;flow&quot;</span><span class="p">,</span> <span class="s2">&quot;rate&quot;</span>
+        <span class="p">}</span>
 
         <span class="n">scored_results</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">total_retrieved</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">retrieved_chunks</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">retrieved_chunks</span><span class="p">):</span>
             <span class="c1"># 2. Get concepts from the chunk</span>
             <span class="n">content_to_check</span> <span class="o">=</span> <span class="n">chunk</span><span class="o">.</span><span class="n">page_content</span>
-            <span class="k">if</span> <span class="n">chunk</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;original_term&quot;</span><span class="p">):</span>
-                <span class="n">content_to_check</span> <span class="o">=</span> <span class="n">chunk</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;original_term&quot;</span><span class="p">]</span> <span class="o">+</span><span class="s2">&quot;: &quot;</span> <span class="o">+</span> <span class="n">content_to_check</span>
-
-            <span class="n">chunk_lemmas</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">t</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">nlp_service</span><span class="o">.</span><span class="n">get_lemmatized_tokens</span><span class="p">(</span><span class="n">content_to_check</span><span class="p">)])</span>
-
-            <span class="c1"># 3. Calculate overlap</span>
-            <span class="c1"># Calculate Query Coverage: What percentage of the query&#39;s concepts are present in the chunk?</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">query_lemmas</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">overlap_ratio</span> <span class="o">=</span> <span class="mf">0.0</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">intersection</span> <span class="o">=</span> <span class="n">query_lemmas</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">chunk_lemmas</span><span class="p">)</span>
-                <span class="n">base_overlap</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">intersection</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">query_lemmas</span><span class="p">)</span>
-                
-                <span class="c1"># Length Penalty (Information Density):</span>
-                <span class="c1"># Discount overlap score for excessively long chunks.</span>
-                <span class="c1"># Chunks under 100 lemmas get no penalty.</span>
-                <span class="c1"># A 1000-lemma chunk is penalized heavily (100/1000 = 0.1).</span>
-                <span class="n">length_penalty</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">100.0</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">chunk_lemmas</span><span class="p">)))</span>
-                <span class="n">overlap_ratio</span> <span class="o">=</span> <span class="n">base_overlap</span> <span class="o">*</span> <span class="n">length_penalty</span>
-            
-            <span class="c1"># 4. Tie-breaker: Prefer definitions ONLY if they actually match the query context</span>
-            <span class="n">is_relevant_definition</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="n">original_term</span> <span class="o">=</span> <span class="n">chunk</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;original_term&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">original_term</span><span class="p">:</span>
+                <span class="n">content_to_check</span> <span class="o">=</span> <span class="n">original_term</span> <span class="o">+</span> <span class="s2">&quot;: &quot;</span> <span class="o">+</span> <span class="n">content_to_check</span>
+
+            <span class="n">chunk_lemmas_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">nlp_service</span><span class="o">.</span><span class="n">get_lemmatized_tokens</span><span class="p">(</span><span class="n">content_to_check</span><span class="p">)]</span>
+            <span class="n">chunk_lemmas_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">chunk_lemmas_list</span><span class="p">)</span>
+
+            <span class="c1"># 3. Calculate query concept coverage</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">query_lemmas</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">base_overlap</span> <span class="o">=</span> <span class="mf">0.0</span>
+                <span class="n">lexical_score</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">intersection</span> <span class="o">=</span> <span class="n">query_lemmas</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">chunk_lemmas_set</span><span class="p">)</span>
+                <span class="n">base_overlap</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">intersection</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">query_lemmas</span><span class="p">)</span>
+
+                <span class="c1"># Concept Concentration / Bounded Length Factor:</span>
+                <span class="c1"># To prevent small local models (e.g. Gemma-2-2b-it) from being overwhelmed by massive</span>
+                <span class="c1"># text blocks, we apply a gentle density curve. Chunks under 300 lemmas incur no penalty.</span>
+                <span class="c1"># Longer research sections receive a soft bounded scaling (not the severe 100/len penalty</span>
+                <span class="c1"># that previously slashed 500-lemma empirical papers by 80%).</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">chunk_lemmas_list</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">300</span><span class="p">:</span>
+                    <span class="n">density_factor</span> <span class="o">=</span> <span class="mf">1.0</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">density_factor</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.65</span><span class="p">,</span> <span class="p">(</span><span class="mf">300.0</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">chunk_lemmas_list</span><span class="p">))</span> <span class="o">**</span> <span class="mf">0.3</span><span class="p">)</span>
+                
+                <span class="n">lexical_score</span> <span class="o">=</span> <span class="n">base_overlap</span> <span class="o">*</span> <span class="n">density_factor</span>
+
+            <span class="c1"># 4. Discriminative Term Matching for Definitions:</span>
+            <span class="c1"># Glossary leapfrogging was originally added for token efficiency, but coarse single-word matches</span>
+            <span class="c1"># on generic domain terms (like &quot;smoke&quot; or &quot;fire&quot;) allowed airport glossaries to crowd out peer-reviewed</span>
+            <span class="c1"># research. Prioritize definitions ONLY when:</span>
+            <span class="c1">#   (a) The query explicitly asks for a definition, OR</span>
+            <span class="c1">#   (b) The term is a multi-word compound sharing query concepts, OR</span>
+            <span class="c1">#   (c) The term is a specific, rare technical term (not in DOMAIN_STOPWORDS, length &gt;= 3).</span>
+            <span class="n">is_relevant_definition</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">if</span> <span class="n">original_term</span><span class="p">:</span>
+                <span class="n">term_clean</span> <span class="o">=</span> <span class="n">original_term</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
                 <span class="n">term_lemmas</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">t</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">nlp_service</span><span class="o">.</span><span class="n">get_lemmatized_tokens</span><span class="p">(</span><span class="n">original_term</span><span class="p">)])</span>
-                <span class="c1"># If the term shares words with the query, or the definition is a strong match</span>
-                <span class="k">if</span> <span class="n">term_lemmas</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">query_lemmas</span><span class="p">)</span> <span class="ow">or</span> <span class="n">overlap_ratio</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">:</span>
+                <span class="n">term_overlap</span> <span class="o">=</span> <span class="n">term_lemmas</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">query_lemmas</span><span class="p">)</span>
+                
+                <span class="n">is_multiword</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">term_clean</span><span class="o">.</span><span class="n">split</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">1</span>
+                <span class="n">is_specific_term</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="n">t</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">DOMAIN_STOPWORDS</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">3</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">term_lemmas</span><span class="p">)</span>
+                
+                <span class="k">if</span> <span class="n">term_overlap</span> <span class="ow">and</span> <span class="p">(</span><span class="n">is_definition_query</span> <span class="ow">or</span> <span class="n">is_multiword</span> <span class="ow">or</span> <span class="n">is_specific_term</span><span class="p">):</span>
                     <span class="n">is_relevant_definition</span> <span class="o">=</span> <span class="mi">1</span>
+
+            <span class="c1"># 5. Continuous Composite Score:</span>
+            <span class="c1"># Instead of a rigid tuple sort that acts as an absolute glass ceiling, combine lexical concept</span>
+            <span class="c1"># coverage, semantic search rank, and an appropriate definition bonus.</span>
+            <span class="c1"># Normalised semantic score: 1.0 for first retrieved chunk, decreasing down to 0.5.</span>
+            <span class="n">semantic_score</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">i</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">total_retrieved</span><span class="p">))))</span>
+            <span class="n">definition_bonus</span> <span class="o">=</span> <span class="mf">0.25</span> <span class="k">if</span> <span class="p">(</span><span class="n">is_relevant_definition</span> <span class="ow">and</span> <span class="n">is_definition_query</span><span class="p">)</span> <span class="k">else</span> <span class="p">(</span><span class="mf">0.10</span> <span class="k">if</span> <span class="n">is_relevant_definition</span> <span class="k">else</span> <span class="mf">0.0</span><span class="p">)</span>
             
-            <span class="c1"># By defaulting to 0.0, we stop punishing the semantic embedding model for finding synonyms!</span>
-            <span class="k">if</span> <span class="n">overlap_ratio</span> <span class="o">&gt;=</span> <span class="n">min_overlap</span> <span class="ow">or</span> <span class="n">is_relevant_definition</span><span class="p">:</span>
-                <span class="n">scored_results</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">chunk</span><span class="p">,</span> <span class="n">overlap_ratio</span><span class="p">,</span> <span class="n">is_relevant_definition</span><span class="p">,</span> <span class="n">i</span><span class="p">))</span>
+            <span class="n">composite_score</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.55</span> <span class="o">*</span> <span class="n">lexical_score</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="mf">0.35</span> <span class="o">*</span> <span class="n">semantic_score</span><span class="p">)</span> <span class="o">+</span> <span class="n">definition_bonus</span>
+
+            <span class="c1"># Acceptance filter</span>
+            <span class="k">if</span> <span class="n">lexical_score</span> <span class="o">&gt;=</span> <span class="n">min_overlap</span> <span class="ow">or</span> <span class="n">is_relevant_definition</span> <span class="ow">or</span> <span class="p">(</span><span class="n">base_overlap</span> <span class="o">&gt;</span> <span class="mf">0.0</span> <span class="ow">and</span> <span class="n">semantic_score</span> <span class="o">&gt;=</span> <span class="mf">0.8</span><span class="p">):</span>
+                <span class="n">scored_results</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">chunk</span><span class="p">,</span> <span class="n">composite_score</span><span class="p">,</span> <span class="n">lexical_score</span><span class="p">,</span> <span class="n">is_relevant_definition</span><span class="p">,</span> <span class="n">i</span><span class="p">))</span>
 
         <span class="c1"># HYBRID SEARCH SORTING:</span>
-        <span class="c1"># 1. Target Definition (Exact Glossary Hit)</span>
-        <span class="c1"># 2. Lexical Overlap (Safeguard against embedding hallucinations like Python code)</span>
-        <span class="c1"># 3. Original Semantic Rank (-x[3])</span>
-        <span class="n">sorted_results</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">scored_results</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="n">x</span><span class="p">[</span><span class="mi">3</span><span class="p">]),</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># Sort continuously by composite_score, preserving semantic tie-breaker (-i)</span>
+        <span class="n">sorted_results</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">scored_results</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="n">x</span><span class="p">[</span><span class="mi">4</span><span class="p">]),</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">return</span> <span class="p">[(</span><span class="n">item</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">item</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">sorted_results</span><span class="p">]</span></div>
 
 

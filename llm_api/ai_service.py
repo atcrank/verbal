@@ -393,6 +393,18 @@ class AIService:
                 )
                 if "log_ids" in log_kwargs:
                     log_kwargs["log_ids"].append(log.id)
+
+                # If running inside a background task, record telemetry to the active context
+                try:
+                    from verbal_tasks.telemetry import record_task_generation
+                    record_task_generation(
+                        input_tokens=input_tokens,
+                        output_tokens=output_tokens,
+                        duration_ms=duration_ms,
+                        tokens_per_second=tps,
+                    )
+                except Exception:
+                    pass
         except Exception as e:
             logger.info(f'Warning: Failed to log prompt response: {e}')
 
@@ -738,7 +750,7 @@ class AIService:
         return needs_proxy
 
     def generate_response2(self, messages,
-                           max_new_tokens=500,
+                           max_new_tokens=1500,
                            temperature=0.7,
                            log_kwargs=None,
                            user=None,
@@ -858,7 +870,7 @@ class AIService:
 
     def generate_outline(self, messages,
                          response_schema=None,
-                         max_new_tokens=500,
+                         max_new_tokens=1500,
                          temperature=0.7,
                          log_kwargs=None,
                          user=None,

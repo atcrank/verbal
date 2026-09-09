@@ -63,11 +63,12 @@ This eliminates the locked-down `verbal_redis` Docker container, unifies task ma
 2. **Seed & Maintenance Integration**:
    - Update `metacognition/seed.py` to register the NightManager daily maintenance (3:00 AM) and scoring tasks in the new schedule model.
 
-### Phase 4: Admin Dashboard & Task Monitoring
+### Phase 4: Admin Dashboard & Task Monitoring (Completed)
 1. **Task Monitoring Dashboard**:
-   - Refactor `CeleryStatus` model / admin in `grips/admin.py` to `TaskStatusAdmin` / `TaskQueueAdmin`.
-   - Query task states (`PENDING`, `RUNNING`, `SUCCESSFUL`, `FAILED`) directly from the PostgreSQL task queue table.
-   - Update `celery_status_dashboard.html` template for real-time task queue visibility.
+   - Implemented `TaskRecordAdmin` and `ScheduledTaskAdmin` in `verbal_tasks/admin.py` with custom changelist badges, runtime duration indicators, token count breakdown, and JSON inspection widgets.
+   - Built a real-time, interactive Task Queue Dashboard (`/admin/verbal_tasks/taskrecord/dashboard/`) featuring live KPI cards (active running tasks, pending queue, 24h success rate, failures, LLM token metrics, avg latency), active tasks live stream with stopwatches, token usage leaderboard by task type, recent task activity stream with instant AJAX retry, and scheduled jobs monitor.
+   - Built `TaskTelemetryContext` in `verbal_tasks/telemetry.py` hooking into `llm_api.ai_service` and `runtaskworker` to automatically measure execution durations and capture input, output, and total token consumption for all background tasks.
+   - Refactored legacy `CeleryStatus` model and admin in `grips/admin.py` and updated `templates/admin/grips/celery_status_dashboard.html` with smooth redirection to the new centralized dashboard.
 
 ### Phase 5: Shell Scripts, Tooling & Documentation
 1. **Script Updates**:

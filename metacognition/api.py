@@ -99,7 +99,7 @@ def dispatch_blueprint(request, payload: BlueprintDispatchIn):
 
     run_id = str(uuid4())
     
-    task_run_blueprint_async.delay(
+    task_run_blueprint_async.enqueue(
         blueprint_id=payload.blueprint_id,
         user_prompt=payload.user_prompt,
         conversation_id=payload.conversation_id,
@@ -134,7 +134,7 @@ def approve_tool(request, payload: ApproveToolIn):
     """
     Authorizes a pending tool execution and resumes the suspended LangGraph checkpoint.
     """
-    task_resume_blueprint_async.delay(
+    task_resume_blueprint_async.enqueue(
         blueprint_id=payload.blueprint_id,
         thread_id=payload.thread_id,
         run_id=payload.run_id,

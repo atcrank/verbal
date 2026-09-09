@@ -3,35 +3,53 @@
         <div class="bubble">
             {{ log.html_user_prompt|safe }}
             {% if log.rag_selections %}
-            <details style="margin-top: 10px; font-size: 0.85rem; background: rgba(255,255,255,0.4); padding: 8px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.1);">
-                <summary style="cursor: pointer; font-weight: bold; color: var(--text-muted);">View Retrieved Context</summary>
-                <div style="margin-top: 8px; white-space: pre-wrap; word-wrap: break-word; font-family: monospace;">{{ log.rag_selections }}</div>
+            <details style="margin-top: 8px; font-size: 0.8rem; background: #ffffff; padding: 6px 10px; border-radius: 4px; border: 1px solid #cbd5e1;">
+                <summary style="cursor: pointer; font-weight: 600; color: #475569;">Attached Context</summary>
+                <div style="margin-top: 6px; white-space: pre-wrap; word-wrap: break-word; font-family: monospace; font-size: 0.78rem;">{{ log.html_rag_selections|default:log.rag_selections }}</div>
             </details>
             {% endif %}
         </div>
     </div>
     {% if log.generated_response %}
-    <div class="chat-message ai">
+    <div class="chat-message ai" id="message-log-{{ log.id }}">
         <div class="bubble">
             {{ log.html_response|safe }}
-            <div style="margin-top: 10px; font-size: 0.75rem; color: var(--text-muted); text-align: right;">
-                Tokens: Input ({{ log.input_tokens }}), Output ({{ log.output_tokens }})
+            <div class="message-actions-bar">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <button type="button" class="branch-btn"
+                        hx-post="{% url 'demo_ui:branch_conversation' log.id %}"
+                        hx-target="#chat-history"
+                        hx-swap="innerHTML"
+                        title="Fork conversation DAG from this turn">
+                        Branch from here
+                    </button>
+                    {% if log.model_name %}
+                        <span style="font-size: 0.72rem; color: #94a3b8;">{{ log.model_name }}</span>
+                    {% endif %}
+                </div>
+                <div style="font-size: 0.74rem; color: var(--text-muted);">
+                    Tokens: <span style="color: var(--text-main); font-weight: 600;">{{ log.input_tokens }}</span> in / <span style="color: var(--text-main); font-weight: 600;">{{ log.output_tokens }}</span> out
+                </div>
             </div>
         </div>
     </div>
     {% endif %}
 {% empty %}
-    <div class="empty-state" style="text-align: center; margin-top: 20px; color: var(--text-muted);">
-        No messages yet.
+    <div class="empty-state" style="text-align: center; margin-top: 40px; color: var(--text-muted);">
+        <div style="font-weight: 600; color: var(--text-main); font-size: 0.95rem;">No messages in this conversation yet.</div>
+        <div style="font-size: 0.82rem; margin-top: 4px;">Type a prompt below or drop documents, concepts, and past chats to get started.</div>
     </div>
 {% endfor %}
 
 <!-- HTMX Out-Of-Band Swap: This updates the hidden input in the form with the active conversation ID -->
 <input type="hidden" name="conversation_id" id="current-conversation-id" value="{{ conversation.id }}" hx-swap-oob="true">
 <!-- HTMX Out-Of-Band Swap: This updates the title header above the chat -->
- <div id="active-conversation-header" hx-swap-oob="true" style="padding: 15px 20px; border-bottom: 1px solid var(--border); background-color: var(--bg-panel); font-weight: 600; color: var(--text-main); font-size: 1.1rem; min-height: 55px; flex-shrink: 0;">
-     {{ conversation.title|default:"New Conversation" }}
- </div>
+<div id="active-conversation-header" hx-swap-oob="true" style="padding: 12px 18px; border-bottom: 1px solid var(--border); background-color: var(--bg-panel); font-weight: 600; color: var(--text-main); font-size: 0.95rem; min-height: 50px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;">
+    <div>{{ conversation.title|default:"New Conversation" }}</div>
+    <span style="font-size: 0.74rem; color: var(--text-muted); font-weight: 400;">ID: {{ conversation.id|stringformat:".8s" }}</span>
+</div>
 
-
-<script>document.getElementById("chat-history").scrollTop = document.getElementById("chat-history").scrollHeight;</script>
+<script>
+    var chatBox = document.getElementById("chat-history");
+    if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+</script>

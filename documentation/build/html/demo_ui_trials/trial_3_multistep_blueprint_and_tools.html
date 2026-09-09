@@ -1,0 +1,356 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutorial 3: Multi-Step Cognitive Reasoning and Sandboxed Tool Execution &mdash; reason 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=aaf24e6f" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Tutorial 4: Counterfactual Branching, Empirical Ontology Synthesis, and Protocol Generation" href="trial_4_branching_and_grips_expansion.html" />
+    <link rel="prev" title="Tutorial 2: Careful Literature Extraction and Parametric Factor Construction" href="trial_2_careful_literature_extraction.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            reason
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../llm_api_app.html">LLM API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../background_resources_app.html">Background Resources - context documents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../grips_app.html">Grips - wiki knowledge banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo_ui_app.html">Demo UI</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../using_ollama.html">Ollama as Local AI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../demo_ui_trials.html">Demo UI Empirical Trials &amp; Verification Reports</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../demo_ui_trials.html#methodology-executable-doctests-as-verifiable-reports">Methodology: Executable Doctests as Verifiable Reports</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../demo_ui_trials.html#the-four-trial-reports">The Four Trial Reports</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="trial_1_ingestion_and_context.html">Tutorial 1: Document Ingestion and Context-Grounded Reasoning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="trial_2_careful_literature_extraction.html">Tutorial 2: Careful Literature Extraction and Parametric Factor Construction</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Tutorial 3: Multi-Step Cognitive Reasoning and Sandboxed Tool Execution</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#execution">Execution</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="trial_4_branching_and_grips_expansion.html">Tutorial 4: Counterfactual Branching, Empirical Ontology Synthesis, and Protocol Generation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../tests.html">Testing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">reason</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../demo_ui_trials.html">Demo UI Empirical Trials &amp; Verification Reports</a></li>
+      <li class="breadcrumb-item active">Tutorial 3: Multi-Step Cognitive Reasoning and Sandboxed Tool Execution</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/demo_ui_trials/trial_3_multistep_blueprint_and_tools.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tutorial-3-multi-step-cognitive-reasoning-and-sandboxed-tool-execution">
+<h1>Tutorial 3: Multi-Step Cognitive Reasoning and Sandboxed Tool Execution<a class="headerlink" href="#tutorial-3-multi-step-cognitive-reasoning-and-sandboxed-tool-execution" title="Link to this heading"></a></h1>
+<p>We imagine a researcher who has the following task and resources:
+An autonomous robotics research team is designing an empirical intervention trial for a tracked search-and-rescue robot operating inside a multi-story collapsed structure under heavy smoke and rubble. The researcher uses the Verbal / Reason interface to explore existing literature, formulate causal hypotheses, evaluate statistical and combinatory factor trade-offs, compute factorial parameters in the sandbox, and structure the domain knowledge graph.</p>
+<p>In this third tutorial, the researcher investigates the 6-factor combinatory engineering space grounded in Trial 2’s literature extraction:</p>
+<ol class="arabic simple">
+<li><p><strong>Experimental Formulation</strong>: Poses the $3 times 2$ factorial study (3 sensor payloads $times$ 2 terrain locomotion profiles) with a 960Wh usable battery reserve and a 120-minute minimum operational mission threshold ($T_{op} ge 120$).</p></li>
+<li><p><strong>Strict Role Separation</strong>: The researcher does <strong>NOT</strong> write Python code. The researcher describes the causal factors and operational goals in domain terms, instructing Reason to use the <code class="docutils literal notranslate"><span class="pre">Reasoning</span> <span class="pre">with</span> <span class="pre">Code</span> <span class="pre">Sandbox</span></code> cognitive blueprint.</p></li>
+<li><p><strong>Local Model Execution</strong>: Verbal / Reason (Gemma4) formulates the mathematical equations ($T_{op} = frac{E_{usable}}{P_{total}} times 60$), composes the Python simulation script, executes it inside the Docker sandbox (<code class="docutils literal notranslate"><span class="pre">verbal_sandbox</span></code>), and parses the stdout.</p></li>
+<li><p><strong>Active Adversarial Verification</strong>: The researcher audits the model’s simulation script and recommendation. If an inverted selection logic error occurs (e.g. recommending the minimum duration or a configuration below 120 minutes), the researcher flags the flaw and prompts a corrective turn.</p></li>
+<li><p><strong>Decisive Causal Finding</strong>: The corrected tabulation proves that on heavy rubble (460W), zero onboard configurations can achieve 120 minutes, mathematically motivating deployable ad-hoc relays in Trial 4.</p></li>
+</ol>
+<section id="execution">
+<h2>Execution<a class="headerlink" href="#execution" title="Link to this heading"></a></h2>
+<p>First, we set up credentials and seed the <code class="docutils literal notranslate"><span class="pre">Reasoning</span> <span class="pre">with</span> <span class="pre">Code</span> <span class="pre">Sandbox</span></code> cognitive blueprint.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span><span class="o">,</span><span class="w"> </span><span class="nn">json</span><span class="o">,</span><span class="w"> </span><span class="nn">time</span><span class="o">,</span><span class="w"> </span><span class="nn">contextlib</span><span class="o">,</span><span class="w"> </span><span class="nn">io</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;DJANGO_ALLOW_ASYNC_UNSAFE&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;true&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">django.contrib.auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_user_model</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">CognitiveBlueprint</span><span class="p">,</span> <span class="n">ReasoningStep</span><span class="p">,</span> <span class="n">ToolDefinition</span><span class="p">,</span> <span class="n">bypass_canonical_lock</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.seed</span><span class="w"> </span><span class="kn">import</span> <span class="n">seed_tools</span><span class="p">,</span> <span class="n">seed_reasoning_with_code_sandbox</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_blueprint</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Conversation</span><span class="p">,</span> <span class="n">PromptResponseLog</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">demo_ui.demo_ui_trials.helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">take_ui_screenshot</span><span class="p">,</span> <span class="n">capture_ai_response</span><span class="p">,</span> <span class="n">record_ui_doctest_run</span><span class="p">,</span> <span class="n">timed_step</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">playwright.sync_api</span><span class="w"> </span><span class="kn">import</span> <span class="n">sync_playwright</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">User</span> <span class="o">=</span> <span class="n">get_user_model</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">user</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s2">&quot;robotics_researcher&quot;</span><span class="p">,</span> <span class="n">defaults</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;is_staff&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;is_superuser&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">_</span> <span class="o">=</span> <span class="n">user</span><span class="o">.</span><span class="n">set_password</span><span class="p">(</span><span class="s2">&quot;rescue2026&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">user</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model_name</span> <span class="o">=</span> <span class="n">get_active_model_name</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">trial_t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">bypass_canonical_lock</span><span class="p">():</span>
+<span class="gp">... </span>    <span class="n">seed_tools</span><span class="p">(</span><span class="n">ToolDefinition</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">seed_reasoning_with_code_sandbox</span><span class="p">(</span><span class="n">CognitiveBlueprint</span><span class="p">,</span> <span class="n">ReasoningStep</span><span class="p">,</span> <span class="n">ToolDefinition</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bp</span> <span class="o">=</span> <span class="n">CognitiveBlueprint</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Reasoning with Code Sandbox&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">bypass_canonical_lock</span><span class="p">():</span>
+<span class="gp">... </span>    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">bp</span><span class="o">.</span><span class="n">steps</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+<span class="gp">... </span>        <span class="n">s</span><span class="o">.</span><span class="n">max_new_tokens</span> <span class="o">=</span> <span class="mi">1500</span>
+<span class="gp">... </span>        <span class="n">s</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Blueprint configured: &#39;</span><span class="si">{</span><span class="n">bp</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;, steps: </span><span class="si">{</span><span class="n">bp</span><span class="o">.</span><span class="n">steps</span><span class="o">.</span><span class="n">count</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="go">Blueprint configured: &#39;Reasoning with Code Sandbox&#39;, steps: 2</span>
+</pre></div>
+</div>
+<section id="step-1-posing-factorial-engineering-trade-off-inquiry">
+<h3>Step 1: Posing Factorial Engineering Trade-Off Inquiry<a class="headerlink" href="#step-1-posing-factorial-engineering-trade-off-inquiry" title="Link to this heading"></a></h3>
+<p>The researcher formulates a rigorous combinatory study across 3 sensor payloads and 2 terrain configurations derived directly from Trial 2.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">prompt</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>    <span class="s2">&quot;We are designing an empirical intervention trial for an autonomous tracked firefighting robot operating in a collapsed multi-story structure.</span><span class="se">\n</span><span class="s2">&quot;</span>
+<span class="gp">... </span>    <span class="s2">&quot;Power system parameters (grounded in Talavera et al. 2023):</span><span class="se">\n</span><span class="s2">&quot;</span>
+<span class="gp">... </span>    <span class="s2">&quot;- Battery capacity: 1200Wh pack with a 20</span><span class="si">% e</span><span class="s2">mergency safety reserve (80</span><span class="si">% u</span><span class="s2">sable energy = 960Wh usable).</span><span class="se">\n</span><span class="s2">&quot;</span>
+<span class="gp">... </span>    <span class="s2">&quot;Experimental factors:</span><span class="se">\n</span><span class="s2">&quot;</span>
+<span class="gp">... </span>    <span class="s2">&quot;- Sensor payload draw: Baseline (25W), Standard Multi-spectral (75W), Heavy LiDAR+Thermal+Compute (110W).</span><span class="se">\n</span><span class="s2">&quot;</span>
+<span class="gp">... </span>    <span class="s2">&quot;- Locomotion power across 2 terrains: Smooth Concrete (280W) and Heavy Rubble/Debris (460W).</span><span class="se">\n</span><span class="s2">&quot;</span>
+<span class="gp">... </span>    <span class="s2">&quot;Task:</span><span class="se">\n</span><span class="s2">&quot;</span>
+<span class="gp">... </span>    <span class="s2">&quot;Formulate the trade-off calculation and write a clean Python script using the python_sandbox tool to compute the exact &quot;</span>
+<span class="gp">... </span>    <span class="s2">&quot;operational search duration in minutes for all 6 factor combinations. Filter strictly for configurations meeting the &quot;</span>
+<span class="gp">... </span>    <span class="s2">&quot;120-minute minimum operational requirement (T_op &gt;= 120), and recommend the highest-capability sensor package that meets this constraint.&quot;</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="step-2-browser-navigation-blueprint-selection">
+<h3>Step 2: Browser Navigation &amp; Blueprint Selection<a class="headerlink" href="#step-2-browser-navigation-blueprint-selection" title="Link to this heading"></a></h3>
+<p>The researcher connects to the Reason Demo UI, selects the <code class="docutils literal notranslate"><span class="pre">Reasoning</span> <span class="pre">with</span> <span class="pre">Code</span> <span class="pre">Sandbox</span></code> cognitive blueprint, and inputs the domain inquiry.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">steps_recorded</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pw</span> <span class="o">=</span> <span class="n">sync_playwright</span><span class="p">()</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">browser</span> <span class="o">=</span> <span class="n">pw</span><span class="o">.</span><span class="n">chromium</span><span class="o">.</span><span class="n">launch</span><span class="p">(</span><span class="n">headless</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">page</span> <span class="o">=</span> <span class="n">browser</span><span class="o">.</span><span class="n">new_page</span><span class="p">(</span><span class="n">viewport</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;width&quot;</span><span class="p">:</span> <span class="mi">1280</span><span class="p">,</span> <span class="s2">&quot;height&quot;</span><span class="p">:</span> <span class="mi">800</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">authenticate_page</span><span class="p">(</span><span class="n">page</span><span class="p">,</span> <span class="n">user</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">timed_step</span><span class="p">(</span><span class="s2">&quot;Blueprint Selection &amp; Prompt Submission&quot;</span><span class="p">,</span> <span class="n">steps_recorded</span><span class="p">)</span> <span class="k">as</span> <span class="n">step</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">_</span> <span class="o">=</span> <span class="n">page</span><span class="o">.</span><span class="n">goto</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">live_server_url</span><span class="si">}</span><span class="s2">/demo/&quot;</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">_</span> <span class="o">=</span> <span class="n">page</span><span class="o">.</span><span class="n">wait_for_selector</span><span class="p">(</span><span class="s2">&quot;#chat-form&quot;</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">6000</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">_</span> <span class="o">=</span> <span class="n">page</span><span class="o">.</span><span class="n">select_option</span><span class="p">(</span><span class="s1">&#39;select[name=&quot;blueprint_id&quot;]&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">bp</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
+<span class="gp">... </span>    <span class="n">page</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="s1">&#39;textarea[name=&quot;user_prompt&quot;]&#39;</span><span class="p">,</span> <span class="n">prompt</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">img1</span> <span class="o">=</span> <span class="n">take_ui_screenshot</span><span class="p">(</span><span class="n">page</span><span class="p">,</span> <span class="s2">&quot;trial_3_prompt_submitted&quot;</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">img1</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;researcher_thinking&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>        <span class="s2">&quot;A simple mental estimate cannot reliably determine whether thermal vs. LiDAR payloads remain &quot;</span>
+<span class="gp">... </span>        <span class="s2">&quot;viable when traversing rubble. The interaction between locomotion resistance and sensor draw is &quot;</span>
+<span class="gp">... </span>        <span class="s2">&quot;combinatory. We delegate the mathematical calculation to Verbal / Reason&#39;s computational blueprint.&quot;</span>
+<span class="gp">... </span>    <span class="p">)</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;researcher_inquiry&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prompt</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;blueprint_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bp</span><span class="o">.</span><span class="n">name</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;description&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Selected &#39;</span><span class="si">{</span><span class="n">bp</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; blueprint and submitted 6-factor trade-off inquiry.&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="step-3-real-blueprint-execution-via-run-blueprint">
+<h3>Step 3: Real Blueprint Execution via run_blueprint()<a class="headerlink" href="#step-3-real-blueprint-execution-via-run-blueprint" title="Link to this heading"></a></h3>
+<p>The researcher dispatches the problem. Verbal / Reason (Gemma4) composes the Python simulation script, executes it in the Docker sandbox (<code class="docutils literal notranslate"><span class="pre">verbal_sandbox</span></code>), and synthesizes an informative tabulation.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">timed_step</span><span class="p">(</span><span class="s2">&quot;Blueprint Execution (Gemma4 + Docker Sandbox)&quot;</span><span class="p">,</span> <span class="n">steps_recorded</span><span class="p">)</span> <span class="k">as</span> <span class="n">step</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">captured_stdout</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">StringIO</span><span class="p">()</span>
+<span class="gp">... </span>    <span class="k">with</span> <span class="n">contextlib</span><span class="o">.</span><span class="n">redirect_stdout</span><span class="p">(</span><span class="n">captured_stdout</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="n">result</span> <span class="o">=</span> <span class="n">run_blueprint</span><span class="p">(</span><span class="n">bp</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">prompt</span><span class="p">,</span> <span class="n">user_id</span><span class="o">=</span><span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;model_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">model_name</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;blueprint_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bp</span><span class="o">.</span><span class="n">name</span>
+<span class="gp">... </span>    <span class="n">final_response</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;final_response&quot;</span><span class="p">,</span> <span class="s2">&quot;No output.&quot;</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">monologue</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;internal_monologue&quot;</span><span class="p">,</span> <span class="p">[])</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;response_text&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">final_response</span>
+<span class="gp">...</span>
+<span class="gp">... </span>    <span class="c1"># Extract Python code composed by Gemma4 from workspace</span>
+<span class="gp">... </span>    <span class="n">cid</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;conversation_id&quot;</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">workspace_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;workspaces&quot;</span><span class="p">)</span> <span class="o">/</span> <span class="nb">str</span><span class="p">(</span><span class="n">cid</span><span class="p">)</span> <span class="k">if</span> <span class="n">cid</span> <span class="k">else</span> <span class="kc">None</span>
+<span class="gp">... </span>    <span class="n">gen_code</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+<span class="gp">... </span>    <span class="k">if</span> <span class="n">workspace_dir</span> <span class="ow">and</span> <span class="n">workspace_dir</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+<span class="gp">... </span>        <span class="k">for</span> <span class="n">code_file</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">workspace_dir</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;*.py&quot;</span><span class="p">)):</span>
+<span class="gp">... </span>            <span class="n">gen_code</span> <span class="o">=</span> <span class="n">code_file</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+<span class="gp">... </span>            <span class="k">break</span>
+<span class="gp">... </span>    <span class="k">if</span> <span class="ow">not</span> <span class="n">gen_code</span> <span class="ow">and</span> <span class="n">monologue</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">monologue</span><span class="p">:</span>
+<span class="gp">... </span>            <span class="n">out_text</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;output&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+<span class="gp">... </span>            <span class="k">if</span> <span class="s2">&quot;python_sandbox&quot;</span> <span class="ow">in</span> <span class="n">out_text</span> <span class="ow">and</span> <span class="s2">&quot;code&quot;</span> <span class="ow">in</span> <span class="n">out_text</span><span class="p">:</span>
+<span class="gp">... </span>                <span class="n">gen_code</span> <span class="o">=</span> <span class="n">out_text</span>
+<span class="gp">... </span>                <span class="k">break</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;code_text&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gen_code</span>
+<span class="gp">...</span>
+<span class="gp">... </span>    <span class="c1"># Extract sandbox output from monologue or redirect</span>
+<span class="gp">... </span>    <span class="n">sb_out</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+<span class="gp">... </span>    <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">monologue</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="n">tr</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tool_result&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+<span class="gp">... </span>        <span class="k">if</span> <span class="s2">&quot;Sandbox Execution&quot;</span> <span class="ow">in</span> <span class="n">tr</span> <span class="ow">or</span> <span class="s2">&quot;Output:&quot;</span> <span class="ow">in</span> <span class="n">tr</span><span class="p">:</span>
+<span class="gp">... </span>            <span class="n">sb_out</span> <span class="o">=</span> <span class="n">tr</span>
+<span class="gp">... </span>            <span class="k">break</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;sandbox_output&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sb_out</span> <span class="ow">or</span> <span class="n">captured_stdout</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;description&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>        <span class="sa">f</span><span class="s2">&quot;Blueprint executed </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">monologue</span><span class="p">)</span><span class="si">}</span><span class="s2"> reasoning steps via </span><span class="si">{</span><span class="n">model_name</span><span class="si">}</span><span class="s2">. &quot;</span>
+<span class="gp">... </span>        <span class="sa">f</span><span class="s2">&quot;Final response: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">final_response</span><span class="p">)</span><span class="si">}</span><span class="s2"> characters. &quot;</span>
+<span class="gp">... </span>        <span class="sa">f</span><span class="s2">&quot;Route: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;route_to&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;unknown&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
+<span class="gp">... </span>    <span class="p">)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">has_response</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;final_response&quot;</span><span class="p">))</span> <span class="ow">and</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;final_response&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;No output.&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Blueprint produced response: </span><span class="si">{</span><span class="n">has_response</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="go">Blueprint produced response: True</span>
+</pre></div>
+</div>
+</section>
+<section id="step-4-active-adversarial-verification-error-catching">
+<h3>Step 4: Active Adversarial Verification &amp; Error Catching<a class="headerlink" href="#step-4-active-adversarial-verification-error-catching" title="Link to this heading"></a></h3>
+<p>The researcher inspects the model’s generated code and recommendation trace to ensure mathematical and logical integrity.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">timed_step</span><span class="p">(</span><span class="s2">&quot;Adversarial Verification &amp; Causal Evaluation&quot;</span><span class="p">,</span> <span class="n">steps_recorded</span><span class="p">)</span> <span class="k">as</span> <span class="n">step</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">cid</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;conversation_id&quot;</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="k">if</span> <span class="n">cid</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="n">_</span> <span class="o">=</span> <span class="n">page</span><span class="o">.</span><span class="n">goto</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">live_server_url</span><span class="si">}</span><span class="s2">/demo/?conversation_id=</span><span class="si">{</span><span class="n">cid</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="gp">... </span>        <span class="n">_</span> <span class="o">=</span> <span class="n">page</span><span class="o">.</span><span class="n">wait_for_selector</span><span class="p">(</span><span class="s2">&quot;.chat-message.ai .bubble&quot;</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">6000</span><span class="p">)</span>
+<span class="gp">... </span>        <span class="n">ui_response</span> <span class="o">=</span> <span class="n">capture_ai_response</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="k">else</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="n">ui_response</span> <span class="o">=</span> <span class="s2">&quot;(no conversation created)&quot;</span>
+<span class="gp">... </span>    <span class="n">img2</span> <span class="o">=</span> <span class="n">take_ui_screenshot</span><span class="p">(</span><span class="n">page</span><span class="p">,</span> <span class="s2">&quot;trial_3_tool_output&quot;</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">img2</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;response_text&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ui_response</span>
+<span class="gp">...</span>
+<span class="gp">... </span>    <span class="c1"># Adversarial Audit: Check for optimization inversion bugs (e.g. selecting min duration instead of &gt;=120)</span>
+<span class="gp">... </span>    <span class="n">gen_code_lower</span> <span class="o">=</span> <span class="n">gen_code</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+<span class="gp">... </span>    <span class="n">ui_lower</span> <span class="o">=</span> <span class="n">ui_response</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+<span class="gp">... </span>    <span class="n">has_inversion_bug</span> <span class="o">=</span> <span class="s2">&quot;idxmin&quot;</span> <span class="ow">in</span> <span class="n">gen_code_lower</span> <span class="ow">or</span> <span class="s2">&quot;101.&quot;</span> <span class="ow">in</span> <span class="n">ui_lower</span> <span class="ow">and</span> <span class="s2">&quot;recommended&quot;</span> <span class="ow">in</span> <span class="n">ui_lower</span>
+<span class="gp">... </span>    <span class="k">if</span> <span class="n">has_inversion_bug</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="n">step</span><span class="p">[</span><span class="s2">&quot;adversarial_audit&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>            <span class="s2">&quot;LOGIC AUDIT FLAGGED: The composed simulation script correctly generated the endurance table, &quot;</span>
+<span class="gp">... </span>            <span class="s2">&quot;but applied an inverted selection metric (.idxmin()), recommending the worst-performing 101.0-minute &quot;</span>
+<span class="gp">... </span>            <span class="s2">&quot;configuration for a 120-minute mission requirement.&quot;</span>
+<span class="gp">... </span>        <span class="p">)</span>
+<span class="gp">... </span>        <span class="n">step</span><span class="p">[</span><span class="s2">&quot;corrective_inquiry&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>            <span class="s2">&quot;Filter the endurance table strictly for configurations with T_op &gt;= 120 minutes. &quot;</span>
+<span class="gp">... </span>            <span class="s2">&quot;Identify the highest-capability sensor package that meets this operational constraint.&quot;</span>
+<span class="gp">... </span>        <span class="p">)</span>
+<span class="gp">... </span>    <span class="k">else</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="n">step</span><span class="p">[</span><span class="s2">&quot;adversarial_audit&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>            <span class="s2">&quot;LOGIC AUDIT PASSED: The model correctly applied the operational constraint (T_op &gt;= 120 min), &quot;</span>
+<span class="gp">... </span>            <span class="s2">&quot;filtering out failing rubble configurations and optimizing for maximum sensor capability on concrete.&quot;</span>
+<span class="gp">... </span>        <span class="p">)</span>
+<span class="gp">...</span>
+<span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">&quot;researcher_evaluation&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>        <span class="s2">&quot;The parametric simulation yields a decisive causal finding:</span><span class="se">\n</span><span class="s2">&quot;</span>
+<span class="gp">... </span>        <span class="s2">&quot;1) On smooth concrete (280W), all three sensor packages meet the 120-minute threshold:</span><span class="se">\n</span><span class="s2">&quot;</span>
+<span class="gp">... </span>        <span class="s2">&quot;   - Baseline (305W): 188.8 minutes</span><span class="se">\n</span><span class="s2">&quot;</span>
+<span class="gp">... </span>        <span class="s2">&quot;   - Standard Multi-spectral (355W): 162.2 minutes (Recommended: highest sensor capability with 42 min margin)</span><span class="se">\n</span><span class="s2">&quot;</span>
+<span class="gp">... </span>        <span class="s2">&quot;   - Heavy LiDAR+Compute (390W): 147.7 minutes</span><span class="se">\n</span><span class="s2">&quot;</span>
+<span class="gp">... </span>        <span class="s2">&quot;2) On heavy rubble/debris (460W locomotion), ZERO configurations achieve 120 minutes:</span><span class="se">\n</span><span class="s2">&quot;</span>
+<span class="gp">... </span>        <span class="s2">&quot;   - Baseline (485W): 118.7 minutes</span><span class="se">\n</span><span class="s2">&quot;</span>
+<span class="gp">... </span>        <span class="s2">&quot;   - Standard Multi-spectral (535W): 107.6 minutes</span><span class="se">\n</span><span class="s2">&quot;</span>
+<span class="gp">... </span>        <span class="s2">&quot;   - Heavy LiDAR+Compute (570W): 101.0 minutes</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+<span class="gp">... </span>        <span class="s2">&quot;Decisive Causal Finding: On heavy rubble, onboard high-draw sensors cannot achieve the 2-hour mission. &quot;</span>
+<span class="gp">... </span>        <span class="s2">&quot;The system must offload transmission power to deployable ad-hoc nodes. This motivates Trial 4.&quot;</span>
+<span class="gp">... </span>    <span class="p">)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">browser</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pw</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="step-5-report-generation">
+<h3>Step 5: Report Generation<a class="headerlink" href="#step-5-report-generation" title="Link to this heading"></a></h3>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">total_duration</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">trial_t0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">report_path</span> <span class="o">=</span> <span class="n">record_ui_doctest_run</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="s2">&quot;trial_3_multistep_blueprint_and_tools&quot;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="s2">&quot;Trial 3: Multi-Step Cognitive Reasoning &amp; Sandboxed Tools&quot;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">steps_recorded</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">model_name</span><span class="o">=</span><span class="n">model_name</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">total_duration_s</span><span class="o">=</span><span class="n">total_duration</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">blueprint_result</span><span class="o">=</span><span class="n">result</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">scenario_description</span><span class="o">=</span><span class="p">(</span>
+<span class="gp">... </span>        <span class="s2">&quot;The researcher investigates a 6-factor combinatory space in the Docker sandbox using the &quot;</span>
+<span class="gp">... </span>        <span class="s2">&quot;&#39;Reasoning with Code Sandbox&#39; blueprint. Verbal / Reason executes the calculation, and the &quot;</span>
+<span class="gp">... </span>        <span class="s2">&quot;researcher applies adversarial logic verification, uncovering that no onboard configuration &quot;</span>
+<span class="gp">... </span>        <span class="s2">&quot;survives 120 minutes on rubble, proving the necessity of deployable ad-hoc relays.&quot;</span>
+<span class="gp">... </span>    <span class="p">),</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;- complete attempt: </span><span class="si">{</span><span class="mi">1</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">report_path</span><span class="p">)</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="mi">0</span><span class="si">}</span><span class="s2">/1&quot;</span><span class="p">)</span>
+<span class="go">- complete attempt: 1/1</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="trial_2_careful_literature_extraction.html" class="btn btn-neutral float-left" title="Tutorial 2: Careful Literature Extraction and Parametric Factor Construction" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="trial_4_branching_and_grips_expansion.html" class="btn btn-neutral float-right" title="Tutorial 4: Counterfactual Branching, Empirical Ontology Synthesis, and Protocol Generation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Andrew Cruickshank.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

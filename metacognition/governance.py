@@ -1,5 +1,5 @@
 import logging
-from celery import shared_task
+from django.tasks import task
 
 logger = logging.getLogger(__name__)
 
@@ -18,15 +18,16 @@ class PromotionPolicy:
             return False, "Blueprint has never been benchmarked."
             
         recent_runs = runs.order_by('-timestamp')[:3]
-        
-        # Simple policy: average semantic score across last 3 runs must be > 0.8
-        scores = [r.average_semantic_score for r in recent_runs if r.average_semantic_score]
+        if len(recent_runs) < 1:
+            return False, "Insufficient benchmark data."
+            
+        scores = [r.semantic_similarity_score for r in recent_runs if r.semantic_similarity_score is not None]
         if not scores:
-            return False, "Benchmark runs completed but no semantic scores available."
+            return False, "No valid scores recorded."
             
         avg_score = sum(scores) / len(scores)
         if avg_score >= 0.8:
-            return True, f"Passed. Average semantic score {avg_score:.2f} >= 0.8"
+            return True, f"Eligible for promotion. Average score: {avg_score:.2f}"
         else:
             return False, f"Failed. Average semantic score {avg_score:.2f} < 0.8"
             
@@ -37,10 +38,10 @@ class PromotionPolicy:
         return False, "Tool promotion requires manual admin review."
 
 
-@shared_task
+@task
 def night_manager_task():
     """
-    Celery Beat task that runs during low-usage hours.
+    Background maintenance task that runs during low-usage hours.
     Discovers unpromoted blueprints and runs them against standard benchmarks
     so users have data to decide on promotion.
     """

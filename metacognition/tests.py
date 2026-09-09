@@ -937,7 +937,7 @@ class AsyncStreamingAndGovernanceTests(TestCase):
         # 2. Resume execution by approving tool
         mock_outline.return_value = {"tool_calls": []}
         mock_generate.return_value = ["Task finished successfully after authorization."]
-        resume_res = task_resume_blueprint_async(
+        resume_res = task_resume_blueprint_async.func(
             blueprint_id=self.bp.id,
             thread_id=thread_id,
             run_id=run_id,

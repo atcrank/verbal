@@ -6,7 +6,6 @@ from django.contrib.contenttypes.forms import BaseGenericInlineFormSet
 from django.utils.html import format_html
 from django.urls import reverse
 from llm_api.apps import service_registry  # Import your service
-from verbal_config.celery import app as celery_app
 from .models import (Document,
                      VectorIndexExplorer,
                      PromptStrategy,
@@ -21,61 +20,38 @@ from benchmarking.tasks import task_generate_benchmarks
 from grobid_client.tasks import task_extract_grobid_metadata
 
 
-def _check_celery_available(modeladmin, request):
-    """Helper to ensure the user has started the background worker."""
-    try:
-        if not celery_app.control.ping(timeout=1.0):
-            modeladmin.message_user(request, "Celery service not available (no workers running).", level=messages.ERROR)
-            return False
-        return True
-    except Exception:
-        modeladmin.message_user(request, "Celery service not available (Broker connection failed).", level=messages.ERROR)
-        return False
-
 @admin.action(description="Ingest document(s) according to its indexing strategy.")
 def process_document(modeladmin, request, queryset):
-    if not _check_celery_available(modeladmin, request):
-        return
-    
     doc_ids = list(queryset.values_list('id', flat=True))
-    task_process_documents.delay(doc_ids)
+    task_process_documents.enqueue(doc_ids)
     modeladmin.message_user(request, f"Queued ingestion for {len(doc_ids)} document(s).", level=messages.SUCCESS)
 
 
 @admin.action(description="Execute this Reading Strategy")
 def process_reading(modeladmin, request, queryset):
-    if not _check_celery_available(modeladmin, request):
-        return
-        
     strategy_ids = list(queryset.values_list('id', flat=True))
-    task_process_reading_strategies.delay(strategy_ids)
+    task_process_reading_strategies.enqueue(strategy_ids)
     modeladmin.message_user(request, f"Queued {len(strategy_ids)} reading strateg(ies) for execution.", level=messages.SUCCESS)
+
 
 @admin.action(description="Execute this Grobid Semantic Strategy")
 def process_grobid_reading(modeladmin, request, queryset):
-    if not _check_celery_available(modeladmin, request):
-        return
-        
     strategy_ids = list(queryset.values_list('id', flat=True))
-    task_process_grobid_reading_strategies.delay(strategy_ids)
+    task_process_grobid_reading_strategies.enqueue(strategy_ids)
     modeladmin.message_user(request, f"Queued {len(strategy_ids)} Grobid reading strateg(ies) for execution.", level=messages.SUCCESS)
+
 
 @admin.action(description="Generate Synthetic Benchmarks")
 def generate_benchmarks(modeladmin, request, queryset):
-    if not _check_celery_available(modeladmin, request):
-        return
-        
     doc_ids = list(queryset.values_list('id', flat=True))
-    task_generate_benchmarks.delay(doc_ids)
+    task_generate_benchmarks.enqueue(doc_ids)
     modeladmin.message_user(request, f"Queued benchmark generation for {len(doc_ids)} document(s).", level=messages.SUCCESS)
+
 
 @admin.action(description="Extract Grobid Metadata & Citations")
 def extract_grobid_metadata(modeladmin, request, queryset):
-    if not _check_celery_available(modeladmin, request):
-        return
-        
     for doc in queryset:
-        task_extract_grobid_metadata.delay(doc.id)
+        task_extract_grobid_metadata.enqueue(doc.id)
     modeladmin.message_user(request, f"Queued Grobid extraction for {queryset.count()} document(s).", level=messages.SUCCESS)
 
 class RAGChunkAdmin(admin.ModelAdmin):

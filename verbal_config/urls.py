@@ -29,6 +29,7 @@ from ninja.openapi.docs import Swagger
 from llm_api.api import router as llm_router
 from metacognition import api as metacognition_api
 from work_organisation import api as whiteboard_api
+from . import broadcast_views
 
 class LocalSwagger(Swagger):
     def render_page(self, request, api, **kwargs):
@@ -40,7 +41,13 @@ class LocalSwagger(Swagger):
         from django.shortcuts import render
         return render(request, "vendor/swagger.html", context)
 
-api = NinjaAPI(auth=django_auth, docs=LocalSwagger())
+api = NinjaAPI(
+    title="reason API",
+    description="API for reason: Computational Study Design & Agentic Reasoning Assistant",
+    version="0.1.0",
+    auth=django_auth,
+    docs=LocalSwagger(),
+)
 
 api.add_router("/llm/", llm_router)
 api.add_router("/meta/", metacognition_api.router)
@@ -146,6 +153,13 @@ def change_password(request, data: ChangePasswordIn):
 
 DOCS_DIR = os.path.join(settings.BASE_DIR, 'documentation', 'build', 'html')
 
+
+def serve_docs(request, path=""):
+    if not path or path == "" or path.endswith("/"):
+        path = os.path.join(path, "index.html")
+    return serve(request, path, document_root=DOCS_DIR)
+
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", api.urls),
@@ -153,9 +167,14 @@ urlpatterns = [
     path("accounts/", include("django.contrib.auth.urls")),
     path('demo/', include('demo_ui.urls')),
     
+    # Broadcast and SSE Endpoints (WS12)
+    path("api/broadcasts/current/", broadcast_views.current_broadcast, name="broadcast_current"),
+    path("api/broadcasts/stream/", broadcast_views.stream_broadcasts, name="broadcast_stream"),
+    path("api/broadcasts/send/", broadcast_views.send_broadcast_api, name="broadcast_send"),
+    path("api/broadcasts/clear/", broadcast_views.clear_broadcast_api, name="broadcast_clear"),
+
     # Serve Sphinx Documentation
-    re_path(r'^docs/(?P<path>.*)$', serve, {'document_root': DOCS_DIR}),
-    path('docs/', serve, {'document_root': DOCS_DIR, 'path': 'index.html'}),
+    re_path(r'^docs/(?P<path>.*)$', serve_docs, name="docs_serve"),
 ]
 
 if settings.DEBUG:

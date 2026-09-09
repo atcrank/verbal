@@ -1,0 +1,209 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Demo UI Empirical Trials &amp; Verification Reports &mdash; reason 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=aaf24e6f" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=2709fde1"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Doctest Report: Trial 1: Document Ingestion and Context-Grounded Reasoning" href="demo_ui_trials/trial_1_ingestion_and_context_report.html" />
+    <link rel="prev" title="Metacognition Trials &amp; Reports" href="metacognition_trials.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            reason
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="llm_api_app.html">LLM API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="background_resources_app.html">Background Resources - context documents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grips_app.html">Grips - wiki knowledge banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo_ui_app.html">Demo UI</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="using_ollama.html">Ollama as Local AI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Demo UI Empirical Trials &amp; Verification Reports</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#methodology-executable-doctests-as-verifiable-reports">Methodology: Executable Doctests as Verifiable Reports</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="demo_ui_trials/trial_1_ingestion_and_context_report.html">Doctest Report: Trial 1: Document Ingestion and Context-Grounded Reasoning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="demo_ui_trials/trial_2_careful_literature_extraction_report.html">Doctest Report: Trial 2: Careful Literature Extraction &amp; Parametric Factor Construction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="demo_ui_trials/trial_3_multistep_blueprint_and_tools_report.html">Doctest Report: Trial 3: Multi-Step Cognitive Reasoning &amp; Sandboxed Tools</a></li>
+<li class="toctree-l3"><a class="reference internal" href="demo_ui_trials/trial_4_branching_and_grips_expansion_report.html">Doctest Report: Trial 4: Counterfactual Branching &amp; Empirical Ontology Synthesis</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#the-four-trial-reports">The Four Trial Reports</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="demo_ui_trials/trial_1_ingestion_and_context.html">Tutorial 1: Document Ingestion and Context-Grounded Reasoning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="demo_ui_trials/trial_2_careful_literature_extraction.html">Tutorial 2: Careful Literature Extraction and Parametric Factor Construction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="demo_ui_trials/trial_3_multistep_blueprint_and_tools.html">Tutorial 3: Multi-Step Cognitive Reasoning and Sandboxed Tool Execution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="demo_ui_trials/trial_4_branching_and_grips_expansion.html">Tutorial 4: Counterfactual Branching, Empirical Ontology Synthesis, and Protocol Generation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tests.html">Testing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">reason</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Demo UI Empirical Trials &amp; Verification Reports</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/demo_ui_trials.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="demo-ui-empirical-trials-verification-reports">
+<h1>Demo UI Empirical Trials &amp; Verification Reports<a class="headerlink" href="#demo-ui-empirical-trials-verification-reports" title="Link to this heading"></a></h1>
+<p>This suite of empirical trials documents and verifies the core capabilities of <strong>Reason</strong> (<cite>demo_ui</cite>), the computational study design assistant. Grounded in the rigorous domain of <strong>Autonomous Robotics in Structural Firefighting</strong>, these trials showcase the entire lifecycle of an empirical research intervention: from literature ingestion and context retrieval to parametric factor construction, sandboxed engineering calculation, active error detection, counterfactual hypothesis testing in conversation branches, and domain ontology synthesis.</p>
+<section id="methodology-executable-doctests-as-verifiable-reports">
+<h2>Methodology: Executable Doctests as Verifiable Reports<a class="headerlink" href="#methodology-executable-doctests-as-verifiable-reports" title="Link to this heading"></a></h2>
+<p>Rather than presenting static mockups or hand-written marketing summaries, Reason uses <strong>executable Python doctests</strong> driven by <cite>pytest</cite> and Playwright browser automation.</p>
+<p>Every trial runs against:
+- <strong>Live Local GPU Inference</strong>: Token generation executed by <cite>google/gemma-2-2b-it</cite> on local hardware (port 8001).
+- <strong>Live Browser Automation</strong>: End-to-end browser session driving the HTMX frontend, context chips, and conversation DAG.
+- <strong>Dockerized Execution Sandbox</strong>: Sandboxed code execution (<cite>verbal_sandbox</cite>) for numerical modeling.
+- <strong>Persistent Knowledge Graph</strong>: Grips ontology storage and autonomous conceptual elaboration in PostgreSQL / pgvector.</p>
+<p>Upon test completion, the test harness compiles a comprehensive <strong>Trial Report</strong> recording verbatim model tokens, timing measurements, captured sandbox stdout, high-resolution screenshots, and animated walkthrough GIFs. These reports represent the primary reading material for evaluating Reason’s capabilities.</p>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Empirical Trial Reports</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="demo_ui_trials/trial_1_ingestion_and_context_report.html">Doctest Report: Trial 1: Document Ingestion and Context-Grounded Reasoning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo_ui_trials/trial_2_careful_literature_extraction_report.html">Doctest Report: Trial 2: Careful Literature Extraction &amp; Parametric Factor Construction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo_ui_trials/trial_3_multistep_blueprint_and_tools_report.html">Doctest Report: Trial 3: Multi-Step Cognitive Reasoning &amp; Sandboxed Tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo_ui_trials/trial_4_branching_and_grips_expansion_report.html">Doctest Report: Trial 4: Counterfactual Branching &amp; Empirical Ontology Synthesis</a></li>
+</ul>
+</div>
+</section>
+<section id="the-four-trial-reports">
+<h2>The Four Trial Reports<a class="headerlink" href="#the-four-trial-reports" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p><a class="reference internal" href="demo_ui_trials/trial_1_ingestion_and_context_report.html"><span class="doc">Report 1: Targeted Literature Retrieval &amp; Grounding Audit</span></a>
+Audits semantic retrieval against peer-reviewed papers (<em>Talavera et al. 2023</em>, <em>Penders et al. 2011</em>). Evaluates context chip formulation, token estimation, and trade-offs between 3D LiDAR backscatter and LWIR thermal signatures in aerosolized smoke with strict token-only evaluation.</p></li>
+<li><p><a class="reference internal" href="demo_ui_trials/trial_2_careful_literature_extraction_report.html"><span class="doc">Report 2: Careful Literature Extraction &amp; Parametric Factor Construction</span></a>
+Extracts physical hardware specifications directly from literature tables: GM25-370 locomotion motors, 12,800mAh 3.7V motor bank, 10,800mAh 5V compute bank, and Pozyx UWB transceiver. Establishes the empirical $3 times 2$ factorial space (Payload: 25W, 75W, 110W; Locomotion: 280W, 460W; 960Wh usable battery) with zero fabricated numbers.</p></li>
+<li><p><a class="reference internal" href="demo_ui_trials/trial_3_multistep_blueprint_and_tools_report.html"><span class="doc">Report 3: Multi-Step Reasoning, Sandboxed Simulation &amp; Adversarial Critique</span></a>
+Demonstrates agentic multi-step reasoning using the Docker Python sandbox. Actively flags the model’s <cite>.idxmin()</cite> optimization inversion error in real time, prompts the model for correction, captures the valid recommendation (<strong>Standard Multi-spectral on Concrete: 162 min / 42 min margin</strong>), and uncovers the decisive finding that onboard power fails on rubble (&lt;119 min).</p></li>
+<li><p><a class="reference internal" href="demo_ui_trials/trial_4_branching_and_grips_expansion_report.html"><span class="doc">Report 4: Counterfactual Branching, Empirical Ontology Synthesis &amp; Protocol Generation</span></a>
+Forks an isolated DAG conversation branch via <cite>Branch from here</cite> and actively evaluates a live counterfactual query (deployable breadcrumb relays offloading 45W transmitter draw, reaching <strong>130.9 minutes</strong> on rubble). Elaborates the Grips ontology stub <cite>Breadcrumb Relay Node</cite> with genuine UWB physics (3.5–6.5 GHz, 15cm accuracy, 3 structured claims), culminating in a synthesized 2x2 factorial Empirical Intervention Protocol ($N=8$, two-way ANOVA).</p></li>
+</ol>
+<details class="doctest-breakout">
+<summary>🔍 Click to inspect the 4 Underlying Executable Doctest Specifications</summary>
+<div class="breakout-content">
+<p>The four reports above are compiled automatically by executing the underlying doctest test files. You can inspect or run any test file directly:</p><table class="docutils align-default">
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 35.0%" />
+<col style="width: 40.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Trial Specification</p></th>
+<th class="head"><p>Pytest Command</p></th>
+<th class="head"><p>Test Automation Highlights</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference internal" href="demo_ui_trials/trial_1_ingestion_and_context.html"><span class="doc">Trial 1 Doctest</span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">pytest</span> <span class="pre">demo_ui/demo_ui_trials/trial_1_ingestion_and_context.rst</span></code></p></td>
+<td><p>RAG indexing, context chip injection, micro-badge status tracking, and token counting.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="demo_ui_trials/trial_2_careful_literature_extraction.html"><span class="doc">Trial 2 Doctest</span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">pytest</span> <span class="pre">demo_ui/demo_ui_trials/trial_2_careful_literature_extraction.rst</span></code></p></td>
+<td><p>Paper chunk attachment, hardware spec extraction verification, and factorial matrix assertion.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="demo_ui_trials/trial_3_multistep_blueprint_and_tools.html"><span class="doc">Trial 3 Doctest</span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">pytest</span> <span class="pre">demo_ui/demo_ui_trials/trial_3_multistep_blueprint_and_tools.rst</span></code></p></td>
+<td><p>Cognitive blueprint invocation, Docker sandbox stdout extraction, and adversarial logic audit.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="demo_ui_trials/trial_4_branching_and_grips_expansion.html"><span class="doc">Trial 4 Doctest</span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">pytest</span> <span class="pre">demo_ui/demo_ui_trials/trial_4_branching_and_grips_expansion.rst</span></code></p></td>
+<td><p>DAG branch button click, multi-turn branched submission, Grips stub elaboration, and protocol generation.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</details><div class="toctree-wrapper compound">
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="metacognition_trials.html" class="btn btn-neutral float-left" title="Metacognition Trials &amp; Reports" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="demo_ui_trials/trial_1_ingestion_and_context_report.html" class="btn btn-neutral float-right" title="Doctest Report: Trial 1: Document Ingestion and Context-Grounded Reasoning" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Andrew Cruickshank.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
