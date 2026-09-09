@@ -28,15 +28,15 @@ class Reference(models.Model):
 
     def save(self, *args, **kwargs):
         # Explicitly truncate strings to prevent PostgreSQL DataErrors during programmatic inserts
-        if self.title: self.title = self.title[:996] +"..."
-        if self.journal: self.journal = self.journal[:996] +"..."
-        if self.publisher: self.publisher = self.publisher[:251] + "..."
-        if self.year: self.year = self.year[:196] + "..."
-        if self.publication_date: self.publication_date = self.publication_date[:46] + "..."
-        if self.volume: self.volume = self.volume[:46] + "..."
-        if self.issue: self.issue = self.issue[:46] + "..."
-        if self.pages: self.pages = self.pages[:46] + "..."
-        if self.doi: self.doi = self.doi[:96] + "..."
+        if self.title and len(self.title) > 996: self.title = self.title[:996] + "..."
+        if self.journal and len(self.journal) > 996: self.journal = self.journal[:996] + "..."
+        if self.publisher and len(self.publisher) > 251: self.publisher = self.publisher[:251] + "..."
+        if self.year and len(self.year) > 196: self.year = self.year[:196] + "..."
+        if self.publication_date and len(self.publication_date) > 46: self.publication_date = self.publication_date[:46] + "..."
+        if self.volume and len(self.volume) > 46: self.volume = self.volume[:46] + "..."
+        if self.issue and len(self.issue) > 46: self.issue = self.issue[:46] + "..."
+        if self.pages and len(self.pages) > 46: self.pages = self.pages[:46] + "..."
+        if self.doi and len(self.doi) > 96: self.doi = self.doi[:96] + "..."
         
         super().save(*args, **kwargs)
 

@@ -77,7 +77,11 @@ The researcher navigates to the Reason Demo UI, reviews the literature library, 
     >>> with timed_step("Context Chip Formulation & Prompt Submission", steps_recorded) as step:
     ...     _ = page.goto(f"{live_server_url}/demo/")
     ...     _ = page.wait_for_selector("#uploaded-docs-list", timeout=6000)
-    ...     chunk = RAGChunk.objects.filter(text_content__icontains="smoke").first() or RAGChunk.objects.first()
+    ...     chunk = (
+    ...         RAGChunk.objects.filter(text_content__icontains="Lidar").filter(text_content__icontains="smoke").first()
+    ...         or RAGChunk.objects.filter(text_content__icontains="smoke").first()
+    ...         or RAGChunk.objects.first()
+    ...     )
     ...     prompt_text = (
     ...         "When evaluating sensor payloads for autonomous ground robots in multi-story building fires, "
     ...         "what are the primary perception and localization trade-offs between 3D LiDAR point clouds "
@@ -92,18 +96,19 @@ The researcher navigates to the Reason Demo UI, reviews the literature library, 
     ...     step["researcher_inquiry"] = prompt_text
     ...     page.fill('textarea[name="user_prompt"]', prompt_text)
     ...     if chunk:
+    ...         citation = chunk.get_citation()
     ...         _ = page.evaluate("""(data) => {
     ...             includedContexts.push(data);
     ...             updateContextInput();
     ...         }""", {
     ...             "model": "RAGChunk",
-    ...             "id": str(chunk.id),
-    ...             "preview": f"Chunk {chunk.chunk_id[:12]}: {chunk.metadata.get('filename', 'Literature')}",
+    ...             "id": str(chunk.chunk_id),
+    ...             "preview": citation,
     ...             "content": chunk.text_content
     ...         })
     ...     img1 = take_ui_screenshot(page, "trial_1_prompt_with_chips", wait_selector="#context-chips-container .context-chip")
     ...     step["image"] = img1
-    ...     step["rag_chunks"] = [{"id": chunk.chunk_id, "preview": chunk.text_content[:200]}] if chunk else []
+    ...     step["rag_chunks"] = [{"id": chunk.chunk_id, "citation": chunk.get_citation(), "preview": chunk.text_content[:200]}] if chunk else []
     ...     step["description"] = "Attached literature context chip and formulated sensor trade-off inquiry."
 
 Step 3: Live Inference Dispatch & Response Capture
@@ -124,7 +129,7 @@ The researcher submits the inquiry to Verbal / Reason. The local Gemma4 model an
     ...     step["description"] = f"Local LLM ({model_name}) generated {len(ai_response)} characters of context-grounded synthesis."
     ...     new_log = PromptResponseLog.objects.filter(user=user).order_by("-created_at").first()
     ...     if new_log and new_log.rag_selections:
-    ...         step["rag_chunks"] = [{"id": sel.get("id", "?"), "preview": sel.get("preview", "")} for sel in new_log.rag_selections]
+    ...         step["rag_chunks"] = [{"id": sel.get("id", "?"), "citation": sel.get("citation", ""), "preview": sel.get("preview", "")} for sel in new_log.rag_selections]
     ...     step["researcher_evaluation"] = (
     ...         "Verbal / Reason identified three critical causal factors for our experiment: "
     ...         "1) Sensor payload power draw (LiDAR+Compute draws ~110W vs. 25W baseline), "

@@ -47,6 +47,9 @@ def timed_step(label: str, steps_recorded: list):
         "sandbox_output": "",
         "rag_chunks": [],
         "model_name": "",
+        "adversarial_audit": "",
+        "corrective_inquiry": "",
+        "protocol_synthesis": "",
         "duration_s": 0.0,
     }
     t0 = time.perf_counter()
@@ -101,8 +104,9 @@ def capture_ai_response(page, selector: str = ".chat-message.ai .bubble") -> str
     cleanly stripping out UI action buttons and token stats."""
     try:
         clean_text = page.evaluate(f"""() => {{
-            const bubble = document.querySelector('{selector}');
-            if (!bubble) return '';
+            const bubbles = document.querySelectorAll('{selector}');
+            if (!bubbles || bubbles.length === 0) return '';
+            const bubble = bubbles[bubbles.length - 1];
             const clone = bubble.cloneNode(true);
             const actions = clone.querySelector('.message-actions-bar');
             if (actions) actions.remove();
@@ -114,7 +118,11 @@ def capture_ai_response(page, selector: str = ".chat-message.ai .bubble") -> str
         logger.warning("Could not capture AI response via evaluate: %s", exc)
 
     try:
-        raw = (page.text_content(selector) or "").strip()
+        loc = page.locator(selector)
+        count = loc.count()
+        if count == 0:
+            return ""
+        raw = (loc.nth(count - 1).text_content() or "").strip()
         lines = [
             line for line in raw.splitlines()
             if not line.strip().startswith("Branch from here")
@@ -272,8 +280,10 @@ def record_ui_doctest_run(
                 for chunk in chunks:
                     preview = chunk.get("preview", chunk.get("text", ""))[:200]
                     score = chunk.get("score", "")
-                    score_str = f" (distance: {score:.2f})" if isinstance(score, float) else ""
-                    f.write(f"- Chunk `{chunk.get('id', 'unknown')}`{score_str}: \"{preview}\"\n")
+                    score_str = f" (score: {score:.2f})" if isinstance(score, float) else ""
+                    citation = chunk.get("citation", "")
+                    cite_str = f"**{citation}** " if citation else ""
+                    f.write(f"- {cite_str}[Chunk `{chunk.get('id', 'unknown')}`{score_str}]: \"{preview}\"\n")
                 f.write("\n")
 
             # 2. Verbal / Reason: Local Model Execution
@@ -303,10 +313,34 @@ def record_ui_doctest_run(
                 f.write(f"**Verbal / Reason Response (Synthesized by: {step_model})**:\n\n")
                 f.write(_rst_code_block(response))
 
+            # Active Adversarial Verification / Logic Audit
+            audit = step.get("adversarial_audit", "")
+            if audit:
+                f.write("**Active Adversarial Verification & Logic Audit**:\n\n")
+                f.write(".. warning::\n\n")
+                for line in audit.splitlines():
+                    f.write(f"    {line}\n")
+                f.write("\n")
+
+            # Corrective Follow-Up Inquiry
+            corr_inq = step.get("corrective_inquiry", "")
+            if corr_inq:
+                f.write("**Researcher Corrective Follow-Up Inquiry (Submitted in Demo UI)**:\n\n")
+                f.write(_rst_code_block(corr_inq))
+
             # 3. Researcher Evaluation
             r_eval = step.get("researcher_evaluation", "")
             if r_eval:
                 f.write(f"**The Researcher (Evaluation & Decision)**:\n\n{r_eval}\n\n")
+
+            # Terminal Empirical Intervention Protocol Synthesis
+            protocol = step.get("protocol_synthesis", "")
+            if protocol:
+                f.write("**Empirical Intervention Protocol Synthesis**:\n\n")
+                f.write(".. note::\n\n")
+                for line in protocol.splitlines():
+                    f.write(f"    {line}\n")
+                f.write("\n")
 
             # Screenshot
             img = step.get("image", "")

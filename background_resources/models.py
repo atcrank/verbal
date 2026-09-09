@@ -58,6 +58,36 @@ class Document(models.Model):
     def __str__(self):
         return self.title
 
+    def get_citation(self) -> str:
+        """
+        Returns an authoritative academic citation for this document.
+        Uses citation_text if present, falls back to grobid_metadata Reference,
+        or constructs from author/title.
+        """
+        if self.citation_text and self.citation_text.strip():
+            return self.citation_text.strip()
+        
+        # Check reverse relation to Reference (grobid_metadata)
+        if hasattr(self, 'grobid_metadata') and self.grobid_metadata:
+            ref = self.grobid_metadata
+            parts = []
+            if ref.authors:
+                parts.append(ref.authors.strip())
+            if ref.year:
+                parts.append(f"({ref.year.strip()})")
+            parts.append(f"{ref.title.strip()}.")
+            if ref.journal:
+                parts.append(f"{ref.journal.strip()}.")
+            if ref.doi:
+                parts.append(f"DOI: {ref.doi.strip()}")
+            citation = " ".join(parts).strip()
+            if citation:
+                return citation
+                
+        if self.author:
+            return f"{self.author}. {self.title}."
+        return self.title
+
     def chunking_scheme(self, override_size=None, override_overlap=None):
         # Allows calculating scheme for specific strategies
         size = override_size if override_size is not None else self.chunk_size
@@ -71,6 +101,10 @@ class Document(models.Model):
 
     def save(self, *args, **kwargs):
         """Calculates the SHA256 hash of the uploaded file."""
+        if not bool(self.file):
+            super().save(*args, **kwargs)
+            return
+
         updated_file = False
         hasher = hashlib.sha256()
         f = self.file.open('rb')
@@ -170,6 +204,64 @@ class RAGChunk(models.Model):
     def __str__(self):
         return f"{self.chunk_id} ({self.text_content[:20]}...)"
 
+    @property
+    def document(self):
+        """
+        Resolves the parent Document for this chunk via StrategyChunkUsage or metadata.
+        """
+        for usage in self.usages.select_related('content_type').all():
+            obj = usage.content_object
+            if obj and hasattr(obj, 'document') and obj.document:
+                return obj.document
+        
+        if self.metadata and self.metadata.get('document_id'):
+            try:
+                return Document.objects.get(id=int(self.metadata['document_id']))
+            except (Document.DoesNotExist, ValueError, TypeError):
+                pass
+        return None
+
+    @property
+    def reference(self):
+        """
+        Returns the Grobid Reference object associated with this chunk's parent document.
+        """
+        doc = self.document
+        if doc and hasattr(doc, 'grobid_metadata') and doc.grobid_metadata:
+            return doc.grobid_metadata
+        return None
+
+    def get_citation(self) -> str:
+        """
+        Returns an academic citation identifying the source paper and section:
+        e.g. "Talavera et al. (2023) — Section: ARCHITECTURE"
+        """
+        meta = self.metadata or {}
+        authors = meta.get('authors')
+        year = meta.get('year')
+        section_title = meta.get('section_title') or meta.get('section') or meta.get('title')
+        doi = meta.get('doi')
+        
+        doc = self.document
+        ref = self.reference
+        if not authors and ref and ref.authors:
+            authors = ref.authors
+        elif not authors and doc and doc.author:
+            authors = doc.author
+            
+        if not year and ref and ref.year:
+            year = ref.year
+            
+        if not doi and ref and ref.doi:
+            doi = ref.doi
+
+        author_str = authors or (doc.title if doc else meta.get('filename', 'Unknown Source'))
+        year_str = f" ({year})" if year else ""
+        section_str = f" — Section: {section_title}" if section_title else ""
+        doi_str = f" (DOI: {doi})" if doi else ""
+        
+        return f"{author_str}{year_str}{section_str}{doi_str}".strip()
+
 
 class StrategyChunkUsage(models.Model):
     """
@@ -228,8 +320,8 @@ class ReadingStrategy(models.Model):
                     'in_byte_store': True
                 }
             )
-            StrategyChunkUsage.objects.create(chunk=rag_chunk, content_object=self,
-                                              role=StrategyChunkUsage.Role.CLIPPED)
+            StrategyChunkUsage.objects.get_or_create(chunk=rag_chunk, content_object=self,
+                                                     role=StrategyChunkUsage.Role.CLIPPED)
         rag_service_inject.index_unindexed_chunks()
         logger.info(f'{self.__class__.__name__}[{self.id}] logged {len(chunk_ids)} usages to db.')
 
@@ -284,7 +376,7 @@ class GrobidReadingStrategy(models.Model):
                     'in_byte_store': True
                 }
             )
-            StrategyChunkUsage.objects.create(chunk=rag_chunk, content_object=self, role=StrategyChunkUsage.Role.CLIPPED)
+            StrategyChunkUsage.objects.get_or_create(chunk=rag_chunk, content_object=self, role=StrategyChunkUsage.Role.CLIPPED)
         rag_service_inject.index_unindexed_chunks()
         logger.info(f'{self.__class__.__name__}[{self.id}] logged {len(chunk_ids)} usages to db.')
 

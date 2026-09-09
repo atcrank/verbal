@@ -98,7 +98,10 @@ class RAGService:
 
     def __init__(self, collection_name="verbal_background_resources"):
         self.collection_name = collection_name
-        self.embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+        embed_kwargs = {}
+        if os.environ.get("VERBAL_ROLE") == "web":
+            embed_kwargs = {"device": "cpu"}
+        self.embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2", model_kwargs=embed_kwargs)
         self.reading_ids = set()  # reading_ids
         self.store = DjangoChunkStore()
         self.id_key = "chunk_id"
@@ -514,9 +517,17 @@ class RAGService:
         final_chunks = grobid_tei_to_semantic_chunks(tei_xml, document_title=document.title)
         
         total_chunks = len(final_chunks)
+        ref = getattr(document, 'grobid_metadata', None)
         for index, vec_doc in enumerate(final_chunks):
             global_meta = document.metadata.copy() if document.metadata else {}
             vec_doc.metadata.update(global_meta)
+            vec_doc.metadata["document_id"] = str(document.id)
+            if ref:
+                if getattr(ref, 'authors', None): vec_doc.metadata["authors"] = ref.authors
+                if getattr(ref, 'year', None): vec_doc.metadata["year"] = str(ref.year)
+                if getattr(ref, 'doi', None): vec_doc.metadata["doi"] = ref.doi
+                if getattr(ref, 'journal', None): vec_doc.metadata["journal"] = ref.journal
+                if getattr(ref, 'title', None): vec_doc.metadata["paper_title"] = ref.title
             vec_doc.metadata["chunk_index"] = index
             vec_doc.metadata["total_chunks"] = total_chunks
             vec_doc.metadata["location_percent"] = int(((index + 1) / total_chunks) * 100) if total_chunks > 0 else 0
@@ -533,6 +544,13 @@ class RAGService:
             chunk.metadata["filename"] = document.file.name
             chunk.metadata["chunk_number"] = f"{str(i + 1)}/{str(len(final_chunks))}"
             chunk.metadata["indexed_hash"] = current_scheme
+            chunk.metadata["document_id"] = str(document.id)
+            if ref:
+                if getattr(ref, 'authors', None): chunk.metadata["authors"] = ref.authors
+                if getattr(ref, 'year', None): chunk.metadata["year"] = str(ref.year)
+                if getattr(ref, 'doi', None): chunk.metadata["doi"] = ref.doi
+                if getattr(ref, 'journal', None): chunk.metadata["journal"] = ref.journal
+                if getattr(ref, 'title', None): chunk.metadata["paper_title"] = ref.title
             
             chunks_to_store.append((chunk_id, chunk))
             
@@ -751,52 +769,89 @@ class RAGService:
         nlp_service = service_registry.nlp_service
 
         # 1. Get core concepts from query
-        # Query: "How do I fix memory leaks?" -> {'fix', 'memory', 'leak'}
-        # Lowercase lemmas to ensure case-insensitive matching (e.g. "Water" vs "water")
+        # Lowercase lemmas to ensure case-insensitive matching
         query_lemmas = set([t.lower() for t in nlp_service.get_lemmatized_tokens(user_query)])
+        
+        # Detect explicit request for definitions/terminology
+        query_lower = user_query.lower()
+        is_definition_query = any(phrase in query_lower for phrase in [
+            "what is", "what are", "define", "definition", "meaning of", "stands for", "acronym"
+        ])
+        
+        # Domain stop-concepts: generic domain unigrams that should NOT trigger glossary definition priority
+        DOMAIN_STOPWORDS = {
+            "fire", "smoke", "system", "water", "foam", "test", "device", "equipment", 
+            "operation", "datum", "data", "model", "use", "method", "result", "paper", 
+            "study", "research", "area", "scene", "unit", "level", "flow", "rate"
+        }
 
         scored_results = []
+        total_retrieved = len(retrieved_chunks)
         for i, chunk in enumerate(retrieved_chunks):
             # 2. Get concepts from the chunk
             content_to_check = chunk.page_content
-            if chunk.metadata.get("original_term"):
-                content_to_check = chunk.metadata["original_term"] +": " + content_to_check
-
-            chunk_lemmas = set([t.lower() for t in nlp_service.get_lemmatized_tokens(content_to_check)])
-
-            # 3. Calculate overlap
-            # Calculate Query Coverage: What percentage of the query's concepts are present in the chunk?
-            if len(query_lemmas) == 0:
-                overlap_ratio = 0.0
-            else:
-                intersection = query_lemmas.intersection(chunk_lemmas)
-                base_overlap = len(intersection) / len(query_lemmas)
-                
-                # Length Penalty (Information Density):
-                # Discount overlap score for excessively long chunks.
-                # Chunks under 100 lemmas get no penalty.
-                # A 1000-lemma chunk is penalized heavily (100/1000 = 0.1).
-                length_penalty = min(1.0, 100.0 / max(1, len(chunk_lemmas)))
-                overlap_ratio = base_overlap * length_penalty
-            
-            # 4. Tie-breaker: Prefer definitions ONLY if they actually match the query context
-            is_relevant_definition = 0
             original_term = chunk.metadata.get("original_term")
             if original_term:
+                content_to_check = original_term + ": " + content_to_check
+
+            chunk_lemmas_list = [t.lower() for t in nlp_service.get_lemmatized_tokens(content_to_check)]
+            chunk_lemmas_set = set(chunk_lemmas_list)
+
+            # 3. Calculate query concept coverage
+            if len(query_lemmas) == 0:
+                base_overlap = 0.0
+                lexical_score = 0.0
+            else:
+                intersection = query_lemmas.intersection(chunk_lemmas_set)
+                base_overlap = len(intersection) / len(query_lemmas)
+
+                # Concept Concentration / Bounded Length Factor:
+                # To prevent small local models (e.g. Gemma-2-2b-it) from being overwhelmed by massive
+                # text blocks, we apply a gentle density curve. Chunks under 300 lemmas incur no penalty.
+                # Longer research sections receive a soft bounded scaling (not the severe 100/len penalty
+                # that previously slashed 500-lemma empirical papers by 80%).
+                if len(chunk_lemmas_list) <= 300:
+                    density_factor = 1.0
+                else:
+                    density_factor = max(0.65, (300.0 / len(chunk_lemmas_list)) ** 0.3)
+                
+                lexical_score = base_overlap * density_factor
+
+            # 4. Discriminative Term Matching for Definitions:
+            # Glossary leapfrogging was originally added for token efficiency, but coarse single-word matches
+            # on generic domain terms (like "smoke" or "fire") allowed airport glossaries to crowd out peer-reviewed
+            # research. Prioritize definitions ONLY when:
+            #   (a) The query explicitly asks for a definition, OR
+            #   (b) The term is a multi-word compound sharing query concepts, OR
+            #   (c) The term is a specific, rare technical term (not in DOMAIN_STOPWORDS, length >= 3).
+            is_relevant_definition = 0
+            if original_term:
+                term_clean = original_term.strip().lower()
                 term_lemmas = set([t.lower() for t in nlp_service.get_lemmatized_tokens(original_term)])
-                # If the term shares words with the query, or the definition is a strong match
-                if term_lemmas.intersection(query_lemmas) or overlap_ratio > 0.5:
+                term_overlap = term_lemmas.intersection(query_lemmas)
+                
+                is_multiword = len(term_clean.split()) > 1
+                is_specific_term = any(t not in DOMAIN_STOPWORDS and len(t) >= 3 for t in term_lemmas)
+                
+                if term_overlap and (is_definition_query or is_multiword or is_specific_term):
                     is_relevant_definition = 1
+
+            # 5. Continuous Composite Score:
+            # Instead of a rigid tuple sort that acts as an absolute glass ceiling, combine lexical concept
+            # coverage, semantic search rank, and an appropriate definition bonus.
+            # Normalised semantic score: 1.0 for first retrieved chunk, decreasing down to 0.5.
+            semantic_score = max(0.5, 1.0 - (0.5 * (i / max(1, total_retrieved))))
+            definition_bonus = 0.25 if (is_relevant_definition and is_definition_query) else (0.10 if is_relevant_definition else 0.0)
             
-            # By defaulting to 0.0, we stop punishing the semantic embedding model for finding synonyms!
-            if overlap_ratio >= min_overlap or is_relevant_definition:
-                scored_results.append((chunk, overlap_ratio, is_relevant_definition, i))
+            composite_score = (0.55 * lexical_score) + (0.35 * semantic_score) + definition_bonus
+
+            # Acceptance filter
+            if lexical_score >= min_overlap or is_relevant_definition or (base_overlap > 0.0 and semantic_score >= 0.8):
+                scored_results.append((chunk, composite_score, lexical_score, is_relevant_definition, i))
 
         # HYBRID SEARCH SORTING:
-        # 1. Target Definition (Exact Glossary Hit)
-        # 2. Lexical Overlap (Safeguard against embedding hallucinations like Python code)
-        # 3. Original Semantic Rank (-x[3])
-        sorted_results = sorted(scored_results, key=lambda x: (x[2], x[1], -x[3]), reverse=True)
+        # Sort continuously by composite_score, preserving semantic tie-breaker (-i)
+        sorted_results = sorted(scored_results, key=lambda x: (x[1], -x[4]), reverse=True)
         return [(item[0], item[1]) for item in sorted_results]
 
 

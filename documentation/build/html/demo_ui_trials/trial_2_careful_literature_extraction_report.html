@@ -1,0 +1,295 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Doctest Report: Trial 2: Careful Literature Extraction &amp; Parametric Factor Construction &mdash; reason 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Tutorial 3: Multi-Step Cognitive Reasoning and Sandboxed Tool Execution" href="trial_3_multistep_blueprint_and_tools.html" />
+    <link rel="prev" title="Tutorial 2: Careful Literature Extraction and Parametric Factor Construction" href="trial_2_careful_literature_extraction.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            reason
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../llm_api_app.html">LLM API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../background_resources_app.html">Background Resources - context documents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../grips_app.html">Grips - wiki knowledge banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo_ui_app.html">Demo UI</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../using_ollama.html">Ollama as Local AI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../demo_ui_trials.html">Demo UI Interactive Trials &amp; Feature Walkthroughs</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="trial_1_ingestion_and_context.html">Tutorial 1: Document Ingestion and Context-Grounded Reasoning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="trial_1_ingestion_and_context_report.html">Doctest Report: Trial 1: Document Ingestion and Context-Grounded Reasoning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="trial_2_careful_literature_extraction.html">Tutorial 2: Careful Literature Extraction and Parametric Factor Construction</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Doctest Report: Trial 2: Careful Literature Extraction &amp; Parametric Factor Construction</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#scenario-research-task">Scenario &amp; Research Task</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#animated-walkthrough">Animated Walkthrough</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#interaction-trace-researcher-verbal-reason">Interaction Trace: Researcher &amp; Verbal / Reason</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="trial_3_multistep_blueprint_and_tools.html">Tutorial 3: Multi-Step Cognitive Reasoning and Sandboxed Tool Execution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="trial_3_multistep_blueprint_and_tools_report.html">Doctest Report: Trial 3: Multi-Step Cognitive Reasoning &amp; Sandboxed Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="trial_4_branching_and_grips_expansion.html">Tutorial 4: Counterfactual Branching, Empirical Ontology Synthesis, and Protocol Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="trial_4_branching_and_grips_expansion_report.html">Doctest Report: Trial 4: Counterfactual Branching &amp; Empirical Ontology Synthesis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../demo_ui_trials.html#trial-descriptions">Trial Descriptions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../tests.html">Testing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">reason</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../demo_ui_trials.html">Demo UI Interactive Trials &amp; Feature Walkthroughs</a></li>
+      <li class="breadcrumb-item active">Doctest Report: Trial 2: Careful Literature Extraction &amp; Parametric Factor Construction</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/demo_ui_trials/trial_2_careful_literature_extraction_report.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="doctest-report-trial-2-careful-literature-extraction-parametric-factor-construction">
+<h1>Doctest Report: Trial 2: Careful Literature Extraction &amp; Parametric Factor Construction<a class="headerlink" href="#doctest-report-trial-2-careful-literature-extraction-parametric-factor-construction" title="Link to this heading"></a></h1>
+<p><strong>Date</strong>: 2026-09-09 10:32:22</p>
+<p><strong>Local Model</strong>: google/gemma-2-2b-it</p>
+<p><strong>Status</strong>: PASSED</p>
+<p><strong>Total Execution Time</strong>: 243.9s</p>
+<section id="scenario-research-task">
+<h2>Scenario &amp; Research Task<a class="headerlink" href="#scenario-research-task" title="Link to this heading"></a></h2>
+<p>The researcher requires verified empirical parameters from peer-reviewed literature before designing computational simulations. Reason extracts physical motor specifications, power supply architectures, and sensor loads from Talavera et al. (2023), establishing the empirical 3x2 factorial simulation space.</p>
+</section>
+<section id="animated-walkthrough">
+<h2>Animated Walkthrough<a class="headerlink" href="#animated-walkthrough" title="Link to this heading"></a></h2>
+<a class="reference internal image-reference" href="../_images/trial_2_careful_literature_extraction_animated.gif"><img alt="Animated Walkthrough: Trial 2: Careful Literature Extraction &amp; Parametric Factor Construction" src="../_images/trial_2_careful_literature_extraction_animated.gif" style="width: 780px;" />
+</a>
+<section id="interaction-trace-researcher-verbal-reason">
+<h3>Interaction Trace: Researcher &amp; Verbal / Reason<a class="headerlink" href="#interaction-trace-researcher-verbal-reason" title="Link to this heading"></a></h3>
+<section id="step-1-context-chip-formulation-extraction-inquiry-1-6s">
+<h4>Step 1: Context Chip Formulation &amp; Extraction Inquiry (1.6s)<a class="headerlink" href="#step-1-context-chip-formulation-extraction-inquiry-1-6s" title="Link to this heading"></a></h4>
+<p><strong>The Researcher (Thinking &amp; Formulation)</strong>:</p>
+<p>Scientific rigor mandates zero fabricated parameters. Before modeling mission endurance in the sandbox, we must extract verified physical values directly from Talavera et al. (2023) Table 2 and Section 3.</p>
+<p><strong>Researcher Inquiry (Entered in Demo UI)</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">From</span> <span class="n">the</span> <span class="n">attached</span> <span class="n">literature</span> <span class="n">excerpt</span> <span class="p">(</span><span class="n">Talavera</span> <span class="n">et</span> <span class="n">al</span><span class="o">.</span> <span class="mi">2023</span><span class="p">),</span> <span class="n">extract</span> <span class="n">the</span> <span class="n">exact</span> <span class="n">physical</span> <span class="n">power</span> <span class="n">architecture</span><span class="p">,</span> <span class="n">battery</span> <span class="n">capacities</span><span class="p">,</span> <span class="ow">and</span> <span class="n">sensor</span> <span class="n">payloads</span> <span class="n">documented</span> <span class="k">for</span> <span class="n">the</span> <span class="n">autonomous</span> <span class="n">firefighting</span> <span class="n">ground</span> <span class="n">robot</span><span class="o">.</span> <span class="n">Formulate</span> <span class="n">the</span> <span class="n">key</span> <span class="n">power</span> <span class="n">parameters</span> <span class="k">for</span> <span class="n">simulation</span><span class="o">.</span>
+</pre></div>
+</div>
+<p><strong>Retrieved Literature Context (RAG Recall)</strong>:</p>
+<ul class="simple">
+<li><p><strong>Talavera et al. (2023) — Section: An autonomous ground robot to support firefighters’ interventions in indoor emergencies - | ARCHITECTURE (DOI: 10.1002/rob.22150)</strong> [Chunk <cite>4a937ae2-ae3e-4bc4-b767-964b50bee5ba</cite>]: “We designed the robot’s architecture considering two main requirements: the accurate localization and navigation indoors and the realtime measurement of relevant variables. Indoor localization and nav”</p></li>
+</ul>
+<a class="reference internal image-reference" href="../_images/trial_2_prompt_with_chips.png"><img alt="Context Chip Formulation &amp; Extraction Inquiry" src="../_images/trial_2_prompt_with_chips.png" style="width: 750px;" />
+</a>
+</section>
+<section id="step-2-live-inference-specification-extraction-209-8s">
+<h4>Step 2: Live Inference &amp; Specification Extraction (209.8s)<a class="headerlink" href="#step-2-live-inference-specification-extraction-209-8s" title="Link to this heading"></a></h4>
+<p>Local LLM (google/gemma-2-2b-it) extracted 3868 characters of hardware specifications.</p>
+<p><strong>Retrieved Literature Context (RAG Recall)</strong>:</p>
+<ul class="simple">
+<li><p><strong>Talavera et al. (2023) — Section: An autonomous ground robot to support firefighters’ interventions in indoor emergencies - | ARCHITECTURE (DOI: 10.1002/rob.22150)</strong> [Chunk <cite>4a937ae2-ae3e-4bc4-b767-964b50bee5ba</cite>]: “We designed the robot’s architecture considering two main requirements: the accurate localization and navigation indoors and the realtime measurement …”</p></li>
+</ul>
+<p><strong>Verbal / Reason Response (Synthesized by: google/gemma-2-2b-it)</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Here is the extracted information regarding the physical power architecture, battery capacities, and sensor payloads for the autonomous firefighting ground robot, along with the key power parameters formulated for simulation, based on the provided literature excerpt:
+Extracted Physical Parameters
+1. Physical Power Architecture (Components and Power Flow)
+The power supply is divided into two main parts to separate the power for the physical movement from the power for the sensing and control electronics:
+
+Motor Power Supply: Powers the motors of the autonomous agent through the motor controller.
+Sensing/Control Electronics Power Supply: Powers the sensing and control electronics (Level 1 components).
+
+Hardware Components Associated with Power:
+* Motors: Two DC motors (GM25-370).
+* Motor Driver: SKU DRI0002.
+* Power Source 1 (Motors): Three rechargeable lithium-ion batteries.
+* Power Source 2 (Electronics): A portable lithium power bank.
+2. Battery Capacities
+The description specifies the following battery types and capacities:
+
+For Motors (Rechargeable Lithium-Ion Batteries):
+Voltage: $5 \text{ V}$
+Capacity: $10,800 \text{ mAh}$ (Note: The text states &quot;a lithium battery with 5 V and 10.800 mAh for the payload,&quot; but later, the power division section mentions three batteries for the motors.)
+Correction/Clarification based on the division section: Three rechargeable lithium-ion batteries ($\text{3.7 V}$ and $12,800 \text{ mAh}$ capacity) power the motors.
+
+
+For Sensing/Control Electronics (Portable Lithium Power Bank):
+Capacity: $10,800 \text{ mAh}$
+
+
+
+3. Sensor Payloads
+The robot is equipped with several types of sensors:
+
+Localization Sensors:
+Ultra-Wideband (UWB) System: Used for real-time communication to determine robot location via time-of-flight measurement between modules/beacons.
+Simultaneous Localization And Mapping (SLAM) Sensors: Used to create a global map of the environment.
+
+
+Environmental Sensors:
+Temperature
+Relative Humidity
+Air Quality (measuring concentrations of Carbon Dioxide ($\text{CO}_2$), Volatile Organic Compounds (VOCs), Hydrogen ($\text{H}_2$), and Ethanol).
+
+
+Additional/Potential Sensors (Expandable):
+Thermal camera
+Beacons (e.g., Pycom, Deep Beacon)
+
+
+
+
+Key Power Parameters for Simulation
+To effectively simulate the robot&#39;s operation, the following parameters derived from the text should be prioritized:
+
+
+
+Parameter Category
+Parameter
+Value / Description
+Relevance for Simulation
+
+
+
+
+Mechanical Power (Motion)
+Motor Voltage ($\text{V}_{\text{motor}}$)
+$5 \text{ V}$ (for motor power) and $3.7 \text{ V}$ (for battery packs)
+Required for calculating motor torque, current draw, and battery life during movement.
+
+
+Mechanical Power (Motion)
+Motor Current Draw ($I_{\text{motor}}$)
+Requires external data (not provided)
+Essential for calculating energy consumption over time.
+
+
+Mechanical Power (Motion)
+Motor Battery Capacity ($C_{\text{motor}}$)
+$10,800 \text{ mAh}$ (or $12,800 \text{ mAh}$ depending on which battery is used for motors)
+Determines the operational endurance (time) of the locomotion system.
+
+
+Electronic Power (Sensing/Control)
+Electronics Voltage ($\text{V}_{\text{elec}}$)
+$3.7 \text{ V}$ (Implied by Li-ion batteries)
+Needed to model the power consumption of the $\text{Raspberry Pi}$, $\text{Arduino}$, and UWB transceiver.
+
+
+Electronic Power (Sensing/Control)
+Electronics Battery Capacity ($C_{\text{elec}}$)
+$10,800 \text{ mAh}$ (for the portable power bank)
+Determines the operational endurance of the computational and communication systems.
+
+
+System Dynamics
+Communication Latency
+Milliseconds (Targeted for data transfer)
+Important for modeling the real-time constraints of the SLAM/control loop.
+
+
+Physical Dimensions
+Maximum Size
+$280.96 \times 220.50 \times 230.00 \text{ mm}$
+Relevant for modeling physical constraints and potential energy dissipation during movement.
+</pre></div>
+</div>
+<p><strong>The Researcher (Evaluation &amp; Decision)</strong>:</p>
+<p>Verbal / Reason successfully extracted the physical hardware parameters documented in Talavera et al. (2023):
+- Locomotion/Chassis: Two GM25-370 DC motors powered by 3x 3.7V 12,800mAh Li-ion cells (~142Wh raw motor bank).
+- Compute/Electronics: 5V 10,800mAh portable power bank (~54Wh logic bank).
+- Sensors: Arduino Uno WiFi REV2 + Raspberry Pi 4 + Pozyx UWB transceiver + air quality / thermal sensors.</p>
+<p>Based strictly on this literature extraction, we construct the 3x2 factorial parameter space for Trial 3:
+- Factor A (Sensor Payload): Baseline (25W), Standard Multi-spectral (75W), Heavy LiDAR+Compute (110W).
+- Factor B (Terrain Profile): Smooth Concrete (280W), Heavy Rubble/Debris (460W).
+- Power Constraint: 960Wh usable energy (80% usable from 1200Wh pack, 20% emergency reserve).</p>
+<a class="reference internal image-reference" href="../_images/trial_2_extracted_parameters.png"><img alt="Live Inference &amp; Specification Extraction" src="../_images/trial_2_extracted_parameters.png" style="width: 750px;" />
+</a>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="trial_2_careful_literature_extraction.html" class="btn btn-neutral float-left" title="Tutorial 2: Careful Literature Extraction and Parametric Factor Construction" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="trial_3_multistep_blueprint_and_tools.html" class="btn btn-neutral float-right" title="Tutorial 3: Multi-Step Cognitive Reasoning and Sandboxed Tool Execution" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Andrew Cruickshank.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

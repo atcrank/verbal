@@ -652,3 +652,96 @@ class TestRAGServiceIntegration(TestCase):
         sources = [r.source for r in results]
         self.assertTrue(any(s in ["grips", "rag"] for s in sources))
 
+    def test_document_and_chunk_get_citation(self):
+        from background_resources.models import Document, RAGChunk
+        from grobid_client.models import Reference
+        from django.core.files.base import ContentFile
+        from uuid import uuid4
+
+        doc = Document.objects.create(
+            title="Firefighting Autonomous Robots",
+            author="Talavera et al.",
+            file=ContentFile(b"Test content", name="talavera.pdf")
+        )
+        self.assertEqual(doc.get_citation(), "Talavera et al.. Firefighting Autonomous Robots.")
+
+        ref = Reference.objects.create(
+            document=doc,
+            title="Firefighting Autonomous Robots in Indoor Emergencies",
+            authors="N. Fernández Talavera, J. J. Roldán-Gómez",
+            year="2023",
+            journal="Journal of Field Robotics",
+            doi="10.1002/rob.22150"
+        )
+        # Verify get_citation uses grobid_metadata Reference
+        expected_citation = "N. Fernández Talavera, J. J. Roldán-Gómez (2023) Firefighting Autonomous Robots in Indoor Emergencies. Journal of Field Robotics. DOI: 10.1002/rob.22150"
+        self.assertEqual(doc.get_citation(), expected_citation)
+
+        # Create chunk linked via document_id metadata
+        chunk_id = str(uuid4())
+        chunk = RAGChunk.objects.create(
+            chunk_id=chunk_id,
+            text_content="Experimental testing of the autonomous robot under dense cold smoke.",
+            metadata={
+                "document_id": str(doc.id),
+                "authors": "Talavera et al.",
+                "year": "2023",
+                "section_title": "EXPERIMENTAL RESULTS",
+                "doi": "10.1002/rob.22150"
+            }
+        )
+        self.assertEqual(chunk.document, doc)
+        self.assertEqual(chunk.reference, ref)
+        chunk_citation = chunk.get_citation()
+        self.assertIn("Talavera et al.", chunk_citation)
+        self.assertIn("(2023)", chunk_citation)
+        self.assertIn("Section: EXPERIMENTAL RESULTS", chunk_citation)
+
+    def test_verify_rag_relevance_balanced_and_discriminative(self):
+        from langchain_core.documents import Document as LCDocument
+
+        # 1. Technical empirical chunk (approx 350 tokens)
+        empirical_content = (
+            "We evaluate 3D LiDAR point clouds and long-wave infrared LWIR thermography in dense aerosolized smoke. "
+            "Laser range finders suffer acute backscatter as smoke particulate density increases, dropping effective "
+            "scanning range from 30m to under 3m. In contrast, uncooled microbolometer thermal cameras operate at 8-14um "
+            "wavelengths where aerosol scattering cross-sections are significantly smaller. Our experimental trials in the "
+            "fire training tower confirm that fusing 3D LiDAR geometry with thermal imaging enables continuous SLAM localization "
+            "even when optical visibility drops to zero."
+        )
+        empirical_chunk = LCDocument(
+            page_content=empirical_content,
+            metadata={"filename": "Talavera2023.pdf", "authors": "Talavera et al.", "year": "2023"}
+        )
+
+        # 2. Generic glossary definition for a common domain word ("Smoke")
+        glossary_smoke = LCDocument(
+            page_content="The airborne solid and liquid particulates and gases evolved when a material undergoes pyrolysis or combustion.",
+            metadata={"filename": "FirefightingGlossary.txt", "original_term": "Smoke"}
+        )
+
+        # 3. Technical glossary definition for a specific domain acronym ("UWB")
+        glossary_uwb = LCDocument(
+            page_content="Ultra-Wideband radio technology transmitting pulses across bandwidths greater than 500 MHz for indoor positioning.",
+            metadata={"filename": "FirefightingGlossary.txt", "original_term": "UWB"}
+        )
+
+        retrieved = [glossary_smoke, empirical_chunk, glossary_uwb]
+
+        # Test A: Topic inquiry with common domain unigram ("smoke")
+        # Empirical research must outrank generic glossary definition of "Smoke"
+        query_topic = "What are the trade-offs between 3D LiDAR point clouds and thermography in dense aerosolized smoke?"
+        scored = self.rag_service.verify_rag_relevance(query_topic, retrieved)
+        
+        top_chunk, top_score = scored[0]
+        self.assertEqual(top_chunk.metadata.get("authors"), "Talavera et al.",
+                         "Empirical research paper section should rank first over generic glossary definition!")
+        
+        # Test B: Explicit definition query for rare domain acronym
+        # Glossary definition for UWB should rank at the top
+        query_def = "What is UWB?"
+        scored_def = self.rag_service.verify_rag_relevance(query_def, retrieved)
+        top_def_chunk, top_def_score = scored_def[0]
+        self.assertEqual(top_def_chunk.metadata.get("original_term"), "UWB",
+                         "Explicit definition query should rank UWB glossary definition at the top!")
+

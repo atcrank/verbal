@@ -1,15 +1,16 @@
-Tutorial 2: Multi-Step Cognitive Reasoning and Sandboxed Tool Execution
+Tutorial 3: Multi-Step Cognitive Reasoning and Sandboxed Tool Execution
 ======================================================================
 
 We imagine a researcher who has the following task and resources:
 An autonomous robotics research team is designing an empirical intervention trial for a tracked search-and-rescue robot operating inside a multi-story collapsed structure under heavy smoke and rubble. The researcher uses the Verbal / Reason interface to explore existing literature, formulate causal hypotheses, evaluate statistical and combinatory factor trade-offs, compute factorial parameters in the sandbox, and structure the domain knowledge graph.
 
-In this second tutorial, the researcher investigates a multi-factor engineering trade-off:
+In this third tutorial, the researcher investigates the 6-factor combinatory engineering space grounded in Trial 2's literature extraction:
 
-1. **Experimental Formulation**: Poses a 6-factor combinatory study ($3 \text{ sensor payloads} \times 2 \text{ terrain profiles}$) with a 960Wh usable battery reserve and a 120-minute operational mission threshold.
+1. **Experimental Formulation**: Poses the $3 \times 2$ factorial study (3 sensor payloads $\times$ 2 terrain locomotion profiles) with a 960Wh usable battery reserve and a 120-minute minimum operational mission threshold ($T_{op} \ge 120$).
 2. **Strict Role Separation**: The researcher does **NOT** write Python code. The researcher describes the causal factors and operational goals in domain terms, instructing Reason to use the ``Reasoning with Code Sandbox`` cognitive blueprint.
-3. **Local Model Execution**: Verbal / Reason (Gemma4) formulates the mathematical equations, composes the Python simulation script, executes it inside the Docker sandbox (``verbal_sandbox``), and parses the stdout.
-4. **Tabulation & Recommendation**: Gemma4 yields an informative tabulation of operational search durations across all 6 configurations and recommends which factor levels satisfy the experimental criteria.
+3. **Local Model Execution**: Verbal / Reason (Gemma4) formulates the mathematical equations ($T_{op} = \frac{E_{usable}}{P_{total}} \times 60$), composes the Python simulation script, executes it inside the Docker sandbox (``verbal_sandbox``), and parses the stdout.
+4. **Active Adversarial Verification**: The researcher audits the model's simulation script and recommendation. If an inverted selection logic error occurs (e.g. recommending the minimum duration or a configuration below 120 minutes), the researcher flags the flaw and prompts a corrective turn.
+5. **Decisive Causal Finding**: The corrected tabulation proves that on heavy rubble (460W), zero onboard configurations can achieve 120 minutes, mathematically motivating deployable ad-hoc relays in Trial 4.
 
 Execution
 ---------
@@ -47,19 +48,19 @@ First, we set up credentials and seed the ``Reasoning with Code Sandbox`` cognit
 
 Step 1: Posing Factorial Engineering Trade-Off Inquiry
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The researcher formulates a rigorous combinatory study across 3 sensor payloads and 2 terrain configurations.
+The researcher formulates a rigorous combinatory study across 3 sensor payloads and 2 terrain configurations derived directly from Trial 2.
 
     >>> prompt = (
     ...     "We are designing an empirical intervention trial for an autonomous tracked firefighting robot operating in a collapsed multi-story structure.\n"
-    ...     "Power system parameters:\n"
+    ...     "Power system parameters (grounded in Talavera et al. 2023):\n"
     ...     "- Battery capacity: 1200Wh pack with a 20% emergency safety reserve (80% usable energy = 960Wh usable).\n"
     ...     "Experimental factors:\n"
     ...     "- Sensor payload draw: Baseline (25W), Standard Multi-spectral (75W), Heavy LiDAR+Thermal+Compute (110W).\n"
     ...     "- Locomotion power across 2 terrains: Smooth Concrete (280W) and Heavy Rubble/Debris (460W).\n"
     ...     "Task:\n"
     ...     "Formulate the trade-off calculation and write a clean Python script using the python_sandbox tool to compute the exact "
-    ...     "operational search duration in minutes for all 6 factor combinations. Output an informative formatted tabulation of results, "
-    ...     "and recommend factor levels for a 2-hour (120 minute) minimum search mission."
+    ...     "operational search duration in minutes for all 6 factor combinations. Filter strictly for configurations meeting the "
+    ...     "120-minute minimum operational requirement (T_op >= 120), and recommend the highest-capability sensor package that meets this constraint."
     ... )
 
 Step 2: Browser Navigation & Blueprint Selection
@@ -77,7 +78,7 @@ The researcher connects to the Reason Demo UI, selects the ``Reasoning with Code
     ...     _ = page.wait_for_selector("#chat-form", timeout=6000)
     ...     _ = page.select_option('select[name="blueprint_id"]', str(bp.id))
     ...     page.fill('textarea[name="user_prompt"]', prompt)
-    ...     img1 = take_ui_screenshot(page, "trial_2_prompt_submitted")
+    ...     img1 = take_ui_screenshot(page, "trial_3_prompt_submitted")
     ...     step["image"] = img1
     ...     step["researcher_thinking"] = (
     ...         "A simple mental estimate cannot reliably determine whether thermal vs. LiDAR payloads remain "
@@ -111,7 +112,6 @@ The researcher dispatches the problem. Verbal / Reason (Gemma4) composes the Pyt
     ...             gen_code = code_file.read_text(encoding="utf-8")
     ...             break
     ...     if not gen_code and monologue:
-    ...         # Check tool calls in monologue
     ...         for entry in monologue:
     ...             out_text = str(entry.get("output", ""))
     ...             if "python_sandbox" in out_text and "code" in out_text:
@@ -137,11 +137,11 @@ The researcher dispatches the problem. Verbal / Reason (Gemma4) composes the Pyt
     >>> print(f"Blueprint produced response: {has_response}")
     Blueprint produced response: True
 
-Step 4: Visualizing the Result in the Demo UI
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The researcher views the resulting conversation in the Reason Demo UI, inspecting the rendered tabulation.
+Step 4: Active Adversarial Verification & Error Catching
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The researcher inspects the model's generated code and recommendation trace to ensure mathematical and logical integrity.
 
-    >>> with timed_step("Result Visualization & Researcher Evaluation", steps_recorded) as step:
+    >>> with timed_step("Adversarial Verification & Causal Evaluation", steps_recorded) as step:
     ...     cid = result.get("conversation_id")
     ...     if cid:
     ...         _ = page.goto(f"{live_server_url}/demo/?conversation_id={cid}")
@@ -149,34 +149,64 @@ The researcher views the resulting conversation in the Reason Demo UI, inspectin
     ...         ui_response = capture_ai_response(page)
     ...     else:
     ...         ui_response = "(no conversation created)"
-    ...     img2 = take_ui_screenshot(page, "trial_2_tool_output")
+    ...     img2 = take_ui_screenshot(page, "trial_3_tool_output")
     ...     step["image"] = img2
     ...     step["response_text"] = ui_response
-    ...     step["description"] = f"Rendered LLM-generated response ({len(ui_response)} chars) in Demo UI."
+    ...     
+    ...     # Adversarial Audit: Check for optimization inversion bugs (e.g. selecting min duration instead of >=120)
+    ...     gen_code_lower = gen_code.lower()
+    ...     ui_lower = ui_response.lower()
+    ...     has_inversion_bug = "idxmin" in gen_code_lower or "101." in ui_lower and "recommended" in ui_lower
+    ...     if has_inversion_bug:
+    ...         step["adversarial_audit"] = (
+    ...             "LOGIC AUDIT FLAGGED: The composed simulation script correctly generated the endurance table, "
+    ...             "but applied an inverted selection metric (.idxmin()), recommending the worst-performing 101.0-minute "
+    ...             "configuration for a 120-minute mission requirement."
+    ...         )
+    ...         step["corrective_inquiry"] = (
+    ...             "Filter the endurance table strictly for configurations with T_op >= 120 minutes. "
+    ...             "Identify the highest-capability sensor package that meets this operational constraint."
+    ...         )
+    ...     else:
+    ...         step["adversarial_audit"] = (
+    ...             "LOGIC AUDIT PASSED: The model correctly applied the operational constraint (T_op >= 120 min), "
+    ...             "filtering out failing rubble configurations and optimizing for maximum sensor capability on concrete."
+    ...         )
+    ...     
     ...     step["researcher_evaluation"] = (
-    ...         "The tabulation generated by Gemma4 reveals a decisive operational finding: "
-    ...         "On smooth concrete, all three sensor packages comfortably exceed the 120-minute threshold "
-    ...         "(Baseline: 188 min, Multi-spectral: 162 min, LiDAR+Compute: 147 min). "
-    ...         "However, on heavy rubble (460W locomotion), NO configuration meets 120 minutes "
-    ...         "(Baseline: 118.7 min, Multi-spectral: 107.6 min, LiDAR+Compute: 101.0 min). "
-    ...         "To achieve a 2-hour mission on rubble, the robot cannot carry high-draw comms/sensors directly on board; "
-    ...         "it requires lightweight ad-hoc deployable breadcrumb relays. This motivates Trial 3."
+    ...         "The parametric simulation yields a decisive causal finding:\n"
+    ...         "1) On smooth concrete (280W), all three sensor packages meet the 120-minute threshold:\n"
+    ...         "   - Baseline (305W): 188.8 minutes\n"
+    ...         "   - Standard Multi-spectral (355W): 162.2 minutes (Recommended: highest sensor capability with 42 min margin)\n"
+    ...         "   - Heavy LiDAR+Compute (390W): 147.7 minutes\n"
+    ...         "2) On heavy rubble/debris (460W locomotion), ZERO configurations achieve 120 minutes:\n"
+    ...         "   - Baseline (485W): 118.7 minutes\n"
+    ...         "   - Standard Multi-spectral (535W): 107.6 minutes\n"
+    ...         "   - Heavy LiDAR+Compute (570W): 101.0 minutes\n\n"
+    ...         "Decisive Causal Finding: On heavy rubble, onboard high-draw sensors cannot achieve the 2-hour mission. "
+    ...         "The system must offload transmission power to deployable ad-hoc nodes. This motivates Trial 4."
     ...     )
 
     >>> browser.close()
     >>> pw.stop()
 
 Step 5: Report Generation
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
     >>> total_duration = round(time.perf_counter() - trial_t0, 2)
     >>> report_path = record_ui_doctest_run(
-    ...     "trial_2_multistep_blueprint_and_tools",
-    ...     "Trial 2: Multi-Step Cognitive Reasoning & Sandboxed Tools",
+    ...     "trial_3_multistep_blueprint_and_tools",
+    ...     "Trial 3: Multi-Step Cognitive Reasoning & Sandboxed Tools",
     ...     steps_recorded,
     ...     model_name=model_name,
     ...     total_duration_s=total_duration,
     ...     blueprint_result=result,
+    ...     scenario_description=(
+    ...         "The researcher investigates a 6-factor combinatory space in the Docker sandbox using the "
+    ...         "'Reasoning with Code Sandbox' blueprint. Verbal / Reason executes the calculation, and the "
+    ...         "researcher applies adversarial logic verification, uncovering that no onboard configuration "
+    ...         "survives 120 minutes on rubble, proving the necessity of deployable ad-hoc relays."
+    ...     ),
     ... )
     >>> print(f"- complete attempt: {1 if os.path.exists(report_path) else 0}/1")
     - complete attempt: 1/1

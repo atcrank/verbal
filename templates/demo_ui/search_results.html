@@ -15,8 +15,14 @@
                 </details>
             </div>
         {% else %}
-            <div class="search-card" draggable="true" ondragstart="event.dataTransfer.setData('application/json', JSON.stringify({model: 'RAGChunk', id: '{% if item.doc.metadata.chunk_id %}{{ item.doc.metadata.chunk_id }}{% else %}{{ item.doc.metadata.id }}{% endif %}', content: '{{ item.doc.page_content|escapejs }}', preview: '{{ item.doc.metadata.filename|escapejs }}'}))">
-                <div class="search-card-title">{{ item.doc.metadata.filename|default:"Document" }} ({{ item.doc.metadata.page_number|default:"-" }})</div>
+            <div class="search-card" draggable="true" ondragstart="event.dataTransfer.setData('application/json', JSON.stringify({model: 'RAGChunk', id: '{% if item.doc.metadata.chunk_id %}{{ item.doc.metadata.chunk_id }}{% else %}{{ item.doc.metadata.id }}{% endif %}', content: '{{ item.doc.page_content|escapejs }}', preview: '{% if item.doc.metadata.authors %}{{ item.doc.metadata.authors|escapejs }} ({{ item.doc.metadata.year|default:\'-\' }}){% else %}{{ item.doc.metadata.filename|escapejs }}{% endif %}'}))">
+                <div class="search-card-title">
+                    {% if item.doc.metadata.authors %}
+                        {{ item.doc.metadata.authors }} ({{ item.doc.metadata.year|default:"-" }}){% if item.doc.metadata.section_title %} — <span style="font-weight: 500;">{{ item.doc.metadata.section_title }}</span>{% endif %}
+                    {% else %}
+                        {{ item.doc.metadata.filename|default:"Document" }} ({{ item.doc.metadata.page_number|default:"-" }})
+                    {% endif %}
+                </div>
                 <details style="margin-top: 4px;">
                     <summary class="search-card-body" style="cursor: pointer; outline: none; font-size: 0.78rem;">{{ item.doc.page_content|truncatechars:80 }}</summary>
                     <div style="margin-top: 6px; padding-left: 10px; font-size: 0.8rem; color: var(--text-main); white-space: pre-wrap; word-break: break-word;">{{ item.doc.page_content }}</div>

@@ -327,6 +327,41 @@ def task_extract_grobid_metadata(document_id: int):
             "tei_xml": tei_xml
         }
     )
+
+    # Propagate parsed academic provenance directly onto the parent Document
+    updated_doc_fields = []
+    extracted_authors = meta.get("authors")
+    if extracted_authors and not doc.author:
+        doc.author = extracted_authors[:255]
+        updated_doc_fields.append('author')
+
+    extracted_doi = meta.get("doi")
+    if extracted_doi and not doc.source_url:
+        doc.source_url = f"https://doi.org/{extracted_doi}"
+        updated_doc_fields.append('source_url')
+
+    # Construct authoritative citation text if missing
+    year_val = meta.get("year") or ""
+    journal_val = meta.get("journal") or ""
+    title_val = meta.get("title") or doc.title
+    citation_parts = []
+    if extracted_authors:
+        citation_parts.append(extracted_authors.strip())
+    if year_val:
+        citation_parts.append(f"({year_val.strip()})")
+    citation_parts.append(f"{title_val.strip()}.")
+    if journal_val:
+        citation_parts.append(f"{journal_val.strip()}.")
+    if extracted_doi:
+        citation_parts.append(f"DOI: {extracted_doi.strip()}")
+    generated_citation = " ".join(citation_parts).strip()
+
+    if generated_citation and not doc.citation_text:
+        doc.citation_text = generated_citation
+        updated_doc_fields.append('citation_text')
+
+    if updated_doc_fields:
+        doc.save(update_fields=updated_doc_fields)
     
     # 2. Extract Bibliography (Citations)
     list_bibl = soup.find("listBibl")

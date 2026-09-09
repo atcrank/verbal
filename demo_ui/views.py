@@ -236,30 +236,58 @@ def send_message(request):
             item_id = item.get("id")
             
             if model_type == "RAGChunk" and service_registry.rag_service:
+                from background_resources.models import RAGChunk
                 docs = service_registry.rag_service.store.mget([item_id])
                 if docs and docs[0]:
                     d = docs[0]
-                    rag_selections.append({"model": "RAGChunk", "id": item_id, "preview": d.page_content[:150] + "..."})
-                    rag_text += f"\nSource: {d.metadata.get('filename', 'Unknown')}\nContent: {d.page_content}\n"
+                    chunk_obj = RAGChunk.objects.filter(chunk_id=str(item_id)).first()
+                    if chunk_obj:
+                        citation = chunk_obj.get_citation()
+                    else:
+                        meta = d.metadata or {}
+                        author_str = meta.get('authors') or meta.get('filename', 'Unknown Source')
+                        year_str = f" ({meta.get('year')})" if meta.get('year') else ""
+                        sec_str = f" — Section: {meta.get('section_title')}" if meta.get('section_title') else ""
+                        citation = f"{author_str}{year_str}{sec_str}".strip()
+
+                    rag_selections.append({
+                        "model": "RAGChunk",
+                        "id": item_id,
+                        "citation": citation,
+                        "preview": d.page_content[:150] + "..."
+                    })
+                    rag_text += f"\n[Reference: {citation}]\nExcerpt:\n{d.page_content}\n"
                     
             elif model_type == "ConceptNode":
                 content = item.get("content", "Concept content unavailable")
                 rag_selections.append({"model": "ConceptNode", "id": item_id, "preview": content[:150] + "..."})
-                rag_text += f"\nConcept:\n{content}\n"
+                rag_text += f"\n[Concept Node: {item.get('preview', 'Concept')}]\n{content}\n"
                 
             elif model_type == "Document" and service_registry.rag_service:
-                # If they dropped a whole document, maybe just add a reference to it
-                content = item.get("content", "Document dropped")
-                rag_selections.append({"model": "Document", "id": item_id, "preview": content})
-                rag_text += f"\nReference Document: {content}\n"
+                from background_resources.models import Document
+                try:
+                    doc_obj = Document.objects.get(id=int(item_id))
+                    doc_citation = doc_obj.get_citation()
+                except Exception:
+                    doc_citation = item.get("content", "Document dropped")
+                rag_selections.append({"model": "Document", "id": item_id, "citation": doc_citation, "preview": doc_citation})
+                rag_text += f"\n[Reference Document: {doc_citation}]\n"
                 
             elif model_type == "Conversation":
                 content = item.get("content", "Conversation dropped")
                 rag_selections.append({"model": "Conversation", "id": item_id, "preview": content})
-                rag_text += f"\nPrevious Conversation Reference: {content}\n"
+                rag_text += f"\n[Previous Conversation Reference: {content}]\n"
         
         if rag_text:
-            messages_for_llm = messages + [{"role": "user", "content": user_prompt + "\n\nRelevant Context:\n" + rag_text}]
+            context_prompt = (
+                f"{user_prompt}\n\n"
+                "--- Relevant Literature & Empirical Context ---\n"
+                f"{rag_text}\n"
+                "--- End of Context ---\n"
+                "Ground your response in the provided reference excerpts where relevant. "
+                "If an excerpt is not directly relevant to the user's specific experimental design question, do not focus on it."
+            )
+            messages_for_llm = messages + [{"role": "user", "content": context_prompt}]
         else:
             messages_for_llm = messages + [{"role": "user", "content": user_prompt}]
         
