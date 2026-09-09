@@ -9,6 +9,7 @@
   <title>Doctest Report: Trial 1: Document Ingestion and Context-Grounded Reasoning &mdash; reason 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=aaf24e6f" />
 
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
@@ -19,8 +20,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Tutorial 2: Careful Literature Extraction and Parametric Factor Construction" href="trial_2_careful_literature_extraction.html" />
-    <link rel="prev" title="Tutorial 1: Document Ingestion and Context-Grounded Reasoning" href="trial_1_ingestion_and_context.html" /> 
+    <link rel="next" title="Doctest Report: Trial 2: Careful Literature Extraction &amp; Parametric Factor Construction" href="trial_2_careful_literature_extraction_report.html" />
+    <link rel="prev" title="Demo UI Empirical Trials &amp; Verification Reports" href="../demo_ui_trials.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -56,23 +57,19 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../using_ollama.html">Ollama as Local AI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="../demo_ui_trials.html">Demo UI Interactive Trials &amp; Feature Walkthroughs</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="trial_1_ingestion_and_context.html">Tutorial 1: Document Ingestion and Context-Grounded Reasoning</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Doctest Report: Trial 1: Document Ingestion and Context-Grounded Reasoning</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#scenario-research-task">Scenario &amp; Research Task</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#animated-walkthrough">Animated Walkthrough</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#interaction-trace-researcher-verbal-reason">Interaction Trace: Researcher &amp; Verbal / Reason</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../demo_ui_trials.html">Demo UI Empirical Trials &amp; Verification Reports</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../demo_ui_trials.html#methodology-executable-doctests-as-verifiable-reports">Methodology: Executable Doctests as Verifiable Reports</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Doctest Report: Trial 1: Document Ingestion and Context-Grounded Reasoning</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#scenario-research-task">Scenario &amp; Research Task</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#animated-walkthrough">Animated Walkthrough</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="trial_2_careful_literature_extraction_report.html">Doctest Report: Trial 2: Careful Literature Extraction &amp; Parametric Factor Construction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="trial_3_multistep_blueprint_and_tools_report.html">Doctest Report: Trial 3: Multi-Step Cognitive Reasoning &amp; Sandboxed Tools</a></li>
+<li class="toctree-l3"><a class="reference internal" href="trial_4_branching_and_grips_expansion_report.html">Doctest Report: Trial 4: Counterfactual Branching &amp; Empirical Ontology Synthesis</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="trial_2_careful_literature_extraction.html">Tutorial 2: Careful Literature Extraction and Parametric Factor Construction</a></li>
-<li class="toctree-l2"><a class="reference internal" href="trial_2_careful_literature_extraction_report.html">Doctest Report: Trial 2: Careful Literature Extraction &amp; Parametric Factor Construction</a></li>
-<li class="toctree-l2"><a class="reference internal" href="trial_3_multistep_blueprint_and_tools.html">Tutorial 3: Multi-Step Cognitive Reasoning and Sandboxed Tool Execution</a></li>
-<li class="toctree-l2"><a class="reference internal" href="trial_3_multistep_blueprint_and_tools_report.html">Doctest Report: Trial 3: Multi-Step Cognitive Reasoning &amp; Sandboxed Tools</a></li>
-<li class="toctree-l2"><a class="reference internal" href="trial_4_branching_and_grips_expansion.html">Tutorial 4: Counterfactual Branching, Empirical Ontology Synthesis, and Protocol Generation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="trial_4_branching_and_grips_expansion_report.html">Doctest Report: Trial 4: Counterfactual Branching &amp; Empirical Ontology Synthesis</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../demo_ui_trials.html#trial-descriptions">Trial Descriptions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../demo_ui_trials.html#the-four-trial-reports">The Four Trial Reports</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../tests.html">Testing</a></li>
@@ -92,7 +89,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-          <li class="breadcrumb-item"><a href="../demo_ui_trials.html">Demo UI Interactive Trials &amp; Feature Walkthroughs</a></li>
+          <li class="breadcrumb-item"><a href="../demo_ui_trials.html">Demo UI Empirical Trials &amp; Verification Reports</a></li>
       <li class="breadcrumb-item active">Doctest Report: Trial 1: Document Ingestion and Context-Grounded Reasoning</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../_sources/demo_ui_trials/trial_1_ingestion_and_context_report.rst.txt" rel="nofollow"> View page source</a>
@@ -111,7 +108,12 @@
 <p><strong>Total Execution Time</strong>: 216.2s</p>
 <section id="scenario-research-task">
 <h2>Scenario &amp; Research Task<a class="headerlink" href="#scenario-research-task" title="Link to this heading"></a></h2>
-<p>We imagine a researcher who has the following task and resources: An autonomous robotics research team is designing an empirical intervention trial for a tracked search-and-rescue robot operating inside a multi-story collapsed structure under heavy smoke and rubble. The researcher uses the Verbal / Reason interface to formulate hypotheses, evaluate causal and statistical trade-offs, compute factorial parameters in the sandbox, and structure the domain knowledge graph.</p>
+<p>We imagine a researcher who has the following task and resources: An autonomous robotics
+research team is designing an empirical intervention trial for a tracked search-and-rescue
+robot operating inside a multi-story collapsed structure under heavy smoke and rubble. The
+researcher uses the Verbal / Reason interface to formulate hypotheses, evaluate causal and
+statistical trade-offs, compute factorial parameters in the sandbox, and structure the
+domain knowledge graph.</p>
 </section>
 <section id="animated-walkthrough">
 <h2>Animated Walkthrough<a class="headerlink" href="#animated-walkthrough" title="Link to this heading"></a></h2>
@@ -122,21 +124,34 @@
 <section id="step-1-literature-ingestion-vector-indexing-31-8s">
 <h4>Step 1: Literature Ingestion &amp; Vector Indexing (31.8s)<a class="headerlink" href="#step-1-literature-ingestion-vector-indexing-31-8s" title="Link to this heading"></a></h4>
 <p><strong>The Researcher (Thinking &amp; Formulation)</strong>:</p>
-<p>Before designing our field intervention trial, we need an authoritative knowledge base grounded in empirical robotics literature. We index 17 domain papers to provide factual anchors for sensor attenuation curves, locomotion power draws, and mission failure modes.</p>
+<p>Before designing our field intervention trial, we need an authoritative knowledge base
+grounded in empirical robotics literature. We index 17 domain papers to provide factual
+anchors for sensor attenuation curves, locomotion power draws, and mission failure modes.</p>
 <p><strong>The Researcher (Evaluation &amp; Decision)</strong>:</p>
-<p>Vector database populated with 1432 semantic chunks across 17 research papers. The literature corpus is ready for semantic retrieval in the Reason UI.</p>
+<p>Vector database populated with 1432 semantic chunks across 17 research papers. The
+literature corpus is ready for semantic retrieval in the Reason UI.</p>
 </section>
 <section id="step-2-context-chip-formulation-prompt-submission-1-8s">
 <h4>Step 2: Context Chip Formulation &amp; Prompt Submission (1.8s)<a class="headerlink" href="#step-2-context-chip-formulation-prompt-submission-1-8s" title="Link to this heading"></a></h4>
 <p><strong>The Researcher (Thinking &amp; Formulation)</strong>:</p>
-<p>We need to clearly isolate the causal factors governing sensor failure in structural fires. LiDAR provides metric geometry for SLAM but suffers backscatter in dense aerosols. LWIR penetrates obscurants but lacks metric depth. We attach the literature chunk and ask Reason to synthesize the exact trade-off boundaries.</p>
+<p>We need to clearly isolate the causal factors governing sensor failure in structural
+fires. LiDAR provides metric geometry for SLAM but suffers backscatter in dense aerosols.
+LWIR penetrates obscurants but lacks metric depth. We attach the literature chunk and ask
+Reason to synthesize the exact trade-off boundaries.</p>
 <p><strong>Researcher Inquiry (Entered in Demo UI)</strong>:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>When evaluating sensor payloads for autonomous ground robots in multi-story building fires, what are the primary perception and localization trade-offs between 3D LiDAR point clouds and long-wave infrared (LWIR) thermography in dense, aerosolized smoke?
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>When evaluating sensor payloads for autonomous ground robots in multi-story building
+fires, what are the primary perception and localization trade-offs between 3D LiDAR point
+clouds and long-wave infrared (LWIR) thermography in dense, aerosolized smoke?
 </pre></div>
 </div>
 <p><strong>Retrieved Literature Context (RAG Recall)</strong>:</p>
 <ul class="simple">
-<li><p><strong>Sen Li et al. (2023) — Section: An Indoor Autonomous Inspection and Firefighting Robot Based on SLAM and Flame Image Recognition - Un-headered Section (DOI: 10.3390/fire6030093)</strong> [Chunk <cite>d1a842af-5c41-4faa-9340-1a2210c559de</cite>]: “Indoor fire accidents have become increasingly common in recent years. More and more firefighting robots have been designed to solve the problem of fires. However, the indoor environment is very compl”</p></li>
+<li><p><strong>Sen Li et al. (2023) — Section: An Indoor Autonomous Inspection and Firefighting Robot
+Based on SLAM and Flame Image Recognition - Un-headered Section (DOI:
+10.3390/fire6030093)</strong> [Chunk <cite>d1a842af-5c41-4faa-9340-1a2210c559de</cite>]: “Indoor fire
+accidents have become increasingly common in recent years. More and more firefighting
+robots have been designed to solve the problem of fires. However, the indoor environment
+is very compl”</p></li>
 </ul>
 <a class="reference internal image-reference" href="../_images/trial_1_prompt_with_chips.png"><img alt="Context Chip Formulation &amp; Prompt Submission" src="../_images/trial_1_prompt_with_chips.png" style="width: 750px;" />
 </a>
@@ -146,23 +161,51 @@
 <p>Local LLM (google/gemma-2-2b-it) generated 4395 characters of context-grounded synthesis.</p>
 <p><strong>Retrieved Literature Context (RAG Recall)</strong>:</p>
 <ul class="simple">
-<li><p><strong>Sen Li et al. (2023) — Section: An Indoor Autonomous Inspection and Firefighting Robot Based on SLAM and Flame Image Recognition - Un-headered Section (DOI: 10.3390/fire6030093)</strong> [Chunk <cite>d1a842af-5c41-4faa-9340-1a2210c559de</cite>]: “Indoor fire accidents have become increasingly common in recent years. More and more firefighting robots have been designed to solve the problem of fi…”</p></li>
+<li><p><strong>Sen Li et al. (2023) — Section: An Indoor Autonomous Inspection and Firefighting Robot
+Based on SLAM and Flame Image Recognition - Un-headered Section (DOI:
+10.3390/fire6030093)</strong> [Chunk <cite>d1a842af-5c41-4faa-9340-1a2210c559de</cite>]: “Indoor fire
+accidents have become increasingly common in recent years. More and more firefighting
+robots have been designed to solve the problem of fi…”</p></li>
 </ul>
 <p><strong>Verbal / Reason Response (Synthesized by: google/gemma-2-2b-it)</strong>:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>As a study design assistant, I can help you analyze the primary perception and localization trade-offs between 3D LiDAR point clouds and Long-Wave Infrared (LWIR) thermography when used for autonomous ground robots in multi-story building fires, specifically considering the challenging environment of dense, aerosolized smoke.
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>As a study design assistant, I can help you analyze the primary perception and
+localization trade-offs between 3D LiDAR point clouds and Long-Wave Infrared (LWIR)
+thermography when used for autonomous ground robots in multi-story building fires,
+specifically considering the challenging environment of dense, aerosolized smoke.
 Based on the provided literature context, here is an analysis of the trade-offs:
 Perception Trade-Offs in Dense Smoke
 1. 3D LiDAR Point Clouds (Geometric Perception):
 
-Strength: LiDAR excels at providing geometric and structural information. In a stable or moderately smoky environment, it can generate precise 3D maps of the environment, crucial for Simultaneous Localization and Mapping (SLAM) systems (as referenced in the literature). This geometric data is essential for navigation, obstacle avoidance, and understanding the physical layout of the building structure (e.g., identifying stairwells, room boundaries, and vertical structure).
-Weakness in Smoke: Dense, aerosolized smoke severely degrades LiDAR performance. Smoke particles scatter the laser beams, leading to signal attenuation, false returns, and significant noise/occlusion. This directly impacts the accuracy of the point cloud, potentially leading to poor localization (SLAM failure) and inaccurate environmental modeling.
-Relevance to Context: The reference mentions that a map-building system using LiDAR was built for navigation. Therefore, the primary trade-off here is accuracy vs. robustness: High geometric accuracy when clear, but low robustness under adverse smoke conditions.
+Strength: LiDAR excels at providing geometric and structural information. In a stable or
+moderately smoky environment, it can generate precise 3D maps of the environment, crucial
+for Simultaneous Localization and Mapping (SLAM) systems (as referenced in the
+literature). This geometric data is essential for navigation, obstacle avoidance, and
+understanding the physical layout of the building structure (e.g., identifying stairwells,
+room boundaries, and vertical structure).
+Weakness in Smoke: Dense, aerosolized smoke severely degrades LiDAR performance. Smoke
+particles scatter the laser beams, leading to signal attenuation, false returns, and
+significant noise/occlusion. This directly impacts the accuracy of the point cloud,
+potentially leading to poor localization (SLAM failure) and inaccurate environmental
+modeling.
+Relevance to Context: The reference mentions that a map-building system using LiDAR was
+built for navigation. Therefore, the primary trade-off here is accuracy vs. robustness:
+High geometric accuracy when clear, but low robustness under adverse smoke conditions.
 
 2. Long-Wave Infrared (LWIR) Thermography (Semantic/Target Perception):
 
-Strength: LWIR is excellent for detecting the fire source itself. Since fire produces a distinct thermal signature (high temperature), LWIR allows the robot to perform target detection—identifying where the fire is, even when visual features are obscured by smoke. This is critical for the function of the robot (identifying the flame for extinguishing).
-Weakness in Perception: LWIR provides low-resolution semantic information regarding the surrounding environment structure. It cannot inherently provide the precise geometry needed for detailed SLAM or path planning (i.e., it doesn&#39;t map walls or corridors well). Furthermore, smoke can interfere with the thermal gradient, potentially masking or confusing the heat signature, requiring advanced filtering.
-Relevance to Context: The reference explicitly states that the fire source identification was achieved using an infrared thermal imager (LWIR) combined with deep learning (YOLOv4). This suggests that LWIR&#39;s strength lies in fire localization, which is a more immediate, mission-critical task than full environmental mapping.
+Strength: LWIR is excellent for detecting the fire source itself. Since fire produces a
+distinct thermal signature (high temperature), LWIR allows the robot to perform target
+detection—identifying where the fire is, even when visual features are obscured by smoke.
+This is critical for the function of the robot (identifying the flame for extinguishing).
+Weakness in Perception: LWIR provides low-resolution semantic information regarding the
+surrounding environment structure. It cannot inherently provide the precise geometry
+needed for detailed SLAM or path planning (i.e., it doesn&#39;t map walls or corridors well).
+Furthermore, smoke can interfere with the thermal gradient, potentially masking or
+confusing the heat signature, requiring advanced filtering.
+Relevance to Context: The reference explicitly states that the fire source identification
+was achieved using an infrared thermal imager (LWIR) combined with deep learning (YOLOv4).
+This suggests that LWIR&#39;s strength lies in fire localization, which is a more immediate,
+mission-critical task than full environmental mapping.
 
 Localization Trade-Offs in Dense Smoke
 The core trade-off revolves around where each sensor excels:
@@ -183,7 +226,8 @@ Target Detection (Where is the fire?)
 
 Performance in Smoke
 High risk of localization drift/failure due to scattering and occlusion.
-Potential for robust target detection if the thermal contrast remains high, even if surrounding structure perception is lost.
+Potential for robust target detection if the thermal contrast remains high, even if
+surrounding structure perception is lost.
 
 
 Data Type
@@ -200,14 +244,27 @@ Relies on the presence of a strong thermal anomaly (the fire).
 Conclusion for Study Design:
 For an autonomous robot operating in a dynamic, smoke-filled environment:
 
-If the primary requirement is robust Navigation and SLAM (knowing the map): LiDAR is necessary, but the system must be designed with heavy filtering or fusion techniques to handle the severe noise introduced by smoke.
-If the primary requirement is reliable Fire Detection (knowing the threat location): LWIR is superior because its function (detecting the heat) is less dependent on the geometric integrity of the scene, provided the smoke does not completely overwhelm the thermal signal.
+If the primary requirement is robust Navigation and SLAM (knowing the map): LiDAR is
+necessary, but the system must be designed with heavy filtering or fusion techniques to
+handle the severe noise introduced by smoke.
+If the primary requirement is reliable Fire Detection (knowing the threat location): LWIR
+is superior because its function (detecting the heat) is less dependent on the geometric
+integrity of the scene, provided the smoke does not completely overwhelm the thermal
+signal.
 
-Recommendation for a comprehensive system: A successful design would likely involve sensor fusion, leveraging the strengths of both: using LWIR for high-confidence fire detection, and using LiDAR (perhaps processed through techniques robust to sparse data) to maintain positional awareness for navigation, compensating for the weaknesses of each modality in the smoke.
+Recommendation for a comprehensive system: A successful design would likely involve sensor
+fusion, leveraging the strengths of both: using LWIR for high-confidence fire detection,
+and using LiDAR (perhaps processed through techniques robust to sparse data) to maintain
+positional awareness for navigation, compensating for the weaknesses of each modality in
+the smoke.
 </pre></div>
 </div>
 <p><strong>The Researcher (Evaluation &amp; Decision)</strong>:</p>
-<p>Verbal / Reason identified three critical causal factors for our experiment: 1) Sensor payload power draw (LiDAR+Compute draws ~110W vs. 25W baseline), 2) Terrain locomotion resistance (heavy rubble demands ~460W vs. 280W on concrete), and 3) Battery capacity (1200Wh pack with 20% reserve = 960Wh usable). These factors interact in combinatory ways that require quantitative modeling in Trial 2.</p>
+<p>Verbal / Reason identified three critical causal factors for our experiment: 1) Sensor
+payload power draw (LiDAR+Compute draws ~110W vs. 25W baseline), 2) Terrain locomotion
+resistance (heavy rubble demands ~460W vs. 280W on concrete), and 3) Battery capacity
+(1200Wh pack with 20% reserve = 960Wh usable). These factors interact in combinatory ways
+that require quantitative modeling in Trial 2.</p>
 <a class="reference internal image-reference" href="../_images/trial_1_grounded_response.png"><img alt="Live Inference &amp; Response Capture" src="../_images/trial_1_grounded_response.png" style="width: 750px;" />
 </a>
 </section>
@@ -219,8 +276,8 @@ Recommendation for a comprehensive system: A successful design would likely invo
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="trial_1_ingestion_and_context.html" class="btn btn-neutral float-left" title="Tutorial 1: Document Ingestion and Context-Grounded Reasoning" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="trial_2_careful_literature_extraction.html" class="btn btn-neutral float-right" title="Tutorial 2: Careful Literature Extraction and Parametric Factor Construction" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="../demo_ui_trials.html" class="btn btn-neutral float-left" title="Demo UI Empirical Trials &amp; Verification Reports" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="trial_2_careful_literature_extraction_report.html" class="btn btn-neutral float-right" title="Doctest Report: Trial 2: Careful Literature Extraction &amp; Parametric Factor Construction" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

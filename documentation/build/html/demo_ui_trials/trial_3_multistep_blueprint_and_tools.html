@@ -9,6 +9,7 @@
   <title>Tutorial 3: Multi-Step Cognitive Reasoning and Sandboxed Tool Execution &mdash; reason 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=aaf24e6f" />
 
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
@@ -19,8 +20,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Doctest Report: Trial 3: Multi-Step Cognitive Reasoning &amp; Sandboxed Tools" href="trial_3_multistep_blueprint_and_tools_report.html" />
-    <link rel="prev" title="Doctest Report: Trial 2: Careful Literature Extraction &amp; Parametric Factor Construction" href="trial_2_careful_literature_extraction_report.html" /> 
+    <link rel="next" title="Tutorial 4: Counterfactual Branching, Empirical Ontology Synthesis, and Protocol Generation" href="trial_4_branching_and_grips_expansion.html" />
+    <link rel="prev" title="Tutorial 2: Careful Literature Extraction and Parametric Factor Construction" href="trial_2_careful_literature_extraction.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -56,26 +57,18 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../using_ollama.html">Ollama as Local AI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="../demo_ui_trials.html">Demo UI Interactive Trials &amp; Feature Walkthroughs</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="trial_1_ingestion_and_context.html">Tutorial 1: Document Ingestion and Context-Grounded Reasoning</a></li>
-<li class="toctree-l2"><a class="reference internal" href="trial_1_ingestion_and_context_report.html">Doctest Report: Trial 1: Document Ingestion and Context-Grounded Reasoning</a></li>
-<li class="toctree-l2"><a class="reference internal" href="trial_2_careful_literature_extraction.html">Tutorial 2: Careful Literature Extraction and Parametric Factor Construction</a></li>
-<li class="toctree-l2"><a class="reference internal" href="trial_2_careful_literature_extraction_report.html">Doctest Report: Trial 2: Careful Literature Extraction &amp; Parametric Factor Construction</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Tutorial 3: Multi-Step Cognitive Reasoning and Sandboxed Tool Execution</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#execution">Execution</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#step-1-posing-factorial-engineering-trade-off-inquiry">Step 1: Posing Factorial Engineering Trade-Off Inquiry</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#step-2-browser-navigation-blueprint-selection">Step 2: Browser Navigation &amp; Blueprint Selection</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#step-3-real-blueprint-execution-via-run-blueprint">Step 3: Real Blueprint Execution via run_blueprint()</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#step-4-active-adversarial-verification-error-catching">Step 4: Active Adversarial Verification &amp; Error Catching</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#step-5-report-generation">Step 5: Report Generation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../demo_ui_trials.html">Demo UI Empirical Trials &amp; Verification Reports</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../demo_ui_trials.html#methodology-executable-doctests-as-verifiable-reports">Methodology: Executable Doctests as Verifiable Reports</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../demo_ui_trials.html#the-four-trial-reports">The Four Trial Reports</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="trial_1_ingestion_and_context.html">Tutorial 1: Document Ingestion and Context-Grounded Reasoning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="trial_2_careful_literature_extraction.html">Tutorial 2: Careful Literature Extraction and Parametric Factor Construction</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Tutorial 3: Multi-Step Cognitive Reasoning and Sandboxed Tool Execution</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#execution">Execution</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="trial_4_branching_and_grips_expansion.html">Tutorial 4: Counterfactual Branching, Empirical Ontology Synthesis, and Protocol Generation</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="trial_3_multistep_blueprint_and_tools_report.html">Doctest Report: Trial 3: Multi-Step Cognitive Reasoning &amp; Sandboxed Tools</a></li>
-<li class="toctree-l2"><a class="reference internal" href="trial_4_branching_and_grips_expansion.html">Tutorial 4: Counterfactual Branching, Empirical Ontology Synthesis, and Protocol Generation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="trial_4_branching_and_grips_expansion_report.html">Doctest Report: Trial 4: Counterfactual Branching &amp; Empirical Ontology Synthesis</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../demo_ui_trials.html#trial-descriptions">Trial Descriptions</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../tests.html">Testing</a></li>
@@ -95,7 +88,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-          <li class="breadcrumb-item"><a href="../demo_ui_trials.html">Demo UI Interactive Trials &amp; Feature Walkthroughs</a></li>
+          <li class="breadcrumb-item"><a href="../demo_ui_trials.html">Demo UI Empirical Trials &amp; Verification Reports</a></li>
       <li class="breadcrumb-item active">Tutorial 3: Multi-Step Cognitive Reasoning and Sandboxed Tool Execution</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../_sources/demo_ui_trials/trial_3_multistep_blueprint_and_tools.rst.txt" rel="nofollow"> View page source</a>
@@ -333,8 +326,8 @@ An autonomous robotics research team is designing an empirical intervention tria
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="trial_2_careful_literature_extraction_report.html" class="btn btn-neutral float-left" title="Doctest Report: Trial 2: Careful Literature Extraction &amp; Parametric Factor Construction" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="trial_3_multistep_blueprint_and_tools_report.html" class="btn btn-neutral float-right" title="Doctest Report: Trial 3: Multi-Step Cognitive Reasoning &amp; Sandboxed Tools" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="trial_2_careful_literature_extraction.html" class="btn btn-neutral float-left" title="Tutorial 2: Careful Literature Extraction and Parametric Factor Construction" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="trial_4_branching_and_grips_expansion.html" class="btn btn-neutral float-right" title="Tutorial 4: Counterfactual Branching, Empirical Ontology Synthesis, and Protocol Generation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

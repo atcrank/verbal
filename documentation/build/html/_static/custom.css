@@ -1,0 +1,39 @@
+/* custom.css: Enhanced readability and word wrapping for Sphinx documentation */
+
+/* Ensure all preformatted blocks wrap naturally instead of creating horizontal scrollbars */
+.rst-content pre.literal-block,
+.rst-content div[class^="highlight"] pre,
+.rst-content .highlight pre,
+.rst-content pre {
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+}
+
+/* Improve styling for collapsible details elements */
+details.doctest-breakout {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 16px 0;
+}
+
+details.doctest-breakout summary {
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    color: #1e293b;
+    outline: none;
+    user-select: none;
+}
+
+details.doctest-breakout summary:hover {
+    color: #2563eb;
+}
+
+details.doctest-breakout .breakout-content {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid #e2e8f0;
+}

@@ -9,6 +9,7 @@ import os
 import time
 import datetime
 import logging
+import textwrap
 from contextlib import contextmanager
 from pathlib import Path
 from PIL import Image
@@ -184,8 +185,63 @@ def _rst_heading(text: str, char: str) -> str:
     return f"{text}\n{char * len(text)}\n\n"
 
 
-def _rst_code_block(text: str, indent: str = "    ") -> str:
-    """Wraps text in an RST literal block (``::`` directive)."""
+def wrap_prose_block(text: str, width: int = 90) -> str:
+    """
+    Wraps long prose paragraphs at `width` columns while preserving code blocks,
+    tables, indentation, and list prefixes.
+    """
+    if not text:
+        return ""
+    wrapped_lines = []
+    for raw_line in text.splitlines():
+        if not raw_line.strip():
+            wrapped_lines.append("")
+            continue
+        # Preserve Markdown/ASCII tables
+        if raw_line.count("|") >= 2:
+            wrapped_lines.append(raw_line)
+            continue
+        stripped = raw_line.strip()
+        # Preserve code, diffs, doctest prompts, divider lines
+        if (
+            raw_line.startswith("    ")
+            or raw_line.startswith("\t")
+            or stripped.startswith(("def ", "class ", "import ", "from ", ">>>", "...", "return ", "if ", "for ", "while "))
+            or set(stripped).issubset({"-", "=", "_", "*", "#"})
+        ):
+            wrapped_lines.append(raw_line)
+            continue
+
+        if len(raw_line) > width:
+            subsequent_indent = ""
+            if stripped.startswith(("- ", "* ", "+ ")):
+                prefix_len = len(raw_line) - len(stripped) + 2
+                subsequent_indent = " " * prefix_len
+            elif (
+                stripped[:3].rstrip(".").isdigit()
+                and ". " in stripped[:6]
+            ):
+                dot_pos = stripped.find(". ") + 2
+                prefix_len = len(raw_line) - len(stripped) + dot_pos
+                subsequent_indent = " " * prefix_len
+
+            filled = textwrap.fill(
+                raw_line,
+                width=width,
+                subsequent_indent=subsequent_indent,
+                break_long_words=False,
+                break_on_hyphens=False,
+            )
+            wrapped_lines.append(filled)
+        else:
+            wrapped_lines.append(raw_line)
+    return "\n".join(wrapped_lines)
+
+
+def _rst_code_block(text: str, indent: str = "    ", wrap: bool = True, width: int = 90) -> str:
+    """Wraps text in an RST literal block (``::`` directive), wrapping long prose lines."""
+    if wrap and text:
+        text = wrap_prose_block(text, width=width)
     lines = text.splitlines() if text else ["(empty)"]
     body = "\n".join(f"{indent}{line}" for line in lines)
     return f"::\n\n{body}\n\n"
@@ -240,7 +296,7 @@ def record_ui_doctest_run(
 
         # Scene setting
         f.write(_rst_heading("Scenario & Research Task", "~"))
-        f.write(f"{scenario_text}\n\n")
+        f.write(f"{wrap_prose_block(scenario_text)}\n\n")
 
         # Animated GIF
         image_paths = [s["image"] for s in steps_data if s.get("image")]
@@ -264,9 +320,9 @@ def record_ui_doctest_run(
             # 1. The Researcher: Thinking & Inquiry
             r_thinking = step.get("researcher_thinking", "")
             if r_thinking:
-                f.write(f"**The Researcher (Thinking & Formulation)**:\n\n{r_thinking}\n\n")
+                f.write(f"**The Researcher (Thinking & Formulation)**:\n\n{wrap_prose_block(r_thinking)}\n\n")
             elif step.get("description"):
-                f.write(f"{step['description']}\n\n")
+                f.write(f"{wrap_prose_block(step['description'])}\n\n")
 
             r_inquiry = step.get("researcher_inquiry", "")
             if r_inquiry:
@@ -318,7 +374,7 @@ def record_ui_doctest_run(
             if audit:
                 f.write("**Active Adversarial Verification & Logic Audit**:\n\n")
                 f.write(".. warning::\n\n")
-                for line in audit.splitlines():
+                for line in wrap_prose_block(audit).splitlines():
                     f.write(f"    {line}\n")
                 f.write("\n")
 
@@ -331,14 +387,14 @@ def record_ui_doctest_run(
             # 3. Researcher Evaluation
             r_eval = step.get("researcher_evaluation", "")
             if r_eval:
-                f.write(f"**The Researcher (Evaluation & Decision)**:\n\n{r_eval}\n\n")
+                f.write(f"**The Researcher (Evaluation & Decision)**:\n\n{wrap_prose_block(r_eval)}\n\n")
 
             # Terminal Empirical Intervention Protocol Synthesis
             protocol = step.get("protocol_synthesis", "")
             if protocol:
                 f.write("**Empirical Intervention Protocol Synthesis**:\n\n")
                 f.write(".. note::\n\n")
-                for line in protocol.splitlines():
+                for line in wrap_prose_block(protocol).splitlines():
                     f.write(f"    {line}\n")
                 f.write("\n")
 
