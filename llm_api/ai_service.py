@@ -178,34 +178,79 @@ class AIService:
             logger.info('🛑 No Local AI Model selected in System Configuration. Bypassing PyTorch to save VRAM.')
             return
 
-        logger.info('Loading Heavy AI models into VRAM...')
+        logger.info(f'Loading AI model {self.model_id} into memory...')
 
+        quant_mode = "nf4"
+        compute_dtype_pref = "auto"
+        try:
+            from .models import SystemConfiguration
+            config = SystemConfiguration.get_solo()
+            if config and config.active_local_model:
+                quant_mode = getattr(config.active_local_model, 'quantization_mode', 'nf4')
+                compute_dtype_pref = getattr(config.active_local_model, 'compute_dtype', 'auto')
+        except Exception:
+            pass
+
+        # Determine compute dtype
         compute_dtype = torch.float16
-        if torch.cuda.is_available() and torch.cuda.is_bf16_supported():
+        if compute_dtype_pref == "bfloat16":
             compute_dtype = torch.bfloat16
-            logger.info('Hardware supports bfloat16, using it for compute.')
+        elif compute_dtype_pref == "float32":
+            compute_dtype = torch.float32
+        elif compute_dtype_pref == "float16":
+            compute_dtype = torch.float16
+        elif compute_dtype_pref == "auto":
+            if torch.cuda.is_available() and torch.cuda.is_bf16_supported():
+                compute_dtype = torch.bfloat16
+                logger.info('Hardware supports bfloat16, using it for compute.')
 
-        quantization_config = BitsAndBytesConfig(
-            load_in_4bit=True,
-            bnb_4bit_quant_type="nf4",
-            bnb_4bit_use_double_quant=True,
-            bnb_4bit_compute_dtype = compute_dtype
-        )
+        # Configure Quantization
+        quantization_config = None
+        torch_dtype = compute_dtype
+        if torch.cuda.is_available():
+            if quant_mode == "nf4":
+                logger.info("Applying BitsAndBytes 4-bit NormalFloat (NF4) quantization.")
+                quantization_config = BitsAndBytesConfig(
+                    load_in_4bit=True,
+                    bnb_4bit_quant_type="nf4",
+                    bnb_4bit_use_double_quant=True,
+                    bnb_4bit_compute_dtype=compute_dtype
+                )
+            elif quant_mode == "fp4":
+                logger.info("Applying BitsAndBytes 4-bit Float (FP4) quantization.")
+                quantization_config = BitsAndBytesConfig(
+                    load_in_4bit=True,
+                    bnb_4bit_quant_type="fp4",
+                    bnb_4bit_use_double_quant=True,
+                    bnb_4bit_compute_dtype=compute_dtype
+                )
+            elif quant_mode == "int8":
+                logger.info("Applying BitsAndBytes 8-bit quantization.")
+                quantization_config = BitsAndBytesConfig(
+                    load_in_8bit=True
+                )
+            elif quant_mode in ["none", "awq", "gptq"]:
+                logger.info(f"Loading model without BitsAndBytes quantization (mode: {quant_mode}, dtype: {torch_dtype}).")
+                quantization_config = None
 
+        device_map = {"": 0} if torch.cuda.is_available() else "cpu"
+        load_kwargs = {
+            "device_map": device_map,
+            "low_cpu_mem_usage": True,
+            "token": token,
+        }
+        if quantization_config is not None:
+            load_kwargs["quantization_config"] = quantization_config
+        else:
+            load_kwargs["torch_dtype"] = torch_dtype
 
-        # Ensure the model knows this too
         self.model = AutoModelForCausalLM.from_pretrained(
             self.model_id,
-            # dtype=torch.float16,
-            device_map={"": 0},
-            quantization_config=quantization_config,
-            low_cpu_mem_usage=True,
-            token=token
+            **load_kwargs
         )
 
         self.model.config.pad_token_id = getattr(self.tokenizer, 'pad_token_id', self.tokenizer.eos_token_id)
         logger.info(" ".join([str(x) for x in ['✅ LLM model loaded successfully.', type(self.model)]]))
-
 
         self.outline_pipeline = outline_models.Transformers(self.model, self.tokenizer)
         logger.info(" ".join([str(x) for x in ['✅ Outline llm wrapper loaded', type(self.outline_pipeline)]]))
@@ -223,8 +268,10 @@ class AIService:
     def unload_models(self):
         """Frees VRAM for model switching."""
         logger.info('🗑️ Unloading AI models...')
-        del self.model
-        del self.outline_pipeline
+        if hasattr(self, 'model') and self.model is not None:
+            del self.model
+        if hasattr(self, 'outline_pipeline') and self.outline_pipeline is not None:
+            del self.outline_pipeline
         self._generator_cache.clear()
         self.model = None
         self.outline_pipeline = None
@@ -232,6 +279,8 @@ class AIService:
         gc.collect()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
+            if hasattr(torch.cuda, 'ipc_collect'):
+                torch.cuda.ipc_collect()
         logger.info('✅ VRAM cleared.')
 
     def set_active_adapter(self, adapter_path: str = None, adapter_name: str = None):

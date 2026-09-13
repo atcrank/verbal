@@ -358,3 +358,196 @@ class ConversationBranchAndReplayTests(TestCase):
         mock_tokenizer.encode.return_value = [1, 2, 3]
         token_count = service.count_conversation_tokens(messages)
         self.assertEqual(token_count, 6)
+
+
+class HardwareAdvisorTests(TestCase):
+    """Tests for hardware inspection, CPU fallback, and backend recommendations."""
+
+    def test_live_hardware_profile(self):
+        from llm_api.hardware import get_hardware_profile, get_backend_recommendations
+        profile = get_hardware_profile()
+        self.assertIsNotNone(profile)
+        self.assertTrue(profile.host_cpu.physical_cores >= 1)
+        self.assertTrue(profile.host_cpu.total_ram_mb > 0)
+        
+        rec = get_backend_recommendations(profile)
+        self.assertIn(rec.vllm_dtype, ["float16", "auto", "float32"])
+        self.assertTrue(0.1 <= rec.vllm_gpu_memory_utilization <= 1.0)
+        self.assertTrue(rec.vllm_max_model_len >= 1024)
+
+    def test_mock_turing_6gb_gpu(self):
+        from llm_api.hardware import GPUDeviceInfo, HostCPUInfo, HardwareProfile, get_backend_recommendations
+        gpu = GPUDeviceInfo(
+            index=0,
+            name="GeForce GTX 1660 Ti",
+            total_vram_mb=6144.0,
+            free_vram_mb=5000.0,
+            used_vram_mb=1144.0,
+            compute_capability=(7, 5),
+            supports_bf16=False,
+            supports_fp16=True,
+            supports_flash_attention=False
+        )
+        cpu = HostCPUInfo(physical_cores=6, total_threads=12, total_ram_mb=16384.0, available_ram_mb=8192.0)
+        profile = HardwareProfile(cuda_available=True, devices=[gpu], primary_device=gpu, host_cpu=cpu)
+        
+        rec = get_backend_recommendations(profile, model_param_size_b=3.0, requested_context=4096)
+        self.assertEqual(rec.vllm_dtype, "float16")
+        self.assertTrue(0.70 <= rec.vllm_gpu_memory_utilization <= 0.76)
+        self.assertEqual(rec.recommended_quantization, "nf4")
+        self.assertEqual(rec.vllm_max_model_len, 4096)
+
+    def test_mock_ampere_24gb_gpu(self):
+        from llm_api.hardware import GPUDeviceInfo, HostCPUInfo, HardwareProfile, get_backend_recommendations
+        gpu = GPUDeviceInfo(
+            index=0,
+            name="RTX 4090",
+            total_vram_mb=24576.0,
+            free_vram_mb=23000.0,
+            used_vram_mb=1576.0,
+            compute_capability=(8, 9),
+            supports_bf16=True,
+            supports_fp16=True,
+            supports_flash_attention=True
+        )
+        cpu = HostCPUInfo(physical_cores=16, total_threads=32, total_ram_mb=65536.0, available_ram_mb=48000.0)
+        profile = HardwareProfile(cuda_available=True, devices=[gpu], primary_device=gpu, host_cpu=cpu)
+        
+        rec = get_backend_recommendations(profile, model_param_size_b=7.0, requested_context=8192)
+        self.assertEqual(rec.vllm_dtype, "auto")
+        self.assertEqual(rec.recommended_quantization, "none")
+        self.assertEqual(rec.vllm_max_model_len, 8192)
+        self.assertEqual(rec.vllm_gpu_memory_utilization, 0.90)
+
+    def test_mock_cpu_only_fallback(self):
+        from llm_api.hardware import HostCPUInfo, HardwareProfile, get_backend_recommendations
+        cpu = HostCPUInfo(physical_cores=8, total_threads=16, total_ram_mb=32768.0, available_ram_mb=24000.0)
+        profile = HardwareProfile(cuda_available=False, devices=[], primary_device=None, host_cpu=cpu)
+        
+        rec = get_backend_recommendations(profile)
+        self.assertEqual(rec.vllm_dtype, "float32")
+        self.assertEqual(rec.vllm_gpu_memory_utilization, 0.50)
+        self.assertTrue(any("No CUDA GPU detected" in note for note in rec.advisory_notes))
+
+
+class ModelQuantizationTests(TestCase):
+    """Tests for expanded quantization modes, validation, and synchronization."""
+
+    def test_quantization_mode_sync_with_legacy_flag(self):
+        from llm_api.models import LocalAIModel
+        
+        m1 = LocalAIModel.objects.create(
+            name="Test Model NF4",
+            hf_model_id="test/model-nf4",
+            quantization_mode=LocalAIModel.QuantizationMode.NF4,
+            load_in_4bit=True
+        )
+        self.assertEqual(m1.quantization_mode, LocalAIModel.QuantizationMode.NF4)
+        self.assertTrue(m1.load_in_4bit)
+
+        # Disabling load_in_4bit switches mode to NONE
+        m1.load_in_4bit = False
+        m1.save()
+        self.assertEqual(m1.quantization_mode, LocalAIModel.QuantizationMode.NONE)
+
+        # Enabling load_in_4bit from NONE switches mode to NF4
+        m1.load_in_4bit = True
+        m1.save()
+        self.assertEqual(m1.quantization_mode, LocalAIModel.QuantizationMode.NF4)
+
+    def test_various_quantization_modes(self):
+        from llm_api.models import LocalAIModel
+        
+        for mode in [
+            LocalAIModel.QuantizationMode.INT8,
+            LocalAIModel.QuantizationMode.FP4,
+            LocalAIModel.QuantizationMode.AWQ,
+            LocalAIModel.QuantizationMode.GPTQ,
+            LocalAIModel.QuantizationMode.NONE
+        ]:
+            m = LocalAIModel.objects.create(
+                name=f"Model {mode}",
+                hf_model_id=f"test/model-{mode}",
+                quantization_mode=mode,
+                compute_dtype="float16",
+                vllm_gpu_memory_utilization=0.72,
+                vllm_max_model_len=2048,
+                load_in_4bit=(mode in [LocalAIModel.QuantizationMode.NF4, LocalAIModel.QuantizationMode.FP4])
+            )
+            self.assertEqual(m.quantization_mode, mode)
+            self.assertEqual(m.vllm_gpu_memory_utilization, 0.72)
+            self.assertEqual(m.vllm_max_model_len, 2048)
+
+
+class BackendLifecycleTests(TestCase):
+    """Tests for pre_save tracking, post_save container management, and vLLM client argument generation."""
+
+    def test_system_config_tracks_old_vllm_model(self):
+        from llm_api.models import SystemConfiguration, LocalAIModel
+        m1 = LocalAIModel.objects.create(name="M1", hf_model_id="org/m1")
+        m2 = LocalAIModel.objects.create(name="M2", hf_model_id="org/m2")
+        
+        cfg = SystemConfiguration.get_solo()
+        cfg.active_vllm_model = m1
+        cfg.hosting_backend = 'vllm'
+        cfg.save()
+        
+        cfg.active_vllm_model = m2
+        from llm_api.models import track_backend_model_changes
+        track_backend_model_changes(SystemConfiguration, cfg)
+        self.assertEqual(cfg._old_vllm_model, m1)
+
+    def test_vllm_client_start_container_invokes_compose(self):
+        from unittest.mock import patch
+        from llm_api.models import LocalAIModel
+        from llm_api import vllm_client
+        
+        model = LocalAIModel.objects.create(
+            name="Gemma 2B",
+            hf_model_id="google/gemma-2-2b-it",
+            quantization_mode=LocalAIModel.QuantizationMode.NF4,
+            vllm_gpu_memory_utilization=0.68,
+            vllm_max_model_len=2048,
+            compute_dtype="float16"
+        )
+        
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value.returncode = 0
+            vllm_client.start_container(model)
+            
+            self.assertTrue(mock_run.called)
+            cmd = mock_run.call_args[0][0]
+            env = mock_run.call_args[1].get("env", {})
+            self.assertIn("docker", cmd)
+            self.assertIn("vllm", cmd)
+            self.assertEqual(env.get("VLLM_MODEL"), "google/gemma-2-2b-it")
+            self.assertEqual(env.get("VLLM_GPU_MEMORY_UTILIZATION"), "0.68")
+            self.assertEqual(env.get("VLLM_MAX_MODEL_LEN"), "2048")
+            self.assertEqual(env.get("VLLM_DTYPE"), "float16")
+
+
+class ApiHardwareEndpointTests(TestCase):
+    """Tests for the /api/llm/hardware/ and /api/llm/internal/unload-vram/ endpoints."""
+
+    def setUp(self):
+        self.client = Client()
+
+    def test_hardware_endpoint(self):
+        resp = self.client.get("/api/llm/hardware/")
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertIn("summary", data)
+        self.assertIn("host_cpu", data)
+        self.assertIn("recommendations", data)
+        rec = data["recommendations"]
+        self.assertIn("vllm_gpu_memory_utilization", rec)
+        self.assertIn("vllm_dtype", rec)
+
+    def test_unload_vram_endpoint(self):
+        from unittest.mock import patch
+        with patch("llm_api.api.service_registry") as mock_registry:
+            mock_service = mock_registry.ai_service
+            resp = self.client.post("/api/llm/internal/unload-vram/")
+            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp.json()["status"], "ok")
+            self.assertTrue(mock_service.unload_models.called)

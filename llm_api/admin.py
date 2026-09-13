@@ -26,9 +26,24 @@ def unload_local_models(modeladmin, request, queryset):
 
 @admin.register(LocalAIModel)
 class LocalAIModelAdmin(admin.ModelAdmin):
-    list_display = ('name', 'hf_model_id')
+    list_display = ('name', 'hf_model_id', 'quantization_mode', 'compute_dtype', 'context_window')
+    list_filter = ('quantization_mode', 'compute_dtype')
     search_fields = ('name', 'hf_model_id')
     actions = [activate_local_model, unload_local_models]
+    
+    fieldsets = (
+        ('Model Identification', {
+            'fields': ('name', 'hf_model_id', 'description', 'context_window'),
+        }),
+        ('Precision & Quantization', {
+            'fields': ('quantization_mode', 'compute_dtype', 'load_in_4bit'),
+            'description': 'Choose the tensor quantization strategy (e.g. 4-bit NF4, 8-bit, or unquantized FP16/BF16).'
+        }),
+        ('Container & vLLM Overrides', {
+            'fields': ('vllm_gpu_memory_utilization', 'vllm_max_model_len'),
+            'description': 'Optional custom tuning when served via containerized vLLM. Leave empty for automatic hardware-aware defaults.'
+        }),
+    )
     
     def change_view(self, request, object_id, form_url='', extra_context=None):
         extra_context = extra_context or {}
@@ -108,7 +123,12 @@ class PromptResponseLogAdmin(admin.ModelAdmin):
 
 @admin.register(SystemConfiguration)
 class SystemConfigurationAdmin(admin.ModelAdmin):
+    readonly_fields = ('hardware_advisor_display',)
     fieldsets = (
+        ('Host Hardware & Resource Advisor', {
+            'fields': ('hardware_advisor_display',),
+            'description': 'Real-time detection of host compute capability, VRAM headroom, and recommended settings.'
+        }),
         ('Hosting Strategy', {
             'fields': ('hosting_backend', 'system_tokenizer'),
             'description': 'Select which internal engine acts as your primary AI host. The tokenizer is always loaded to CPU RAM for local proxy validation.'
@@ -126,6 +146,54 @@ class SystemConfigurationAdmin(admin.ModelAdmin):
             'description': 'Settings for using the Ollama Docker service as the backend.'
         }),
     )
+
+    def hardware_advisor_display(self, obj):
+        from .hardware import get_hardware_profile, get_backend_recommendations
+        profile = get_hardware_profile()
+        rec = get_backend_recommendations(profile)
+
+        if profile.cuda_available and profile.primary_device:
+            dev = profile.primary_device
+            pct = round((dev.free_vram_mb / dev.total_vram_mb) * 100, 1) if dev.total_vram_mb else 0
+            bf16_badge = "🟢 Native" if dev.supports_bf16 else "🟡 Emulated / FP16 Preferred"
+            fa_badge = "🟢 Supported (Ampere+)" if dev.supports_flash_attention else "⚪ Not Supported"
+            advisory_li = "".join(f"<li>{note}</li>" for note in rec.advisory_notes)
+            html = f"""
+            <div style="background: #0f172a; color: #f8fafc; padding: 16px 20px; border-radius: 8px; font-family: monospace; line-height: 1.6;">
+                <div style="font-size: 1.15em; font-weight: bold; margin-bottom: 8px; color: #38bdf8;">
+                    🖥️ {dev.name} (Compute Capability: {dev.compute_capability_str})
+                </div>
+                <div style="margin-bottom: 6px;">
+                    <strong>VRAM Availability:</strong> {dev.free_vram_gb} GB Free / {dev.total_vram_gb} GB Total ({pct}% free)
+                </div>
+                <div style="margin-bottom: 8px;">
+                    <strong>Precision Support:</strong> FP16: 🟢 Native &nbsp;|&nbsp; BF16: {bf16_badge} &nbsp;|&nbsp; FlashAttention-2: {fa_badge}
+                </div>
+                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #334155;">
+                    <span style="color: #fbbf24; font-weight: bold;">⚡ Hardware Advisor Recommendations:</span>
+                    <ul style="margin: 6px 0 0 16px; padding: 0; color: #cbd5e1;">
+                        <li><strong>vLLM Memory Utilization:</strong> {rec.vllm_gpu_memory_utilization} (safely accommodates host display headroom)</li>
+                        <li><strong>vLLM Max Sequence:</strong> {rec.vllm_max_model_len} tokens</li>
+                        <li><strong>Precision / Dtype:</strong> {rec.vllm_dtype}</li>
+                        <li><strong>Quantization:</strong> {rec.recommended_quantization.upper()}</li>
+                        {advisory_li}
+                    </ul>
+                </div>
+            </div>
+            """
+        else:
+            html = f"""
+            <div style="background: #0f172a; color: #f8fafc; padding: 16px 20px; border-radius: 8px;">
+                <div style="font-size: 1.1em; font-weight: bold; color: #f59e0b;">
+                    💻 CPU Mode (No CUDA GPU Detected)
+                </div>
+                <div>Cores: {profile.host_cpu.physical_cores} | Threads: {profile.host_cpu.total_threads} | RAM: {profile.host_cpu.available_ram_gb} GB free / {profile.host_cpu.total_ram_gb} GB total</div>
+                <div style="margin-top: 6px; color: #94a3b8;">Recommended backend: Containerized Ollama with GGUF quantization.</div>
+            </div>
+            """
+        return format_html(html)
+
+    hardware_advisor_display.short_description = "Host Hardware & VRAM Diagnostics"
 
 
 admin.site.register(ExternalAIModel)

@@ -316,15 +316,58 @@ class PromptResponseLog(models.Model):
         ]
 
 class LocalAIModel(models.Model):
-    """Configuration for an LLM loaded natively into VRAM on the inference server."""
+    """Configuration for an LLM loaded natively into VRAM or served via local containers."""
+
+    class QuantizationMode(models.TextChoices):
+        NONE = 'none', 'Unquantized (16-bit FP16 / BF16)'
+        INT8 = 'int8', '8-bit Integer (BitsAndBytes)'
+        NF4 = 'nf4', '4-bit NormalFloat (BitsAndBytes NF4 - High Precision)'
+        FP4 = 'fp4', '4-bit Float (BitsAndBytes FP4)'
+        AWQ = 'awq', 'AWQ (vLLM / Transformers)'
+        GPTQ = 'gptq', 'GPTQ (vLLM / Transformers)'
+
     name = models.CharField(max_length=255, help_text="Friendly name (e.g. 'Gemma 4 E2B')")
     hf_model_id = models.CharField(max_length=255, help_text="HuggingFace ID")
     description = models.TextField(blank=True, help_text="Notes on capabilities, VRAM usage, etc.")
-    load_in_4bit = models.BooleanField(default=True, help_text="Use 4-bit quantization (Recommended for 6GB VRAM)")
+    
+    quantization_mode = models.CharField(
+        max_length=20,
+        choices=QuantizationMode.choices,
+        default=QuantizationMode.NF4,
+        help_text="Quantization method to apply when loading model into memory or container."
+    )
+    compute_dtype = models.CharField(
+        max_length=20,
+        choices=[
+            ('auto', 'Auto-detect (Recommended based on GPU capability)'),
+            ('float16', 'Float16 (FP16)'),
+            ('bfloat16', 'BFloat16 (BF16 - requires Ampere / CC 8.0+)'),
+            ('float32', 'Float32 (FP32 - CPU fallback)'),
+        ],
+        default='auto',
+        help_text="Precision used for tensor computations."
+    )
+    vllm_gpu_memory_utilization = models.FloatField(
+        null=True, blank=True,
+        help_text="vLLM GPU memory utilization fraction (0.1 - 1.0). Leave blank to auto-calculate from free VRAM."
+    )
+    vllm_max_model_len = models.IntegerField(
+        null=True, blank=True,
+        help_text="Max model sequence length for vLLM KV-cache. Defaults to model context window."
+    )
+    load_in_4bit = models.BooleanField(default=True, help_text="Legacy flag: Use 4-bit quantization (synced with quantization_mode)")
     context_window = models.IntegerField(default=4096, help_text="Max tokens")
 
+    def save(self, *args, **kwargs):
+        # Keep legacy load_in_4bit in sync with quantization_mode
+        if not self.load_in_4bit and self.quantization_mode in [self.QuantizationMode.NF4, self.QuantizationMode.FP4]:
+            self.quantization_mode = self.QuantizationMode.NONE
+        elif self.load_in_4bit and self.quantization_mode == self.QuantizationMode.NONE:
+            self.quantization_mode = self.QuantizationMode.NF4
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return f"{self.name}"
+        return f"{self.name} ({self.get_quantization_mode_display()})"
 
 
 class LoRAAdapter(models.Model):
@@ -437,48 +480,67 @@ from . import vllm_client
 
 
 @receiver(pre_save, sender=SystemConfiguration)
-def track_ollama_model_changes(sender, instance, **kwargs):
-    """Track the old model name so we know what to unload."""
+def track_backend_model_changes(sender, instance, **kwargs):
+    """Track the old model and backend so we know what to unload, restart, or clear."""
     if instance.pk:
         try:
             old_instance = SystemConfiguration.objects.get(pk=instance.pk)
             instance._old_ollama_model = old_instance.active_ollama_model
+            instance._old_vllm_model = old_instance.active_vllm_model
+            instance._old_local_model = old_instance.active_local_model
             instance._old_hosting_backend = old_instance.hosting_backend
         except SystemConfiguration.DoesNotExist:
             instance._old_ollama_model = None
+            instance._old_vllm_model = None
+            instance._old_local_model = None
             instance._old_hosting_backend = None
     else:
         instance._old_ollama_model = None
+        instance._old_vllm_model = None
+        instance._old_local_model = None
         instance._old_hosting_backend = None
 
 
 @receiver(post_save, sender=SystemConfiguration)
 def manage_hosting_backend(sender, instance, **kwargs):
-    """Unload old models and manage Docker containers for the backend."""
+    """Unload old models, clear VRAM, and manage Docker containers for the backend."""
     import sys
     if 'test' in sys.argv:
         return
 
-    old_model = getattr(instance, '_old_ollama_model', None)
-    new_model = instance.active_ollama_model
-    
     old_backend = getattr(instance, '_old_hosting_backend', None)
     new_backend = instance.hosting_backend
 
-    # Case 1: Switching away from Ollama or changing its model
-    if old_backend == 'ollama' and old_model:
-        if new_backend != 'ollama' or old_model != new_model:
-            logger.info(f"Unloading Ollama model: {old_model.hf_model_id}")
-            ollama_client.set_ollama_model_state(old_model.hf_model_id, active=False)
+    old_ollama = getattr(instance, '_old_ollama_model', None)
+    new_ollama = instance.active_ollama_model
 
-    # Manage Docker Containers if backend changed
+    old_vllm = getattr(instance, '_old_vllm_model', None)
+    new_vllm = instance.active_vllm_model
+
+    # 1. Unload old Ollama model if switching away or changing models
+    if old_backend == 'ollama' and old_ollama:
+        if new_backend != 'ollama' or old_ollama != new_ollama:
+            logger.info(f"Unloading Ollama model: {old_ollama.hf_model_id}")
+            ollama_client.set_ollama_model_state(old_ollama.hf_model_id, active=False)
+
+    # 2. Release PyTorch VRAM if switching away from in-process PyTorch to container backends
+    if old_backend == 'pytorch' and new_backend in ['vllm', 'ollama']:
+        logger.info("Switching from PyTorch to containerized backend. Prompting inference server to release VRAM...")
+        try:
+            import requests
+            inf_url = getattr(settings, 'INFERENCE_URL', 'http://127.0.0.1:8001/api/llm')
+            requests.post(f"{inf_url.rstrip('/')}/internal/unload-vram/", timeout=5)
+        except Exception as e:
+            logger.debug(f"Could not signal inference server to unload VRAM: {e}")
+
+    # 3. Manage Docker Containers if backend changed
     if old_backend != new_backend:
         logger.info(f"Switching hosting backend from '{old_backend}' to '{new_backend}'")
         if new_backend == 'vllm':
             logger.info("Stopping Ollama and starting vLLM container...")
             ollama_client.stop_container()
-            if instance.active_vllm_model:
-                vllm_client.start_container(instance.active_vllm_model.hf_model_id)
+            if new_vllm:
+                vllm_client.start_container(new_vllm)
         elif new_backend == 'ollama':
             logger.info("Stopping vLLM and starting Ollama container...")
             vllm_client.stop_container()
@@ -488,8 +550,14 @@ def manage_hosting_backend(sender, instance, **kwargs):
             ollama_client.stop_container()
             vllm_client.stop_container()
 
-    # Case 2: We are now using Ollama, and either just switched to it OR changed model
-    if new_backend == 'ollama' and new_model:
-        if old_backend != 'ollama' or old_model != new_model:
-            logger.info(f"Loading Ollama model: {new_model.hf_model_id}")
-            ollama_client.set_ollama_model_state(new_model.hf_model_id, active=True)
+    # 4. If active backend is vLLM and model changed while backend stayed vllm
+    elif new_backend == 'vllm' and old_backend == 'vllm':
+        if old_vllm != new_vllm and new_vllm:
+            logger.info(f"vLLM model changed to {new_vllm.name}. Restarting vLLM container...")
+            vllm_client.start_container(new_vllm)
+
+    # 5. If active backend is Ollama, and either just switched to it OR changed model
+    if new_backend == 'ollama' and new_ollama:
+        if old_backend != 'ollama' or old_ollama != new_ollama:
+            logger.info(f"Loading Ollama model: {new_ollama.hf_model_id}")
+            ollama_client.set_ollama_model_state(new_ollama.hf_model_id, active=True)

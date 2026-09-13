@@ -274,6 +274,50 @@ def internal_ping(request):
     from django.conf import settings
     return JsonResponse({"status": "ok", "role": getattr(settings, "VERBAL_ROLE", "unknown")})
 
+@router.post("/internal/unload-vram/", auth=None)
+@csrf_exempt
+def internal_unload_vram(request):
+    """Frees in-process PyTorch VRAM and clears CUDA memory cache."""
+    try:
+        service_registry.ai_service.unload_models()
+        return JsonResponse({"status": "ok", "message": "VRAM cleared"})
+    except Exception as e:
+        logger.error(f"Error unloading VRAM: {e}")
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
+@router.get("/hardware/", auth=None)
+@csrf_exempt
+def get_hardware_diagnostics(request):
+    """Returns host hardware profile, GPU/CPU metrics, and backend recommendations."""
+    from .hardware import get_hardware_profile, get_backend_recommendations
+    profile = get_hardware_profile()
+    rec = get_backend_recommendations(profile)
+    return JsonResponse({
+        "summary": profile.summary,
+        "cuda_available": profile.cuda_available,
+        "devices": [
+            {
+                "index": d.index,
+                "name": d.name,
+                "total_vram_mb": d.total_vram_mb,
+                "free_vram_mb": d.free_vram_mb,
+                "used_vram_mb": d.used_vram_mb,
+                "compute_capability": d.compute_capability_str,
+                "supports_bf16": d.supports_bf16,
+                "supports_fp16": d.supports_fp16,
+                "supports_flash_attention": d.supports_flash_attention,
+            }
+            for d in profile.devices
+        ],
+        "host_cpu": {
+            "physical_cores": profile.host_cpu.physical_cores,
+            "total_threads": profile.host_cpu.total_threads,
+            "total_ram_gb": profile.host_cpu.total_ram_gb,
+            "available_ram_gb": profile.host_cpu.available_ram_gb,
+        },
+        "recommendations": rec.to_dict(),
+    })
+
 @router.post("/v1/chat/completions", auth=None)
 @csrf_exempt
 def openai_chat_completions(request, payload: OpenAIChatCompletionIn):

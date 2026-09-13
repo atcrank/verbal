@@ -44,7 +44,7 @@ class LazyServiceRegistry:
                     logger.info("SYNC: Stopping Ollama and ensuring vLLM is running...")
                     ollama_client.stop_container()
                     if config.active_vllm_model:
-                        vllm_client.start_container(config.active_vllm_model.hf_model_id)
+                        vllm_client.start_container(config.active_vllm_model)
                 elif config.hosting_backend == 'ollama':
                     logger.info("SYNC: Stopping vLLM and ensuring Ollama is running...")
                     vllm_client.stop_container()
