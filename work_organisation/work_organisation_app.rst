@@ -1,51 +1,140 @@
 Work Organisation - Collaborative Whiteboards & Assisted Study Design
 ========================================================================
 
-The **Work Organisation** app provides multi-user collaboration, workshop management, group-scoped access control, and assisted whiteboard ideation for study design. It enables teams to organize research inquiries into hierarchical projects, conduct synchronous or asynchronous ideation sessions, cluster ideas with LLMs, extract causal factors, and stream real-time canvas updates.
+The **Work Organisation** app provides multi-user workspace management, group-scoped access control, interactive whiteboarding, and assisted ideation for study design. It enables multidisciplinary research teams to structure exploratory questions, capture hypotheses, cluster brainstorming notes with local AI assistance, and extract formal causal factors into study artifacts.
 
 .. contents:: Table of Contents
    :local:
    :depth: 2
 
 
-App Achievements & Core Capabilities
-------------------------------------
+1. Purpose & Motivating Problem
+-------------------------------
 
-1. **Hierarchical Project & Workshop Scoping**
-   Organizes study design workflows hierarchically: ``Project`` -> ``Workshop`` -> ``WorkshopSession`` -> ``WhiteboardCard`` / ``WhiteboardCluster``.
+During early-stage research and experimental design, teams frequently encounter cognitive and organizational hurdles:
 
-2. **Group-Scoped Access Control & Privacy Modes**
-   Provides automatic query-level permission scoping via ``GroupScopedManager``, supporting granular Django Groups and 4 distinct anonymity modes for sensitive workshops:
+* **Fragmented Ideation vs. Formal Specification**: Brainstorming sticky notes, questions, and hypotheses rarely translate smoothly into rigorous empirical variables or formal causal models without tedious manual translation.
+* **Evaluation Apprehension & Attribution Bias**: In sensitive domains or interdisciplinary teams, junior participants or domain specialists may hesitate to propose unconventional ideas or challenge established hypotheses if every note is visibly attributed to their identity.
+* **Cognitive Overload from Sprawl**: Unstructured whiteboard canvases quickly degrade into visual clutter where recurring themes, contradictions, and causal relationships are obscured.
 
-   * **Restricted & Tracked (``RESTRICTED_TRACKED``)**: Restricted to group members; participant inputs are tracked and attributed to their user accounts in both UI and database.
-   * **Restricted & UI-Anonymized (``RESTRICTED_ANONYMIZED_UI``)**: Restricted to authorized groups, but participant identities are masked in the UI with stable pseudonyms (e.g., *Participant #42*), while maintaining DB auditability.
-   * **Restricted & DB-Anonymized (``RESTRICTED_ANONYMIZED_DB``)**: Restricted to authorized groups, but all card author foreign keys are stripped (set to ``NULL``) in the database to guarantee total non-attribution.
-   * **Public & Optional User (``PUBLIC_OPTIONAL_USER``)**: Open sessions where authentication is optional and anonymous contributors can participate.
+To alleviate these challenges without falling into naive automation traps, the Work Organisation module combines human-in-the-loop spatial organization with structured LLM synthesis:
 
-3. **Collaborative Whiteboard Canvas & Thematic Clustering**
-   Supports spatial canvas cards (ideas, causal factors, Grips concepts, open questions, hypotheses). Integrates with local LLMs to synthesize unstructured cards into titled, color-coded ``WhiteboardCluster`` bounding boxes.
-
-4. **Causal Graph & Factor Extraction**
-   Analyzes whiteboard notes with structured schema output to extract causal variables, candidate discrete states, and influence relationships directly into study design artifacts.
-
-5. **Real-time Event Synchronization via Datastar SSE**
-   Streams incremental canvas updates (card movements, additions, clustering events) over Redis pub/sub using the lightweight `Datastar <https://data-star.dev>`_ Server-Sent Events protocol.
-
-6. **Markdown & Mermaid Export**
-   Exports whiteboard canvases into clean GitHub-flavored Markdown reports with structured tables and embedded Mermaid diagrams.
+.. note::
+   **A Note on AI Facilitation**:
+   LLM-assisted clustering and causal factor extraction are not authoritative oracles. A local model can easily force artificial analogies, group contradictory claims into the same cluster, or infer directional causality where only correlation was mentioned. The Work Organisation canvas treats AI outputs as editable proposals: cards remain independent, clusters are repositionable bounding boxes, and extracted factors must be validated by human experiment designers before promotion to formal Grips causal graphs.
 
 
-Database Models
----------------
+2. Architecture & Mechanism
+---------------------------
 
-The domain model hierarchy is structured as follows:
+The module is structured around a four-tier project hierarchy, group-scoped permissions, four distinct privacy modes, real-time event distribution, and structured Pydantic extraction pipelines.
 
-* **``Project``**: The top-level container for workshops, experiments, and whiteboards. Associated with Django Groups and creator ownership.
-* **``Workshop``**: A specific collaborative milestone or study design track under a Project.
-* **``WorkshopSession``**: An active collaborative session (whiteboard, interview dialogue, or drafting document) linked to a conversational thread and configured with an access mode.
-* **``ConversationMember``**: Manages multi-user roles (``owner``, ``editor``, ``viewer``) and UI display aliases on sessions.
-* **``WhiteboardCard``**: Individual spatial cards on the canvas with 2D coordinates, card types (``idea``, ``factor``, ``concept``, ``question``, ``hypothesis``), author attributes, and custom JSON metadata.
-* **``WhiteboardCluster``**: Thematic bounding groups created manually or synthesized by LLMs to group related cards.
+Domain Hierarchy
+~~~~~~~~~~~~~~~~
+
+.. code-block:: text
+
+   Project (Top-level container; Django Groups & owner permissions)
+     └── Workshop (Specific research track, workshop milestone, or study inquiry)
+           └── WorkshopSession (Collaborative canvas session with specific access mode)
+                 ├── WhiteboardCard (Spatial 2D notes: ideas, factors, hypotheses, questions)
+                 └── WhiteboardCluster (Thematic bounding boxes grouping related cards)
+
+Access Control & Anonymity Modes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Query-level security is enforced across all models using a custom ``GroupScopedManager``, preventing cross-tenant data leakage. When creating a ``WorkshopSession``, facilitators configure one of four access modes to match the session's privacy requirements:
+
+1. **Restricted & Tracked (``RESTRICTED_TRACKED``)**:
+   Restricted to authorized group members. All contributions are linked to participant user accounts in both the database and the canvas UI.
+2. **Restricted & UI-Anonymized (``RESTRICTED_ANONYMIZED_UI``)**:
+   Restricted to authorized group members. Participant usernames are masked in the UI with stable session pseudonyms (e.g., *Participant #3*), preserving psychological safety while maintaining database auditability for session administrators.
+3. **Restricted & DB-Anonymized (``RESTRICTED_ANONYMIZED_DB``)**:
+   Restricted to authorized group members, but card author foreign keys are permanently set to ``NULL`` upon creation. Neither other participants nor database administrators can deanonymize authorship.
+4. **Public & Optional User (``PUBLIC_OPTIONAL_USER``)**:
+   Open collaboration sessions where authentication is optional and unauthenticated guests can contribute anonymously alongside registered users.
+
+Real-Time Event Distribution (Datastar SSE)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To enable collaborative multi-user editing without heavy JavaScript frameworks, the app uses `Datastar <https://data-star.dev>`_ Server-Sent Events (SSE) paired with Redis Pub/Sub:
+
+* Canvas mutations (``POST /api/work/cards/``, ``POST /api/work/cards/move/``) persist updates to PostgreSQL and broadcast an event payload to channel ``verbal:whiteboard:{session_id}``.
+* Connected browsers listen to ``GET /api/work/stream_session/{session_id}/``, which yields real-time SSE events (e.g., ``card_added``, ``card_moved``, ``clustered``) or HTML fragment merges.
+* Heartbeat comments (``: heartbeat``) are sent every 15 seconds to prevent intermediate proxy timeouts.
+
+.. note::
+   **Redis Fallback**:
+   If the Redis broker configured in ``CELERY_BROKER_URL`` is unavailable, standard REST persistence continues to work seamlessly. However, real-time synchronization between concurrent browser tabs will be disabled, returning an error event instructing clients to refresh.
+
+LLM Synthesis & Causal Factor Extraction
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Two specialized synthesis routines use structured Pydantic schemas via ``ai_service.generate_outline``:
+
+* **Thematic Idea Clustering (``cluster_whiteboard_cards``)**:
+  Extracts all session cards, prompts the local model with the session objective, and requests an ``IdeaClusteringPlan`` containing 2 to 5 thematic clusters. Cards are automatically repositioned into spatial cluster bounding boxes (width 340px, dynamic height).
+* **Causal Factor Extraction (``extract_causal_factors_from_session``)**:
+  Parses card contents against ``CausalGraphExtractionPlan``, identifying named variables, discrete state options (e.g., ``["Low", "High"]``), upstream causal drivers, and textual justification. Extracted variables are converted into specialized ``factor`` cards on the canvas ready for export to Grips or Blueprint design.
+
+Export Capabilities
+~~~~~~~~~~~~~~~~~~~
+
+The endpoint ``GET /api/work/export_summary/{session_id}/`` compiles the entire session into a Markdown document complete with cluster breakdown tables, author attribution (honoring active anonymity modes), extracted causal dynamic tables, and open questions.
+
+
+3. Observability & Health Signals
+---------------------------------
+
+To monitor workshop collaboration and verify proper operational health:
+
+1. **Django Admin Inspection**:
+   * Inspect **Work Organisation > Projects** to verify attached Django Groups and owner assignments.
+   * Inspect **Workshop Sessions** to verify ``access_mode``, active ``Conversation`` link, and member list.
+   * Inspect **Whiteboard Cards** to verify coordinate values (``pos_x``, ``pos_y``), ``card_type``, and ``metadata`` JSON payloads.
+
+2. **SSE Stream Verification**:
+   Inspect the browser network tab or test using ``curl``:
+
+   .. code-block:: bash
+
+      curl -N -H "Accept: text/event-stream" http://127.0.0.1:8000/api/work/stream_session/<session_id>/
+
+   A healthy stream immediately yields:
+
+   .. code-block:: text
+
+      event: connected
+      data: {"session_id": "...", "status": "active"}
+
+      : heartbeat
+
+3. **Clustering & Extraction Logs**:
+   Look for structured synthesis messages in the web process log:
+
+   .. code-block:: text
+
+      INFO:work_organisation.clustering: Clustering completed for session 12: 3 clusters formed.
+      INFO:work_organisation.events: Published whiteboard event 'clustered' to channel verbal:whiteboard:12
+
+
+4. Diagnostic Tips & Common Failure Modes
+-----------------------------------------
+
+* **Redis Broker Offline**:
+  If the Redis service is down or unreachable, users will see an error message in the real-time stream. Database operations still succeed. To restore multi-user live synchronization, verify Redis is running (e.g. ``redis-cli ping``) and check the ``CELERY_BROKER_URL`` setting in ``settings.py``.
+* **Irreversible Anonymity in DB-Anonymized Mode**:
+  When a session is configured as ``RESTRICTED_ANONYMIZED_DB``, author IDs are set to ``NULL`` immediately on write. If facilitators later need to trace authorship for accountability, they cannot do so. If auditability is required, use ``RESTRICTED_ANONYMIZED_UI`` instead.
+* **Over-aggressive LLM Clustering**:
+  Small language models (SLMs) may occasionally group fundamentally distinct ideas under vague titles (e.g., *"General Considerations"*). If clustering results are suboptimal, refine the Workshop's ``objective`` text to give the model stronger domain context before re-running clustering.
+* **Extracted Causal Links Lacking Evidence**:
+  The causal factor extraction pipeline asks the model to suggest upstream causes based on session notes. SLMs can hallucinate causal links between variables that merely co-occurred in discussion. Always inspect the ``justification`` column in the export summary before adopting causal links in study design.
+* **Canvas Coordinate Overlap**:
+  If multiple users drag cards simultaneously while offline or under high network latency, cards may overlap. Running the automated clustering routine or manually dragging cards resets their spatial bounding boxes.
+
+
+Database Models Reference
+-------------------------
 
 .. automodule:: work_organisation.models
    :members:
@@ -53,35 +142,8 @@ The domain model hierarchy is structured as follows:
    :show-inheritance:
 
 
-API Endpoints
--------------
-
-The app exposes Django-Ninja REST and SSE endpoints routed under ``/api/work/``:
-
-Hierarchy & Session Management
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-* ``GET /api/work/projects/``: Lists all projects accessible to the authenticated user.
-* ``POST /api/work/projects/``: Creates a new project and attaches authorized Django Groups.
-* ``GET /api/work/workshops/``: Lists workshops accessible to the user, optionally filtered by ``project_id``.
-* ``POST /api/work/workshops/``: Creates a new workshop within a project.
-* ``POST /api/work/sessions/new/``: Quick-launch endpoint that provisions a ``WorkshopSession``, links an underlying ``Conversation``, and assigns ownership roles.
-* ``GET /api/work/sessions/{session_id}/``: Retrieves full session state (clusters, cards, member aliases) with active anonymity rules applied.
-
-Canvas Mutations & Real-time Streaming
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-* ``POST /api/work/cards/``: Creates a new whiteboard card and broadcasts a ``card_added`` event.
-* ``POST /api/work/cards/move/``: Updates card 2D coordinates and cluster assignment, broadcasting a ``card_moved`` event.
-* ``GET /api/work/stream_session/{session_id}/``: Real-time Datastar SSE stream delivering canvas updates over Redis pub/sub.
-* ``POST /api/work/stream_response/``: Progressive token-by-token LLM generation stream.
-
-AI Analysis & Export Endpoints
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-* ``POST /api/work/cluster_ideas/``: Triggers LLM thematic clustering to group loose sticky notes into clusters.
-* ``POST /api/work/extract_causal_graph/``: Extracts causal factors, state options, and directional influence links.
-* ``GET /api/work/export_summary/{session_id}/``: Generates and returns a formatted Markdown report of the session.
+API Endpoints Reference
+-----------------------
 
 .. automodule:: work_organisation.api
    :members:
@@ -98,7 +160,7 @@ Clustering & Synthesis Utilities
    :show-inheritance:
 
 
-Real-time Event Streaming
+Event Streaming Reference
 -------------------------
 
 .. automodule:: work_organisation.events

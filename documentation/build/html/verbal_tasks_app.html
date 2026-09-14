@@ -1,0 +1,832 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Verbal Tasks - Database-Backed Asynchronous Execution &amp; Scheduling &mdash; reason 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=aaf24e6f" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=2709fde1"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Sandbox Manager - Isolated Python Execution Environment" href="sandbox_manager_app.html" />
+    <link rel="prev" title="LLM API - Local Inference, Proxy Routing &amp; Hardware-Aware Serving" href="llm_api_app.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            reason
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="llm_api_app.html">LLM API - Local Inference, Proxy Routing &amp; Hardware-Aware Serving</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Verbal Tasks - Database-Backed Asynchronous Execution &amp; Scheduling</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#purpose-motivating-problem">1. Purpose &amp; Motivating Problem</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#why-background-tasks-are-necessary">Why Background Tasks are Necessary</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-hazard-of-distributed-brokers-on-research-workstations">The Hazard of Distributed Brokers on Research Workstations</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#architecture-mechanism">2. Architecture &amp; Mechanism</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#how-the-database-queue-operates">How the Database Queue Operates</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#key-data-models">Key Data Models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#management-commands">Management Commands</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#defining-tasks">Defining Tasks</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#observability-health-signals">3. Observability &amp; Health Signals</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#how-to-know-the-task-system-is-working-well">How to Know the Task System is Working Well</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#diagnostic-tips-failure-modes">4. Diagnostic Tips &amp; Failure Modes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#when-the-system-misses-the-mark-how-to-tune">When the System Misses the Mark &amp; How to Tune</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-verbal_tasks.models">Module Reference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#verbal_tasks.models.ScheduledTask"><code class="docutils literal notranslate"><span class="pre">ScheduledTask</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.ScheduledTask.DoesNotExist"><code class="docutils literal notranslate"><span class="pre">ScheduledTask.DoesNotExist</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.ScheduledTask.MultipleObjectsReturned"><code class="docutils literal notranslate"><span class="pre">ScheduledTask.MultipleObjectsReturned</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.ScheduledTask.NotUpdated"><code class="docutils literal notranslate"><span class="pre">ScheduledTask.NotUpdated</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.ScheduledTask.args_json"><code class="docutils literal notranslate"><span class="pre">ScheduledTask.args_json</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.ScheduledTask.cron_expression"><code class="docutils literal notranslate"><span class="pre">ScheduledTask.cron_expression</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.ScheduledTask.id"><code class="docutils literal notranslate"><span class="pre">ScheduledTask.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.ScheduledTask.interval_seconds"><code class="docutils literal notranslate"><span class="pre">ScheduledTask.interval_seconds</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.ScheduledTask.is_active"><code class="docutils literal notranslate"><span class="pre">ScheduledTask.is_active</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.ScheduledTask.is_due"><code class="docutils literal notranslate"><span class="pre">ScheduledTask.is_due()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.ScheduledTask.kwargs_json"><code class="docutils literal notranslate"><span class="pre">ScheduledTask.kwargs_json</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.ScheduledTask.last_run_at"><code class="docutils literal notranslate"><span class="pre">ScheduledTask.last_run_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.ScheduledTask.last_task_record"><code class="docutils literal notranslate"><span class="pre">ScheduledTask.last_task_record</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.ScheduledTask.last_task_record_id"><code class="docutils literal notranslate"><span class="pre">ScheduledTask.last_task_record_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.ScheduledTask.name"><code class="docutils literal notranslate"><span class="pre">ScheduledTask.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.ScheduledTask.objects"><code class="docutils literal notranslate"><span class="pre">ScheduledTask.objects</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.ScheduledTask.priority"><code class="docutils literal notranslate"><span class="pre">ScheduledTask.priority</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.ScheduledTask.queue_name"><code class="docutils literal notranslate"><span class="pre">ScheduledTask.queue_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.ScheduledTask.task_name"><code class="docutils literal notranslate"><span class="pre">ScheduledTask.task_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.ScheduledTask.total_run_count"><code class="docutils literal notranslate"><span class="pre">ScheduledTask.total_run_count</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.ScheduledTask.trigger"><code class="docutils literal notranslate"><span class="pre">ScheduledTask.trigger()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#verbal_tasks.models.TaskRecord"><code class="docutils literal notranslate"><span class="pre">TaskRecord</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.TaskRecord.DoesNotExist"><code class="docutils literal notranslate"><span class="pre">TaskRecord.DoesNotExist</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.TaskRecord.MultipleObjectsReturned"><code class="docutils literal notranslate"><span class="pre">TaskRecord.MultipleObjectsReturned</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.TaskRecord.NotUpdated"><code class="docutils literal notranslate"><span class="pre">TaskRecord.NotUpdated</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.TaskRecord.args_json"><code class="docutils literal notranslate"><span class="pre">TaskRecord.args_json</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.TaskRecord.attempts"><code class="docutils literal notranslate"><span class="pre">TaskRecord.attempts</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.TaskRecord.duration_formatted"><code class="docutils literal notranslate"><span class="pre">TaskRecord.duration_formatted</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.TaskRecord.duration_ms"><code class="docutils literal notranslate"><span class="pre">TaskRecord.duration_ms</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.TaskRecord.enqueued_at"><code class="docutils literal notranslate"><span class="pre">TaskRecord.enqueued_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.TaskRecord.error_traceback"><code class="docutils literal notranslate"><span class="pre">TaskRecord.error_traceback</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.TaskRecord.finished_at"><code class="docutils literal notranslate"><span class="pre">TaskRecord.finished_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.TaskRecord.get_next_by_enqueued_at"><code class="docutils literal notranslate"><span class="pre">TaskRecord.get_next_by_enqueued_at()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.TaskRecord.get_previous_by_enqueued_at"><code class="docutils literal notranslate"><span class="pre">TaskRecord.get_previous_by_enqueued_at()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.TaskRecord.get_status_display"><code class="docutils literal notranslate"><span class="pre">TaskRecord.get_status_display()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.TaskRecord.id"><code class="docutils literal notranslate"><span class="pre">TaskRecord.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.TaskRecord.input_tokens"><code class="docutils literal notranslate"><span class="pre">TaskRecord.input_tokens</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.TaskRecord.kwargs_json"><code class="docutils literal notranslate"><span class="pre">TaskRecord.kwargs_json</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.TaskRecord.last_attempted_at"><code class="docutils literal notranslate"><span class="pre">TaskRecord.last_attempted_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.TaskRecord.metrics_json"><code class="docutils literal notranslate"><span class="pre">TaskRecord.metrics_json</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.TaskRecord.objects"><code class="docutils literal notranslate"><span class="pre">TaskRecord.objects</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.TaskRecord.output_tokens"><code class="docutils literal notranslate"><span class="pre">TaskRecord.output_tokens</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.TaskRecord.priority"><code class="docutils literal notranslate"><span class="pre">TaskRecord.priority</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.TaskRecord.queue_latency_formatted"><code class="docutils literal notranslate"><span class="pre">TaskRecord.queue_latency_formatted</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.TaskRecord.queue_latency_ms"><code class="docutils literal notranslate"><span class="pre">TaskRecord.queue_latency_ms</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.TaskRecord.queue_name"><code class="docutils literal notranslate"><span class="pre">TaskRecord.queue_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.TaskRecord.return_value_json"><code class="docutils literal notranslate"><span class="pre">TaskRecord.return_value_json</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.TaskRecord.run_after"><code class="docutils literal notranslate"><span class="pre">TaskRecord.run_after</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.TaskRecord.scheduled_triggers"><code class="docutils literal notranslate"><span class="pre">TaskRecord.scheduled_triggers</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.TaskRecord.short_task_name"><code class="docutils literal notranslate"><span class="pre">TaskRecord.short_task_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.TaskRecord.started_at"><code class="docutils literal notranslate"><span class="pre">TaskRecord.started_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.TaskRecord.status"><code class="docutils literal notranslate"><span class="pre">TaskRecord.status</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.TaskRecord.task_path"><code class="docutils literal notranslate"><span class="pre">TaskRecord.task_path</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.TaskRecord.tokens_formatted"><code class="docutils literal notranslate"><span class="pre">TaskRecord.tokens_formatted</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.TaskRecord.total_tokens"><code class="docutils literal notranslate"><span class="pre">TaskRecord.total_tokens</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.TaskRecord.worker_id"><code class="docutils literal notranslate"><span class="pre">TaskRecord.worker_id</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#verbal_tasks.models.TaskRecordStatus"><code class="docutils literal notranslate"><span class="pre">TaskRecordStatus</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.TaskRecordStatus.FAILED"><code class="docutils literal notranslate"><span class="pre">TaskRecordStatus.FAILED</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.TaskRecordStatus.READY"><code class="docutils literal notranslate"><span class="pre">TaskRecordStatus.READY</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.TaskRecordStatus.RUNNING"><code class="docutils literal notranslate"><span class="pre">TaskRecordStatus.RUNNING</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.models.TaskRecordStatus.SUCCESSFUL"><code class="docutils literal notranslate"><span class="pre">TaskRecordStatus.SUCCESSFUL</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#verbal_tasks.models.cron_matches"><code class="docutils literal notranslate"><span class="pre">cron_matches()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#verbal_tasks.models.match_cron_field"><code class="docutils literal notranslate"><span class="pre">match_cron_field()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#verbal_tasks.task_backend.DatabaseTaskBackend"><code class="docutils literal notranslate"><span class="pre">DatabaseTaskBackend</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.task_backend.DatabaseTaskBackend.enqueue"><code class="docutils literal notranslate"><span class="pre">DatabaseTaskBackend.enqueue()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.task_backend.DatabaseTaskBackend.get_result"><code class="docutils literal notranslate"><span class="pre">DatabaseTaskBackend.get_result()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.task_backend.DatabaseTaskBackend.supports_async_task"><code class="docutils literal notranslate"><span class="pre">DatabaseTaskBackend.supports_async_task</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.task_backend.DatabaseTaskBackend.supports_defer"><code class="docutils literal notranslate"><span class="pre">DatabaseTaskBackend.supports_defer</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.task_backend.DatabaseTaskBackend.supports_get_result"><code class="docutils literal notranslate"><span class="pre">DatabaseTaskBackend.supports_get_result</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verbal_tasks.task_backend.DatabaseTaskBackend.supports_priority"><code class="docutils literal notranslate"><span class="pre">DatabaseTaskBackend.supports_priority</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="sandbox_manager_app.html">Sandbox Manager - Isolated Python Execution Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grobid_client_app.html">Grobid Client - Deterministic Scientific PDF Parsing &amp; Citation Extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="background_resources_app.html">Background Resources - Retrieval-Augmented Generation &amp; Document Ingestion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grips_app.html">Grips - Structured Knowledge Graph &amp; Propositional Claims</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metacognition_app.html">Metacognition - Cognitive Blueprints, Agentic Workflows &amp; Self-Evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmarking_app.html">Benchmarking - Automated Evaluation, Synthetic Generation &amp; LoRA Flywheels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo_ui_app.html">Demo UI - Empirical Research &amp; Cognitive Workbench</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="using_ollama.html">Ollama as Local AI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo_ui_trials.html">Demo UI Empirical Trials &amp; Verification Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests.html">Testing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">reason</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Verbal Tasks - Database-Backed Asynchronous Execution &amp; Scheduling</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/verbal_tasks_app.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="verbal-tasks-database-backed-asynchronous-execution-scheduling">
+<h1>Verbal Tasks - Database-Backed Asynchronous Execution &amp; Scheduling<a class="headerlink" href="#verbal-tasks-database-backed-asynchronous-execution-scheduling" title="Link to this heading"></a></h1>
+<p>The <strong>Verbal Tasks</strong> application provides native, database-backed background task execution, cron/interval scheduling, and operational telemetry for the Verbal study design assistant. It operates entirely within PostgreSQL and standard Django database transactions, eliminating the operational complexity and connection failure modes of external message brokers (such as Redis or RabbitMQ) and distributed task queues (such as Celery).</p>
+<nav class="contents local" id="table-of-contents">
+<p class="topic-title">Table of Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#purpose-motivating-problem" id="id1">1. Purpose &amp; Motivating Problem</a></p>
+<ul>
+<li><p><a class="reference internal" href="#why-background-tasks-are-necessary" id="id2">Why Background Tasks are Necessary</a></p></li>
+<li><p><a class="reference internal" href="#the-hazard-of-distributed-brokers-on-research-workstations" id="id3">The Hazard of Distributed Brokers on Research Workstations</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#architecture-mechanism" id="id4">2. Architecture &amp; Mechanism</a></p>
+<ul>
+<li><p><a class="reference internal" href="#how-the-database-queue-operates" id="id5">How the Database Queue Operates</a></p></li>
+<li><p><a class="reference internal" href="#key-data-models" id="id6">Key Data Models</a></p></li>
+<li><p><a class="reference internal" href="#management-commands" id="id7">Management Commands</a></p></li>
+<li><p><a class="reference internal" href="#defining-tasks" id="id8">Defining Tasks</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#observability-health-signals" id="id9">3. Observability &amp; Health Signals</a></p>
+<ul>
+<li><p><a class="reference internal" href="#how-to-know-the-task-system-is-working-well" id="id10">How to Know the Task System is Working Well</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#diagnostic-tips-failure-modes" id="id11">4. Diagnostic Tips &amp; Failure Modes</a></p>
+<ul>
+<li><p><a class="reference internal" href="#when-the-system-misses-the-mark-how-to-tune" id="id12">When the System Misses the Mark &amp; How to Tune</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#module-verbal_tasks.models" id="id13">Module Reference</a></p></li>
+</ul>
+</nav>
+<section id="purpose-motivating-problem">
+<h2><a class="toc-backref" href="#id1" role="doc-backlink">1. Purpose &amp; Motivating Problem</a><a class="headerlink" href="#purpose-motivating-problem" title="Link to this heading"></a></h2>
+<section id="why-background-tasks-are-necessary">
+<h3><a class="toc-backref" href="#id2" role="doc-backlink">Why Background Tasks are Necessary</a><a class="headerlink" href="#why-background-tasks-are-necessary" title="Link to this heading"></a></h3>
+<p>Computational study design involves compute-heavy operations that cannot execute synchronously within a standard HTTP request/response cycle:</p>
+<ul class="simple">
+<li><p>Parsing multi-hundred-page research PDFs and chunking them for semantic indexing (<cite>background_resources</cite>).</p></li>
+<li><p>Executing multi-step agentic cognitive blueprints with tool calls and reflection loops (<cite>metacognition</cite>).</p></li>
+<li><p>Running automated benchmark evaluation suites across dozens of scenarios (<cite>benchmarking</cite>).</p></li>
+<li><p>Periodic graph verification, linting, and maintenance routines via NightManager.</p></li>
+</ul>
+<p>If executed in the web thread, these operations would cause HTTP gateway timeouts (504s), freeze user interfaces, and starve concurrent users.</p>
+</section>
+<section id="the-hazard-of-distributed-brokers-on-research-workstations">
+<h3><a class="toc-backref" href="#id3" role="doc-backlink">The Hazard of Distributed Brokers on Research Workstations</a><a class="headerlink" href="#the-hazard-of-distributed-brokers-on-research-workstations" title="Link to this heading"></a></h3>
+<p>Earlier iterations of this project utilized Celery with Redis brokers. While standard in cloud deployments, running distributed brokers on single-workstation research environments introduced serious failure modes:</p>
+<ul class="simple">
+<li><p><strong>Silent Connection Drops</strong>: Local OS sleep cycles, Docker network hiccups, or Redis restarts severed worker connections silently without alerting the user.</p></li>
+<li><p><strong>Process Fragmentation</strong>: Managing multiple daemons (Django web, Celery worker, Celery beat, Redis) increased cognitive load and configuration drift.</p></li>
+<li><p><strong>State Invisibility</strong>: In-memory Redis queues made inspecting task state, token telemetry, and execution history difficult without specialized external monitoring tooling (e.g. Flower).</p></li>
+</ul>
+<p><strong>Verbal Tasks</strong> was created to resolve these friction points by storing all task queues, periodic schedules, and execution records directly in PostgreSQL using standard transactional guarantees.</p>
+</section>
+</section>
+<section id="architecture-mechanism">
+<h2><a class="toc-backref" href="#id4" role="doc-backlink">2. Architecture &amp; Mechanism</a><a class="headerlink" href="#architecture-mechanism" title="Link to this heading"></a></h2>
+<section id="how-the-database-queue-operates">
+<h3><a class="toc-backref" href="#id5" role="doc-backlink">How the Database Queue Operates</a><a class="headerlink" href="#how-the-database-queue-operates" title="Link to this heading"></a></h3>
+<p>The task engine is built on standard relational patterns:</p>
+<ul class="simple">
+<li><p><strong>Task Enqueueing</strong>: Calling <cite>.enqueue(*args, **kwargs)</cite> on a task decorated with <code class="docutils literal notranslate"><span class="pre">&#64;task</span></code> writes a <code class="docutils literal notranslate"><span class="pre">TaskRecord</span></code> row into PostgreSQL with <code class="docutils literal notranslate"><span class="pre">status='READY'</span></code> and an optional <code class="docutils literal notranslate"><span class="pre">run_after</span></code> timestamp.</p></li>
+<li><p><strong>Worker Execution (``runtaskworker``)</strong>: A multi-threaded worker process polls PostgreSQL using row-level locking (<cite>SELECT … FOR UPDATE SKIP LOCKED</cite>). When a task is claimed, its status transitions to <code class="docutils literal notranslate"><span class="pre">RUNNING</span></code>, and the payload is dispatched to a thread pool.</p></li>
+<li><p><strong>Transactional Reliability</strong>: Because queue operations participate in database transactions, a task is never enqueued unless the surrounding database transaction successfully commits.</p></li>
+</ul>
+</section>
+<section id="key-data-models">
+<h3><a class="toc-backref" href="#id6" role="doc-backlink">Key Data Models</a><a class="headerlink" href="#key-data-models" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>``TaskRecord``</strong>: Stores individual execution instances, positional/keyword arguments (JSON), priority, execution timestamps, duration in milliseconds, worker hostname, input/output token counts, and full error tracebacks if failed.</p></li>
+<li><p><strong>``ScheduledTask``</strong>: Defines recurring jobs using standard 5-field cron expressions (e.g., <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">21</span> <span class="pre">*</span> <span class="pre">*</span> <span class="pre">*</span></code> for nightly 9 PM runs) or fixed interval seconds. Replaces Celery Beat.</p></li>
+<li><p><strong>``WorkerHeartbeat``</strong>: Tracks active worker processes, active thread counts, and last-seen timestamps to enable stale worker detection and automatic failover.</p></li>
+</ul>
+</section>
+<section id="management-commands">
+<h3><a class="toc-backref" href="#id7" role="doc-backlink">Management Commands</a><a class="headerlink" href="#management-commands" title="Link to this heading"></a></h3>
+<p>The task system is managed via two core CLI commands:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Start the multi-threaded background worker</span>
+python<span class="w"> </span>manage.py<span class="w"> </span>runtaskworker<span class="w"> </span>--threads<span class="w"> </span><span class="m">4</span><span class="w"> </span>--queue<span class="w"> </span>default
+
+<span class="c1"># Start the periodic cron and interval scheduler</span>
+python<span class="w"> </span>manage.py<span class="w"> </span>runtaskscheduler
+</pre></div>
+</div>
+</section>
+<section id="defining-tasks">
+<h3><a class="toc-backref" href="#id8" role="doc-backlink">Defining Tasks</a><a class="headerlink" href="#defining-tasks" title="Link to this heading"></a></h3>
+<p>Tasks are declared using the <code class="docutils literal notranslate"><span class="pre">&#64;task</span></code> decorator:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">verbal_tasks.task_backend</span><span class="w"> </span><span class="kn">import</span> <span class="n">task</span>
+
+<span class="nd">@task</span><span class="p">(</span><span class="n">queue_name</span><span class="o">=</span><span class="s2">&quot;default&quot;</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">ingest_document_async</span><span class="p">(</span><span class="n">document_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+    <span class="c1"># Heavy processing logic...</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;complete&quot;</span><span class="p">,</span> <span class="s2">&quot;document_id&quot;</span><span class="p">:</span> <span class="n">document_id</span><span class="p">}</span>
+
+<span class="c1"># Calling synchronously:</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">ingest_document_async</span><span class="p">(</span><span class="n">document_id</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+
+<span class="c1"># Dispatching to the database background queue:</span>
+<span class="n">task_record</span> <span class="o">=</span> <span class="n">ingest_document_async</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="n">document_id</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="observability-health-signals">
+<h2><a class="toc-backref" href="#id9" role="doc-backlink">3. Observability &amp; Health Signals</a><a class="headerlink" href="#observability-health-signals" title="Link to this heading"></a></h2>
+<section id="how-to-know-the-task-system-is-working-well">
+<h3><a class="toc-backref" href="#id10" role="doc-backlink">How to Know the Task System is Working Well</a><a class="headerlink" href="#how-to-know-the-task-system-is-working-well" title="Link to this heading"></a></h3>
+<ol class="arabic simple">
+<li><p><strong>Active Worker Heartbeats</strong>:
+In Django Admin under <strong>Verbal Tasks &gt; Worker Heartbeats</strong>, healthy worker instances report active heartbeats every 10 seconds. The status badge displays green: <code class="docutils literal notranslate"><span class="pre">🟢</span> <span class="pre">Active</span></code>.</p></li>
+<li><p><strong>Low Queue Latency</strong>:
+The <code class="docutils literal notranslate"><span class="pre">TaskRecord.queue_latency_formatted</span></code> property measures the time between when a task was enqueued and when a thread picked it up. In a healthy system, queue latency is consistently below 1 second.</p></li>
+<li><p><strong>Admin Task Telemetry</strong>:
+Every completed task record logs execution duration and LLM token usage (input, output, and total tokens). The change list view allows administrators to filter by queue, status, priority, and task function to verify throughput.</p></li>
+</ol>
+</section>
+</section>
+<section id="diagnostic-tips-failure-modes">
+<h2><a class="toc-backref" href="#id11" role="doc-backlink">4. Diagnostic Tips &amp; Failure Modes</a><a class="headerlink" href="#diagnostic-tips-failure-modes" title="Link to this heading"></a></h2>
+<section id="when-the-system-misses-the-mark-how-to-tune">
+<h3><a class="toc-backref" href="#id12" role="doc-backlink">When the System Misses the Mark &amp; How to Tune</a><a class="headerlink" href="#when-the-system-misses-the-mark-how-to-tune" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Tasks Remain Stuck in ``READY``</strong>:
+* <em>Cause</em>: The worker process is not running, or is listening to a different queue name.
+* <em>Check</em>: Verify that <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">manage.py</span> <span class="pre">runtaskworker</span></code> is actively running in a terminal or daemon service. Check the task’s <code class="docutils literal notranslate"><span class="pre">queue_name</span></code> in the admin to ensure the worker is subscribed to it.</p></li>
+<li><p><strong>Tasks Remain Stuck in ``RUNNING`` (Zombies)</strong>:
+* <em>Cause</em>: The worker process was killed abruptly (e.g. machine reboot or <cite>kill -9</cite>) while executing a job.
+* <em>Remedy</em>: The system automatically flags workers whose heartbeat is older than 60 seconds. In Django Admin, select the stuck task records and use the action <strong>Reset Stuck Running Tasks to Ready</strong> to release them back to the queue.</p></li>
+<li><p><strong>Worker Thread Starvation</strong>:
+* <em>Cause</em>: All worker threads are blocked on synchronous external operations (e.g., long-running LLM API calls with high timeouts or frozen sandbox scripts).
+* <em>Remedy</em>: Increase worker thread pool capacity using <code class="docutils literal notranslate"><span class="pre">--threads</span> <span class="pre">8</span></code> or run separate dedicated workers listening to distinct queues (e.g. <code class="docutils literal notranslate"><span class="pre">web_interactive</span></code> vs <code class="docutils literal notranslate"><span class="pre">nightly_batch</span></code>).</p></li>
+<li><p><strong>Database Task Table Growth</strong>:
+* <em>Remedy</em>: Over months of continuous study design, hundreds of thousands of completed records accumulate. Use the scheduled archival command to prune successful records older than 30 days while retaining failed records for debugging.</p></li>
+</ul>
+</section>
+</section>
+<section id="module-verbal_tasks.models">
+<span id="module-reference"></span><h2><a class="toc-backref" href="#id13" role="doc-backlink">Module Reference</a><a class="headerlink" href="#module-verbal_tasks.models" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="verbal_tasks.models.ScheduledTask">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">verbal_tasks.models.</span></span><span class="sig-name descname"><span class="pre">ScheduledTask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/verbal_tasks/models.html#ScheduledTask"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#verbal_tasks.models.ScheduledTask" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
+<p>Periodic task schedule stored in PostgreSQL.
+Replaces Celery Beat and django_celery_beat.</p>
+<dl class="py exception">
+<dt class="sig sig-object py" id="verbal_tasks.models.ScheduledTask.DoesNotExist">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DoesNotExist</span></span><a class="headerlink" href="#verbal_tasks.models.ScheduledTask.DoesNotExist" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectDoesNotExist</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="verbal_tasks.models.ScheduledTask.MultipleObjectsReturned">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MultipleObjectsReturned</span></span><a class="headerlink" href="#verbal_tasks.models.ScheduledTask.MultipleObjectsReturned" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleObjectsReturned</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="verbal_tasks.models.ScheduledTask.NotUpdated">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NotUpdated</span></span><a class="headerlink" href="#verbal_tasks.models.ScheduledTask.NotUpdated" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectNotUpdated</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">DatabaseError</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.ScheduledTask.args_json">
+<span class="sig-name descname"><span class="pre">args_json</span></span><a class="headerlink" href="#verbal_tasks.models.ScheduledTask.args_json" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.ScheduledTask.cron_expression">
+<span class="sig-name descname"><span class="pre">cron_expression</span></span><a class="headerlink" href="#verbal_tasks.models.ScheduledTask.cron_expression" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.ScheduledTask.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#verbal_tasks.models.ScheduledTask.id" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.ScheduledTask.interval_seconds">
+<span class="sig-name descname"><span class="pre">interval_seconds</span></span><a class="headerlink" href="#verbal_tasks.models.ScheduledTask.interval_seconds" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.ScheduledTask.is_active">
+<span class="sig-name descname"><span class="pre">is_active</span></span><a class="headerlink" href="#verbal_tasks.models.ScheduledTask.is_active" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="verbal_tasks.models.ScheduledTask.is_due">
+<span class="sig-name descname"><span class="pre">is_due</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">current_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">datetime</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/verbal_tasks/models.html#ScheduledTask.is_due"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#verbal_tasks.models.ScheduledTask.is_due" title="Link to this definition"></a></dt>
+<dd><p>Determines whether the task is due for execution at current_time.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.ScheduledTask.kwargs_json">
+<span class="sig-name descname"><span class="pre">kwargs_json</span></span><a class="headerlink" href="#verbal_tasks.models.ScheduledTask.kwargs_json" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.ScheduledTask.last_run_at">
+<span class="sig-name descname"><span class="pre">last_run_at</span></span><a class="headerlink" href="#verbal_tasks.models.ScheduledTask.last_run_at" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.ScheduledTask.last_task_record">
+<span class="sig-name descname"><span class="pre">last_task_record</span></span><a class="headerlink" href="#verbal_tasks.models.ScheduledTask.last_task_record" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related object on the forward side of a many-to-one or
+one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.ScheduledTask.last_task_record_id">
+<span class="sig-name descname"><span class="pre">last_task_record_id</span></span><a class="headerlink" href="#verbal_tasks.models.ScheduledTask.last_task_record_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.ScheduledTask.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#verbal_tasks.models.ScheduledTask.name" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.ScheduledTask.objects">
+<span class="sig-name descname"><span class="pre">objects</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;django.db.models.manager.Manager</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#verbal_tasks.models.ScheduledTask.objects" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.ScheduledTask.priority">
+<span class="sig-name descname"><span class="pre">priority</span></span><a class="headerlink" href="#verbal_tasks.models.ScheduledTask.priority" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.ScheduledTask.queue_name">
+<span class="sig-name descname"><span class="pre">queue_name</span></span><a class="headerlink" href="#verbal_tasks.models.ScheduledTask.queue_name" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.ScheduledTask.task_name">
+<span class="sig-name descname"><span class="pre">task_name</span></span><a class="headerlink" href="#verbal_tasks.models.ScheduledTask.task_name" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.ScheduledTask.total_run_count">
+<span class="sig-name descname"><span class="pre">total_run_count</span></span><a class="headerlink" href="#verbal_tasks.models.ScheduledTask.total_run_count" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="verbal_tasks.models.ScheduledTask.trigger">
+<span class="sig-name descname"><span class="pre">trigger</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#verbal_tasks.models.TaskRecord" title="verbal_tasks.models.TaskRecord"><span class="pre">TaskRecord</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/verbal_tasks/models.html#ScheduledTask.trigger"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#verbal_tasks.models.ScheduledTask.trigger" title="Link to this definition"></a></dt>
+<dd><p>Enqueues the task via django.tasks and records execution metadata.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecord">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">verbal_tasks.models.</span></span><span class="sig-name descname"><span class="pre">TaskRecord</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/verbal_tasks/models.html#TaskRecord"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#verbal_tasks.models.TaskRecord" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
+<p>Database record representing an enqueued, executing, or completed background task.
+Serves as the PostgreSQL-backed storage for django.tasks.</p>
+<dl class="py exception">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecord.DoesNotExist">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DoesNotExist</span></span><a class="headerlink" href="#verbal_tasks.models.TaskRecord.DoesNotExist" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectDoesNotExist</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecord.MultipleObjectsReturned">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MultipleObjectsReturned</span></span><a class="headerlink" href="#verbal_tasks.models.TaskRecord.MultipleObjectsReturned" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleObjectsReturned</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecord.NotUpdated">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NotUpdated</span></span><a class="headerlink" href="#verbal_tasks.models.TaskRecord.NotUpdated" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectNotUpdated</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">DatabaseError</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecord.args_json">
+<span class="sig-name descname"><span class="pre">args_json</span></span><a class="headerlink" href="#verbal_tasks.models.TaskRecord.args_json" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecord.attempts">
+<span class="sig-name descname"><span class="pre">attempts</span></span><a class="headerlink" href="#verbal_tasks.models.TaskRecord.attempts" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecord.duration_formatted">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">duration_formatted</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#verbal_tasks.models.TaskRecord.duration_formatted" title="Link to this definition"></a></dt>
+<dd><p>Returns human-readable duration.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecord.duration_ms">
+<span class="sig-name descname"><span class="pre">duration_ms</span></span><a class="headerlink" href="#verbal_tasks.models.TaskRecord.duration_ms" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecord.enqueued_at">
+<span class="sig-name descname"><span class="pre">enqueued_at</span></span><a class="headerlink" href="#verbal_tasks.models.TaskRecord.enqueued_at" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecord.error_traceback">
+<span class="sig-name descname"><span class="pre">error_traceback</span></span><a class="headerlink" href="#verbal_tasks.models.TaskRecord.error_traceback" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecord.finished_at">
+<span class="sig-name descname"><span class="pre">finished_at</span></span><a class="headerlink" href="#verbal_tasks.models.TaskRecord.finished_at" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecord.get_next_by_enqueued_at">
+<span class="sig-name descname"><span class="pre">get_next_by_enqueued_at</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field=&lt;django.db.models.fields.DateTimeField:</span> <span class="pre">enqueued_at&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_next=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#verbal_tasks.models.TaskRecord.get_next_by_enqueued_at" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecord.get_previous_by_enqueued_at">
+<span class="sig-name descname"><span class="pre">get_previous_by_enqueued_at</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field=&lt;django.db.models.fields.DateTimeField:</span> <span class="pre">enqueued_at&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_next=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#verbal_tasks.models.TaskRecord.get_previous_by_enqueued_at" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecord.get_status_display">
+<span class="sig-name descname"><span class="pre">get_status_display</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field=&lt;django.db.models.fields.CharField:</span> <span class="pre">status&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#verbal_tasks.models.TaskRecord.get_status_display" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecord.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#verbal_tasks.models.TaskRecord.id" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecord.input_tokens">
+<span class="sig-name descname"><span class="pre">input_tokens</span></span><a class="headerlink" href="#verbal_tasks.models.TaskRecord.input_tokens" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecord.kwargs_json">
+<span class="sig-name descname"><span class="pre">kwargs_json</span></span><a class="headerlink" href="#verbal_tasks.models.TaskRecord.kwargs_json" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecord.last_attempted_at">
+<span class="sig-name descname"><span class="pre">last_attempted_at</span></span><a class="headerlink" href="#verbal_tasks.models.TaskRecord.last_attempted_at" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecord.metrics_json">
+<span class="sig-name descname"><span class="pre">metrics_json</span></span><a class="headerlink" href="#verbal_tasks.models.TaskRecord.metrics_json" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecord.objects">
+<span class="sig-name descname"><span class="pre">objects</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;django.db.models.manager.Manager</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#verbal_tasks.models.TaskRecord.objects" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecord.output_tokens">
+<span class="sig-name descname"><span class="pre">output_tokens</span></span><a class="headerlink" href="#verbal_tasks.models.TaskRecord.output_tokens" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecord.priority">
+<span class="sig-name descname"><span class="pre">priority</span></span><a class="headerlink" href="#verbal_tasks.models.TaskRecord.priority" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecord.queue_latency_formatted">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">queue_latency_formatted</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#verbal_tasks.models.TaskRecord.queue_latency_formatted" title="Link to this definition"></a></dt>
+<dd><p>Human-readable queue latency.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecord.queue_latency_ms">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">queue_latency_ms</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#verbal_tasks.models.TaskRecord.queue_latency_ms" title="Link to this definition"></a></dt>
+<dd><p>Calculates latency spent waiting in queue before execution started.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecord.queue_name">
+<span class="sig-name descname"><span class="pre">queue_name</span></span><a class="headerlink" href="#verbal_tasks.models.TaskRecord.queue_name" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecord.return_value_json">
+<span class="sig-name descname"><span class="pre">return_value_json</span></span><a class="headerlink" href="#verbal_tasks.models.TaskRecord.return_value_json" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecord.run_after">
+<span class="sig-name descname"><span class="pre">run_after</span></span><a class="headerlink" href="#verbal_tasks.models.TaskRecord.run_after" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecord.scheduled_triggers">
+<span class="sig-name descname"><span class="pre">scheduled_triggers</span></span><a class="headerlink" href="#verbal_tasks.models.TaskRecord.scheduled_triggers" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related objects manager on the reverse side of a
+many-to-one relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
+<p>Most of the implementation is delegated to a dynamically defined manager
+class built by <code class="docutils literal notranslate"><span class="pre">create_reverse_many_to_one_manager()</span></code> defined below.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecord.short_task_name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">short_task_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#verbal_tasks.models.TaskRecord.short_task_name" title="Link to this definition"></a></dt>
+<dd><p>Returns a shortened representation of the task path (e.g. ‘grips.tasks.generate_concept_narrative’).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecord.started_at">
+<span class="sig-name descname"><span class="pre">started_at</span></span><a class="headerlink" href="#verbal_tasks.models.TaskRecord.started_at" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecord.status">
+<span class="sig-name descname"><span class="pre">status</span></span><a class="headerlink" href="#verbal_tasks.models.TaskRecord.status" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecord.task_path">
+<span class="sig-name descname"><span class="pre">task_path</span></span><a class="headerlink" href="#verbal_tasks.models.TaskRecord.task_path" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecord.tokens_formatted">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">tokens_formatted</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#verbal_tasks.models.TaskRecord.tokens_formatted" title="Link to this definition"></a></dt>
+<dd><p>Returns formatted token count breakdown.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecord.total_tokens">
+<span class="sig-name descname"><span class="pre">total_tokens</span></span><a class="headerlink" href="#verbal_tasks.models.TaskRecord.total_tokens" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecord.worker_id">
+<span class="sig-name descname"><span class="pre">worker_id</span></span><a class="headerlink" href="#verbal_tasks.models.TaskRecord.worker_id" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecordStatus">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">verbal_tasks.models.</span></span><span class="sig-name descname"><span class="pre">TaskRecordStatus</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names=&lt;not</span> <span class="pre">given&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qualname=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start=1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary=None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/verbal_tasks/models.html#TaskRecordStatus"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#verbal_tasks.models.TaskRecordStatus" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">TextChoices</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecordStatus.FAILED">
+<span class="sig-name descname"><span class="pre">FAILED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'FAILED'</span></em><a class="headerlink" href="#verbal_tasks.models.TaskRecordStatus.FAILED" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecordStatus.READY">
+<span class="sig-name descname"><span class="pre">READY</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'READY'</span></em><a class="headerlink" href="#verbal_tasks.models.TaskRecordStatus.READY" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecordStatus.RUNNING">
+<span class="sig-name descname"><span class="pre">RUNNING</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'RUNNING'</span></em><a class="headerlink" href="#verbal_tasks.models.TaskRecordStatus.RUNNING" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.models.TaskRecordStatus.SUCCESSFUL">
+<span class="sig-name descname"><span class="pre">SUCCESSFUL</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'SUCCESSFUL'</span></em><a class="headerlink" href="#verbal_tasks.models.TaskRecordStatus.SUCCESSFUL" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="verbal_tasks.models.cron_matches">
+<span class="sig-prename descclassname"><span class="pre">verbal_tasks.models.</span></span><span class="sig-name descname"><span class="pre">cron_matches</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cron_expr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">datetime</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/verbal_tasks/models.html#cron_matches"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#verbal_tasks.models.cron_matches" title="Link to this definition"></a></dt>
+<dd><p>Evaluates whether a datetime matches a standard 5-field cron expression
+(minute hour day_of_month month day_of_week).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="verbal_tasks.models.match_cron_field">
+<span class="sig-prename descclassname"><span class="pre">verbal_tasks.models.</span></span><span class="sig-name descname"><span class="pre">match_cron_field</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">field_pattern</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_val</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_val</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_dow</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/verbal_tasks/models.html#match_cron_field"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#verbal_tasks.models.match_cron_field" title="Link to this definition"></a></dt>
+<dd><p>Matches an integer value against a standard cron field expression.</p>
+</dd></dl>
+
+<dl class="py class" id="module-verbal_tasks.task_backend">
+<dt class="sig sig-object py" id="verbal_tasks.task_backend.DatabaseTaskBackend">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">verbal_tasks.task_backend.</span></span><span class="sig-name descname"><span class="pre">DatabaseTaskBackend</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">alias</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/verbal_tasks/task_backend.html#DatabaseTaskBackend"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#verbal_tasks.task_backend.DatabaseTaskBackend" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseTaskBackend</span></code></p>
+<p>PostgreSQL-backed task backend for Django Tasks.
+Stores enqueued tasks and results in the verbal.TaskRecord table.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="verbal_tasks.task_backend.DatabaseTaskBackend.enqueue">
+<span class="sig-name descname"><span class="pre">enqueue</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">task</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/verbal_tasks/task_backend.html#DatabaseTaskBackend.enqueue"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#verbal_tasks.task_backend.DatabaseTaskBackend.enqueue" title="Link to this definition"></a></dt>
+<dd><p>Queue up a task to be executed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="verbal_tasks.task_backend.DatabaseTaskBackend.get_result">
+<span class="sig-name descname"><span class="pre">get_result</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">TaskResult</span></span></span><a class="reference internal" href="_modules/verbal_tasks/task_backend.html#DatabaseTaskBackend.get_result"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#verbal_tasks.task_backend.DatabaseTaskBackend.get_result" title="Link to this definition"></a></dt>
+<dd><p>Retrieve a task result by id.</p>
+<p>Raise TaskResultDoesNotExist if such result does not exist.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.task_backend.DatabaseTaskBackend.supports_async_task">
+<span class="sig-name descname"><span class="pre">supports_async_task</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#verbal_tasks.task_backend.DatabaseTaskBackend.supports_async_task" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.task_backend.DatabaseTaskBackend.supports_defer">
+<span class="sig-name descname"><span class="pre">supports_defer</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#verbal_tasks.task_backend.DatabaseTaskBackend.supports_defer" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.task_backend.DatabaseTaskBackend.supports_get_result">
+<span class="sig-name descname"><span class="pre">supports_get_result</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#verbal_tasks.task_backend.DatabaseTaskBackend.supports_get_result" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="verbal_tasks.task_backend.DatabaseTaskBackend.supports_priority">
+<span class="sig-name descname"><span class="pre">supports_priority</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#verbal_tasks.task_backend.DatabaseTaskBackend.supports_priority" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="llm_api_app.html" class="btn btn-neutral float-left" title="LLM API - Local Inference, Proxy Routing &amp; Hardware-Aware Serving" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="sandbox_manager_app.html" class="btn btn-neutral float-right" title="Sandbox Manager - Isolated Python Execution Environment" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Andrew Cruickshank.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

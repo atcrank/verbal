@@ -8,6 +8,7 @@
   <title>llm_api.ai_service &mdash; reason 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=aaf24e6f" />
 
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
@@ -53,7 +54,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../using_ollama.html">Ollama as Local AI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_trials.html">Demo UI Interactive Trials &amp; Feature Walkthroughs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_trials.html">Demo UI Empirical Trials &amp; Verification Reports</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../tests.html">Testing</a></li>
 </ul>
 
@@ -275,34 +276,79 @@
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;🛑 No Local AI Model selected in System Configuration. Bypassing PyTorch to save VRAM.&#39;</span><span class="p">)</span>
             <span class="k">return</span>
 
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Loading Heavy AI models into VRAM...&#39;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Loading AI model </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">model_id</span><span class="si">}</span><span class="s1"> into memory...&#39;</span><span class="p">)</span>
 
+        <span class="n">quant_mode</span> <span class="o">=</span> <span class="s2">&quot;nf4&quot;</span>
+        <span class="n">compute_dtype_pref</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemConfiguration</span>
+            <span class="n">config</span> <span class="o">=</span> <span class="n">SystemConfiguration</span><span class="o">.</span><span class="n">get_solo</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">config</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">active_local_model</span><span class="p">:</span>
+                <span class="n">quant_mode</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">active_local_model</span><span class="p">,</span> <span class="s1">&#39;quantization_mode&#39;</span><span class="p">,</span> <span class="s1">&#39;nf4&#39;</span><span class="p">)</span>
+                <span class="n">compute_dtype_pref</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">active_local_model</span><span class="p">,</span> <span class="s1">&#39;compute_dtype&#39;</span><span class="p">,</span> <span class="s1">&#39;auto&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="c1"># Determine compute dtype</span>
         <span class="n">compute_dtype</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">float16</span>
-        <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="ow">and</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_bf16_supported</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">compute_dtype_pref</span> <span class="o">==</span> <span class="s2">&quot;bfloat16&quot;</span><span class="p">:</span>
             <span class="n">compute_dtype</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">bfloat16</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Hardware supports bfloat16, using it for compute.&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">compute_dtype_pref</span> <span class="o">==</span> <span class="s2">&quot;float32&quot;</span><span class="p">:</span>
+            <span class="n">compute_dtype</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">float32</span>
+        <span class="k">elif</span> <span class="n">compute_dtype_pref</span> <span class="o">==</span> <span class="s2">&quot;float16&quot;</span><span class="p">:</span>
+            <span class="n">compute_dtype</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">float16</span>
+        <span class="k">elif</span> <span class="n">compute_dtype_pref</span> <span class="o">==</span> <span class="s2">&quot;auto&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="ow">and</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_bf16_supported</span><span class="p">():</span>
+                <span class="n">compute_dtype</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">bfloat16</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Hardware supports bfloat16, using it for compute.&#39;</span><span class="p">)</span>
 
-        <span class="n">quantization_config</span> <span class="o">=</span> <span class="n">BitsAndBytesConfig</span><span class="p">(</span>
-            <span class="n">load_in_4bit</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">bnb_4bit_quant_type</span><span class="o">=</span><span class="s2">&quot;nf4&quot;</span><span class="p">,</span>
-            <span class="n">bnb_4bit_use_double_quant</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">bnb_4bit_compute_dtype</span> <span class="o">=</span> <span class="n">compute_dtype</span>
-        <span class="p">)</span>
+        <span class="c1"># Configure Quantization</span>
+        <span class="n">quantization_config</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">torch_dtype</span> <span class="o">=</span> <span class="n">compute_dtype</span>
+        <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">quant_mode</span> <span class="o">==</span> <span class="s2">&quot;nf4&quot;</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Applying BitsAndBytes 4-bit NormalFloat (NF4) quantization.&quot;</span><span class="p">)</span>
+                <span class="n">quantization_config</span> <span class="o">=</span> <span class="n">BitsAndBytesConfig</span><span class="p">(</span>
+                    <span class="n">load_in_4bit</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">bnb_4bit_quant_type</span><span class="o">=</span><span class="s2">&quot;nf4&quot;</span><span class="p">,</span>
+                    <span class="n">bnb_4bit_use_double_quant</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">bnb_4bit_compute_dtype</span><span class="o">=</span><span class="n">compute_dtype</span>
+                <span class="p">)</span>
+            <span class="k">elif</span> <span class="n">quant_mode</span> <span class="o">==</span> <span class="s2">&quot;fp4&quot;</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Applying BitsAndBytes 4-bit Float (FP4) quantization.&quot;</span><span class="p">)</span>
+                <span class="n">quantization_config</span> <span class="o">=</span> <span class="n">BitsAndBytesConfig</span><span class="p">(</span>
+                    <span class="n">load_in_4bit</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">bnb_4bit_quant_type</span><span class="o">=</span><span class="s2">&quot;fp4&quot;</span><span class="p">,</span>
+                    <span class="n">bnb_4bit_use_double_quant</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">bnb_4bit_compute_dtype</span><span class="o">=</span><span class="n">compute_dtype</span>
+                <span class="p">)</span>
+            <span class="k">elif</span> <span class="n">quant_mode</span> <span class="o">==</span> <span class="s2">&quot;int8&quot;</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Applying BitsAndBytes 8-bit quantization.&quot;</span><span class="p">)</span>
+                <span class="n">quantization_config</span> <span class="o">=</span> <span class="n">BitsAndBytesConfig</span><span class="p">(</span>
+                    <span class="n">load_in_8bit</span><span class="o">=</span><span class="kc">True</span>
+                <span class="p">)</span>
+            <span class="k">elif</span> <span class="n">quant_mode</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;none&quot;</span><span class="p">,</span> <span class="s2">&quot;awq&quot;</span><span class="p">,</span> <span class="s2">&quot;gptq&quot;</span><span class="p">]:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loading model without BitsAndBytes quantization (mode: </span><span class="si">{</span><span class="n">quant_mode</span><span class="si">}</span><span class="s2">, dtype: </span><span class="si">{</span><span class="n">torch_dtype</span><span class="si">}</span><span class="s2">).&quot;</span><span class="p">)</span>
+                <span class="n">quantization_config</span> <span class="o">=</span> <span class="kc">None</span>
 
+        <span class="n">device_map</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span>
+        <span class="n">load_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;device_map&quot;</span><span class="p">:</span> <span class="n">device_map</span><span class="p">,</span>
+            <span class="s2">&quot;low_cpu_mem_usage&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;token&quot;</span><span class="p">:</span> <span class="n">token</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="n">quantization_config</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">load_kwargs</span><span class="p">[</span><span class="s2">&quot;quantization_config&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">quantization_config</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">load_kwargs</span><span class="p">[</span><span class="s2">&quot;torch_dtype&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch_dtype</span>
 
-        <span class="c1"># Ensure the model knows this too</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">AutoModelForCausalLM</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model_id</span><span class="p">,</span>
-            <span class="c1"># dtype=torch.float16,</span>
-            <span class="n">device_map</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
-            <span class="n">quantization_config</span><span class="o">=</span><span class="n">quantization_config</span><span class="p">,</span>
-            <span class="n">low_cpu_mem_usage</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">token</span><span class="o">=</span><span class="n">token</span>
+            <span class="o">**</span><span class="n">load_kwargs</span>
         <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">pad_token_id</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">,</span> <span class="s1">&#39;pad_token_id&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">eos_token_id</span><span class="p">)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;✅ LLM model loaded successfully.&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)]]))</span>
-
 
         <span class="bp">self</span><span class="o">.</span><span class="n">outline_pipeline</span> <span class="o">=</span> <span class="n">outline_models</span><span class="o">.</span><span class="n">Transformers</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;✅ Outline llm wrapper loaded&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outline_pipeline</span><span class="p">)]]))</span>
@@ -323,8 +369,10 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">unload_models</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Frees VRAM for model switching.&quot;&quot;&quot;</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;🗑️ Unloading AI models...&#39;</span><span class="p">)</span>
-        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span>
-        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">outline_pipeline</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;model&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;outline_pipeline&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">outline_pipeline</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">outline_pipeline</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_generator_cache</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">outline_pipeline</span> <span class="o">=</span> <span class="kc">None</span>
@@ -332,6 +380,8 @@
         <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
             <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">empty_cache</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="p">,</span> <span class="s1">&#39;ipc_collect&#39;</span><span class="p">):</span>
+                <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">ipc_collect</span><span class="p">()</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;✅ VRAM cleared.&#39;</span><span class="p">)</span></div>
 
 

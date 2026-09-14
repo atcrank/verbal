@@ -1,0 +1,746 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grobid Client - Deterministic Scientific PDF Parsing &amp; Citation Extraction &mdash; reason 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=aaf24e6f" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=2709fde1"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Background Resources - Retrieval-Augmented Generation &amp; Document Ingestion" href="background_resources_app.html" />
+    <link rel="prev" title="Sandbox Manager - Isolated Python Execution Environment" href="sandbox_manager_app.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            reason
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="llm_api_app.html">LLM API - Local Inference, Proxy Routing &amp; Hardware-Aware Serving</a></li>
+<li class="toctree-l1"><a class="reference internal" href="verbal_tasks_app.html">Verbal Tasks - Database-Backed Asynchronous Execution &amp; Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sandbox_manager_app.html">Sandbox Manager - Isolated Python Execution Environment</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Grobid Client - Deterministic Scientific PDF Parsing &amp; Citation Extraction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#purpose-motivating-problem">1. Purpose &amp; Motivating Problem</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#why-raw-text-extraction-fails-on-academic-pdfs">Why Raw Text Extraction Fails on Academic PDFs</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#architecture-mechanism">2. Architecture &amp; Mechanism</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#grobid-microservice-integration">GROBID Microservice Integration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#key-data-models">Key Data Models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#coordination-with-rag">Coordination with RAG</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#observability-health-signals">3. Observability &amp; Health Signals</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#how-to-know-the-grobid-parser-is-working-well">How to Know the GROBID Parser is Working Well</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#diagnostic-tips-failure-modes">4. Diagnostic Tips &amp; Failure Modes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#when-the-parser-misses-the-mark-how-to-tune">When the Parser Misses the Mark &amp; How to Tune</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-grobid_client.models">Module Reference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#grobid_client.models.Citation"><code class="docutils literal notranslate"><span class="pre">Citation</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Citation.DoesNotExist"><code class="docutils literal notranslate"><span class="pre">Citation.DoesNotExist</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Citation.MultipleObjectsReturned"><code class="docutils literal notranslate"><span class="pre">Citation.MultipleObjectsReturned</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Citation.NotUpdated"><code class="docutils literal notranslate"><span class="pre">Citation.NotUpdated</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Citation.context_text"><code class="docutils literal notranslate"><span class="pre">Citation.context_text</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Citation.id"><code class="docutils literal notranslate"><span class="pre">Citation.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Citation.objects"><code class="docutils literal notranslate"><span class="pre">Citation.objects</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Citation.raw_reference_string"><code class="docutils literal notranslate"><span class="pre">Citation.raw_reference_string</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Citation.source_reference"><code class="docutils literal notranslate"><span class="pre">Citation.source_reference</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Citation.source_reference_id"><code class="docutils literal notranslate"><span class="pre">Citation.source_reference_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Citation.target_reference"><code class="docutils literal notranslate"><span class="pre">Citation.target_reference</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Citation.target_reference_id"><code class="docutils literal notranslate"><span class="pre">Citation.target_reference_id</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#grobid_client.models.CitationGraphExplorer"><code class="docutils literal notranslate"><span class="pre">CitationGraphExplorer</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.CitationGraphExplorer.DoesNotExist"><code class="docutils literal notranslate"><span class="pre">CitationGraphExplorer.DoesNotExist</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.CitationGraphExplorer.MultipleObjectsReturned"><code class="docutils literal notranslate"><span class="pre">CitationGraphExplorer.MultipleObjectsReturned</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.CitationGraphExplorer.NotUpdated"><code class="docutils literal notranslate"><span class="pre">CitationGraphExplorer.NotUpdated</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.CitationGraphExplorer.id"><code class="docutils literal notranslate"><span class="pre">CitationGraphExplorer.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.CitationGraphExplorer.objects"><code class="docutils literal notranslate"><span class="pre">CitationGraphExplorer.objects</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#grobid_client.models.Reference"><code class="docutils literal notranslate"><span class="pre">Reference</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Reference.DoesNotExist"><code class="docutils literal notranslate"><span class="pre">Reference.DoesNotExist</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Reference.MultipleObjectsReturned"><code class="docutils literal notranslate"><span class="pre">Reference.MultipleObjectsReturned</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Reference.NotUpdated"><code class="docutils literal notranslate"><span class="pre">Reference.NotUpdated</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Reference.abstract"><code class="docutils literal notranslate"><span class="pre">Reference.abstract</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Reference.authors"><code class="docutils literal notranslate"><span class="pre">Reference.authors</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Reference.document"><code class="docutils literal notranslate"><span class="pre">Reference.document</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Reference.document_id"><code class="docutils literal notranslate"><span class="pre">Reference.document_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Reference.doi"><code class="docutils literal notranslate"><span class="pre">Reference.doi</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Reference.extended_metadata"><code class="docutils literal notranslate"><span class="pre">Reference.extended_metadata</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Reference.get_next_by_parsed_at"><code class="docutils literal notranslate"><span class="pre">Reference.get_next_by_parsed_at()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Reference.get_previous_by_parsed_at"><code class="docutils literal notranslate"><span class="pre">Reference.get_previous_by_parsed_at()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Reference.id"><code class="docutils literal notranslate"><span class="pre">Reference.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Reference.incoming_citations"><code class="docutils literal notranslate"><span class="pre">Reference.incoming_citations</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Reference.issue"><code class="docutils literal notranslate"><span class="pre">Reference.issue</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Reference.journal"><code class="docutils literal notranslate"><span class="pre">Reference.journal</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Reference.objects"><code class="docutils literal notranslate"><span class="pre">Reference.objects</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Reference.outgoing_citations"><code class="docutils literal notranslate"><span class="pre">Reference.outgoing_citations</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Reference.pages"><code class="docutils literal notranslate"><span class="pre">Reference.pages</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Reference.parsed_at"><code class="docutils literal notranslate"><span class="pre">Reference.parsed_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Reference.publication_date"><code class="docutils literal notranslate"><span class="pre">Reference.publication_date</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Reference.publisher"><code class="docutils literal notranslate"><span class="pre">Reference.publisher</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Reference.save"><code class="docutils literal notranslate"><span class="pre">Reference.save()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Reference.tei_xml"><code class="docutils literal notranslate"><span class="pre">Reference.tei_xml</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Reference.title"><code class="docutils literal notranslate"><span class="pre">Reference.title</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Reference.volume"><code class="docutils literal notranslate"><span class="pre">Reference.volume</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Reference.year"><code class="docutils literal notranslate"><span class="pre">Reference.year</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#grobid_client.tasks.CandidateEvaluation"><code class="docutils literal notranslate"><span class="pre">CandidateEvaluation</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.tasks.CandidateEvaluation.authors"><code class="docutils literal notranslate"><span class="pre">CandidateEvaluation.authors</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.tasks.CandidateEvaluation.doi"><code class="docutils literal notranslate"><span class="pre">CandidateEvaluation.doi</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.tasks.CandidateEvaluation.model_config"><code class="docutils literal notranslate"><span class="pre">CandidateEvaluation.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.tasks.CandidateEvaluation.title"><code class="docutils literal notranslate"><span class="pre">CandidateEvaluation.title</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.tasks.CandidateEvaluation.year"><code class="docutils literal notranslate"><span class="pre">CandidateEvaluation.year</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#grobid_client.tasks.DocumentMetadataExtraction"><code class="docutils literal notranslate"><span class="pre">DocumentMetadataExtraction</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.tasks.DocumentMetadataExtraction.abstract"><code class="docutils literal notranslate"><span class="pre">DocumentMetadataExtraction.abstract</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.tasks.DocumentMetadataExtraction.authors"><code class="docutils literal notranslate"><span class="pre">DocumentMetadataExtraction.authors</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.tasks.DocumentMetadataExtraction.doi"><code class="docutils literal notranslate"><span class="pre">DocumentMetadataExtraction.doi</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.tasks.DocumentMetadataExtraction.journal"><code class="docutils literal notranslate"><span class="pre">DocumentMetadataExtraction.journal</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.tasks.DocumentMetadataExtraction.model_config"><code class="docutils literal notranslate"><span class="pre">DocumentMetadataExtraction.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.tasks.DocumentMetadataExtraction.publisher"><code class="docutils literal notranslate"><span class="pre">DocumentMetadataExtraction.publisher</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.tasks.DocumentMetadataExtraction.title"><code class="docutils literal notranslate"><span class="pre">DocumentMetadataExtraction.title</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.tasks.DocumentMetadataExtraction.year"><code class="docutils literal notranslate"><span class="pre">DocumentMetadataExtraction.year</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#grobid_client.tasks.grobid_tei_to_semantic_chunks"><code class="docutils literal notranslate"><span class="pre">grobid_tei_to_semantic_chunks()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#grobid_client.api.process_pdf_with_grobid"><code class="docutils literal notranslate"><span class="pre">process_pdf_with_grobid()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="background_resources_app.html">Background Resources - Retrieval-Augmented Generation &amp; Document Ingestion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grips_app.html">Grips - Structured Knowledge Graph &amp; Propositional Claims</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metacognition_app.html">Metacognition - Cognitive Blueprints, Agentic Workflows &amp; Self-Evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmarking_app.html">Benchmarking - Automated Evaluation, Synthetic Generation &amp; LoRA Flywheels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo_ui_app.html">Demo UI - Empirical Research &amp; Cognitive Workbench</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="using_ollama.html">Ollama as Local AI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo_ui_trials.html">Demo UI Empirical Trials &amp; Verification Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests.html">Testing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">reason</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Grobid Client - Deterministic Scientific PDF Parsing &amp; Citation Extraction</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/grobid_client_app.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="grobid-client-deterministic-scientific-pdf-parsing-citation-extraction">
+<h1>Grobid Client - Deterministic Scientific PDF Parsing &amp; Citation Extraction<a class="headerlink" href="#grobid-client-deterministic-scientific-pdf-parsing-citation-extraction" title="Link to this heading"></a></h1>
+<p>The <strong>Grobid Client</strong> application integrates the specialized open-source <a class="reference external" href="https://github.com/kermitt2/grobid">GROBID</a> (GeneRation Of BIbliographic Data) service into Verbal. It performs deterministic structural parsing of academic PDF research papers into structured TEI XML, extracting publication metadata (titles, authors, abstracts, journals, DOIs) and constructing relational citation graphs.</p>
+<nav class="contents local" id="table-of-contents">
+<p class="topic-title">Table of Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#purpose-motivating-problem" id="id1">1. Purpose &amp; Motivating Problem</a></p>
+<ul>
+<li><p><a class="reference internal" href="#why-raw-text-extraction-fails-on-academic-pdfs" id="id2">Why Raw Text Extraction Fails on Academic PDFs</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#architecture-mechanism" id="id3">2. Architecture &amp; Mechanism</a></p>
+<ul>
+<li><p><a class="reference internal" href="#grobid-microservice-integration" id="id4">GROBID Microservice Integration</a></p></li>
+<li><p><a class="reference internal" href="#key-data-models" id="id5">Key Data Models</a></p></li>
+<li><p><a class="reference internal" href="#coordination-with-rag" id="id6">Coordination with RAG</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#observability-health-signals" id="id7">3. Observability &amp; Health Signals</a></p>
+<ul>
+<li><p><a class="reference internal" href="#how-to-know-the-grobid-parser-is-working-well" id="id8">How to Know the GROBID Parser is Working Well</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#diagnostic-tips-failure-modes" id="id9">4. Diagnostic Tips &amp; Failure Modes</a></p>
+<ul>
+<li><p><a class="reference internal" href="#when-the-parser-misses-the-mark-how-to-tune" id="id10">When the Parser Misses the Mark &amp; How to Tune</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#module-grobid_client.models" id="id11">Module Reference</a></p></li>
+</ul>
+</nav>
+<section id="purpose-motivating-problem">
+<h2><a class="toc-backref" href="#id1" role="doc-backlink">1. Purpose &amp; Motivating Problem</a><a class="headerlink" href="#purpose-motivating-problem" title="Link to this heading"></a></h2>
+<section id="why-raw-text-extraction-fails-on-academic-pdfs">
+<h3><a class="toc-backref" href="#id2" role="doc-backlink">Why Raw Text Extraction Fails on Academic PDFs</a><a class="headerlink" href="#why-raw-text-extraction-fails-on-academic-pdfs" title="Link to this heading"></a></h3>
+<p>Scientific papers are visually dense documents characterized by multi-column layouts, marginal notes, embedded formulas, figure captions, author affiliations, and extensive bibliographic lists.</p>
+<p>Standard PDF text extractors (such as <cite>pypdf</cite> or <cite>pdfminer</cite>) read character streams geometrically. On multi-column academic papers, they produce severe failure modes:</p>
+<ul class="simple">
+<li><p><strong>Column Interleaving</strong>: Reading across columns produces jumbled sentences where left-hand and right-hand paragraphs merge into nonsensical word salads.</p></li>
+<li><p><strong>Header and Footnote Noise</strong>: Running headers, page numbers, and license disclaimers are repeatedly injected into paragraph text, polluting downstream vector embeddings.</p></li>
+<li><p><strong>Unstructured Bibliography</strong>: Reference lists are scraped as raw strings without separating author names, publication years, or DOIs, preventing automated cross-referencing.</p></li>
+</ul>
+<p>Attempting to fix these structural failures using raw LLM prompts is computationally expensive, prone to hallucinated titles, and token-inefficient. <strong>GROBID</strong> solves this by applying deterministic sequence-labeling models trained specifically on academic typography.</p>
+</section>
+</section>
+<section id="architecture-mechanism">
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">2. Architecture &amp; Mechanism</a><a class="headerlink" href="#architecture-mechanism" title="Link to this heading"></a></h2>
+<section id="grobid-microservice-integration">
+<h3><a class="toc-backref" href="#id4" role="doc-backlink">GROBID Microservice Integration</a><a class="headerlink" href="#grobid-microservice-integration" title="Link to this heading"></a></h3>
+<p>The service operates as a containerized microservice defined in [docker-compose.yml](<a class="reference external" href="file:///home/crank/coding/antigrav/verbal/docker-compose.yml">file:///home/crank/coding/antigrav/verbal/docker-compose.yml</a>) (<cite>verbal_grobid</cite> on port 8070, using image <cite>grobid/grobid:0.8.1</cite>):</p>
+<ol class="arabic simple">
+<li><p>When a research PDF is uploaded to <cite>background_resources</cite>, a background task in <cite>grobid_client.tasks</cite> sends the binary file to GROBID’s <cite>/api/processFulltextDocument</cite> endpoint.</p></li>
+<li><p>GROBID returns standard <strong>TEI XML</strong> (Text Encoding Initiative), cleanly separating front-matter metadata, body section headings, paragraph blocks, and bibliography entries.</p></li>
+<li><p>The parser extracts the structured elements and populates relational database records.</p></li>
+</ol>
+</section>
+<section id="key-data-models">
+<h3><a class="toc-backref" href="#id5" role="doc-backlink">Key Data Models</a><a class="headerlink" href="#key-data-models" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>``Reference``</strong>: Represents the parsed metadata for a document in the library. Stores the raw cached <cite>tei_xml</cite>, cleaned title, comma-separated authors, abstract, publication journal, year, volume, issue, page numbers, and resolved DOI.</p></li>
+<li><p><strong>``Citation``</strong>: A directed graph edge representing one document citing another (<cite>source_reference</cite> $rightarrow$ <cite>target_reference</cite>). When a paper cites another document already present in the local database, an explicit relational link is established.</p></li>
+</ul>
+</section>
+<section id="coordination-with-rag">
+<h3><a class="toc-backref" href="#id6" role="doc-backlink">Coordination with RAG</a><a class="headerlink" href="#coordination-with-rag" title="Link to this heading"></a></h3>
+<p>The structured TEI XML directly informs <cite>background_resources</cite>:</p>
+<ul class="simple">
+<li><p>The extracted title and abstract provide high-signal concept summaries for <cite>ConceptNode</cite> generation in <cite>grips</cite>.</p></li>
+<li><p>Paragraph bodies are chunked respecting section boundaries rather than arbitrary character counts.</p></li>
+<li><p>The citation graph provides a third retrieval path alongside dense semantic search and lexical matching.</p></li>
+</ul>
+</section>
+</section>
+<section id="observability-health-signals">
+<h2><a class="toc-backref" href="#id7" role="doc-backlink">3. Observability &amp; Health Signals</a><a class="headerlink" href="#observability-health-signals" title="Link to this heading"></a></h2>
+<section id="how-to-know-the-grobid-parser-is-working-well">
+<h3><a class="toc-backref" href="#id8" role="doc-backlink">How to Know the GROBID Parser is Working Well</a><a class="headerlink" href="#how-to-know-the-grobid-parser-is-working-well" title="Link to this heading"></a></h3>
+<ol class="arabic simple">
+<li><p><strong>Populated Metadata Fields</strong>:
+In Django Admin under <strong>Grobid Client &gt; References</strong>, inspect parsed documents. A successful parse exhibits:
+* <strong>Title</strong>: Accurately matches the paper’s title without trailing author names or institutional addresses.
+* <strong>Authors</strong>: Cleanly formatted comma-delimited author list (e.g., <em>Li, Wei, Chen, Jing, Wang, Hua</em>).
+* <strong>DOI</strong>: Contains a valid, resolvable DOI string (e.g., <cite>10.1145/3544548.3581388</cite>).</p></li>
+<li><p><strong>Citation Edge Creation</strong>:
+For documents containing rich bibliographies, inspecting the <strong>Citations</strong> table reveals outgoing citation links resolving to target publications.</p></li>
+<li><p><strong>Container Responsiveness</strong>:
+Pinging <cite>http://127.0.0.1:8070/api/isalive</cite> returns an immediate HTTP 200 confirming the GROBID JVM service is ready.</p></li>
+</ol>
+</section>
+</section>
+<section id="diagnostic-tips-failure-modes">
+<h2><a class="toc-backref" href="#id9" role="doc-backlink">4. Diagnostic Tips &amp; Failure Modes</a><a class="headerlink" href="#diagnostic-tips-failure-modes" title="Link to this heading"></a></h2>
+<section id="when-the-parser-misses-the-mark-how-to-tune">
+<h3><a class="toc-backref" href="#id10" role="doc-backlink">When the Parser Misses the Mark &amp; How to Tune</a><a class="headerlink" href="#when-the-parser-misses-the-mark-how-to-tune" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Scanned or Image-Only PDFs (Empty TEI Output)</strong>:
+* <em>Hazard</em>: GROBID requires an embedded digital text layer. When presented with scanned historical papers or faxed documents, it returns empty body text.
+* <em>Remedy</em>: Pre-process image-based PDFs with an OCR tool (e.g. <cite>tesseract</cite> or <cite>ocrmypdf</cite>) before importing them into Verbal, or configure the RAG pipeline’s fallback text extractor.</p></li>
+<li><p><strong>GROBID Service Timeouts on Massive Monographs</strong>:
+* <em>Hazard</em>: Processing a 300-page book or thesis through GROBID fulltext extraction can exceed the HTTP client timeout (defaulting to 60–120s).
+* <em>Remedy</em>: For long monographs, split the PDF into individual chapters, or configure the background task to call <cite>/api/processHeaderDocument</cite> rather than parsing all 300 pages of body text at once.</p></li>
+<li><p><strong>Missing Target References in Citation Graph</strong>:
+* <em>Hazard</em>: A paper lists 40 citations, but no <code class="docutils literal notranslate"><span class="pre">Citation</span></code> records appear in the database.
+* <em>Explanation</em>: The system only creates <cite>Citation</cite> database rows when the cited work matches an existing <cite>Reference</cite> already present in your local library. If the cited papers have not been imported, the raw citation is stored in <cite>extended_metadata</cite> without a relational database edge.</p></li>
+</ul>
+</section>
+</section>
+<section id="module-grobid_client.models">
+<span id="module-reference"></span><h2><a class="toc-backref" href="#id11" role="doc-backlink">Module Reference</a><a class="headerlink" href="#module-grobid_client.models" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="grobid_client.models.Citation">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grobid_client.models.</span></span><span class="sig-name descname"><span class="pre">Citation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grobid_client/models.html#Citation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grobid_client.models.Citation" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
+<p>A directed edge representing one document citing another.</p>
+<dl class="py exception">
+<dt class="sig sig-object py" id="grobid_client.models.Citation.DoesNotExist">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DoesNotExist</span></span><a class="headerlink" href="#grobid_client.models.Citation.DoesNotExist" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectDoesNotExist</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="grobid_client.models.Citation.MultipleObjectsReturned">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MultipleObjectsReturned</span></span><a class="headerlink" href="#grobid_client.models.Citation.MultipleObjectsReturned" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleObjectsReturned</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="grobid_client.models.Citation.NotUpdated">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NotUpdated</span></span><a class="headerlink" href="#grobid_client.models.Citation.NotUpdated" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectNotUpdated</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">DatabaseError</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.models.Citation.context_text">
+<span class="sig-name descname"><span class="pre">context_text</span></span><a class="headerlink" href="#grobid_client.models.Citation.context_text" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.models.Citation.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#grobid_client.models.Citation.id" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.models.Citation.objects">
+<span class="sig-name descname"><span class="pre">objects</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;django.db.models.manager.Manager</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#grobid_client.models.Citation.objects" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.models.Citation.raw_reference_string">
+<span class="sig-name descname"><span class="pre">raw_reference_string</span></span><a class="headerlink" href="#grobid_client.models.Citation.raw_reference_string" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.models.Citation.source_reference">
+<span class="sig-name descname"><span class="pre">source_reference</span></span><a class="headerlink" href="#grobid_client.models.Citation.source_reference" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related object on the forward side of a many-to-one or
+one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.models.Citation.source_reference_id">
+<span class="sig-name descname"><span class="pre">source_reference_id</span></span><a class="headerlink" href="#grobid_client.models.Citation.source_reference_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.models.Citation.target_reference">
+<span class="sig-name descname"><span class="pre">target_reference</span></span><a class="headerlink" href="#grobid_client.models.Citation.target_reference" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related object on the forward side of a many-to-one or
+one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.models.Citation.target_reference_id">
+<span class="sig-name descname"><span class="pre">target_reference_id</span></span><a class="headerlink" href="#grobid_client.models.Citation.target_reference_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="grobid_client.models.CitationGraphExplorer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grobid_client.models.</span></span><span class="sig-name descname"><span class="pre">CitationGraphExplorer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grobid_client/models.html#CitationGraphExplorer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grobid_client.models.CitationGraphExplorer" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
+<p>Dummy model to hook the Graph Explorer into the admin.</p>
+<dl class="py exception">
+<dt class="sig sig-object py" id="grobid_client.models.CitationGraphExplorer.DoesNotExist">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DoesNotExist</span></span><a class="headerlink" href="#grobid_client.models.CitationGraphExplorer.DoesNotExist" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectDoesNotExist</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="grobid_client.models.CitationGraphExplorer.MultipleObjectsReturned">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MultipleObjectsReturned</span></span><a class="headerlink" href="#grobid_client.models.CitationGraphExplorer.MultipleObjectsReturned" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleObjectsReturned</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="grobid_client.models.CitationGraphExplorer.NotUpdated">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NotUpdated</span></span><a class="headerlink" href="#grobid_client.models.CitationGraphExplorer.NotUpdated" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectNotUpdated</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">DatabaseError</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.models.CitationGraphExplorer.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#grobid_client.models.CitationGraphExplorer.id" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.models.CitationGraphExplorer.objects">
+<span class="sig-name descname"><span class="pre">objects</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;django.db.models.manager.Manager</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#grobid_client.models.CitationGraphExplorer.objects" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="grobid_client.models.Reference">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grobid_client.models.</span></span><span class="sig-name descname"><span class="pre">Reference</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grobid_client/models.html#Reference"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grobid_client.models.Reference" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
+<p>Parsed metadata for a specific document in our library.</p>
+<dl class="py exception">
+<dt class="sig sig-object py" id="grobid_client.models.Reference.DoesNotExist">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DoesNotExist</span></span><a class="headerlink" href="#grobid_client.models.Reference.DoesNotExist" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectDoesNotExist</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="grobid_client.models.Reference.MultipleObjectsReturned">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MultipleObjectsReturned</span></span><a class="headerlink" href="#grobid_client.models.Reference.MultipleObjectsReturned" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleObjectsReturned</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="grobid_client.models.Reference.NotUpdated">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NotUpdated</span></span><a class="headerlink" href="#grobid_client.models.Reference.NotUpdated" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectNotUpdated</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">DatabaseError</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.models.Reference.abstract">
+<span class="sig-name descname"><span class="pre">abstract</span></span><a class="headerlink" href="#grobid_client.models.Reference.abstract" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.models.Reference.authors">
+<span class="sig-name descname"><span class="pre">authors</span></span><a class="headerlink" href="#grobid_client.models.Reference.authors" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.models.Reference.document">
+<span class="sig-name descname"><span class="pre">document</span></span><a class="headerlink" href="#grobid_client.models.Reference.document" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related object on the forward side of a one-to-one
+relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Restaurant</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">place</span> <span class="o">=</span> <span class="n">OneToOneField</span><span class="p">(</span><span class="n">Place</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;restaurant&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Restaurant.place</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardOneToOneDescriptor</span></code> instance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.models.Reference.document_id">
+<span class="sig-name descname"><span class="pre">document_id</span></span><a class="headerlink" href="#grobid_client.models.Reference.document_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.models.Reference.doi">
+<span class="sig-name descname"><span class="pre">doi</span></span><a class="headerlink" href="#grobid_client.models.Reference.doi" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.models.Reference.extended_metadata">
+<span class="sig-name descname"><span class="pre">extended_metadata</span></span><a class="headerlink" href="#grobid_client.models.Reference.extended_metadata" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="grobid_client.models.Reference.get_next_by_parsed_at">
+<span class="sig-name descname"><span class="pre">get_next_by_parsed_at</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field=&lt;django.db.models.fields.DateTimeField:</span> <span class="pre">parsed_at&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_next=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#grobid_client.models.Reference.get_next_by_parsed_at" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="grobid_client.models.Reference.get_previous_by_parsed_at">
+<span class="sig-name descname"><span class="pre">get_previous_by_parsed_at</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field=&lt;django.db.models.fields.DateTimeField:</span> <span class="pre">parsed_at&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_next=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#grobid_client.models.Reference.get_previous_by_parsed_at" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.models.Reference.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#grobid_client.models.Reference.id" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.models.Reference.incoming_citations">
+<span class="sig-name descname"><span class="pre">incoming_citations</span></span><a class="headerlink" href="#grobid_client.models.Reference.incoming_citations" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related objects manager on the reverse side of a
+many-to-one relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
+<p>Most of the implementation is delegated to a dynamically defined manager
+class built by <code class="docutils literal notranslate"><span class="pre">create_reverse_many_to_one_manager()</span></code> defined below.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.models.Reference.issue">
+<span class="sig-name descname"><span class="pre">issue</span></span><a class="headerlink" href="#grobid_client.models.Reference.issue" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.models.Reference.journal">
+<span class="sig-name descname"><span class="pre">journal</span></span><a class="headerlink" href="#grobid_client.models.Reference.journal" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.models.Reference.objects">
+<span class="sig-name descname"><span class="pre">objects</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;django.db.models.manager.Manager</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#grobid_client.models.Reference.objects" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.models.Reference.outgoing_citations">
+<span class="sig-name descname"><span class="pre">outgoing_citations</span></span><a class="headerlink" href="#grobid_client.models.Reference.outgoing_citations" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related objects manager on the reverse side of a
+many-to-one relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
+<p>Most of the implementation is delegated to a dynamically defined manager
+class built by <code class="docutils literal notranslate"><span class="pre">create_reverse_many_to_one_manager()</span></code> defined below.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.models.Reference.pages">
+<span class="sig-name descname"><span class="pre">pages</span></span><a class="headerlink" href="#grobid_client.models.Reference.pages" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.models.Reference.parsed_at">
+<span class="sig-name descname"><span class="pre">parsed_at</span></span><a class="headerlink" href="#grobid_client.models.Reference.parsed_at" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.models.Reference.publication_date">
+<span class="sig-name descname"><span class="pre">publication_date</span></span><a class="headerlink" href="#grobid_client.models.Reference.publication_date" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.models.Reference.publisher">
+<span class="sig-name descname"><span class="pre">publisher</span></span><a class="headerlink" href="#grobid_client.models.Reference.publisher" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="grobid_client.models.Reference.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grobid_client/models.html#Reference.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grobid_client.models.Reference.save" title="Link to this definition"></a></dt>
+<dd><p>Save the current instance. Override this in a subclass if you want to
+control the saving process.</p>
+<p>The ‘force_insert’ and ‘force_update’ parameters can be used to insist
+that the “save” must be an SQL insert or update (or equivalent for
+non-SQL backends), respectively. Normally, they should not be set.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.models.Reference.tei_xml">
+<span class="sig-name descname"><span class="pre">tei_xml</span></span><a class="headerlink" href="#grobid_client.models.Reference.tei_xml" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.models.Reference.title">
+<span class="sig-name descname"><span class="pre">title</span></span><a class="headerlink" href="#grobid_client.models.Reference.title" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.models.Reference.volume">
+<span class="sig-name descname"><span class="pre">volume</span></span><a class="headerlink" href="#grobid_client.models.Reference.volume" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.models.Reference.year">
+<span class="sig-name descname"><span class="pre">year</span></span><a class="headerlink" href="#grobid_client.models.Reference.year" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class" id="module-grobid_client.tasks">
+<dt class="sig sig-object py" id="grobid_client.tasks.CandidateEvaluation">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grobid_client.tasks.</span></span><span class="sig-name descname"><span class="pre">CandidateEvaluation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">authors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">year</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grobid_client/tasks.html#CandidateEvaluation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grobid_client.tasks.CandidateEvaluation" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.tasks.CandidateEvaluation.authors">
+<span class="sig-name descname"><span class="pre">authors</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#grobid_client.tasks.CandidateEvaluation.authors" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.tasks.CandidateEvaluation.doi">
+<span class="sig-name descname"><span class="pre">doi</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#grobid_client.tasks.CandidateEvaluation.doi" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.tasks.CandidateEvaluation.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#grobid_client.tasks.CandidateEvaluation.model_config" title="Link to this definition"></a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.tasks.CandidateEvaluation.title">
+<span class="sig-name descname"><span class="pre">title</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#grobid_client.tasks.CandidateEvaluation.title" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.tasks.CandidateEvaluation.year">
+<span class="sig-name descname"><span class="pre">year</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#grobid_client.tasks.CandidateEvaluation.year" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="grobid_client.tasks.DocumentMetadataExtraction">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grobid_client.tasks.</span></span><span class="sig-name descname"><span class="pre">DocumentMetadataExtraction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">authors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">abstract</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">journal</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">publisher</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">year</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grobid_client/tasks.html#DocumentMetadataExtraction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grobid_client.tasks.DocumentMetadataExtraction" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.tasks.DocumentMetadataExtraction.abstract">
+<span class="sig-name descname"><span class="pre">abstract</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#grobid_client.tasks.DocumentMetadataExtraction.abstract" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.tasks.DocumentMetadataExtraction.authors">
+<span class="sig-name descname"><span class="pre">authors</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#grobid_client.tasks.DocumentMetadataExtraction.authors" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.tasks.DocumentMetadataExtraction.doi">
+<span class="sig-name descname"><span class="pre">doi</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#grobid_client.tasks.DocumentMetadataExtraction.doi" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.tasks.DocumentMetadataExtraction.journal">
+<span class="sig-name descname"><span class="pre">journal</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#grobid_client.tasks.DocumentMetadataExtraction.journal" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.tasks.DocumentMetadataExtraction.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#grobid_client.tasks.DocumentMetadataExtraction.model_config" title="Link to this definition"></a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.tasks.DocumentMetadataExtraction.publisher">
+<span class="sig-name descname"><span class="pre">publisher</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#grobid_client.tasks.DocumentMetadataExtraction.publisher" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.tasks.DocumentMetadataExtraction.title">
+<span class="sig-name descname"><span class="pre">title</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#grobid_client.tasks.DocumentMetadataExtraction.title" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="grobid_client.tasks.DocumentMetadataExtraction.year">
+<span class="sig-name descname"><span class="pre">year</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#grobid_client.tasks.DocumentMetadataExtraction.year" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="grobid_client.tasks.grobid_tei_to_semantic_chunks">
+<span class="sig-prename descclassname"><span class="pre">grobid_client.tasks.</span></span><span class="sig-name descname"><span class="pre">grobid_tei_to_semantic_chunks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tei_xml_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">document_title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grobid_client/tasks.html#grobid_tei_to_semantic_chunks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grobid_client.tasks.grobid_tei_to_semantic_chunks" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function" id="module-grobid_client.api">
+<dt class="sig sig-object py" id="grobid_client.api.process_pdf_with_grobid">
+<span class="sig-prename descclassname"><span class="pre">grobid_client.api.</span></span><span class="sig-name descname"><span class="pre">process_pdf_with_grobid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/grobid_client/api.html#process_pdf_with_grobid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grobid_client.api.process_pdf_with_grobid" title="Link to this definition"></a></dt>
+<dd><p>Sends a PDF to the local Grobid container and returns the TEI XML.</p>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="sandbox_manager_app.html" class="btn btn-neutral float-left" title="Sandbox Manager - Isolated Python Execution Environment" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="background_resources_app.html" class="btn btn-neutral float-right" title="Background Resources - Retrieval-Augmented Generation &amp; Document Ingestion" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Andrew Cruickshank.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

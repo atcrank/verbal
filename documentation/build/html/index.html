@@ -20,7 +20,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="LLM API" href="llm_api_app.html" /> 
+    <link rel="next" title="LLM API - Local Inference, Proxy Routing &amp; Hardware-Aware Serving" href="llm_api_app.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -44,13 +44,16 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="llm_api_app.html">LLM API</a></li>
-<li class="toctree-l1"><a class="reference internal" href="background_resources_app.html">Background Resources - context documents</a></li>
-<li class="toctree-l1"><a class="reference internal" href="benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="grips_app.html">Grips - wiki knowledge banks</a></li>
-<li class="toctree-l1"><a class="reference internal" href="metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="llm_api_app.html">LLM API - Local Inference, Proxy Routing &amp; Hardware-Aware Serving</a></li>
+<li class="toctree-l1"><a class="reference internal" href="verbal_tasks_app.html">Verbal Tasks - Database-Backed Asynchronous Execution &amp; Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sandbox_manager_app.html">Sandbox Manager - Isolated Python Execution Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grobid_client_app.html">Grobid Client - Deterministic Scientific PDF Parsing &amp; Citation Extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="background_resources_app.html">Background Resources - Retrieval-Augmented Generation &amp; Document Ingestion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grips_app.html">Grips - Structured Knowledge Graph &amp; Propositional Claims</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metacognition_app.html">Metacognition - Cognitive Blueprints, Agentic Workflows &amp; Self-Evaluation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
-<li class="toctree-l1"><a class="reference internal" href="demo_ui_app.html">Demo UI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmarking_app.html">Benchmarking - Automated Evaluation, Synthetic Generation &amp; LoRA Flywheels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo_ui_app.html">Demo UI - Empirical Research &amp; Cognitive Workbench</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
 <ul>
@@ -91,60 +94,89 @@
 <div class="toctree-wrapper compound">
 <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="llm_api_app.html">LLM API</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="llm_api_app.html#app-achievements">App achievements</a></li>
-<li class="toctree-l2"><a class="reference internal" href="llm_api_app.html#app-enhancement">App enhancement</a></li>
-<li class="toctree-l2"><a class="reference internal" href="llm_api_app.html#module-llm_api.models">Database models</a></li>
-<li class="toctree-l2"><a class="reference internal" href="llm_api_app.html#module-llm_api.api">API Reference</a></li>
-<li class="toctree-l2"><a class="reference internal" href="llm_api_app.html#module-llm_api.ai_service">Background Tasks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="llm_api_app.html">LLM API - Local Inference, Proxy Routing &amp; Hardware-Aware Serving</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="llm_api_app.html#purpose-motivating-problem">1. Purpose &amp; Motivating Problem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="llm_api_app.html#architecture-mechanism">2. Architecture &amp; Mechanism</a></li>
+<li class="toctree-l2"><a class="reference internal" href="llm_api_app.html#observability-health-signals">3. Observability &amp; Health Signals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="llm_api_app.html#diagnostic-tips-failure-modes">4. Diagnostic Tips &amp; Failure Modes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="llm_api_app.html#module-llm_api.models">Module Reference</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="background_resources_app.html">Background Resources - context documents</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="background_resources_app.html#app-achievements">App achievements</a></li>
-<li class="toctree-l2"><a class="reference internal" href="background_resources_app.html#app-enhancement">App enhancement</a></li>
-<li class="toctree-l2"><a class="reference internal" href="background_resources_app.html#unified-retrieval-deep-rag-design-decisions">Unified Retrieval &amp; Deep RAG Design Decisions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="background_resources_app.html#module-background_resources.models">Database models</a></li>
-<li class="toctree-l2"><a class="reference internal" href="background_resources_app.html#module-background_resources.rag_service">RAG Service</a></li>
-<li class="toctree-l2"><a class="reference internal" href="background_resources_app.html#module-background_resources.nlp_service">NLP Service</a></li>
-<li class="toctree-l2"><a class="reference internal" href="background_resources_app.html#module-background_resources.tasks">Background Tasks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="verbal_tasks_app.html">Verbal Tasks - Database-Backed Asynchronous Execution &amp; Scheduling</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="verbal_tasks_app.html#purpose-motivating-problem">1. Purpose &amp; Motivating Problem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="verbal_tasks_app.html#architecture-mechanism">2. Architecture &amp; Mechanism</a></li>
+<li class="toctree-l2"><a class="reference internal" href="verbal_tasks_app.html#observability-health-signals">3. Observability &amp; Health Signals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="verbal_tasks_app.html#diagnostic-tips-failure-modes">4. Diagnostic Tips &amp; Failure Modes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="verbal_tasks_app.html#module-verbal_tasks.models">Module Reference</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="benchmarking_app.html">Benchmarking - model and strategy evaluations</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="benchmarking_app.html#app-achievements">App achievements</a></li>
-<li class="toctree-l2"><a class="reference internal" href="benchmarking_app.html#app-enhancement">App enhancement</a></li>
-<li class="toctree-l2"><a class="reference internal" href="benchmarking_app.html#module-benchmarking.models">Database models</a></li>
-<li class="toctree-l2"><a class="reference internal" href="benchmarking_app.html#module-benchmarking.generators">Generators</a></li>
-<li class="toctree-l2"><a class="reference internal" href="benchmarking_app.html#module-benchmarking.runner">Benchmark Runner</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sandbox_manager_app.html">Sandbox Manager - Isolated Python Execution Environment</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="sandbox_manager_app.html#purpose-motivating-problem">1. Purpose &amp; Motivating Problem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sandbox_manager_app.html#architecture-mechanism">2. Architecture &amp; Mechanism</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sandbox_manager_app.html#observability-health-signals">3. Observability &amp; Health Signals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sandbox_manager_app.html#diagnostic-tips-failure-modes">4. Diagnostic Tips &amp; Failure Modes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sandbox_manager_app.html#module-sandbox_manager.models">Module Reference</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="grips_app.html">Grips - wiki knowledge banks</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="grips_app.html#app-achievements">App achievements</a></li>
-<li class="toctree-l2"><a class="reference internal" href="grips_app.html#app-enhancement">App enhancement</a></li>
-<li class="toctree-l2"><a class="reference internal" href="grips_app.html#module-grips.models">Database models</a></li>
-<li class="toctree-l2"><a class="reference internal" href="grips_app.html#module-grips.tasks">Grip Tasks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grobid_client_app.html">Grobid Client - Deterministic Scientific PDF Parsing &amp; Citation Extraction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="grobid_client_app.html#purpose-motivating-problem">1. Purpose &amp; Motivating Problem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="grobid_client_app.html#architecture-mechanism">2. Architecture &amp; Mechanism</a></li>
+<li class="toctree-l2"><a class="reference internal" href="grobid_client_app.html#observability-health-signals">3. Observability &amp; Health Signals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="grobid_client_app.html#diagnostic-tips-failure-modes">4. Diagnostic Tips &amp; Failure Modes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="grobid_client_app.html#module-grobid_client.models">Module Reference</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="metacognition_app.html">Metacognition - plans and self-evaluation</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="metacognition_app.html#app-achievements">App achievements</a></li>
-<li class="toctree-l2"><a class="reference internal" href="metacognition_app.html#app-enhancement">App enhancement</a></li>
-<li class="toctree-l2"><a class="reference internal" href="metacognition_app.html#module-metacognition.models">Database models</a></li>
-<li class="toctree-l2"><a class="reference internal" href="metacognition_app.html#module-metacognition.api">API Reference</a></li>
-<li class="toctree-l2"><a class="reference internal" href="metacognition_app.html#module-metacognition.tasks">Background Tasks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="background_resources_app.html">Background Resources - Retrieval-Augmented Generation &amp; Document Ingestion</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="background_resources_app.html#purpose-motivating-problem">1. Purpose &amp; Motivating Problem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="background_resources_app.html#architecture-mechanism">2. Architecture &amp; Mechanism</a></li>
+<li class="toctree-l2"><a class="reference internal" href="background_resources_app.html#observability-health-signals">3. Observability &amp; Health Signals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="background_resources_app.html#diagnostic-tips-failure-modes">4. Diagnostic Tips &amp; Failure Modes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="background_resources_app.html#module-background_resources.models">Module Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="grips_app.html">Grips - Structured Knowledge Graph &amp; Propositional Claims</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="grips_app.html#purpose-motivating-problem">1. Purpose &amp; Motivating Problem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="grips_app.html#architecture-mechanism">2. Architecture &amp; Mechanism</a></li>
+<li class="toctree-l2"><a class="reference internal" href="grips_app.html#observability-health-signals">3. Observability &amp; Health Signals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="grips_app.html#diagnostic-tips-failure-modes">4. Diagnostic Tips &amp; Failure Modes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="grips_app.html#module-grips.models">Module Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="metacognition_app.html">Metacognition - Cognitive Blueprints, Agentic Workflows &amp; Self-Evaluation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="metacognition_app.html#purpose-motivating-problem">1. Purpose &amp; Motivating Problem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="metacognition_app.html#architecture-mechanism">2. Architecture &amp; Mechanism</a></li>
+<li class="toctree-l2"><a class="reference internal" href="metacognition_app.html#observability-health-signals">3. Observability &amp; Health Signals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="metacognition_app.html#diagnostic-tips-failure-modes">4. Diagnostic Tips &amp; Failure Modes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="metacognition_app.html#module-metacognition.models">Module Reference</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="work_organisation_app.html#app-achievements-core-capabilities">App Achievements &amp; Core Capabilities</a></li>
-<li class="toctree-l2"><a class="reference internal" href="work_organisation_app.html#database-models">Database Models</a></li>
-<li class="toctree-l2"><a class="reference internal" href="work_organisation_app.html#api-endpoints">API Endpoints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="work_organisation_app.html#purpose-motivating-problem">1. Purpose &amp; Motivating Problem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="work_organisation_app.html#architecture-mechanism">2. Architecture &amp; Mechanism</a></li>
+<li class="toctree-l2"><a class="reference internal" href="work_organisation_app.html#observability-health-signals">3. Observability &amp; Health Signals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="work_organisation_app.html#diagnostic-tips-common-failure-modes">4. Diagnostic Tips &amp; Common Failure Modes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="work_organisation_app.html#module-work_organisation.models">Database Models Reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="work_organisation_app.html#module-work_organisation.api">API Endpoints Reference</a></li>
 <li class="toctree-l2"><a class="reference internal" href="work_organisation_app.html#module-work_organisation.clustering">Clustering &amp; Synthesis Utilities</a></li>
-<li class="toctree-l2"><a class="reference internal" href="work_organisation_app.html#module-work_organisation.events">Real-time Event Streaming</a></li>
+<li class="toctree-l2"><a class="reference internal" href="work_organisation_app.html#module-work_organisation.events">Event Streaming Reference</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="demo_ui_app.html">Demo UI</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="demo_ui_app.html#app-achievements">App achievements</a></li>
-<li class="toctree-l2"><a class="reference internal" href="demo_ui_app.html#app-enhancement">App enhancement</a></li>
-<li class="toctree-l2"><a class="reference internal" href="demo_ui_app.html#ui-walkthrough">UI Walkthrough</a></li>
-<li class="toctree-l2"><a class="reference internal" href="demo_ui_app.html#module-demo_ui.views">Demo UI Views</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmarking_app.html">Benchmarking - Automated Evaluation, Synthetic Generation &amp; LoRA Flywheels</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="benchmarking_app.html#purpose-motivating-problem">1. Purpose &amp; Motivating Problem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmarking_app.html#architecture-mechanism">2. Architecture &amp; Mechanism</a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmarking_app.html#observability-health-signals">3. Observability &amp; Health Signals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmarking_app.html#diagnostic-tips-failure-modes">4. Diagnostic Tips &amp; Failure Modes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="benchmarking_app.html#module-benchmarking.models">Module Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="demo_ui_app.html">Demo UI - Empirical Research &amp; Cognitive Workbench</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="demo_ui_app.html#purpose-motivating-problem">1. Purpose &amp; Motivating Problem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="demo_ui_app.html#architecture-mechanism">2. Architecture &amp; Mechanism</a></li>
+<li class="toctree-l2"><a class="reference internal" href="demo_ui_app.html#visual-interface-walkthrough">Visual Interface Walkthrough</a></li>
+<li class="toctree-l2"><a class="reference internal" href="demo_ui_app.html#empirical-rigor-trials">Empirical Rigor Trials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="demo_ui_app.html#observability-health-signals">3. Observability &amp; Health Signals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="demo_ui_app.html#diagnostic-tips-common-failure-modes">4. Diagnostic Tips &amp; Common Failure Modes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="demo_ui_app.html#module-demo_ui.views">Views Reference</a></li>
 </ul>
 </li>
 </ul>
@@ -243,7 +275,7 @@ python<span class="w"> </span>manage.py<span class="w"> </span>runserver<span cl
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="llm_api_app.html" class="btn btn-neutral float-right" title="LLM API" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="llm_api_app.html" class="btn btn-neutral float-right" title="LLM API - Local Inference, Proxy Routing &amp; Hardware-Aware Serving" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

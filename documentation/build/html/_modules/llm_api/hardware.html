@@ -1,0 +1,443 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>llm_api.hardware &mdash; reason 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=aaf24e6f" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            reason
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../llm_api_app.html">LLM API - Local Inference, Proxy Routing &amp; Hardware-Aware Serving</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../verbal_tasks_app.html">Verbal Tasks - Database-Backed Asynchronous Execution &amp; Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../sandbox_manager_app.html">Sandbox Manager - Isolated Python Execution Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grobid_client_app.html">Grobid Client - Deterministic Scientific PDF Parsing &amp; Citation Extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../background_resources_app.html">Background Resources - Retrieval-Augmented Generation &amp; Document Ingestion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grips_app.html">Grips - Structured Knowledge Graph &amp; Propositional Claims</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../metacognition_app.html">Metacognition - Cognitive Blueprints, Agentic Workflows &amp; Self-Evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmarking_app.html">Benchmarking - Automated Evaluation, Synthetic Generation &amp; LoRA Flywheels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_app.html">Demo UI - Empirical Research &amp; Cognitive Workbench</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../using_ollama.html">Ollama as Local AI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_trials.html">Demo UI Empirical Trials &amp; Verification Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tests.html">Testing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">reason</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">llm_api.hardware</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for llm_api.hardware</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Hardware introspection and resource advisor module for local AI hosting.</span>
+
+<span class="sd">Provides runtime detection of host CPU/GPU capabilities, available VRAM,</span>
+<span class="sd">tensor precision features, and dynamic configuration recommendations for</span>
+<span class="sd">internal PyTorch, vLLM, and Ollama backends.</span>
+
+<span class="sd">Examples / Doctest:</span>
+<span class="sd">    &gt;&gt;&gt; from llm_api.hardware import GPUDeviceInfo, BackendRecommendation, get_backend_recommendations, HardwareProfile, HostCPUInfo</span>
+<span class="sd">    &gt;&gt;&gt; mock_gpu = GPUDeviceInfo(</span>
+<span class="sd">    ...     index=0,</span>
+<span class="sd">    ...     name=&quot;NVIDIA GeForce GTX 1660 Ti&quot;,</span>
+<span class="sd">    ...     total_vram_mb=6144.0,</span>
+<span class="sd">    ...     free_vram_mb=5120.0,</span>
+<span class="sd">    ...     used_vram_mb=1024.0,</span>
+<span class="sd">    ...     compute_capability=(7, 5),</span>
+<span class="sd">    ...     supports_bf16=False,</span>
+<span class="sd">    ...     supports_fp16=True,</span>
+<span class="sd">    ...     supports_flash_attention=False</span>
+<span class="sd">    ... )</span>
+<span class="sd">    &gt;&gt;&gt; mock_cpu = HostCPUInfo(physical_cores=6, total_threads=12, total_ram_mb=16384.0, available_ram_mb=12000.0)</span>
+<span class="sd">    &gt;&gt;&gt; mock_profile = HardwareProfile(cuda_available=True, devices=[mock_gpu], primary_device=mock_gpu, host_cpu=mock_cpu)</span>
+<span class="sd">    &gt;&gt;&gt; rec = get_backend_recommendations(profile=mock_profile, requested_context=4096)</span>
+<span class="sd">    &gt;&gt;&gt; rec.vllm_dtype</span>
+<span class="sd">    &#39;float16&#39;</span>
+<span class="sd">    &gt;&gt;&gt; 0.70 &lt;= rec.vllm_gpu_memory_utilization &lt;= 0.76</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; rec.recommended_quantization</span>
+<span class="sd">    &#39;nf4&#39;</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">psutil</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="GPUDeviceInfo">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.hardware.GPUDeviceInfo">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">GPUDeviceInfo</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Detailed hardware metadata for an NVIDIA/CUDA device.&quot;&quot;&quot;</span>
+    <span class="n">index</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">total_vram_mb</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">free_vram_mb</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">used_vram_mb</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">compute_capability</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
+    <span class="n">supports_bf16</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">supports_fp16</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">supports_flash_attention</span><span class="p">:</span> <span class="nb">bool</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">total_vram_gb</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">round</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">total_vram_mb</span> <span class="o">/</span> <span class="mf">1024.0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">free_vram_gb</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">round</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">free_vram_mb</span> <span class="o">/</span> <span class="mf">1024.0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_capability_str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">compute_capability</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">compute_capability</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="HostCPUInfo">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.hardware.HostCPUInfo">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">HostCPUInfo</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Host processor and memory metrics.&quot;&quot;&quot;</span>
+    <span class="n">physical_cores</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">total_threads</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">total_ram_mb</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">available_ram_mb</span><span class="p">:</span> <span class="nb">float</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">total_ram_gb</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">round</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">total_ram_mb</span> <span class="o">/</span> <span class="mf">1024.0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">available_ram_gb</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">round</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">available_ram_mb</span> <span class="o">/</span> <span class="mf">1024.0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="HardwareProfile">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.hardware.HardwareProfile">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">HardwareProfile</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Full host compute profile.&quot;&quot;&quot;</span>
+    <span class="n">cuda_available</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">devices</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">GPUDeviceInfo</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+    <span class="n">primary_device</span><span class="p">:</span> <span class="n">GPUDeviceInfo</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">host_cpu</span><span class="p">:</span> <span class="n">HostCPUInfo</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">HostCPUInfo</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">1024.0</span><span class="p">,</span> <span class="mf">512.0</span><span class="p">))</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">cuda_available</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_device</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;CPU Mode: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">host_cpu</span><span class="o">.</span><span class="n">physical_cores</span><span class="si">}</span><span class="s2"> cores / </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">host_cpu</span><span class="o">.</span><span class="n">total_threads</span><span class="si">}</span><span class="s2"> threads, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">host_cpu</span><span class="o">.</span><span class="n">available_ram_gb</span><span class="si">}</span><span class="s2"> GB RAM available.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">dev</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_device</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;GPU: </span><span class="si">{</span><span class="n">dev</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">dev</span><span class="o">.</span><span class="n">free_vram_gb</span><span class="si">}</span><span class="s2"> GB free / </span><span class="si">{</span><span class="n">dev</span><span class="o">.</span><span class="n">total_vram_gb</span><span class="si">}</span><span class="s2"> GB total, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Compute </span><span class="si">{</span><span class="n">dev</span><span class="o">.</span><span class="n">compute_capability_str</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="BackendRecommendation">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.hardware.BackendRecommendation">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">BackendRecommendation</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Recommended execution parameters for local AI engines.&quot;&quot;&quot;</span>
+    <span class="n">vllm_gpu_memory_utilization</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">vllm_max_model_len</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">vllm_dtype</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">recommended_quantization</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">advisory_notes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BackendRecommendation.to_dict">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.hardware.BackendRecommendation.to_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;vllm_gpu_memory_utilization&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">vllm_gpu_memory_utilization</span><span class="p">,</span>
+            <span class="s2">&quot;vllm_max_model_len&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">vllm_max_model_len</span><span class="p">,</span>
+            <span class="s2">&quot;vllm_dtype&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">vllm_dtype</span><span class="p">,</span>
+            <span class="s2">&quot;recommended_quantization&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">recommended_quantization</span><span class="p">,</span>
+            <span class="s2">&quot;advisory_notes&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">advisory_notes</span><span class="p">,</span>
+        <span class="p">}</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="get_hardware_profile">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.hardware.get_hardware_profile">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_hardware_profile</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">HardwareProfile</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Inspects host system hardware using PyTorch CUDA and psutil.</span>
+<span class="sd">    Safe against environments where CUDA is not present or drivers are missing.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># 1. CPU &amp; System RAM</span>
+    <span class="n">vm</span> <span class="o">=</span> <span class="n">psutil</span><span class="o">.</span><span class="n">virtual_memory</span><span class="p">()</span>
+    <span class="n">host_cpu</span> <span class="o">=</span> <span class="n">HostCPUInfo</span><span class="p">(</span>
+        <span class="n">physical_cores</span><span class="o">=</span><span class="n">psutil</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">(</span><span class="n">logical</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="ow">or</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">total_threads</span><span class="o">=</span><span class="n">psutil</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">(</span><span class="n">logical</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="ow">or</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">total_ram_mb</span><span class="o">=</span><span class="nb">round</span><span class="p">(</span><span class="n">vm</span><span class="o">.</span><span class="n">total</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1024.0</span> <span class="o">*</span> <span class="mf">1024.0</span><span class="p">),</span> <span class="mi">2</span><span class="p">),</span>
+        <span class="n">available_ram_mb</span><span class="o">=</span><span class="nb">round</span><span class="p">(</span><span class="n">vm</span><span class="o">.</span><span class="n">available</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1024.0</span> <span class="o">*</span> <span class="mf">1024.0</span><span class="p">),</span> <span class="mi">2</span><span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="c1"># 2. CUDA GPU Inspection</span>
+    <span class="n">devices</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">GPUDeviceInfo</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">cuda_available</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+        <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+            <span class="n">cuda_available</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">count</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">device_count</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">count</span><span class="p">):</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">get_device_name</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+                <span class="n">cap</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">get_device_capability</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+                <span class="n">major</span><span class="p">,</span> <span class="n">minor</span> <span class="o">=</span> <span class="n">cap</span>
+
+                <span class="c1"># Memory query: (free_bytes, total_bytes)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">free_b</span><span class="p">,</span> <span class="n">total_b</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">mem_get_info</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">mem_err</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not query mem_get_info for CUDA device </span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">mem_err</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">free_b</span><span class="p">,</span> <span class="n">total_b</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+                <span class="n">total_mb</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">total_b</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1024.0</span> <span class="o">*</span> <span class="mf">1024.0</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span>
+                <span class="n">free_mb</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">free_b</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1024.0</span> <span class="o">*</span> <span class="mf">1024.0</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span>
+                <span class="n">used_mb</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="nb">round</span><span class="p">(</span><span class="n">total_mb</span> <span class="o">-</span> <span class="n">free_mb</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+
+                <span class="c1"># Precision feature support</span>
+                <span class="n">supports_bf16</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">supports_bf16</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_bf16_supported</span><span class="p">()</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="p">,</span> <span class="s2">&quot;is_bf16_supported&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="p">(</span><span class="n">major</span> <span class="o">&gt;=</span> <span class="mi">8</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="n">supports_bf16</span> <span class="o">=</span> <span class="p">(</span><span class="n">major</span> <span class="o">&gt;=</span> <span class="mi">8</span><span class="p">)</span>
+
+                <span class="n">supports_fp16</span> <span class="o">=</span> <span class="n">major</span> <span class="o">&gt;=</span> <span class="mi">5</span>
+                <span class="n">supports_fa</span> <span class="o">=</span> <span class="n">major</span> <span class="o">&gt;=</span> <span class="mi">8</span>
+
+                <span class="n">devices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">GPUDeviceInfo</span><span class="p">(</span>
+                        <span class="n">index</span><span class="o">=</span><span class="n">idx</span><span class="p">,</span>
+                        <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+                        <span class="n">total_vram_mb</span><span class="o">=</span><span class="n">total_mb</span><span class="p">,</span>
+                        <span class="n">free_vram_mb</span><span class="o">=</span><span class="n">free_mb</span><span class="p">,</span>
+                        <span class="n">used_vram_mb</span><span class="o">=</span><span class="n">used_mb</span><span class="p">,</span>
+                        <span class="n">compute_capability</span><span class="o">=</span><span class="p">(</span><span class="n">major</span><span class="p">,</span> <span class="n">minor</span><span class="p">),</span>
+                        <span class="n">supports_bf16</span><span class="o">=</span><span class="n">supports_bf16</span><span class="p">,</span>
+                        <span class="n">supports_fp16</span><span class="o">=</span><span class="n">supports_fp16</span><span class="p">,</span>
+                        <span class="n">supports_flash_attention</span><span class="o">=</span><span class="n">supports_fa</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Hardware inspection encountered an exception when probing CUDA: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">primary</span> <span class="o">=</span> <span class="n">devices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">devices</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">HardwareProfile</span><span class="p">(</span>
+        <span class="n">cuda_available</span><span class="o">=</span><span class="n">cuda_available</span><span class="p">,</span>
+        <span class="n">devices</span><span class="o">=</span><span class="n">devices</span><span class="p">,</span>
+        <span class="n">primary_device</span><span class="o">=</span><span class="n">primary</span><span class="p">,</span>
+        <span class="n">host_cpu</span><span class="o">=</span><span class="n">host_cpu</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_backend_recommendations">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.hardware.get_backend_recommendations">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_backend_recommendations</span><span class="p">(</span>
+    <span class="n">profile</span><span class="p">:</span> <span class="n">HardwareProfile</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">model_param_size_b</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">requested_context</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4096</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BackendRecommendation</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes tailored settings for local inference backends given the current hardware profile.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        profile: The HardwareProfile to evaluate (defaults to live detection).</span>
+<span class="sd">        model_param_size_b: Estimated model parameter count in billions (e.g. 2.0, 7.0, 14.0).</span>
+<span class="sd">        requested_context: Desired context length in tokens (default 4096).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">profile</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">profile</span> <span class="o">=</span> <span class="n">get_hardware_profile</span><span class="p">()</span>
+
+    <span class="n">notes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># CPU-only fallback</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">profile</span><span class="o">.</span><span class="n">cuda_available</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">profile</span><span class="o">.</span><span class="n">primary_device</span><span class="p">:</span>
+        <span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;No CUDA GPU detected. Local inference will execute on the CPU.&quot;</span><span class="p">)</span>
+        <span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;For CPU execution, Ollama with GGUF quantized models is strongly recommended.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">BackendRecommendation</span><span class="p">(</span>
+            <span class="n">vllm_gpu_memory_utilization</span><span class="o">=</span><span class="mf">0.50</span><span class="p">,</span>
+            <span class="n">vllm_max_model_len</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="n">requested_context</span><span class="p">,</span> <span class="mi">2048</span><span class="p">),</span>
+            <span class="n">vllm_dtype</span><span class="o">=</span><span class="s2">&quot;float32&quot;</span><span class="p">,</span>
+            <span class="n">recommended_quantization</span><span class="o">=</span><span class="s2">&quot;nf4&quot;</span><span class="p">,</span>
+            <span class="n">advisory_notes</span><span class="o">=</span><span class="n">notes</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="n">dev</span> <span class="o">=</span> <span class="n">profile</span><span class="o">.</span><span class="n">primary_device</span>
+    <span class="n">major</span><span class="p">,</span> <span class="n">minor</span> <span class="o">=</span> <span class="n">dev</span><span class="o">.</span><span class="n">compute_capability</span>
+
+    <span class="c1"># 1. vLLM Memory Utilization</span>
+    <span class="c1"># vLLM calculates utilization against TOTAL physical device memory.</span>
+    <span class="c1"># We must leave headroom for the OS / display server (e.g. 512 MB).</span>
+    <span class="n">headroom_mb</span> <span class="o">=</span> <span class="mf">512.0</span>
+    <span class="n">usable_mb</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">dev</span><span class="o">.</span><span class="n">free_vram_mb</span> <span class="o">-</span> <span class="n">headroom_mb</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">dev</span><span class="o">.</span><span class="n">total_vram_mb</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">raw_util</span> <span class="o">=</span> <span class="n">usable_mb</span> <span class="o">/</span> <span class="n">dev</span><span class="o">.</span><span class="n">total_vram_mb</span>
+        <span class="c1"># Clamp between 0.30 and 0.90</span>
+        <span class="n">vllm_util</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="mf">0.90</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.30</span><span class="p">,</span> <span class="n">raw_util</span><span class="p">)),</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">vllm_util</span> <span class="o">=</span> <span class="mf">0.70</span>
+
+    <span class="k">if</span> <span class="n">dev</span><span class="o">.</span><span class="n">total_vram_gb</span> <span class="o">&lt;=</span> <span class="mf">8.0</span><span class="p">:</span>
+        <span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Detected consumer/mobile GPU with </span><span class="si">{</span><span class="n">dev</span><span class="o">.</span><span class="n">total_vram_gb</span><span class="si">}</span><span class="s2"> GB VRAM (</span><span class="si">{</span><span class="n">dev</span><span class="o">.</span><span class="n">free_vram_gb</span><span class="si">}</span><span class="s2"> GB currently free). &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;vLLM memory utilization capped to </span><span class="si">{</span><span class="n">vllm_util</span><span class="si">}</span><span class="s2"> to avoid startup allocation crashes.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># 2. Context Window Sizing</span>
+    <span class="c1"># Models on &lt;= 6GB VRAM should constrain KV cache tokens</span>
+    <span class="k">if</span> <span class="n">dev</span><span class="o">.</span><span class="n">total_vram_gb</span> <span class="o">&lt;=</span> <span class="mf">6.5</span><span class="p">:</span>
+        <span class="n">max_context</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">requested_context</span><span class="p">,</span> <span class="mi">4096</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">requested_context</span> <span class="o">&gt;</span> <span class="mi">4096</span><span class="p">:</span>
+            <span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Requested context length </span><span class="si">{</span><span class="n">requested_context</span><span class="si">}</span><span class="s2"> clamped to 4096 for 6 GB VRAM KV-cache preservation.&quot;</span>
+            <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">max_context</span> <span class="o">=</span> <span class="n">requested_context</span>
+
+    <span class="c1"># 3. Precision / Dtype Selection</span>
+    <span class="k">if</span> <span class="n">major</span> <span class="o">&lt;</span> <span class="mi">8</span><span class="p">:</span>
+        <span class="n">vllm_dtype</span> <span class="o">=</span> <span class="s2">&quot;float16&quot;</span>
+        <span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;GPU Compute Capability </span><span class="si">{</span><span class="n">dev</span><span class="o">.</span><span class="n">compute_capability_str</span><span class="si">}</span><span class="s2"> (Turing/Pascal) lacks native BF16 instructions. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Configured float16 precision for compatibility and speed.&quot;</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">vllm_dtype</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span>
+        <span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;GPU Compute Capability </span><span class="si">{</span><span class="n">dev</span><span class="o">.</span><span class="n">compute_capability_str</span><span class="si">}</span><span class="s2"> (Ampere or newer) supports native BF16.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># 4. Model Quantization Recommendation</span>
+    <span class="n">param_size</span> <span class="o">=</span> <span class="n">model_param_size_b</span> <span class="k">if</span> <span class="n">model_param_size_b</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mf">3.0</span>
+    <span class="k">if</span> <span class="n">dev</span><span class="o">.</span><span class="n">total_vram_gb</span> <span class="o">&lt;=</span> <span class="mf">8.0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">param_size</span> <span class="o">&gt;=</span> <span class="mf">2.5</span><span class="p">:</span>
+            <span class="n">rec_quant</span> <span class="o">=</span> <span class="s2">&quot;nf4&quot;</span>
+            <span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;For models with ~</span><span class="si">{</span><span class="n">param_size</span><span class="si">}</span><span class="s2">B+ parameters on </span><span class="si">{</span><span class="n">dev</span><span class="o">.</span><span class="n">total_vram_gb</span><span class="si">}</span><span class="s2"> GB VRAM, 4-bit NormalFloat (NF4) &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;or Ollama GGUF Q4_K_M is required to fit into VRAM.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">rec_quant</span> <span class="o">=</span> <span class="s2">&quot;int8&quot;</span>
+            <span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Small model (~</span><span class="si">{</span><span class="n">param_size</span><span class="si">}</span><span class="s2">B) fits comfortably in 8-bit quantization.&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">dev</span><span class="o">.</span><span class="n">total_vram_gb</span> <span class="o">&lt;=</span> <span class="mf">16.0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">param_size</span> <span class="o">&gt;</span> <span class="mf">8.0</span><span class="p">:</span>
+            <span class="n">rec_quant</span> <span class="o">=</span> <span class="s2">&quot;nf4&quot;</span>
+            <span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Models &gt; 8B parameters require 4-bit quantization on </span><span class="si">{</span><span class="n">dev</span><span class="o">.</span><span class="n">total_vram_gb</span><span class="si">}</span><span class="s2"> GB VRAM.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">rec_quant</span> <span class="o">=</span> <span class="s2">&quot;int8&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">rec_quant</span> <span class="o">=</span> <span class="s2">&quot;none&quot;</span>
+        <span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;High-capacity GPU (</span><span class="si">{</span><span class="n">dev</span><span class="o">.</span><span class="n">total_vram_gb</span><span class="si">}</span><span class="s2"> GB VRAM). Unquantized FP16/BF16 is fully viable.&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">BackendRecommendation</span><span class="p">(</span>
+        <span class="n">vllm_gpu_memory_utilization</span><span class="o">=</span><span class="n">vllm_util</span><span class="p">,</span>
+        <span class="n">vllm_max_model_len</span><span class="o">=</span><span class="n">max_context</span><span class="p">,</span>
+        <span class="n">vllm_dtype</span><span class="o">=</span><span class="n">vllm_dtype</span><span class="p">,</span>
+        <span class="n">recommended_quantization</span><span class="o">=</span><span class="n">rec_quant</span><span class="p">,</span>
+        <span class="n">advisory_notes</span><span class="o">=</span><span class="n">notes</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Andrew Cruickshank.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

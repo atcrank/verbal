@@ -12,11 +12,14 @@ Welcome to the documentation for **reason**, Django handles for gripping your La
    :caption: Application Modules:
 
    llm_api_app
+   verbal_tasks_app
+   sandbox_manager_app
+   grobid_client_app
    background_resources_app
-   benchmarking_app
    grips_app
    metacognition_app
    work_organisation_app
+   benchmarking_app
    demo_ui_app
 
 .. toctree::

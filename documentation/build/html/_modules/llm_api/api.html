@@ -8,6 +8,7 @@
   <title>llm_api.api &mdash; reason 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=aaf24e6f" />
 
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
@@ -53,7 +54,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../using_ollama.html">Ollama as Local AI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_trials.html">Demo UI Interactive Trials &amp; Feature Walkthroughs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_trials.html">Demo UI Empirical Trials &amp; Verification Reports</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../tests.html">Testing</a></li>
 </ul>
 
@@ -416,6 +417,56 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">internal_ping</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">django.conf</span><span class="w"> </span><span class="kn">import</span> <span class="n">settings</span>
     <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;ok&quot;</span><span class="p">,</span> <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="s2">&quot;VERBAL_ROLE&quot;</span><span class="p">,</span> <span class="s2">&quot;unknown&quot;</span><span class="p">)})</span></div>
+
+
+<div class="viewcode-block" id="internal_unload_vram">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.api.internal_unload_vram">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/internal/unload-vram/&quot;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="nd">@csrf_exempt</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">internal_unload_vram</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Frees in-process PyTorch VRAM and clears CUDA memory cache.&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">service_registry</span><span class="o">.</span><span class="n">ai_service</span><span class="o">.</span><span class="n">unload_models</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;ok&quot;</span><span class="p">,</span> <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;VRAM cleared&quot;</span><span class="p">})</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error unloading VRAM: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;error&quot;</span><span class="p">,</span> <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)},</span> <span class="n">status</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_hardware_diagnostics">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.api.get_hardware_diagnostics">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/hardware/&quot;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="nd">@csrf_exempt</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_hardware_diagnostics</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns host hardware profile, GPU/CPU metrics, and backend recommendations.&quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">.hardware</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_hardware_profile</span><span class="p">,</span> <span class="n">get_backend_recommendations</span>
+    <span class="n">profile</span> <span class="o">=</span> <span class="n">get_hardware_profile</span><span class="p">()</span>
+    <span class="n">rec</span> <span class="o">=</span> <span class="n">get_backend_recommendations</span><span class="p">(</span><span class="n">profile</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span>
+        <span class="s2">&quot;summary&quot;</span><span class="p">:</span> <span class="n">profile</span><span class="o">.</span><span class="n">summary</span><span class="p">,</span>
+        <span class="s2">&quot;cuda_available&quot;</span><span class="p">:</span> <span class="n">profile</span><span class="o">.</span><span class="n">cuda_available</span><span class="p">,</span>
+        <span class="s2">&quot;devices&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;index&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                <span class="s2">&quot;total_vram_mb&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">total_vram_mb</span><span class="p">,</span>
+                <span class="s2">&quot;free_vram_mb&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">free_vram_mb</span><span class="p">,</span>
+                <span class="s2">&quot;used_vram_mb&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">used_vram_mb</span><span class="p">,</span>
+                <span class="s2">&quot;compute_capability&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">compute_capability_str</span><span class="p">,</span>
+                <span class="s2">&quot;supports_bf16&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">supports_bf16</span><span class="p">,</span>
+                <span class="s2">&quot;supports_fp16&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">supports_fp16</span><span class="p">,</span>
+                <span class="s2">&quot;supports_flash_attention&quot;</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">supports_flash_attention</span><span class="p">,</span>
+            <span class="p">}</span>
+            <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">profile</span><span class="o">.</span><span class="n">devices</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;host_cpu&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;physical_cores&quot;</span><span class="p">:</span> <span class="n">profile</span><span class="o">.</span><span class="n">host_cpu</span><span class="o">.</span><span class="n">physical_cores</span><span class="p">,</span>
+            <span class="s2">&quot;total_threads&quot;</span><span class="p">:</span> <span class="n">profile</span><span class="o">.</span><span class="n">host_cpu</span><span class="o">.</span><span class="n">total_threads</span><span class="p">,</span>
+            <span class="s2">&quot;total_ram_gb&quot;</span><span class="p">:</span> <span class="n">profile</span><span class="o">.</span><span class="n">host_cpu</span><span class="o">.</span><span class="n">total_ram_gb</span><span class="p">,</span>
+            <span class="s2">&quot;available_ram_gb&quot;</span><span class="p">:</span> <span class="n">profile</span><span class="o">.</span><span class="n">host_cpu</span><span class="o">.</span><span class="n">available_ram_gb</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;recommendations&quot;</span><span class="p">:</span> <span class="n">rec</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+    <span class="p">})</span></div>
 
 
 <div class="viewcode-block" id="openai_chat_completions">

@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Grips - wiki knowledge banks &mdash; reason 0.1 documentation</title>
+  <title>Grips - Structured Knowledge Graph &amp; Propositional Claims &mdash; reason 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/custom.css?v=aaf24e6f" />
@@ -20,8 +20,8 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Metacognition - plans and self-evaluation" href="metacognition_app.html" />
-    <link rel="prev" title="Benchmarking - model and strategy evaluations" href="benchmarking_app.html" /> 
+    <link rel="next" title="Metacognition - Cognitive Blueprints, Agentic Workflows &amp; Self-Evaluation" href="metacognition_app.html" />
+    <link rel="prev" title="Background Resources - Retrieval-Augmented Generation &amp; Document Ingestion" href="background_resources_app.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -45,13 +45,30 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="llm_api_app.html">LLM API</a></li>
-<li class="toctree-l1"><a class="reference internal" href="background_resources_app.html">Background Resources - context documents</a></li>
-<li class="toctree-l1"><a class="reference internal" href="benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Grips - wiki knowledge banks</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#app-achievements">App achievements</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#app-enhancement">App enhancement</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-grips.models">Database models</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="llm_api_app.html">LLM API - Local Inference, Proxy Routing &amp; Hardware-Aware Serving</a></li>
+<li class="toctree-l1"><a class="reference internal" href="verbal_tasks_app.html">Verbal Tasks - Database-Backed Asynchronous Execution &amp; Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sandbox_manager_app.html">Sandbox Manager - Isolated Python Execution Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grobid_client_app.html">Grobid Client - Deterministic Scientific PDF Parsing &amp; Citation Extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="background_resources_app.html">Background Resources - Retrieval-Augmented Generation &amp; Document Ingestion</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Grips - Structured Knowledge Graph &amp; Propositional Claims</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#purpose-motivating-problem">1. Purpose &amp; Motivating Problem</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#why-a-knowledge-graph-is-necessary">Why a Knowledge Graph is Necessary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#architecture-mechanism">2. Architecture &amp; Mechanism</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#the-ontology-structure">The Ontology Structure</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#automated-curation-linting-pipeline">Automated Curation &amp; Linting Pipeline</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#observability-health-signals">3. Observability &amp; Health Signals</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#how-to-know-the-knowledge-graph-is-working-well">How to Know the Knowledge Graph is Working Well</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#diagnostic-tips-failure-modes">4. Diagnostic Tips &amp; Failure Modes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#when-the-graph-misses-the-mark-how-to-tune">When the Graph Misses the Mark &amp; How to Tune</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-grips.models">Module Reference</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#grips.models.Domain"><code class="docutils literal notranslate"><span class="pre">Domain</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#grips.models.Domain.name"><code class="docutils literal notranslate"><span class="pre">Domain.name</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#grips.models.Domain.description"><code class="docutils literal notranslate"><span class="pre">Domain.description</span></code></a></li>
@@ -124,9 +141,6 @@
 <li class="toctree-l4"><a class="reference internal" href="#grips.models.CeleryStatus.objects"><code class="docutils literal notranslate"><span class="pre">CeleryStatus.objects</span></code></a></li>
 </ul>
 </li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#module-grips.tasks">Grip Tasks</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#grips.tasks.StructuredClaim"><code class="docutils literal notranslate"><span class="pre">StructuredClaim</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#grips.tasks.StructuredClaim.predicate"><code class="docutils literal notranslate"><span class="pre">StructuredClaim.predicate</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#grips.tasks.StructuredClaim.subject"><code class="docutils literal notranslate"><span class="pre">StructuredClaim.subject</span></code></a></li>
@@ -189,9 +203,10 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metacognition_app.html">Metacognition - Cognitive Blueprints, Agentic Workflows &amp; Self-Evaluation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
-<li class="toctree-l1"><a class="reference internal" href="demo_ui_app.html">Demo UI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmarking_app.html">Benchmarking - Automated Evaluation, Synthetic Generation &amp; LoRA Flywheels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo_ui_app.html">Demo UI - Empirical Research &amp; Cognitive Workbench</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
 <ul>
@@ -215,7 +230,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Grips - wiki knowledge banks</li>
+      <li class="breadcrumb-item active">Grips - Structured Knowledge Graph &amp; Propositional Claims</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/grips_app.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -225,31 +240,112 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="grips-wiki-knowledge-banks">
-<h1>Grips - wiki knowledge banks<a class="headerlink" href="#grips-wiki-knowledge-banks" title="Link to this heading"></a></h1>
-<p>This app is an LLM-curated Knowledge Graph and highly structured wiki. It provides the AI with “handles” or “grips” on dense conceptual areas, acting as a structured compensating context engine.</p>
-<section id="app-achievements">
-<h2>App achievements<a class="headerlink" href="#app-achievements" title="Link to this heading"></a></h2>
+  <section id="grips-structured-knowledge-graph-propositional-claims">
+<h1>Grips - Structured Knowledge Graph &amp; Propositional Claims<a class="headerlink" href="#grips-structured-knowledge-graph-propositional-claims" title="Link to this heading"></a></h1>
+<p>The <strong>Grips</strong> (Graph Representation of Intelligent Problem Solving) application provides an LLM-curated Knowledge Graph and structured research wiki for Verbal. It equips the assistant with formal conceptual “handles” or “grips” on dense research domains, pairing human-readable Markdown narratives with machine-readable propositional claims in JSON.</p>
+<nav class="contents local" id="table-of-contents">
+<p class="topic-title">Table of Contents</p>
 <ul class="simple">
-<li><p><strong>Structured Ontology:</strong> Separates human-readable markdown narrative from machine-readable JSON propositions (structured claims).</p></li>
-<li><p><strong>Automated Curation:</strong> Allows creating stub entries and dispatching background Celery tasks to write dense, encyclopedic entries based on the RAG document store.</p></li>
-<li><p><strong>Semantic Relationships:</strong> Defines hard relationship edges (<code class="docutils literal notranslate"><span class="pre">DEPENDS_ON</span></code>, <code class="docutils literal notranslate"><span class="pre">INCLUDES</span></code>, <code class="docutils literal notranslate"><span class="pre">EXEMPLIFIES</span></code>, <code class="docutils literal notranslate"><span class="pre">RELATED_TO</span></code>) to build a traversable graph.</p></li>
-<li><p><strong>RAG Integration:</strong> Intercepts and merges user queries against both the Grips Graph and semantic document search with smart deduplication.</p></li>
-<li><p><strong>Admin Wiki Experience:</strong> Integrates dynamic Markdown rendering and contextual URL linking directly into the Django Admin to mimic an Obsidian-like wiki.</p></li>
+<li><p><a class="reference internal" href="#purpose-motivating-problem" id="id1">1. Purpose &amp; Motivating Problem</a></p>
+<ul>
+<li><p><a class="reference internal" href="#why-a-knowledge-graph-is-necessary" id="id2">Why a Knowledge Graph is Necessary</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#architecture-mechanism" id="id3">2. Architecture &amp; Mechanism</a></p>
+<ul>
+<li><p><a class="reference internal" href="#the-ontology-structure" id="id4">The Ontology Structure</a></p></li>
+<li><p><a class="reference internal" href="#automated-curation-linting-pipeline" id="id5">Automated Curation &amp; Linting Pipeline</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#observability-health-signals" id="id6">3. Observability &amp; Health Signals</a></p>
+<ul>
+<li><p><a class="reference internal" href="#how-to-know-the-knowledge-graph-is-working-well" id="id7">How to Know the Knowledge Graph is Working Well</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#diagnostic-tips-failure-modes" id="id8">4. Diagnostic Tips &amp; Failure Modes</a></p>
+<ul>
+<li><p><a class="reference internal" href="#when-the-graph-misses-the-mark-how-to-tune" id="id9">When the Graph Misses the Mark &amp; How to Tune</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#module-grips.models" id="id10">Module Reference</a></p></li>
+</ul>
+</nav>
+<section id="purpose-motivating-problem">
+<h2><a class="toc-backref" href="#id1" role="doc-backlink">1. Purpose &amp; Motivating Problem</a><a class="headerlink" href="#purpose-motivating-problem" title="Link to this heading"></a></h2>
+<section id="why-a-knowledge-graph-is-necessary">
+<h3><a class="toc-backref" href="#id2" role="doc-backlink">Why a Knowledge Graph is Necessary</a><a class="headerlink" href="#why-a-knowledge-graph-is-necessary" title="Link to this heading"></a></h3>
+<p>While standard RAG retrieves raw text excerpts, study design requires understanding how concepts interlock: which experimental factors <em>depend on</em> physical constraints, which methodologies <em>contradict</em> prior assumptions, and what definitions are strictly authoritative.</p>
+<p>Relying solely on unstructured Markdown wikis or conversational summaries introduces serious failure modes over time:</p>
+<ul class="simple">
+<li><p><strong>Semantic Drift</strong>: As an LLM edits a document across multiple turns, subtle factual distortions accumulate, turning precise empirical findings into fuzzy generalities.</p></li>
+<li><p><strong>Hidden Contradictions</strong>: An assistant may assert Proposition A in one conversation turn and an incompatible Proposition B in another without detecting the conflict.</p></li>
+<li><p><strong>Unverifiable Assertions</strong>: In pure text, claims are entangled with rhetorical prose, making automated mathematical or logical verification impossible.</p></li>
+</ul>
+<p><strong>Grips</strong> resolves this by enforcing a dual-layer representation: a natural language narrative for human readers, backed by explicit, verifiable propositional claims and directed relationship edges.</p>
+</section>
+</section>
+<section id="architecture-mechanism">
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">2. Architecture &amp; Mechanism</a><a class="headerlink" href="#architecture-mechanism" title="Link to this heading"></a></h2>
+<section id="the-ontology-structure">
+<h3><a class="toc-backref" href="#id4" role="doc-backlink">The Ontology Structure</a><a class="headerlink" href="#the-ontology-structure" title="Link to this heading"></a></h3>
+<p>The graph is organized into three core models:</p>
+<ul class="simple">
+<li><p><strong>``ConceptDomain``</strong>: High-level thematic boundaries (e.g. <em>Robotic Firefighting</em>, <em>Clinical Pharmacology</em>, <em>Autonomous Navigation</em>) that scope queries and prevent cross-domain conceptual confusion.</p></li>
+<li><p><strong>``ConceptNode``</strong>: An individual conceptual entry containing:
+* <strong>Title &amp; Slug</strong>: Canonical identifier.
+* <strong>Narrative Content</strong>: Human-readable Markdown providing context, background, and syntheses.
+* <strong>Structured Claims (``claims_json``)</strong>: A list of discrete, machine-evaluable propositions (e.g. <cite>{“subject”: “LiDAR”, “predicate”: “degraded_by”, “object”: “dense_smoke”, “confidence”: 0.95, “source_chunk_id”: 104}</cite>).</p></li>
+<li><p><strong>``KnowledgeEdge``</strong>: Directed relational links connecting two <cite>ConceptNode</cite> instances with typed semantic relationships:
+* <code class="docutils literal notranslate"><span class="pre">DEPENDS_ON</span></code>: Indicates a functional or causal prerequisite.
+* <code class="docutils literal notranslate"><span class="pre">INCLUDES</span></code>: Taxonomic parent/child containment.
+* <code class="docutils literal notranslate"><span class="pre">EXEMPLIFIES</span></code>: Concrete experimental instance of a general principle.
+* <code class="docutils literal notranslate"><span class="pre">RELATED_TO</span></code>: Associative domain connection.
+* <code class="docutils literal notranslate"><span class="pre">CONTRADICTS</span></code>: Explicit conflict requiring designer attention.</p></li>
 </ul>
 </section>
-<section id="app-enhancement">
-<h2>App enhancement<a class="headerlink" href="#app-enhancement" title="Link to this heading"></a></h2>
+<section id="automated-curation-linting-pipeline">
+<h3><a class="toc-backref" href="#id5" role="doc-backlink">Automated Curation &amp; Linting Pipeline</a><a class="headerlink" href="#automated-curation-linting-pipeline" title="Link to this heading"></a></h3>
+<p>Grips is actively maintained through background tasks (<cite>verbal_tasks</cite>):</p>
 <ul class="simple">
-<li><p><strong>Document summary:</strong> Develop pipeline to summarise a whole document into a set of related concept nodes informed primarily from that document.</p></li>
-<li><p><strong>Automated Linting Pipeline:</strong> Develop background linters that actively evaluate new <code class="docutils literal notranslate"><span class="pre">ConceptNodes</span></code> for contradictions, missing cross-references, and style-guide violations.</p></li>
-<li><p><strong>Edge Extraction:</strong> Create LLM tasks that read narratives and automatically suggest new <code class="docutils literal notranslate"><span class="pre">KnowledgeEdge</span></code> relationships between existing concepts.</p></li>
-<li><p><strong>Graph Visualization:</strong> Build a frontend module (e.g., using D3.js or Cytoscape) to allow users and developers to visually navigate the concept network.</p></li>
-<li><p><strong>Metacognitive Verification:</strong> Allow the AI to query its own generated claims against the <code class="docutils literal notranslate"><span class="pre">benchmarking</span></code> logic to score its own wiki entries for faithfulness.</p></li>
+<li><p><strong>Concept Synthesis</strong>: Given an uploaded document, tasks extract core concepts, synthesize the narrative, and formulate discrete claims.</p></li>
+<li><p><strong>Automated Node Linting (``lint_concept_node``)</strong>: An automated critique pass inspects <cite>claims_json</cite> against the document store to flag unanchored assertions, vague predicates, or factual contradictions.</p></li>
+<li><p><strong>Edge Linting (``lint_knowledge_edge``)</strong>: Verifies that relationship edges between nodes are logically justified, improving edge annotations or recommending edge pruning.</p></li>
 </ul>
+</section>
+</section>
+<section id="observability-health-signals">
+<h2><a class="toc-backref" href="#id6" role="doc-backlink">3. Observability &amp; Health Signals</a><a class="headerlink" href="#observability-health-signals" title="Link to this heading"></a></h2>
+<section id="how-to-know-the-knowledge-graph-is-working-well">
+<h3><a class="toc-backref" href="#id7" role="doc-backlink">How to Know the Knowledge Graph is Working Well</a><a class="headerlink" href="#how-to-know-the-knowledge-graph-is-working-well" title="Link to this heading"></a></h3>
+<ol class="arabic simple">
+<li><p><strong>Integrated Admin Wiki Experience</strong>:
+In Django Admin under <strong>Grips &gt; Concept Nodes</strong>, the interface renders dynamic Markdown previews with contextual URL links, mirroring an Obsidian-like research wiki.</p></li>
+<li><p><strong>Dense Propositional Grounding</strong>:
+Healthy concept nodes feature rich <cite>claims_json</cite> where each claim maps to specific citations or <cite>source_chunk_id</cite> references rather than ungrounded generalities.</p></li>
+<li><p><strong>Graph Connectivity</strong>:
+Navigating to a node displays its incoming and outgoing <cite>KnowledgeEdge</cite> links. Concepts should form coherent, navigable clusters within their <cite>ConceptDomain</cite>.</p></li>
+</ol>
+</section>
+</section>
+<section id="diagnostic-tips-failure-modes">
+<h2><a class="toc-backref" href="#id8" role="doc-backlink">4. Diagnostic Tips &amp; Failure Modes</a><a class="headerlink" href="#diagnostic-tips-failure-modes" title="Link to this heading"></a></h2>
+<section id="when-the-graph-misses-the-mark-how-to-tune">
+<h3><a class="toc-backref" href="#id9" role="doc-backlink">When the Graph Misses the Mark &amp; How to Tune</a><a class="headerlink" href="#when-the-graph-misses-the-mark-how-to-tune" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Graph Bloat (Explosion of Redundant Nodes)</strong>:
+* <em>Hazard</em>: Automated LLM extraction can generate dozens of near-synonymous nodes (e.g., <em>“Smoke Density”</em>, <em>“Aerosol Concentration”</em>, <em>“Particulate Obscuration”</em>).
+* <em>Remedy</em>: In Django Admin, inspect the domain’s concept list. Merge synonymous nodes into a single canonical entry, placing the alternative expressions into the node’s narrative or aliases.</p></li>
+<li><p><strong>Circular Dependencies in Causal Paths</strong>:
+* <em>Hazard</em>: Two experimental variables are accidentally linked cyclically (A <cite>DEPENDS_ON</cite> B and B <cite>DEPENDS_ON</cite> A), confusing downstream causal graph extraction.
+* <em>Remedy</em>: Run the edge linting task or inspect the graph neighbors to ensure dependency edges form a directed acyclic graph (DAG).</p></li>
+<li><p><strong>Unanchored or Hallucinated Claims</strong>:
+* <em>Hazard</em>: The LLM formulates claims that sound authoritative but do not exist in the source literature.
+* <em>Remedy</em>: Trigger the <strong>Lint Concept Node</strong> action in the Django Admin. The linter checks claims against the document store and flags ungrounded propositions with <cite>improved_justification</cite> notes.</p></li>
+</ul>
+</section>
 </section>
 <section id="module-grips.models">
-<span id="database-models"></span><h2>Database models<a class="headerlink" href="#module-grips.models" title="Link to this heading"></a></h2>
+<span id="module-reference"></span><h2><a class="toc-backref" href="#id10" role="doc-backlink">Module Reference</a><a class="headerlink" href="#module-grips.models" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="grips.models.Domain">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grips.models.</span></span><span class="sig-name descname"><span class="pre">Domain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grips/models.html#Domain"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grips.models.Domain" title="Link to this definition"></a></dt>
@@ -752,10 +848,7 @@ object the first time, the query is executed.</p>
 
 </dd></dl>
 
-</section>
-<section id="module-grips.tasks">
-<span id="grip-tasks"></span><h2>Grip Tasks<a class="headerlink" href="#module-grips.tasks" title="Link to this heading"></a></h2>
-<dl class="py class">
+<dl class="py class" id="module-grips.tasks">
 <dt class="sig sig-object py" id="grips.tasks.StructuredClaim">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grips.tasks.</span></span><span class="sig-name descname"><span class="pre">StructuredClaim</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predicate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'DEPENDS_ON'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'INCLUDES'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'EXEMPLIFIES'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'RELATED_TO'</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subject</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grips/tasks.html#StructuredClaim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grips.tasks.StructuredClaim" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
@@ -988,8 +1081,8 @@ object the first time, the query is executed.</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="benchmarking_app.html" class="btn btn-neutral float-left" title="Benchmarking - model and strategy evaluations" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="metacognition_app.html" class="btn btn-neutral float-right" title="Metacognition - plans and self-evaluation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="background_resources_app.html" class="btn btn-neutral float-left" title="Background Resources - Retrieval-Augmented Generation &amp; Document Ingestion" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="metacognition_app.html" class="btn btn-neutral float-right" title="Metacognition - Cognitive Blueprints, Agentic Workflows &amp; Self-Evaluation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

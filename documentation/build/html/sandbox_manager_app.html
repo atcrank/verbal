@@ -1,0 +1,457 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sandbox Manager - Isolated Python Execution Environment &mdash; reason 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=aaf24e6f" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=2709fde1"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Grobid Client - Deterministic Scientific PDF Parsing &amp; Citation Extraction" href="grobid_client_app.html" />
+    <link rel="prev" title="Verbal Tasks - Database-Backed Asynchronous Execution &amp; Scheduling" href="verbal_tasks_app.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            reason
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="llm_api_app.html">LLM API - Local Inference, Proxy Routing &amp; Hardware-Aware Serving</a></li>
+<li class="toctree-l1"><a class="reference internal" href="verbal_tasks_app.html">Verbal Tasks - Database-Backed Asynchronous Execution &amp; Scheduling</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Sandbox Manager - Isolated Python Execution Environment</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#purpose-motivating-problem">1. Purpose &amp; Motivating Problem</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#why-code-sandboxing-is-necessary">Why Code Sandboxing is Necessary</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#architecture-mechanism">2. Architecture &amp; Mechanism</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#container-architecture-resource-boundaries">Container Architecture &amp; Resource Boundaries</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#key-data-models">Key Data Models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#execution-workflow">Execution Workflow</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#observability-health-signals">3. Observability &amp; Health Signals</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#how-to-know-the-sandbox-is-working-well">How to Know the Sandbox is Working Well</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#diagnostic-tips-failure-modes">4. Diagnostic Tips &amp; Failure Modes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#when-the-sandbox-misses-the-mark-how-to-tune">When the Sandbox Misses the Mark &amp; How to Tune</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-sandbox_manager.models">Module Reference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#sandbox_manager.models.SandboxConfiguration"><code class="docutils literal notranslate"><span class="pre">SandboxConfiguration</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#sandbox_manager.models.SandboxConfiguration.DoesNotExist"><code class="docutils literal notranslate"><span class="pre">SandboxConfiguration.DoesNotExist</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sandbox_manager.models.SandboxConfiguration.MultipleObjectsReturned"><code class="docutils literal notranslate"><span class="pre">SandboxConfiguration.MultipleObjectsReturned</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sandbox_manager.models.SandboxConfiguration.NotUpdated"><code class="docutils literal notranslate"><span class="pre">SandboxConfiguration.NotUpdated</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sandbox_manager.models.SandboxConfiguration.clean"><code class="docutils literal notranslate"><span class="pre">SandboxConfiguration.clean()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sandbox_manager.models.SandboxConfiguration.execution_timeout"><code class="docutils literal notranslate"><span class="pre">SandboxConfiguration.execution_timeout</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sandbox_manager.models.SandboxConfiguration.get_solo"><code class="docutils literal notranslate"><span class="pre">SandboxConfiguration.get_solo()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sandbox_manager.models.SandboxConfiguration.id"><code class="docutils literal notranslate"><span class="pre">SandboxConfiguration.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sandbox_manager.models.SandboxConfiguration.last_rebuilt"><code class="docutils literal notranslate"><span class="pre">SandboxConfiguration.last_rebuilt</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sandbox_manager.models.SandboxConfiguration.objects"><code class="docutils literal notranslate"><span class="pre">SandboxConfiguration.objects</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sandbox_manager.models.SandboxConfiguration.requirements_txt"><code class="docutils literal notranslate"><span class="pre">SandboxConfiguration.requirements_txt</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sandbox_manager.models.SandboxConfiguration.save"><code class="docutils literal notranslate"><span class="pre">SandboxConfiguration.save()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#sandbox_manager.models.SandboxExecutionLog"><code class="docutils literal notranslate"><span class="pre">SandboxExecutionLog</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#sandbox_manager.models.SandboxExecutionLog.DoesNotExist"><code class="docutils literal notranslate"><span class="pre">SandboxExecutionLog.DoesNotExist</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sandbox_manager.models.SandboxExecutionLog.MultipleObjectsReturned"><code class="docutils literal notranslate"><span class="pre">SandboxExecutionLog.MultipleObjectsReturned</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sandbox_manager.models.SandboxExecutionLog.NotUpdated"><code class="docutils literal notranslate"><span class="pre">SandboxExecutionLog.NotUpdated</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sandbox_manager.models.SandboxExecutionLog.conversation_id"><code class="docutils literal notranslate"><span class="pre">SandboxExecutionLog.conversation_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sandbox_manager.models.SandboxExecutionLog.filepath"><code class="docutils literal notranslate"><span class="pre">SandboxExecutionLog.filepath</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sandbox_manager.models.SandboxExecutionLog.get_next_by_timestamp"><code class="docutils literal notranslate"><span class="pre">SandboxExecutionLog.get_next_by_timestamp()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sandbox_manager.models.SandboxExecutionLog.get_previous_by_timestamp"><code class="docutils literal notranslate"><span class="pre">SandboxExecutionLog.get_previous_by_timestamp()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sandbox_manager.models.SandboxExecutionLog.id"><code class="docutils literal notranslate"><span class="pre">SandboxExecutionLog.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sandbox_manager.models.SandboxExecutionLog.objects"><code class="docutils literal notranslate"><span class="pre">SandboxExecutionLog.objects</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sandbox_manager.models.SandboxExecutionLog.return_code"><code class="docutils literal notranslate"><span class="pre">SandboxExecutionLog.return_code</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sandbox_manager.models.SandboxExecutionLog.stderr"><code class="docutils literal notranslate"><span class="pre">SandboxExecutionLog.stderr</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sandbox_manager.models.SandboxExecutionLog.stdout"><code class="docutils literal notranslate"><span class="pre">SandboxExecutionLog.stdout</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sandbox_manager.models.SandboxExecutionLog.timestamp"><code class="docutils literal notranslate"><span class="pre">SandboxExecutionLog.timestamp</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="grobid_client_app.html">Grobid Client - Deterministic Scientific PDF Parsing &amp; Citation Extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="background_resources_app.html">Background Resources - Retrieval-Augmented Generation &amp; Document Ingestion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grips_app.html">Grips - Structured Knowledge Graph &amp; Propositional Claims</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metacognition_app.html">Metacognition - Cognitive Blueprints, Agentic Workflows &amp; Self-Evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmarking_app.html">Benchmarking - Automated Evaluation, Synthetic Generation &amp; LoRA Flywheels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo_ui_app.html">Demo UI - Empirical Research &amp; Cognitive Workbench</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="using_ollama.html">Ollama as Local AI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo_ui_trials.html">Demo UI Empirical Trials &amp; Verification Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests.html">Testing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">reason</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Sandbox Manager - Isolated Python Execution Environment</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/sandbox_manager_app.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="sandbox-manager-isolated-python-execution-environment">
+<h1>Sandbox Manager - Isolated Python Execution Environment<a class="headerlink" href="#sandbox-manager-isolated-python-execution-environment" title="Link to this heading"></a></h1>
+<p>The <strong>Sandbox Manager</strong> application provides a secure, resource-constrained Docker environment for executing Python scripts synthesized by autonomous agents during study design workflows. It safeguards the host operating system from infinite loops, memory exhaustion, and unintended filesystem alterations while enabling agents to perform computational logic, simulations, and data transformations.</p>
+<nav class="contents local" id="table-of-contents">
+<p class="topic-title">Table of Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#purpose-motivating-problem" id="id1">1. Purpose &amp; Motivating Problem</a></p>
+<ul>
+<li><p><a class="reference internal" href="#why-code-sandboxing-is-necessary" id="id2">Why Code Sandboxing is Necessary</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#architecture-mechanism" id="id3">2. Architecture &amp; Mechanism</a></p>
+<ul>
+<li><p><a class="reference internal" href="#container-architecture-resource-boundaries" id="id4">Container Architecture &amp; Resource Boundaries</a></p></li>
+<li><p><a class="reference internal" href="#key-data-models" id="id5">Key Data Models</a></p></li>
+<li><p><a class="reference internal" href="#execution-workflow" id="id6">Execution Workflow</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#observability-health-signals" id="id7">3. Observability &amp; Health Signals</a></p>
+<ul>
+<li><p><a class="reference internal" href="#how-to-know-the-sandbox-is-working-well" id="id8">How to Know the Sandbox is Working Well</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#diagnostic-tips-failure-modes" id="id9">4. Diagnostic Tips &amp; Failure Modes</a></p>
+<ul>
+<li><p><a class="reference internal" href="#when-the-sandbox-misses-the-mark-how-to-tune" id="id10">When the Sandbox Misses the Mark &amp; How to Tune</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#module-sandbox_manager.models" id="id11">Module Reference</a></p></li>
+</ul>
+</nav>
+<section id="purpose-motivating-problem">
+<h2><a class="toc-backref" href="#id1" role="doc-backlink">1. Purpose &amp; Motivating Problem</a><a class="headerlink" href="#purpose-motivating-problem" title="Link to this heading"></a></h2>
+<section id="why-code-sandboxing-is-necessary">
+<h3><a class="toc-backref" href="#id2" role="doc-backlink">Why Code Sandboxing is Necessary</a><a class="headerlink" href="#why-code-sandboxing-is-necessary" title="Link to this heading"></a></h3>
+<p>When autonomous cognitive blueprints (in <cite>metacognition</cite>) are tasked with complex research problems (such as computing experimental power, simulating agent-based models, or verifying causal graphs), relying on pure LLM text generation is insufficient. Language models struggle with precise mathematical computations and symbolic reasoning.</p>
+<p>Allowing models to write and execute Python code bridges this gap. However, executing LLM-generated code directly on the host machine presents severe operational hazards:</p>
+<ul class="simple">
+<li><p><strong>Host System Compromise</strong>: Naked <cite>subprocess</cite> execution allows untrusted scripts to access private files, delete directories, or compromise environment credentials.</p></li>
+<li><p><strong>Runaway Loops &amp; Thread Hijacking</strong>: Mathematical packages (such as NumPy or SciPy) frequently attempt to pre-allocate thread pools matching the host machine’s total CPU core count, exhausting virtual memory within seconds.</p></li>
+<li><p><strong>Uncontrolled Resource Depletion</strong>: An unintended infinite loop or exponential recursion will lock 100% of the host CPU and consume all system RAM until the operating system freezes.</p></li>
+</ul>
+<p><strong>Sandbox Manager</strong> encapsulates all script execution within an isolated, heavily throttled container with strict execution timeouts.</p>
+</section>
+</section>
+<section id="architecture-mechanism">
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">2. Architecture &amp; Mechanism</a><a class="headerlink" href="#architecture-mechanism" title="Link to this heading"></a></h2>
+<section id="container-architecture-resource-boundaries">
+<h3><a class="toc-backref" href="#id4" role="doc-backlink">Container Architecture &amp; Resource Boundaries</a><a class="headerlink" href="#container-architecture-resource-boundaries" title="Link to this heading"></a></h3>
+<p>The sandbox runs as a standalone service in [docker-compose.yml](<a class="reference external" href="file:///home/crank/coding/antigrav/verbal/docker-compose.yml">file:///home/crank/coding/antigrav/verbal/docker-compose.yml</a>) (<cite>verbal_sandbox</cite> on port 8002):</p>
+<ul class="simple">
+<li><p><strong>Filesystem Isolation</strong>: The host only mounts the project’s <cite>./workspaces</cite> folder into the container at <cite>/workspace</cite>. The container has no visibility into project source code, database credentials, or system directories.</p></li>
+<li><p><strong>Resource Limits</strong>:
+* <strong>Memory Limit</strong>: Throttled to 1 GB physical RAM. If a script exceeds this ceiling, the Linux kernel terminates the process rather than destabilizing the host.
+* <strong>CPU Throttling</strong>: Restricted to 1.0 CPU cores (<cite>cpus: ‘1.0’</cite>).
+* <strong>Thread Restraint</strong>: Injects <code class="docutils literal notranslate"><span class="pre">OPENBLAS_NUM_THREADS=1</span></code> into the environment to prevent linear algebra libraries from spawning unmanageable thread pools.</p></li>
+<li><p><strong>Execution Timeouts</strong>: Enforces hard timeouts via the Linux <cite>timeout</cite> utility (defaulting to 30 seconds). A script that fails to terminate within the threshold is killed, returning standard UNIX exit code <cite>124</cite>.</p></li>
+</ul>
+</section>
+<section id="key-data-models">
+<h3><a class="toc-backref" href="#id5" role="doc-backlink">Key Data Models</a><a class="headerlink" href="#key-data-models" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>``SandboxConfiguration``</strong>: A singleton model in PostgreSQL managing the active Python package environment. It validates package strings against PEP-508 specifications, writes <cite>sandbox/requirements.txt</cite>, and triggers Docker image rebuilding directly from Django Admin.</p></li>
+<li><p><strong>``SandboxExecutionLog``</strong>: Records every execution event, linking it to the originating conversation ID, script filepath, return code, execution duration, <cite>stdout</cite>, and <cite>stderr</cite>.</p></li>
+</ul>
+</section>
+<section id="execution-workflow">
+<h3><a class="toc-backref" href="#id6" role="doc-backlink">Execution Workflow</a><a class="headerlink" href="#execution-workflow" title="Link to this heading"></a></h3>
+<ol class="arabic simple">
+<li><p>An agent step in <cite>metacognition</cite> generates a Python script (e.g. <cite>workspace_123/simulate_power.py</cite>).</p></li>
+<li><p>The agent invokes the <cite>run_sandbox_script</cite> meta-tool.</p></li>
+<li><p>The tool issues an HTTP POST to the sandbox microservice at <cite>http://127.0.0.1:8002/execute</cite>.</p></li>
+<li><p>The container runs the script inside <cite>/workspace</cite> with the configured timeout.</p></li>
+<li><p><cite>stdout</cite>, <cite>stderr</cite>, and the integer return code are streamed back, logged in <cite>SandboxExecutionLog</cite>, and delivered back to the agent’s observation context for self-evaluation.</p></li>
+</ol>
+</section>
+</section>
+<section id="observability-health-signals">
+<h2><a class="toc-backref" href="#id7" role="doc-backlink">3. Observability &amp; Health Signals</a><a class="headerlink" href="#observability-health-signals" title="Link to this heading"></a></h2>
+<section id="how-to-know-the-sandbox-is-working-well">
+<h3><a class="toc-backref" href="#id8" role="doc-backlink">How to Know the Sandbox is Working Well</a><a class="headerlink" href="#how-to-know-the-sandbox-is-working-well" title="Link to this heading"></a></h3>
+<ol class="arabic simple">
+<li><p><strong>Clean Return Codes in Execution Logs</strong>:
+In Django Admin under <strong>Sandbox Manager &gt; Sandbox Execution Logs</strong>, inspect recent script runs. A healthy execution displays:
+* <strong>Return Code</strong>: <cite>0</cite>
+* <strong>Stdout</strong>: Contains structured output, tables, or numeric calculations.
+* <strong>Stderr</strong>: Empty or contains non-fatal informational warnings.</p></li>
+<li><p><strong>Container Heartbeat</strong>:
+Querying <cite>http://127.0.0.1:8002/docs</cite> or pinging the container returns an immediate HTTP 200 response, confirming that the internal FastAPI runner is healthy.</p></li>
+</ol>
+</section>
+</section>
+<section id="diagnostic-tips-failure-modes">
+<h2><a class="toc-backref" href="#id9" role="doc-backlink">4. Diagnostic Tips &amp; Failure Modes</a><a class="headerlink" href="#diagnostic-tips-failure-modes" title="Link to this heading"></a></h2>
+<section id="when-the-sandbox-misses-the-mark-how-to-tune">
+<h3><a class="toc-backref" href="#id10" role="doc-backlink">When the Sandbox Misses the Mark &amp; How to Tune</a><a class="headerlink" href="#when-the-sandbox-misses-the-mark-how-to-tune" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Return Code 124 (Timeout Exceeded)</strong>:
+* <em>Hazard</em>: The agent generated a script with an infinite <cite>while</cite> loop, an excessively fine simulation grid, or an unoptimized nested loop.
+* <em>Remedy</em>: Inspect <cite>stderr</cite> in the execution log. If the script was legitimately compute-heavy (e.g. Monte Carlo trial with 1,000,000 iterations), increase <cite>execution_timeout</cite> in <strong>Sandbox Environment Configuration</strong> from 30s to 60s, or instruct the agent via prompt to downsample the simulation size.</p></li>
+<li><p><strong>Return Code &gt; 0 with ``ModuleNotFoundError``</strong>:
+* <em>Hazard</em>: The generated script attempted to import an uninstalled package (e.g. <cite>scikit-learn</cite> or <cite>statsmodels</cite>).
+* <em>Remedy</em>: Navigate to <strong>Sandbox Environment Configuration</strong> in Django Admin, append the required package to <cite>requirements_txt</cite>, and click <strong>Save and Rebuild Sandbox Image</strong>.</p></li>
+<li><p><strong>Exit Code 137 (OOM Killed)</strong>:
+* <em>Hazard</em>: The script attempted to load an enormous dataset into memory exceeding the container’s 1 GB RAM allocation.
+* <em>Remedy</em>: Modify the script to process data in chunked streams or adjust the memory limit in <cite>docker-compose.yml</cite> if the host workstation has sufficient RAM headroom.</p></li>
+</ul>
+</section>
+</section>
+<section id="module-sandbox_manager.models">
+<span id="module-reference"></span><h2><a class="toc-backref" href="#id11" role="doc-backlink">Module Reference</a><a class="headerlink" href="#module-sandbox_manager.models" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="sandbox_manager.models.SandboxConfiguration">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sandbox_manager.models.</span></span><span class="sig-name descname"><span class="pre">SandboxConfiguration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sandbox_manager/models.html#SandboxConfiguration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sandbox_manager.models.SandboxConfiguration" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
+<p>Singleton model managing the Docker Sandbox environment.</p>
+<dl class="py exception">
+<dt class="sig sig-object py" id="sandbox_manager.models.SandboxConfiguration.DoesNotExist">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DoesNotExist</span></span><a class="headerlink" href="#sandbox_manager.models.SandboxConfiguration.DoesNotExist" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectDoesNotExist</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="sandbox_manager.models.SandboxConfiguration.MultipleObjectsReturned">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MultipleObjectsReturned</span></span><a class="headerlink" href="#sandbox_manager.models.SandboxConfiguration.MultipleObjectsReturned" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleObjectsReturned</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="sandbox_manager.models.SandboxConfiguration.NotUpdated">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NotUpdated</span></span><a class="headerlink" href="#sandbox_manager.models.SandboxConfiguration.NotUpdated" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectNotUpdated</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">DatabaseError</span></code></p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sandbox_manager.models.SandboxConfiguration.clean">
+<span class="sig-name descname"><span class="pre">clean</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/sandbox_manager/models.html#SandboxConfiguration.clean"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sandbox_manager.models.SandboxConfiguration.clean" title="Link to this definition"></a></dt>
+<dd><p>Validates the PEP-508 syntax of the requirements before saving.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sandbox_manager.models.SandboxConfiguration.execution_timeout">
+<span class="sig-name descname"><span class="pre">execution_timeout</span></span><a class="headerlink" href="#sandbox_manager.models.SandboxConfiguration.execution_timeout" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sandbox_manager.models.SandboxConfiguration.get_solo">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_solo</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/sandbox_manager/models.html#SandboxConfiguration.get_solo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sandbox_manager.models.SandboxConfiguration.get_solo" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sandbox_manager.models.SandboxConfiguration.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#sandbox_manager.models.SandboxConfiguration.id" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sandbox_manager.models.SandboxConfiguration.last_rebuilt">
+<span class="sig-name descname"><span class="pre">last_rebuilt</span></span><a class="headerlink" href="#sandbox_manager.models.SandboxConfiguration.last_rebuilt" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sandbox_manager.models.SandboxConfiguration.objects">
+<span class="sig-name descname"><span class="pre">objects</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;django.db.models.manager.Manager</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#sandbox_manager.models.SandboxConfiguration.objects" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sandbox_manager.models.SandboxConfiguration.requirements_txt">
+<span class="sig-name descname"><span class="pre">requirements_txt</span></span><a class="headerlink" href="#sandbox_manager.models.SandboxConfiguration.requirements_txt" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sandbox_manager.models.SandboxConfiguration.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sandbox_manager/models.html#SandboxConfiguration.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sandbox_manager.models.SandboxConfiguration.save" title="Link to this definition"></a></dt>
+<dd><p>Save the current instance. Override this in a subclass if you want to
+control the saving process.</p>
+<p>The ‘force_insert’ and ‘force_update’ parameters can be used to insist
+that the “save” must be an SQL insert or update (or equivalent for
+non-SQL backends), respectively. Normally, they should not be set.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="sandbox_manager.models.SandboxExecutionLog">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sandbox_manager.models.</span></span><span class="sig-name descname"><span class="pre">SandboxExecutionLog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sandbox_manager/models.html#SandboxExecutionLog"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sandbox_manager.models.SandboxExecutionLog" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
+<p>Tracks individual code execution requests to identify missing packages or runaway loops.</p>
+<dl class="py exception">
+<dt class="sig sig-object py" id="sandbox_manager.models.SandboxExecutionLog.DoesNotExist">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DoesNotExist</span></span><a class="headerlink" href="#sandbox_manager.models.SandboxExecutionLog.DoesNotExist" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectDoesNotExist</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="sandbox_manager.models.SandboxExecutionLog.MultipleObjectsReturned">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MultipleObjectsReturned</span></span><a class="headerlink" href="#sandbox_manager.models.SandboxExecutionLog.MultipleObjectsReturned" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleObjectsReturned</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="sandbox_manager.models.SandboxExecutionLog.NotUpdated">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NotUpdated</span></span><a class="headerlink" href="#sandbox_manager.models.SandboxExecutionLog.NotUpdated" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectNotUpdated</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">DatabaseError</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sandbox_manager.models.SandboxExecutionLog.conversation_id">
+<span class="sig-name descname"><span class="pre">conversation_id</span></span><a class="headerlink" href="#sandbox_manager.models.SandboxExecutionLog.conversation_id" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sandbox_manager.models.SandboxExecutionLog.filepath">
+<span class="sig-name descname"><span class="pre">filepath</span></span><a class="headerlink" href="#sandbox_manager.models.SandboxExecutionLog.filepath" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sandbox_manager.models.SandboxExecutionLog.get_next_by_timestamp">
+<span class="sig-name descname"><span class="pre">get_next_by_timestamp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field=&lt;django.db.models.fields.DateTimeField:</span> <span class="pre">timestamp&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_next=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sandbox_manager.models.SandboxExecutionLog.get_next_by_timestamp" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sandbox_manager.models.SandboxExecutionLog.get_previous_by_timestamp">
+<span class="sig-name descname"><span class="pre">get_previous_by_timestamp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field=&lt;django.db.models.fields.DateTimeField:</span> <span class="pre">timestamp&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_next=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sandbox_manager.models.SandboxExecutionLog.get_previous_by_timestamp" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sandbox_manager.models.SandboxExecutionLog.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#sandbox_manager.models.SandboxExecutionLog.id" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sandbox_manager.models.SandboxExecutionLog.objects">
+<span class="sig-name descname"><span class="pre">objects</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;django.db.models.manager.Manager</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#sandbox_manager.models.SandboxExecutionLog.objects" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sandbox_manager.models.SandboxExecutionLog.return_code">
+<span class="sig-name descname"><span class="pre">return_code</span></span><a class="headerlink" href="#sandbox_manager.models.SandboxExecutionLog.return_code" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sandbox_manager.models.SandboxExecutionLog.stderr">
+<span class="sig-name descname"><span class="pre">stderr</span></span><a class="headerlink" href="#sandbox_manager.models.SandboxExecutionLog.stderr" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sandbox_manager.models.SandboxExecutionLog.stdout">
+<span class="sig-name descname"><span class="pre">stdout</span></span><a class="headerlink" href="#sandbox_manager.models.SandboxExecutionLog.stdout" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sandbox_manager.models.SandboxExecutionLog.timestamp">
+<span class="sig-name descname"><span class="pre">timestamp</span></span><a class="headerlink" href="#sandbox_manager.models.SandboxExecutionLog.timestamp" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="verbal_tasks_app.html" class="btn btn-neutral float-left" title="Verbal Tasks - Database-Backed Asynchronous Execution &amp; Scheduling" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="grobid_client_app.html" class="btn btn-neutral float-right" title="Grobid Client - Deterministic Scientific PDF Parsing &amp; Citation Extraction" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Andrew Cruickshank.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -42,13 +42,16 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="llm_api_app.html">LLM API</a></li>
-<li class="toctree-l1"><a class="reference internal" href="background_resources_app.html">Background Resources - context documents</a></li>
-<li class="toctree-l1"><a class="reference internal" href="benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="grips_app.html">Grips - wiki knowledge banks</a></li>
-<li class="toctree-l1"><a class="reference internal" href="metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="llm_api_app.html">LLM API - Local Inference, Proxy Routing &amp; Hardware-Aware Serving</a></li>
+<li class="toctree-l1"><a class="reference internal" href="verbal_tasks_app.html">Verbal Tasks - Database-Backed Asynchronous Execution &amp; Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sandbox_manager_app.html">Sandbox Manager - Isolated Python Execution Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grobid_client_app.html">Grobid Client - Deterministic Scientific PDF Parsing &amp; Citation Extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="background_resources_app.html">Background Resources - Retrieval-Augmented Generation &amp; Document Ingestion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grips_app.html">Grips - Structured Knowledge Graph &amp; Propositional Claims</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metacognition_app.html">Metacognition - Cognitive Blueprints, Agentic Workflows &amp; Self-Evaluation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
-<li class="toctree-l1"><a class="reference internal" href="demo_ui_app.html">Demo UI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmarking_app.html">Benchmarking - Automated Evaluation, Synthetic Generation &amp; LoRA Flywheels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo_ui_app.html">Demo UI - Empirical Research &amp; Cognitive Workbench</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
 <ul>
@@ -130,7 +133,13 @@
       <li><a href="background_resources_app.html#background_resources.models.Document.abbreviationsreadingstrategy_set">abbreviationsreadingstrategy_set (background_resources.models.Document attribute)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.models.AbstractHigherOrderStrategy.Meta.abstract">abstract (background_resources.models.AbstractHigherOrderStrategy.Meta attribute)</a>
+
+      <ul>
+        <li><a href="grobid_client_app.html#grobid_client.models.Reference.abstract">(grobid_client.models.Reference attribute)</a>
 </li>
+        <li><a href="grobid_client_app.html#grobid_client.tasks.DocumentMetadataExtraction.abstract">(grobid_client.tasks.DocumentMetadataExtraction attribute)</a>
+</li>
+      </ul></li>
       <li><a href="background_resources_app.html#background_resources.models.AbstractHigherOrderStrategy">AbstractHigherOrderStrategy (class in background_resources.models)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.models.AbstractHigherOrderStrategy.Meta">AbstractHigherOrderStrategy.Meta (class in background_resources.models)</a>
@@ -144,6 +153,8 @@
 </li>
       </ul></li>
       <li><a href="work_organisation_app.html#work_organisation.models.WorkshopSession.ACCESS_MODE_CHOICES">ACCESS_MODE_CHOICES (work_organisation.models.WorkshopSession attribute)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.DifficultPromptEvaluation.action">action (metacognition.actions.DifficultPromptEvaluation attribute)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.models.UserActiveModel.active_external">active_external (llm_api.models.UserActiveModel attribute)</a>
 </li>
@@ -169,19 +180,23 @@
 </li>
       <li><a href="llm_api_app.html#llm_api.models.LocalAIModel.adapters">adapters (llm_api.models.LocalAIModel attribute)</a>
 </li>
+      <li><a href="llm_api_app.html#llm_api.hardware.BackendRecommendation.advisory_notes">advisory_notes (llm_api.hardware.BackendRecommendation attribute)</a>
+</li>
       <li><a href="metacognition_app.html#metacognition.models.AgentCheckpoint">AgentCheckpoint (class in metacognition.models)</a>
 </li>
       <li><a href="metacognition_app.html#metacognition.models.AgentCheckpoint.DoesNotExist">AgentCheckpoint.DoesNotExist</a>
 </li>
       <li><a href="metacognition_app.html#metacognition.models.AgentCheckpoint.MultipleObjectsReturned">AgentCheckpoint.MultipleObjectsReturned</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="metacognition_app.html#metacognition.models.AgentCheckpoint.NotUpdated">AgentCheckpoint.NotUpdated</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.ai_service.AIService">AIService (class in llm_api.ai_service)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.ai_service.AIService.DefaultOutlineResponse">AIService.DefaultOutlineResponse (class in llm_api.ai_service)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="metacognition_app.html#metacognition.actions.ExecutionPlan.analysis">analysis (metacognition.actions.ExecutionPlan attribute)</a>
 </li>
       <li><a href="benchmarking_app.html#benchmarking.generators.SyntheticQA.answer">answer (benchmarking.generators.SyntheticQA attribute)</a>
 </li>
@@ -213,7 +228,15 @@
 </li>
       <li><a href="metacognition_app.html#metacognition.api.ApproveToolIn">ApproveToolIn (class in metacognition.api)</a>
 </li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.ScheduledTask.args_json">args_json (verbal_tasks.models.ScheduledTask attribute)</a>
+
+      <ul>
+        <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecord.args_json">(verbal_tasks.models.TaskRecord attribute)</a>
+</li>
+      </ul></li>
       <li><a href="llm_api_app.html#llm_api.models.Conversation.as_messages">as_messages() (llm_api.models.Conversation method)</a>
+</li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecord.attempts">attempts (verbal_tasks.models.TaskRecord attribute)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.rag_service.RAGService.audit_stores">audit_stores() (background_resources.rag_service.RAGService method)</a>
 </li>
@@ -233,6 +256,18 @@
       </ul></li>
       <li><a href="work_organisation_app.html#work_organisation.models.WhiteboardCard.author_id">author_id (work_organisation.models.WhiteboardCard attribute)</a>
 </li>
+      <li><a href="grobid_client_app.html#grobid_client.models.Reference.authors">authors (grobid_client.models.Reference attribute)</a>
+
+      <ul>
+        <li><a href="grobid_client_app.html#grobid_client.tasks.CandidateEvaluation.authors">(grobid_client.tasks.CandidateEvaluation attribute)</a>
+</li>
+        <li><a href="grobid_client_app.html#grobid_client.tasks.DocumentMetadataExtraction.authors">(grobid_client.tasks.DocumentMetadataExtraction attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="llm_api_app.html#llm_api.hardware.HostCPUInfo.available_ram_gb">available_ram_gb (llm_api.hardware.HostCPUInfo property)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.hardware.HostCPUInfo.available_ram_mb">available_ram_mb (llm_api.hardware.HostCPUInfo attribute)</a>
+</li>
       <li><a href="metacognition_app.html#metacognition.models.ReasoningStep.available_tools">available_tools (metacognition.models.ReasoningStep attribute)</a>
 </li>
       <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkRun.average_faithfulness">average_faithfulness (benchmarking.models.BenchmarkRun attribute)</a>
@@ -243,12 +278,16 @@
 </li>
       <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkRun.average_semantic_score">average_semantic_score (benchmarking.models.BenchmarkRun attribute)</a>
 </li>
+      <li><a href="llm_api_app.html#llm_api.models.LocalAIModel.QuantizationMode.AWQ">AWQ (llm_api.models.LocalAIModel.QuantizationMode attribute)</a>
+</li>
   </ul></td>
 </tr></table>
 
 <h2 id="B">B</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="llm_api_app.html#llm_api.hardware.BackendRecommendation">BackendRecommendation (class in llm_api.hardware)</a>
+</li>
       <li>
     background_resources.models
 
@@ -400,6 +439,8 @@
 </li>
       <li><a href="metacognition_app.html#metacognition.api.CancelBlueprintIn">CancelBlueprintIn (class in metacognition.api)</a>
 </li>
+      <li><a href="grobid_client_app.html#grobid_client.tasks.CandidateEvaluation">CandidateEvaluation (class in grobid_client.tasks)</a>
+</li>
       <li><a href="work_organisation_app.html#work_organisation.api.CardMoveSchema.card_id">card_id (work_organisation.api.CardMoveSchema attribute)</a>
 </li>
       <li><a href="work_organisation_app.html#work_organisation.clustering.IdeaClusterItem.card_ids">card_ids (work_organisation.clustering.IdeaClusterItem attribute)</a>
@@ -451,6 +492,10 @@
       <li><a href="metacognition_app.html#metacognition.tasks.check_for_banned_concepts">check_for_banned_concepts() (in module metacognition.tasks)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.api.Hydrant.check_physics">check_physics() (llm_api.api.Hydrant method)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.CheckParsingAction">CheckParsingAction (class in metacognition.actions)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.CheckParsingArgs">CheckParsingArgs (class in metacognition.actions)</a>
 </li>
       <li><a href="metacognition_app.html#metacognition.models.AgentCheckpoint.checkpoint_id">checkpoint_id (metacognition.models.AgentCheckpoint attribute)</a>
 </li>
@@ -504,7 +549,23 @@
       </ul></li>
       <li><a href="background_resources_app.html#background_resources.models.Document.chunking_scheme">chunking_scheme() (background_resources.models.Document method)</a>
 </li>
+      <li><a href="grobid_client_app.html#grobid_client.models.Citation">Citation (class in grobid_client.models)</a>
+</li>
+      <li><a href="grobid_client_app.html#grobid_client.models.Citation.DoesNotExist">Citation.DoesNotExist</a>
+</li>
+      <li><a href="grobid_client_app.html#grobid_client.models.Citation.MultipleObjectsReturned">Citation.MultipleObjectsReturned</a>
+</li>
+      <li><a href="grobid_client_app.html#grobid_client.models.Citation.NotUpdated">Citation.NotUpdated</a>
+</li>
       <li><a href="background_resources_app.html#background_resources.models.Document.citation_text">citation_text (background_resources.models.Document attribute)</a>
+</li>
+      <li><a href="grobid_client_app.html#grobid_client.models.CitationGraphExplorer">CitationGraphExplorer (class in grobid_client.models)</a>
+</li>
+      <li><a href="grobid_client_app.html#grobid_client.models.CitationGraphExplorer.DoesNotExist">CitationGraphExplorer.DoesNotExist</a>
+</li>
+      <li><a href="grobid_client_app.html#grobid_client.models.CitationGraphExplorer.MultipleObjectsReturned">CitationGraphExplorer.MultipleObjectsReturned</a>
+</li>
+      <li><a href="grobid_client_app.html#grobid_client.models.CitationGraphExplorer.NotUpdated">CitationGraphExplorer.NotUpdated</a>
 </li>
       <li><a href="grips_app.html#grips.tasks.ConceptDraft.claims">claims (grips.tasks.ConceptDraft attribute)</a>
 
@@ -513,10 +574,16 @@
 </li>
         <li><a href="grips_app.html#grips.tasks.UnifiedConceptDraft.claims">(grips.tasks.UnifiedConceptDraft attribute)</a>
 </li>
+        <li><a href="metacognition_app.html#metacognition.actions.ConceptExtraction.claims">(metacognition.actions.ConceptExtraction attribute)</a>
+</li>
       </ul></li>
       <li><a href="benchmarking_app.html#benchmarking.runner.EvaluationScore.clamp_score">clamp_score() (benchmarking.runner.EvaluationScore class method)</a>
 </li>
+      <li><a href="metacognition_app.html#metacognition.actions.DifficultPromptEvaluation.clarification_question">clarification_question (metacognition.actions.DifficultPromptEvaluation attribute)</a>
+</li>
       <li><a href="llm_api_app.html#llm_api.ai_service.AIService.classifier">classifier (llm_api.ai_service.AIService attribute)</a>
+</li>
+      <li><a href="sandbox_manager_app.html#sandbox_manager.models.SandboxConfiguration.clean">clean() (sandbox_manager.models.SandboxConfiguration method)</a>
 </li>
       <li><a href="grips_app.html#grips.tasks.ConceptDraft.clean_narrative">clean_narrative() (grips.tasks.ConceptDraft class method)</a>
 </li>
@@ -552,6 +619,8 @@
         <li><a href="work_organisation_app.html#work_organisation.models.WorkshopSession.clusters">(work_organisation.models.WorkshopSession attribute)</a>
 </li>
       </ul></li>
+      <li><a href="metacognition_app.html#metacognition.actions.CheckParsingArgs.code">code (metacognition.actions.CheckParsingArgs attribute)</a>
+</li>
       <li><a href="metacognition_app.html#metacognition.models.CognitiveBlueprint">CognitiveBlueprint (class in metacognition.models)</a>
 </li>
       <li><a href="metacognition_app.html#metacognition.models.CognitiveBlueprint.DoesNotExist">CognitiveBlueprint.DoesNotExist</a>
@@ -562,6 +631,10 @@
 </li>
       <li><a href="metacognition_app.html#metacognition.models.ModerationList.cognitiveblueprint_set">cognitiveblueprint_set (metacognition.models.ModerationList attribute)</a>
 </li>
+      <li><a href="metacognition_app.html#metacognition.actions.CognitiveBlueprintProposal">CognitiveBlueprintProposal (class in metacognition.actions)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="work_organisation_app.html#work_organisation.api.ClusterDetailSchema.color">color (work_organisation.api.ClusterDetailSchema attribute)</a>
 
       <ul>
@@ -570,9 +643,15 @@
         <li><a href="work_organisation_app.html#work_organisation.models.WhiteboardCluster.color">(work_organisation.models.WhiteboardCluster attribute)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="metacognition_app.html#metacognition.compiler.compile_graph_from_blueprint">compile_graph_from_blueprint() (in module metacognition.compiler)</a>
+</li>
       <li><a href="background_resources_app.html#background_resources.rag_service.RAGService.complete_reading">complete_reading() (background_resources.rag_service.RAGService method)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.hardware.GPUDeviceInfo.compute_capability">compute_capability (llm_api.hardware.GPUDeviceInfo attribute)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.hardware.GPUDeviceInfo.compute_capability_str">compute_capability_str (llm_api.hardware.GPUDeviceInfo property)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.models.LocalAIModel.compute_dtype">compute_dtype (llm_api.models.LocalAIModel attribute)</a>
 </li>
       <li><a href="grips_app.html#grips.tasks.BatchConceptExtraction.concept_nodes">concept_nodes (grips.tasks.BatchConceptExtraction attribute)</a>
 
@@ -581,6 +660,8 @@
 </li>
       </ul></li>
       <li><a href="grips_app.html#grips.tasks.ConceptDraft">ConceptDraft (class in grips.tasks)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.ConceptExtraction">ConceptExtraction (class in metacognition.actions)</a>
 </li>
       <li><a href="grips_app.html#grips.models.ConceptNode">ConceptNode (class in grips.models)</a>
 </li>
@@ -605,12 +686,20 @@
       <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkRun.configuration_snapshot">configuration_snapshot (benchmarking.models.BenchmarkRun attribute)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.api.OpenAIChatMessage.content">content (llm_api.api.OpenAIChatMessage attribute)</a>
+
+      <ul>
+        <li><a href="metacognition_app.html#metacognition.actions.WriteFileArgs.content">(metacognition.actions.WriteFileArgs attribute)</a>
 </li>
+      </ul></li>
       <li><a href="background_resources_app.html#background_resources.models.StrategyChunkUsage.content_object">content_object (background_resources.models.StrategyChunkUsage attribute)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.models.StrategyChunkUsage.content_type">content_type (background_resources.models.StrategyChunkUsage attribute)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.models.StrategyChunkUsage.content_type_id">content_type_id (background_resources.models.StrategyChunkUsage attribute)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.StrategicPlan.context_summary">context_summary (metacognition.actions.StrategicPlan attribute)</a>
+</li>
+      <li><a href="grobid_client_app.html#grobid_client.models.Citation.context_text">context_text (grobid_client.models.Citation attribute)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.models.ExternalAIModel.context_window">context_window (llm_api.models.ExternalAIModel attribute)</a>
 
@@ -644,6 +733,8 @@
         <li><a href="metacognition_app.html#metacognition.api.BlueprintDispatchIn.conversation_id">(metacognition.api.BlueprintDispatchIn attribute)</a>
 </li>
         <li><a href="metacognition_app.html#metacognition.api.BlueprintRunIn.conversation_id">(metacognition.api.BlueprintRunIn attribute)</a>
+</li>
+        <li><a href="sandbox_manager_app.html#sandbox_manager.models.SandboxExecutionLog.conversation_id">(sandbox_manager.models.SandboxExecutionLog attribute)</a>
 </li>
         <li><a href="work_organisation_app.html#work_organisation.api.SessionDetailOutSchema.conversation_id">(work_organisation.api.SessionDetailOutSchema attribute)</a>
 </li>
@@ -691,6 +782,8 @@
       <li><a href="work_organisation_app.html#work_organisation.api.create_new_session">create_new_session() (in module work_organisation.api)</a>
 </li>
       <li><a href="work_organisation_app.html#work_organisation.api.create_project">create_project() (in module work_organisation.api)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.create_prompt_variant">create_prompt_variant() (in module metacognition.actions)</a>
 </li>
       <li><a href="metacognition_app.html#metacognition.models.ReasoningStep.create_variant">create_variant() (metacognition.models.ReasoningStep method)</a>
 </li>
@@ -742,6 +835,12 @@
         <li><a href="work_organisation_app.html#work_organisation.models.Workshop.created_by_id">(work_organisation.models.Workshop attribute)</a>
 </li>
       </ul></li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.ScheduledTask.cron_expression">cron_expression (verbal_tasks.models.ScheduledTask attribute)</a>
+</li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.cron_matches">cron_matches() (in module verbal_tasks.models)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.hardware.HardwareProfile.cuda_available">cuda_available (llm_api.hardware.HardwareProfile attribute)</a>
+</li>
       <li><a href="background_resources_app.html#background_resources.models.Document.currently_indexed">currently_indexed (background_resources.models.Document attribute)</a>
 </li>
   </ul></td>
@@ -750,12 +849,20 @@
 <h2 id="D">D</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.task_backend.DatabaseTaskBackend">DatabaseTaskBackend (class in verbal_tasks.task_backend)</a>
+</li>
       <li><a href="llm_api_app.html#llm_api.models.LoRAAdapter.dataset">dataset (llm_api.models.LoRAAdapter attribute)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.models.LoRAAdapter.dataset_id">dataset_id (llm_api.models.LoRAAdapter attribute)</a>
 </li>
       <li><a href="benchmarking_app.html#benchmarking.models.ScenarioGroup.datasets">datasets (benchmarking.models.ScenarioGroup attribute)</a>
 </li>
+      <li><a href="metacognition_app.html#metacognition.actions.EvaluateConceptNeighborsResult.decision">decision (metacognition.actions.EvaluateConceptNeighborsResult attribute)</a>
+
+      <ul>
+        <li><a href="metacognition_app.html#metacognition.actions.ResultCritique.decision">(metacognition.actions.ResultCritique attribute)</a>
+</li>
+      </ul></li>
       <li><a href="llm_api_app.html#llm_api.ai_service.AIService.default_outline_response">default_outline_response (llm_api.ai_service.AIService attribute)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.rag_service.GlossaryItem.definition">definition (background_resources.rag_service.GlossaryItem attribute)</a>
@@ -765,6 +872,8 @@
 </li>
       </ul></li>
       <li><a href="llm_api_app.html#llm_api.api.RegexSuggestIn.definition_description">definition_description (llm_api.api.RegexSuggestIn attribute)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.TaskItem.delegated_blueprint">delegated_blueprint (metacognition.actions.TaskItem attribute)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.models.delete_conversation_workspace">delete_conversation_workspace() (in module llm_api.models)</a>
 </li>
@@ -802,6 +911,8 @@
 </li>
         <li><a href="llm_api_app.html#llm_api.models.LoRAAdapter.description">(llm_api.models.LoRAAdapter attribute)</a>
 </li>
+        <li><a href="metacognition_app.html#metacognition.actions.CognitiveBlueprintProposal.description">(metacognition.actions.CognitiveBlueprintProposal attribute)</a>
+</li>
         <li><a href="metacognition_app.html#metacognition.models.CognitiveBlueprint.description">(metacognition.models.CognitiveBlueprint attribute)</a>
 </li>
         <li><a href="metacognition_app.html#metacognition.models.ResponseSchema.description">(metacognition.models.ResponseSchema attribute)</a>
@@ -819,6 +930,16 @@
         <li><a href="work_organisation_app.html#work_organisation.models.Project.description">(work_organisation.models.Project attribute)</a>
 </li>
         <li><a href="work_organisation_app.html#work_organisation.models.Workshop.description">(work_organisation.models.Workshop attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="llm_api_app.html#llm_api.hardware.HardwareProfile.devices">devices (llm_api.hardware.HardwareProfile attribute)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.DifficultPromptEvaluation">DifficultPromptEvaluation (class in metacognition.actions)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.ListFilesArgs.directory">directory (metacognition.actions.ListFilesArgs attribute)</a>
+
+      <ul>
+        <li><a href="metacognition_app.html#metacognition.actions.MakeDirArgs.directory">(metacognition.actions.MakeDirArgs attribute)</a>
 </li>
       </ul></li>
       <li><a href="background_resources_app.html#background_resources.rag_service.RAGService.disconnect">disconnect() (background_resources.rag_service.RAGService method)</a>
@@ -851,6 +972,8 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="background_resources_app.html#background_resources.models.Document">Document (class in background_resources.models)</a>
 </li>
+      <li><a href="grobid_client_app.html#grobid_client.models.Reference.document">document (grobid_client.models.Reference attribute)</a>
+</li>
       <li><a href="background_resources_app.html#background_resources.models.Document.DoesNotExist">Document.DoesNotExist</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.models.Document.MultipleObjectsReturned">Document.MultipleObjectsReturned</a>
@@ -874,6 +997,8 @@
 </li>
         <li><a href="background_resources_app.html#background_resources.models.ZeroShotLabelReadingStrategy.document_id">(background_resources.models.ZeroShotLabelReadingStrategy attribute)</a>
 </li>
+        <li><a href="grobid_client_app.html#grobid_client.models.Reference.document_id">(grobid_client.models.Reference attribute)</a>
+</li>
         <li><a href="llm_api_app.html#llm_api.api.AbbreviationPreviewIn.document_id">(llm_api.api.AbbreviationPreviewIn attribute)</a>
 </li>
         <li><a href="llm_api_app.html#llm_api.api.PromptPreviewIn.document_id">(llm_api.api.PromptPreviewIn attribute)</a>
@@ -887,10 +1012,20 @@
 </li>
       <li><a href="background_resources_app.html#background_resources.rag_service.DocumentHandles">DocumentHandles (class in background_resources.rag_service)</a>
 </li>
+      <li><a href="grobid_client_app.html#grobid_client.tasks.DocumentMetadataExtraction">DocumentMetadataExtraction (class in grobid_client.tasks)</a>
+</li>
       <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkCorpus.documents">documents (benchmarking.models.BenchmarkCorpus attribute)</a>
 
       <ul>
         <li><a href="grips_app.html#grips.models.Domain.documents">(grips.models.Domain attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="grobid_client_app.html#grobid_client.models.Reference.doi">doi (grobid_client.models.Reference attribute)</a>
+
+      <ul>
+        <li><a href="grobid_client_app.html#grobid_client.tasks.CandidateEvaluation.doi">(grobid_client.tasks.CandidateEvaluation attribute)</a>
+</li>
+        <li><a href="grobid_client_app.html#grobid_client.tasks.DocumentMetadataExtraction.doi">(grobid_client.tasks.DocumentMetadataExtraction attribute)</a>
 </li>
       </ul></li>
       <li><a href="grips_app.html#grips.models.Domain">Domain (class in grips.models)</a>
@@ -905,6 +1040,8 @@
 </li>
       <li><a href="grips_app.html#grips.models.ConceptNode.domain_id">domain_id (grips.models.ConceptNode attribute)</a>
 </li>
+      <li><a href="metacognition_app.html#metacognition.actions.GripsExpansionProposal.domain_name">domain_name (metacognition.actions.GripsExpansionProposal attribute)</a>
+</li>
       <li><a href="background_resources_app.html#background_resources.nlp_service.NLPService.domain_terms">domain_terms (background_resources.nlp_service.NLPService attribute)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.models.Document.domains">domains (background_resources.models.Document attribute)</a>
@@ -915,6 +1052,10 @@
 </li>
       <li><a href="background_resources_app.html#background_resources.rag_service.RAGService.dump_index_to_file">dump_index_to_file() (background_resources.rag_service.RAGService method)</a>
 </li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecord.duration_formatted">duration_formatted (verbal_tasks.models.TaskRecord property)</a>
+</li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecord.duration_ms">duration_ms (verbal_tasks.models.TaskRecord attribute)</a>
+</li>
       <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkResult.duration_seconds">duration_seconds (benchmarking.models.BenchmarkResult attribute)</a>
 </li>
   </ul></td>
@@ -923,7 +1064,11 @@
 <h2 id="E">E</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="metacognition_app.html#metacognition.actions.EdgeLintResult.edge_id">edge_id (metacognition.actions.EdgeLintResult attribute)</a>
+</li>
       <li><a href="grips_app.html#grips.tasks.ConceptRelationshipEvaluation.edge_predicate">edge_predicate (grips.tasks.ConceptRelationshipEvaluation attribute)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.EdgeLintResult">EdgeLintResult (class in metacognition.actions)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.models.RAGChunk.embedding">embedding (background_resources.models.RAGChunk attribute)</a>
 
@@ -935,13 +1080,23 @@
 </li>
       <li><a href="background_resources_app.html#background_resources.rag_service.RAGService.embeddings">embeddings (background_resources.rag_service.RAGService attribute)</a>
 </li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.task_backend.DatabaseTaskBackend.enqueue">enqueue() (verbal_tasks.task_backend.DatabaseTaskBackend method)</a>
+</li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecord.enqueued_at">enqueued_at (verbal_tasks.models.TaskRecord attribute)</a>
+</li>
       <li><a href="background_resources_app.html#background_resources.models.ensure_default_reading_strategy">ensure_default_reading_strategy() (in module background_resources.models)</a>
+</li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecord.error_traceback">error_traceback (verbal_tasks.models.TaskRecord attribute)</a>
 </li>
       <li><a href="benchmarking_app.html#benchmarking.models.FineTuningDataset.estimated_training_minutes">estimated_training_minutes (benchmarking.models.FineTuningDataset attribute)</a>
 </li>
       <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkRun.eval_success_rate">eval_success_rate (benchmarking.models.BenchmarkRun attribute)</a>
 </li>
       <li><a href="benchmarking_app.html#benchmarking.runner.evaluate_metric">evaluate_metric() (in module benchmarking.runner)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.EvaluateConceptNeighborsResult">EvaluateConceptNeighborsResult (class in metacognition.actions)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.EvaluateCrossDomainResult">EvaluateCrossDomainResult (class in metacognition.actions)</a>
 </li>
       <li><a href="metacognition_app.html#metacognition.models.ReasoningStep.evaluation_criteria">evaluation_criteria (metacognition.models.ReasoningStep attribute)</a>
 </li>
@@ -953,10 +1108,36 @@
 </li>
       <li><a href="metacognition_app.html#metacognition.api.execute_blueprint">execute_blueprint() (in module metacognition.api)</a>
 </li>
+      <li><a href="metacognition_app.html#metacognition.actions.ExecuteScriptAction">ExecuteScriptAction (class in metacognition.actions)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.ExecuteScriptArgs">ExecuteScriptArgs (class in metacognition.actions)</a>
+</li>
+      <li><a href="sandbox_manager_app.html#sandbox_manager.models.SandboxConfiguration.execution_timeout">execution_timeout (sandbox_manager.models.SandboxConfiguration attribute)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.ExecutionPlan">ExecutionPlan (class in metacognition.actions)</a>
+</li>
       <li><a href="grips_app.html#grips.models.KnowledgeEdge.RelationshipTypes.EXEMPLIFIES">EXEMPLIFIES (grips.models.KnowledgeEdge.RelationshipTypes attribute)</a>
 </li>
       <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkScenario.expected_keywords">expected_keywords (benchmarking.models.BenchmarkScenario attribute)</a>
 </li>
+      <li><a href="metacognition_app.html#metacognition.actions.CheckParsingAction.expected_outcome">expected_outcome (metacognition.actions.CheckParsingAction attribute)</a>
+
+      <ul>
+        <li><a href="metacognition_app.html#metacognition.actions.ExecuteScriptAction.expected_outcome">(metacognition.actions.ExecuteScriptAction attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.ListFilesAction.expected_outcome">(metacognition.actions.ListFilesAction attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.MakeDirAction.expected_outcome">(metacognition.actions.MakeDirAction attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.ReadFileAction.expected_outcome">(metacognition.actions.ReadFileAction attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.TaskCompleteAction.expected_outcome">(metacognition.actions.TaskCompleteAction attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.WriteFileAction.expected_outcome">(metacognition.actions.WriteFileAction attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkRun.experiment">experiment (benchmarking.models.BenchmarkRun attribute)</a>
 </li>
       <li><a href="benchmarking_app.html#benchmarking.models.Experiment">Experiment (class in benchmarking.models)</a>
@@ -965,8 +1146,6 @@
 </li>
       <li><a href="benchmarking_app.html#benchmarking.models.Experiment.MultipleObjectsReturned">Experiment.MultipleObjectsReturned</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="benchmarking_app.html#benchmarking.models.Experiment.NotUpdated">Experiment.NotUpdated</a>
 </li>
       <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkRun.experiment_id">experiment_id (benchmarking.models.BenchmarkRun attribute)</a>
@@ -982,6 +1161,8 @@
       <li><a href="benchmarking_app.html#benchmarking.models.Investigation.experiments">experiments (benchmarking.models.Investigation attribute)</a>
 </li>
       <li><a href="work_organisation_app.html#work_organisation.clustering.export_whiteboard_markdown_summary">export_whiteboard_markdown_summary() (in module work_organisation.clustering)</a>
+</li>
+      <li><a href="grobid_client_app.html#grobid_client.models.Reference.extended_metadata">extended_metadata (grobid_client.models.Reference attribute)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.models.ExternalAIModel">ExternalAIModel (class in llm_api.models)</a>
 </li>
@@ -1021,6 +1202,8 @@
 </li>
       <li><a href="work_organisation_app.html#work_organisation.clustering.CausalGraphExtractionPlan.factors">factors (work_organisation.clustering.CausalGraphExtractionPlan attribute)</a>
 </li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecordStatus.FAILED">FAILED (verbal_tasks.models.TaskRecordStatus attribute)</a>
+</li>
       <li><a href="llm_api_app.html#llm_api.models.PromptResponseLog.StepStatus.FAILURE">FAILURE (llm_api.models.PromptResponseLog.StepStatus attribute)</a>
 </li>
       <li><a href="metacognition_app.html#metacognition.models.ReasoningStep.failure_sources">failure_sources (metacognition.models.ReasoningStep attribute)</a>
@@ -1028,6 +1211,8 @@
       <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkResult.faithfulness_score">faithfulness_score (benchmarking.models.BenchmarkResult attribute)</a>
 </li>
       <li><a href="metacognition_app.html#metacognition.models.CognitiveBlueprint.family_success_probability">family_success_probability (metacognition.models.CognitiveBlueprint property)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.ResultCritique.feedback_for_planner">feedback_for_planner (metacognition.actions.ResultCritique attribute)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.models.Document.file">file (background_resources.models.Document attribute)</a>
 </li>
@@ -1037,7 +1222,19 @@
         <li><a href="llm_api_app.html#llm_api.models.LoRAAdapter.file_path">(llm_api.models.LoRAAdapter attribute)</a>
 </li>
       </ul></li>
+      <li><a href="metacognition_app.html#metacognition.actions.ExecuteScriptArgs.filepath">filepath (metacognition.actions.ExecuteScriptArgs attribute)</a>
+
+      <ul>
+        <li><a href="metacognition_app.html#metacognition.actions.ReadFileArgs.filepath">(metacognition.actions.ReadFileArgs attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.WriteFileArgs.filepath">(metacognition.actions.WriteFileArgs attribute)</a>
+</li>
+        <li><a href="sandbox_manager_app.html#sandbox_manager.models.SandboxExecutionLog.filepath">(sandbox_manager.models.SandboxExecutionLog attribute)</a>
+</li>
+      </ul></li>
       <li><a href="demo_ui_app.html#demo_ui.views.fill_grips_stub">fill_grips_stub() (in module demo_ui.views)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.TaskCompleteArgs.final_answer">final_answer (metacognition.actions.TaskCompleteArgs attribute)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -1049,10 +1246,16 @@
 </li>
       <li><a href="benchmarking_app.html#benchmarking.models.FineTuningDataset.NotUpdated">FineTuningDataset.NotUpdated</a>
 </li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecord.finished_at">finished_at (verbal_tasks.models.TaskRecord attribute)</a>
+</li>
       <li><a href="grips_app.html#grips.models.ConceptNode.focus_hint">focus_hint (grips.models.ConceptNode attribute)</a>
 
       <ul>
         <li><a href="grips_app.html#grips.tasks.SubConcept.focus_hint">(grips.tasks.SubConcept attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.ConceptExtraction.focus_hint">(metacognition.actions.ConceptExtraction attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.GripsExpansionProposal.focus_hint">(metacognition.actions.GripsExpansionProposal attribute)</a>
 </li>
       </ul></li>
       <li><a href="work_organisation_app.html#work_organisation.models.GroupScopedQuerySet.for_user">for_user() (work_organisation.models.GroupScopedQuerySet method)</a>
@@ -1064,6 +1267,12 @@
       <li><a href="llm_api_app.html#llm_api.ai_service.AIService.format_chat_prompt">format_chat_prompt() (llm_api.ai_service.AIService method)</a>
 </li>
       <li><a href="work_organisation_app.html#work_organisation.events.format_datastar_sse">format_datastar_sse() (in module work_organisation.events)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.models.LocalAIModel.QuantizationMode.FP4">FP4 (llm_api.models.LocalAIModel.QuantizationMode attribute)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.hardware.GPUDeviceInfo.free_vram_gb">free_vram_gb (llm_api.hardware.GPUDeviceInfo property)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.hardware.GPUDeviceInfo.free_vram_mb">free_vram_mb (llm_api.hardware.GPUDeviceInfo attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -1103,6 +1312,8 @@
         <li><a href="grips_app.html#grips.models.Domain.get_admin_url">(grips.models.Domain method)</a>
 </li>
       </ul></li>
+      <li><a href="llm_api_app.html#llm_api.hardware.get_backend_recommendations">get_backend_recommendations() (in module llm_api.hardware)</a>
+</li>
       <li><a href="background_resources_app.html#background_resources.nlp_service.NLPService.get_basic_spellchecker">get_basic_spellchecker() (background_resources.nlp_service.NLPService method)</a>
 </li>
       <li><a href="metacognition_app.html#metacognition.models.ToolDefinition.get_callable">get_callable() (metacognition.models.ToolDefinition method)</a>
@@ -1127,6 +1338,8 @@
         <li><a href="background_resources_app.html#background_resources.models.RAGChunk.get_citation">(background_resources.models.RAGChunk method)</a>
 </li>
       </ul></li>
+      <li><a href="llm_api_app.html#llm_api.models.LocalAIModel.get_compute_dtype_display">get_compute_dtype_display() (llm_api.models.LocalAIModel method)</a>
+</li>
       <li><a href="background_resources_app.html#background_resources.rag_service.RAGService.get_context">get_context() (background_resources.rag_service.RAGService method)</a>
 </li>
       <li><a href="demo_ui_app.html#demo_ui.views.get_conversation">get_conversation() (in module demo_ui.views)</a>
@@ -1142,6 +1355,10 @@
       <li><a href="background_resources_app.html#background_resources.rag_service.RAGService.get_glossary_terms">get_glossary_terms() (background_resources.rag_service.RAGService method)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.api.get_grips_context">get_grips_context() (in module llm_api.api)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.api.get_hardware_diagnostics">get_hardware_diagnostics() (in module llm_api.api)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.hardware.get_hardware_profile">get_hardware_profile() (in module llm_api.hardware)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.models.SystemConfiguration.get_hosting_backend_display">get_hosting_backend_display() (llm_api.models.SystemConfiguration method)</a>
 </li>
@@ -1177,9 +1394,13 @@
         <li><a href="work_organisation_app.html#work_organisation.models.WorkshopSession.get_next_by_created_at">(work_organisation.models.WorkshopSession method)</a>
 </li>
       </ul></li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecord.get_next_by_enqueued_at">get_next_by_enqueued_at() (verbal_tasks.models.TaskRecord method)</a>
+</li>
       <li><a href="work_organisation_app.html#work_organisation.models.ConversationMember.get_next_by_joined_at">get_next_by_joined_at() (work_organisation.models.ConversationMember method)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.models.RAGChunk.get_next_by_last_accessed">get_next_by_last_accessed() (background_resources.models.RAGChunk method)</a>
+</li>
+      <li><a href="grobid_client_app.html#grobid_client.models.Reference.get_next_by_parsed_at">get_next_by_parsed_at() (grobid_client.models.Reference method)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.models.Conversation.get_next_by_start_time">get_next_by_start_time() (llm_api.models.Conversation method)</a>
 </li>
@@ -1187,6 +1408,8 @@
 
       <ul>
         <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkRun.get_next_by_timestamp">(benchmarking.models.BenchmarkRun method)</a>
+</li>
+        <li><a href="sandbox_manager_app.html#sandbox_manager.models.SandboxExecutionLog.get_next_by_timestamp">(sandbox_manager.models.SandboxExecutionLog method)</a>
 </li>
       </ul></li>
       <li><a href="benchmarking_app.html#benchmarking.models.ScenarioGroup.get_next_by_updated_at">get_next_by_updated_at() (benchmarking.models.ScenarioGroup method)</a>
@@ -1233,9 +1456,13 @@
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecord.get_previous_by_enqueued_at">get_previous_by_enqueued_at() (verbal_tasks.models.TaskRecord method)</a>
+</li>
       <li><a href="work_organisation_app.html#work_organisation.models.ConversationMember.get_previous_by_joined_at">get_previous_by_joined_at() (work_organisation.models.ConversationMember method)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.models.RAGChunk.get_previous_by_last_accessed">get_previous_by_last_accessed() (background_resources.models.RAGChunk method)</a>
+</li>
+      <li><a href="grobid_client_app.html#grobid_client.models.Reference.get_previous_by_parsed_at">get_previous_by_parsed_at() (grobid_client.models.Reference method)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.models.Conversation.get_previous_by_start_time">get_previous_by_start_time() (llm_api.models.Conversation method)</a>
 </li>
@@ -1243,6 +1470,8 @@
 
       <ul>
         <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkRun.get_previous_by_timestamp">(benchmarking.models.BenchmarkRun method)</a>
+</li>
+        <li><a href="sandbox_manager_app.html#sandbox_manager.models.SandboxExecutionLog.get_previous_by_timestamp">(sandbox_manager.models.SandboxExecutionLog method)</a>
 </li>
       </ul></li>
       <li><a href="benchmarking_app.html#benchmarking.models.ScenarioGroup.get_previous_by_updated_at">get_previous_by_updated_at() (benchmarking.models.ScenarioGroup method)</a>
@@ -1265,6 +1494,8 @@
 </li>
       <li><a href="metacognition_app.html#metacognition.models.ResponseSchema.get_pydantic_model_name_display">get_pydantic_model_name_display() (metacognition.models.ResponseSchema method)</a>
 </li>
+      <li><a href="llm_api_app.html#llm_api.models.LocalAIModel.get_quantization_mode_display">get_quantization_mode_display() (llm_api.models.LocalAIModel method)</a>
+</li>
       <li><a href="background_resources_app.html#background_resources.models.PromptStrategy.get_query">get_query() (background_resources.models.PromptStrategy method)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.models.ConversationManager.get_queryset">get_queryset() (llm_api.models.ConversationManager method)</a>
@@ -1276,6 +1507,8 @@
       <li><a href="llm_api_app.html#llm_api.api.get_rag_context">get_rag_context() (in module llm_api.api)</a>
 </li>
       <li><a href="grips_app.html#grips.models.KnowledgeEdge.get_relationship_type_display">get_relationship_type_display() (grips.models.KnowledgeEdge method)</a>
+</li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.task_backend.DatabaseTaskBackend.get_result">get_result() (verbal_tasks.task_backend.DatabaseTaskBackend method)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.models.StrategyChunkUsage.get_role_display">get_role_display() (background_resources.models.StrategyChunkUsage method)</a>
 
@@ -1294,6 +1527,12 @@
       <li><a href="work_organisation_app.html#work_organisation.models.WorkshopSession.get_session_type_display">get_session_type_display() (work_organisation.models.WorkshopSession method)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.models.SystemConfiguration.get_solo">get_solo() (llm_api.models.SystemConfiguration class method)</a>
+
+      <ul>
+        <li><a href="sandbox_manager_app.html#sandbox_manager.models.SandboxConfiguration.get_solo">(sandbox_manager.models.SandboxConfiguration class method)</a>
+</li>
+      </ul></li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecord.get_status_display">get_status_display() (verbal_tasks.models.TaskRecord method)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.models.PromptResponseLog.get_step_status_display">get_step_status_display() (llm_api.models.PromptResponseLog method)</a>
 </li>
@@ -1321,6 +1560,12 @@
 </li>
       <li><a href="background_resources_app.html#background_resources.rag_service.GlossaryItem">GlossaryItem (class in background_resources.rag_service)</a>
 </li>
+      <li><a href="metacognition_app.html#metacognition.actions.TaskItem.goal">goal (metacognition.actions.TaskItem attribute)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.models.LocalAIModel.QuantizationMode.GPTQ">GPTQ (llm_api.models.LocalAIModel.QuantizationMode attribute)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.hardware.GPUDeviceInfo">GPUDeviceInfo (class in llm_api.hardware)</a>
+</li>
       <li>
     grips.models
 
@@ -1339,7 +1584,34 @@
 </li>
       <li><a href="demo_ui_app.html#demo_ui.views.grips_explorer_tab">grips_explorer_tab() (in module demo_ui.views)</a>
 </li>
+      <li><a href="metacognition_app.html#metacognition.actions.ResearchEvaluation.grips_queries">grips_queries (metacognition.actions.ResearchEvaluation attribute)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.GripsExpansionProposal">GripsExpansionProposal (class in metacognition.actions)</a>
+</li>
+      <li>
+    grobid_client.api
+
+      <ul>
+        <li><a href="grobid_client_app.html#module-grobid_client.api">module</a>
+</li>
+      </ul></li>
+      <li>
+    grobid_client.models
+
+      <ul>
+        <li><a href="grobid_client_app.html#module-grobid_client.models">module</a>
+</li>
+      </ul></li>
+      <li>
+    grobid_client.tasks
+
+      <ul>
+        <li><a href="grobid_client_app.html#module-grobid_client.tasks">module</a>
+</li>
+      </ul></li>
       <li><a href="background_resources_app.html#background_resources.models.Document.grobid_metadata">grobid_metadata (background_resources.models.Document attribute)</a>
+</li>
+      <li><a href="grobid_client_app.html#grobid_client.tasks.grobid_tei_to_semantic_chunks">grobid_tei_to_semantic_chunks() (in module grobid_client.tasks)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.models.GrobidReadingStrategy">GrobidReadingStrategy (class in background_resources.models)</a>
 </li>
@@ -1375,6 +1647,32 @@
 <h2 id="H">H</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="metacognition_app.html#metacognition.actions.handle_blueprint_proposal">handle_blueprint_proposal() (in module metacognition.actions)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.handle_create_concept_nodes_tool">handle_create_concept_nodes_tool() (in module metacognition.actions)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.handle_difficult_prompt">handle_difficult_prompt() (in module metacognition.actions)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.handle_edge_lint_tool">handle_edge_lint_tool() (in module metacognition.actions)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.handle_evaluate_concept_neighbors_tool">handle_evaluate_concept_neighbors_tool() (in module metacognition.actions)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.handle_evaluate_cross_domain_tool">handle_evaluate_cross_domain_tool() (in module metacognition.actions)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.handle_execution_plan">handle_execution_plan() (in module metacognition.actions)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.handle_grips_expansion">handle_grips_expansion() (in module metacognition.actions)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.handle_node_lint_tool">handle_node_lint_tool() (in module metacognition.actions)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.handle_research">handle_research() (in module metacognition.actions)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="metacognition_app.html#metacognition.actions.handle_result_critique">handle_result_critique() (in module metacognition.actions)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.hardware.HardwareProfile">HardwareProfile (class in llm_api.hardware)</a>
+</li>
       <li><a href="background_resources_app.html#background_resources.rag_service.RAGService.hashes_indexed">hashes_indexed (background_resources.rag_service.RAGService attribute)</a>
 </li>
       <li><a href="work_organisation_app.html#work_organisation.api.ClusterDetailSchema.height">height (work_organisation.api.ClusterDetailSchema attribute)</a>
@@ -1383,11 +1681,13 @@
         <li><a href="work_organisation_app.html#work_organisation.models.WhiteboardCluster.height">(work_organisation.models.WhiteboardCluster attribute)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="llm_api_app.html#llm_api.models.LocalAIModel.hf_model_id">hf_model_id (llm_api.models.LocalAIModel attribute)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.models.RAGChunk.hit_count">hit_count (background_resources.models.RAGChunk attribute)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.hardware.HardwareProfile.host_cpu">host_cpu (llm_api.hardware.HardwareProfile attribute)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.hardware.HostCPUInfo">HostCPUInfo (class in llm_api.hardware)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.models.SystemConfiguration.hosting_backend">hosting_backend (llm_api.models.SystemConfiguration attribute)</a>
 </li>
@@ -1446,6 +1746,12 @@
 </li>
         <li><a href="grips_app.html#grips.models.KnowledgeEdge.id">(grips.models.KnowledgeEdge attribute)</a>
 </li>
+        <li><a href="grobid_client_app.html#grobid_client.models.Citation.id">(grobid_client.models.Citation attribute)</a>
+</li>
+        <li><a href="grobid_client_app.html#grobid_client.models.CitationGraphExplorer.id">(grobid_client.models.CitationGraphExplorer attribute)</a>
+</li>
+        <li><a href="grobid_client_app.html#grobid_client.models.Reference.id">(grobid_client.models.Reference attribute)</a>
+</li>
         <li><a href="llm_api_app.html#llm_api.models.Conversation.id">(llm_api.models.Conversation attribute)</a>
 </li>
         <li><a href="llm_api_app.html#llm_api.models.ExternalAIModel.id">(llm_api.models.ExternalAIModel attribute)</a>
@@ -1474,6 +1780,14 @@
 </li>
         <li><a href="metacognition_app.html#metacognition.models.ToolDefinition.id">(metacognition.models.ToolDefinition attribute)</a>
 </li>
+        <li><a href="sandbox_manager_app.html#sandbox_manager.models.SandboxConfiguration.id">(sandbox_manager.models.SandboxConfiguration attribute)</a>
+</li>
+        <li><a href="sandbox_manager_app.html#sandbox_manager.models.SandboxExecutionLog.id">(sandbox_manager.models.SandboxExecutionLog attribute)</a>
+</li>
+        <li><a href="verbal_tasks_app.html#verbal_tasks.models.ScheduledTask.id">(verbal_tasks.models.ScheduledTask attribute)</a>
+</li>
+        <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecord.id">(verbal_tasks.models.TaskRecord attribute)</a>
+</li>
         <li><a href="work_organisation_app.html#work_organisation.api.CardDetailSchema.id">(work_organisation.api.CardDetailSchema attribute)</a>
 </li>
         <li><a href="work_organisation_app.html#work_organisation.api.ClusterDetailSchema.id">(work_organisation.api.ClusterDetailSchema attribute)</a>
@@ -1497,13 +1811,17 @@
         <li><a href="work_organisation_app.html#work_organisation.models.WorkshopSession.id">(work_organisation.models.WorkshopSession attribute)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="work_organisation_app.html#work_organisation.clustering.IdeaClusteringPlan">IdeaClusteringPlan (class in work_organisation.clustering)</a>
 </li>
       <li><a href="work_organisation_app.html#work_organisation.clustering.IdeaClusterItem">IdeaClusterItem (class in work_organisation.clustering)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkScenario.ideal_answer">ideal_answer (benchmarking.models.BenchmarkScenario attribute)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.EdgeLintResult.improved_justification">improved_justification (metacognition.actions.EdgeLintResult attribute)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.NodeLintResult.improved_narrative">improved_narrative (metacognition.actions.NodeLintResult attribute)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.models.RAGChunk.in_byte_store">in_byte_store (background_resources.models.RAGChunk attribute)</a>
 </li>
@@ -1513,7 +1831,11 @@
 </li>
       <li><a href="grips_app.html#grips.models.KnowledgeEdge.RelationshipTypes.INCLUDES">INCLUDES (grips.models.KnowledgeEdge.RelationshipTypes attribute)</a>
 </li>
+      <li><a href="grobid_client_app.html#grobid_client.models.Reference.incoming_citations">incoming_citations (grobid_client.models.Reference attribute)</a>
+</li>
       <li><a href="grips_app.html#grips.models.ConceptNode.incoming_edges">incoming_edges (grips.models.ConceptNode attribute)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.hardware.GPUDeviceInfo.index">index (llm_api.hardware.GPUDeviceInfo attribute)</a>
 </li>
       <li><a href="demo_ui_app.html#demo_ui.views.index">index() (in module demo_ui.views)</a>
 </li>
@@ -1529,11 +1851,23 @@
 </li>
       <li><a href="background_resources_app.html#background_resources.rag_service.RAGService.ingest_queryset_reading_strategies">ingest_queryset_reading_strategies() (background_resources.rag_service.RAGService method)</a>
 </li>
+      <li><a href="metacognition_app.html#metacognition.actions.CognitiveBlueprintProposal.initial_step_prompt">initial_step_prompt (metacognition.actions.CognitiveBlueprintProposal attribute)</a>
+</li>
       <li><a href="metacognition_app.html#metacognition.models.ToolDefinition.input_schema">input_schema (metacognition.models.ToolDefinition attribute)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.models.PromptResponseLog.input_tokens">input_tokens (llm_api.models.PromptResponseLog attribute)</a>
+
+      <ul>
+        <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecord.input_tokens">(verbal_tasks.models.TaskRecord attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="llm_api_app.html#llm_api.models.LocalAIModel.QuantizationMode.INT8">INT8 (llm_api.models.LocalAIModel.QuantizationMode attribute)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.api.internal_ping">internal_ping() (in module llm_api.api)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.api.internal_unload_vram">internal_unload_vram() (in module llm_api.api)</a>
+</li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.ScheduledTask.interval_seconds">interval_seconds (verbal_tasks.models.ScheduledTask attribute)</a>
 </li>
       <li><a href="benchmarking_app.html#benchmarking.models.Experiment.investigation">investigation (benchmarking.models.Experiment attribute)</a>
 </li>
@@ -1554,15 +1888,23 @@
       <ul>
         <li><a href="metacognition_app.html#metacognition.models.ToolDefinition.is_active">(metacognition.models.ToolDefinition attribute)</a>
 </li>
-      </ul></li>
-      <li><a href="metacognition_app.html#metacognition.models.CognitiveBlueprint.is_autonomous">is_autonomous (metacognition.models.CognitiveBlueprint attribute)</a>
+        <li><a href="verbal_tasks_app.html#verbal_tasks.models.ScheduledTask.is_active">(verbal_tasks.models.ScheduledTask attribute)</a>
 </li>
+      </ul></li>
+      <li><a href="metacognition_app.html#metacognition.actions.CognitiveBlueprintProposal.is_autonomous">is_autonomous (metacognition.actions.CognitiveBlueprintProposal attribute)</a>
+
+      <ul>
+        <li><a href="metacognition_app.html#metacognition.models.CognitiveBlueprint.is_autonomous">(metacognition.models.CognitiveBlueprint attribute)</a>
+</li>
+      </ul></li>
       <li><a href="metacognition_app.html#metacognition.models.CognitiveBlueprint.is_canonical">is_canonical (metacognition.models.CognitiveBlueprint attribute)</a>
 
       <ul>
         <li><a href="metacognition_app.html#metacognition.models.ReasoningStep.is_canonical">(metacognition.models.ReasoningStep attribute)</a>
 </li>
       </ul></li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.ScheduledTask.is_due">is_due() (verbal_tasks.models.ScheduledTask method)</a>
+</li>
       <li><a href="background_resources_app.html#background_resources.rag_service.RAGService.is_hallucination">is_hallucination() (background_resources.rag_service.RAGService method)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.rag_service.RAGService.is_likely_toc">is_likely_toc() (background_resources.rag_service.RAGService static method)</a>
@@ -1581,6 +1923,8 @@
         <li><a href="work_organisation_app.html#work_organisation.models.Project.is_public">(work_organisation.models.Project attribute)</a>
 </li>
       </ul></li>
+      <li><a href="metacognition_app.html#metacognition.actions.EvaluateCrossDomainResult.is_related">is_related (metacognition.actions.EvaluateCrossDomainResult attribute)</a>
+</li>
       <li><a href="benchmarking_app.html#benchmarking.models.FineTuningDataset.is_stale">is_stale (benchmarking.models.FineTuningDataset property)</a>
 
       <ul>
@@ -1590,6 +1934,8 @@
       <li><a href="metacognition_app.html#metacognition.models.ReasoningStep.is_start_node">is_start_node (metacognition.models.ReasoningStep attribute)</a>
 </li>
       <li><a href="grips_app.html#grips.tasks.LintingReportSchema.is_valid">is_valid (grips.tasks.LintingReportSchema attribute)</a>
+</li>
+      <li><a href="grobid_client_app.html#grobid_client.models.Reference.issue">issue (grobid_client.models.Reference attribute)</a>
 </li>
       <li><a href="grips_app.html#grips.models.ConceptNode.issue_flags">issue_flags (grips.models.ConceptNode attribute)</a>
 </li>
@@ -1609,6 +1955,12 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="work_organisation_app.html#work_organisation.models.ConversationMember.joined_at">joined_at (work_organisation.models.ConversationMember attribute)</a>
 </li>
+      <li><a href="grobid_client_app.html#grobid_client.models.Reference.journal">journal (grobid_client.models.Reference attribute)</a>
+
+      <ul>
+        <li><a href="grobid_client_app.html#grobid_client.tasks.DocumentMetadataExtraction.journal">(grobid_client.tasks.DocumentMetadataExtraction attribute)</a>
+</li>
+      </ul></li>
       <li><a href="metacognition_app.html#metacognition.models.ResponseSchema.json_schema">json_schema (metacognition.models.ResponseSchema attribute)</a>
 </li>
   </ul></td>
@@ -1618,6 +1970,10 @@
       <li><a href="grips_app.html#grips.models.KnowledgeEdge.justification">justification (grips.models.KnowledgeEdge attribute)</a>
 
       <ul>
+        <li><a href="metacognition_app.html#metacognition.actions.EvaluateConceptNeighborsResult.justification">(metacognition.actions.EvaluateConceptNeighborsResult attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.EvaluateCrossDomainResult.justification">(metacognition.actions.EvaluateCrossDomainResult attribute)</a>
+</li>
         <li><a href="work_organisation_app.html#work_organisation.clustering.CausalFactorItem.justification">(work_organisation.clustering.CausalFactorItem attribute)</a>
 </li>
       </ul></li>
@@ -1635,16 +1991,22 @@
       </ul></li>
       <li><a href="grips_app.html#grips.models.KnowledgeEdge">KnowledgeEdge (class in grips.models)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="grips_app.html#grips.models.KnowledgeEdge.DoesNotExist">KnowledgeEdge.DoesNotExist</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="grips_app.html#grips.models.KnowledgeEdge.MultipleObjectsReturned">KnowledgeEdge.MultipleObjectsReturned</a>
 </li>
       <li><a href="grips_app.html#grips.models.KnowledgeEdge.NotUpdated">KnowledgeEdge.NotUpdated</a>
 </li>
       <li><a href="grips_app.html#grips.models.KnowledgeEdge.RelationshipTypes">KnowledgeEdge.RelationshipTypes (class in grips.models)</a>
 </li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.ScheduledTask.kwargs_json">kwargs_json (verbal_tasks.models.ScheduledTask attribute)</a>
+
+      <ul>
+        <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecord.kwargs_json">(verbal_tasks.models.TaskRecord attribute)</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
@@ -1657,12 +2019,22 @@
 </li>
       <li><a href="background_resources_app.html#background_resources.models.RAGChunk.last_accessed">last_accessed (background_resources.models.RAGChunk attribute)</a>
 </li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecord.last_attempted_at">last_attempted_at (verbal_tasks.models.TaskRecord attribute)</a>
+</li>
       <li><a href="grips_app.html#grips.models.ConceptNode.last_linted_at">last_linted_at (grips.models.ConceptNode attribute)</a>
 
       <ul>
         <li><a href="grips_app.html#grips.models.KnowledgeEdge.last_linted_at">(grips.models.KnowledgeEdge attribute)</a>
 </li>
       </ul></li>
+      <li><a href="sandbox_manager_app.html#sandbox_manager.models.SandboxConfiguration.last_rebuilt">last_rebuilt (sandbox_manager.models.SandboxConfiguration attribute)</a>
+</li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.ScheduledTask.last_run_at">last_run_at (verbal_tasks.models.ScheduledTask attribute)</a>
+</li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.ScheduledTask.last_task_record">last_task_record (verbal_tasks.models.ScheduledTask attribute)</a>
+</li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.ScheduledTask.last_task_record_id">last_task_record_id (verbal_tasks.models.ScheduledTask attribute)</a>
+</li>
       <li><a href="grips_app.html#grips.models.ConceptNode.linting_report">linting_report (grips.models.ConceptNode attribute)</a>
 
       <ul>
@@ -1676,6 +2048,10 @@
       <li><a href="work_organisation_app.html#work_organisation.api.list_projects">list_projects() (in module work_organisation.api)</a>
 </li>
       <li><a href="work_organisation_app.html#work_organisation.api.list_workshops">list_workshops() (in module work_organisation.api)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.ListFilesAction">ListFilesAction (class in metacognition.actions)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.ListFilesArgs">ListFilesArgs (class in metacognition.actions)</a>
 </li>
       <li>
     llm_api.ai_service
@@ -1691,6 +2067,15 @@
         <li><a href="llm_api_app.html#module-llm_api.api">module</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li>
+    llm_api.hardware
+
+      <ul>
+        <li><a href="llm_api_app.html#module-llm_api.hardware">module</a>
+</li>
+      </ul></li>
       <li>
     llm_api.models
 
@@ -1698,8 +2083,6 @@
         <li><a href="llm_api_app.html#module-llm_api.models">module</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="background_resources_app.html#background_resources.rag_service.RAGService.load_db">load_db() (background_resources.rag_service.RAGService method)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.models.LocalAIModel.load_in_4bit">load_in_4bit (llm_api.models.LocalAIModel attribute)</a>
@@ -1717,6 +2100,8 @@
       <li><a href="llm_api_app.html#llm_api.models.LocalAIModel.MultipleObjectsReturned">LocalAIModel.MultipleObjectsReturned</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.models.LocalAIModel.NotUpdated">LocalAIModel.NotUpdated</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.models.LocalAIModel.QuantizationMode">LocalAIModel.QuantizationMode (class in llm_api.models)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.api.Hydrant.location_name">location_name (llm_api.api.Hydrant attribute)</a>
 </li>
@@ -1744,7 +2129,13 @@
 <h2 id="M">M</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="metacognition_app.html#metacognition.actions.MakeDirAction">MakeDirAction (class in metacognition.actions)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.MakeDirArgs">MakeDirArgs (class in metacognition.actions)</a>
+</li>
       <li><a href="llm_api_app.html#llm_api.models.manage_hosting_backend">manage_hosting_backend() (in module llm_api.models)</a>
+</li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.match_cron_field">match_cron_field() (in module verbal_tasks.models)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.api.GenerateIn.max_new_tokens">max_new_tokens (llm_api.api.GenerateIn attribute)</a>
 
@@ -1767,10 +2158,24 @@
       <li><a href="llm_api_app.html#llm_api.api.OpenAIChatCompletionIn.messages">messages (llm_api.api.OpenAIChatCompletionIn attribute)</a>
 </li>
       <li>
+    metacognition.actions
+
+      <ul>
+        <li><a href="metacognition_app.html#module-metacognition.actions">module</a>
+</li>
+      </ul></li>
+      <li>
     metacognition.api
 
       <ul>
         <li><a href="metacognition_app.html#module-metacognition.api">module</a>
+</li>
+      </ul></li>
+      <li>
+    metacognition.compiler
+
+      <ul>
+        <li><a href="metacognition_app.html#module-metacognition.compiler">module</a>
 </li>
       </ul></li>
       <li>
@@ -1800,6 +2205,8 @@
 </li>
       </ul></li>
       <li><a href="metacognition_app.html#metacognition.models.AgentCheckpoint.metadata_json">metadata_json (metacognition.models.AgentCheckpoint attribute)</a>
+</li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecord.metrics_json">metrics_json (verbal_tasks.models.TaskRecord attribute)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.rag_service.DjangoChunkStore.mget">mget() (background_resources.rag_service.DjangoChunkStore method)</a>
 </li>
@@ -1840,6 +2247,10 @@
 </li>
         <li><a href="grips_app.html#grips.tasks.UnifiedConceptDraft.model_config">(grips.tasks.UnifiedConceptDraft attribute)</a>
 </li>
+        <li><a href="grobid_client_app.html#grobid_client.tasks.CandidateEvaluation.model_config">(grobid_client.tasks.CandidateEvaluation attribute)</a>
+</li>
+        <li><a href="grobid_client_app.html#grobid_client.tasks.DocumentMetadataExtraction.model_config">(grobid_client.tasks.DocumentMetadataExtraction attribute)</a>
+</li>
         <li><a href="llm_api_app.html#llm_api.ai_service.AIService.DefaultOutlineResponse.model_config">(llm_api.ai_service.AIService.DefaultOutlineResponse attribute)</a>
 </li>
         <li><a href="llm_api_app.html#llm_api.api.AbbreviationPreviewIn.model_config">(llm_api.api.AbbreviationPreviewIn attribute)</a>
@@ -1875,6 +2286,66 @@
         <li><a href="llm_api_app.html#llm_api.api.StateSet.model_config">(llm_api.api.StateSet attribute)</a>
 </li>
         <li><a href="llm_api_app.html#llm_api.api.StateValue.model_config">(llm_api.api.StateValue attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.CheckParsingAction.model_config">(metacognition.actions.CheckParsingAction attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.CheckParsingArgs.model_config">(metacognition.actions.CheckParsingArgs attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.CognitiveBlueprintProposal.model_config">(metacognition.actions.CognitiveBlueprintProposal attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.ConceptExtraction.model_config">(metacognition.actions.ConceptExtraction attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.DifficultPromptEvaluation.model_config">(metacognition.actions.DifficultPromptEvaluation attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.EdgeLintResult.model_config">(metacognition.actions.EdgeLintResult attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.EvaluateConceptNeighborsResult.model_config">(metacognition.actions.EvaluateConceptNeighborsResult attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.EvaluateCrossDomainResult.model_config">(metacognition.actions.EvaluateCrossDomainResult attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.ExecuteScriptAction.model_config">(metacognition.actions.ExecuteScriptAction attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.ExecuteScriptArgs.model_config">(metacognition.actions.ExecuteScriptArgs attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.ExecutionPlan.model_config">(metacognition.actions.ExecutionPlan attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.GripsExpansionProposal.model_config">(metacognition.actions.GripsExpansionProposal attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.ListFilesAction.model_config">(metacognition.actions.ListFilesAction attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.ListFilesArgs.model_config">(metacognition.actions.ListFilesArgs attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.MakeDirAction.model_config">(metacognition.actions.MakeDirAction attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.MakeDirArgs.model_config">(metacognition.actions.MakeDirArgs attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.NodeLintResult.model_config">(metacognition.actions.NodeLintResult attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.PromptVariant.model_config">(metacognition.actions.PromptVariant attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.ReadFileAction.model_config">(metacognition.actions.ReadFileAction attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.ReadFileArgs.model_config">(metacognition.actions.ReadFileArgs attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.ResearchEvaluation.model_config">(metacognition.actions.ResearchEvaluation attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.ResultCritique.model_config">(metacognition.actions.ResultCritique attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.StrategicPlan.model_config">(metacognition.actions.StrategicPlan attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.StructuredClaim.model_config">(metacognition.actions.StructuredClaim attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.TaskCompleteAction.model_config">(metacognition.actions.TaskCompleteAction attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.TaskCompleteArgs.model_config">(metacognition.actions.TaskCompleteArgs attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.TaskItem.model_config">(metacognition.actions.TaskItem attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.TaskQueue.model_config">(metacognition.actions.TaskQueue attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.WriteFileAction.model_config">(metacognition.actions.WriteFileAction attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.WriteFileArgs.model_config">(metacognition.actions.WriteFileArgs attribute)</a>
 </li>
         <li><a href="metacognition_app.html#metacognition.api.ApproveToolIn.model_config">(metacognition.api.ApproveToolIn attribute)</a>
 </li>
@@ -1961,17 +2432,35 @@
 </li>
         <li><a href="grips_app.html#module-grips.tasks">grips.tasks</a>
 </li>
+        <li><a href="grobid_client_app.html#module-grobid_client.api">grobid_client.api</a>
+</li>
+        <li><a href="grobid_client_app.html#module-grobid_client.models">grobid_client.models</a>
+</li>
+        <li><a href="grobid_client_app.html#module-grobid_client.tasks">grobid_client.tasks</a>
+</li>
         <li><a href="llm_api_app.html#module-llm_api.ai_service">llm_api.ai_service</a>
 </li>
         <li><a href="llm_api_app.html#module-llm_api.api">llm_api.api</a>
 </li>
+        <li><a href="llm_api_app.html#module-llm_api.hardware">llm_api.hardware</a>
+</li>
         <li><a href="llm_api_app.html#module-llm_api.models">llm_api.models</a>
 </li>
+        <li><a href="metacognition_app.html#module-metacognition.actions">metacognition.actions</a>
+</li>
         <li><a href="metacognition_app.html#module-metacognition.api">metacognition.api</a>
+</li>
+        <li><a href="metacognition_app.html#module-metacognition.compiler">metacognition.compiler</a>
 </li>
         <li><a href="metacognition_app.html#module-metacognition.models">metacognition.models</a>
 </li>
         <li><a href="metacognition_app.html#module-metacognition.tasks">metacognition.tasks</a>
+</li>
+        <li><a href="sandbox_manager_app.html#module-sandbox_manager.models">sandbox_manager.models</a>
+</li>
+        <li><a href="verbal_tasks_app.html#module-verbal_tasks.models">verbal_tasks.models</a>
+</li>
+        <li><a href="verbal_tasks_app.html#module-verbal_tasks.task_backend">verbal_tasks.task_backend</a>
 </li>
         <li><a href="work_organisation_app.html#module-work_organisation.api">work_organisation.api</a>
 </li>
@@ -2013,11 +2502,15 @@
 </li>
         <li><a href="llm_api_app.html#llm_api.api.StateValue.name">(llm_api.api.StateValue attribute)</a>
 </li>
+        <li><a href="llm_api_app.html#llm_api.hardware.GPUDeviceInfo.name">(llm_api.hardware.GPUDeviceInfo attribute)</a>
+</li>
         <li><a href="llm_api_app.html#llm_api.models.ExternalAIModel.name">(llm_api.models.ExternalAIModel attribute)</a>
 </li>
         <li><a href="llm_api_app.html#llm_api.models.LocalAIModel.name">(llm_api.models.LocalAIModel attribute)</a>
 </li>
         <li><a href="llm_api_app.html#llm_api.models.LoRAAdapter.name">(llm_api.models.LoRAAdapter attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.CognitiveBlueprintProposal.name">(metacognition.actions.CognitiveBlueprintProposal attribute)</a>
 </li>
         <li><a href="metacognition_app.html#metacognition.models.CognitiveBlueprint.name">(metacognition.models.CognitiveBlueprint attribute)</a>
 </li>
@@ -2028,6 +2521,8 @@
         <li><a href="metacognition_app.html#metacognition.models.ResponseSchema.name">(metacognition.models.ResponseSchema attribute)</a>
 </li>
         <li><a href="metacognition_app.html#metacognition.models.ToolDefinition.name">(metacognition.models.ToolDefinition attribute)</a>
+</li>
+        <li><a href="verbal_tasks_app.html#verbal_tasks.models.ScheduledTask.name">(verbal_tasks.models.ScheduledTask attribute)</a>
 </li>
         <li><a href="work_organisation_app.html#work_organisation.api.ProjectCreateSchema.name">(work_organisation.api.ProjectCreateSchema attribute)</a>
 </li>
@@ -2053,7 +2548,13 @@
 </li>
       </ul></li>
       <li><a href="grips_app.html#grips.models.ConceptNode.narrative_content">narrative_content (grips.models.ConceptNode attribute)</a>
+
+      <ul>
+        <li><a href="metacognition_app.html#metacognition.actions.ConceptExtraction.narrative_content">(metacognition.actions.ConceptExtraction attribute)</a>
 </li>
+        <li><a href="metacognition_app.html#metacognition.actions.GripsExpansionProposal.narrative_content">(metacognition.actions.GripsExpansionProposal attribute)</a>
+</li>
+      </ul></li>
       <li><a href="grips_app.html#grips.models.ConceptNode.ConceptNodeFlags.NEEDS_CITATION">NEEDS_CITATION (grips.models.ConceptNode.ConceptNodeFlags attribute)</a>
 </li>
       <li><a href="grips_app.html#grips.models.ConceptNode.ConceptNodeFlags.NEEDS_CLARIFICATION">NEEDS_CLARIFICATION (grips.models.ConceptNode.ConceptNodeFlags attribute)</a>
@@ -2064,7 +2565,19 @@
         <li><a href="grips_app.html#grips.models.KnowledgeEdge.needs_linting">(grips.models.KnowledgeEdge attribute)</a>
 </li>
       </ul></li>
+      <li><a href="metacognition_app.html#metacognition.actions.PromptVariant.new_evaluation_criteria">new_evaluation_criteria (metacognition.actions.PromptVariant attribute)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.PromptVariant.new_system_prompt">new_system_prompt (metacognition.actions.PromptVariant attribute)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.models.LocalAIModel.QuantizationMode.NF4">NF4 (llm_api.models.LocalAIModel.QuantizationMode attribute)</a>
+</li>
       <li><a href="background_resources_app.html#background_resources.nlp_service.NLPService">NLPService (class in background_resources.nlp_service)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.NodeLintResult.node_id">node_id (metacognition.actions.NodeLintResult attribute)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.NodeLintResult">NodeLintResult (class in metacognition.actions)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.models.LocalAIModel.QuantizationMode.NONE">NONE (llm_api.models.LocalAIModel.QuantizationMode attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -2073,7 +2586,11 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="grips_app.html#grips.tasks.StructuredClaim.object">object (grips.tasks.StructuredClaim attribute)</a>
+
+      <ul>
+        <li><a href="metacognition_app.html#metacognition.actions.StructuredClaim.object">(metacognition.actions.StructuredClaim attribute)</a>
 </li>
+      </ul></li>
       <li><a href="background_resources_app.html#background_resources.models.StrategyChunkUsage.object_id">object_id (background_resources.models.StrategyChunkUsage attribute)</a>
 </li>
       <li><a href="work_organisation_app.html#work_organisation.api.WorkshopCreateSchema.objective">objective (work_organisation.api.WorkshopCreateSchema attribute)</a>
@@ -2129,6 +2646,12 @@
 </li>
         <li><a href="grips_app.html#grips.models.KnowledgeEdge.objects">(grips.models.KnowledgeEdge attribute)</a>
 </li>
+        <li><a href="grobid_client_app.html#grobid_client.models.Citation.objects">(grobid_client.models.Citation attribute)</a>
+</li>
+        <li><a href="grobid_client_app.html#grobid_client.models.CitationGraphExplorer.objects">(grobid_client.models.CitationGraphExplorer attribute)</a>
+</li>
+        <li><a href="grobid_client_app.html#grobid_client.models.Reference.objects">(grobid_client.models.Reference attribute)</a>
+</li>
         <li><a href="llm_api_app.html#llm_api.models.Conversation.objects">(llm_api.models.Conversation attribute)</a>
 </li>
         <li><a href="llm_api_app.html#llm_api.models.ExternalAIModel.objects">(llm_api.models.ExternalAIModel attribute)</a>
@@ -2156,6 +2679,14 @@
         <li><a href="metacognition_app.html#metacognition.models.ResponseSchema.objects">(metacognition.models.ResponseSchema attribute)</a>
 </li>
         <li><a href="metacognition_app.html#metacognition.models.ToolDefinition.objects">(metacognition.models.ToolDefinition attribute)</a>
+</li>
+        <li><a href="sandbox_manager_app.html#sandbox_manager.models.SandboxConfiguration.objects">(sandbox_manager.models.SandboxConfiguration attribute)</a>
+</li>
+        <li><a href="sandbox_manager_app.html#sandbox_manager.models.SandboxExecutionLog.objects">(sandbox_manager.models.SandboxExecutionLog attribute)</a>
+</li>
+        <li><a href="verbal_tasks_app.html#verbal_tasks.models.ScheduledTask.objects">(verbal_tasks.models.ScheduledTask attribute)</a>
+</li>
+        <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecord.objects">(verbal_tasks.models.TaskRecord attribute)</a>
 </li>
         <li><a href="work_organisation_app.html#work_organisation.models.ConversationMember.objects">(work_organisation.models.ConversationMember attribute)</a>
 </li>
@@ -2196,6 +2727,8 @@
 </li>
       <li><a href="grips_app.html#grips.models.ConceptNode.ConceptNodeFlags.ORPHANED">ORPHANED (grips.models.ConceptNode.ConceptNodeFlags attribute)</a>
 </li>
+      <li><a href="grobid_client_app.html#grobid_client.models.Reference.outgoing_citations">outgoing_citations (grobid_client.models.Reference attribute)</a>
+</li>
       <li><a href="grips_app.html#grips.models.ConceptNode.outgoing_edges">outgoing_edges (grips.models.ConceptNode attribute)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.ai_service.AIService.outline_pipeline">outline_pipeline (llm_api.ai_service.AIService attribute)</a>
@@ -2231,6 +2764,8 @@
       <ul>
         <li><a href="llm_api_app.html#llm_api.models.PromptResponseLog.output_tokens">(llm_api.models.PromptResponseLog attribute)</a>
 </li>
+        <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecord.output_tokens">(verbal_tasks.models.TaskRecord attribute)</a>
+</li>
       </ul></li>
       <li><a href="grips_app.html#grips.tasks.DocumentDigest.overall_summary">overall_summary (grips.tasks.DocumentDigest attribute)</a>
 </li>
@@ -2240,11 +2775,31 @@
 <h2 id="P">P</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="grobid_client_app.html#grobid_client.models.Reference.pages">pages (grobid_client.models.Reference attribute)</a>
+</li>
       <li><a href="metacognition_app.html#metacognition.models.ReasoningStep.parallel_sources">parallel_sources (metacognition.models.ReasoningStep attribute)</a>
 </li>
       <li><a href="metacognition_app.html#metacognition.models.ReasoningStep.parallel_steps">parallel_steps (metacognition.models.ReasoningStep attribute)</a>
 </li>
+      <li><a href="metacognition_app.html#metacognition.actions.CheckParsingAction.parameters">parameters (metacognition.actions.CheckParsingAction attribute)</a>
+
+      <ul>
+        <li><a href="metacognition_app.html#metacognition.actions.ExecuteScriptAction.parameters">(metacognition.actions.ExecuteScriptAction attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.ListFilesAction.parameters">(metacognition.actions.ListFilesAction attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.MakeDirAction.parameters">(metacognition.actions.MakeDirAction attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.ReadFileAction.parameters">(metacognition.actions.ReadFileAction attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.TaskCompleteAction.parameters">(metacognition.actions.TaskCompleteAction attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.WriteFileAction.parameters">(metacognition.actions.WriteFileAction attribute)</a>
+</li>
+      </ul></li>
       <li><a href="metacognition_app.html#metacognition.models.CognitiveBlueprint.parent">parent (metacognition.models.CognitiveBlueprint attribute)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.MakeDirArgs.parent_directory">parent_directory (metacognition.actions.MakeDirArgs attribute)</a>
 </li>
       <li><a href="metacognition_app.html#metacognition.models.AgentCheckpoint.parent_id">parent_id (metacognition.models.AgentCheckpoint attribute)</a>
 
@@ -2268,11 +2823,15 @@
 </li>
       <li><a href="metacognition_app.html#metacognition.tasks.parse_structured_response">parse_structured_response() (in module metacognition.tasks)</a>
 </li>
+      <li><a href="grobid_client_app.html#grobid_client.models.Reference.parsed_at">parsed_at (grobid_client.models.Reference attribute)</a>
+</li>
       <li><a href="llm_api_app.html#llm_api.api.RegexCandidate.pattern">pattern (llm_api.api.RegexCandidate attribute)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.api.Hydrant.peak_flow">peak_flow (llm_api.api.Hydrant attribute)</a>
 </li>
       <li><a href="metacognition_app.html#metacognition.models.ReasoningStep.performance_score">performance_score (metacognition.models.ReasoningStep attribute)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.hardware.HostCPUInfo.physical_cores">physical_cores (llm_api.hardware.HostCPUInfo attribute)</a>
 </li>
       <li><a href="work_organisation_app.html#work_organisation.api.CardCreateSchema.pos_x">pos_x (work_organisation.api.CardCreateSchema attribute)</a>
 
@@ -2305,7 +2864,11 @@
       <li><a href="background_resources_app.html#background_resources.models.pre_save_handler">pre_save_handler() (in module background_resources.models)</a>
 </li>
       <li><a href="grips_app.html#grips.tasks.StructuredClaim.predicate">predicate (grips.tasks.StructuredClaim attribute)</a>
+
+      <ul>
+        <li><a href="metacognition_app.html#metacognition.actions.StructuredClaim.predicate">(metacognition.actions.StructuredClaim attribute)</a>
 </li>
+      </ul></li>
       <li><a href="llm_api_app.html#llm_api.api.preview_abbreviations">preview_abbreviations() (in module llm_api.api)</a>
 </li>
       <li><a href="demo_ui_app.html#demo_ui.views.preview_context_item">preview_context_item() (in module demo_ui.views)</a>
@@ -2314,14 +2877,26 @@
 </li>
       <li><a href="llm_api_app.html#llm_api.api.preview_regex">preview_regex() (in module llm_api.api)</a>
 </li>
+      <li><a href="llm_api_app.html#llm_api.hardware.HardwareProfile.primary_device">primary_device (llm_api.hardware.HardwareProfile attribute)</a>
+</li>
       <li><a href="background_resources_app.html#background_resources.nlp_service.NLPService.primary_nlp">primary_nlp (background_resources.nlp_service.NLPService attribute)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.ScheduledTask.priority">priority (verbal_tasks.models.ScheduledTask attribute)</a>
+
+      <ul>
+        <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecord.priority">(verbal_tasks.models.TaskRecord attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="grobid_client_app.html#grobid_client.api.process_pdf_with_grobid">process_pdf_with_grobid() (in module grobid_client.api)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.process_task_queue">process_task_queue() (in module metacognition.actions)</a>
 </li>
       <li><a href="work_organisation_app.html#work_organisation.models.Project">Project (class in work_organisation.models)</a>
 </li>
       <li><a href="work_organisation_app.html#work_organisation.models.Workshop.project">project (work_organisation.models.Workshop attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="work_organisation_app.html#work_organisation.models.Project.DoesNotExist">Project.DoesNotExist</a>
 </li>
       <li><a href="work_organisation_app.html#work_organisation.models.Project.MultipleObjectsReturned">Project.MultipleObjectsReturned</a>
@@ -2382,6 +2957,8 @@
 </li>
       <li><a href="background_resources_app.html#background_resources.models.Document.promptstrategy_set">promptstrategy_set (background_resources.models.Document attribute)</a>
 </li>
+      <li><a href="metacognition_app.html#metacognition.actions.PromptVariant">PromptVariant (class in metacognition.actions)</a>
+</li>
       <li><a href="metacognition_app.html#metacognition.models.ReasoningStep.proposed_at">proposed_at (metacognition.models.ReasoningStep attribute)</a>
 </li>
       <li><a href="metacognition_app.html#metacognition.models.ReasoningStep.proposed_by">proposed_by (metacognition.models.ReasoningStep attribute)</a>
@@ -2393,12 +2970,24 @@
 </li>
       </ul></li>
       <li><a href="background_resources_app.html#background_resources.models.Document.publication_date">publication_date (background_resources.models.Document attribute)</a>
+
+      <ul>
+        <li><a href="grobid_client_app.html#grobid_client.models.Reference.publication_date">(grobid_client.models.Reference attribute)</a>
 </li>
+      </ul></li>
       <li><a href="work_organisation_app.html#work_organisation.events.publish_whiteboard_event">publish_whiteboard_event() (in module work_organisation.events)</a>
 </li>
+      <li><a href="grobid_client_app.html#grobid_client.models.Reference.publisher">publisher (grobid_client.models.Reference attribute)</a>
+
+      <ul>
+        <li><a href="grobid_client_app.html#grobid_client.tasks.DocumentMetadataExtraction.publisher">(grobid_client.tasks.DocumentMetadataExtraction attribute)</a>
+</li>
+      </ul></li>
       <li><a href="metacognition_app.html#metacognition.models.ResponseSchema.pydantic_model_name">pydantic_model_name (metacognition.models.ResponseSchema attribute)</a>
 </li>
       <li><a href="metacognition_app.html#metacognition.models.ToolDefinition.python_path">python_path (metacognition.models.ToolDefinition attribute)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.python_sandbox">python_sandbox() (in module metacognition.actions)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.models.SystemConfiguration.HostingBackend.PYTORCH">PYTORCH (llm_api.models.SystemConfiguration.HostingBackend attribute)</a>
 </li>
@@ -2408,16 +2997,38 @@
 <h2 id="Q">Q</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="metacognition_app.html#metacognition.actions.StructuredClaim.qualifier">qualifier (metacognition.actions.StructuredClaim attribute)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.ResultCritique.quantitative_result">quantitative_result (metacognition.actions.ResultCritique attribute)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.models.LocalAIModel.quantization_mode">quantization_mode (llm_api.models.LocalAIModel attribute)</a>
+</li>
       <li><a href="llm_api_app.html#llm_api.api.OutlineIn.query">query (llm_api.api.OutlineIn attribute)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.models.RAGQueryLog.query_text">query_text (background_resources.models.RAGQueryLog attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="benchmarking_app.html#benchmarking.generators.SyntheticQA.question">question (benchmarking.generators.SyntheticQA attribute)</a>
 
       <ul>
         <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkScenario.question">(benchmarking.models.BenchmarkScenario attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="metacognition_app.html#metacognition.actions.ExecutionPlan.queue">queue (metacognition.actions.ExecutionPlan attribute)</a>
+
+      <ul>
+        <li><a href="metacognition_app.html#metacognition.actions.TaskQueue.queue">(metacognition.actions.TaskQueue attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecord.queue_latency_formatted">queue_latency_formatted (verbal_tasks.models.TaskRecord property)</a>
+</li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecord.queue_latency_ms">queue_latency_ms (verbal_tasks.models.TaskRecord property)</a>
+</li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.ScheduledTask.queue_name">queue_name (verbal_tasks.models.ScheduledTask attribute)</a>
+
+      <ul>
+        <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecord.queue_name">(verbal_tasks.models.TaskRecord attribute)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -2426,6 +3037,8 @@
 <h2 id="R">R</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="metacognition_app.html#metacognition.actions.ResearchEvaluation.rag_queries">rag_queries (metacognition.actions.ResearchEvaluation attribute)</a>
+</li>
       <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkResult.rag_recall_score">rag_recall_score (benchmarking.models.BenchmarkResult attribute)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.models.PromptResponseLog.rag_selections">rag_selections (llm_api.models.PromptResponseLog attribute)</a>
@@ -2448,6 +3061,8 @@
 </li>
       <li><a href="background_resources_app.html#background_resources.rag_service.RAGService">RAGService (class in background_resources.rag_service)</a>
 </li>
+      <li><a href="grobid_client_app.html#grobid_client.models.Citation.raw_reference_string">raw_reference_string (grobid_client.models.Citation attribute)</a>
+</li>
       <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkResult.raw_retrieved_text">raw_retrieved_text (benchmarking.models.BenchmarkResult attribute)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.models.GrobidReadingStrategy.read_document">read_document() (background_resources.models.GrobidReadingStrategy method)</a>
@@ -2456,6 +3071,10 @@
         <li><a href="background_resources_app.html#background_resources.models.ReadingStrategy.read_document">(background_resources.models.ReadingStrategy method)</a>
 </li>
       </ul></li>
+      <li><a href="metacognition_app.html#metacognition.actions.ReadFileAction">ReadFileAction (class in metacognition.actions)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.ReadFileArgs">ReadFileArgs (class in metacognition.actions)</a>
+</li>
       <li><a href="background_resources_app.html#background_resources.models.ReadingStrategy">ReadingStrategy (class in background_resources.models)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.models.ReadingStrategy.DoesNotExist">ReadingStrategy.DoesNotExist</a>
@@ -2466,12 +3085,22 @@
 </li>
       <li><a href="background_resources_app.html#background_resources.models.Document.readingstrategy_set">readingstrategy_set (background_resources.models.Document attribute)</a>
 </li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecordStatus.READY">READY (verbal_tasks.models.TaskRecordStatus attribute)</a>
+</li>
       <li><a href="benchmarking_app.html#benchmarking.runner.EvaluationScore.reasoning">reasoning (benchmarking.runner.EvaluationScore attribute)</a>
 
       <ul>
         <li><a href="grips_app.html#grips.tasks.ConceptRelationshipEvaluation.reasoning">(grips.tasks.ConceptRelationshipEvaluation attribute)</a>
 </li>
         <li><a href="llm_api_app.html#llm_api.api.RegexCandidate.reasoning">(llm_api.api.RegexCandidate attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.DifficultPromptEvaluation.reasoning">(metacognition.actions.DifficultPromptEvaluation attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.PromptVariant.reasoning">(metacognition.actions.PromptVariant attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.ResearchEvaluation.reasoning">(metacognition.actions.ResearchEvaluation attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.ResultCritique.reasoning">(metacognition.actions.ResultCritique attribute)</a>
 </li>
         <li><a href="work_organisation_app.html#work_organisation.clustering.CausalGraphExtractionPlan.reasoning">(work_organisation.clustering.CausalGraphExtractionPlan attribute)</a>
 </li>
@@ -2502,7 +3131,19 @@
 </li>
       <li><a href="metacognition_app.html#metacognition.models.ReasoningStepQuerySet">ReasoningStepQuerySet (class in metacognition.models)</a>
 </li>
+      <li><a href="llm_api_app.html#llm_api.hardware.BackendRecommendation.recommended_quantization">recommended_quantization (llm_api.hardware.BackendRecommendation attribute)</a>
+</li>
       <li><a href="background_resources_app.html#background_resources.models.RAGChunk.reference">reference (background_resources.models.RAGChunk property)</a>
+</li>
+      <li><a href="grobid_client_app.html#grobid_client.models.Reference">Reference (class in grobid_client.models)</a>
+</li>
+      <li><a href="grobid_client_app.html#grobid_client.models.Reference.DoesNotExist">Reference.DoesNotExist</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="grobid_client_app.html#grobid_client.models.Reference.MultipleObjectsReturned">Reference.MultipleObjectsReturned</a>
+</li>
+      <li><a href="grobid_client_app.html#grobid_client.models.Reference.NotUpdated">Reference.NotUpdated</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.models.RegexStrategy.regex">regex (background_resources.models.RegexStrategy attribute)</a>
 
@@ -2510,8 +3151,6 @@
         <li><a href="llm_api_app.html#llm_api.api.RegexPreviewIn.regex">(llm_api.api.RegexPreviewIn attribute)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="llm_api_app.html#llm_api.api.RegexCandidate">RegexCandidate (class in llm_api.api)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.api.RegexPreviewIn">RegexPreviewIn (class in llm_api.api)</a>
@@ -2536,9 +3175,15 @@
 </li>
       <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkResult.relevance_score">relevance_score (benchmarking.models.BenchmarkResult attribute)</a>
 </li>
+      <li><a href="sandbox_manager_app.html#sandbox_manager.models.SandboxConfiguration.requirements_txt">requirements_txt (sandbox_manager.models.SandboxConfiguration attribute)</a>
+</li>
       <li><a href="metacognition_app.html#metacognition.models.ToolDefinition.requires_approval">requires_approval (metacognition.models.ToolDefinition attribute)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.nlp_service.NLPService.requires_research">requires_research() (background_resources.nlp_service.NLPService method)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.ResearchEvaluation">ResearchEvaluation (class in metacognition.actions)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.compiler.resolve_active_steps">resolve_active_steps() (in module metacognition.compiler)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.ai_service.AIService.DefaultOutlineResponse.response_content">response_content (llm_api.ai_service.AIService.DefaultOutlineResponse attribute)</a>
 </li>
@@ -2554,9 +3199,15 @@
 </li>
       <li><a href="metacognition_app.html#metacognition.models.ResponseSchema.NotUpdated">ResponseSchema.NotUpdated</a>
 </li>
+      <li><a href="metacognition_app.html#metacognition.actions.ResultCritique">ResultCritique (class in metacognition.actions)</a>
+</li>
       <li><a href="background_resources_app.html#background_resources.rag_service.RAGService.retriever">retriever (background_resources.rag_service.RAGService attribute)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.models.PromptResponseLog.StepStatus.RETRY">RETRY (llm_api.models.PromptResponseLog.StepStatus attribute)</a>
+</li>
+      <li><a href="sandbox_manager_app.html#sandbox_manager.models.SandboxExecutionLog.return_code">return_code (sandbox_manager.models.SandboxExecutionLog attribute)</a>
+</li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecord.return_value_json">return_value_json (verbal_tasks.models.TaskRecord attribute)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.models.StrategyChunkUsage.Role.REUSED">REUSED (background_resources.models.StrategyChunkUsage.Role attribute)</a>
 </li>
@@ -2574,6 +3225,8 @@
 </li>
       <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkResult.run">run (benchmarking.models.BenchmarkResult attribute)</a>
 </li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecord.run_after">run_after (verbal_tasks.models.TaskRecord attribute)</a>
+</li>
       <li><a href="benchmarking_app.html#benchmarking.runner.run_benchmark_suite">run_benchmark_suite() (in module benchmarking.runner)</a>
 </li>
       <li><a href="metacognition_app.html#metacognition.tasks.run_blueprint">run_blueprint() (in module metacognition.tasks)</a>
@@ -2588,20 +3241,51 @@
         <li><a href="metacognition_app.html#metacognition.api.CancelBlueprintIn.run_id">(metacognition.api.CancelBlueprintIn attribute)</a>
 </li>
       </ul></li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecordStatus.RUNNING">RUNNING (verbal_tasks.models.TaskRecordStatus attribute)</a>
+</li>
   </ul></td>
 </tr></table>
 
 <h2 id="S">S</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li>
+    sandbox_manager.models
+
+      <ul>
+        <li><a href="sandbox_manager_app.html#module-sandbox_manager.models">module</a>
+</li>
+      </ul></li>
+      <li><a href="sandbox_manager_app.html#sandbox_manager.models.SandboxConfiguration">SandboxConfiguration (class in sandbox_manager.models)</a>
+</li>
+      <li><a href="sandbox_manager_app.html#sandbox_manager.models.SandboxConfiguration.DoesNotExist">SandboxConfiguration.DoesNotExist</a>
+</li>
+      <li><a href="sandbox_manager_app.html#sandbox_manager.models.SandboxConfiguration.MultipleObjectsReturned">SandboxConfiguration.MultipleObjectsReturned</a>
+</li>
+      <li><a href="sandbox_manager_app.html#sandbox_manager.models.SandboxConfiguration.NotUpdated">SandboxConfiguration.NotUpdated</a>
+</li>
+      <li><a href="sandbox_manager_app.html#sandbox_manager.models.SandboxExecutionLog">SandboxExecutionLog (class in sandbox_manager.models)</a>
+</li>
+      <li><a href="sandbox_manager_app.html#sandbox_manager.models.SandboxExecutionLog.DoesNotExist">SandboxExecutionLog.DoesNotExist</a>
+</li>
+      <li><a href="sandbox_manager_app.html#sandbox_manager.models.SandboxExecutionLog.MultipleObjectsReturned">SandboxExecutionLog.MultipleObjectsReturned</a>
+</li>
+      <li><a href="sandbox_manager_app.html#sandbox_manager.models.SandboxExecutionLog.NotUpdated">SandboxExecutionLog.NotUpdated</a>
+</li>
       <li><a href="background_resources_app.html#background_resources.models.Document.save">save() (background_resources.models.Document method)</a>
 
       <ul>
+        <li><a href="grobid_client_app.html#grobid_client.models.Reference.save">(grobid_client.models.Reference method)</a>
+</li>
+        <li><a href="llm_api_app.html#llm_api.models.LocalAIModel.save">(llm_api.models.LocalAIModel method)</a>
+</li>
         <li><a href="llm_api_app.html#llm_api.models.SystemConfiguration.save">(llm_api.models.SystemConfiguration method)</a>
 </li>
         <li><a href="metacognition_app.html#metacognition.models.CognitiveBlueprint.save">(metacognition.models.CognitiveBlueprint method)</a>
 </li>
         <li><a href="metacognition_app.html#metacognition.models.ReasoningStep.save">(metacognition.models.ReasoningStep method)</a>
+</li>
+        <li><a href="sandbox_manager_app.html#sandbox_manager.models.SandboxConfiguration.save">(sandbox_manager.models.SandboxConfiguration method)</a>
 </li>
         <li><a href="work_organisation_app.html#work_organisation.models.Project.save">(work_organisation.models.Project method)</a>
 </li>
@@ -2634,6 +3318,16 @@
 </li>
       <li><a href="benchmarking_app.html#benchmarking.models.ScenarioGroup.scenarios">scenarios (benchmarking.models.ScenarioGroup attribute)</a>
 </li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecord.scheduled_triggers">scheduled_triggers (verbal_tasks.models.TaskRecord attribute)</a>
+</li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.ScheduledTask">ScheduledTask (class in verbal_tasks.models)</a>
+</li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.ScheduledTask.DoesNotExist">ScheduledTask.DoesNotExist</a>
+</li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.ScheduledTask.MultipleObjectsReturned">ScheduledTask.MultipleObjectsReturned</a>
+</li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.ScheduledTask.NotUpdated">ScheduledTask.NotUpdated</a>
+</li>
       <li><a href="llm_api_app.html#llm_api.api.OpenAIJsonSchema.schema_dict">schema_dict (llm_api.api.OpenAIJsonSchema attribute)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.api.OutlineIn.schema_key">schema_key (llm_api.api.OutlineIn attribute)</a>
@@ -2645,6 +3339,8 @@
       <li><a href="benchmarking_app.html#benchmarking.runner.EvaluationScore.score">score (benchmarking.runner.EvaluationScore attribute)</a>
 </li>
       <li><a href="demo_ui_app.html#demo_ui.views.search_knowledge_base">search_knowledge_base() (in module demo_ui.views)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.DifficultPromptEvaluation.search_queries">search_queries (metacognition.actions.DifficultPromptEvaluation attribute)</a>
 </li>
       <li><a href="benchmarking_app.html#benchmarking.models.Experiment.selected_model">selected_model (benchmarking.models.Experiment attribute)</a>
 </li>
@@ -2696,6 +3392,8 @@
 </li>
       <li><a href="background_resources_app.html#background_resources.rag_service.DocumentHandles.short_form">short_form (background_resources.rag_service.DocumentHandles attribute)</a>
 </li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecord.short_task_name">short_task_name (verbal_tasks.models.TaskRecord property)</a>
+</li>
       <li><a href="background_resources_app.html#background_resources.rag_service.RAGService.similarity_search_with_score">similarity_search_with_score() (background_resources.rag_service.RAGService method)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.api.GenerateIn.skip_grips">skip_grips (llm_api.api.GenerateIn attribute)</a>
@@ -2732,16 +3430,22 @@
 </li>
       <li><a href="grips_app.html#grips.models.KnowledgeEdge.source_id">source_id (grips.models.KnowledgeEdge attribute)</a>
 </li>
+      <li><a href="grobid_client_app.html#grobid_client.models.Citation.source_reference">source_reference (grobid_client.models.Citation attribute)</a>
+</li>
+      <li><a href="grobid_client_app.html#grobid_client.models.Citation.source_reference_id">source_reference_id (grobid_client.models.Citation attribute)</a>
+</li>
       <li><a href="background_resources_app.html#background_resources.models.Document.source_url">source_url (background_resources.models.Document attribute)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.models.RAGChunk.sourced_concepts">sourced_concepts (background_resources.models.RAGChunk attribute)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.api.start_download_model_cache">start_download_model_cache() (in module llm_api.api)</a>
 </li>
-      <li><a href="llm_api_app.html#llm_api.models.Conversation.start_time">start_time (llm_api.models.Conversation attribute)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="llm_api_app.html#llm_api.models.Conversation.start_time">start_time (llm_api.models.Conversation attribute)</a>
+</li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecord.started_at">started_at (verbal_tasks.models.TaskRecord attribute)</a>
+</li>
       <li><a href="metacognition_app.html#metacognition.models.AgentCheckpoint.state_json">state_json (metacognition.models.AgentCheckpoint attribute)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.api.Factor.state_options">state_options (llm_api.api.Factor attribute)</a>
@@ -2760,11 +3464,23 @@
 </li>
       <li><a href="llm_api_app.html#llm_api.api.StateValue">StateValue (class in llm_api.api)</a>
 </li>
+      <li><a href="metacognition_app.html#metacognition.actions.ResearchEvaluation.status">status (metacognition.actions.ResearchEvaluation attribute)</a>
+
+      <ul>
+        <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecord.status">(verbal_tasks.models.TaskRecord attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="sandbox_manager_app.html#sandbox_manager.models.SandboxExecutionLog.stderr">stderr (sandbox_manager.models.SandboxExecutionLog attribute)</a>
+</li>
+      <li><a href="sandbox_manager_app.html#sandbox_manager.models.SandboxExecutionLog.stdout">stdout (sandbox_manager.models.SandboxExecutionLog attribute)</a>
+</li>
       <li><a href="llm_api_app.html#llm_api.models.PromptResponseLog.step_status">step_status (llm_api.models.PromptResponseLog attribute)</a>
 </li>
       <li><a href="metacognition_app.html#metacognition.models.CognitiveBlueprint.steps">steps (metacognition.models.CognitiveBlueprint attribute)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.rag_service.RAGService.store">store (background_resources.rag_service.RAGService attribute)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.StrategicPlan">StrategicPlan (class in metacognition.actions)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.models.AbbreviationsReadingStrategy.strategy_description">strategy_description (background_resources.models.AbbreviationsReadingStrategy attribute)</a>
 
@@ -2783,6 +3499,8 @@
 </li>
       </ul></li>
       <li><a href="background_resources_app.html#background_resources.models.RegexStrategy.strategy_details">strategy_details (background_resources.models.RegexStrategy attribute)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.StrategicPlan.strategy_steps">strategy_steps (metacognition.actions.StrategicPlan attribute)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.models.StrategyChunkUsage">StrategyChunkUsage (class in background_resources.models)</a>
 </li>
@@ -2805,9 +3523,17 @@
       <li><a href="llm_api_app.html#llm_api.api.OpenAIJsonSchema.strict">strict (llm_api.api.OpenAIJsonSchema attribute)</a>
 </li>
       <li><a href="grips_app.html#grips.models.ConceptNode.structured_claims">structured_claims (grips.models.ConceptNode attribute)</a>
+
+      <ul>
+        <li><a href="metacognition_app.html#metacognition.actions.GripsExpansionProposal.structured_claims">(metacognition.actions.GripsExpansionProposal attribute)</a>
 </li>
+      </ul></li>
       <li><a href="grips_app.html#grips.tasks.StructuredClaim">StructuredClaim (class in grips.tasks)</a>
+
+      <ul>
+        <li><a href="metacognition_app.html#metacognition.actions.StructuredClaim">(class in metacognition.actions)</a>
 </li>
+      </ul></li>
       <li><a href="grips_app.html#grips.models.Domain.style_guide">style_guide (grips.models.Domain attribute)</a>
 </li>
       <li><a href="grips_app.html#grips.models.ConceptNode.ConceptNodeFlags.STYLE_VIOLATION">STYLE_VIOLATION (grips.models.ConceptNode.ConceptNodeFlags attribute)</a>
@@ -2829,10 +3555,16 @@
       <li><a href="grips_app.html#grips.tasks.SubConcept">SubConcept (class in grips.tasks)</a>
 </li>
       <li><a href="grips_app.html#grips.tasks.StructuredClaim.subject">subject (grips.tasks.StructuredClaim attribute)</a>
+
+      <ul>
+        <li><a href="metacognition_app.html#metacognition.actions.StructuredClaim.subject">(metacognition.actions.StructuredClaim attribute)</a>
 </li>
+      </ul></li>
       <li><a href="llm_api_app.html#llm_api.models.PromptResponseLog.StepStatus.SUCCESS">SUCCESS (llm_api.models.PromptResponseLog.StepStatus attribute)</a>
 </li>
       <li><a href="metacognition_app.html#metacognition.models.ReasoningStep.success_sources">success_sources (metacognition.models.ReasoningStep attribute)</a>
+</li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecordStatus.SUCCESSFUL">SUCCESSFUL (verbal_tasks.models.TaskRecordStatus attribute)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.api.suggest_regex">suggest_regex() (in module llm_api.api)</a>
 </li>
@@ -2843,6 +3575,8 @@
       <li><a href="grips_app.html#grips.tasks.SubConcept.summary">summary (grips.tasks.SubConcept attribute)</a>
 
       <ul>
+        <li><a href="llm_api_app.html#llm_api.hardware.HardwareProfile.summary">(llm_api.hardware.HardwareProfile property)</a>
+</li>
         <li><a href="work_organisation_app.html#work_organisation.api.ClusterDetailSchema.summary">(work_organisation.api.ClusterDetailSchema attribute)</a>
 </li>
         <li><a href="work_organisation_app.html#work_organisation.clustering.IdeaClusterItem.summary">(work_organisation.clustering.IdeaClusterItem attribute)</a>
@@ -2850,7 +3584,21 @@
         <li><a href="work_organisation_app.html#work_organisation.models.WhiteboardCluster.summary">(work_organisation.models.WhiteboardCluster attribute)</a>
 </li>
       </ul></li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.task_backend.DatabaseTaskBackend.supports_async_task">supports_async_task (verbal_tasks.task_backend.DatabaseTaskBackend attribute)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.hardware.GPUDeviceInfo.supports_bf16">supports_bf16 (llm_api.hardware.GPUDeviceInfo attribute)</a>
+</li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.task_backend.DatabaseTaskBackend.supports_defer">supports_defer (verbal_tasks.task_backend.DatabaseTaskBackend attribute)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.hardware.GPUDeviceInfo.supports_flash_attention">supports_flash_attention (llm_api.hardware.GPUDeviceInfo attribute)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.hardware.GPUDeviceInfo.supports_fp16">supports_fp16 (llm_api.hardware.GPUDeviceInfo attribute)</a>
+</li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.task_backend.DatabaseTaskBackend.supports_get_result">supports_get_result (verbal_tasks.task_backend.DatabaseTaskBackend attribute)</a>
+</li>
       <li><a href="llm_api_app.html#llm_api.ai_service.AIService.supports_native_tools">supports_native_tools() (llm_api.ai_service.AIService method)</a>
+</li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.task_backend.DatabaseTaskBackend.supports_priority">supports_priority (verbal_tasks.task_backend.DatabaseTaskBackend attribute)</a>
 </li>
       <li><a href="benchmarking_app.html#benchmarking.generators.SyntheticQA">SyntheticQA (class in benchmarking.generators)</a>
 </li>
@@ -2894,7 +3642,37 @@
 </li>
       <li><a href="grips_app.html#grips.models.KnowledgeEdge.target_id">target_id (grips.models.KnowledgeEdge attribute)</a>
 </li>
+      <li><a href="grobid_client_app.html#grobid_client.models.Citation.target_reference">target_reference (grobid_client.models.Citation attribute)</a>
+</li>
+      <li><a href="grobid_client_app.html#grobid_client.models.Citation.target_reference_id">target_reference_id (grobid_client.models.Citation attribute)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.PromptVariant.target_step_id">target_step_id (metacognition.actions.PromptVariant attribute)</a>
+</li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.ScheduledTask.task_name">task_name (verbal_tasks.models.ScheduledTask attribute)</a>
+</li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecord.task_path">task_path (verbal_tasks.models.TaskRecord attribute)</a>
+</li>
       <li><a href="metacognition_app.html#metacognition.tasks.task_run_blueprint_sync">task_run_blueprint_sync() (in module metacognition.tasks)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.TaskCompleteAction">TaskCompleteAction (class in metacognition.actions)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.TaskCompleteArgs">TaskCompleteArgs (class in metacognition.actions)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.TaskItem">TaskItem (class in metacognition.actions)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.TaskQueue">TaskQueue (class in metacognition.actions)</a>
+</li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecord">TaskRecord (class in verbal_tasks.models)</a>
+</li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecord.DoesNotExist">TaskRecord.DoesNotExist</a>
+</li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecord.MultipleObjectsReturned">TaskRecord.MultipleObjectsReturned</a>
+</li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecord.NotUpdated">TaskRecord.NotUpdated</a>
+</li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecordStatus">TaskRecordStatus (class in verbal_tasks.models)</a>
+</li>
+      <li><a href="grobid_client_app.html#grobid_client.models.Reference.tei_xml">tei_xml (grobid_client.models.Reference attribute)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.api.OpenAIChatCompletionIn.temperature">temperature (llm_api.api.OpenAIChatCompletionIn attribute)</a>
 </li>
@@ -2933,6 +3711,8 @@
       <ul>
         <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkRun.timestamp">(benchmarking.models.BenchmarkRun attribute)</a>
 </li>
+        <li><a href="sandbox_manager_app.html#sandbox_manager.models.SandboxExecutionLog.timestamp">(sandbox_manager.models.SandboxExecutionLog attribute)</a>
+</li>
       </ul></li>
       <li><a href="background_resources_app.html#background_resources.models.Document.title">title (background_resources.models.Document attribute)</a>
 
@@ -2943,7 +3723,17 @@
 </li>
         <li><a href="grips_app.html#grips.tasks.UnifiedConceptDraft.title">(grips.tasks.UnifiedConceptDraft attribute)</a>
 </li>
+        <li><a href="grobid_client_app.html#grobid_client.models.Reference.title">(grobid_client.models.Reference attribute)</a>
+</li>
+        <li><a href="grobid_client_app.html#grobid_client.tasks.CandidateEvaluation.title">(grobid_client.tasks.CandidateEvaluation attribute)</a>
+</li>
+        <li><a href="grobid_client_app.html#grobid_client.tasks.DocumentMetadataExtraction.title">(grobid_client.tasks.DocumentMetadataExtraction attribute)</a>
+</li>
         <li><a href="llm_api_app.html#llm_api.models.Conversation.title">(llm_api.models.Conversation attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.ConceptExtraction.title">(metacognition.actions.ConceptExtraction attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.GripsExpansionProposal.title">(metacognition.actions.GripsExpansionProposal attribute)</a>
 </li>
         <li><a href="work_organisation_app.html#work_organisation.api.ClusterDetailSchema.title">(work_organisation.api.ClusterDetailSchema attribute)</a>
 </li>
@@ -2962,7 +3752,11 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="benchmarking_app.html#benchmarking.models.Investigation.to_dataframe">to_dataframe() (benchmarking.models.Investigation method)</a>
 </li>
+      <li><a href="llm_api_app.html#llm_api.hardware.BackendRecommendation.to_dict">to_dict() (llm_api.hardware.BackendRecommendation method)</a>
+</li>
       <li><a href="llm_api_app.html#llm_api.ai_service.AIService.tokenizer">tokenizer (llm_api.ai_service.AIService attribute)</a>
+</li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecord.tokens_formatted">tokens_formatted (verbal_tasks.models.TaskRecord property)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.ai_service.GenerationMetrics.tokens_per_second">tokens_per_second (llm_api.ai_service.GenerationMetrics attribute)</a>
 
@@ -2972,6 +3766,22 @@
       </ul></li>
       <li><a href="work_organisation_app.html#work_organisation.api.TokenStreamRequestSchema">TokenStreamRequestSchema (class in work_organisation.api)</a>
 </li>
+      <li><a href="metacognition_app.html#metacognition.actions.CheckParsingAction.tool">tool (metacognition.actions.CheckParsingAction attribute)</a>
+
+      <ul>
+        <li><a href="metacognition_app.html#metacognition.actions.ExecuteScriptAction.tool">(metacognition.actions.ExecuteScriptAction attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.ListFilesAction.tool">(metacognition.actions.ListFilesAction attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.MakeDirAction.tool">(metacognition.actions.MakeDirAction attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.ReadFileAction.tool">(metacognition.actions.ReadFileAction attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.TaskCompleteAction.tool">(metacognition.actions.TaskCompleteAction attribute)</a>
+</li>
+        <li><a href="metacognition_app.html#metacognition.actions.WriteFileAction.tool">(metacognition.actions.WriteFileAction attribute)</a>
+</li>
+      </ul></li>
       <li><a href="metacognition_app.html#metacognition.models.CognitiveBlueprint.tool_definitions">tool_definitions (metacognition.models.CognitiveBlueprint attribute)</a>
 </li>
       <li><a href="metacognition_app.html#metacognition.api.ApproveToolIn.tool_name">tool_name (metacognition.api.ApproveToolIn attribute)</a>
@@ -2990,9 +3800,27 @@
 </li>
       <li><a href="llm_api_app.html#llm_api.ai_service.GenerationMetrics.total_duration_ms">total_duration_ms (llm_api.ai_service.GenerationMetrics attribute)</a>
 </li>
-      <li><a href="benchmarking_app.html#benchmarking.models.FineTuningDataset.total_tokens">total_tokens (benchmarking.models.FineTuningDataset attribute)</a>
+      <li><a href="llm_api_app.html#llm_api.hardware.HostCPUInfo.total_ram_gb">total_ram_gb (llm_api.hardware.HostCPUInfo property)</a>
 </li>
-      <li><a href="llm_api_app.html#llm_api.models.track_ollama_model_changes">track_ollama_model_changes() (in module llm_api.models)</a>
+      <li><a href="llm_api_app.html#llm_api.hardware.HostCPUInfo.total_ram_mb">total_ram_mb (llm_api.hardware.HostCPUInfo attribute)</a>
+</li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.ScheduledTask.total_run_count">total_run_count (verbal_tasks.models.ScheduledTask attribute)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.hardware.HostCPUInfo.total_threads">total_threads (llm_api.hardware.HostCPUInfo attribute)</a>
+</li>
+      <li><a href="benchmarking_app.html#benchmarking.models.FineTuningDataset.total_tokens">total_tokens (benchmarking.models.FineTuningDataset attribute)</a>
+
+      <ul>
+        <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecord.total_tokens">(verbal_tasks.models.TaskRecord attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="llm_api_app.html#llm_api.hardware.GPUDeviceInfo.total_vram_gb">total_vram_gb (llm_api.hardware.GPUDeviceInfo property)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.hardware.GPUDeviceInfo.total_vram_mb">total_vram_mb (llm_api.hardware.GPUDeviceInfo attribute)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.models.track_backend_model_changes">track_backend_model_changes() (in module llm_api.models)</a>
+</li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.ScheduledTask.trigger">trigger() (verbal_tasks.models.ScheduledTask method)</a>
 </li>
       <li><a href="demo_ui_app.html#demo_ui.views.trigger_document_ingestion">trigger_document_ingestion() (in module demo_ui.views)</a>
 </li>
@@ -3049,6 +3877,8 @@
 </li>
       </ul></li>
       <li><a href="llm_api_app.html#llm_api.models.UserActiveModel.use_external">use_external (llm_api.models.UserActiveModel attribute)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.hardware.GPUDeviceInfo.used_vram_mb">used_vram_mb (llm_api.hardware.GPUDeviceInfo attribute)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.models.Conversation.user">user (llm_api.models.Conversation attribute)</a>
 
@@ -3122,20 +3952,38 @@
 </li>
       <li><a href="llm_api_app.html#llm_api.api.Hydrant.validate_residual_pressure">validate_residual_pressure() (llm_api.api.Hydrant class method)</a>
 </li>
-      <li><a href="metacognition_app.html#metacognition.models.ReasoningStep.variant_intent">variant_intent (metacognition.models.ReasoningStep attribute)</a>
+      <li><a href="metacognition_app.html#metacognition.actions.PromptVariant.variant_intent">variant_intent (metacognition.actions.PromptVariant attribute)</a>
+
+      <ul>
+        <li><a href="metacognition_app.html#metacognition.models.ReasoningStep.variant_intent">(metacognition.models.ReasoningStep attribute)</a>
 </li>
+      </ul></li>
       <li><a href="metacognition_app.html#metacognition.models.ReasoningStep.variants">variants (metacognition.models.ReasoningStep attribute)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.models.VectorIndexExplorer">VectorIndexExplorer (class in background_resources.models)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.models.VectorIndexExplorer.DoesNotExist">VectorIndexExplorer.DoesNotExist</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="background_resources_app.html#background_resources.models.VectorIndexExplorer.MultipleObjectsReturned">VectorIndexExplorer.MultipleObjectsReturned</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.models.VectorIndexExplorer.NotUpdated">VectorIndexExplorer.NotUpdated</a>
 </li>
+      <li>
+    verbal_tasks.models
+
+      <ul>
+        <li><a href="verbal_tasks_app.html#module-verbal_tasks.models">module</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li>
+    verbal_tasks.task_backend
+
+      <ul>
+        <li><a href="verbal_tasks_app.html#module-verbal_tasks.task_backend">module</a>
+</li>
+      </ul></li>
       <li><a href="background_resources_app.html#background_resources.rag_service.RAGService.verify_rag_relevance">verify_rag_relevance() (background_resources.rag_service.RAGService method)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.api.view_document_pdf">view_document_pdf() (in module llm_api.api)</a>
@@ -3143,6 +3991,22 @@
       <li><a href="llm_api_app.html#llm_api.models.SystemConfiguration.HostingBackend.VLLM">VLLM (llm_api.models.SystemConfiguration.HostingBackend attribute)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.models.LocalAIModel.vllm_configurations">vllm_configurations (llm_api.models.LocalAIModel attribute)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.hardware.BackendRecommendation.vllm_dtype">vllm_dtype (llm_api.hardware.BackendRecommendation attribute)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.hardware.BackendRecommendation.vllm_gpu_memory_utilization">vllm_gpu_memory_utilization (llm_api.hardware.BackendRecommendation attribute)</a>
+
+      <ul>
+        <li><a href="llm_api_app.html#llm_api.models.LocalAIModel.vllm_gpu_memory_utilization">(llm_api.models.LocalAIModel attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="llm_api_app.html#llm_api.hardware.BackendRecommendation.vllm_max_model_len">vllm_max_model_len (llm_api.hardware.BackendRecommendation attribute)</a>
+
+      <ul>
+        <li><a href="llm_api_app.html#llm_api.models.LocalAIModel.vllm_max_model_len">(llm_api.models.LocalAIModel attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="grobid_client_app.html#grobid_client.models.Reference.volume">volume (grobid_client.models.Reference attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -3212,6 +4076,8 @@
         <li><a href="work_organisation_app.html#module-work_organisation.models">module</a>
 </li>
       </ul></li>
+      <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecord.worker_id">worker_id (verbal_tasks.models.TaskRecord attribute)</a>
+</li>
       <li><a href="work_organisation_app.html#work_organisation.models.Workshop">Workshop (class in work_organisation.models)</a>
 </li>
       <li><a href="work_organisation_app.html#work_organisation.models.WorkshopSession.workshop">workshop (work_organisation.models.WorkshopSession attribute)</a>
@@ -3246,11 +4112,25 @@
 </li>
       <li><a href="work_organisation_app.html#work_organisation.models.WorkshopSession.NotUpdated">WorkshopSession.NotUpdated</a>
 </li>
+      <li><a href="metacognition_app.html#metacognition.actions.WriteFileAction">WriteFileAction (class in metacognition.actions)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.actions.WriteFileArgs">WriteFileArgs (class in metacognition.actions)</a>
+</li>
   </ul></td>
 </tr></table>
 
 <h2 id="Y">Y</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="grobid_client_app.html#grobid_client.models.Reference.year">year (grobid_client.models.Reference attribute)</a>
+
+      <ul>
+        <li><a href="grobid_client_app.html#grobid_client.tasks.CandidateEvaluation.year">(grobid_client.tasks.CandidateEvaluation attribute)</a>
+</li>
+        <li><a href="grobid_client_app.html#grobid_client.tasks.DocumentMetadataExtraction.year">(grobid_client.tasks.DocumentMetadataExtraction attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="background_resources_app.html#background_resources.rag_service.DjangoChunkStore.yield_keys">yield_keys() (background_resources.rag_service.DjangoChunkStore method)</a>
 </li>

@@ -20,8 +20,8 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Demo UI" href="demo_ui_app.html" />
-    <link rel="prev" title="Metacognition - plans and self-evaluation" href="metacognition_app.html" /> 
+    <link rel="next" title="Benchmarking - Automated Evaluation, Synthetic Generation &amp; LoRA Flywheels" href="benchmarking_app.html" />
+    <link rel="prev" title="Metacognition - Cognitive Blueprints, Agentic Workflows &amp; Self-Evaluation" href="metacognition_app.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -45,14 +45,26 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="llm_api_app.html">LLM API</a></li>
-<li class="toctree-l1"><a class="reference internal" href="background_resources_app.html">Background Resources - context documents</a></li>
-<li class="toctree-l1"><a class="reference internal" href="benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="grips_app.html">Grips - wiki knowledge banks</a></li>
-<li class="toctree-l1"><a class="reference internal" href="metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="llm_api_app.html">LLM API - Local Inference, Proxy Routing &amp; Hardware-Aware Serving</a></li>
+<li class="toctree-l1"><a class="reference internal" href="verbal_tasks_app.html">Verbal Tasks - Database-Backed Asynchronous Execution &amp; Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sandbox_manager_app.html">Sandbox Manager - Isolated Python Execution Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grobid_client_app.html">Grobid Client - Deterministic Scientific PDF Parsing &amp; Citation Extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="background_resources_app.html">Background Resources - Retrieval-Augmented Generation &amp; Document Ingestion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grips_app.html">Grips - Structured Knowledge Graph &amp; Propositional Claims</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metacognition_app.html">Metacognition - Cognitive Blueprints, Agentic Workflows &amp; Self-Evaluation</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#app-achievements-core-capabilities">App Achievements &amp; Core Capabilities</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#database-models">Database Models</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#purpose-motivating-problem">1. Purpose &amp; Motivating Problem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#architecture-mechanism">2. Architecture &amp; Mechanism</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#domain-hierarchy">Domain Hierarchy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#access-control-anonymity-modes">Access Control &amp; Anonymity Modes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#real-time-event-distribution-datastar-sse">Real-Time Event Distribution (Datastar SSE)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#llm-synthesis-causal-factor-extraction">LLM Synthesis &amp; Causal Factor Extraction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#export-capabilities">Export Capabilities</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#observability-health-signals">3. Observability &amp; Health Signals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#diagnostic-tips-common-failure-modes">4. Diagnostic Tips &amp; Common Failure Modes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-work_organisation.models">Database Models Reference</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#work_organisation.models.ConversationMember"><code class="docutils literal notranslate"><span class="pre">ConversationMember</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#work_organisation.models.ConversationMember.DoesNotExist"><code class="docutils literal notranslate"><span class="pre">ConversationMember.DoesNotExist</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#work_organisation.models.ConversationMember.MultipleObjectsReturned"><code class="docutils literal notranslate"><span class="pre">ConversationMember.MultipleObjectsReturned</span></code></a></li>
@@ -201,37 +213,134 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#api-endpoints">API Endpoints</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#hierarchy-session-management">Hierarchy &amp; Session Management</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#canvas-mutations-real-time-streaming">Canvas Mutations &amp; Real-time Streaming</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#ai-analysis-export-endpoints">AI Analysis &amp; Export Endpoints</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.CardCreateSchema"><code class="docutils literal notranslate"><span class="pre">CardCreateSchema</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.CardDetailSchema"><code class="docutils literal notranslate"><span class="pre">CardDetailSchema</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.CardMoveSchema"><code class="docutils literal notranslate"><span class="pre">CardMoveSchema</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.ClusterDetailSchema"><code class="docutils literal notranslate"><span class="pre">ClusterDetailSchema</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.ClusterRequestSchema"><code class="docutils literal notranslate"><span class="pre">ClusterRequestSchema</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.ProjectCreateSchema"><code class="docutils literal notranslate"><span class="pre">ProjectCreateSchema</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.ProjectOutSchema"><code class="docutils literal notranslate"><span class="pre">ProjectOutSchema</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.SessionCreateSchema"><code class="docutils literal notranslate"><span class="pre">SessionCreateSchema</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.SessionDetailOutSchema"><code class="docutils literal notranslate"><span class="pre">SessionDetailOutSchema</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.TokenStreamRequestSchema"><code class="docutils literal notranslate"><span class="pre">TokenStreamRequestSchema</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.WorkshopCreateSchema"><code class="docutils literal notranslate"><span class="pre">WorkshopCreateSchema</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.WorkshopOutSchema"><code class="docutils literal notranslate"><span class="pre">WorkshopOutSchema</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.api_cluster_ideas"><code class="docutils literal notranslate"><span class="pre">api_cluster_ideas()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.api_export_summary"><code class="docutils literal notranslate"><span class="pre">api_export_summary()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.api_extract_causal_graph"><code class="docutils literal notranslate"><span class="pre">api_extract_causal_graph()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.create_card"><code class="docutils literal notranslate"><span class="pre">create_card()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.create_new_session"><code class="docutils literal notranslate"><span class="pre">create_new_session()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.create_project"><code class="docutils literal notranslate"><span class="pre">create_project()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.create_workshop"><code class="docutils literal notranslate"><span class="pre">create_workshop()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.get_session_detail"><code class="docutils literal notranslate"><span class="pre">get_session_detail()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.list_projects"><code class="docutils literal notranslate"><span class="pre">list_projects()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.list_workshops"><code class="docutils literal notranslate"><span class="pre">list_workshops()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.move_card"><code class="docutils literal notranslate"><span class="pre">move_card()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.stream_llm_response"><code class="docutils literal notranslate"><span class="pre">stream_llm_response()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.stream_session_events"><code class="docutils literal notranslate"><span class="pre">stream_session_events()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-work_organisation.api">API Endpoints Reference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#work_organisation.api.CardCreateSchema"><code class="docutils literal notranslate"><span class="pre">CardCreateSchema</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.CardCreateSchema.author_alias"><code class="docutils literal notranslate"><span class="pre">CardCreateSchema.author_alias</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.CardCreateSchema.card_type"><code class="docutils literal notranslate"><span class="pre">CardCreateSchema.card_type</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.CardCreateSchema.cluster_id"><code class="docutils literal notranslate"><span class="pre">CardCreateSchema.cluster_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.CardCreateSchema.metadata"><code class="docutils literal notranslate"><span class="pre">CardCreateSchema.metadata</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.CardCreateSchema.model_config"><code class="docutils literal notranslate"><span class="pre">CardCreateSchema.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.CardCreateSchema.pos_x"><code class="docutils literal notranslate"><span class="pre">CardCreateSchema.pos_x</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.CardCreateSchema.pos_y"><code class="docutils literal notranslate"><span class="pre">CardCreateSchema.pos_y</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.CardCreateSchema.session_id"><code class="docutils literal notranslate"><span class="pre">CardCreateSchema.session_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.CardCreateSchema.text"><code class="docutils literal notranslate"><span class="pre">CardCreateSchema.text</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="#work_organisation.api.CardDetailSchema"><code class="docutils literal notranslate"><span class="pre">CardDetailSchema</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.CardDetailSchema.author_alias"><code class="docutils literal notranslate"><span class="pre">CardDetailSchema.author_alias</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.CardDetailSchema.card_type"><code class="docutils literal notranslate"><span class="pre">CardDetailSchema.card_type</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.CardDetailSchema.cluster_id"><code class="docutils literal notranslate"><span class="pre">CardDetailSchema.cluster_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.CardDetailSchema.id"><code class="docutils literal notranslate"><span class="pre">CardDetailSchema.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.CardDetailSchema.metadata"><code class="docutils literal notranslate"><span class="pre">CardDetailSchema.metadata</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.CardDetailSchema.model_config"><code class="docutils literal notranslate"><span class="pre">CardDetailSchema.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.CardDetailSchema.pos_x"><code class="docutils literal notranslate"><span class="pre">CardDetailSchema.pos_x</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.CardDetailSchema.pos_y"><code class="docutils literal notranslate"><span class="pre">CardDetailSchema.pos_y</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.CardDetailSchema.text"><code class="docutils literal notranslate"><span class="pre">CardDetailSchema.text</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#work_organisation.api.CardMoveSchema"><code class="docutils literal notranslate"><span class="pre">CardMoveSchema</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.CardMoveSchema.card_id"><code class="docutils literal notranslate"><span class="pre">CardMoveSchema.card_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.CardMoveSchema.cluster_id"><code class="docutils literal notranslate"><span class="pre">CardMoveSchema.cluster_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.CardMoveSchema.model_config"><code class="docutils literal notranslate"><span class="pre">CardMoveSchema.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.CardMoveSchema.pos_x"><code class="docutils literal notranslate"><span class="pre">CardMoveSchema.pos_x</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.CardMoveSchema.pos_y"><code class="docutils literal notranslate"><span class="pre">CardMoveSchema.pos_y</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#work_organisation.api.ClusterDetailSchema"><code class="docutils literal notranslate"><span class="pre">ClusterDetailSchema</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.ClusterDetailSchema.color"><code class="docutils literal notranslate"><span class="pre">ClusterDetailSchema.color</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.ClusterDetailSchema.height"><code class="docutils literal notranslate"><span class="pre">ClusterDetailSchema.height</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.ClusterDetailSchema.id"><code class="docutils literal notranslate"><span class="pre">ClusterDetailSchema.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.ClusterDetailSchema.model_config"><code class="docutils literal notranslate"><span class="pre">ClusterDetailSchema.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.ClusterDetailSchema.pos_x"><code class="docutils literal notranslate"><span class="pre">ClusterDetailSchema.pos_x</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.ClusterDetailSchema.pos_y"><code class="docutils literal notranslate"><span class="pre">ClusterDetailSchema.pos_y</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.ClusterDetailSchema.summary"><code class="docutils literal notranslate"><span class="pre">ClusterDetailSchema.summary</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.ClusterDetailSchema.title"><code class="docutils literal notranslate"><span class="pre">ClusterDetailSchema.title</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.ClusterDetailSchema.width"><code class="docutils literal notranslate"><span class="pre">ClusterDetailSchema.width</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#work_organisation.api.ClusterRequestSchema"><code class="docutils literal notranslate"><span class="pre">ClusterRequestSchema</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.ClusterRequestSchema.model_config"><code class="docutils literal notranslate"><span class="pre">ClusterRequestSchema.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.ClusterRequestSchema.session_id"><code class="docutils literal notranslate"><span class="pre">ClusterRequestSchema.session_id</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#work_organisation.api.ProjectCreateSchema"><code class="docutils literal notranslate"><span class="pre">ProjectCreateSchema</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.ProjectCreateSchema.description"><code class="docutils literal notranslate"><span class="pre">ProjectCreateSchema.description</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.ProjectCreateSchema.group_ids"><code class="docutils literal notranslate"><span class="pre">ProjectCreateSchema.group_ids</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.ProjectCreateSchema.is_public"><code class="docutils literal notranslate"><span class="pre">ProjectCreateSchema.is_public</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.ProjectCreateSchema.model_config"><code class="docutils literal notranslate"><span class="pre">ProjectCreateSchema.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.ProjectCreateSchema.name"><code class="docutils literal notranslate"><span class="pre">ProjectCreateSchema.name</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#work_organisation.api.ProjectOutSchema"><code class="docutils literal notranslate"><span class="pre">ProjectOutSchema</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.ProjectOutSchema.created_at"><code class="docutils literal notranslate"><span class="pre">ProjectOutSchema.created_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.ProjectOutSchema.description"><code class="docutils literal notranslate"><span class="pre">ProjectOutSchema.description</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.ProjectOutSchema.id"><code class="docutils literal notranslate"><span class="pre">ProjectOutSchema.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.ProjectOutSchema.is_public"><code class="docutils literal notranslate"><span class="pre">ProjectOutSchema.is_public</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.ProjectOutSchema.model_config"><code class="docutils literal notranslate"><span class="pre">ProjectOutSchema.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.ProjectOutSchema.name"><code class="docutils literal notranslate"><span class="pre">ProjectOutSchema.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.ProjectOutSchema.slug"><code class="docutils literal notranslate"><span class="pre">ProjectOutSchema.slug</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#work_organisation.api.SessionCreateSchema"><code class="docutils literal notranslate"><span class="pre">SessionCreateSchema</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.SessionCreateSchema.access_mode"><code class="docutils literal notranslate"><span class="pre">SessionCreateSchema.access_mode</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.SessionCreateSchema.model_config"><code class="docutils literal notranslate"><span class="pre">SessionCreateSchema.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.SessionCreateSchema.session_type"><code class="docutils literal notranslate"><span class="pre">SessionCreateSchema.session_type</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.SessionCreateSchema.title"><code class="docutils literal notranslate"><span class="pre">SessionCreateSchema.title</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.SessionCreateSchema.workshop_id"><code class="docutils literal notranslate"><span class="pre">SessionCreateSchema.workshop_id</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#work_organisation.api.SessionDetailOutSchema"><code class="docutils literal notranslate"><span class="pre">SessionDetailOutSchema</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.SessionDetailOutSchema.access_mode"><code class="docutils literal notranslate"><span class="pre">SessionDetailOutSchema.access_mode</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.SessionDetailOutSchema.cards"><code class="docutils literal notranslate"><span class="pre">SessionDetailOutSchema.cards</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.SessionDetailOutSchema.clusters"><code class="docutils literal notranslate"><span class="pre">SessionDetailOutSchema.clusters</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.SessionDetailOutSchema.conversation_id"><code class="docutils literal notranslate"><span class="pre">SessionDetailOutSchema.conversation_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.SessionDetailOutSchema.id"><code class="docutils literal notranslate"><span class="pre">SessionDetailOutSchema.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.SessionDetailOutSchema.model_config"><code class="docutils literal notranslate"><span class="pre">SessionDetailOutSchema.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.SessionDetailOutSchema.project_id"><code class="docutils literal notranslate"><span class="pre">SessionDetailOutSchema.project_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.SessionDetailOutSchema.session_type"><code class="docutils literal notranslate"><span class="pre">SessionDetailOutSchema.session_type</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.SessionDetailOutSchema.title"><code class="docutils literal notranslate"><span class="pre">SessionDetailOutSchema.title</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.SessionDetailOutSchema.workshop_id"><code class="docutils literal notranslate"><span class="pre">SessionDetailOutSchema.workshop_id</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#work_organisation.api.TokenStreamRequestSchema"><code class="docutils literal notranslate"><span class="pre">TokenStreamRequestSchema</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.TokenStreamRequestSchema.max_new_tokens"><code class="docutils literal notranslate"><span class="pre">TokenStreamRequestSchema.max_new_tokens</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.TokenStreamRequestSchema.model_config"><code class="docutils literal notranslate"><span class="pre">TokenStreamRequestSchema.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.TokenStreamRequestSchema.prompt"><code class="docutils literal notranslate"><span class="pre">TokenStreamRequestSchema.prompt</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.TokenStreamRequestSchema.system_prompt"><code class="docutils literal notranslate"><span class="pre">TokenStreamRequestSchema.system_prompt</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#work_organisation.api.WorkshopCreateSchema"><code class="docutils literal notranslate"><span class="pre">WorkshopCreateSchema</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.WorkshopCreateSchema.description"><code class="docutils literal notranslate"><span class="pre">WorkshopCreateSchema.description</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.WorkshopCreateSchema.group_ids"><code class="docutils literal notranslate"><span class="pre">WorkshopCreateSchema.group_ids</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.WorkshopCreateSchema.model_config"><code class="docutils literal notranslate"><span class="pre">WorkshopCreateSchema.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.WorkshopCreateSchema.name"><code class="docutils literal notranslate"><span class="pre">WorkshopCreateSchema.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.WorkshopCreateSchema.objective"><code class="docutils literal notranslate"><span class="pre">WorkshopCreateSchema.objective</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.WorkshopCreateSchema.project_id"><code class="docutils literal notranslate"><span class="pre">WorkshopCreateSchema.project_id</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#work_organisation.api.WorkshopOutSchema"><code class="docutils literal notranslate"><span class="pre">WorkshopOutSchema</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.WorkshopOutSchema.description"><code class="docutils literal notranslate"><span class="pre">WorkshopOutSchema.description</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.WorkshopOutSchema.id"><code class="docutils literal notranslate"><span class="pre">WorkshopOutSchema.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.WorkshopOutSchema.model_config"><code class="docutils literal notranslate"><span class="pre">WorkshopOutSchema.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.WorkshopOutSchema.name"><code class="docutils literal notranslate"><span class="pre">WorkshopOutSchema.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.WorkshopOutSchema.objective"><code class="docutils literal notranslate"><span class="pre">WorkshopOutSchema.objective</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.WorkshopOutSchema.project_id"><code class="docutils literal notranslate"><span class="pre">WorkshopOutSchema.project_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#work_organisation.api.WorkshopOutSchema.session_count"><code class="docutils literal notranslate"><span class="pre">WorkshopOutSchema.session_count</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#work_organisation.api.api_cluster_ideas"><code class="docutils literal notranslate"><span class="pre">api_cluster_ideas()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#work_organisation.api.api_export_summary"><code class="docutils literal notranslate"><span class="pre">api_export_summary()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#work_organisation.api.api_extract_causal_graph"><code class="docutils literal notranslate"><span class="pre">api_extract_causal_graph()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#work_organisation.api.create_card"><code class="docutils literal notranslate"><span class="pre">create_card()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#work_organisation.api.create_new_session"><code class="docutils literal notranslate"><span class="pre">create_new_session()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#work_organisation.api.create_project"><code class="docutils literal notranslate"><span class="pre">create_project()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#work_organisation.api.create_workshop"><code class="docutils literal notranslate"><span class="pre">create_workshop()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#work_organisation.api.get_session_detail"><code class="docutils literal notranslate"><span class="pre">get_session_detail()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#work_organisation.api.list_projects"><code class="docutils literal notranslate"><span class="pre">list_projects()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#work_organisation.api.list_workshops"><code class="docutils literal notranslate"><span class="pre">list_workshops()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#work_organisation.api.move_card"><code class="docutils literal notranslate"><span class="pre">move_card()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#work_organisation.api.stream_llm_response"><code class="docutils literal notranslate"><span class="pre">stream_llm_response()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#work_organisation.api.stream_session_events"><code class="docutils literal notranslate"><span class="pre">stream_session_events()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#module-work_organisation.clustering">Clustering &amp; Synthesis Utilities</a><ul>
@@ -268,7 +377,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#work_organisation.clustering.extract_causal_factors_from_session"><code class="docutils literal notranslate"><span class="pre">extract_causal_factors_from_session()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#module-work_organisation.events">Real-time Event Streaming</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-work_organisation.events">Event Streaming Reference</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#work_organisation.events.format_datastar_sse"><code class="docutils literal notranslate"><span class="pre">format_datastar_sse()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#work_organisation.events.get_whiteboard_channel"><code class="docutils literal notranslate"><span class="pre">get_whiteboard_channel()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#work_organisation.events.publish_whiteboard_event"><code class="docutils literal notranslate"><span class="pre">publish_whiteboard_event()</span></code></a></li>
@@ -277,7 +386,8 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="demo_ui_app.html">Demo UI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmarking_app.html">Benchmarking - Automated Evaluation, Synthetic Generation &amp; LoRA Flywheels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo_ui_app.html">Demo UI - Empirical Research &amp; Cognitive Workbench</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
 <ul>
@@ -313,59 +423,147 @@
              
   <section id="work-organisation-collaborative-whiteboards-assisted-study-design">
 <h1>Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design<a class="headerlink" href="#work-organisation-collaborative-whiteboards-assisted-study-design" title="Link to this heading"></a></h1>
-<p>The <strong>Work Organisation</strong> app provides multi-user collaboration, workshop management, group-scoped access control, and assisted whiteboard ideation for study design. It enables teams to organize research inquiries into hierarchical projects, conduct synchronous or asynchronous ideation sessions, cluster ideas with LLMs, extract causal factors, and stream real-time canvas updates.</p>
+<p>The <strong>Work Organisation</strong> app provides multi-user workspace management, group-scoped access control, interactive whiteboarding, and assisted ideation for study design. It enables multidisciplinary research teams to structure exploratory questions, capture hypotheses, cluster brainstorming notes with local AI assistance, and extract formal causal factors into study artifacts.</p>
 <nav class="contents local" id="table-of-contents">
 <p class="topic-title">Table of Contents</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="#app-achievements-core-capabilities" id="id1">App Achievements &amp; Core Capabilities</a></p></li>
-<li><p><a class="reference internal" href="#database-models" id="id2">Database Models</a></p></li>
-<li><p><a class="reference internal" href="#api-endpoints" id="id3">API Endpoints</a></p>
+<li><p><a class="reference internal" href="#purpose-motivating-problem" id="id1">1. Purpose &amp; Motivating Problem</a></p></li>
+<li><p><a class="reference internal" href="#architecture-mechanism" id="id2">2. Architecture &amp; Mechanism</a></p>
 <ul>
-<li><p><a class="reference internal" href="#hierarchy-session-management" id="id4">Hierarchy &amp; Session Management</a></p></li>
-<li><p><a class="reference internal" href="#canvas-mutations-real-time-streaming" id="id5">Canvas Mutations &amp; Real-time Streaming</a></p></li>
-<li><p><a class="reference internal" href="#ai-analysis-export-endpoints" id="id6">AI Analysis &amp; Export Endpoints</a></p></li>
+<li><p><a class="reference internal" href="#domain-hierarchy" id="id3">Domain Hierarchy</a></p></li>
+<li><p><a class="reference internal" href="#access-control-anonymity-modes" id="id4">Access Control &amp; Anonymity Modes</a></p></li>
+<li><p><a class="reference internal" href="#real-time-event-distribution-datastar-sse" id="id5">Real-Time Event Distribution (Datastar SSE)</a></p></li>
+<li><p><a class="reference internal" href="#llm-synthesis-causal-factor-extraction" id="id6">LLM Synthesis &amp; Causal Factor Extraction</a></p></li>
+<li><p><a class="reference internal" href="#export-capabilities" id="id7">Export Capabilities</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#module-work_organisation.clustering" id="id7">Clustering &amp; Synthesis Utilities</a></p></li>
-<li><p><a class="reference internal" href="#module-work_organisation.events" id="id8">Real-time Event Streaming</a></p></li>
+<li><p><a class="reference internal" href="#observability-health-signals" id="id8">3. Observability &amp; Health Signals</a></p></li>
+<li><p><a class="reference internal" href="#diagnostic-tips-common-failure-modes" id="id9">4. Diagnostic Tips &amp; Common Failure Modes</a></p></li>
+<li><p><a class="reference internal" href="#module-work_organisation.models" id="id10">Database Models Reference</a></p></li>
+<li><p><a class="reference internal" href="#module-work_organisation.api" id="id11">API Endpoints Reference</a></p></li>
+<li><p><a class="reference internal" href="#module-work_organisation.clustering" id="id12">Clustering &amp; Synthesis Utilities</a></p></li>
+<li><p><a class="reference internal" href="#module-work_organisation.events" id="id13">Event Streaming Reference</a></p></li>
 </ul>
 </nav>
-<section id="app-achievements-core-capabilities">
-<h2><a class="toc-backref" href="#id1" role="doc-backlink">App Achievements &amp; Core Capabilities</a><a class="headerlink" href="#app-achievements-core-capabilities" title="Link to this heading"></a></h2>
-<ol class="arabic simple">
-<li><p><strong>Hierarchical Project &amp; Workshop Scoping</strong>
-Organizes study design workflows hierarchically: <code class="docutils literal notranslate"><span class="pre">Project</span></code> -&gt; <code class="docutils literal notranslate"><span class="pre">Workshop</span></code> -&gt; <code class="docutils literal notranslate"><span class="pre">WorkshopSession</span></code> -&gt; <code class="docutils literal notranslate"><span class="pre">WhiteboardCard</span></code> / <code class="docutils literal notranslate"><span class="pre">WhiteboardCluster</span></code>.</p></li>
-<li><p><strong>Group-Scoped Access Control &amp; Privacy Modes</strong>
-Provides automatic query-level permission scoping via <code class="docutils literal notranslate"><span class="pre">GroupScopedManager</span></code>, supporting granular Django Groups and 4 distinct anonymity modes for sensitive workshops:</p>
+<section id="purpose-motivating-problem">
+<h2><a class="toc-backref" href="#id1" role="doc-backlink">1. Purpose &amp; Motivating Problem</a><a class="headerlink" href="#purpose-motivating-problem" title="Link to this heading"></a></h2>
+<p>During early-stage research and experimental design, teams frequently encounter cognitive and organizational hurdles:</p>
 <ul class="simple">
-<li><p><strong>Restricted &amp; Tracked (``RESTRICTED_TRACKED``)</strong>: Restricted to group members; participant inputs are tracked and attributed to their user accounts in both UI and database.</p></li>
-<li><p><strong>Restricted &amp; UI-Anonymized (``RESTRICTED_ANONYMIZED_UI``)</strong>: Restricted to authorized groups, but participant identities are masked in the UI with stable pseudonyms (e.g., <em>Participant #42</em>), while maintaining DB auditability.</p></li>
-<li><p><strong>Restricted &amp; DB-Anonymized (``RESTRICTED_ANONYMIZED_DB``)</strong>: Restricted to authorized groups, but all card author foreign keys are stripped (set to <code class="docutils literal notranslate"><span class="pre">NULL</span></code>) in the database to guarantee total non-attribution.</p></li>
-<li><p><strong>Public &amp; Optional User (``PUBLIC_OPTIONAL_USER``)</strong>: Open sessions where authentication is optional and anonymous contributors can participate.</p></li>
+<li><p><strong>Fragmented Ideation vs. Formal Specification</strong>: Brainstorming sticky notes, questions, and hypotheses rarely translate smoothly into rigorous empirical variables or formal causal models without tedious manual translation.</p></li>
+<li><p><strong>Evaluation Apprehension &amp; Attribution Bias</strong>: In sensitive domains or interdisciplinary teams, junior participants or domain specialists may hesitate to propose unconventional ideas or challenge established hypotheses if every note is visibly attributed to their identity.</p></li>
+<li><p><strong>Cognitive Overload from Sprawl</strong>: Unstructured whiteboard canvases quickly degrade into visual clutter where recurring themes, contradictions, and causal relationships are obscured.</p></li>
 </ul>
-</li>
-<li><p><strong>Collaborative Whiteboard Canvas &amp; Thematic Clustering</strong>
-Supports spatial canvas cards (ideas, causal factors, Grips concepts, open questions, hypotheses). Integrates with local LLMs to synthesize unstructured cards into titled, color-coded <code class="docutils literal notranslate"><span class="pre">WhiteboardCluster</span></code> bounding boxes.</p></li>
-<li><p><strong>Causal Graph &amp; Factor Extraction</strong>
-Analyzes whiteboard notes with structured schema output to extract causal variables, candidate discrete states, and influence relationships directly into study design artifacts.</p></li>
-<li><p><strong>Real-time Event Synchronization via Datastar SSE</strong>
-Streams incremental canvas updates (card movements, additions, clustering events) over Redis pub/sub using the lightweight <a class="reference external" href="https://data-star.dev">Datastar</a> Server-Sent Events protocol.</p></li>
-<li><p><strong>Markdown &amp; Mermaid Export</strong>
-Exports whiteboard canvases into clean GitHub-flavored Markdown reports with structured tables and embedded Mermaid diagrams.</p></li>
+<p>To alleviate these challenges without falling into naive automation traps, the Work Organisation module combines human-in-the-loop spatial organization with structured LLM synthesis:</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>A Note on AI Facilitation</strong>:
+LLM-assisted clustering and causal factor extraction are not authoritative oracles. A local model can easily force artificial analogies, group contradictory claims into the same cluster, or infer directional causality where only correlation was mentioned. The Work Organisation canvas treats AI outputs as editable proposals: cards remain independent, clusters are repositionable bounding boxes, and extracted factors must be validated by human experiment designers before promotion to formal Grips causal graphs.</p>
+</div>
+</section>
+<section id="architecture-mechanism">
+<h2><a class="toc-backref" href="#id2" role="doc-backlink">2. Architecture &amp; Mechanism</a><a class="headerlink" href="#architecture-mechanism" title="Link to this heading"></a></h2>
+<p>The module is structured around a four-tier project hierarchy, group-scoped permissions, four distinct privacy modes, real-time event distribution, and structured Pydantic extraction pipelines.</p>
+<section id="domain-hierarchy">
+<h3><a class="toc-backref" href="#id3" role="doc-backlink">Domain Hierarchy</a><a class="headerlink" href="#domain-hierarchy" title="Link to this heading"></a></h3>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Project (Top-level container; Django Groups &amp; owner permissions)
+  └── Workshop (Specific research track, workshop milestone, or study inquiry)
+        └── WorkshopSession (Collaborative canvas session with specific access mode)
+              ├── WhiteboardCard (Spatial 2D notes: ideas, factors, hypotheses, questions)
+              └── WhiteboardCluster (Thematic bounding boxes grouping related cards)
+</pre></div>
+</div>
+</section>
+<section id="access-control-anonymity-modes">
+<h3><a class="toc-backref" href="#id4" role="doc-backlink">Access Control &amp; Anonymity Modes</a><a class="headerlink" href="#access-control-anonymity-modes" title="Link to this heading"></a></h3>
+<p>Query-level security is enforced across all models using a custom <code class="docutils literal notranslate"><span class="pre">GroupScopedManager</span></code>, preventing cross-tenant data leakage. When creating a <code class="docutils literal notranslate"><span class="pre">WorkshopSession</span></code>, facilitators configure one of four access modes to match the session’s privacy requirements:</p>
+<ol class="arabic simple">
+<li><p><strong>Restricted &amp; Tracked (``RESTRICTED_TRACKED``)</strong>:
+Restricted to authorized group members. All contributions are linked to participant user accounts in both the database and the canvas UI.</p></li>
+<li><p><strong>Restricted &amp; UI-Anonymized (``RESTRICTED_ANONYMIZED_UI``)</strong>:
+Restricted to authorized group members. Participant usernames are masked in the UI with stable session pseudonyms (e.g., <em>Participant #3</em>), preserving psychological safety while maintaining database auditability for session administrators.</p></li>
+<li><p><strong>Restricted &amp; DB-Anonymized (``RESTRICTED_ANONYMIZED_DB``)</strong>:
+Restricted to authorized group members, but card author foreign keys are permanently set to <code class="docutils literal notranslate"><span class="pre">NULL</span></code> upon creation. Neither other participants nor database administrators can deanonymize authorship.</p></li>
+<li><p><strong>Public &amp; Optional User (``PUBLIC_OPTIONAL_USER``)</strong>:
+Open collaboration sessions where authentication is optional and unauthenticated guests can contribute anonymously alongside registered users.</p></li>
 </ol>
 </section>
-<section id="database-models">
-<h2><a class="toc-backref" href="#id2" role="doc-backlink">Database Models</a><a class="headerlink" href="#database-models" title="Link to this heading"></a></h2>
-<p>The domain model hierarchy is structured as follows:</p>
+<section id="real-time-event-distribution-datastar-sse">
+<h3><a class="toc-backref" href="#id5" role="doc-backlink">Real-Time Event Distribution (Datastar SSE)</a><a class="headerlink" href="#real-time-event-distribution-datastar-sse" title="Link to this heading"></a></h3>
+<p>To enable collaborative multi-user editing without heavy JavaScript frameworks, the app uses <a class="reference external" href="https://data-star.dev">Datastar</a> Server-Sent Events (SSE) paired with Redis Pub/Sub:</p>
 <ul class="simple">
-<li><p><strong>``Project``</strong>: The top-level container for workshops, experiments, and whiteboards. Associated with Django Groups and creator ownership.</p></li>
-<li><p><strong>``Workshop``</strong>: A specific collaborative milestone or study design track under a Project.</p></li>
-<li><p><strong>``WorkshopSession``</strong>: An active collaborative session (whiteboard, interview dialogue, or drafting document) linked to a conversational thread and configured with an access mode.</p></li>
-<li><p><strong>``ConversationMember``</strong>: Manages multi-user roles (<code class="docutils literal notranslate"><span class="pre">owner</span></code>, <code class="docutils literal notranslate"><span class="pre">editor</span></code>, <code class="docutils literal notranslate"><span class="pre">viewer</span></code>) and UI display aliases on sessions.</p></li>
-<li><p><strong>``WhiteboardCard``</strong>: Individual spatial cards on the canvas with 2D coordinates, card types (<code class="docutils literal notranslate"><span class="pre">idea</span></code>, <code class="docutils literal notranslate"><span class="pre">factor</span></code>, <code class="docutils literal notranslate"><span class="pre">concept</span></code>, <code class="docutils literal notranslate"><span class="pre">question</span></code>, <code class="docutils literal notranslate"><span class="pre">hypothesis</span></code>), author attributes, and custom JSON metadata.</p></li>
-<li><p><strong>``WhiteboardCluster``</strong>: Thematic bounding groups created manually or synthesized by LLMs to group related cards.</p></li>
+<li><p>Canvas mutations (<code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/work/cards/</span></code>, <code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/work/cards/move/</span></code>) persist updates to PostgreSQL and broadcast an event payload to channel <code class="docutils literal notranslate"><span class="pre">verbal:whiteboard:{session_id}</span></code>.</p></li>
+<li><p>Connected browsers listen to <code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/api/work/stream_session/{session_id}/</span></code>, which yields real-time SSE events (e.g., <code class="docutils literal notranslate"><span class="pre">card_added</span></code>, <code class="docutils literal notranslate"><span class="pre">card_moved</span></code>, <code class="docutils literal notranslate"><span class="pre">clustered</span></code>) or HTML fragment merges.</p></li>
+<li><p>Heartbeat comments (<code class="docutils literal notranslate"><span class="pre">:</span> <span class="pre">heartbeat</span></code>) are sent every 15 seconds to prevent intermediate proxy timeouts.</p></li>
 </ul>
-<dl class="py class" id="module-work_organisation.models">
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>Redis Fallback</strong>:
+If the Redis broker configured in <code class="docutils literal notranslate"><span class="pre">CELERY_BROKER_URL</span></code> is unavailable, standard REST persistence continues to work seamlessly. However, real-time synchronization between concurrent browser tabs will be disabled, returning an error event instructing clients to refresh.</p>
+</div>
+</section>
+<section id="llm-synthesis-causal-factor-extraction">
+<h3><a class="toc-backref" href="#id6" role="doc-backlink">LLM Synthesis &amp; Causal Factor Extraction</a><a class="headerlink" href="#llm-synthesis-causal-factor-extraction" title="Link to this heading"></a></h3>
+<p>Two specialized synthesis routines use structured Pydantic schemas via <code class="docutils literal notranslate"><span class="pre">ai_service.generate_outline</span></code>:</p>
+<ul class="simple">
+<li><p><strong>Thematic Idea Clustering (``cluster_whiteboard_cards``)</strong>:
+Extracts all session cards, prompts the local model with the session objective, and requests an <code class="docutils literal notranslate"><span class="pre">IdeaClusteringPlan</span></code> containing 2 to 5 thematic clusters. Cards are automatically repositioned into spatial cluster bounding boxes (width 340px, dynamic height).</p></li>
+<li><p><strong>Causal Factor Extraction (``extract_causal_factors_from_session``)</strong>:
+Parses card contents against <code class="docutils literal notranslate"><span class="pre">CausalGraphExtractionPlan</span></code>, identifying named variables, discrete state options (e.g., <code class="docutils literal notranslate"><span class="pre">[&quot;Low&quot;,</span> <span class="pre">&quot;High&quot;]</span></code>), upstream causal drivers, and textual justification. Extracted variables are converted into specialized <code class="docutils literal notranslate"><span class="pre">factor</span></code> cards on the canvas ready for export to Grips or Blueprint design.</p></li>
+</ul>
+</section>
+<section id="export-capabilities">
+<h3><a class="toc-backref" href="#id7" role="doc-backlink">Export Capabilities</a><a class="headerlink" href="#export-capabilities" title="Link to this heading"></a></h3>
+<p>The endpoint <code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/api/work/export_summary/{session_id}/</span></code> compiles the entire session into a Markdown document complete with cluster breakdown tables, author attribution (honoring active anonymity modes), extracted causal dynamic tables, and open questions.</p>
+</section>
+</section>
+<section id="observability-health-signals">
+<h2><a class="toc-backref" href="#id8" role="doc-backlink">3. Observability &amp; Health Signals</a><a class="headerlink" href="#observability-health-signals" title="Link to this heading"></a></h2>
+<p>To monitor workshop collaboration and verify proper operational health:</p>
+<ol class="arabic">
+<li><p><strong>Django Admin Inspection</strong>:
+* Inspect <strong>Work Organisation &gt; Projects</strong> to verify attached Django Groups and owner assignments.
+* Inspect <strong>Workshop Sessions</strong> to verify <code class="docutils literal notranslate"><span class="pre">access_mode</span></code>, active <code class="docutils literal notranslate"><span class="pre">Conversation</span></code> link, and member list.
+* Inspect <strong>Whiteboard Cards</strong> to verify coordinate values (<code class="docutils literal notranslate"><span class="pre">pos_x</span></code>, <code class="docutils literal notranslate"><span class="pre">pos_y</span></code>), <code class="docutils literal notranslate"><span class="pre">card_type</span></code>, and <code class="docutils literal notranslate"><span class="pre">metadata</span></code> JSON payloads.</p></li>
+<li><p><strong>SSE Stream Verification</strong>:
+Inspect the browser network tab or test using <code class="docutils literal notranslate"><span class="pre">curl</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl<span class="w"> </span>-N<span class="w"> </span>-H<span class="w"> </span><span class="s2">&quot;Accept: text/event-stream&quot;</span><span class="w"> </span>http://127.0.0.1:8000/api/work/stream_session/&lt;session_id&gt;/
+</pre></div>
+</div>
+<p>A healthy stream immediately yields:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>event: connected
+data: {&quot;session_id&quot;: &quot;...&quot;, &quot;status&quot;: &quot;active&quot;}
+
+: heartbeat
+</pre></div>
+</div>
+</li>
+<li><p><strong>Clustering &amp; Extraction Logs</strong>:
+Look for structured synthesis messages in the web process log:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>INFO:work_organisation.clustering: Clustering completed for session 12: 3 clusters formed.
+INFO:work_organisation.events: Published whiteboard event &#39;clustered&#39; to channel verbal:whiteboard:12
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="diagnostic-tips-common-failure-modes">
+<h2><a class="toc-backref" href="#id9" role="doc-backlink">4. Diagnostic Tips &amp; Common Failure Modes</a><a class="headerlink" href="#diagnostic-tips-common-failure-modes" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Redis Broker Offline</strong>:
+If the Redis service is down or unreachable, users will see an error message in the real-time stream. Database operations still succeed. To restore multi-user live synchronization, verify Redis is running (e.g. <code class="docutils literal notranslate"><span class="pre">redis-cli</span> <span class="pre">ping</span></code>) and check the <code class="docutils literal notranslate"><span class="pre">CELERY_BROKER_URL</span></code> setting in <code class="docutils literal notranslate"><span class="pre">settings.py</span></code>.</p></li>
+<li><p><strong>Irreversible Anonymity in DB-Anonymized Mode</strong>:
+When a session is configured as <code class="docutils literal notranslate"><span class="pre">RESTRICTED_ANONYMIZED_DB</span></code>, author IDs are set to <code class="docutils literal notranslate"><span class="pre">NULL</span></code> immediately on write. If facilitators later need to trace authorship for accountability, they cannot do so. If auditability is required, use <code class="docutils literal notranslate"><span class="pre">RESTRICTED_ANONYMIZED_UI</span></code> instead.</p></li>
+<li><p><strong>Over-aggressive LLM Clustering</strong>:
+Small language models (SLMs) may occasionally group fundamentally distinct ideas under vague titles (e.g., <em>“General Considerations”</em>). If clustering results are suboptimal, refine the Workshop’s <code class="docutils literal notranslate"><span class="pre">objective</span></code> text to give the model stronger domain context before re-running clustering.</p></li>
+<li><p><strong>Extracted Causal Links Lacking Evidence</strong>:
+The causal factor extraction pipeline asks the model to suggest upstream causes based on session notes. SLMs can hallucinate causal links between variables that merely co-occurred in discussion. Always inspect the <code class="docutils literal notranslate"><span class="pre">justification</span></code> column in the export summary before adopting causal links in study design.</p></li>
+<li><p><strong>Canvas Coordinate Overlap</strong>:
+If multiple users drag cards simultaneously while offline or under high network latency, cards may overlap. Running the automated clustering routine or manually dragging cards resets their spatial bounding boxes.</p></li>
+</ul>
+</section>
+<section id="module-work_organisation.models">
+<span id="database-models-reference"></span><h2><a class="toc-backref" href="#id10" role="doc-backlink">Database Models Reference</a><a class="headerlink" href="#module-work_organisation.models" title="Link to this heading"></a></h2>
+<dl class="py class">
 <dt class="sig sig-object py" id="work_organisation.models.ConversationMember">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">work_organisation.models.</span></span><span class="sig-name descname"><span class="pre">ConversationMember</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/work_organisation/models.html#ConversationMember"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#work_organisation.models.ConversationMember" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
@@ -1306,37 +1504,9 @@ one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 </dd></dl>
 
 </section>
-<section id="api-endpoints">
-<h2><a class="toc-backref" href="#id3" role="doc-backlink">API Endpoints</a><a class="headerlink" href="#api-endpoints" title="Link to this heading"></a></h2>
-<p>The app exposes Django-Ninja REST and SSE endpoints routed under <code class="docutils literal notranslate"><span class="pre">/api/work/</span></code>:</p>
-<section id="hierarchy-session-management">
-<h3><a class="toc-backref" href="#id4" role="doc-backlink">Hierarchy &amp; Session Management</a><a class="headerlink" href="#hierarchy-session-management" title="Link to this heading"></a></h3>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/api/work/projects/</span></code>: Lists all projects accessible to the authenticated user.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/work/projects/</span></code>: Creates a new project and attaches authorized Django Groups.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/api/work/workshops/</span></code>: Lists workshops accessible to the user, optionally filtered by <code class="docutils literal notranslate"><span class="pre">project_id</span></code>.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/work/workshops/</span></code>: Creates a new workshop within a project.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/work/sessions/new/</span></code>: Quick-launch endpoint that provisions a <code class="docutils literal notranslate"><span class="pre">WorkshopSession</span></code>, links an underlying <code class="docutils literal notranslate"><span class="pre">Conversation</span></code>, and assigns ownership roles.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/api/work/sessions/{session_id}/</span></code>: Retrieves full session state (clusters, cards, member aliases) with active anonymity rules applied.</p></li>
-</ul>
-</section>
-<section id="canvas-mutations-real-time-streaming">
-<h3><a class="toc-backref" href="#id5" role="doc-backlink">Canvas Mutations &amp; Real-time Streaming</a><a class="headerlink" href="#canvas-mutations-real-time-streaming" title="Link to this heading"></a></h3>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/work/cards/</span></code>: Creates a new whiteboard card and broadcasts a <code class="docutils literal notranslate"><span class="pre">card_added</span></code> event.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/work/cards/move/</span></code>: Updates card 2D coordinates and cluster assignment, broadcasting a <code class="docutils literal notranslate"><span class="pre">card_moved</span></code> event.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/api/work/stream_session/{session_id}/</span></code>: Real-time Datastar SSE stream delivering canvas updates over Redis pub/sub.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/work/stream_response/</span></code>: Progressive token-by-token LLM generation stream.</p></li>
-</ul>
-</section>
-<section id="ai-analysis-export-endpoints">
-<h3><a class="toc-backref" href="#id6" role="doc-backlink">AI Analysis &amp; Export Endpoints</a><a class="headerlink" href="#ai-analysis-export-endpoints" title="Link to this heading"></a></h3>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/work/cluster_ideas/</span></code>: Triggers LLM thematic clustering to group loose sticky notes into clusters.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/work/extract_causal_graph/</span></code>: Extracts causal factors, state options, and directional influence links.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/api/work/export_summary/{session_id}/</span></code>: Generates and returns a formatted Markdown report of the session.</p></li>
-</ul>
-<dl class="py class" id="module-work_organisation.api">
+<section id="module-work_organisation.api">
+<span id="api-endpoints-reference"></span><h2><a class="toc-backref" href="#id11" role="doc-backlink">API Endpoints Reference</a><a class="headerlink" href="#module-work_organisation.api" title="Link to this heading"></a></h2>
+<dl class="py class">
 <dt class="sig sig-object py" id="work_organisation.api.CardCreateSchema">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">work_organisation.api.</span></span><span class="sig-name descname"><span class="pre">CardCreateSchema</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">session_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">card_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'idea'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pos_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pos_y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cluster_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">author_alias</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/work_organisation/api.html#CardCreateSchema"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#work_organisation.api.CardCreateSchema" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Schema</span></code></p>
@@ -1890,9 +2060,8 @@ and grants the creator an ‘owner’ ConversationMember role.</p>
 </dd></dl>
 
 </section>
-</section>
 <section id="module-work_organisation.clustering">
-<span id="clustering-synthesis-utilities"></span><h2><a class="toc-backref" href="#id7" role="doc-backlink">Clustering &amp; Synthesis Utilities</a><a class="headerlink" href="#module-work_organisation.clustering" title="Link to this heading"></a></h2>
+<span id="clustering-synthesis-utilities"></span><h2><a class="toc-backref" href="#id12" role="doc-backlink">Clustering &amp; Synthesis Utilities</a><a class="headerlink" href="#module-work_organisation.clustering" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="work_organisation.clustering.CausalFactorItem">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">work_organisation.clustering.</span></span><span class="sig-name descname"><span class="pre">CausalFactorItem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state_options:</span> <span class="pre">~typing.List[str]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">causes:</span> <span class="pre">~typing.List[str]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">justification:</span> <span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/work_organisation/clustering.html#CausalFactorItem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#work_organisation.clustering.CausalFactorItem" title="Link to this definition"></a></dt>
@@ -2022,7 +2191,7 @@ structured cluster tables, causal factors, and open questions.</p>
 
 </section>
 <section id="module-work_organisation.events">
-<span id="real-time-event-streaming"></span><h2><a class="toc-backref" href="#id8" role="doc-backlink">Real-time Event Streaming</a><a class="headerlink" href="#module-work_organisation.events" title="Link to this heading"></a></h2>
+<span id="event-streaming-reference"></span><h2><a class="toc-backref" href="#id13" role="doc-backlink">Event Streaming Reference</a><a class="headerlink" href="#module-work_organisation.events" title="Link to this heading"></a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="work_organisation.events.format_datastar_sse">
 <span class="sig-prename descclassname"><span class="pre">work_organisation.events.</span></span><span class="sig-name descname"><span class="pre">format_datastar_sse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fragment_html</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/work_organisation/events.html#format_datastar_sse"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#work_organisation.events.format_datastar_sse" title="Link to this definition"></a></dt>
@@ -2055,8 +2224,8 @@ to Redis Pub/Sub for real-time synchronization across all participating clients.
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="metacognition_app.html" class="btn btn-neutral float-left" title="Metacognition - plans and self-evaluation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="demo_ui_app.html" class="btn btn-neutral float-right" title="Demo UI" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="metacognition_app.html" class="btn btn-neutral float-left" title="Metacognition - Cognitive Blueprints, Agentic Workflows &amp; Self-Evaluation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="benchmarking_app.html" class="btn btn-neutral float-right" title="Benchmarking - Automated Evaluation, Synthetic Generation &amp; LoRA Flywheels" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

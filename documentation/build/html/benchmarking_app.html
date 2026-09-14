@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Benchmarking - model and strategy evaluations &mdash; reason 0.1 documentation</title>
+  <title>Benchmarking - Automated Evaluation, Synthetic Generation &amp; LoRA Flywheels &mdash; reason 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/custom.css?v=aaf24e6f" />
@@ -20,8 +20,8 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Grips - wiki knowledge banks" href="grips_app.html" />
-    <link rel="prev" title="Background Resources - context documents" href="background_resources_app.html" /> 
+    <link rel="next" title="Demo UI - Empirical Research &amp; Cognitive Workbench" href="demo_ui_app.html" />
+    <link rel="prev" title="Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design" href="work_organisation_app.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -45,12 +45,33 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="llm_api_app.html">LLM API</a></li>
-<li class="toctree-l1"><a class="reference internal" href="background_resources_app.html">Background Resources - context documents</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Benchmarking - model and strategy evaluations</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#app-achievements">App achievements</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#app-enhancement">App enhancement</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-benchmarking.models">Database models</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="llm_api_app.html">LLM API - Local Inference, Proxy Routing &amp; Hardware-Aware Serving</a></li>
+<li class="toctree-l1"><a class="reference internal" href="verbal_tasks_app.html">Verbal Tasks - Database-Backed Asynchronous Execution &amp; Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sandbox_manager_app.html">Sandbox Manager - Isolated Python Execution Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grobid_client_app.html">Grobid Client - Deterministic Scientific PDF Parsing &amp; Citation Extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="background_resources_app.html">Background Resources - Retrieval-Augmented Generation &amp; Document Ingestion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grips_app.html">Grips - Structured Knowledge Graph &amp; Propositional Claims</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metacognition_app.html">Metacognition - Cognitive Blueprints, Agentic Workflows &amp; Self-Evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Benchmarking - Automated Evaluation, Synthetic Generation &amp; LoRA Flywheels</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#purpose-motivating-problem">1. Purpose &amp; Motivating Problem</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#why-automated-benchmarking-is-essential">Why Automated Benchmarking is Essential</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#architecture-mechanism">2. Architecture &amp; Mechanism</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#the-evaluation-data-model-hierarchy">The Evaluation Data Model Hierarchy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#synthetic-question-generation-scoring-pipeline">Synthetic Question Generation &amp; Scoring Pipeline</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#observability-health-signals">3. Observability &amp; Health Signals</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#how-to-know-benchmarks-are-working-well">How to Know Benchmarks are Working Well</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#diagnostic-tips-failure-modes">4. Diagnostic Tips &amp; Failure Modes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#when-benchmarking-misses-the-mark-how-to-tune">When Benchmarking Misses the Mark &amp; How to Tune</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-benchmarking.models">Module Reference</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#benchmarking.models.BenchmarkCorpus"><code class="docutils literal notranslate"><span class="pre">BenchmarkCorpus</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkCorpus.DoesNotExist"><code class="docutils literal notranslate"><span class="pre">BenchmarkCorpus.DoesNotExist</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkCorpus.MultipleObjectsReturned"><code class="docutils literal notranslate"><span class="pre">BenchmarkCorpus.MultipleObjectsReturned</span></code></a></li>
@@ -204,9 +225,6 @@
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.ScenarioGroup.updated_at"><code class="docutils literal notranslate"><span class="pre">ScenarioGroup.updated_at</span></code></a></li>
 </ul>
 </li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#module-benchmarking.generators">Generators</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#benchmarking.generators.SyntheticQA"><code class="docutils literal notranslate"><span class="pre">SyntheticQA</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.generators.SyntheticQA.answer"><code class="docutils literal notranslate"><span class="pre">SyntheticQA.answer</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.generators.SyntheticQA.keywords"><code class="docutils literal notranslate"><span class="pre">SyntheticQA.keywords</span></code></a></li>
@@ -221,9 +239,6 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#benchmarking.generators.generate_scenarios_for_document"><code class="docutils literal notranslate"><span class="pre">generate_scenarios_for_document()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#module-benchmarking.runner">Benchmark Runner</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#benchmarking.runner.EvaluationScore"><code class="docutils literal notranslate"><span class="pre">EvaluationScore</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.runner.EvaluationScore.clamp_score"><code class="docutils literal notranslate"><span class="pre">EvaluationScore.clamp_score()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.runner.EvaluationScore.model_config"><code class="docutils literal notranslate"><span class="pre">EvaluationScore.model_config</span></code></a></li>
@@ -237,10 +252,7 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="grips_app.html">Grips - wiki knowledge banks</a></li>
-<li class="toctree-l1"><a class="reference internal" href="metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
-<li class="toctree-l1"><a class="reference internal" href="demo_ui_app.html">Demo UI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo_ui_app.html">Demo UI - Empirical Research &amp; Cognitive Workbench</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
 <ul>
@@ -264,7 +276,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Benchmarking - model and strategy evaluations</li>
+      <li class="breadcrumb-item active">Benchmarking - Automated Evaluation, Synthetic Generation &amp; LoRA Flywheels</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/benchmarking_app.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -274,31 +286,111 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="benchmarking-model-and-strategy-evaluations">
-<h1>Benchmarking - model and strategy evaluations<a class="headerlink" href="#benchmarking-model-and-strategy-evaluations" title="Link to this heading"></a></h1>
-<p>This app provides an automated test harness to evaluate the performance of AI models and RAG retrieval configurations against the local knowledge base.</p>
-<section id="app-achievements">
-<h2>App achievements<a class="headerlink" href="#app-achievements" title="Link to this heading"></a></h2>
+  <section id="benchmarking-automated-evaluation-synthetic-generation-lora-flywheels">
+<h1>Benchmarking - Automated Evaluation, Synthetic Generation &amp; LoRA Flywheels<a class="headerlink" href="#benchmarking-automated-evaluation-synthetic-generation-lora-flywheels" title="Link to this heading"></a></h1>
+<p>The <strong>Benchmarking</strong> application provides an automated evaluation harness for measuring the performance, accuracy, and factual grounding of LLM models and RAG configurations. It synthesizes context-grounded evaluation datasets, scores model outputs against mathematical metrics, and exports curated scenarios into fine-tuning datasets for local LoRA training.</p>
+<nav class="contents local" id="table-of-contents">
+<p class="topic-title">Table of Contents</p>
 <ul class="simple">
-<li><p><strong>Synthetic Data Generation:</strong> Autonomously reads uploaded documents and generates challenging, context-grounded Question/Answer pairs.</p></li>
-<li><p><strong>Automated Evaluation:</strong> Scores model outputs mathematically using established metrics like Semantic Similarity and Faithfulness (grounding).</p></li>
-<li><p><strong>Asynchronous Runners:</strong> Benchmarking suites are delegated to Celery, allowing hundreds of tests to run in the background.</p></li>
-<li><p><strong>Traceable Experiments:</strong> Records all experiments, parameters, and historical benchmark runs directly in the database for longitudinal comparison.</p></li>
-<li><p><strong>Data Flywheel &amp; LoRA Training:</strong> Export benchmark scenarios to Fine-Tuning Datasets (ShareGPT format) and trigger on-the-fly local LoRA fine-tuning using Unsloth.</p></li>
-<li><p><strong>Dataset Quality Metrics:</strong> Automatically calculates dataset metrics (token counts, semantic diversity via embeddings) and warns if data becomes stale compared to its source.</p></li>
+<li><p><a class="reference internal" href="#purpose-motivating-problem" id="id1">1. Purpose &amp; Motivating Problem</a></p>
+<ul>
+<li><p><a class="reference internal" href="#why-automated-benchmarking-is-essential" id="id2">Why Automated Benchmarking is Essential</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#architecture-mechanism" id="id3">2. Architecture &amp; Mechanism</a></p>
+<ul>
+<li><p><a class="reference internal" href="#the-evaluation-data-model-hierarchy" id="id4">The Evaluation Data Model Hierarchy</a></p></li>
+<li><p><a class="reference internal" href="#synthetic-question-generation-scoring-pipeline" id="id5">Synthetic Question Generation &amp; Scoring Pipeline</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#observability-health-signals" id="id6">3. Observability &amp; Health Signals</a></p>
+<ul>
+<li><p><a class="reference internal" href="#how-to-know-benchmarks-are-working-well" id="id7">How to Know Benchmarks are Working Well</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#diagnostic-tips-failure-modes" id="id8">4. Diagnostic Tips &amp; Failure Modes</a></p>
+<ul>
+<li><p><a class="reference internal" href="#when-benchmarking-misses-the-mark-how-to-tune" id="id9">When Benchmarking Misses the Mark &amp; How to Tune</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#module-benchmarking.models" id="id10">Module Reference</a></p></li>
+</ul>
+</nav>
+<section id="purpose-motivating-problem">
+<h2><a class="toc-backref" href="#id1" role="doc-backlink">1. Purpose &amp; Motivating Problem</a><a class="headerlink" href="#purpose-motivating-problem" title="Link to this heading"></a></h2>
+<section id="why-automated-benchmarking-is-essential">
+<h3><a class="toc-backref" href="#id2" role="doc-backlink">Why Automated Benchmarking is Essential</a><a class="headerlink" href="#why-automated-benchmarking-is-essential" title="Link to this heading"></a></h3>
+<p>Language model behavior is probabilistic. When developers adjust system prompts, tweak RAG chunking strategies, or swap underlying model weights (e.g., from Gemma to Qwen or Llama), subjective impressions are profoundly deceptive. A model may sound more confident or articulate while subtly hallucinating critical experimental controls or dropping required JSON fields.</p>
+<p>Relying on informal “vibe checks” leads to silent regression:</p>
+<ul class="simple">
+<li><p><strong>Prompt Regression</strong>: An edit that improves response tone for one question may break structured tool output for five others.</p></li>
+<li><p><strong>Retrieval Degeneracy</strong>: A change to embedding similarity thresholds may retrieve higher volumes of text while dropping the single critical paper section containing the true answer.</p></li>
+<li><p><strong>Ungrounded Fine-Tuning</strong>: Training LoRA adapters without baseline benchmarks makes it impossible to verify whether the fine-tuned model actually acquired specialized domain knowledge or simply suffered catastrophic forgetting.</p></li>
+</ul>
+<p><strong>Benchmarking</strong> replaces subjective impressions with repeatable, automated empirical evaluations.</p>
+</section>
+</section>
+<section id="architecture-mechanism">
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">2. Architecture &amp; Mechanism</a><a class="headerlink" href="#architecture-mechanism" title="Link to this heading"></a></h2>
+<section id="the-evaluation-data-model-hierarchy">
+<h3><a class="toc-backref" href="#id4" role="doc-backlink">The Evaluation Data Model Hierarchy</a><a class="headerlink" href="#the-evaluation-data-model-hierarchy" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>``BenchmarkSuite``</strong>: An overarching test collection (e.g. <em>Robotics Methodology Suite</em>, <em>Statistical Inference Validation</em>).</p></li>
+<li><p><strong>``BenchmarkScenario``</strong>: An individual evaluation test case consisting of:
+* <strong>User Prompt</strong>: The challenge question.
+* <strong>Reference Context</strong>: The source document excerpts containing the ground truth.
+* <strong>Expected Answer</strong>: The authoritative gold-standard response.
+* <strong>Active RAG Configuration</strong>: Specific retrieval thresholds and chunking strategies to evaluate.</p></li>
+<li><p><strong>``BenchmarkRun``</strong>: An execution instance of a suite against a specified model backend, logging total score, duration, and token consumption.</p></li>
+<li><p><strong>``ScenarioResult``</strong>: Granular scoring of an individual scenario within a run, storing the generated response, similarity score, faithfulness score, and latency.</p></li>
 </ul>
 </section>
-<section id="app-enhancement">
-<h2>App enhancement<a class="headerlink" href="#app-enhancement" title="Link to this heading"></a></h2>
+<section id="synthetic-question-generation-scoring-pipeline">
+<h3><a class="toc-backref" href="#id5" role="doc-backlink">Synthetic Question Generation &amp; Scoring Pipeline</a><a class="headerlink" href="#synthetic-question-generation-scoring-pipeline" title="Link to this heading"></a></h3>
 <ul class="simple">
-<li><p><strong>LLM-as-a-Judge:</strong> Implement advanced evaluators where a larger “Teacher” model (e.g., GPT-4o) grades the output of the local models on nuance, tone, and formatting.</p></li>
-<li><p><strong>Data Visualization:</strong> Build integrated charts/graphs in the Django Admin to visually compare the performance of different models over time.</p></li>
-<li><p><strong>Prompt Optimization:</strong> Add automated prompt-tuning loops (like DSPy) that slightly tweak system prompts to maximize the benchmark score over successive runs.</p></li>
-<li><p><strong>Retrieval Metric Expansion:</strong> Add metrics specifically for the RAG pipeline, such as Mean Reciprocal Rank (MRR) and Normalized Discounted Cumulative Gain (NDCG).</p></li>
+<li><p><strong>Synthetic Q&amp;A Generation (``generators.py``)</strong>: Ingests documents from <cite>background_resources</cite> and generates challenging question-answer pairs directly grounded in source paragraphs.</p></li>
+<li><p><strong>Automated Scoring Runner (``runner.py``)</strong>: Evaluates generated completions against ground truth using:
+* <strong>Semantic Similarity</strong>: Cosine similarity between embedding vectors of the generated answer and the reference answer.
+* <strong>Faithfulness / Grounding</strong>: Verifies that every assertion in the response is mathematically supported by the reference context.
+* <strong>Exact / Structural Match</strong>: Checks compliance with required formatting or categorical outputs.</p></li>
+<li><p><strong>Fine-Tuning Data Flywheel (``exporters.py`` &amp; ``train_lora.py``)</strong>: Successful benchmark scenarios can be exported to standard JSONL datasets (ShareGPT format) to train specialized LoRA adapters using Unsloth. The system tracks dataset currency and flags stale datasets when source documents change.</p></li>
+<li><p><strong>Background Queueing</strong>: Benchmark suites are dispatched asynchronously via <cite>verbal_tasks</cite>, allowing suites with hundreds of scenarios to execute without blocking the UI.</p></li>
 </ul>
+</section>
+</section>
+<section id="observability-health-signals">
+<h2><a class="toc-backref" href="#id6" role="doc-backlink">3. Observability &amp; Health Signals</a><a class="headerlink" href="#observability-health-signals" title="Link to this heading"></a></h2>
+<section id="how-to-know-benchmarks-are-working-well">
+<h3><a class="toc-backref" href="#id7" role="doc-backlink">How to Know Benchmarks are Working Well</a><a class="headerlink" href="#how-to-know-benchmarks-are-working-well" title="Link to this heading"></a></h3>
+<ol class="arabic simple">
+<li><p><strong>Longitudinal Score Tracking in Django Admin</strong>:
+Under <strong>Benchmarking &gt; Benchmark Runs</strong>, compare average scores across successive model versions and prompt iterations. A healthy pipeline exhibits stable or improving similarity scores (&gt; 0.80) across releases.</p></li>
+<li><p><strong>Detailed Failure Inspection in Scenario Results</strong>:
+Inspect individual <cite>ScenarioResult</cite> rows. The diff viewer highlights where a candidate model’s answer deviated from the reference answer or where hallucinated claims failed grounding checks.</p></li>
+<li><p><strong>Dataset Freshness Indicators</strong>:
+Under <strong>Benchmarking &gt; Fine Tuning Datasets</strong>, datasets display a currency badge: <code class="docutils literal notranslate"><span class="pre">🟢</span> <span class="pre">Up</span> <span class="pre">to</span> <span class="pre">date</span></code> or <code class="docutils literal notranslate"><span class="pre">⚠️</span> <span class="pre">Stale</span></code> (if the underlying research documents have been updated since dataset creation).</p></li>
+</ol>
+</section>
+</section>
+<section id="diagnostic-tips-failure-modes">
+<h2><a class="toc-backref" href="#id8" role="doc-backlink">4. Diagnostic Tips &amp; Failure Modes</a><a class="headerlink" href="#diagnostic-tips-failure-modes" title="Link to this heading"></a></h2>
+<section id="when-benchmarking-misses-the-mark-how-to-tune">
+<h3><a class="toc-backref" href="#id9" role="doc-backlink">When Benchmarking Misses the Mark &amp; How to Tune</a><a class="headerlink" href="#when-benchmarking-misses-the-mark-how-to-tune" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Noisy or Fluctuating Benchmark Scores</strong>:
+* <em>Hazard</em>: If candidate models generate responses with high non-deterministic temperature (<cite>temperature &gt;= 0.7</cite>), identical prompts will receive swinging scores across runs.
+* <em>Remedy</em>: Ensure evaluation suites configure low temperature (<cite>temperature=0.0</cite> or <cite>0.1</cite>) to ensure reproducible, deterministic benchmarking.</p></li>
+<li><p><strong>Synthetic Generation of Trivial Questions</strong>:
+* <em>Hazard</em>: Automated Q&amp;A generators may produce superficial questions (e.g., <em>“What year was paper X written?”</em>) rather than testing deep study design logic.
+* <em>Remedy</em>: In <cite>generators.py</cite>, adjust the prompt strategy to instruct the generator to formulate <em>inferential</em> and <em>causal</em> questions requiring multi-sentence synthesis.</p></li>
+<li><p><strong>Dataset Staleness Warnings</strong>:
+* <em>Hazard</em>: Fine-Tuning Datasets display <cite>⚠️ Stale (Source data updated)</cite>.
+* <em>Remedy</em>: Re-export the dataset from the updated benchmark suite to incorporate the revised document excerpts before launching LoRA fine-tuning.</p></li>
+</ul>
+</section>
 </section>
 <section id="module-benchmarking.models">
-<span id="database-models"></span><h2>Database models<a class="headerlink" href="#module-benchmarking.models" title="Link to this heading"></a></h2>
+<span id="module-reference"></span><h2><a class="toc-backref" href="#id10" role="doc-backlink">Module Reference</a><a class="headerlink" href="#module-benchmarking.models" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="benchmarking.models.BenchmarkCorpus">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">benchmarking.models.</span></span><span class="sig-name descname"><span class="pre">BenchmarkCorpus</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/benchmarking/models.html#BenchmarkCorpus"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmarking.models.BenchmarkCorpus" title="Link to this definition"></a></dt>
@@ -1338,10 +1430,7 @@ object the first time, the query is executed.</p>
 
 </dd></dl>
 
-</section>
-<section id="module-benchmarking.generators">
-<span id="generators"></span><h2>Generators<a class="headerlink" href="#module-benchmarking.generators" title="Link to this heading"></a></h2>
-<dl class="py class">
+<dl class="py class" id="module-benchmarking.generators">
 <dt class="sig sig-object py" id="benchmarking.generators.SyntheticQA">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">benchmarking.generators.</span></span><span class="sig-name descname"><span class="pre">SyntheticQA</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">question</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">answer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keywords</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'Factoid'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'Reasoning'</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/benchmarking/generators.html#SyntheticQA"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmarking.generators.SyntheticQA" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
@@ -1395,10 +1484,7 @@ object the first time, the query is executed.</p>
 <span class="sig-prename descclassname"><span class="pre">benchmarking.generators.</span></span><span class="sig-name descname"><span class="pre">generate_scenarios_for_document</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">document</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stride=5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group_name=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_callback=&lt;built-in</span> <span class="pre">function</span> <span class="pre">print&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/benchmarking/generators.html#generate_scenarios_for_document"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmarking.generators.generate_scenarios_for_document" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
-</section>
-<section id="module-benchmarking.runner">
-<span id="benchmark-runner"></span><h2>Benchmark Runner<a class="headerlink" href="#module-benchmarking.runner" title="Link to this heading"></a></h2>
-<dl class="py class">
+<dl class="py class" id="module-benchmarking.runner">
 <dt class="sig sig-object py" id="benchmarking.runner.EvaluationScore">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">benchmarking.runner.</span></span><span class="sig-name descname"><span class="pre">EvaluationScore</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reasoning</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">score</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/benchmarking/runner.html#EvaluationScore"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmarking.runner.EvaluationScore" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
@@ -1447,8 +1533,8 @@ If all parsing fails, returns (-1.0, 0.0) as a sentinel.</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="background_resources_app.html" class="btn btn-neutral float-left" title="Background Resources - context documents" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="grips_app.html" class="btn btn-neutral float-right" title="Grips - wiki knowledge banks" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="work_organisation_app.html" class="btn btn-neutral float-left" title="Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="demo_ui_app.html" class="btn btn-neutral float-right" title="Demo UI - Empirical Research &amp; Cognitive Workbench" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

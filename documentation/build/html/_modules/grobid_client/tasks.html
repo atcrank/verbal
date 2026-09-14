@@ -1,0 +1,579 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>grobid_client.tasks &mdash; reason 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=aaf24e6f" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            reason
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../llm_api_app.html">LLM API - Local Inference, Proxy Routing &amp; Hardware-Aware Serving</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../verbal_tasks_app.html">Verbal Tasks - Database-Backed Asynchronous Execution &amp; Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../sandbox_manager_app.html">Sandbox Manager - Isolated Python Execution Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grobid_client_app.html">Grobid Client - Deterministic Scientific PDF Parsing &amp; Citation Extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../background_resources_app.html">Background Resources - Retrieval-Augmented Generation &amp; Document Ingestion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grips_app.html">Grips - Structured Knowledge Graph &amp; Propositional Claims</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../metacognition_app.html">Metacognition - Cognitive Blueprints, Agentic Workflows &amp; Self-Evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmarking_app.html">Benchmarking - Automated Evaluation, Synthetic Generation &amp; LoRA Flywheels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_app.html">Demo UI - Empirical Research &amp; Cognitive Workbench</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../using_ollama.html">Ollama as Local AI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_trials.html">Demo UI Empirical Trials &amp; Verification Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tests.html">Testing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">reason</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">grobid_client.tasks</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for grobid_client.tasks</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">django.tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">task</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.apps</span><span class="w"> </span><span class="kn">import</span> <span class="n">service_registry</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">background_resources.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Document</span><span class="p">,</span> <span class="n">RAGChunk</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Reference</span><span class="p">,</span> <span class="n">Citation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">background_resources.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Document</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">bs4</span><span class="w"> </span><span class="kn">import</span> <span class="n">BeautifulSoup</span><span class="p">,</span> <span class="n">NavigableString</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langchain_core.documents</span><span class="w"> </span><span class="kn">import</span> <span class="n">Document</span> <span class="k">as</span> <span class="n">LangChainDocument</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">process_pdf_with_grobid</span>
+
+
+<div class="viewcode-block" id="DocumentMetadataExtraction">
+<a class="viewcode-back" href="../../grobid_client_app.html#grobid_client.tasks.DocumentMetadataExtraction">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DocumentMetadataExtraction</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The title of the document&quot;</span><span class="p">)</span>
+    <span class="n">authors</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Comma separated list of authors (correct any OCR typos)&quot;</span><span class="p">)</span>
+    <span class="n">abstract</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The abstract or a short summary if no formal abstract exists&quot;</span><span class="p">)</span>
+    <span class="n">journal</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The journal, book, or conference name&quot;</span><span class="p">)</span>
+    <span class="n">publisher</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The publisher&quot;</span><span class="p">)</span>
+    <span class="n">year</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Year of publication&quot;</span><span class="p">)</span>
+    <span class="n">doi</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Digital Object Identifier (DOI) if present&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CandidateEvaluation">
+<a class="viewcode-back" href="../../grobid_client_app.html#grobid_client.tasks.CandidateEvaluation">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CandidateEvaluation</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The correct title from the candidates, or empty&quot;</span><span class="p">)</span>
+    <span class="n">authors</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The correct authors from the candidates, or empty&quot;</span><span class="p">)</span>
+    <span class="n">year</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The correct year from the candidates, or empty&quot;</span><span class="p">)</span>
+    <span class="n">doi</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The correct DOI from the candidates, or empty&quot;</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_xml_to_dict</span><span class="p">(</span><span class="n">element</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Recursively converts a BeautifulSoup Tag to a JSON-serializable dictionary.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">NavigableString</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">element</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">element</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">result</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;@</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+
+    <span class="n">children</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">element</span><span class="o">.</span><span class="n">children</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">NavigableString</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">str</span><span class="p">(</span><span class="n">c</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">())]</span>
+    
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">children</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">children</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">NavigableString</span><span class="p">):</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">child</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">text</span><span class="p">:</span>
+                <span class="n">result</span><span class="p">[</span><span class="s2">&quot;#text&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;#text&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="s2">&quot; &quot;</span> <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;#text&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="n">text</span>
+            <span class="k">continue</span>
+        
+        <span class="n">child_name</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">name</span>
+        <span class="n">child_dict</span> <span class="o">=</span> <span class="n">_xml_to_dict</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">child_name</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="n">child_name</span><span class="p">],</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="n">result</span><span class="p">[</span><span class="n">child_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">result</span><span class="p">[</span><span class="n">child_name</span><span class="p">]]</span>
+            <span class="n">result</span><span class="p">[</span><span class="n">child_name</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">child_dict</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">result</span><span class="p">[</span><span class="n">child_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">child_dict</span>
+
+    <span class="c1"># Flatten if it only has text and no attributes</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="s2">&quot;#text&quot;</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;#text&quot;</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">result</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_parse_bibl_struct</span><span class="p">(</span><span class="n">bibl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper to deterministically parse a &lt;biblStruct&gt; element into Reference fields.&quot;&quot;&quot;</span>
+    <span class="n">meta</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;authors&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;journal&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;publisher&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;year&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;doi&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;extended_metadata&quot;</span><span class="p">:</span> <span class="n">_xml_to_dict</span><span class="p">(</span><span class="n">bibl</span><span class="p">)</span>
+    <span class="p">}</span>
+    
+    <span class="n">analytic</span> <span class="o">=</span> <span class="n">bibl</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;analytic&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">analytic</span><span class="p">:</span>
+        <span class="n">title_node</span> <span class="o">=</span> <span class="n">analytic</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;title&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">title_node</span><span class="p">:</span>
+             <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">title_node</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        
+        <span class="n">authors</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">author</span> <span class="ow">in</span> <span class="n">analytic</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s2">&quot;author&quot;</span><span class="p">):</span>
+            <span class="n">persName</span> <span class="o">=</span> <span class="n">author</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;persName&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">persName</span><span class="p">:</span>
+                <span class="n">forenames</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">persName</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s2">&quot;forename&quot;</span><span class="p">)]</span>
+                <span class="n">surname</span> <span class="o">=</span> <span class="n">persName</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;surname&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">if</span> <span class="n">persName</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;surname&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+                <span class="n">full_name</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">forenames</span> <span class="o">+</span> <span class="p">[</span><span class="n">surname</span><span class="p">])</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">full_name</span><span class="p">:</span>
+                    <span class="n">authors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">full_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">authors</span><span class="p">:</span>
+            <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;authors&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">authors</span><span class="p">)</span>
+
+    <span class="n">monogr</span> <span class="o">=</span> <span class="n">bibl</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;monogr&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">monogr</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">]:</span>
+            <span class="n">title_node</span> <span class="o">=</span> <span class="n">monogr</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;title&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">title_node</span><span class="p">:</span>
+                <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">title_node</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                
+        <span class="n">journal_node</span> <span class="o">=</span> <span class="n">monogr</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;title&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">journal_node</span> <span class="ow">and</span> <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">journal_node</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;journal&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">journal_node</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            
+        <span class="n">imprint</span> <span class="o">=</span> <span class="n">monogr</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;imprint&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">imprint</span><span class="p">:</span>
+            <span class="n">pub_node</span> <span class="o">=</span> <span class="n">imprint</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;publisher&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">pub_node</span><span class="p">:</span>
+                <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;publisher&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pub_node</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="n">date_node</span> <span class="o">=</span> <span class="n">imprint</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;date&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">date_node</span> <span class="ow">and</span> <span class="n">date_node</span><span class="o">.</span><span class="n">has_attr</span><span class="p">(</span><span class="s2">&quot;when&quot;</span><span class="p">):</span>
+                <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;year&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">date_node</span><span class="p">[</span><span class="s2">&quot;when&quot;</span><span class="p">][:</span><span class="mi">4</span><span class="p">]</span>
+                
+    <span class="n">idno</span> <span class="o">=</span> <span class="n">bibl</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;idno&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;DOI&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">idno</span><span class="p">:</span>
+        <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;doi&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">idno</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        
+    <span class="k">return</span> <span class="n">meta</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_extract_grobid_deterministic</span><span class="p">(</span><span class="n">soup</span><span class="p">:</span> <span class="n">BeautifulSoup</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Algorithm 1: Safely traverse the TEI XML tree for explicitly declared fields.&quot;&quot;&quot;</span>
+    <span class="n">meta</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;authors&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;abstract&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;journal&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;publisher&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;year&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;doi&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;extended_metadata&quot;</span><span class="p">:</span> <span class="p">{}</span>
+    <span class="p">}</span>
+    
+    <span class="n">tei_header</span> <span class="o">=</span> <span class="n">soup</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;teiHeader&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">tei_header</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">meta</span>
+
+    <span class="n">title_node</span> <span class="o">=</span> <span class="n">tei_header</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;titleStmt&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">title_node</span> <span class="ow">and</span> <span class="n">title_node</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;title&quot;</span><span class="p">):</span>
+        <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">title_node</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;title&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+    <span class="n">abstract_node</span> <span class="o">=</span> <span class="n">tei_header</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;abstract&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">abstract_node</span><span class="p">:</span>
+        <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;abstract&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">abstract_node</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        
+    <span class="n">source_desc</span> <span class="o">=</span> <span class="n">tei_header</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;sourceDesc&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">source_desc</span><span class="p">:</span>
+        <span class="n">bibl</span> <span class="o">=</span> <span class="n">source_desc</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;biblStruct&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">bibl</span><span class="p">:</span>
+            <span class="n">bibl_meta</span> <span class="o">=</span> <span class="n">_parse_bibl_struct</span><span class="p">(</span><span class="n">bibl</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">bibl_meta</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">]:</span>
+                <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bibl_meta</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">]</span>
+            <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;authors&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bibl_meta</span><span class="p">[</span><span class="s2">&quot;authors&quot;</span><span class="p">]</span>
+            <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;journal&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bibl_meta</span><span class="p">[</span><span class="s2">&quot;journal&quot;</span><span class="p">]</span>
+            <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;publisher&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bibl_meta</span><span class="p">[</span><span class="s2">&quot;publisher&quot;</span><span class="p">]</span>
+            <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;year&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bibl_meta</span><span class="p">[</span><span class="s2">&quot;year&quot;</span><span class="p">]</span>
+            <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;doi&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bibl_meta</span><span class="p">[</span><span class="s2">&quot;doi&quot;</span><span class="p">]</span>
+            <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;extended_metadata&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bibl_meta</span><span class="p">[</span><span class="s2">&quot;extended_metadata&quot;</span><span class="p">]</span>
+                
+    <span class="k">return</span> <span class="n">meta</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_extract_grobid_heuristics</span><span class="p">(</span><span class="n">soup</span><span class="p">:</span> <span class="n">BeautifulSoup</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Algorithm 2a: Scrape loose tags that Grobid couldn&#39;t confidently classify.&quot;&quot;&quot;</span>
+    <span class="n">candidates</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;authors&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;year&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;doi&quot;</span><span class="p">:</span> <span class="p">[]}</span>
+    
+    <span class="n">front</span> <span class="o">=</span> <span class="n">soup</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;front&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">front</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="n">front</span><span class="o">.</span><span class="n">find_all</span><span class="p">([</span><span class="s2">&quot;head&quot;</span><span class="p">,</span> <span class="s2">&quot;note&quot;</span><span class="p">]):</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="n">tag</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">if</span> <span class="mi">5</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">150</span> <span class="ow">and</span> <span class="n">text</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">candidates</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">]:</span>
+                <span class="n">candidates</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+                
+        <span class="k">for</span> <span class="n">affil</span> <span class="ow">in</span> <span class="n">front</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s2">&quot;affiliation&quot;</span><span class="p">):</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="n">affil</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">text</span> <span class="ow">and</span> <span class="n">text</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">candidates</span><span class="p">[</span><span class="s2">&quot;authors&quot;</span><span class="p">]:</span>
+                <span class="n">candidates</span><span class="p">[</span><span class="s2">&quot;authors&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+            
+        <span class="k">for</span> <span class="n">date_tag</span> <span class="ow">in</span> <span class="n">front</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s2">&quot;date&quot;</span><span class="p">):</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="n">date_tag</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">text</span> <span class="ow">and</span> <span class="n">text</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">candidates</span><span class="p">[</span><span class="s2">&quot;year&quot;</span><span class="p">]:</span>
+                <span class="n">candidates</span><span class="p">[</span><span class="s2">&quot;year&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+                
+    <span class="c1"># Basic DOI regex search in first 2000 chars as a heuristic fallback</span>
+    <span class="n">front_text</span> <span class="o">=</span> <span class="n">soup</span><span class="o">.</span><span class="n">get_text</span><span class="p">(</span><span class="n">separator</span><span class="o">=</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="n">strip</span><span class="o">=</span><span class="kc">True</span><span class="p">)[:</span><span class="mi">2000</span><span class="p">]</span>
+    <span class="n">doi_matches</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;10\.\d{4,9}/[-._;()/:A-Z0-9]+&quot;</span><span class="p">,</span> <span class="n">front_text</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">doi_matches</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">match</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">candidates</span><span class="p">[</span><span class="s2">&quot;doi&quot;</span><span class="p">]:</span>
+            <span class="n">candidates</span><span class="p">[</span><span class="s2">&quot;doi&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">match</span><span class="p">)</span>
+            
+    <span class="k">return</span> <span class="n">candidates</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_evaluate_candidates_with_llm</span><span class="p">(</span><span class="n">candidates</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">ai_service</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Algorithm 2b: Ask the LLM to verify and route the heuristic candidates.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">candidates</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+        <span class="k">return</span> <span class="p">{}</span>
+        
+    <span class="n">prompt</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    Evaluate the following candidate text snippets extracted from a document.</span>
+<span class="s2">    Identify if any of them represent the document&#39;s Title, Authors, Year of Publication, or DOI.</span>
+<span class="s2">    Return ONLY the correct value for each field if found among the candidates, otherwise return an empty string.</span>
+<span class="s2">    </span>
+<span class="s2">    Candidates:</span>
+<span class="s2">    </span><span class="si">{</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">candidates</span><span class="p">,</span><span class="w"> </span><span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span><span class="si">}</span>
+<span class="s2">    &quot;&quot;&quot;</span>
+    
+    <span class="n">result</span> <span class="o">=</span> <span class="n">ai_service</span><span class="o">.</span><span class="n">generate_outline</span><span class="p">(</span>
+        <span class="n">messages</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">prompt</span><span class="p">}],</span>
+        <span class="n">response_schema</span><span class="o">=</span><span class="n">CandidateEvaluation</span><span class="p">,</span>
+        <span class="n">max_new_tokens</span><span class="o">=</span><span class="mi">500</span>
+    <span class="p">)</span>
+    
+    <span class="n">eval_obj</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;error&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+        <span class="n">eval_obj</span> <span class="o">=</span> <span class="n">CandidateEvaluation</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">eval_obj</span> <span class="o">=</span> <span class="n">CandidateEvaluation</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+    <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="s1">&#39;title&#39;</span><span class="p">):</span>
+        <span class="n">eval_obj</span> <span class="o">=</span> <span class="n">result</span>
+        
+    <span class="k">if</span> <span class="n">eval_obj</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">eval_obj</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="s2">&quot;authors&quot;</span><span class="p">:</span> <span class="n">eval_obj</span><span class="o">.</span><span class="n">authors</span><span class="p">,</span>
+            <span class="s2">&quot;year&quot;</span><span class="p">:</span> <span class="n">eval_obj</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="s2">&quot;doi&quot;</span><span class="p">:</span> <span class="n">eval_obj</span><span class="o">.</span><span class="n">doi</span>
+        <span class="p">}</span>
+    <span class="k">return</span> <span class="p">{}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_extract_fallback_with_llm</span><span class="p">(</span><span class="n">front_text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">missing_fields</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">ai_service</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Algorithm 3: Brute force OCR reading for remaining missing fields.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">missing_fields</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">front_text</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{}</span>
+        
+    <span class="n">prompt</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    You are an expert academic librarian. Analyze the OCR text from the beginning of this document.</span>
+<span class="s2">    Extract the following missing metadata fields: </span><span class="si">{</span><span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">missing_fields</span><span class="p">)</span><span class="si">}</span><span class="s2">.</span>
+<span class="s2">    If there are obvious OCR errors (e.g. &quot;Trru UNIvERSITY op MEvPrrts&quot;), seamlessly correct them to their obvious real-world counterparts.</span>
+<span class="s2">    </span>
+<span class="s2">    OCR TEXT:</span>
+<span class="s2">    </span><span class="si">{</span><span class="n">front_text</span><span class="si">}</span>
+<span class="s2">    &quot;&quot;&quot;</span>
+    
+    <span class="n">result</span> <span class="o">=</span> <span class="n">ai_service</span><span class="o">.</span><span class="n">generate_outline</span><span class="p">(</span>
+        <span class="n">messages</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">prompt</span><span class="p">}],</span>
+        <span class="n">response_schema</span><span class="o">=</span><span class="n">DocumentMetadataExtraction</span><span class="p">,</span>
+        <span class="n">max_new_tokens</span><span class="o">=</span><span class="mi">1000</span>
+    <span class="p">)</span>
+    
+    <span class="n">meta_obj</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;error&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+        <span class="n">meta_obj</span> <span class="o">=</span> <span class="n">DocumentMetadataExtraction</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">meta_obj</span> <span class="o">=</span> <span class="n">DocumentMetadataExtraction</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+    <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="s1">&#39;title&#39;</span><span class="p">):</span>
+        <span class="n">meta_obj</span> <span class="o">=</span> <span class="n">result</span>
+        
+    <span class="k">if</span> <span class="n">meta_obj</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">meta_obj</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="s2">&quot;authors&quot;</span><span class="p">:</span> <span class="n">meta_obj</span><span class="o">.</span><span class="n">authors</span><span class="p">,</span>
+            <span class="s2">&quot;abstract&quot;</span><span class="p">:</span> <span class="n">meta_obj</span><span class="o">.</span><span class="n">abstract</span><span class="p">,</span> <span class="s2">&quot;journal&quot;</span><span class="p">:</span> <span class="n">meta_obj</span><span class="o">.</span><span class="n">journal</span><span class="p">,</span>
+            <span class="s2">&quot;publisher&quot;</span><span class="p">:</span> <span class="n">meta_obj</span><span class="o">.</span><span class="n">publisher</span><span class="p">,</span> <span class="s2">&quot;year&quot;</span><span class="p">:</span> <span class="n">meta_obj</span><span class="o">.</span><span class="n">year</span><span class="p">,</span>
+            <span class="s2">&quot;doi&quot;</span><span class="p">:</span> <span class="n">meta_obj</span><span class="o">.</span><span class="n">doi</span>
+        <span class="p">}</span>
+    <span class="k">return</span> <span class="p">{}</span>
+
+<span class="nd">@task</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">task_extract_grobid_metadata</span><span class="p">(</span><span class="n">document_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sends a PDF to Grobid, parses the TEI XML, and populates the Citation Graph.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">doc</span> <span class="o">=</span> <span class="n">Document</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">document_id</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">Document</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Document </span><span class="si">{</span><span class="n">document_id</span><span class="si">}</span><span class="s2"> not found.&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">doc</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.pdf&#39;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Document </span><span class="si">{</span><span class="n">doc</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2"> is not a PDF. Grobid processing skipped.&quot;</span>
+
+    <span class="n">file_path</span> <span class="o">=</span> <span class="n">doc</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">path</span>
+    <span class="n">tei_xml</span> <span class="o">=</span> <span class="n">process_pdf_with_grobid</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+    
+    <span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">tei_xml</span><span class="p">,</span> <span class="s2">&quot;xml&quot;</span><span class="p">)</span>
+    <span class="n">ai_service</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">ai_service</span>
+    
+    <span class="c1"># Step 1: Deterministic extraction from Grobid TEI XML</span>
+    <span class="n">meta</span> <span class="o">=</span> <span class="n">_extract_grobid_deterministic</span><span class="p">(</span><span class="n">soup</span><span class="p">)</span>
+
+    <span class="c1"># Step 2: Heuristic extraction &amp; LLM Evaluation</span>
+    <span class="n">missing_fields</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">meta</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">v</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">missing_fields</span><span class="p">:</span>
+        <span class="n">candidates</span> <span class="o">=</span> <span class="n">_extract_grobid_heuristics</span><span class="p">(</span><span class="n">soup</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">candidates</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+            <span class="n">eval_results</span> <span class="o">=</span> <span class="n">_evaluate_candidates_with_llm</span><span class="p">(</span><span class="n">candidates</span><span class="p">,</span> <span class="n">ai_service</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">eval_results</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">v</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
+                    <span class="n">meta</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+                    
+    <span class="c1"># Step 3: LLM Full Document Fallback</span>
+    <span class="n">missing_fields</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">meta</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">v</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">missing_fields</span><span class="p">:</span>
+        <span class="n">tei_header</span> <span class="o">=</span> <span class="n">soup</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;teiHeader&quot;</span><span class="p">)</span>
+        <span class="n">front_text</span> <span class="o">=</span> <span class="n">tei_header</span><span class="o">.</span><span class="n">get_text</span><span class="p">(</span><span class="n">separator</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">strip</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">if</span> <span class="n">tei_header</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">front_text</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="n">front_text</span> <span class="o">=</span> <span class="n">soup</span><span class="o">.</span><span class="n">get_text</span><span class="p">(</span><span class="n">separator</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">strip</span><span class="o">=</span><span class="kc">True</span><span class="p">)[:</span><span class="mi">4000</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">front_text</span> <span class="o">=</span> <span class="n">front_text</span><span class="p">[:</span><span class="mi">4000</span><span class="p">]</span>
+            
+        <span class="n">fallback_results</span> <span class="o">=</span> <span class="n">_extract_fallback_with_llm</span><span class="p">(</span><span class="n">front_text</span><span class="p">,</span> <span class="n">missing_fields</span><span class="p">,</span> <span class="n">ai_service</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">fallback_results</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">v</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
+                <span class="n">meta</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+    
+    <span class="c1"># Create or update the Reference for the source document</span>
+    <span class="n">source_ref</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">Reference</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">update_or_create</span><span class="p">(</span>
+        <span class="n">document</span><span class="o">=</span><span class="n">doc</span><span class="p">,</span>
+        <span class="n">defaults</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;title&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">doc</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+            <span class="s2">&quot;authors&quot;</span><span class="p">:</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;authors&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;abstract&quot;</span><span class="p">:</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;abstract&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;journal&quot;</span><span class="p">:</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;journal&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;publisher&quot;</span><span class="p">:</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;publisher&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;year&quot;</span><span class="p">:</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;year&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;doi&quot;</span><span class="p">:</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;doi&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;extended_metadata&quot;</span><span class="p">:</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;extended_metadata&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{},</span>
+            <span class="s2">&quot;tei_xml&quot;</span><span class="p">:</span> <span class="n">tei_xml</span>
+        <span class="p">}</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Propagate parsed academic provenance directly onto the parent Document</span>
+    <span class="n">updated_doc_fields</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">extracted_authors</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;authors&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">extracted_authors</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">doc</span><span class="o">.</span><span class="n">author</span><span class="p">:</span>
+        <span class="n">doc</span><span class="o">.</span><span class="n">author</span> <span class="o">=</span> <span class="n">extracted_authors</span><span class="p">[:</span><span class="mi">255</span><span class="p">]</span>
+        <span class="n">updated_doc_fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;author&#39;</span><span class="p">)</span>
+
+    <span class="n">extracted_doi</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;doi&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">extracted_doi</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">doc</span><span class="o">.</span><span class="n">source_url</span><span class="p">:</span>
+        <span class="n">doc</span><span class="o">.</span><span class="n">source_url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;https://doi.org/</span><span class="si">{</span><span class="n">extracted_doi</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">updated_doc_fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;source_url&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Construct authoritative citation text if missing</span>
+    <span class="n">year_val</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;year&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">journal_val</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;journal&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">title_val</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;title&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">doc</span><span class="o">.</span><span class="n">title</span>
+    <span class="n">citation_parts</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">extracted_authors</span><span class="p">:</span>
+        <span class="n">citation_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">extracted_authors</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">year_val</span><span class="p">:</span>
+        <span class="n">citation_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">year_val</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+    <span class="n">citation_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">title_val</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">journal_val</span><span class="p">:</span>
+        <span class="n">citation_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">journal_val</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">extracted_doi</span><span class="p">:</span>
+        <span class="n">citation_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;DOI: </span><span class="si">{</span><span class="n">extracted_doi</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">generated_citation</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">citation_parts</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">generated_citation</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">doc</span><span class="o">.</span><span class="n">citation_text</span><span class="p">:</span>
+        <span class="n">doc</span><span class="o">.</span><span class="n">citation_text</span> <span class="o">=</span> <span class="n">generated_citation</span>
+        <span class="n">updated_doc_fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;citation_text&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">updated_doc_fields</span><span class="p">:</span>
+        <span class="n">doc</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">update_fields</span><span class="o">=</span><span class="n">updated_doc_fields</span><span class="p">)</span>
+    
+    <span class="c1"># 2. Extract Bibliography (Citations)</span>
+    <span class="n">list_bibl</span> <span class="o">=</span> <span class="n">soup</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;listBibl&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># Pre-compute contexts by finding all in-text &lt;ref type=&quot;bibr&quot;&gt; tags</span>
+    <span class="c1"># and mapping them to their parent paragraphs.</span>
+    <span class="n">context_map</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">ref</span> <span class="ow">in</span> <span class="n">soup</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s2">&quot;ref&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;bibr&quot;</span><span class="p">):</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">ref</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;target&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">target</span> <span class="ow">and</span> <span class="n">target</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;#&quot;</span><span class="p">):</span>
+            <span class="n">bib_id</span> <span class="o">=</span> <span class="n">target</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+            <span class="n">parent_p</span> <span class="o">=</span> <span class="n">ref</span><span class="o">.</span><span class="n">find_parent</span><span class="p">(</span><span class="s2">&quot;p&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">parent_p</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">bib_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">context_map</span><span class="p">:</span>
+                    <span class="n">context_map</span><span class="p">[</span><span class="n">bib_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">p_text</span> <span class="o">=</span> <span class="n">parent_p</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                <span class="c1"># Avoid adding identical paragraphs if multiple citations occur in the same block</span>
+                <span class="k">if</span> <span class="n">p_text</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">context_map</span><span class="p">[</span><span class="n">bib_id</span><span class="p">]:</span>
+                    <span class="n">context_map</span><span class="p">[</span><span class="n">bib_id</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p_text</span><span class="p">)</span>
+                    
+    <span class="k">if</span> <span class="n">list_bibl</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">bibl</span> <span class="ow">in</span> <span class="n">list_bibl</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s2">&quot;biblStruct&quot;</span><span class="p">):</span>
+            <span class="n">bib_id</span> <span class="o">=</span> <span class="n">bibl</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;xml:id&quot;</span><span class="p">)</span>
+            <span class="n">bib_meta</span> <span class="o">=</span> <span class="n">_parse_bibl_struct</span><span class="p">(</span><span class="n">bibl</span><span class="p">)</span>
+            <span class="n">cited_title</span> <span class="o">=</span> <span class="n">bib_meta</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">]</span>
+            <span class="n">raw_string</span> <span class="o">=</span> <span class="n">bibl</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            
+            <span class="n">contexts</span> <span class="o">=</span> <span class="n">context_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">bib_id</span><span class="p">,</span> <span class="p">[])</span>
+            <span class="n">context_text</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">contexts</span><span class="p">)</span> <span class="k">if</span> <span class="n">contexts</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+            
+            <span class="k">if</span> <span class="n">cited_title</span><span class="p">:</span>
+                <span class="c1"># Create a &quot;Ghost&quot; reference for the cited work</span>
+                <span class="n">target_ref</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">Reference</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span>
+                    <span class="n">title</span><span class="o">=</span><span class="n">cited_title</span><span class="p">,</span>
+                    <span class="n">defaults</span><span class="o">=</span><span class="p">{</span>
+                        <span class="s2">&quot;document&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="c1"># We don&#39;t have the file for it yet!</span>
+                        <span class="s2">&quot;authors&quot;</span><span class="p">:</span> <span class="n">bib_meta</span><span class="p">[</span><span class="s2">&quot;authors&quot;</span><span class="p">],</span>
+                        <span class="s2">&quot;journal&quot;</span><span class="p">:</span> <span class="n">bib_meta</span><span class="p">[</span><span class="s2">&quot;journal&quot;</span><span class="p">],</span>
+                        <span class="s2">&quot;publisher&quot;</span><span class="p">:</span> <span class="n">bib_meta</span><span class="p">[</span><span class="s2">&quot;publisher&quot;</span><span class="p">],</span>
+                        <span class="s2">&quot;year&quot;</span><span class="p">:</span> <span class="n">bib_meta</span><span class="p">[</span><span class="s2">&quot;year&quot;</span><span class="p">],</span>
+                        <span class="s2">&quot;doi&quot;</span><span class="p">:</span> <span class="n">bib_meta</span><span class="p">[</span><span class="s2">&quot;doi&quot;</span><span class="p">],</span>
+                        <span class="s2">&quot;extended_metadata&quot;</span><span class="p">:</span> <span class="n">bib_meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;extended_metadata&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
+                    <span class="p">}</span> 
+                <span class="p">)</span>
+                
+                <span class="c1"># Link them</span>
+                <span class="n">Citation</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span>
+                    <span class="n">source_reference</span><span class="o">=</span><span class="n">source_ref</span><span class="p">,</span>
+                    <span class="n">target_reference</span><span class="o">=</span><span class="n">target_ref</span><span class="p">,</span>
+                    <span class="n">defaults</span><span class="o">=</span><span class="p">{</span>
+                        <span class="s2">&quot;raw_reference_string&quot;</span><span class="p">:</span> <span class="n">raw_string</span><span class="p">,</span>
+                        <span class="s2">&quot;context_text&quot;</span><span class="p">:</span> <span class="n">context_text</span>
+                    <span class="p">}</span>
+                <span class="p">)</span>
+                
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Grobid extraction complete for </span><span class="si">{</span><span class="n">doc</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">. Extracted citations.&quot;</span>
+
+
+<div class="viewcode-block" id="grobid_tei_to_semantic_chunks">
+<a class="viewcode-back" href="../../grobid_client_app.html#grobid_client.tasks.grobid_tei_to_semantic_chunks">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">grobid_tei_to_semantic_chunks</span><span class="p">(</span><span class="n">tei_xml_string</span><span class="p">,</span> <span class="n">document_title</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
+    <span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">tei_xml_string</span><span class="p">,</span> <span class="s2">&quot;xml&quot;</span><span class="p">)</span>
+    <span class="n">semantic_chunks</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># In TEI XML, sections are usually wrapped in &lt;div&gt; tags</span>
+    <span class="k">for</span> <span class="n">div</span> <span class="ow">in</span> <span class="n">soup</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s2">&quot;div&quot;</span><span class="p">):</span>
+        <span class="c1"># Extract the section header</span>
+        <span class="n">head</span> <span class="o">=</span> <span class="n">div</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;head&quot;</span><span class="p">)</span>
+        <span class="n">section_title</span> <span class="o">=</span> <span class="n">head</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">if</span> <span class="n">head</span> <span class="k">else</span> <span class="s2">&quot;Un-headered Section&quot;</span>
+
+        <span class="c1"># Extract all paragraphs within this specific section</span>
+        <span class="n">paragraphs</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">div</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s2">&quot;p&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">text</span><span class="p">]</span>
+        <span class="n">section_text</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">paragraphs</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">section_text</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">50</span><span class="p">:</span>
+            <span class="c1"># Prefix the section title with the document title to prevent collision</span>
+            <span class="c1"># e.g., &quot;Attention is All You Need - Methodology&quot;</span>
+            <span class="n">compound_title</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">document_title</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">section_title</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">document_title</span> <span class="k">else</span> <span class="n">section_title</span>
+            
+            <span class="c1"># We now have a chunk that represents an exact, author-defined section!</span>
+            <span class="n">doc</span> <span class="o">=</span> <span class="n">LangChainDocument</span><span class="p">(</span>
+                <span class="n">page_content</span><span class="o">=</span><span class="n">section_text</span><span class="p">,</span>
+                <span class="n">metadata</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;section_title&quot;</span><span class="p">:</span> <span class="n">compound_title</span><span class="p">,</span>
+                    <span class="s2">&quot;is_semantic_chunk&quot;</span><span class="p">:</span> <span class="kc">True</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+            <span class="n">semantic_chunks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">semantic_chunks</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Andrew Cruickshank.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

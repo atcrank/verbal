@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Background Resources - context documents &mdash; reason 0.1 documentation</title>
+  <title>Background Resources - Retrieval-Augmented Generation &amp; Document Ingestion &mdash; reason 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/custom.css?v=aaf24e6f" />
@@ -20,8 +20,8 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Benchmarking - model and strategy evaluations" href="benchmarking_app.html" />
-    <link rel="prev" title="LLM API" href="llm_api_app.html" /> 
+    <link rel="next" title="Grips - Structured Knowledge Graph &amp; Propositional Claims" href="grips_app.html" />
+    <link rel="prev" title="Grobid Client - Deterministic Scientific PDF Parsing &amp; Citation Extraction" href="grobid_client_app.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -45,12 +45,30 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="llm_api_app.html">LLM API</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Background Resources - context documents</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#app-achievements">App achievements</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#app-enhancement">App enhancement</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#unified-retrieval-deep-rag-design-decisions">Unified Retrieval &amp; Deep RAG Design Decisions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-background_resources.models">Database models</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="llm_api_app.html">LLM API - Local Inference, Proxy Routing &amp; Hardware-Aware Serving</a></li>
+<li class="toctree-l1"><a class="reference internal" href="verbal_tasks_app.html">Verbal Tasks - Database-Backed Asynchronous Execution &amp; Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sandbox_manager_app.html">Sandbox Manager - Isolated Python Execution Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grobid_client_app.html">Grobid Client - Deterministic Scientific PDF Parsing &amp; Citation Extraction</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Background Resources - Retrieval-Augmented Generation &amp; Document Ingestion</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#purpose-motivating-problem">1. Purpose &amp; Motivating Problem</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#why-grounded-retrieval-is-necessary">Why Grounded Retrieval is Necessary</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-dual-hazards-of-rag-on-small-local-models">The Dual Hazards of RAG on Small Local Models</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#architecture-mechanism">2. Architecture &amp; Mechanism</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#the-document-ingestion-pipeline">The Document Ingestion Pipeline</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#unified-retrieval-deep-rag-architecture">Unified Retrieval &amp; Deep RAG Architecture</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#observability-health-signals">3. Observability &amp; Health Signals</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#how-to-know-retrieval-is-working-well">How to Know Retrieval is Working Well</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#diagnostic-tips-failure-modes">4. Diagnostic Tips &amp; Failure Modes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#when-retrieval-misses-the-mark-how-to-tune">When Retrieval Misses the Mark &amp; How to Tune</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-background_resources.models">Module Reference</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#background_resources.models.Document"><code class="docutils literal notranslate"><span class="pre">Document</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#background_resources.models.Document.title"><code class="docutils literal notranslate"><span class="pre">Document.title</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#background_resources.models.Document.author"><code class="docutils literal notranslate"><span class="pre">Document.author</span></code></a></li>
@@ -272,9 +290,6 @@
 <li class="toctree-l4"><a class="reference internal" href="#background_resources.models.RAGQueryLog.objects"><code class="docutils literal notranslate"><span class="pre">RAGQueryLog.objects</span></code></a></li>
 </ul>
 </li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#module-background_resources.rag_service">RAG Service</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#background_resources.rag_service.DocumentHandles"><code class="docutils literal notranslate"><span class="pre">DocumentHandles</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#background_resources.rag_service.DocumentHandles.long_form"><code class="docutils literal notranslate"><span class="pre">DocumentHandles.long_form</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#background_resources.rag_service.DocumentHandles.short_form"><code class="docutils literal notranslate"><span class="pre">DocumentHandles.short_form</span></code></a></li>
@@ -334,9 +349,6 @@
 <li class="toctree-l4"><a class="reference internal" href="#background_resources.rag_service.RAGService.dump_index_to_file"><code class="docutils literal notranslate"><span class="pre">RAGService.dump_index_to_file()</span></code></a></li>
 </ul>
 </li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#module-background_resources.nlp_service">NLP Service</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#background_resources.nlp_service.NLPService"><code class="docutils literal notranslate"><span class="pre">NLPService</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#background_resources.nlp_service.NLPService.primary_nlp"><code class="docutils literal notranslate"><span class="pre">NLPService.primary_nlp</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#background_resources.nlp_service.NLPService.abbreviation_model"><code class="docutils literal notranslate"><span class="pre">NLPService.abbreviation_model</span></code></a></li>
@@ -354,14 +366,13 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#module-background_resources.tasks">Background Tasks</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="grips_app.html">Grips - wiki knowledge banks</a></li>
-<li class="toctree-l1"><a class="reference internal" href="metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grips_app.html">Grips - Structured Knowledge Graph &amp; Propositional Claims</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metacognition_app.html">Metacognition - Cognitive Blueprints, Agentic Workflows &amp; Self-Evaluation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
-<li class="toctree-l1"><a class="reference internal" href="demo_ui_app.html">Demo UI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmarking_app.html">Benchmarking - Automated Evaluation, Synthetic Generation &amp; LoRA Flywheels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo_ui_app.html">Demo UI - Empirical Research &amp; Cognitive Workbench</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
 <ul>
@@ -385,7 +396,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Background Resources - context documents</li>
+      <li class="breadcrumb-item active">Background Resources - Retrieval-Augmented Generation &amp; Document Ingestion</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/background_resources_app.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -395,41 +406,118 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="background-resources-context-documents">
-<h1>Background Resources - context documents<a class="headerlink" href="#background-resources-context-documents" title="Link to this heading"></a></h1>
-<p>This app is responsible for the entire Retrieval-Augmented Generation (RAG) pipeline, from document ingestion and chunking to vector storage and retrieval.</p>
-<section id="app-achievements">
-<h2>App achievements<a class="headerlink" href="#app-achievements" title="Link to this heading"></a></h2>
+  <section id="background-resources-retrieval-augmented-generation-document-ingestion">
+<h1>Background Resources - Retrieval-Augmented Generation &amp; Document Ingestion<a class="headerlink" href="#background-resources-retrieval-augmented-generation-document-ingestion" title="Link to this heading"></a></h1>
+<p>The <strong>Background Resources</strong> application provides the document processing, semantic vector storage, and multi-path retrieval-augmented generation (RAG) pipeline for Verbal. It enables experiment designers to ground their research inquiries in peer-reviewed literature, domain glossaries, and experimental protocols while mitigating the attention failure modes of local language models.</p>
+<nav class="contents local" id="table-of-contents">
+<p class="topic-title">Table of Contents</p>
 <ul class="simple">
-<li><p><strong>Multi-Format Ingestion:</strong> Natively parses PDFs, Word Documents, PowerPoints, raw HTML/ZIP archives, and Jupyter Notebooks (preserving code blocks).</p></li>
-<li><p><strong>Advanced Reading Strategies:</strong> Allows applying customizable processing layers to documents, including Regex Extraction, LLM Prompts, and Abbreviation identification.</p></li>
-<li><p><strong>Robust Database Integration:</strong> Utilizes PGVector via PostgreSQL for seamless, scalable semantic vector indexing paired with standard relational data.</p></li>
-<li><p><strong>Background Processing:</strong> Ingestion relies on Celery tasks, allowing the user to queue massive document libraries without locking the UI.</p></li>
-<li><p><strong>Vector Index Explorer:</strong> A comprehensive Django Admin dashboard that evaluates data integrity, spots orphaned chunks/vectors, and allows live semantic search testing.</p></li>
+<li><p><a class="reference internal" href="#purpose-motivating-problem" id="id1">1. Purpose &amp; Motivating Problem</a></p>
+<ul>
+<li><p><a class="reference internal" href="#why-grounded-retrieval-is-necessary" id="id2">Why Grounded Retrieval is Necessary</a></p></li>
+<li><p><a class="reference internal" href="#the-dual-hazards-of-rag-on-small-local-models" id="id3">The Dual Hazards of RAG on Small Local Models</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#architecture-mechanism" id="id4">2. Architecture &amp; Mechanism</a></p>
+<ul>
+<li><p><a class="reference internal" href="#the-document-ingestion-pipeline" id="id5">The Document Ingestion Pipeline</a></p></li>
+<li><p><a class="reference internal" href="#unified-retrieval-deep-rag-architecture" id="id6">Unified Retrieval &amp; Deep RAG Architecture</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#observability-health-signals" id="id7">3. Observability &amp; Health Signals</a></p>
+<ul>
+<li><p><a class="reference internal" href="#how-to-know-retrieval-is-working-well" id="id8">How to Know Retrieval is Working Well</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#diagnostic-tips-failure-modes" id="id9">4. Diagnostic Tips &amp; Failure Modes</a></p>
+<ul>
+<li><p><a class="reference internal" href="#when-retrieval-misses-the-mark-how-to-tune" id="id10">When Retrieval Misses the Mark &amp; How to Tune</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#module-background_resources.models" id="id11">Module Reference</a></p></li>
+</ul>
+</nav>
+<section id="purpose-motivating-problem">
+<h2><a class="toc-backref" href="#id1" role="doc-backlink">1. Purpose &amp; Motivating Problem</a><a class="headerlink" href="#purpose-motivating-problem" title="Link to this heading"></a></h2>
+<section id="why-grounded-retrieval-is-necessary">
+<h3><a class="toc-backref" href="#id2" role="doc-backlink">Why Grounded Retrieval is Necessary</a><a class="headerlink" href="#why-grounded-retrieval-is-necessary" title="Link to this heading"></a></h3>
+<p>Large Language Models possess general linguistic fluency but lack reliable knowledge of specialized research findings, lab-specific protocols, and exact empirical parameters. Without grounding in authoritative source documents, models generate plausible-sounding but factually ungrounded study designs.</p>
+</section>
+<section id="the-dual-hazards-of-rag-on-small-local-models">
+<h3><a class="toc-backref" href="#id3" role="doc-backlink">The Dual Hazards of RAG on Small Local Models</a><a class="headerlink" href="#the-dual-hazards-of-rag-on-small-local-models" title="Link to this heading"></a></h3>
+<p>Naive RAG architectures—which simply fetch the top-$k$ nearest text chunks by cosine similarity and dump them into the prompt—routinely break down when paired with small open-weights models (2B–8B parameters). Verbal’s RAG architecture was specifically designed to navigate two opposing failure modes:</p>
+<ul class="simple">
+<li><p><strong>Hazard 1: Prompt Hijacking &amp; Chunk Captivity</strong>:
+Small models have limited attention bandwidth. When a concise user prompt (e.g. 30 tokens asking for a control group specification) is prepended with massive raw text chunks (e.g. 1,500 tokens of engineering background), the model’s self-attention is overwhelmed by the chunk. The model falls captive to the retrieved text, outputting rambling summaries of the document while completely ignoring the user’s question.</p></li>
+<li><p><strong>Hazard 2: The Superficiality Trap &amp; Word-Match Crowding</strong>:
+In early attempts to mitigate Chunk Captivity, developers favored short glossary definitions. However, broad search terms (“smoke”, “sensor”, “trial”) caused single-sentence dictionary entries to leapfrog substantive empirical papers, starving the model of real experimental data.</p></li>
+</ul>
+<p><strong>Background Resources</strong> resolves this tension through <strong>salience windowing</strong>, <strong>discriminative glossary matching</strong>, and <strong>lineage-aware concept promotion</strong>.</p>
+</section>
+</section>
+<section id="architecture-mechanism">
+<h2><a class="toc-backref" href="#id4" role="doc-backlink">2. Architecture &amp; Mechanism</a><a class="headerlink" href="#architecture-mechanism" title="Link to this heading"></a></h2>
+<section id="the-document-ingestion-pipeline">
+<h3><a class="toc-backref" href="#id5" role="doc-backlink">The Document Ingestion Pipeline</a><a class="headerlink" href="#the-document-ingestion-pipeline" title="Link to this heading"></a></h3>
+<ol class="arabic simple">
+<li><p><strong>Multi-Format Ingestion</strong>: The system ingests research PDFs, Word documents (.docx), presentations (.pptx), text archives, and Jupyter Notebooks (preserving code blocks).</p></li>
+<li><p><strong>Deterministic Pre-Parsing</strong>: Academic PDFs are routed through the containerized <cite>grobid_client</cite> to extract structured TEI XML, isolating headings, body paragraphs, and bibliographies.</p></li>
+<li><p><strong>Configurable Reading Strategies</strong>: Processing layers attached to documents:
+* <strong>``ReadingStrategy`` (Default)</strong>: Normalizes text and chunks body paragraphs respecting sentence and section boundaries.
+* <strong>``RegexStrategy``</strong>: Extracts structured entities (e.g. equipment codes, chemical formulas) matching defined regular expressions.
+* <strong>``PromptStrategy``</strong>: Passes chunks through an LLM to synthesize high-level conceptual summaries.
+* <strong>``AbbreviationStrategy``</strong>: Builds an authoritative glossary of domain acronyms and expanded forms.</p></li>
+<li><p><strong>Vector Indexing with PGVector</strong>: Computes dense vector embeddings and stores them natively in PostgreSQL using <cite>pgvector.django.VectorField</cite> with cosine distance indexing.</p></li>
+<li><p><strong>Background Execution</strong>: Ingestion, OCR, and vectorization are executed asynchronously via <cite>verbal_tasks</cite>, ensuring file uploads never block the user interface.</p></li>
+</ol>
+</section>
+<section id="unified-retrieval-deep-rag-architecture">
+<h3><a class="toc-backref" href="#id6" role="doc-backlink">Unified Retrieval &amp; Deep RAG Architecture</a><a class="headerlink" href="#unified-retrieval-deep-rag-architecture" title="Link to this heading"></a></h3>
+<p>Rather than performing naive nearest-neighbor lookups, the system uses a <strong>Super Retriever</strong> (<cite>unified_retrieve</cite> and <cite>get_deep_context_report</cite>):</p>
+<ul class="simple">
+<li><p><strong>Dense Semantic Search</strong>: Cosine similarity matching over PGVector chunk embeddings.</p></li>
+<li><p><strong>Lexical Fallback</strong>: PostgreSQL <cite>SearchVector</cite> full-text search, ensuring exact technical terms, acronyms, or proper names are captured even if embedding models fail to place them close in vector space.</p></li>
+<li><p><strong>Lineage-Aware Deduplication &amp; Concept Promotion</strong>: When raw <cite>RAGChunk</cite> records semantically overlap with higher-level <cite>ConceptNode</cite> entities in <cite>grips</cite> derived from the same source, the system drops the redundant raw chunk and injects the curated concept node with a ranking priority boost.</p></li>
+<li><p><strong>Salience Windowing</strong>: Instead of injecting 1,000-word sections, the retriever extracts a focused excerpt window (150–250 tokens) centered on the highest concept density, labeled with an academic citation header: <cite>[Source: Author (Year) — Section: Name]</cite>.</p></li>
 </ul>
 </section>
-<section id="app-enhancement">
-<h2>App enhancement<a class="headerlink" href="#app-enhancement" title="Link to this heading"></a></h2>
+</section>
+<section id="observability-health-signals">
+<h2><a class="toc-backref" href="#id7" role="doc-backlink">3. Observability &amp; Health Signals</a><a class="headerlink" href="#observability-health-signals" title="Link to this heading"></a></h2>
+<section id="how-to-know-retrieval-is-working-well">
+<h3><a class="toc-backref" href="#id8" role="doc-backlink">How to Know Retrieval is Working Well</a><a class="headerlink" href="#how-to-know-retrieval-is-working-well" title="Link to this heading"></a></h3>
+<ol class="arabic simple">
+<li><p><strong>Vector Index Explorer</strong>:
+In Django Admin under <strong>Background Resources &gt; Vector Index Explorer</strong>, administrators can:
+* Test live queries and inspect the similarity score distribution.
+* Verify embedding coverage and spot orphaned chunks lacking vector representations.
+* Review chunk boundaries to ensure sentences are not abruptly severed mid-word.</p></li>
+<li><p><strong>Balanced Context Ratios in Prompt Logs</strong>:
+In <cite>PromptResponseLog</cite>, healthy generations show retrieved context comprising between 20% and 50% of the total prompt tokens—providing adequate grounding without drowning the user’s prompt.</p></li>
+<li><p><strong>Grounded Attributions in AI Responses</strong>:
+The assistant’s outputs explicitly cite retrieved sources (e.g., <em>“Following Li et al. (2023), sensor placement requires…”</em>) rather than speaking in generic generalities.</p></li>
+</ol>
+</section>
+</section>
+<section id="diagnostic-tips-failure-modes">
+<h2><a class="toc-backref" href="#id9" role="doc-backlink">4. Diagnostic Tips &amp; Failure Modes</a><a class="headerlink" href="#diagnostic-tips-failure-modes" title="Link to this heading"></a></h2>
+<section id="when-retrieval-misses-the-mark-how-to-tune">
+<h3><a class="toc-backref" href="#id10" role="doc-backlink">When Retrieval Misses the Mark &amp; How to Tune</a><a class="headerlink" href="#when-retrieval-misses-the-mark-how-to-tune" title="Link to this heading"></a></h3>
 <ul class="simple">
-<li><p><strong>Hybrid Search:</strong> Combine the current dense semantic search (PGVector) with a sparse keyword search (like BM25 or Postgres Full-Text) to improve precise term retrieval.</p></li>
-<li><p><strong>Search target selection enhancement:</strong> Focus search on least common terms or expressions</p></li>
-<li><p><strong>Structurally aware chunking:</strong>  better traction for section breaks of different kinds.</p></li>
-<li><p><strong>Visual Layout Parsing:</strong> Upgrade the PDF parser to something layout-aware (like <code class="docutils literal notranslate"><span class="pre">unstructured</span></code> or specialized OCR) to better handle complex tables and multi-column formats.</p></li>
-<li><p><strong>Graph-RAG Integration:</strong> Bridge the ingested chunks with the <code class="docutils literal notranslate"><span class="pre">grips</span></code> app to build relational metadata for chunks (e.g., “Chunk A contradicts Chunk B”).</p></li>
+<li><p><strong>Prompt Hijacking (AI Ignores Prompt to Talk About Document)</strong>:
+* <em>Hazard</em>: The retrieved chunk is too large or too tangentially related, causing the LLM to fixate on the excerpt.
+* <em>Remedy</em>: In the retrieval call, reduce <cite>max_chunks</cite> (e.g. from 5 down to 2 or 3). Ensure the context framing prompt in <cite>demo_ui/views.py</cite> includes the guardrail: <em>“Use the following reference excerpts to ground your response. If an excerpt is not directly relevant to the specific experimental question, ignore it.”</em></p></li>
+<li><p><strong>Terminology Misses (Exact Technical Keywords Overlooked)</strong>:
+* <em>Hazard</em>: Dense embedding models occasionally fail on niche domain abbreviations (e.g. <em>FMCW</em>, <em>UWB</em>, <em>IMU</em>).
+* <em>Remedy</em>: Create an <cite>AbbreviationStrategy</cite> for the document, or ensure the query triggers the lexical PostgreSQL <cite>SearchVector</cite> fallback by matching exact keyword tokens.</p></li>
+<li><p><strong>Chunk Fragmentation (Key Concepts Broken Across Chunks)</strong>:
+* <em>Hazard</em>: Chunk size is too small, splitting an experimental method across two halves so neither chunk contains the full context.
+* <em>Remedy</em>: In the document’s <cite>ReadingStrategy</cite>, increase <cite>chunk_size</cite> (e.g., from 300 to 500 characters) and adjust <cite>chunk_overlap</cite> (e.g., 50 to 100 characters), then trigger the Django Admin action <strong>“Re-read Document”</strong>.</p></li>
 </ul>
 </section>
-<section id="unified-retrieval-deep-rag-design-decisions">
-<h2>Unified Retrieval &amp; Deep RAG Design Decisions<a class="headerlink" href="#unified-retrieval-deep-rag-design-decisions" title="Link to this heading"></a></h2>
-<p>Recent updates overhauled the retrieval architecture to prioritize token efficiency, novelty, and completeness using a “Super Retriever” approach (<cite>get_deep_context_report</cite>). Key design decisions include:</p>
-<ul class="simple">
-<li><p><strong>Token Efficiency &amp; Relevance:</strong> Only material strictly aligned with the prompt and the active conversation <cite>state_tree</cite> is injected into the LLM context.</p></li>
-<li><p><strong>Completeness &amp; Fast Deterministic Paths:</strong> We rely on <cite>ConceptNode`s for complete ideas and summaries (via `PromptStrategy</cite> generation), and utilize fast deterministic paths like PostgreSQL’s <cite>SearchVector</cite> for robust lexical fallback.</p></li>
-<li><p><strong>Lineage-Aware Deduplication &amp; Boosting:</strong> When raw <cite>RAGChunk`s overlap semantically with their derived `ConceptNode</cite> summaries, the unified retrieval system (<cite>unified_retrieve</cite>) prefers the higher-level Grips concept and drops the redundant raw chunk. The remaining concept receives a ranking distance boost to signify its higher informational density.</p></li>
-<li><p><strong>The NM_Deep_Reader Sub-Blueprint:</strong> A specialized sub-blueprint that digests the “Super Retriever” report—fusing Semantic, Lexical, Citation Graph, and Private User Conversation Logs—into a dense, high-signal prompt injection.</p></li>
-</ul>
 </section>
 <section id="module-background_resources.models">
-<span id="database-models"></span><h2>Database models<a class="headerlink" href="#module-background_resources.models" title="Link to this heading"></a></h2>
+<span id="module-reference"></span><h2><a class="toc-backref" href="#id11" role="doc-backlink">Module Reference</a><a class="headerlink" href="#module-background_resources.models" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="background_resources.models.Document">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">background_resources.models.</span></span><span class="sig-name descname"><span class="pre">Document</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/background_resources/models.html#Document"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#background_resources.models.Document" title="Link to this definition"></a></dt>
@@ -1908,10 +1996,7 @@ object the first time, the query is executed.</p>
 
 </dd></dl>
 
-</section>
-<section id="module-background_resources.rag_service">
-<span id="rag-service"></span><h2>RAG Service<a class="headerlink" href="#module-background_resources.rag_service" title="Link to this heading"></a></h2>
-<dl class="py class">
+<dl class="py class" id="module-background_resources.rag_service">
 <dt class="sig sig-object py" id="background_resources.rag_service.DocumentHandles">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">background_resources.rag_service.</span></span><span class="sig-name descname"><span class="pre">DocumentHandles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">long_form</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">short_form</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keywords</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/background_resources/rag_service.html#DocumentHandles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#background_resources.rag_service.DocumentHandles" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
@@ -2185,10 +2270,7 @@ Format:
 
 </dd></dl>
 
-</section>
-<section id="module-background_resources.nlp_service">
-<span id="nlp-service"></span><h2>NLP Service<a class="headerlink" href="#module-background_resources.nlp_service" title="Link to this heading"></a></h2>
-<dl class="py class">
+<dl class="py class" id="module-background_resources.nlp_service">
 <dt class="sig sig-object py" id="background_resources.nlp_service.NLPService">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">background_resources.nlp_service.</span></span><span class="sig-name descname"><span class="pre">NLPService</span></span><a class="reference internal" href="_modules/background_resources/nlp_service.html#NLPService"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#background_resources.nlp_service.NLPService" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
@@ -2261,18 +2343,15 @@ be careful not to over-correct.</p>
 
 </dd></dl>
 
-</section>
-<section id="module-background_resources.tasks">
-<span id="background-tasks"></span><h2>Background Tasks<a class="headerlink" href="#module-background_resources.tasks" title="Link to this heading"></a></h2>
-</section>
+<span class="target" id="module-background_resources.tasks"></span></section>
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="llm_api_app.html" class="btn btn-neutral float-left" title="LLM API" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="benchmarking_app.html" class="btn btn-neutral float-right" title="Benchmarking - model and strategy evaluations" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="grobid_client_app.html" class="btn btn-neutral float-left" title="Grobid Client - Deterministic Scientific PDF Parsing &amp; Citation Extraction" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="grips_app.html" class="btn btn-neutral float-right" title="Grips - Structured Knowledge Graph &amp; Propositional Claims" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

@@ -5,9 +5,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>llm_api.models &mdash; Verbal 0.1 documentation</title>
+  <title>llm_api.models &mdash; reason 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=aaf24e6f" />
 
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
@@ -29,7 +30,7 @@
           
           
           <a href="../../index.html" class="icon icon-home">
-            Verbal
+            reason
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -53,6 +54,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../using_ollama.html">Ollama as Local AI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_trials.html">Demo UI Empirical Trials &amp; Verification Reports</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../tests.html">Testing</a></li>
 </ul>
 
@@ -62,7 +64,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../index.html">Verbal</a>
+          <a href="../../index.html">reason</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -446,15 +448,64 @@
 <div class="viewcode-block" id="LocalAIModel">
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.LocalAIModel">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">LocalAIModel</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Configuration for an LLM loaded natively into VRAM on the inference server.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Configuration for an LLM loaded natively into VRAM or served via local containers.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="LocalAIModel.QuantizationMode">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.LocalAIModel.QuantizationMode">[docs]</a>
+    <span class="k">class</span><span class="w"> </span><span class="nc">QuantizationMode</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">TextChoices</span><span class="p">):</span>
+        <span class="n">NONE</span> <span class="o">=</span> <span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="s1">&#39;Unquantized (16-bit FP16 / BF16)&#39;</span>
+        <span class="n">INT8</span> <span class="o">=</span> <span class="s1">&#39;int8&#39;</span><span class="p">,</span> <span class="s1">&#39;8-bit Integer (BitsAndBytes)&#39;</span>
+        <span class="n">NF4</span> <span class="o">=</span> <span class="s1">&#39;nf4&#39;</span><span class="p">,</span> <span class="s1">&#39;4-bit NormalFloat (BitsAndBytes NF4 - High Precision)&#39;</span>
+        <span class="n">FP4</span> <span class="o">=</span> <span class="s1">&#39;fp4&#39;</span><span class="p">,</span> <span class="s1">&#39;4-bit Float (BitsAndBytes FP4)&#39;</span>
+        <span class="n">AWQ</span> <span class="o">=</span> <span class="s1">&#39;awq&#39;</span><span class="p">,</span> <span class="s1">&#39;AWQ (vLLM / Transformers)&#39;</span>
+        <span class="n">GPTQ</span> <span class="o">=</span> <span class="s1">&#39;gptq&#39;</span><span class="p">,</span> <span class="s1">&#39;GPTQ (vLLM / Transformers)&#39;</span></div>
+
+
     <span class="n">name</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Friendly name (e.g. &#39;Gemma 4 E2B&#39;)&quot;</span><span class="p">)</span>
     <span class="n">hf_model_id</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;HuggingFace ID&quot;</span><span class="p">)</span>
     <span class="n">description</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Notes on capabilities, VRAM usage, etc.&quot;</span><span class="p">)</span>
-    <span class="n">load_in_4bit</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Use 4-bit quantization (Recommended for 6GB VRAM)&quot;</span><span class="p">)</span>
+    
+    <span class="n">quantization_mode</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span>
+        <span class="n">max_length</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+        <span class="n">choices</span><span class="o">=</span><span class="n">QuantizationMode</span><span class="o">.</span><span class="n">choices</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="n">QuantizationMode</span><span class="o">.</span><span class="n">NF4</span><span class="p">,</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Quantization method to apply when loading model into memory or container.&quot;</span>
+    <span class="p">)</span>
+    <span class="n">compute_dtype</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span>
+        <span class="n">max_length</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+        <span class="n">choices</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">(</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span> <span class="s1">&#39;Auto-detect (Recommended based on GPU capability)&#39;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s1">&#39;float16&#39;</span><span class="p">,</span> <span class="s1">&#39;Float16 (FP16)&#39;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s1">&#39;bfloat16&#39;</span><span class="p">,</span> <span class="s1">&#39;BFloat16 (BF16 - requires Ampere / CC 8.0+)&#39;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s1">&#39;float32&#39;</span><span class="p">,</span> <span class="s1">&#39;Float32 (FP32 - CPU fallback)&#39;</span><span class="p">),</span>
+        <span class="p">],</span>
+        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Precision used for tensor computations.&quot;</span>
+    <span class="p">)</span>
+    <span class="n">vllm_gpu_memory_utilization</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">FloatField</span><span class="p">(</span>
+        <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;vLLM GPU memory utilization fraction (0.1 - 1.0). Leave blank to auto-calculate from free VRAM.&quot;</span>
+    <span class="p">)</span>
+    <span class="n">vllm_max_model_len</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span>
+        <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Max model sequence length for vLLM KV-cache. Defaults to model context window.&quot;</span>
+    <span class="p">)</span>
+    <span class="n">load_in_4bit</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Legacy flag: Use 4-bit quantization (synced with quantization_mode)&quot;</span><span class="p">)</span>
     <span class="n">context_window</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">4096</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Max tokens&quot;</span><span class="p">)</span>
 
+<div class="viewcode-block" id="LocalAIModel.save">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.LocalAIModel.save">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1"># Keep legacy load_in_4bit in sync with quantization_mode</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_in_4bit</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">quantization_mode</span> <span class="ow">in</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">QuantizationMode</span><span class="o">.</span><span class="n">NF4</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">QuantizationMode</span><span class="o">.</span><span class="n">FP4</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">quantization_mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">QuantizationMode</span><span class="o">.</span><span class="n">NONE</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_in_4bit</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">quantization_mode</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">QuantizationMode</span><span class="o">.</span><span class="n">NONE</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">quantization_mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">QuantizationMode</span><span class="o">.</span><span class="n">NF4</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span></div>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">get_quantization_mode_display</span><span class="p">()</span><span class="si">}</span><span class="s2">)&quot;</span></div>
 
 
 
@@ -591,21 +642,27 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">vllm_client</span>
 
 
-<div class="viewcode-block" id="track_ollama_model_changes">
-<a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.track_ollama_model_changes">[docs]</a>
+<div class="viewcode-block" id="track_backend_model_changes">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.track_backend_model_changes">[docs]</a>
 <span class="nd">@receiver</span><span class="p">(</span><span class="n">pre_save</span><span class="p">,</span> <span class="n">sender</span><span class="o">=</span><span class="n">SystemConfiguration</span><span class="p">)</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">track_ollama_model_changes</span><span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Track the old model name so we know what to unload.&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">track_backend_model_changes</span><span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Track the old model and backend so we know what to unload, restart, or clear.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">instance</span><span class="o">.</span><span class="n">pk</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">old_instance</span> <span class="o">=</span> <span class="n">SystemConfiguration</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">pk</span><span class="o">=</span><span class="n">instance</span><span class="o">.</span><span class="n">pk</span><span class="p">)</span>
             <span class="n">instance</span><span class="o">.</span><span class="n">_old_ollama_model</span> <span class="o">=</span> <span class="n">old_instance</span><span class="o">.</span><span class="n">active_ollama_model</span>
+            <span class="n">instance</span><span class="o">.</span><span class="n">_old_vllm_model</span> <span class="o">=</span> <span class="n">old_instance</span><span class="o">.</span><span class="n">active_vllm_model</span>
+            <span class="n">instance</span><span class="o">.</span><span class="n">_old_local_model</span> <span class="o">=</span> <span class="n">old_instance</span><span class="o">.</span><span class="n">active_local_model</span>
             <span class="n">instance</span><span class="o">.</span><span class="n">_old_hosting_backend</span> <span class="o">=</span> <span class="n">old_instance</span><span class="o">.</span><span class="n">hosting_backend</span>
         <span class="k">except</span> <span class="n">SystemConfiguration</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
             <span class="n">instance</span><span class="o">.</span><span class="n">_old_ollama_model</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">instance</span><span class="o">.</span><span class="n">_old_vllm_model</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">instance</span><span class="o">.</span><span class="n">_old_local_model</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="n">instance</span><span class="o">.</span><span class="n">_old_hosting_backend</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">instance</span><span class="o">.</span><span class="n">_old_ollama_model</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">instance</span><span class="o">.</span><span class="n">_old_vllm_model</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">instance</span><span class="o">.</span><span class="n">_old_local_model</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">instance</span><span class="o">.</span><span class="n">_old_hosting_backend</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
@@ -614,31 +671,44 @@
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.manage_hosting_backend">[docs]</a>
 <span class="nd">@receiver</span><span class="p">(</span><span class="n">post_save</span><span class="p">,</span> <span class="n">sender</span><span class="o">=</span><span class="n">SystemConfiguration</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">manage_hosting_backend</span><span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unload old models and manage Docker containers for the backend.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unload old models, clear VRAM, and manage Docker containers for the backend.&quot;&quot;&quot;</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
     <span class="k">if</span> <span class="s1">&#39;test&#39;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">:</span>
         <span class="k">return</span>
 
-    <span class="n">old_model</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span> <span class="s1">&#39;_old_ollama_model&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-    <span class="n">new_model</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="n">active_ollama_model</span>
-    
     <span class="n">old_backend</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span> <span class="s1">&#39;_old_hosting_backend&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
     <span class="n">new_backend</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="n">hosting_backend</span>
 
-    <span class="c1"># Case 1: Switching away from Ollama or changing its model</span>
-    <span class="k">if</span> <span class="n">old_backend</span> <span class="o">==</span> <span class="s1">&#39;ollama&#39;</span> <span class="ow">and</span> <span class="n">old_model</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">new_backend</span> <span class="o">!=</span> <span class="s1">&#39;ollama&#39;</span> <span class="ow">or</span> <span class="n">old_model</span> <span class="o">!=</span> <span class="n">new_model</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unloading Ollama model: </span><span class="si">{</span><span class="n">old_model</span><span class="o">.</span><span class="n">hf_model_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="n">ollama_client</span><span class="o">.</span><span class="n">set_ollama_model_state</span><span class="p">(</span><span class="n">old_model</span><span class="o">.</span><span class="n">hf_model_id</span><span class="p">,</span> <span class="n">active</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">old_ollama</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span> <span class="s1">&#39;_old_ollama_model&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">new_ollama</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="n">active_ollama_model</span>
 
-    <span class="c1"># Manage Docker Containers if backend changed</span>
+    <span class="n">old_vllm</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span> <span class="s1">&#39;_old_vllm_model&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">new_vllm</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="n">active_vllm_model</span>
+
+    <span class="c1"># 1. Unload old Ollama model if switching away or changing models</span>
+    <span class="k">if</span> <span class="n">old_backend</span> <span class="o">==</span> <span class="s1">&#39;ollama&#39;</span> <span class="ow">and</span> <span class="n">old_ollama</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">new_backend</span> <span class="o">!=</span> <span class="s1">&#39;ollama&#39;</span> <span class="ow">or</span> <span class="n">old_ollama</span> <span class="o">!=</span> <span class="n">new_ollama</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unloading Ollama model: </span><span class="si">{</span><span class="n">old_ollama</span><span class="o">.</span><span class="n">hf_model_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">ollama_client</span><span class="o">.</span><span class="n">set_ollama_model_state</span><span class="p">(</span><span class="n">old_ollama</span><span class="o">.</span><span class="n">hf_model_id</span><span class="p">,</span> <span class="n">active</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="c1"># 2. Release PyTorch VRAM if switching away from in-process PyTorch to container backends</span>
+    <span class="k">if</span> <span class="n">old_backend</span> <span class="o">==</span> <span class="s1">&#39;pytorch&#39;</span> <span class="ow">and</span> <span class="n">new_backend</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;vllm&#39;</span><span class="p">,</span> <span class="s1">&#39;ollama&#39;</span><span class="p">]:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Switching from PyTorch to containerized backend. Prompting inference server to release VRAM...&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+            <span class="n">inf_url</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="s1">&#39;INFERENCE_URL&#39;</span><span class="p">,</span> <span class="s1">&#39;http://127.0.0.1:8001/api/llm&#39;</span><span class="p">)</span>
+            <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">inf_url</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">/internal/unload-vram/&quot;</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not signal inference server to unload VRAM: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># 3. Manage Docker Containers if backend changed</span>
     <span class="k">if</span> <span class="n">old_backend</span> <span class="o">!=</span> <span class="n">new_backend</span><span class="p">:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Switching hosting backend from &#39;</span><span class="si">{</span><span class="n">old_backend</span><span class="si">}</span><span class="s2">&#39; to &#39;</span><span class="si">{</span><span class="n">new_backend</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">new_backend</span> <span class="o">==</span> <span class="s1">&#39;vllm&#39;</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Stopping Ollama and starting vLLM container...&quot;</span><span class="p">)</span>
             <span class="n">ollama_client</span><span class="o">.</span><span class="n">stop_container</span><span class="p">()</span>
-            <span class="k">if</span> <span class="n">instance</span><span class="o">.</span><span class="n">active_vllm_model</span><span class="p">:</span>
-                <span class="n">vllm_client</span><span class="o">.</span><span class="n">start_container</span><span class="p">(</span><span class="n">instance</span><span class="o">.</span><span class="n">active_vllm_model</span><span class="o">.</span><span class="n">hf_model_id</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">new_vllm</span><span class="p">:</span>
+                <span class="n">vllm_client</span><span class="o">.</span><span class="n">start_container</span><span class="p">(</span><span class="n">new_vllm</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">new_backend</span> <span class="o">==</span> <span class="s1">&#39;ollama&#39;</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Stopping vLLM and starting Ollama container...&quot;</span><span class="p">)</span>
             <span class="n">vllm_client</span><span class="o">.</span><span class="n">stop_container</span><span class="p">()</span>
@@ -648,11 +718,17 @@
             <span class="n">ollama_client</span><span class="o">.</span><span class="n">stop_container</span><span class="p">()</span>
             <span class="n">vllm_client</span><span class="o">.</span><span class="n">stop_container</span><span class="p">()</span>
 
-    <span class="c1"># Case 2: We are now using Ollama, and either just switched to it OR changed model</span>
-    <span class="k">if</span> <span class="n">new_backend</span> <span class="o">==</span> <span class="s1">&#39;ollama&#39;</span> <span class="ow">and</span> <span class="n">new_model</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">old_backend</span> <span class="o">!=</span> <span class="s1">&#39;ollama&#39;</span> <span class="ow">or</span> <span class="n">old_model</span> <span class="o">!=</span> <span class="n">new_model</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loading Ollama model: </span><span class="si">{</span><span class="n">new_model</span><span class="o">.</span><span class="n">hf_model_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="n">ollama_client</span><span class="o">.</span><span class="n">set_ollama_model_state</span><span class="p">(</span><span class="n">new_model</span><span class="o">.</span><span class="n">hf_model_id</span><span class="p">,</span> <span class="n">active</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+    <span class="c1"># 4. If active backend is vLLM and model changed while backend stayed vllm</span>
+    <span class="k">elif</span> <span class="n">new_backend</span> <span class="o">==</span> <span class="s1">&#39;vllm&#39;</span> <span class="ow">and</span> <span class="n">old_backend</span> <span class="o">==</span> <span class="s1">&#39;vllm&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">old_vllm</span> <span class="o">!=</span> <span class="n">new_vllm</span> <span class="ow">and</span> <span class="n">new_vllm</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;vLLM model changed to </span><span class="si">{</span><span class="n">new_vllm</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">. Restarting vLLM container...&quot;</span><span class="p">)</span>
+            <span class="n">vllm_client</span><span class="o">.</span><span class="n">start_container</span><span class="p">(</span><span class="n">new_vllm</span><span class="p">)</span>
+
+    <span class="c1"># 5. If active backend is Ollama, and either just switched to it OR changed model</span>
+    <span class="k">if</span> <span class="n">new_backend</span> <span class="o">==</span> <span class="s1">&#39;ollama&#39;</span> <span class="ow">and</span> <span class="n">new_ollama</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">old_backend</span> <span class="o">!=</span> <span class="s1">&#39;ollama&#39;</span> <span class="ow">or</span> <span class="n">old_ollama</span> <span class="o">!=</span> <span class="n">new_ollama</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loading Ollama model: </span><span class="si">{</span><span class="n">new_ollama</span><span class="o">.</span><span class="n">hf_model_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">ollama_client</span><span class="o">.</span><span class="n">set_ollama_model_state</span><span class="p">(</span><span class="n">new_ollama</span><span class="o">.</span><span class="n">hf_model_id</span><span class="p">,</span> <span class="n">active</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
 
 </pre></div>
 

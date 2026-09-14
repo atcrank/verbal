@@ -1,0 +1,1075 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>metacognition.compiler &mdash; reason 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=aaf24e6f" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            reason
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../llm_api_app.html">LLM API - Local Inference, Proxy Routing &amp; Hardware-Aware Serving</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../verbal_tasks_app.html">Verbal Tasks - Database-Backed Asynchronous Execution &amp; Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../sandbox_manager_app.html">Sandbox Manager - Isolated Python Execution Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grobid_client_app.html">Grobid Client - Deterministic Scientific PDF Parsing &amp; Citation Extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../background_resources_app.html">Background Resources - Retrieval-Augmented Generation &amp; Document Ingestion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grips_app.html">Grips - Structured Knowledge Graph &amp; Propositional Claims</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../metacognition_app.html">Metacognition - Cognitive Blueprints, Agentic Workflows &amp; Self-Evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmarking_app.html">Benchmarking - Automated Evaluation, Synthetic Generation &amp; LoRA Flywheels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_app.html">Demo UI - Empirical Research &amp; Cognitive Workbench</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../using_ollama.html">Ollama as Local AI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_trials.html">Demo UI Empirical Trials &amp; Verification Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tests.html">Testing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">reason</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">metacognition.compiler</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for metacognition.compiler</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langchain_core.messages</span><span class="w"> </span><span class="kn">import</span> <span class="n">HumanMessage</span><span class="p">,</span> <span class="n">SystemMessage</span><span class="p">,</span> <span class="n">AIMessage</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">langgraph.graph</span><span class="w"> </span><span class="kn">import</span> <span class="n">StateGraph</span><span class="p">,</span> <span class="n">END</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langgraph.constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">Send</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langgraph.graph.state</span><span class="w"> </span><span class="kn">import</span> <span class="n">CompiledStateGraph</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">CognitiveBlueprint</span><span class="p">,</span> <span class="n">ReasoningStep</span><span class="p">,</span> <span class="n">ToolDefinition</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.state</span><span class="w"> </span><span class="kn">import</span> <span class="n">AgentState</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.checkpointer</span><span class="w"> </span><span class="kn">import</span> <span class="n">DjangoCheckpointer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.tool_executor</span><span class="w"> </span><span class="kn">import</span> <span class="n">execute_tool</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.summarizer</span><span class="w"> </span><span class="kn">import</span> <span class="n">summarize_if_needed</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="resolve_active_steps">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.compiler.resolve_active_steps">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">resolve_active_steps</span><span class="p">(</span><span class="n">blueprint</span><span class="p">:</span> <span class="n">CognitiveBlueprint</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">ReasoningStep</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Selects the active variant for each step lineage in a blueprint.</span>
+<span class="sd">    Returns (resolved_steps, root_mapping).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
+    <span class="n">lineage_groups</span> <span class="o">=</span> <span class="n">ReasoningStep</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">active_for_blueprint</span><span class="p">(</span><span class="n">blueprint</span><span class="p">)</span>
+    
+    <span class="c1"># We also need a fast lookup of step.id -&gt; canonical_root.id for the router</span>
+    <span class="n">all_steps</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">blueprint</span><span class="o">.</span><span class="n">steps</span><span class="o">.</span><span class="n">all</span><span class="p">())</span>
+    <span class="n">step_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">s</span><span class="o">.</span><span class="n">id</span><span class="p">:</span> <span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">all_steps</span><span class="p">}</span>
+    <span class="n">root_mapping</span> <span class="o">=</span> <span class="p">{}</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_root_id</span><span class="p">(</span><span class="n">step</span><span class="p">):</span>
+        <span class="n">curr</span> <span class="o">=</span> <span class="n">step</span>
+        <span class="n">seen</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">while</span> <span class="n">curr</span><span class="o">.</span><span class="n">parent_step_id</span> <span class="ow">and</span> <span class="n">curr</span><span class="o">.</span><span class="n">parent_step_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen</span><span class="p">:</span>
+            <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">curr</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">curr</span><span class="o">.</span><span class="n">parent_step_id</span> <span class="ow">in</span> <span class="n">step_map</span><span class="p">:</span>
+                <span class="n">curr</span> <span class="o">=</span> <span class="n">step_map</span><span class="p">[</span><span class="n">curr</span><span class="o">.</span><span class="n">parent_step_id</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">curr</span> <span class="o">=</span> <span class="n">curr</span><span class="o">.</span><span class="n">parent_step</span>
+        <span class="k">return</span> <span class="n">curr</span><span class="o">.</span><span class="n">id</span>
+        
+    <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="n">all_steps</span><span class="p">:</span>
+        <span class="n">root_mapping</span><span class="p">[</span><span class="n">step</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_root_id</span><span class="p">(</span><span class="n">step</span><span class="p">)</span>
+
+    <span class="n">resolved</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">root_id</span><span class="p">,</span> <span class="n">variants</span> <span class="ow">in</span> <span class="n">lineage_groups</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">variants</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">variants</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">root_id</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">variants</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">variants</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">is_active</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="n">resolved</span><span class="p">[</span><span class="n">root_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">variants</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="p">[</span><span class="nb">max</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">selection_weight</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">variants</span><span class="p">]</span>
+            <span class="p">[</span><span class="n">selected</span><span class="p">]</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choices</span><span class="p">(</span><span class="n">variants</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">resolved</span><span class="p">[</span><span class="n">root_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">selected</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Variant selection for lineage </span><span class="si">{</span><span class="n">root_id</span><span class="si">}</span><span class="s2">: selected &#39;</span><span class="si">{</span><span class="n">selected</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;(weight=</span><span class="si">{</span><span class="n">selected</span><span class="o">.</span><span class="n">selection_weight</span><span class="si">}</span><span class="s2">, id=</span><span class="si">{</span><span class="n">selected</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+                        
+    <span class="k">return</span> <span class="n">resolved</span><span class="p">,</span> <span class="n">root_mapping</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_format_state_tree</span><span class="p">(</span><span class="n">state_tree</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Renders conversation state_tree in clean Markdown or JSON.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">state_tree</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">state_tree</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;### Conversation State Tree:&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="s2">&quot;macro_objective&quot;</span> <span class="ow">in</span> <span class="n">state_tree</span><span class="p">:</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;- **Objective:** </span><span class="si">{</span><span class="n">state_tree</span><span class="p">[</span><span class="s1">&#39;macro_objective&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">&quot;active_task&quot;</span> <span class="ow">in</span> <span class="n">state_tree</span><span class="p">:</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;- **Active Task:** </span><span class="si">{</span><span class="n">state_tree</span><span class="p">[</span><span class="s1">&#39;active_task&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">&quot;tasks&quot;</span> <span class="ow">in</span> <span class="n">state_tree</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">state_tree</span><span class="p">[</span><span class="s2">&quot;tasks&quot;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;- **Tasks:**&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">tid</span><span class="p">,</span> <span class="n">tinfo</span> <span class="ow">in</span> <span class="n">state_tree</span><span class="p">[</span><span class="s2">&quot;tasks&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tinfo</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="n">status</span> <span class="o">=</span> <span class="n">tinfo</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;status&quot;</span><span class="p">,</span> <span class="s2">&quot;PENDING&quot;</span><span class="p">)</span>
+                <span class="n">title</span> <span class="o">=</span> <span class="n">tinfo</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;title&quot;</span><span class="p">,</span> <span class="n">tid</span><span class="p">)</span>
+                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  - [</span><span class="si">{</span><span class="n">status</span><span class="si">}</span><span class="s2">] </span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  - </span><span class="si">{</span><span class="n">tid</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">tinfo</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">&quot;working_hypotheses&quot;</span> <span class="ow">in</span> <span class="n">state_tree</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">state_tree</span><span class="p">[</span><span class="s2">&quot;working_hypotheses&quot;</span><span class="p">],</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;- **Working Hypotheses:**&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">hyp</span> <span class="ow">in</span> <span class="n">state_tree</span><span class="p">[</span><span class="s2">&quot;working_hypotheses&quot;</span><span class="p">]:</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  - </span><span class="si">{</span><span class="n">hyp</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">&quot;open_questions&quot;</span> <span class="ow">in</span> <span class="n">state_tree</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">state_tree</span><span class="p">[</span><span class="s2">&quot;open_questions&quot;</span><span class="p">],</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;- **Open Questions:**&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">state_tree</span><span class="p">[</span><span class="s2">&quot;open_questions&quot;</span><span class="p">]:</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  - </span><span class="si">{</span><span class="n">q</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;### Conversation State Tree:</span><span class="se">\n</span><span class="s2">```json</span><span class="se">\n</span><span class="si">{</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">state_tree</span><span class="p">,</span><span class="w"> </span><span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s2">```&quot;</span>
+    <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_merge_state_trees</span><span class="p">(</span><span class="n">parent_tree</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">child_tree</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Merges updates from child sub-blueprint state_tree into parent state_tree.</span>
+<span class="sd">    Preserves parent tasks and updates status/resolutions from child.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">child_tree</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">parent_tree</span> <span class="ow">or</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">parent_tree</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">child_tree</span><span class="p">)</span>
+
+    <span class="n">merged</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">parent_tree</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">child_tree</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;working_hypotheses&quot;</span><span class="p">,</span> <span class="s2">&quot;open_questions&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">existing</span> <span class="o">=</span> <span class="n">merged</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="p">[])</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">existing</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="n">merged</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">existing</span> <span class="o">+</span> <span class="n">val</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">merged</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;tasks&quot;</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">existing_tasks</span> <span class="o">=</span> <span class="n">merged</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tasks&quot;</span><span class="p">,</span> <span class="p">{})</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">existing_tasks</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="n">merged_tasks</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">existing_tasks</span><span class="p">)</span>
+                <span class="n">merged_tasks</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+                <span class="n">merged</span><span class="p">[</span><span class="s2">&quot;tasks&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">merged_tasks</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">merged</span><span class="p">[</span><span class="s2">&quot;tasks&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">merged</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">),</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">nested</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">merged</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+            <span class="n">nested</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+            <span class="n">merged</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">nested</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">merged</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+    <span class="k">return</span> <span class="n">merged</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_make_action_node</span><span class="p">(</span><span class="n">step</span><span class="p">:</span> <span class="n">ReasoningStep</span><span class="p">,</span> <span class="n">root_mapping</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]):</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates an action node function closure for a given ReasoningStep.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">action_node</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">AgentState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.ai_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">AIService</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.apps</span><span class="w"> </span><span class="kn">import</span> <span class="n">service_registry</span>
+        
+        <span class="c1"># Track step count and retries — mirrors the old while-loop semantics:</span>
+        <span class="c1"># First visit: initialize retries to max_retries, proceed.</span>
+        <span class="c1"># Re-entry: decrement retries. If &lt;= 0, abort immediately.</span>
+        <span class="n">step_count</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;step_count&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">retries_remaining</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;retries_remaining&quot;</span><span class="p">,</span> <span class="p">{}))</span>
+        <span class="n">step_key</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">step</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        
+        <span class="c1"># --- Task 7: Cancellation / Interrupt Check ---</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.events</span><span class="w"> </span><span class="kn">import</span> <span class="n">is_cancelled</span><span class="p">,</span> <span class="n">publish_blueprint_event</span>
+        <span class="n">run_id</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;run_id&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;conversation_id&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">is_cancelled</span><span class="p">(</span><span class="n">run_id</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Execution cancelled for run_id=</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">. Halting graph at step &#39;</span><span class="si">{</span><span class="n">step</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+            <span class="n">publish_blueprint_event</span><span class="p">(</span><span class="n">run_id</span><span class="p">,</span> <span class="s2">&quot;cancelled&quot;</span><span class="p">,</span> <span class="p">{</span>
+                <span class="s2">&quot;step_name&quot;</span><span class="p">:</span> <span class="n">step</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                <span class="s2">&quot;step_count&quot;</span><span class="p">:</span> <span class="n">step_count</span><span class="p">,</span>
+                <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Execution halted by user request.&quot;</span>
+            <span class="p">})</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s2">&quot;route_to&quot;</span><span class="p">:</span> <span class="s2">&quot;END&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;step_count&quot;</span><span class="p">:</span> <span class="n">step_count</span><span class="p">,</span>
+                <span class="s2">&quot;retries_remaining&quot;</span><span class="p">:</span> <span class="n">retries_remaining</span><span class="p">,</span>
+                <span class="s2">&quot;internal_monologue&quot;</span><span class="p">:</span> <span class="p">[{</span>
+                    <span class="s2">&quot;step_name&quot;</span><span class="p">:</span> <span class="n">step</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                    <span class="s2">&quot;output&quot;</span><span class="p">:</span> <span class="s2">&quot;HALTED: Execution cancelled by user.&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;failed&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s2">&quot;step_count&quot;</span><span class="p">:</span> <span class="n">step_count</span>
+                <span class="p">}],</span>
+                <span class="s2">&quot;scratch&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;scratch&quot;</span><span class="p">,</span> <span class="p">{}))</span>
+            <span class="p">}</span>
+        
+        <span class="c1"># Publish step start event</span>
+        <span class="n">publish_blueprint_event</span><span class="p">(</span><span class="n">run_id</span><span class="p">,</span> <span class="s2">&quot;step_started&quot;</span><span class="p">,</span> <span class="p">{</span>
+            <span class="s2">&quot;step_id&quot;</span><span class="p">:</span> <span class="n">step</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s2">&quot;step_name&quot;</span><span class="p">:</span> <span class="n">step</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s2">&quot;step_count&quot;</span><span class="p">:</span> <span class="n">step_count</span><span class="p">,</span>
+            <span class="s2">&quot;max_steps&quot;</span><span class="p">:</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;max_steps&quot;</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+        <span class="p">})</span>
+
+        <span class="c1"># --- max_steps Safety Brake ---</span>
+        <span class="c1"># step_count = total node visits across the entire graph (including loop re-visits).</span>
+        <span class="c1"># max_steps = hard cap on total node visits to prevent runaway execution.</span>
+        <span class="n">max_steps</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;max_steps&quot;</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">step_count</span> <span class="o">&gt;</span> <span class="n">max_steps</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;max_steps (</span><span class="si">{</span><span class="n">max_steps</span><span class="si">}</span><span class="s2">) exceeded at step_count=</span><span class="si">{</span><span class="n">step_count</span><span class="si">}</span><span class="s2">. Halting graph.&quot;</span><span class="p">)</span>
+            <span class="n">publish_blueprint_event</span><span class="p">(</span><span class="n">run_id</span><span class="p">,</span> <span class="s2">&quot;error&quot;</span><span class="p">,</span> <span class="p">{</span>
+                <span class="s2">&quot;step_name&quot;</span><span class="p">:</span> <span class="n">step</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;max_steps limit (</span><span class="si">{</span><span class="n">max_steps</span><span class="si">}</span><span class="s2">) exceeded after </span><span class="si">{</span><span class="n">step_count</span><span class="si">}</span><span class="s2"> node visits.&quot;</span>
+            <span class="p">})</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s2">&quot;route_to&quot;</span><span class="p">:</span> <span class="s2">&quot;END&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;step_count&quot;</span><span class="p">:</span> <span class="n">step_count</span><span class="p">,</span>
+                <span class="s2">&quot;retries_remaining&quot;</span><span class="p">:</span> <span class="n">retries_remaining</span><span class="p">,</span>
+                <span class="s2">&quot;internal_monologue&quot;</span><span class="p">:</span> <span class="p">[{</span>
+                    <span class="s2">&quot;step_name&quot;</span><span class="p">:</span> <span class="n">step</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                    <span class="s2">&quot;output&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;ABORTED: max_steps limit (</span><span class="si">{</span><span class="n">max_steps</span><span class="si">}</span><span class="s2">) exceeded after </span><span class="si">{</span><span class="n">step_count</span><span class="si">}</span><span class="s2"> node visits.&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;failed&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="s2">&quot;step_count&quot;</span><span class="p">:</span> <span class="n">step_count</span>
+                <span class="p">}],</span>
+                <span class="s2">&quot;scratch&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;scratch&quot;</span><span class="p">,</span> <span class="p">{}))</span>
+            <span class="p">}</span>
+        
+        <span class="c1"># --- Token Budget &amp; Summarization ---</span>
+        <span class="n">current_budget</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;token_budget_remaining&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">current_budget</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">current_budget</span> <span class="o">=</span> <span class="mi">8000</span>
+        <span class="n">working_memory</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;working_memory&quot;</span><span class="p">,</span> <span class="p">[]))</span>
+        
+        <span class="n">summary_remove_msgs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">current_budget</span> <span class="o">&lt;</span> <span class="mi">500</span><span class="p">:</span> <span class="c1"># Threshold to trigger summarizer</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.summarizer</span><span class="w"> </span><span class="kn">import</span> <span class="n">summarize_if_needed</span>
+            <span class="n">temp_state</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+            <span class="n">temp_state</span><span class="p">[</span><span class="s2">&quot;token_budget_remaining&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">current_budget</span>
+            <span class="n">temp_state</span><span class="p">[</span><span class="s2">&quot;working_memory&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">working_memory</span>
+            
+            <span class="n">summary_updates</span> <span class="o">=</span> <span class="n">summarize_if_needed</span><span class="p">(</span><span class="n">temp_state</span><span class="p">)</span>
+            <span class="k">if</span> <span class="s2">&quot;working_memory&quot;</span> <span class="ow">in</span> <span class="n">summary_updates</span><span class="p">:</span>
+                <span class="n">summary_remove_msgs</span> <span class="o">=</span> <span class="n">summary_updates</span><span class="p">[</span><span class="s2">&quot;working_memory&quot;</span><span class="p">]</span>
+                <span class="n">remove_ids</span> <span class="o">=</span> <span class="p">{</span><span class="n">m</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">summary_remove_msgs</span> <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)}</span>
+                <span class="n">working_memory</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">working_memory</span> <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">remove_ids</span><span class="p">]</span>
+                
+                <span class="c1"># Reset budget based on remaining memory</span>
+                <span class="n">word_count</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">split</span><span class="p">())</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">working_memory</span><span class="p">)</span>
+                <span class="n">current_budget</span> <span class="o">=</span> <span class="mi">8000</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">word_count</span> <span class="o">*</span> <span class="mf">1.3</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">step_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">retries_remaining</span><span class="p">:</span>
+            <span class="c1"># First visit to this step</span>
+            <span class="n">retries_remaining</span><span class="p">[</span><span class="n">step_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">step</span><span class="o">.</span><span class="n">max_retries</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Re-entry (looped back via SELF)</span>
+            <span class="n">retries_remaining</span><span class="p">[</span><span class="n">step_key</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">retries_remaining</span><span class="p">[</span><span class="n">step_key</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1"># Abort: max retries exhausted — mirrors old while-loop `break`</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Max retries exhausted for step &#39;</span><span class="si">{</span><span class="n">step</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;. Aborting.&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="p">{</span>
+                    <span class="s2">&quot;route_to&quot;</span><span class="p">:</span> <span class="s2">&quot;END&quot;</span><span class="p">,</span>  <span class="c1"># Go straight to END, not FAILURE (avoids self-loop)</span>
+                    <span class="s2">&quot;step_count&quot;</span><span class="p">:</span> <span class="n">step_count</span><span class="p">,</span>
+                    <span class="s2">&quot;retries_remaining&quot;</span><span class="p">:</span> <span class="n">retries_remaining</span><span class="p">,</span>
+                    <span class="s2">&quot;internal_monologue&quot;</span><span class="p">:</span> <span class="p">[{</span>
+                        <span class="s2">&quot;step_name&quot;</span><span class="p">:</span> <span class="n">step</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                        <span class="s2">&quot;output&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;ABORTED: Max retries reached for step &#39;</span><span class="si">{</span><span class="n">step</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;failed&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                        <span class="s2">&quot;step_count&quot;</span><span class="p">:</span> <span class="n">step_count</span>
+                    <span class="p">}],</span>
+                    <span class="s2">&quot;scratch&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;scratch&quot;</span><span class="p">,</span> <span class="p">{}))</span>
+                <span class="p">}</span>
+        
+        <span class="c1"># 1. Native Sub-Blueprint Execution Bypass</span>
+        <span class="k">if</span> <span class="n">step</span><span class="o">.</span><span class="n">sub_blueprint_id</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">.tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_blueprint</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Conversation</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># Serialize accumulated working_memory into the sub-blueprint prompt</span>
+                <span class="n">prior_context</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                    <span class="nb">getattr</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">m</span><span class="p">))</span>
+                    <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;working_memory&#39;</span><span class="p">,</span> <span class="p">[])</span>
+                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">)</span>
+                <span class="p">)</span>
+                <span class="n">task_prompt</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Macro Goal: </span><span class="si">{</span><span class="n">step</span><span class="o">.</span><span class="n">system_prompt</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">Working Context (Prior Blueprint Conclusions):</span><span class="se">\n</span><span class="si">{</span><span class="n">prior_context</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Step &#39;</span><span class="si">{</span><span class="n">step</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; bypassing LLM to execute sub-blueprint: </span><span class="si">{</span><span class="n">step</span><span class="o">.</span><span class="n">sub_blueprint</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                
+                <span class="c1"># Propagate parent state_tree to sub-blueprint conversation</span>
+                <span class="n">parent_conv</span> <span class="o">=</span> <span class="n">Conversation</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;conversation_id&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+                <span class="n">parent_tree</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">parent_conv</span><span class="o">.</span><span class="n">state_tree</span><span class="p">)</span> <span class="k">if</span> <span class="n">parent_conv</span> <span class="ow">and</span> <span class="n">parent_conv</span><span class="o">.</span><span class="n">state_tree</span> <span class="k">else</span> <span class="p">{}</span>
+                
+                <span class="c1"># Use a stable, reusable Conversation for each sub-blueprint.</span>
+                <span class="c1"># This limits proliferation to exactly 1 Conversation per sub-blueprint,</span>
+                <span class="c1"># reused across nightly runs.</span>
+                <span class="n">sub_conv_title</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;NightManager: </span><span class="si">{</span><span class="n">step</span><span class="o">.</span><span class="n">sub_blueprint</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">sub_conv</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">Conversation</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span>
+                    <span class="n">title</span><span class="o">=</span><span class="n">sub_conv_title</span><span class="p">,</span>
+                    <span class="n">user_id</span><span class="o">=</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;user_id&quot;</span><span class="p">),</span>
+                    <span class="n">defaults</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;state_tree&quot;</span><span class="p">:</span> <span class="n">parent_tree</span><span class="p">}</span>
+                <span class="p">)</span>
+                
+                <span class="k">if</span> <span class="n">parent_tree</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">sub_conv</span><span class="o">.</span><span class="n">state_tree</span><span class="p">:</span>
+                    <span class="n">sub_conv</span><span class="o">.</span><span class="n">state_tree</span> <span class="o">=</span> <span class="n">parent_tree</span>
+                    <span class="n">sub_conv</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">update_fields</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;state_tree&#39;</span><span class="p">])</span>
+                
+                <span class="n">res</span> <span class="o">=</span> <span class="n">run_blueprint</span><span class="p">(</span>
+                    <span class="n">blueprint_id</span><span class="o">=</span><span class="n">step</span><span class="o">.</span><span class="n">sub_blueprint_id</span><span class="p">,</span> 
+                    <span class="n">user_prompt</span><span class="o">=</span><span class="n">task_prompt</span><span class="p">,</span> 
+                    <span class="n">conversation_id</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">sub_conv</span><span class="o">.</span><span class="n">id</span><span class="p">),</span>
+                    <span class="n">user_id</span><span class="o">=</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;user_id&quot;</span><span class="p">),</span>
+                    <span class="n">max_steps</span><span class="o">=</span><span class="mi">150</span>  <span class="c1"># Sub-blueprint step budget</span>
+                <span class="p">)</span>
+                
+                <span class="c1"># Merge child state_tree updates back into parent conversation</span>
+                <span class="n">sub_conv</span><span class="o">.</span><span class="n">refresh_from_db</span><span class="p">()</span>
+                <span class="n">scratch_merged</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;scratch&quot;</span><span class="p">,</span> <span class="p">{}))</span>
+                <span class="k">if</span> <span class="n">sub_conv</span><span class="o">.</span><span class="n">state_tree</span> <span class="ow">and</span> <span class="n">parent_conv</span><span class="p">:</span>
+                    <span class="n">merged_tree</span> <span class="o">=</span> <span class="n">_merge_state_trees</span><span class="p">(</span><span class="n">parent_conv</span><span class="o">.</span><span class="n">state_tree</span> <span class="ow">or</span> <span class="p">{},</span> <span class="n">sub_conv</span><span class="o">.</span><span class="n">state_tree</span><span class="p">)</span>
+                    <span class="n">parent_conv</span><span class="o">.</span><span class="n">state_tree</span> <span class="o">=</span> <span class="n">merged_tree</span>
+                    <span class="n">parent_conv</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">update_fields</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;state_tree&#39;</span><span class="p">])</span>
+                    <span class="n">scratch_merged</span><span class="p">[</span><span class="s2">&quot;state_tree&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">merged_tree</span>
+                
+                <span class="n">final_response</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;final_response&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="n">monologue</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;internal_monologue&quot;</span><span class="p">,</span> <span class="p">[])</span>
+                
+                <span class="c1"># Evaluate success/failure of the sub-blueprint</span>
+                <span class="n">sub_failed</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">monologue</span><span class="p">:</span>
+                    <span class="c1"># Sub-blueprint returned no execution trace at all</span>
+                    <span class="n">sub_failed</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="n">final_response</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Sub-Blueprint &#39;</span><span class="si">{</span><span class="n">step</span><span class="o">.</span><span class="n">sub_blueprint</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; returned no execution trace.&quot;</span>
+                <span class="k">elif</span> <span class="n">monologue</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;failed&quot;</span><span class="p">):</span>
+                    <span class="n">sub_failed</span> <span class="o">=</span> <span class="kc">True</span>
+                    
+                <span class="n">working_prompt</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[SYSTEM: Sub-Blueprint &#39;</span><span class="si">{</span><span class="n">step</span><span class="o">.</span><span class="n">sub_blueprint</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; Completed.</span><span class="se">\n</span><span class="s2">Success: </span><span class="si">{</span><span class="ow">not</span><span class="w"> </span><span class="n">sub_failed</span><span class="si">}</span><span class="se">\n</span><span class="s2">Output:</span><span class="se">\n</span><span class="si">{</span><span class="n">final_response</span><span class="si">}</span><span class="se">\n</span><span class="s2">]</span><span class="se">\n</span><span class="s2">&quot;</span>
+                
+                <span class="n">monologue_entry</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;step_name&quot;</span><span class="p">:</span> <span class="n">step</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                    <span class="s2">&quot;output&quot;</span><span class="p">:</span> <span class="n">working_prompt</span><span class="p">,</span>
+                    <span class="s2">&quot;failed&quot;</span><span class="p">:</span> <span class="n">sub_failed</span><span class="p">,</span>
+                    <span class="s2">&quot;step_count&quot;</span><span class="p">:</span> <span class="n">step_count</span><span class="p">,</span>
+                    <span class="s2">&quot;system_prompt&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Native Sub-Blueprint Executor: </span><span class="si">{</span><span class="n">step</span><span class="o">.</span><span class="n">sub_blueprint</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;user_prompt&quot;</span><span class="p">:</span> <span class="p">[],</span>
+                    <span class="s2">&quot;sub_monologue&quot;</span><span class="p">:</span> <span class="n">monologue</span>
+                <span class="p">}</span>
+                
+                <span class="k">return</span> <span class="p">{</span>
+                    <span class="s2">&quot;working_memory&quot;</span><span class="p">:</span> <span class="n">summary_remove_msgs</span> <span class="o">+</span> <span class="p">[</span><span class="n">SystemMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="n">working_prompt</span><span class="p">)],</span>
+                    <span class="s2">&quot;route_to&quot;</span><span class="p">:</span> <span class="s2">&quot;FAILURE&quot;</span> <span class="k">if</span> <span class="n">sub_failed</span> <span class="k">else</span> <span class="s2">&quot;SUCCESS&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;resume_to&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                    <span class="s2">&quot;step_count&quot;</span><span class="p">:</span> <span class="n">step_count</span><span class="p">,</span>
+                    <span class="s2">&quot;retries_remaining&quot;</span><span class="p">:</span> <span class="n">retries_remaining</span><span class="p">,</span>
+                    <span class="s2">&quot;internal_monologue&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">monologue_entry</span><span class="p">],</span>
+                    <span class="s2">&quot;scratch&quot;</span><span class="p">:</span> <span class="n">scratch_merged</span><span class="p">,</span>
+                    <span class="s2">&quot;token_budget_remaining&quot;</span><span class="p">:</span> <span class="n">current_budget</span>
+                <span class="p">}</span>
+
+                
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error executing sub-blueprint </span><span class="si">{</span><span class="n">step</span><span class="o">.</span><span class="n">sub_blueprint_id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">working_prompt</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[SYSTEM: Failed to execute Sub-Blueprint &#39;</span><span class="si">{</span><span class="n">step</span><span class="o">.</span><span class="n">sub_blueprint</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">]</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="n">monologue_entry</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;step_name&quot;</span><span class="p">:</span> <span class="n">step</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                    <span class="s2">&quot;output&quot;</span><span class="p">:</span> <span class="n">working_prompt</span><span class="p">,</span>
+                    <span class="s2">&quot;failed&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="s2">&quot;step_count&quot;</span><span class="p">:</span> <span class="n">step_count</span><span class="p">,</span>
+                    <span class="s2">&quot;system_prompt&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Native Sub-Blueprint Executor: </span><span class="si">{</span><span class="n">step</span><span class="o">.</span><span class="n">sub_blueprint</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;user_prompt&quot;</span><span class="p">:</span> <span class="p">[]</span>
+                <span class="p">}</span>
+                <span class="k">return</span> <span class="p">{</span>
+                    <span class="s2">&quot;working_memory&quot;</span><span class="p">:</span> <span class="n">summary_remove_msgs</span> <span class="o">+</span> <span class="p">[</span><span class="n">SystemMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="n">working_prompt</span><span class="p">)],</span>
+                    <span class="s2">&quot;route_to&quot;</span><span class="p">:</span> <span class="s2">&quot;FAILURE&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;resume_to&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                    <span class="s2">&quot;step_count&quot;</span><span class="p">:</span> <span class="n">step_count</span><span class="p">,</span>
+                    <span class="s2">&quot;retries_remaining&quot;</span><span class="p">:</span> <span class="n">retries_remaining</span><span class="p">,</span>
+                    <span class="s2">&quot;internal_monologue&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">monologue_entry</span><span class="p">],</span>
+                    <span class="s2">&quot;scratch&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;scratch&quot;</span><span class="p">,</span> <span class="p">{})),</span>
+                    <span class="s2">&quot;token_budget_remaining&quot;</span><span class="p">:</span> <span class="n">current_budget</span>
+                <span class="p">}</span>
+        <span class="n">system_prompt</span> <span class="o">=</span> <span class="n">step</span><span class="o">.</span><span class="n">system_prompt</span>
+        <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;rag_context&quot;</span><span class="p">):</span>
+            <span class="n">system_prompt</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">Context provided:</span><span class="se">\n</span><span class="si">{</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;rag_context&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;scratch&quot;</span><span class="p">):</span>
+            <span class="n">system_prompt</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">Scratchpad Variables:</span><span class="se">\n</span><span class="si">{</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;scratch&#39;</span><span class="p">),</span><span class="w"> </span><span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        
+        <span class="c1"># Inject Conversation.state_tree into the prompt when include_state_tree is enabled</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="s1">&#39;include_state_tree&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span> <span class="ow">and</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;conversation_id&quot;</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Conversation</span>
+                <span class="n">conv</span> <span class="o">=</span> <span class="n">Conversation</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;conversation_id&quot;</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">conv</span><span class="o">.</span><span class="n">state_tree</span><span class="p">:</span>
+                    <span class="n">formatted_tree</span> <span class="o">=</span> <span class="n">_format_state_tree</span><span class="p">(</span><span class="n">conv</span><span class="o">.</span><span class="n">state_tree</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">formatted_tree</span><span class="p">:</span>
+                        <span class="n">system_prompt</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="si">{</span><span class="n">formatted_tree</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
+            
+        <span class="n">sys_msg</span> <span class="o">=</span> <span class="n">SystemMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="n">system_prompt</span><span class="p">)</span>
+        
+        <span class="c1"># Ensure we don&#39;t duplicate the system prompt if it&#39;s already the first message</span>
+        <span class="n">messages</span> <span class="o">=</span> <span class="n">working_memory</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">messages</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">messages</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">SystemMessage</span><span class="p">):</span>
+            <span class="n">messages</span> <span class="o">=</span> <span class="p">[</span><span class="n">sys_msg</span><span class="p">]</span> <span class="o">+</span> <span class="n">messages</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Replace the first message (the old system prompt) with the new one for this step</span>
+            <span class="n">messages</span> <span class="o">=</span> <span class="p">[</span><span class="n">sys_msg</span><span class="p">]</span> <span class="o">+</span> <span class="n">messages</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+            
+        <span class="c1"># Call the LLM using the existing service registry</span>
+        <span class="n">ai_service</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">ai_service</span>
+        
+        <span class="c1"># Determine schema format</span>
+        <span class="n">schema_format</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">step</span><span class="o">.</span><span class="n">output_schema</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">.tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_schema_object</span>
+            <span class="n">schema_format</span> <span class="o">=</span> <span class="n">get_schema_object</span><span class="p">(</span><span class="n">step</span><span class="o">.</span><span class="n">output_schema</span><span class="p">)</span>
+            
+        <span class="n">log_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;conversation_id&quot;</span><span class="p">:</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;conversation_id&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;user_id&quot;</span><span class="p">:</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;user_id&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;reasoning_step_id&quot;</span><span class="p">:</span> <span class="n">step</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s2">&quot;log_ids&quot;</span><span class="p">:</span> <span class="p">[]</span>
+        <span class="p">}</span>
+            
+        <span class="k">def</span><span class="w"> </span><span class="nf">_map_role</span><span class="p">(</span><span class="n">m_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">m_type</span> <span class="o">==</span> <span class="s2">&quot;human&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="s2">&quot;user&quot;</span>
+            <span class="k">if</span> <span class="n">m_type</span> <span class="o">==</span> <span class="s2">&quot;ai&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="s2">&quot;assistant&quot;</span>
+            <span class="k">return</span> <span class="n">m_type</span>
+            
+        <span class="n">tools</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">step</span><span class="o">.</span><span class="n">available_tools</span><span class="o">.</span><span class="n">all</span><span class="p">())</span>
+        <span class="n">llm_result_message</span> <span class="o">=</span> <span class="kc">None</span>
+        
+        <span class="k">if</span> <span class="n">tools</span><span class="p">:</span>
+            <span class="c1"># 1. Create native dictionary schemas for the LLM</span>
+            <span class="n">tools_for_llm</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">valid_tool_names</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tools</span><span class="p">:</span>
+                <span class="n">valid_tool_names</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+                <span class="n">tool_dict</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;function&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;function&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">t</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                        <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="n">t</span><span class="o">.</span><span class="n">description</span><span class="p">,</span>
+                        <span class="s2">&quot;parameters&quot;</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">input_schema</span><span class="p">)</span> <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">input_schema</span> <span class="k">else</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;object&quot;</span><span class="p">,</span> <span class="s2">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{}}</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+                <span class="n">tools_for_llm</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tool_dict</span><span class="p">)</span>
+                
+            <span class="n">native_messages</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="n">_map_role</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">type</span><span class="p">),</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">m</span><span class="p">))}</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">messages</span><span class="p">]</span>
+            
+            <span class="c1"># 2. Select strategy based on native tool support</span>
+            <span class="k">if</span> <span class="n">ai_service</span><span class="o">.</span><span class="n">supports_native_tools</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;user&quot;</span><span class="p">)):</span>
+                <span class="c1"># Native Tool Calling (OpenAI/Ollama)</span>
+                <span class="c1"># Do not inject XML instructions; trust the API to return the tool array</span>
+                <span class="p">[</span><span class="n">raw_response</span><span class="p">]</span> <span class="o">=</span> <span class="n">ai_service</span><span class="o">.</span><span class="n">generate_response2</span><span class="p">(</span>
+                    <span class="n">native_messages</span><span class="p">,</span> 
+                    <span class="n">max_new_tokens</span><span class="o">=</span><span class="n">step</span><span class="o">.</span><span class="n">max_new_tokens</span><span class="p">,</span>
+                    <span class="n">tools</span><span class="o">=</span><span class="n">tools_for_llm</span><span class="p">,</span>
+                    <span class="n">log_kwargs</span><span class="o">=</span><span class="n">log_kwargs</span><span class="p">,</span>
+                    <span class="n">lora_adapter</span><span class="o">=</span><span class="n">step</span><span class="o">.</span><span class="n">lora_adapter</span>
+                <span class="p">)</span>
+                
+                <span class="c1"># ai_service.py has been updated to return the list of dicts directly</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw_response</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                    <span class="n">result</span> <span class="o">=</span> <span class="n">raw_response</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw_response</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                    <span class="n">result</span> <span class="o">=</span> <span class="p">[</span><span class="n">raw_response</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">result</span> <span class="o">=</span> <span class="n">raw_response</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Fallback: JSON-Schema Guided Generation via Outlines</span>
+                <span class="c1"># Build a dynamic JSON Schema for the available tools</span>
+                <span class="n">tool_schemas</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tools</span><span class="p">:</span>
+                    <span class="n">t_args</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">input_schema</span><span class="p">)</span> <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">input_schema</span> <span class="k">else</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;object&quot;</span><span class="p">}</span>
+                    <span class="n">tool_schemas</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;object&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span> <span class="s2">&quot;const&quot;</span><span class="p">:</span> <span class="n">t</span><span class="o">.</span><span class="n">name</span><span class="p">},</span>
+                            <span class="s2">&quot;args&quot;</span><span class="p">:</span> <span class="n">t_args</span>
+                        <span class="p">},</span>
+                        <span class="s2">&quot;required&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;args&quot;</span><span class="p">],</span>
+                        <span class="s2">&quot;additionalProperties&quot;</span><span class="p">:</span> <span class="kc">False</span>
+                    <span class="p">})</span>
+                
+                <span class="n">tool_calls_schema</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;object&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;tool_calls&quot;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;array&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;items&quot;</span><span class="p">:</span> <span class="p">{</span>
+                                <span class="s2">&quot;anyOf&quot;</span><span class="p">:</span> <span class="n">tool_schemas</span>
+                            <span class="p">}</span>
+                        <span class="p">}</span>
+                    <span class="p">},</span>
+                    <span class="s2">&quot;required&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;tool_calls&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;additionalProperties&quot;</span><span class="p">:</span> <span class="kc">False</span>
+                <span class="p">}</span>
+                
+                <span class="c1"># We still provide tool descriptions in the prompt so the LLM understands semantics</span>
+                <span class="n">tool_instruction</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">--- TOOL INSTRUCTIONS ---</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="n">tool_instruction</span> <span class="o">+=</span> <span class="s2">&quot;You have access to the following tools:</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tools</span><span class="p">:</span>
+                    <span class="n">schema</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">input_schema</span><span class="p">)</span> <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">input_schema</span> <span class="k">else</span> <span class="p">{}</span>
+                    <span class="n">props</span> <span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;properties&quot;</span><span class="p">,</span> <span class="p">{})</span>
+                    <span class="n">param_desc</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;&quot;</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s1">&quot;: &quot;</span><span class="si">{</span><span class="n">v</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;description&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">v</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;string&quot;</span><span class="p">))</span><span class="si">}</span><span class="s1">&quot;&#39;</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">props</span><span class="o">.</span><span class="n">items</span><span class="p">())</span> <span class="k">if</span> <span class="n">props</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+                    <span class="n">tool_instruction</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;Tool: </span><span class="si">{</span><span class="n">t</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="se">\n</span><span class="s2">  Description: </span><span class="si">{</span><span class="n">t</span><span class="o">.</span><span class="n">description</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+                    <span class="k">if</span> <span class="n">param_desc</span><span class="p">:</span>
+                        <span class="n">tool_instruction</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;  Parameters: </span><span class="se">{{</span><span class="si">{</span><span class="n">param_desc</span><span class="si">}</span><span class="se">}}\n</span><span class="s2">&quot;</span>
+                    <span class="n">tool_instruction</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+                    
+                <span class="n">tool_instruction</span> <span class="o">+=</span> <span class="s2">&quot;You must respond with a JSON object containing a &#39;tool_calls&#39; array. Each item must specify &#39;name&#39; and &#39;args&#39;. Do not add any text before or after the JSON.&quot;</span>
+                
+                <span class="k">if</span> <span class="n">native_messages</span> <span class="ow">and</span> <span class="n">native_messages</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;role&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;system&quot;</span><span class="p">:</span>
+                    <span class="n">native_messages</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;content&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">tool_instruction</span>
+                
+                <span class="n">raw_response</span> <span class="o">=</span> <span class="n">ai_service</span><span class="o">.</span><span class="n">generate_outline</span><span class="p">(</span>
+                    <span class="n">native_messages</span><span class="p">,</span> 
+                    <span class="n">response_schema</span><span class="o">=</span><span class="n">tool_calls_schema</span><span class="p">,</span>
+                    <span class="n">max_new_tokens</span><span class="o">=</span><span class="n">step</span><span class="o">.</span><span class="n">max_new_tokens</span><span class="p">,</span>
+                    <span class="n">log_kwargs</span><span class="o">=</span><span class="n">log_kwargs</span><span class="p">,</span>
+                    <span class="n">lora_adapter</span><span class="o">=</span><span class="n">step</span><span class="o">.</span><span class="n">lora_adapter</span>
+                <span class="p">)</span>
+                
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw_response</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                    <span class="n">raw_response</span> <span class="o">=</span> <span class="n">raw_response</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    
+                <span class="c1"># Since we used a raw JSON schema dict, Outlines returns a JSON string</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw_response</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">parsed</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">raw_response</span><span class="p">)</span>
+                        <span class="n">result</span> <span class="o">=</span> <span class="n">parsed</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tool_calls&quot;</span><span class="p">,</span> <span class="p">[])</span>
+                    <span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to parse tool calls json from outlines: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2"> - Raw: </span><span class="si">{</span><span class="n">raw_response</span><span class="p">[:</span><span class="mi">500</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="n">result</span> <span class="o">=</span> <span class="n">raw_response</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw_response</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="s2">&quot;error&quot;</span> <span class="ow">in</span> <span class="n">raw_response</span><span class="p">:</span>
+                        <span class="c1"># generate_outline returned an error (e.g. connection refused)</span>
+                        <span class="c1"># Propagate as an error dict so the step fails properly</span>
+                        <span class="n">result</span> <span class="o">=</span> <span class="n">raw_response</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">result</span> <span class="o">=</span> <span class="n">raw_response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tool_calls&quot;</span><span class="p">,</span> <span class="p">[])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">result</span> <span class="o">=</span> <span class="n">raw_response</span>
+                    
+            <span class="c1"># 3. Validate tool names</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;name&quot;</span> <span class="ow">in</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="n">validated_result</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">tc</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">tc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span> <span class="ow">in</span> <span class="n">valid_tool_names</span><span class="p">:</span>
+                        <span class="n">validated_result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tc</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;LLM tried to call unauthorized/invented tool: </span><span class="si">{</span><span class="n">tc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="n">validated_result</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Tool &#39;</span><span class="si">{</span><span class="n">tc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&#39; is not available.&quot;</span><span class="p">})</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">validated_result</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="s2">&quot;error&quot;</span> <span class="ow">in</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                    <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># Convert to error dict if only one failed call</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="c1"># The model produced raw text instead of tool calls.</span>
+                <span class="c1"># This means it &quot;simulated&quot; tool usage in prose rather than actually calling them.</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Step &#39;</span><span class="si">{</span><span class="n">step</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; has tools but model returned raw text instead of tool calls. Treating as failure.&quot;</span><span class="p">)</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;ToolCallMissing&quot;</span><span class="p">,</span> <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Model failed to produce tool calls. Raw output: </span><span class="si">{</span><span class="n">result</span><span class="p">[:</span><span class="mi">500</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}</span>
+        <span class="k">elif</span> <span class="n">schema_format</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">ai_service</span><span class="o">.</span><span class="n">generate_outline</span><span class="p">(</span>
+                <span class="n">messages</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="n">_map_role</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">type</span><span class="p">),</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">m</span><span class="o">.</span><span class="n">content</span><span class="p">}</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">messages</span><span class="p">],</span>
+                <span class="n">response_schema</span><span class="o">=</span><span class="n">schema_format</span><span class="p">,</span>
+                <span class="n">log_kwargs</span><span class="o">=</span><span class="n">log_kwargs</span><span class="p">,</span>
+                <span class="n">lora_adapter</span><span class="o">=</span><span class="n">step</span><span class="o">.</span><span class="n">lora_adapter</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="p">[</span><span class="n">raw_response</span><span class="p">]</span> <span class="o">=</span> <span class="n">ai_service</span><span class="o">.</span><span class="n">generate_response2</span><span class="p">(</span>
+                <span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="n">_map_role</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">type</span><span class="p">),</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">m</span><span class="o">.</span><span class="n">content</span><span class="p">}</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">messages</span><span class="p">],</span> 
+                <span class="n">max_new_tokens</span><span class="o">=</span><span class="n">step</span><span class="o">.</span><span class="n">max_new_tokens</span><span class="p">,</span>
+                <span class="n">log_kwargs</span><span class="o">=</span><span class="n">log_kwargs</span><span class="p">,</span>
+                <span class="n">lora_adapter</span><span class="o">=</span><span class="n">step</span><span class="o">.</span><span class="n">lora_adapter</span>
+            <span class="p">)</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">ai_service</span><span class="o">.</span><span class="n">clean_response</span><span class="p">(</span><span class="n">raw_response</span><span class="p">)</span>
+        
+        <span class="c1"># Handle action hooks if defined</span>
+        <span class="n">route_to</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">scratch_updates</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;scratch&quot;</span><span class="p">,</span> <span class="p">{}))</span>
+        <span class="n">additional_messages</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">llm_result_message</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">llm_result_message</span><span class="p">,</span> <span class="s2">&quot;tool_calls&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">llm_result_message</span><span class="o">.</span><span class="n">tool_calls</span><span class="p">:</span>
+            <span class="n">formatted_output</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">llm_result_message</span><span class="o">.</span><span class="n">tool_calls</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="s2">&quot;model_dump_json&quot;</span><span class="p">):</span>
+            <span class="n">formatted_output</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">(</span><span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="s2">&quot;json&quot;</span><span class="p">):</span>
+            <span class="n">formatted_output</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">json</span><span class="p">(</span><span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">formatted_output</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+            
+        <span class="n">monologue_entry</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;step_name&quot;</span><span class="p">:</span> <span class="n">step</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s2">&quot;output&quot;</span><span class="p">:</span> <span class="n">formatted_output</span><span class="p">,</span>
+            <span class="s2">&quot;step_count&quot;</span><span class="p">:</span> <span class="n">step_count</span><span class="p">,</span>
+            <span class="s2">&quot;system_prompt&quot;</span><span class="p">:</span> <span class="n">sys_msg</span><span class="o">.</span><span class="n">content</span><span class="p">,</span>
+            <span class="s2">&quot;user_prompt&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="n">_map_role</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">type</span><span class="p">),</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">m</span><span class="o">.</span><span class="n">content</span><span class="p">}</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">messages</span> <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">type</span> <span class="o">!=</span> <span class="s2">&quot;system&quot;</span><span class="p">]</span>
+        <span class="p">}</span>
+        
+        <span class="c1"># Parse result</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;error&quot;</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error in step </span><span class="si">{</span><span class="n">step</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;error&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">monologue_entry</span><span class="p">[</span><span class="s2">&quot;failed&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">monologue_entry</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Generation error in step &#39;</span><span class="si">{</span><span class="n">step</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Unknown&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">route_to</span> <span class="o">=</span> <span class="s2">&quot;FAILURE&quot;</span> <span class="k">if</span> <span class="s2">&quot;ToolCallMissing&quot;</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;SELF&quot;</span> 
+            <span class="c1"># If generation fails parsing, ReAct loops back (SELF).</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="s2">&quot;__class__&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;list&quot;</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;name&quot;</span> <span class="ow">in</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="n">tool_results_str</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">approved_tools_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;approved_tools&quot;</span><span class="p">,</span> <span class="p">[]))</span>
+                <span class="n">canonical_self_id</span> <span class="o">=</span> <span class="n">root_mapping</span><span class="p">[</span><span class="n">step</span><span class="o">.</span><span class="n">id</span><span class="p">]</span>
+                
+                <span class="k">for</span> <span class="n">tool_call</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+                    <span class="n">tool_name</span> <span class="o">=</span> <span class="n">tool_call</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
+                    <span class="n">tool_args</span> <span class="o">=</span> <span class="n">tool_call</span><span class="p">[</span><span class="s2">&quot;args&quot;</span><span class="p">]</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">tool_def</span> <span class="o">=</span> <span class="n">ToolDefinition</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">tool_name</span><span class="p">)</span>
+                        
+                        <span class="c1"># Task 6: Check Human-in-the-Loop authorization</span>
+                        <span class="n">call_sig</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">tool_name</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">tool_args</span><span class="p">,</span><span class="w"> </span><span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="k">if</span> <span class="n">tool_def</span><span class="o">.</span><span class="n">requires_approval</span> <span class="ow">and</span> <span class="n">call_sig</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">approved_tools_list</span> <span class="ow">and</span> <span class="n">tool_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">approved_tools_list</span><span class="p">:</span>
+                            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Tool &#39;</span><span class="si">{</span><span class="n">tool_name</span><span class="si">}</span><span class="s2">&#39; requires human approval before execution. Suspending graph.&quot;</span><span class="p">)</span>
+                            <span class="n">approval_payload</span> <span class="o">=</span> <span class="p">{</span>
+                                <span class="s2">&quot;tool_name&quot;</span><span class="p">:</span> <span class="n">tool_name</span><span class="p">,</span>
+                                <span class="s2">&quot;tool_args&quot;</span><span class="p">:</span> <span class="n">tool_args</span><span class="p">,</span>
+                                <span class="s2">&quot;tool_description&quot;</span><span class="p">:</span> <span class="n">tool_def</span><span class="o">.</span><span class="n">description</span><span class="p">,</span>
+                                <span class="s2">&quot;step_id&quot;</span><span class="p">:</span> <span class="n">step</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                                <span class="s2">&quot;step_name&quot;</span><span class="p">:</span> <span class="n">step</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                                <span class="s2">&quot;call_signature&quot;</span><span class="p">:</span> <span class="n">call_sig</span><span class="p">,</span>
+                                <span class="s2">&quot;thread_id&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;conversation_id&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">step</span><span class="o">.</span><span class="n">blueprint</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                                <span class="s2">&quot;run_id&quot;</span><span class="p">:</span> <span class="n">run_id</span>
+                            <span class="p">}</span>
+                            <span class="n">publish_blueprint_event</span><span class="p">(</span><span class="n">run_id</span><span class="p">,</span> <span class="s2">&quot;approval_required&quot;</span><span class="p">,</span> <span class="n">approval_payload</span><span class="p">)</span>
+                            
+                            <span class="n">monologue_entry</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;⏸️ Tool &#39;</span><span class="si">{</span><span class="n">tool_name</span><span class="si">}</span><span class="s2">&#39; requires human approval before execution. Graph suspended.&quot;</span>
+                            <span class="n">monologue_entry</span><span class="p">[</span><span class="s2">&quot;tool_result&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Awaiting human authorization.&quot;</span>
+                            
+                            <span class="n">early_memory</span> <span class="o">=</span> <span class="n">summary_remove_msgs</span> <span class="o">+</span> <span class="p">[</span><span class="n">AIMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">result</span><span class="p">))]</span>
+                            <span class="k">return</span> <span class="p">{</span>
+                                <span class="s2">&quot;working_memory&quot;</span><span class="p">:</span> <span class="n">early_memory</span><span class="p">,</span>
+                                <span class="s2">&quot;route_to&quot;</span><span class="p">:</span> <span class="s2">&quot;USER_INPUT_REQUIRED&quot;</span><span class="p">,</span>
+                                <span class="s2">&quot;resume_to&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;step_</span><span class="si">{</span><span class="n">canonical_self_id</span><span class="si">}</span><span class="s2">_action&quot;</span><span class="p">,</span>
+                                <span class="s2">&quot;pending_approval&quot;</span><span class="p">:</span> <span class="n">approval_payload</span><span class="p">,</span>
+                                <span class="s2">&quot;step_count&quot;</span><span class="p">:</span> <span class="n">step_count</span><span class="p">,</span>
+                                <span class="s2">&quot;retries_remaining&quot;</span><span class="p">:</span> <span class="n">retries_remaining</span><span class="p">,</span>
+                                <span class="s2">&quot;internal_monologue&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">monologue_entry</span><span class="p">],</span>
+                                <span class="s2">&quot;scratch&quot;</span><span class="p">:</span> <span class="n">scratch_updates</span><span class="p">,</span>
+                                <span class="s2">&quot;token_budget_remaining&quot;</span><span class="p">:</span> <span class="n">current_budget</span>
+                            <span class="p">}</span>
+
+                        <span class="n">hook_result</span> <span class="o">=</span> <span class="n">execute_tool</span><span class="p">(</span><span class="n">tool_def</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">tool_args</span><span class="p">)</span>
+                            
+                        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hook_result</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                            <span class="k">if</span> <span class="s2">&quot;route_to&quot;</span> <span class="ow">in</span> <span class="n">hook_result</span><span class="p">:</span>
+                                <span class="n">route_to</span> <span class="o">=</span> <span class="n">hook_result</span><span class="p">[</span><span class="s2">&quot;route_to&quot;</span><span class="p">]</span>
+                            <span class="k">if</span> <span class="s2">&quot;working_prompt&quot;</span> <span class="ow">in</span> <span class="n">hook_result</span><span class="p">:</span>
+                                <span class="n">msg</span> <span class="o">=</span> <span class="n">hook_result</span><span class="p">[</span><span class="s2">&quot;working_prompt&quot;</span><span class="p">]</span>
+                                <span class="n">additional_messages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">SystemMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="n">msg</span><span class="p">))</span>
+                                <span class="n">tool_results_str</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+                                <span class="k">if</span> <span class="n">route_to</span> <span class="o">==</span> <span class="s2">&quot;SUCCESS&quot;</span><span class="p">:</span>
+                                    <span class="n">monologue_entry</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">n</span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">&quot;</span>
+                            <span class="k">if</span> <span class="s2">&quot;current_chunk_index&quot;</span> <span class="ow">in</span> <span class="n">hook_result</span><span class="p">:</span>
+                                <span class="n">scratch_updates</span><span class="p">[</span><span class="s2">&quot;current_chunk_index&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hook_result</span><span class="p">[</span><span class="s2">&quot;current_chunk_index&quot;</span><span class="p">]</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">res_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">hook_result</span><span class="p">)</span>
+                            <span class="n">tool_results_str</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">res_str</span><span class="p">)</span>
+                            
+                            <span class="c1"># Add a loud success signal to help the model understand the tool worked</span>
+                            <span class="n">success_prefix</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+                            <span class="k">if</span> <span class="ow">not</span> <span class="n">res_str</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;error&quot;</span><span class="p">):</span>
+                                <span class="n">success_prefix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;✅ THE TOOL &#39;</span><span class="si">{</span><span class="n">tool_name</span><span class="si">}</span><span class="s2">&#39; EXECUTED SUCCESSFULLY.</span><span class="se">\n</span><span class="s2">&quot;</span>
+                                
+                            <span class="n">reminder</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">IMPORTANT: If this result satisfies your goal, you MUST output the TASK_COMPLETE tool now. Do not call </span><span class="si">{</span><span class="n">tool_name</span><span class="si">}</span><span class="s2"> again unless you need to execute a DIFFERENT action.&quot;</span> <span class="k">if</span> <span class="s2">&quot;TASK_COMPLETE&quot;</span> <span class="ow">in</span> <span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tools</span><span class="p">]</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+                            <span class="n">additional_messages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">SystemMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;[Tool &#39;</span><span class="si">{</span><span class="n">tool_name</span><span class="si">}</span><span class="s2">&#39; Result]:</span><span class="se">\n</span><span class="si">{</span><span class="n">success_prefix</span><span class="si">}</span><span class="s2">Output:</span><span class="se">\n</span><span class="si">{</span><span class="n">res_str</span><span class="si">}{</span><span class="n">reminder</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">))</span>
+                    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error in tool </span><span class="si">{</span><span class="n">tool_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="n">tool_results_str</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error in tool </span><span class="si">{</span><span class="n">tool_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="n">additional_messages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">SystemMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;[Tool &#39;</span><span class="si">{</span><span class="n">tool_name</span><span class="si">}</span><span class="s2">&#39; Error]: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">))</span>
+                        <span class="n">route_to</span> <span class="o">=</span> <span class="s2">&quot;FAILURE&quot;</span>
+                
+                <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="ow">not</span> <span class="n">msg</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;[Tool &#39;TASK_COMPLETE&#39;&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">msg</span> <span class="ow">in</span> <span class="n">additional_messages</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;TASK_COMPLETE&quot;</span> <span class="ow">in</span> <span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tools</span><span class="p">]:</span>
+                    <span class="n">additional_messages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">HumanMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="s2">&quot;Tool execution completed. Review the results above. If you have achieved your goal, you MUST output the `TASK_COMPLETE` tool now. Do not call the same tools again with the same arguments.&quot;</span><span class="p">))</span>
+                
+                <span class="n">monologue_entry</span><span class="p">[</span><span class="s2">&quot;tool_result&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tool_results_str</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">route_to</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">route_to</span> <span class="o">=</span> <span class="s2">&quot;SELF&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">route_to</span> <span class="o">=</span> <span class="s2">&quot;SUCCESS&quot;</span> 
+                <span class="c1"># Text output means we successfully generated an answer, subject to eval</span>
+                
+        <span class="c1"># Automatically merge any top-level Pydantic schema fields into scratch</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="s2">&quot;model_dump&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="s2">&quot;dict&quot;</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">schema_data</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="s2">&quot;model_dump&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="n">result</span><span class="o">.</span><span class="n">dict</span><span class="p">()</span>
+                <span class="n">scratch_updates</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">schema_data</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to merge Pydantic result into scratch: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="kn">from</span><span class="w"> </span><span class="nn">.actions</span><span class="w"> </span><span class="kn">import</span> <span class="n">SCHEMA_ACTION_HANDLERS</span>
+            <span class="n">schema_cls_name</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
+            <span class="k">if</span> <span class="n">schema_cls_name</span> <span class="ow">in</span> <span class="n">SCHEMA_ACTION_HANDLERS</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">handler</span> <span class="o">=</span> <span class="n">SCHEMA_ACTION_HANDLERS</span><span class="p">[</span><span class="n">schema_cls_name</span><span class="p">]</span>
+                    <span class="n">action_state</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;working_prompt&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;conversation_id&quot;</span><span class="p">:</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;conversation_id&quot;</span><span class="p">),</span>
+                        <span class="s2">&quot;user_id&quot;</span><span class="p">:</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;user_id&quot;</span><span class="p">),</span>
+                        <span class="s2">&quot;scratch&quot;</span><span class="p">:</span> <span class="n">scratch_updates</span><span class="p">,</span>
+                        <span class="s2">&quot;route_to&quot;</span><span class="p">:</span> <span class="n">route_to</span>
+                    <span class="p">}</span>
+                    <span class="n">handled_res</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="n">action_state</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">handled_res</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;working_prompt&quot;</span><span class="p">):</span>
+                        <span class="n">additional_messages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">SystemMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="n">handled_res</span><span class="p">[</span><span class="s2">&quot;working_prompt&quot;</span><span class="p">]))</span>
+                    <span class="k">if</span> <span class="n">handled_res</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;route_to&quot;</span><span class="p">):</span>
+                        <span class="n">route_to</span> <span class="o">=</span> <span class="n">handled_res</span><span class="p">[</span><span class="s2">&quot;route_to&quot;</span><span class="p">]</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error running schema action handler for </span><span class="si">{</span><span class="n">schema_cls_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+                
+        <span class="c1"># Update state</span>
+        <span class="n">new_messages</span> <span class="o">=</span> <span class="p">[</span><span class="n">AIMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">result</span><span class="p">))]</span> <span class="o">+</span> <span class="n">additional_messages</span>
+        <span class="n">final_memory</span> <span class="o">=</span> <span class="n">summary_remove_msgs</span> <span class="o">+</span> <span class="n">new_messages</span>
+        
+        <span class="n">new_words</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">split</span><span class="p">())</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">new_messages</span><span class="p">)</span>
+        <span class="n">new_tokens</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">new_words</span> <span class="o">*</span> <span class="mf">1.3</span><span class="p">)</span>
+        <span class="n">final_budget</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">current_budget</span> <span class="o">-</span> <span class="n">new_tokens</span><span class="p">)</span>
+        
+        <span class="c1"># Telemetry: Update the PromptResponseLog with the step&#39;s final status</span>
+        <span class="k">if</span> <span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;log_ids&quot;</span><span class="p">):</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">PromptResponseLog</span>
+            <span class="k">for</span> <span class="n">log_id</span> <span class="ow">in</span> <span class="n">log_kwargs</span><span class="p">[</span><span class="s2">&quot;log_ids&quot;</span><span class="p">]:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">log</span> <span class="o">=</span> <span class="n">PromptResponseLog</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">log_id</span><span class="p">)</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">step_status</span> <span class="o">=</span> <span class="n">route_to</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">update_fields</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;step_status&#39;</span><span class="p">])</span>
+                    <span class="n">monologue_entry</span><span class="p">[</span><span class="s2">&quot;model_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">log</span><span class="o">.</span><span class="n">model_name</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to update step_status telemetry for log </span><span class="si">{</span><span class="n">log_id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Fallback: if no log_ids were populated, query SystemConfiguration directly</span>
+        <span class="k">if</span> <span class="s2">&quot;model_name&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">monologue_entry</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemConfiguration</span>
+                <span class="n">config</span> <span class="o">=</span> <span class="n">SystemConfiguration</span><span class="o">.</span><span class="n">get_solo</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">config</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="o">==</span> <span class="s1">&#39;vllm&#39;</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">active_vllm_model</span><span class="p">:</span>
+                        <span class="n">monologue_entry</span><span class="p">[</span><span class="s2">&quot;model_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">active_vllm_model</span><span class="o">.</span><span class="n">name</span>
+                    <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="o">==</span> <span class="s1">&#39;ollama&#39;</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">active_ollama_model</span><span class="p">:</span>
+                        <span class="n">monologue_entry</span><span class="p">[</span><span class="s2">&quot;model_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">active_ollama_model</span><span class="o">.</span><span class="n">name</span>
+                    <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="o">==</span> <span class="s1">&#39;pytorch&#39;</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">active_local_model</span><span class="p">:</span>
+                        <span class="n">monologue_entry</span><span class="p">[</span><span class="s2">&quot;model_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">active_local_model</span><span class="o">.</span><span class="n">name</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
+        
+        <span class="n">publish_blueprint_event</span><span class="p">(</span><span class="n">run_id</span><span class="p">,</span> <span class="s2">&quot;step_completed&quot;</span><span class="p">,</span> <span class="p">{</span>
+            <span class="s2">&quot;step_id&quot;</span><span class="p">:</span> <span class="n">step</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s2">&quot;step_name&quot;</span><span class="p">:</span> <span class="n">step</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s2">&quot;step_count&quot;</span><span class="p">:</span> <span class="n">step_count</span><span class="p">,</span>
+            <span class="s2">&quot;output&quot;</span><span class="p">:</span> <span class="n">monologue_entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;output&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;route_to&quot;</span><span class="p">:</span> <span class="n">route_to</span>
+        <span class="p">})</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;working_memory&quot;</span><span class="p">:</span> <span class="n">final_memory</span><span class="p">,</span>  <span class="c1"># Reducer will append or overwrite</span>
+            <span class="s2">&quot;route_to&quot;</span><span class="p">:</span> <span class="n">route_to</span><span class="p">,</span>
+            <span class="s2">&quot;resume_to&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">&quot;step_count&quot;</span><span class="p">:</span> <span class="n">step_count</span><span class="p">,</span>
+            <span class="s2">&quot;retries_remaining&quot;</span><span class="p">:</span> <span class="n">retries_remaining</span><span class="p">,</span>
+            <span class="s2">&quot;internal_monologue&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">monologue_entry</span><span class="p">],</span>
+            <span class="s2">&quot;scratch&quot;</span><span class="p">:</span> <span class="n">scratch_updates</span><span class="p">,</span>
+            <span class="s2">&quot;token_budget_remaining&quot;</span><span class="p">:</span> <span class="n">final_budget</span>
+        <span class="p">}</span>
+        
+    <span class="k">return</span> <span class="n">action_node</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_make_eval_node</span><span class="p">(</span><span class="n">step</span><span class="p">:</span> <span class="n">ReasoningStep</span><span class="p">,</span> <span class="n">root_mapping</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates an evaluation node function closure for a given ReasoningStep.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eval_node</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">AgentState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="n">route_to</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;route_to&quot;</span><span class="p">)</span>
+        <span class="n">resume_to</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;resume_to&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># 1. Do not evaluate if the graph is halting or awaiting input</span>
+        <span class="k">if</span> <span class="n">route_to</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;END&quot;</span><span class="p">,</span> <span class="s2">&quot;USER_INPUT_REQUIRED&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">{}</span>
+            
+        <span class="c1"># 2. Do not evaluate if this was a sub-blueprint (it handles its own success/failure)</span>
+        <span class="k">if</span> <span class="n">step</span><span class="o">.</span><span class="n">sub_blueprint_id</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_intercept_failure</span><span class="p">(</span><span class="n">route_to</span><span class="p">,</span> <span class="n">resume_to</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">root_mapping</span><span class="p">)</span>
+            
+        <span class="c1"># 3. Determine if this is an interactive step (requires TASK_COMPLETE to finish)</span>
+        <span class="n">has_task_complete</span> <span class="o">=</span> <span class="s2">&quot;TASK_COMPLETE&quot;</span> <span class="ow">in</span> <span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">step</span><span class="o">.</span><span class="n">available_tools</span><span class="o">.</span><span class="n">all</span><span class="p">()]</span>
+        
+        <span class="c1"># We only evaluate if:</span>
+        <span class="c1"># A) It&#39;s a deterministic step (no TASK_COMPLETE), so we evaluate immediately after the tool run (route_to == SELF or SUCCESS)</span>
+        <span class="c1"># B) It&#39;s an interactive step, and the model explicitly finished (route_to == SUCCESS)</span>
+        <span class="n">should_evaluate</span> <span class="o">=</span> <span class="n">step</span><span class="o">.</span><span class="n">evaluation_criteria</span> <span class="ow">and</span> <span class="p">(</span>
+            <span class="p">(</span><span class="ow">not</span> <span class="n">has_task_complete</span><span class="p">)</span> <span class="ow">or</span> 
+            <span class="p">(</span><span class="n">has_task_complete</span> <span class="ow">and</span> <span class="n">route_to</span> <span class="o">==</span> <span class="s2">&quot;SUCCESS&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">should_evaluate</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.apps</span><span class="w"> </span><span class="kn">import</span> <span class="n">service_registry</span>
+            <span class="n">ai_service</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">ai_service</span>
+            
+            <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+            <span class="k">class</span><span class="w"> </span><span class="nc">EvaluationResult</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+                <span class="n">passed</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;True if the evaluation criteria is met, False otherwise.&quot;</span><span class="p">)</span>
+                <span class="n">reasoning</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Reasoning for the evaluation result.&quot;</span><span class="p">)</span>
+            
+            <span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+            <span class="n">messages</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;working_memory&quot;</span><span class="p">,</span> <span class="p">[]):</span>
+                <span class="n">m_copy</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">m_copy</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;human&quot;</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">m_copy</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;Working Context (Prior Blueprint Conclusions):&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">m_copy</span><span class="o">.</span><span class="n">content</span><span class="p">):</span>
+                    <span class="n">m_copy</span><span class="o">.</span><span class="n">content</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">m_copy</span><span class="o">.</span><span class="n">content</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;Working Context (Prior Blueprint Conclusions):&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                <span class="n">messages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m_copy</span><span class="p">)</span>
+                
+            <span class="n">eval_sys</span> <span class="o">=</span> <span class="n">SystemMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Evaluate the conversation state and the latest assistant response (and tool execution result if any) against the following criteria: </span><span class="si">{</span><span class="n">step</span><span class="o">.</span><span class="n">evaluation_criteria</span><span class="si">}</span><span class="se">\n</span><span class="s2">DO NOT copy past evaluation results; you must evaluate the CURRENT assistant response.&quot;</span><span class="p">)</span>
+            <span class="n">eval_messages</span> <span class="o">=</span> <span class="p">[</span><span class="n">eval_sys</span><span class="p">]</span> <span class="o">+</span> <span class="n">messages</span>
+            
+            <span class="k">def</span><span class="w"> </span><span class="nf">_map_role</span><span class="p">(</span><span class="n">m_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">m_type</span> <span class="o">==</span> <span class="s2">&quot;human&quot;</span><span class="p">:</span> <span class="k">return</span> <span class="s2">&quot;user&quot;</span>
+                <span class="k">if</span> <span class="n">m_type</span> <span class="o">==</span> <span class="s2">&quot;ai&quot;</span><span class="p">:</span> <span class="k">return</span> <span class="s2">&quot;assistant&quot;</span>
+                <span class="k">return</span> <span class="n">m_type</span>
+                
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">eval_result</span> <span class="o">=</span> <span class="n">ai_service</span><span class="o">.</span><span class="n">generate_outline</span><span class="p">(</span>
+                    <span class="n">messages</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="n">_map_role</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">type</span><span class="p">),</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">m</span><span class="p">))}</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">eval_messages</span><span class="p">],</span>
+                    <span class="n">response_schema</span><span class="o">=</span><span class="n">EvaluationResult</span><span class="p">,</span>
+                    <span class="n">log_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;conversation_id&quot;</span><span class="p">:</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;conversation_id&quot;</span><span class="p">),</span> <span class="s2">&quot;user_id&quot;</span><span class="p">:</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;user_id&quot;</span><span class="p">),</span> <span class="s2">&quot;reasoning_step_id&quot;</span><span class="p">:</span> <span class="n">step</span><span class="o">.</span><span class="n">id</span><span class="p">}</span>
+                <span class="p">)</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">eval_result</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                    <span class="n">eval_result</span> <span class="o">=</span> <span class="n">eval_result</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    
+                <span class="n">evaluation_passed</span> <span class="o">=</span> <span class="n">eval_result</span><span class="o">.</span><span class="n">passed</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Evaluation for &#39;</span><span class="si">{</span><span class="n">step</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;: passed=</span><span class="si">{</span><span class="n">evaluation_passed</span><span class="si">}</span><span class="s2">, reasoning=</span><span class="si">{</span><span class="n">eval_result</span><span class="o">.</span><span class="n">reasoning</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                
+                <span class="c1"># Update route based on explicit evaluation</span>
+                <span class="n">route_to</span> <span class="o">=</span> <span class="s2">&quot;SUCCESS&quot;</span> <span class="k">if</span> <span class="n">evaluation_passed</span> <span class="k">else</span> <span class="s2">&quot;FAILURE&quot;</span>
+                
+                <span class="c1"># Append the evaluator&#39;s reasoning to the monologue</span>
+                <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;internal_monologue&quot;</span><span class="p">):</span>
+                    <span class="n">last_entry</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;internal_monologue&quot;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="n">last_entry</span><span class="p">[</span><span class="s2">&quot;evaluator_reasoning&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">eval_result</span><span class="o">.</span><span class="n">reasoning</span>
+                    <span class="k">return</span> <span class="n">_intercept_failure</span><span class="p">(</span><span class="n">route_to</span><span class="p">,</span> <span class="n">resume_to</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">root_mapping</span><span class="p">,</span> <span class="n">updated_monologue</span><span class="o">=</span><span class="n">last_entry</span><span class="p">)</span>
+                    
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Evaluation failed for &#39;</span><span class="si">{</span><span class="n">step</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">route_to</span> <span class="o">=</span> <span class="s2">&quot;FAILURE&quot;</span> <span class="c1"># Default to false if evaluation fails</span>
+                
+        <span class="k">return</span> <span class="n">_intercept_failure</span><span class="p">(</span><span class="n">route_to</span><span class="p">,</span> <span class="n">resume_to</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">root_mapping</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_intercept_failure</span><span class="p">(</span><span class="n">route_to</span><span class="p">,</span> <span class="n">resume_to</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">root_mapping</span><span class="p">,</span> <span class="n">updated_monologue</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="c1"># Intercept FAILURE if it loops back to itself, change to USER_INPUT_REQUIRED unless autonomous</span>
+        <span class="k">if</span> <span class="n">route_to</span> <span class="o">==</span> <span class="s2">&quot;FAILURE&quot;</span> <span class="ow">and</span> <span class="n">step</span><span class="o">.</span><span class="n">on_failure_step</span> <span class="ow">and</span> <span class="n">root_mapping</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">step</span><span class="o">.</span><span class="n">on_failure_step</span><span class="o">.</span><span class="n">id</span><span class="p">)</span> <span class="o">==</span> <span class="n">root_mapping</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">step</span><span class="o">.</span><span class="n">id</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">step</span><span class="o">.</span><span class="n">blueprint</span><span class="o">.</span><span class="n">is_autonomous</span><span class="p">:</span>
+                <span class="n">route_to</span> <span class="o">=</span> <span class="s2">&quot;USER_INPUT_REQUIRED&quot;</span>
+                <span class="n">resume_to</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;step_</span><span class="si">{</span><span class="n">root_mapping</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">step</span><span class="o">.</span><span class="n">id</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        
+        <span class="n">updates</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;route_to&quot;</span><span class="p">:</span> <span class="n">route_to</span><span class="p">,</span> <span class="s2">&quot;resume_to&quot;</span><span class="p">:</span> <span class="n">resume_to</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">updated_monologue</span><span class="p">:</span>
+            <span class="n">eval_entry</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;step_name&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">step</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> (Evaluation)&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;output&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Evaluation Result: </span><span class="si">{</span><span class="n">route_to</span><span class="si">}</span><span class="se">\n</span><span class="s2">Reasoning: </span><span class="si">{</span><span class="n">updated_monologue</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;evaluator_reasoning&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;failed&quot;</span><span class="p">:</span> <span class="n">route_to</span> <span class="o">==</span> <span class="s2">&quot;FAILURE&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;step_count&quot;</span><span class="p">:</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;step_count&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="p">}</span>
+            <span class="n">updates</span><span class="p">[</span><span class="s2">&quot;internal_monologue&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">eval_entry</span><span class="p">]</span>
+            
+        <span class="k">return</span> <span class="n">updates</span>
+
+    <span class="k">return</span> <span class="n">eval_node</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_make_router</span><span class="p">(</span><span class="n">step</span><span class="p">:</span> <span class="n">ReasoningStep</span><span class="p">,</span> <span class="n">root_mapping</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates a router function for conditional edges based on state[&quot;route_to&quot;].</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">router</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">AgentState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">route</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;route_to&quot;</span><span class="p">)</span>
+        
+        <span class="n">canonical_self_id</span> <span class="o">=</span> <span class="n">root_mapping</span><span class="p">[</span><span class="n">step</span><span class="o">.</span><span class="n">id</span><span class="p">]</span>
+        
+        <span class="k">if</span> <span class="n">route</span> <span class="o">==</span> <span class="s2">&quot;SELF&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;step_</span><span class="si">{</span><span class="n">canonical_self_id</span><span class="si">}</span><span class="s2">_action&quot;</span>
+            
+        <span class="k">elif</span> <span class="n">route</span> <span class="o">==</span> <span class="s2">&quot;USER_INPUT_REQUIRED&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;interrupt_node&quot;</span>
+            
+        <span class="k">elif</span> <span class="n">route</span> <span class="o">==</span> <span class="s2">&quot;SUCCESS&quot;</span><span class="p">:</span>
+            <span class="c1"># Handle Fan-Out</span>
+            <span class="n">parallel_targets</span> <span class="o">=</span> <span class="n">step</span><span class="o">.</span><span class="n">parallel_steps</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">parallel_targets</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="k">return</span> <span class="p">[</span><span class="n">Send</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;step_</span><span class="si">{</span><span class="n">root_mapping</span><span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">id</span><span class="p">]</span><span class="si">}</span><span class="s2">_action&quot;</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">parallel_targets</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">id</span> <span class="ow">in</span> <span class="n">root_mapping</span><span class="p">]</span>
+                
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">target_id</span> <span class="o">=</span> <span class="n">step</span><span class="o">.</span><span class="n">on_success_step_id</span>
+                <span class="k">if</span> <span class="n">target_id</span> <span class="ow">and</span> <span class="n">target_id</span> <span class="ow">in</span> <span class="n">root_mapping</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;step_</span><span class="si">{</span><span class="n">root_mapping</span><span class="p">[</span><span class="n">target_id</span><span class="p">]</span><span class="si">}</span><span class="s2">_action&quot;</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">return</span> <span class="n">END</span>
+            
+        <span class="k">elif</span> <span class="n">route</span> <span class="o">==</span> <span class="s2">&quot;FAILURE&quot;</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">target_id</span> <span class="o">=</span> <span class="n">step</span><span class="o">.</span><span class="n">on_failure_step_id</span>
+                <span class="k">if</span> <span class="n">target_id</span> <span class="ow">and</span> <span class="n">target_id</span> <span class="ow">in</span> <span class="n">root_mapping</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;step_</span><span class="si">{</span><span class="n">root_mapping</span><span class="p">[</span><span class="n">target_id</span><span class="p">]</span><span class="si">}</span><span class="s2">_action&quot;</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">return</span> <span class="n">END</span>
+            
+        <span class="c1"># Default fallback</span>
+        <span class="k">return</span> <span class="n">END</span>
+        
+    <span class="k">return</span> <span class="n">router</span>
+
+
+<div class="viewcode-block" id="compile_graph_from_blueprint">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.compiler.compile_graph_from_blueprint">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">compile_graph_from_blueprint</span><span class="p">(</span><span class="n">blueprint</span><span class="p">:</span> <span class="n">CognitiveBlueprint</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CompiledStateGraph</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Reads Django models and emits a LangGraph StateGraph.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">resolved</span><span class="p">,</span> <span class="n">root_mapping</span> <span class="o">=</span> <span class="n">resolve_active_steps</span><span class="p">(</span><span class="n">blueprint</span><span class="p">)</span>
+    <span class="n">steps</span> <span class="o">=</span> <span class="n">resolved</span>  <span class="c1"># {canonical_id: selected_variant}</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">steps</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Blueprint </span><span class="si">{</span><span class="n">blueprint</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> has no steps.&quot;</span><span class="p">)</span>
+        
+    <span class="n">builder</span> <span class="o">=</span> <span class="n">StateGraph</span><span class="p">(</span><span class="n">AgentState</span><span class="p">)</span>
+    
+    <span class="c1"># Add nodes</span>
+    <span class="k">for</span> <span class="n">canonical_id</span><span class="p">,</span> <span class="n">step</span> <span class="ow">in</span> <span class="n">steps</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">action_node_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;step_</span><span class="si">{</span><span class="n">canonical_id</span><span class="si">}</span><span class="s2">_action&quot;</span>
+        <span class="n">eval_node_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;step_</span><span class="si">{</span><span class="n">canonical_id</span><span class="si">}</span><span class="s2">_eval&quot;</span>
+        
+        <span class="n">builder</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">action_node_name</span><span class="p">,</span> <span class="n">_make_action_node</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">root_mapping</span><span class="p">))</span>
+        <span class="n">builder</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">eval_node_name</span><span class="p">,</span> <span class="n">_make_eval_node</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">root_mapping</span><span class="p">))</span>
+        
+        <span class="c1"># Unconditional edge from action to eval</span>
+        <span class="n">builder</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">action_node_name</span><span class="p">,</span> <span class="n">eval_node_name</span><span class="p">)</span>
+        
+    <span class="c1"># Add dummy interrupt node</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">interrupt_node_func</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">AgentState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="c1"># When graph resumes, we route to wherever resume_to pointed.</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;route_to&quot;</span><span class="p">:</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;resume_to&quot;</span><span class="p">)}</span>
+        
+    <span class="n">builder</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="s2">&quot;interrupt_node&quot;</span><span class="p">,</span> <span class="n">interrupt_node_func</span><span class="p">)</span>
+    
+    <span class="c1"># Set entry point</span>
+    <span class="n">start_step</span> <span class="o">=</span> <span class="n">blueprint</span><span class="o">.</span><span class="n">steps</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">is_start_node</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">start_step</span><span class="p">:</span>
+        <span class="c1"># Fallback to the first created step</span>
+        <span class="n">start_step</span> <span class="o">=</span> <span class="n">blueprint</span><span class="o">.</span><span class="n">steps</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+        
+    <span class="n">start_canonical_id</span> <span class="o">=</span> <span class="n">root_mapping</span><span class="p">[</span><span class="n">start_step</span><span class="o">.</span><span class="n">id</span><span class="p">]</span>
+    <span class="n">builder</span><span class="o">.</span><span class="n">set_entry_point</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;step_</span><span class="si">{</span><span class="n">start_canonical_id</span><span class="si">}</span><span class="s2">_action&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># Add edges</span>
+    <span class="k">for</span> <span class="n">canonical_id</span><span class="p">,</span> <span class="n">step</span> <span class="ow">in</span> <span class="n">steps</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">eval_node_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;step_</span><span class="si">{</span><span class="n">canonical_id</span><span class="si">}</span><span class="s2">_eval&quot;</span>
+        
+        <span class="c1"># Router is attached to the eval node</span>
+        <span class="n">builder</span><span class="o">.</span><span class="n">add_conditional_edges</span><span class="p">(</span>
+            <span class="n">eval_node_name</span><span class="p">,</span>
+            <span class="n">_make_router</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">root_mapping</span><span class="p">),</span>
+        <span class="p">)</span>
+        
+    <span class="n">builder</span><span class="o">.</span><span class="n">add_conditional_edges</span><span class="p">(</span>
+        <span class="s2">&quot;interrupt_node&quot;</span><span class="p">,</span>
+        <span class="k">lambda</span> <span class="n">state</span><span class="p">:</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;route_to&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">END</span>
+    <span class="p">)</span>
+        
+    <span class="c1"># Compile with Django Checkpointer</span>
+    <span class="n">checkpointer</span> <span class="o">=</span> <span class="n">DjangoCheckpointer</span><span class="p">()</span>
+    <span class="n">graph</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">checkpointer</span><span class="o">=</span><span class="n">checkpointer</span><span class="p">,</span> <span class="n">interrupt_before</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;interrupt_node&quot;</span><span class="p">])</span>
+    
+    <span class="k">return</span> <span class="n">graph</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Andrew Cruickshank.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -10,9 +10,9 @@ The `metacognition` app manages autonomous agent loops, tool execution, and cogn
 
 ## 3. Component Directory
 * **Models**: `CognitiveBlueprint`: Defines an overarching AI workflow. `ReasoningStep`: A single node in a blueprint, detailing system prompts, LLM parameters, and connected tools.  
-* **Views / API endpoints**: No direct HTTP views. Triggered entirely via Celery background tasks or signals.
+* **Views / API endpoints**: `api.py`: Exposes Django Ninja endpoints for blueprint dispatching, Datastar Server-Sent Events (SSE) streaming, cancellation, and human-in-the-loop tool approvals.
 * **Admin**: `admin.py`: Provides UI for modifying `CognitiveBlueprint`, `ReasoningStep`, and `ToolDefinition`.
-* **Tasks**: `tasks.py`: Contains `run_blueprint` (main entrypoint for execution) and `night_manager_task` (runs nightly maintenance).
+* **Tasks**: `tasks.py`: Contains `run_blueprint`, `task_run_blueprint_async`, and `task_resume_blueprint_async` orchestrated asynchronously via native `verbal_tasks`.
 * **Services**: 
   - `compiler.py`: Translates database models into executable LangGraph `StateGraph` instances. Handles context stripping and routing logic.
   - `actions.py`: The executable python functions that run inside the LangGraph nodes (e.g., calling the LLM, parsing tools, evaluating step success).
