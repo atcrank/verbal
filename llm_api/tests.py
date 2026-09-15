@@ -551,3 +551,25 @@ class ApiHardwareEndpointTests(TestCase):
             self.assertEqual(resp.status_code, 200)
             self.assertEqual(resp.json()["status"], "ok")
             self.assertTrue(mock_service.unload_models.called)
+
+
+class SystemConfigurationAdminTests(TestCase):
+    """Tests for the Django Admin interface of SystemConfiguration and LoRAAdapter."""
+
+    def setUp(self):
+        self.client = Client()
+        self.admin_user = User.objects.create_superuser(
+            username="admin_test", email="admin@example.com", password="password123"
+        )
+        self.client.login(username="admin_test", password="password123")
+
+    def test_system_configuration_change_page_renders_without_type_error(self):
+        from llm_api.models import SystemConfiguration
+        config = SystemConfiguration.get_solo()
+        resp = self.client.get(f"/admin/llm_api/systemconfiguration/{config.id}/change/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Host Hardware &amp; VRAM Diagnostics")
+
+    def test_lora_adapter_changelist_renders(self):
+        resp = self.client.get("/admin/llm_api/loraadapter/")
+        self.assertEqual(resp.status_code, 200)

@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mind-Map: {{ session.title }} | Verbal Work Organisation</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-canvas: #0f172a;
+            --bg-surface: #1e293b;
+            --bg-card: #243248;
+            --bg-card-hover: #2d3e58;
+            --border-color: #334155;
+            --border-highlight: #475569;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-blue: #3b82f6;
+            --accent-blue-hover: #2563eb;
+            --accent-purple: #8b5cf6;
+            --accent-emerald: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-rose: #f43f5e;
+            --focus-glow: rgba(59, 130, 246, 0.4);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-canvas);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* 1. TOP BREADCRUMB & HEADER BAR */
+        header.mindmap-header {
+            background-color: var(--bg-surface);
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 50;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+        }
+
+        .breadcrumb-container {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .breadcrumb-trail {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+        }
+
+        .crumb-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .crumb-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--border-highlight);
+            color: var(--text-primary);
+        }
+
+        .crumb-item.active {
+            background: rgba(59, 130, 246, 0.15);
+            border-color: var(--accent-blue);
+            color: #93c5fd;
+            font-weight: 600;
+        }
+
+        .crumb-type {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        .crumb-sep {
+            color: var(--text-muted);
+            user-select: none;
+        }
+
+        /* Header Actions */
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 14px;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-surface);
+            color: var(--text-primary);
+            transition: all 0.15s ease;
+        }
+
+        .btn:hover {
+            background-color: var(--border-color);
+            border-color: var(--border-highlight);
+        }
+
+        .btn-primary {
+            background-color: var(--accent-blue);
+            border-color: var(--accent-blue);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--accent-blue-hover);
+        }
+
+        .btn-ai {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(59, 130, 246, 0.2));
+            border-color: rgba(139, 92, 246, 0.4);
+            color: #c4b5fd;
+        }
+
+        .btn-ai:hover {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.35), rgba(59, 130, 246, 0.35));
+            border-color: #8b5cf6;
+            color: #fff;
+        }
+
+        .badge-mode {
+            padding: 3px 8px;
+            border-radius: 9999px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            background: rgba(16, 185, 129, 0.15);
+            color: #6ee7b7;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        /* 2. STAFF FACILITATOR TOOLBAR */
+        .staff-toolbar {
+            background: #131d31;
+            border-bottom: 1px solid var(--border-color);
+            padding: 6px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.8rem;
+            z-index: 40;
+        }
+
+        .staff-badge {
+            background: rgba(245, 158, 11, 0.15);
+            color: #fcd34d;
+            border: 1px solid rgba(245, 158, 11, 0.4);
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 0.68rem;
+            text-transform: uppercase;
+        }
+
+        .btn-tool {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-secondary);
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.78rem;
+            transition: all 0.15s;
+        }
+
+        .btn-tool:hover {
+            background: var(--bg-surface);
+            color: var(--text-primary);
+            border-color: var(--border-color);
+        }
+
+        .focus-status-pill {
+            margin-left: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+
+        /* 3. MAIN MIND-MAP CANVAS */
+        .canvas-viewport {
+            flex: 1;
+            position: relative;
+            overflow: auto;
+            background-color: var(--bg-canvas);
+            background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 0);
+            background-size: 24px 24px;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            padding: 60px;
+        }
+
+        .mindmap-tree-wrapper {
+            display: flex;
+            align-items: center;
+            position: relative;
+            min-width: 100%;
+            min-height: 100%;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: 0% 50%;
+        }
+
+        /* SVG Connectors */
+        svg.mindmap-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        path.connector-line {
+            fill: none;
+            stroke: #475569;
+            stroke-width: 2px;
+            stroke-dasharray: 4;
+            transition: stroke 0.2s, stroke-width 0.2s;
+        }
+
+        path.connector-line.highlighted {
+            stroke: var(--accent-blue);
+            stroke-width: 3px;
+            stroke-dasharray: none;
+        }
+
+        /* NODE STRUCTURE */
+        .node-column {
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+            z-index: 20;
+            position: relative;
+        }
+
+        .col-root {
+            width: 280px;
+            margin-right: 80px;
+            flex-shrink: 0;
+        }
+
+        .col-clusters {
+            width: 340px;
+            margin-right: 80px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+        }
+
+        .col-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            min-width: 320px;
+        }
+
+        /* ROOT NODE */
+        .mindmap-node-root {
+            background: linear-gradient(145deg, #1e293b, #0f172a);
+            border: 2px solid var(--accent-blue);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 0 20px var(--focus-glow);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .mindmap-node-root:hover {
+            transform: translateY(-2px);
+            border-color: #60a5fa;
+        }
+
+        .mindmap-node-root.focused {
+            border-color: #93c5fd;
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.6);
+        }
+
+        .mindmap-node-root h2 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #f8fafc;
+        }
+
+        .mindmap-node-root p.objective {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            line-height: 1.45;
+        }
+
+        /* CLUSTER NODE */
+        .mindmap-cluster-box {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--accent-blue);
+            border-radius: 10px;
+            padding: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .mindmap-cluster-box:hover {
+            background: var(--bg-card);
+            border-color: var(--border-highlight);
+            transform: translateX(4px);
+        }
+
+        .mindmap-cluster-box.focused {
+            border-color: #60a5fa;
+            border-left-width: 6px;
+            background: var(--bg-card);
+            box-shadow: 0 0 25px var(--focus-glow);
+        }
+
+        .cluster-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .cluster-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .cluster-count {
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 9999px;
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+        }
+
+        .cluster-summary {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* CARD NODE */
+        .mindmap-card-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .mindmap-card-item:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-highlight);
+            transform: translateX(4px);
+        }
+
+        .mindmap-card-item.focused {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 20px var(--focus-glow);
+            transform: scale(1.03);
+            background: #28374f;
+        }
+
+        .card-type-tag {
+            display: inline-block;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-bottom: 6px;
+        }
+
+        .type-idea { background: rgba(59, 130, 246, 0.15); color: #93c5fd; }
+        .type-factor { background: rgba(245, 158, 11, 0.15); color: #fcd34d; }
+        .type-hypothesis { background: rgba(139, 92, 246, 0.15); color: #c4b5fd; }
+        .type-question { background: rgba(244, 63, 94, 0.15); color: #fda4af; }
+        .type-concept { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; }
+
+        .card-text {
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            line-height: 1.4;
+            margin-bottom: 8px;
+        }
+
+        .card-meta-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 6px;
+        }
+
+        .card-factor-details {
+            margin-top: 6px;
+            padding: 6px 8px;
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.2);
+            font-size: 0.72rem;
+        }
+
+        .factor-states {
+            color: #fcd34d;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* DIMMED STATE DURING FOCUS */
+        .dimmed {
+            opacity: 0.22 !important;
+            filter: grayscale(40%);
+            pointer-events: auto;
+        }
+
+        /* MODAL FOR ADDING CARD */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .modal-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            width: 480px;
+            max-width: 90vw;
+            padding: 24px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 8px 12px;
+            background: var(--bg-canvas);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            font-family: inherit;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body data-session-id="{{ session.id }}">
+
+    <!-- 1. TOP BREADCRUMB HEADER -->
+    <header class="mindmap-header">
+        <div class="breadcrumb-container">
+            <nav class="breadcrumb-trail" id="breadcrumbTrail">
+                <span class="crumb-item" data-action="focus-level" data-level="project">
+                    <span class="crumb-type">Project</span> {{ project.name }}
+                </span>
+                <span class="crumb-sep">/</span>
+                <span class="crumb-item" data-action="focus-level" data-level="workshop">
+                    <span class="crumb-type">Workshop</span> {{ workshop.name }}
+                </span>
+                <span class="crumb-sep">/</span>
+                <span class="crumb-item active" id="crumbSession" data-action="focus-level" data-level="session">
+                    <span class="crumb-type">Session</span> {{ session.title }}
+                </span>
+                <span class="crumb-sep" id="sepCluster" style="display: none;">/</span>
+                <span class="crumb-item" id="crumbCluster" style="display: none;" data-action="focus-current-cluster">
+                    <span class="crumb-type">Cluster</span> <span id="crumbClusterText"></span>
+                </span>
+                <span class="crumb-sep" id="sepCard" style="display: none;">/</span>
+                <span class="crumb-item" id="crumbCard" style="display: none;">
+                    <span class="crumb-type">Card</span> <span id="crumbCardText"></span>
+                </span>
+            </nav>
+        </div>
+
+        <div class="header-actions">
+            <span class="badge-mode">{{ session.get_access_mode_display }}</span>
+            <button class="btn btn-ai" id="btnCluster" data-action="trigger-clustering">✨ Cluster Ideas</button>
+            <button class="btn btn-ai" id="btnExtract" data-action="trigger-factor-extraction">🔗 Extract Factors</button>
+            <button class="btn" id="btnExport" data-action="export-summary">📋 Export</button>
+            <button class="btn btn-primary" data-action="open-add-card">➕ Add Note</button>
+        </div>
+    </header>
+
+    <!-- 2. STAFF CONTROLS TOOLBAR -->
+    {% if is_staff_user %}
+    <div class="staff-toolbar">
+        <span class="staff-badge">Staff Controls</span>
+        <button class="btn-tool" data-action="focus-level" data-level="session">🎯 Centre on Session</button>
+        <button class="btn-tool" data-action="zoom-fit">🔍 Zoom to Fit</button>
+        <button class="btn-tool" data-action="reset-zoom">⚡ 100% Reset</button>
+        <span class="focus-status-pill" id="focusStatusPill">Focus: Session Overview</span>
+    </div>
+    {% endif %}
+
+    <!-- 3. CANVAS VIEWPORT -->
+    <main class="canvas-viewport" id="canvasViewport">
+        <div class="mindmap-tree-wrapper" id="treeWrapper">
+            
+            <!-- SVG connector lines -->
+            <svg class="mindmap-svg" id="mindmapSvg"></svg>
+
+            <!-- Column 1: Root Session Node -->
+            <div class="node-column col-root">
+                <div class="mindmap-node-root focused" id="node-session" data-action="focus-level" data-level="session">
+                    <span class="card-type-tag type-concept">Root Study Session</span>
+                    <h2>{{ session.title }}</h2>
+                    <p class="objective">{{ workshop.objective|default:"Collaborative brainstorming and study design space." }}</p>
+                    <div style="margin-top: 12px; font-size: 0.72rem; color: var(--text-muted);">
+                        Total Notes: <strong>{{ total_cards_count }}</strong> | Clusters: <strong>{{ clusters|length }}</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Column 2 & 3: Clusters and Leaf Cards -->
+            <div style="display: flex; gap: 80px; align-items: flex-start;">
+                {% for cl in clusters %}
+                <div style="display: flex; gap: 40px; align-items: center;">
+                    <!-- Cluster Branch -->
+                    <div class="node-column col-clusters">
+                        <div class="mindmap-cluster-box" id="cluster-{{ cl.id }}" 
+                             data-cluster-color="{{ cl.color }}"
+                             data-action="focus-cluster"
+                             data-cluster-id="{{ cl.id }}"
+                             data-cluster-title="{{ cl.title }}">
+                            <div class="cluster-header">
+                                <span class="cluster-title">{{ cl.title }}</span>
+                                <span class="cluster-count">{{ cl.card_count }}</span>
+                            </div>
+                            {% if cl.summary %}
+                            <p class="cluster-summary">{{ cl.summary }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Leaves: Cluster's Cards -->
+                    <div class="node-column col-cards" id="cluster-cards-{{ cl.id }}">
+                        {% for c in cl.cards %}
+                        <div class="mindmap-card-item" id="card-{{ c.id }}"
+                             data-action="focus-card"
+                             data-card-id="{{ c.id }}"
+                             data-card-text="{{ c.text|truncatechars:35 }}"
+                             data-cluster-id="{{ cl.id }}"
+                             data-cluster-title="{{ cl.title }}">
+                            <span class="card-type-tag type-{{ c.card_type }}">{{ c.card_type }}</span>
+                            <div class="card-text">{{ c.text }}</div>
+                            {% if c.card_type == 'factor' %}
+                            <div class="card-factor-details">
+                                {% if c.factor_name %}<div><strong>Factor:</strong> {{ c.factor_name }}</div>{% endif %}
+                                {% if c.state_options %}<div><strong>States:</strong> <span class="factor-states">{{ c.state_options|join:", " }}</span></div>{% endif %}
+                                {% if c.causes %}
+                                <div style="margin-top: 3px; color: var(--text-muted);">Causes: {{ c.causes|join:", " }}</div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            <div class="card-meta-row">
+                                <span>#{{ c.id }}</span>
+                                <span>{{ c.author_alias }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% empty %}
+                <!-- Empty state when no clusters formed yet -->
+                <div class="node-column col-clusters">
+                    <div class="mindmap-cluster-box" style="border-style: dashed; border-left-color: var(--text-muted);">
+                        <div class="cluster-title" style="color: var(--text-muted);">No Clusters Formed Yet</div>
+                        <p class="cluster-summary" style="margin-top: 6px;">
+                            Add ideas or click <strong>✨ Cluster Ideas</strong> to have AI group cards into branches.
+                        </p>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <!-- Standalone Cards Column if any -->
+                {% if standalone_cards %}
+                <div style="display: flex; gap: 40px; align-items: center;">
+                    <div class="node-column col-clusters">
+                        <div class="mindmap-cluster-box" style="border-left-color: #64748b;" data-action="focus-level" data-level="session">
+                            <div class="cluster-header">
+                                <span class="cluster-title">📌 Unclustered Notes</span>
+                                <span class="cluster-count">{{ standalone_cards|length }}</span>
+                            </div>
+                            <p class="cluster-summary">Loose brainstorming cards awaiting thematic synthesis.</p>
+                        </div>
+                    </div>
+                    <div class="node-column col-cards">
+                        {% for c in standalone_cards %}
+                        <div class="mindmap-card-item" id="card-{{ c.id }}"
+                             data-action="focus-card"
+                             data-card-id="{{ c.id }}"
+                             data-card-text="{{ c.text|truncatechars:35 }}"
+                             data-cluster-id=""
+                             data-cluster-title="">
+                            <span class="card-type-tag type-{{ c.card_type }}">{{ c.card_type }}</span>
+                            <div class="card-text">{{ c.text }}</div>
+                            <div class="card-meta-row">
+                                <span>#{{ c.id }}</span>
+                                <span>{{ c.author_alias }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+        </div>
+    </main>
+
+    <!-- 4. ADD NOTE MODAL -->
+    <div class="modal-overlay" id="addCardModal">
+        <div class="modal-card">
+            <h3>Add Brainstorming Note</h3>
+            <div class="form-group">
+                <label for="cardText">Note Content / Idea</label>
+                <textarea id="cardText" class="form-control" rows="3" placeholder="Describe the idea, candidate variable, or hypothesis..."></textarea>
+            </div>
+            <div class="form-group">
+                <label for="cardType">Type</label>
+                <select id="cardType" class="form-control">
+                    <option value="idea">💡 Idea</option>
+                    <option value="factor">⚡ Causal Factor / Variable</option>
+                    <option value="hypothesis">🎯 Working Hypothesis</option>
+                    <option value="question">❓ Open Question</option>
+                    <option value="concept">🌐 Grips Concept</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn" data-action="close-add-card">Cancel</button>
+                <button class="btn btn-primary" data-action="submit-new-card">Save Note</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT: EVENT DELEGATION, MIND-MAP ZOOMABILITY, BREADCRUMBS & CONNECTORS -->
+    <script>
+        const sessionId = document.body.dataset.sessionId;
+        let currentFocus = { level: 'session', clusterId: null, cardId: null };
+        let currentScale = 1.0;
+
+        function updateBreadcrumbs() {
+            const sepCluster = document.getElementById('sepCluster');
+            const crumbCluster = document.getElementById('crumbCluster');
+            const crumbClusterText = document.getElementById('crumbClusterText');
+            const sepCard = document.getElementById('sepCard');
+            const crumbCard = document.getElementById('crumbCard');
+            const crumbCardText = document.getElementById('crumbCardText');
+            const crumbSession = document.getElementById('crumbSession');
+            const focusPill = document.getElementById('focusStatusPill');
+
+            crumbSession.classList.remove('active');
+            crumbCluster.classList.remove('active');
+            crumbCard.classList.remove('active');
+
+            if (currentFocus.level === 'session') {
+                crumbSession.classList.add('active');
+                sepCluster.style.display = 'none';
+                crumbCluster.style.display = 'none';
+                sepCard.style.display = 'none';
+                crumbCard.style.display = 'none';
+                if (focusPill) focusPill.textContent = 'Focus: Session Overview';
+            } else if (currentFocus.level === 'cluster') {
+                sepCluster.style.display = 'inline';
+                crumbCluster.style.display = 'inline-flex';
+                crumbCluster.classList.add('active');
+                crumbClusterText.textContent = currentFocus.clusterTitle || ('Cluster #' + currentFocus.clusterId);
+                sepCard.style.display = 'none';
+                crumbCard.style.display = 'none';
+                if (focusPill) focusPill.textContent = 'Focus: Cluster [' + currentFocus.clusterTitle + ']';
+            } else if (currentFocus.level === 'card') {
+                sepCluster.style.display = currentFocus.clusterId ? 'inline' : 'none';
+                crumbCluster.style.display = currentFocus.clusterId ? 'inline-flex' : 'none';
+                if (currentFocus.clusterTitle) crumbClusterText.textContent = currentFocus.clusterTitle;
+                sepCard.style.display = 'inline';
+                crumbCard.style.display = 'inline-flex';
+                crumbCard.classList.add('active');
+                crumbCardText.textContent = currentFocus.cardText || ('Card #' + currentFocus.cardId);
+                if (focusPill) focusPill.textContent = 'Focus: Card #' + currentFocus.cardId;
+            }
+        }
+
+        function focusLevel(level) {
+            currentFocus = { level: level, clusterId: null, cardId: null };
+            document.querySelectorAll('.focused').forEach(el => el.classList.remove('focused'));
+            document.querySelectorAll('.dimmed').forEach(el => el.classList.remove('dimmed'));
+
+            const rootNode = document.getElementById('node-session');
+            if (rootNode) rootNode.classList.add('focused');
+
+            updateBreadcrumbs();
+            drawConnectors();
+            if (rootNode) rootNode.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+        }
+
+        function focusCluster(clusterId, title) {
+            currentFocus = { level: 'cluster', clusterId: clusterId, clusterTitle: title, cardId: null };
+            
+            document.querySelectorAll('.focused').forEach(el => el.classList.remove('focused'));
+            document.querySelectorAll('.dimmed').forEach(el => el.classList.remove('dimmed'));
+
+            const targetCluster = document.getElementById('cluster-' + clusterId);
+            if (targetCluster) targetCluster.classList.add('focused');
+
+            document.querySelectorAll('.mindmap-cluster-box').forEach(el => {
+                if (el.id !== ('cluster-' + clusterId)) el.classList.add('dimmed');
+            });
+            document.querySelectorAll('.col-cards').forEach(el => {
+                if (el.id !== ('cluster-cards-' + clusterId)) el.classList.add('dimmed');
+            });
+
+            updateBreadcrumbs();
+            drawConnectors();
+            if (targetCluster) {
+                targetCluster.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+            }
+        }
+
+        function focusCurrentCluster() {
+            if (currentFocus.clusterId) {
+                focusCluster(currentFocus.clusterId, currentFocus.clusterTitle);
+            } else {
+                focusLevel('session');
+            }
+        }
+
+        function focusCard(cardId, text, clusterId, clusterTitle) {
+            currentFocus = { level: 'card', cardId: cardId, cardText: text, clusterId: clusterId, clusterTitle: clusterTitle };
+
+            document.querySelectorAll('.focused').forEach(el => el.classList.remove('focused'));
+            document.querySelectorAll('.dimmed').forEach(el => el.classList.remove('dimmed'));
+
+            const targetCard = document.getElementById('card-' + cardId);
+            if (targetCard) targetCard.classList.add('focused');
+
+            document.querySelectorAll('.mindmap-card-item').forEach(el => {
+                if (el.id !== ('card-' + cardId)) el.classList.add('dimmed');
+            });
+            document.querySelectorAll('.mindmap-cluster-box').forEach(el => {
+                if (clusterId && el.id !== ('cluster-' + clusterId)) el.classList.add('dimmed');
+            });
+
+            updateBreadcrumbs();
+            drawConnectors();
+            if (targetCard) {
+                targetCard.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+            }
+        }
+
+        function drawConnectors() {
+            const svg = document.getElementById('mindmapSvg');
+            if (!svg) return;
+            svg.innerHTML = '';
+
+            const wrapper = document.getElementById('treeWrapper');
+            const wrapperRect = wrapper.getBoundingClientRect();
+            const root = document.getElementById('node-session');
+            if (!root) return;
+
+            const rootRect = root.getBoundingClientRect();
+            const rootX = rootRect.right - wrapperRect.left;
+            const rootY = rootRect.top + rootRect.height / 2 - wrapperRect.top;
+
+            document.querySelectorAll('.mindmap-cluster-box').forEach(cl => {
+                const clRect = cl.getBoundingClientRect();
+                const clInX = clRect.left - wrapperRect.left;
+                const clInY = clRect.top + clRect.height / 2 - wrapperRect.top;
+                const clOutX = clRect.right - wrapperRect.left;
+                const clOutY = clInY;
+
+                const cX1 = rootX + (clInX - rootX) * 0.5;
+                const cX2 = rootX + (clInX - rootX) * 0.5;
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', 'M ' + rootX + ' ' + rootY + ' C ' + cX1 + ' ' + rootY + ', ' + cX2 + ' ' + clInY + ', ' + clInX + ' ' + clInY);
+                path.classList.add('connector-line');
+                if (cl.classList.contains('focused') || cl.id === ('cluster-' + currentFocus.clusterId)) {
+                    path.classList.add('highlighted');
+                }
+                svg.appendChild(path);
+
+                const clusterCardsCol = cl.closest('div').nextElementSibling;
+                if (clusterCardsCol) {
+                    clusterCardsCol.querySelectorAll('.mindmap-card-item').forEach(card => {
+                        const cardRect = card.getBoundingClientRect();
+                        const cardX = cardRect.left - wrapperRect.left;
+                        const cardY = cardRect.top + cardRect.height / 2 - wrapperRect.top;
+
+                        const ccX1 = clOutX + (cardX - clOutX) * 0.5;
+                        const ccX2 = clOutX + (cardX - clOutX) * 0.5;
+                        const cardPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        cardPath.setAttribute('d', 'M ' + clOutX + ' ' + clOutY + ' C ' + ccX1 + ' ' + clOutY + ', ' + ccX2 + ' ' + cardY + ', ' + cardX + ' ' + cardY);
+                        cardPath.classList.add('connector-line');
+                        if (card.classList.contains('focused')) {
+                            cardPath.classList.add('highlighted');
+                        }
+                        svg.appendChild(cardPath);
+                    });
+                }
+            });
+        }
+
+        function zoomFit() {
+            const wrapper = document.getElementById('treeWrapper');
+            currentScale = 0.85;
+            wrapper.style.transform = 'scale(' + currentScale + ')';
+            drawConnectors();
+        }
+
+        function resetZoom() {
+            const wrapper = document.getElementById('treeWrapper');
+            currentScale = 1.0;
+            wrapper.style.transform = 'scale(1.0)';
+            drawConnectors();
+        }
+
+        function openAddCardModal() {
+            document.getElementById('addCardModal').style.display = 'flex';
+            document.getElementById('cardText').focus();
+        }
+
+        function closeAddCardModal() {
+            document.getElementById('addCardModal').style.display = 'none';
+        }
+
+        async function submitNewCard() {
+            const text = document.getElementById('cardText').value.trim();
+            const cardType = document.getElementById('cardType').value;
+            if (!text) return;
+
+            try {
+                const resp = await fetch('/api/whiteboard/cards/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    body: JSON.stringify({
+                        session_id: parseInt(sessionId),
+                        text: text,
+                        card_type: cardType,
+                        pos_x: 400.0,
+                        pos_y: 200.0
+                    })
+                });
+                if (resp.ok) {
+                    closeAddCardModal();
+                    document.getElementById('cardText').value = '';
+                    window.location.reload();
+                }
+            } catch (err) {
+                console.error('Error saving note:', err);
+            }
+        }
+
+        async function triggerClustering() {
+            const btn = document.getElementById('btnCluster');
+            btn.disabled = true;
+            btn.textContent = '⏳ Synthesizing Clusters...';
+            try {
+                const resp = await fetch('/api/whiteboard/cluster_ideas/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    body: JSON.stringify({ session_id: parseInt(sessionId) })
+                });
+                const data = await resp.json();
+                if (data.status === 'success') {
+                    window.location.reload();
+                } else {
+                    alert('Clustering message: ' + (data.message || 'No clusters created'));
+                }
+            } catch (err) {
+                console.error('Clustering failed:', err);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '✨ Cluster Ideas';
+            }
+        }
+
+        async function triggerFactorExtraction() {
+            const btn = document.getElementById('btnExtract');
+            btn.disabled = true;
+            btn.textContent = '⏳ Extracting Factors...';
+            try {
+                const resp = await fetch('/api/whiteboard/extract_causal_graph/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    body: JSON.stringify({ session_id: parseInt(sessionId) })
+                });
+                const data = await resp.json();
+                if (data.status === 'success') {
+                    window.location.reload();
+                }
+            } catch (err) {
+                console.error('Factor extraction failed:', err);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔗 Extract Factors';
+            }
+        }
+
+        async function exportSummary() {
+            try {
+                const resp = await fetch('/api/whiteboard/export_summary/' + sessionId + '/');
+                const md = await resp.text();
+                const blob = new Blob([md], { type: 'text/markdown' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'session_' + sessionId + '_summary.md';
+                a.click();
+            } catch (err) {
+                console.error('Export failed:', err);
+            }
+        }
+
+        function getCsrfToken() {
+            const match = document.cookie.match(/csrftoken=([^;]+)/);
+            return match ? match[1] : '';
+        }
+
+        // Global Event Delegation for all interactive elements
+        document.addEventListener('click', (e) => {
+            const target = e.target.closest('[data-action]');
+            if (!target) return;
+
+            const action = target.dataset.action;
+            if (action === 'focus-level') {
+                focusLevel(target.dataset.level);
+            } else if (action === 'focus-cluster') {
+                focusCluster(parseInt(target.dataset.clusterId), target.dataset.clusterTitle);
+            } else if (action === 'focus-current-cluster') {
+                focusCurrentCluster();
+            } else if (action === 'focus-card') {
+                e.stopPropagation();
+                focusCard(
+                    parseInt(target.dataset.cardId),
+                    target.dataset.cardText,
+                    target.dataset.clusterId ? parseInt(target.dataset.clusterId) : null,
+                    target.dataset.clusterTitle
+                );
+            } else if (action === 'zoom-fit') {
+                zoomFit();
+            } else if (action === 'reset-zoom') {
+                resetZoom();
+            } else if (action === 'open-add-card') {
+                openAddCardModal();
+            } else if (action === 'close-add-card') {
+                closeAddCardModal();
+            } else if (action === 'submit-new-card') {
+                submitNewCard();
+            } else if (action === 'trigger-clustering') {
+                triggerClustering();
+            } else if (action === 'trigger-factor-extraction') {
+                triggerFactorExtraction();
+            } else if (action === 'export-summary') {
+                exportSummary();
+            }
+        });
+
+        window.addEventListener('load', () => {
+            setTimeout(drawConnectors, 100);
+            updateBreadcrumbs();
+        });
+        window.addEventListener('resize', drawConnectors);
+    </script>
+</body>
+</html>

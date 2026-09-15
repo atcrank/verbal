@@ -216,7 +216,7 @@ class TaskRecordAdmin(admin.ModelAdmin):
 
     def tokens_display(self, obj):
         if not obj.total_tokens:
-            return format_html('<span style="color: #9ca3af;">0</span>')
+            return mark_safe('<span style="color: #9ca3af;">0</span>')
         return format_html(
             '<span title="Input: {} | Output: {}" style="font-weight: 600; color: #4338ca;">'
             '{} <span style="font-size: 0.75em; color: #6b7280; font-weight: normal;">(In: {} / Out: {})</span></span>',
@@ -453,7 +453,7 @@ class ScheduledTaskAdmin(admin.ModelAdmin):
 
     def last_run_status_display(self, obj):
         if not obj.last_task_record:
-            return format_html('<span style="color: #9ca3af;">Never Run</span>')
+            return mark_safe('<span style="color: #9ca3af;">Never Run</span>')
         record = obj.last_task_record
         url = reverse("admin:verbal_tasks_taskrecord_change", args=[record.id])
         colors = {

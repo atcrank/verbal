@@ -4,43 +4,27 @@ import time
 from typing import Generator, Optional
 from django.conf import settings
 
-logger = logging.getLogger(__name__)
+from verbal_tasks.postgres_events import (
+    publish_pg_event,
+    subscribe_pg_events_sync,
+)
 
-# Redis Client for Whiteboard Pub/Sub
-try:
-    import redis
-    redis_url = getattr(settings, 'CELERY_BROKER_URL', 'redis://127.0.0.1:6379/0')
-    redis_client = redis.Redis.from_url(redis_url, decode_responses=True)
-except Exception as e:
-    logger.warning(f"Redis not available for Whiteboard events: {e}")
-    redis_client = None
+logger = logging.getLogger(__name__)
 
 
 def get_whiteboard_channel(session_id: str | int) -> str:
-    return f"verbal:whiteboard:{session_id}"
+    return f"verbal_whiteboard_{session_id}"
 
 
 def publish_whiteboard_event(session_id: str | int, event_type: str, payload: dict) -> bool:
     """
     Publishes a whiteboard mutation event (card_added, card_moved, clustered, ai_stream)
-    to Redis Pub/Sub for real-time synchronization across all participating clients.
+    to PostgreSQL Pub/Sub for real-time synchronization across all participating clients.
     """
-    if not redis_client:
-        logger.debug(f"Redis offline, skipping whiteboard publish: {event_type}")
-        return False
-    try:
-        channel = get_whiteboard_channel(session_id)
-        msg = json.dumps({
-            "session_id": str(session_id),
-            "event_type": event_type,
-            "payload": payload,
-            "timestamp": time.time()
-        })
-        redis_client.publish(channel, msg)
-        return True
-    except Exception as e:
-        logger.error(f"Error publishing whiteboard event: {e}")
-        return False
+    channel = get_whiteboard_channel(session_id)
+    payload_with_session = dict(payload)
+    payload_with_session["session_id"] = str(session_id)
+    return publish_pg_event(channel, event_type, payload_with_session)
 
 
 def format_datastar_sse(event_type: str, data: dict, fragment_html: Optional[str] = None) -> str:
@@ -63,41 +47,24 @@ def format_datastar_sse(event_type: str, data: dict, fragment_html: Optional[str
 
 def stream_whiteboard_events(session_id: str | int, timeout: int = 30) -> Generator[str, None, None]:
     """
-    Generator that yields real-time SSE events for a whiteboard session.
+    Generator that yields real-time SSE events for a whiteboard session over PostgreSQL notifications.
     """
-    if not redis_client:
-        yield format_datastar_sse("error", {"error": "Redis broker offline"})
-        return
-
     channel = get_whiteboard_channel(session_id)
-    pubsub = redis_client.pubsub()
-    pubsub.subscribe(channel)
 
     # Initial connection ping
     yield format_datastar_sse("connected", {"session_id": str(session_id), "status": "active"})
 
-    start_time = time.time()
     try:
-        while True:
-            msg = pubsub.get_message(ignore_subscribe_messages=True, timeout=1.0)
-            if msg and msg.get("type") == "message":
-                try:
-                    payload = json.loads(msg["data"])
-                    event_type = payload.get("event_type", "message")
-                    event_data = payload.get("payload", {})
-                    yield format_datastar_sse(event_type, event_data)
-                except Exception as e:
-                    logger.error(f"Error parsing whiteboard SSE message: {e}")
-
-            # Keep-alive heartbeat every 15s
-            if time.time() - start_time > 15:
+        for event in subscribe_pg_events_sync(channel, timeout=timeout):
+            event_type = event.get("event", "message")
+            if event_type == "heartbeat":
                 yield ": heartbeat\n\n"
-                start_time = time.time()
+                continue
+
+            event_data = event.get("data", {})
+            yield format_datastar_sse(event_type, event_data)
 
     except GeneratorExit:
-        pubsub.unsubscribe(channel)
-        pubsub.close()
+        logger.debug(f"Whiteboard SSE stream closed for session {session_id}")
     except Exception as e:
-        logger.error(f"Whiteboard SSE stream error: {e}")
-        pubsub.unsubscribe(channel)
-        pubsub.close()
+        logger.error(f"Whiteboard SSE stream error for session {session_id}: {e}")

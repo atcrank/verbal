@@ -600,3 +600,86 @@ class TaskAdminAndDashboardTests(TestCase):
             new_record = TaskRecord.objects.get(id=data["new_task_id"])
             self.assertEqual(new_record.status, TaskRecordStatus.READY)
             self.assertEqual(new_record.args_json, [20, 30])
+
+
+class PostgresEventsTests(TestCase):
+    """
+    Unit tests for zero-Redis PostgreSQL LISTEN/NOTIFY pub/sub bridge and runtime flags.
+    """
+
+    def test_sanitize_channel_name(self):
+        from verbal_tasks.postgres_events import sanitize_channel_name
+        self.assertEqual(sanitize_channel_name("verbal:events:123"), "verbal_events_123")
+        self.assertEqual(sanitize_channel_name("valid_channel_name"), "valid_channel_name")
+        self.assertEqual(sanitize_channel_name("123_invalid_start"), "ch_123_invalid_start")
+
+    def test_runtime_flag_lifecycle(self):
+        from verbal_tasks.postgres_events import (
+            set_runtime_flag,
+            is_runtime_flag_set,
+            get_runtime_flag,
+            clear_runtime_flag
+        )
+        test_key = "test_cancel_token_42"
+        self.assertFalse(is_runtime_flag_set(test_key))
+        self.assertIsNone(get_runtime_flag(test_key))
+
+        set_runtime_flag(test_key, "active_flag", ttl=10)
+        self.assertTrue(is_runtime_flag_set(test_key))
+        self.assertEqual(get_runtime_flag(test_key), "active_flag")
+
+        clear_runtime_flag(test_key)
+        self.assertFalse(is_runtime_flag_set(test_key))
+
+    def test_publish_and_subscribe_sync(self):
+        from verbal_tasks.postgres_events import (
+            publish_pg_event,
+            subscribe_pg_events_sync,
+            _in_memory_subscribers,
+            _in_memory_lock
+        )
+        channel = "test_sync_pubsub_channel"
+        # Test publish returns True
+        res = publish_pg_event(channel, "test_event", {"message": "hello world"})
+        self.assertTrue(res)
+
+        # Test sync subscriber receives event from in-memory queue
+        queue = []
+        with _in_memory_lock:
+            _in_memory_subscribers.setdefault(channel, []).append(queue)
+        
+        publish_pg_event(channel, "completed", {"result": 100})
+        self.assertEqual(len(queue), 1)
+        self.assertEqual(queue[0]["event"], "completed")
+        self.assertEqual(queue[0]["data"]["result"], 100)
+
+        with _in_memory_lock:
+            _in_memory_subscribers[channel].remove(queue)
+
+    async def test_publish_and_subscribe_async(self):
+        from verbal_tasks.postgres_events import (
+            publish_pg_event,
+            subscribe_pg_events_async
+        )
+        import asyncio
+
+        channel = "test_async_channel"
+        received = []
+
+        async def listen():
+            async for ev in subscribe_pg_events_async(channel):
+                received.append(ev)
+                if ev.get("event") == "completed":
+                    break
+
+        listen_task = asyncio.create_task(listen())
+        await asyncio.sleep(0.05)
+
+        publish_pg_event(channel, "step_started", {"step": 1})
+        publish_pg_event(channel, "completed", {"status": "done"})
+
+        await asyncio.wait_for(listen_task, timeout=2.0)
+        self.assertEqual(len(received), 2)
+        self.assertEqual(received[0]["event"], "step_started")
+        self.assertEqual(received[1]["event"], "completed")
+

@@ -168,11 +168,11 @@ class WhiteboardSSEEventTests(TestCase):
         self.assertIn("event: datastar-merge-fragments", res)
         self.assertIn("data: fragments <div id=\"card-42\"", res)
 
-    @patch('work_organisation.events.redis_client', None)
-    def test_stream_whiteboard_events_fallback_when_redis_offline(self):
+    def test_stream_whiteboard_events_postgresql(self):
         gen = stream_whiteboard_events(session_id=123)
         first_event = next(gen)
-        self.assertIn("Redis broker offline", first_event)
+        self.assertIn("event: connected", first_event)
+        self.assertIn('"status": "active"', first_event)
 
 
 class WhiteboardClusteringTests(TestCase):
@@ -393,4 +393,111 @@ class WorkOrganisationAdminTests(TestCase):
         qs = self.proj_admin.get_queryset(request)
         self.assertIn(self.project, qs)
         self.assertNotIn(self.other_project, qs)
+
+
+class MindmapViewTests(TestCase):
+    """
+    Tests for the interactive Mind-Map client and dashboard views in work_organisation.
+    """
+    def setUp(self):
+        self.client = Client()
+        self.group = Group.objects.create(name="Design Team")
+        
+        self.user = User.objects.create_user(username="designer", password="password123")
+        self.user.groups.add(self.group)
+
+        self.staff_user = User.objects.create_user(username="lead_facilitator", password="password123", is_staff=True)
+        self.staff_user.groups.add(self.group)
+
+        self.outsider = User.objects.create_user(username="outsider", password="password123")
+
+        self.project = Project.objects.create(name="Autonomous Fleet Study", created_by=self.staff_user, is_public=False)
+        self.project.groups.add(self.group)
+
+        self.workshop = Workshop.objects.create(
+            project=self.project,
+            name="Emergency Braking Dynamics",
+            objective="Identify edge case weather variables",
+            created_by=self.staff_user
+        )
+
+        self.session = WorkshopSession.objects.create(
+            workshop=self.workshop,
+            title="Sensor Occlusion Mindmap",
+            access_mode="RESTRICTED_TRACKED"
+        )
+
+        self.cluster = WhiteboardCluster.objects.create(
+            session=self.session,
+            title="Optical Degradation",
+            summary="Fog, heavy rain, and lens condensation",
+            color="#3B82F6"
+        )
+
+        self.card = WhiteboardCard.objects.create(
+            session=self.session,
+            cluster=self.cluster,
+            text="Dense fog reduces lidar penetration below 15 meters",
+            card_type="factor",
+            author=self.user,
+            metadata={
+                "factor_name": "Lidar Visibility Range",
+                "state_options": ["Clear (>50m)", "Degraded (15-50m)", "Blocked (<15m)"],
+                "causes": ["Aerosol Water Density"]
+            }
+        )
+
+    def test_session_mindmap_access_control(self):
+        # Outsider user should be forbidden (404 via GroupScopedManager)
+        self.client.login(username="outsider", password="password123")
+        resp = self.client.get(f"/work/session/{self.session.id}/")
+        self.assertEqual(resp.status_code, 404)
+
+        # Authorized group member should succeed
+        self.client.login(username="designer", password="password123")
+        resp = self.client.get(f"/work/session/{self.session.id}/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Sensor Occlusion Mindmap")
+        self.assertContains(resp, "Optical Degradation")
+        self.assertContains(resp, "Dense fog reduces lidar penetration")
+        self.assertContains(resp, "Lidar Visibility Range")
+
+        # Regular user should NOT see staff toolbar
+        self.assertFalse(resp.context['is_staff_user'])
+        self.assertNotContains(resp, '<div class="staff-toolbar">')
+
+    def test_session_mindmap_staff_zoomability(self):
+        # Staff facilitator should see staff toolbar and zoom controls
+        self.client.login(username="lead_facilitator", password="password123")
+        resp = self.client.get(f"/work/session/{self.session.id}/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.context['is_staff_user'])
+        self.assertContains(resp, '<div class="staff-toolbar">')
+        self.assertContains(resp, "Centre on Session")
+        self.assertContains(resp, "Zoom to Fit")
+        self.assertContains(resp, "breadcrumbTrail")
+
+    def test_session_mindmap_conversation_owner_staff_zoomability(self):
+        # Non-staff user who is 'owner' in the session's ConversationMember gets staff controls
+        from llm_api.models import Conversation
+        conv = Conversation.objects.create(user=self.user, title="Discussion Thread")
+        self.session.conversation = conv
+        self.session.save()
+
+        ConversationMember.objects.create(conversation=conv, user=self.user, role="owner")
+
+        self.client.login(username="designer", password="password123")
+        resp = self.client.get(f"/work/session/{self.session.id}/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.context['is_staff_user'])
+        self.assertContains(resp, '<div class="staff-toolbar">')
+
+    def test_work_dashboard_view(self):
+        self.client.login(username="designer", password="password123")
+        resp = self.client.get("/work/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Autonomous Fleet Study")
+        self.assertContains(resp, "Emergency Braking Dynamics")
+        self.assertContains(resp, f"/work/session/{self.session.id}/")
+
 

@@ -15,7 +15,7 @@
                 </details>
             </div>
         {% else %}
-            <div class="search-card" draggable="true" ondragstart="event.dataTransfer.setData('application/json', JSON.stringify({model: 'RAGChunk', id: '{% if item.doc.metadata.chunk_id %}{{ item.doc.metadata.chunk_id }}{% else %}{{ item.doc.metadata.id }}{% endif %}', content: '{{ item.doc.page_content|escapejs }}', preview: '{% if item.doc.metadata.authors %}{{ item.doc.metadata.authors|escapejs }} ({{ item.doc.metadata.year|default:\'-\' }}){% else %}{{ item.doc.metadata.filename|escapejs }}{% endif %}'}))">
+            <div class="search-card" draggable="true" ondragstart='event.dataTransfer.setData("application/json", JSON.stringify({model: "RAGChunk", id: "{% if item.doc.metadata.chunk_id %}{{ item.doc.metadata.chunk_id }}{% else %}{{ item.doc.metadata.id }}{% endif %}", content: "{{ item.doc.page_content|escapejs }}", preview: "{% if item.doc.metadata.authors %}{{ item.doc.metadata.authors|escapejs }} ({{ item.doc.metadata.year|default:"-" }}){% else %}{{ item.doc.metadata.filename|escapejs }}{% endif %}"}))'>
                 <div class="search-card-title">
                     {% if item.doc.metadata.authors %}
                         {{ item.doc.metadata.authors }} ({{ item.doc.metadata.year|default:"-" }}){% if item.doc.metadata.section_title %} — <span style="font-weight: 500;">{{ item.doc.metadata.section_title }}</span>{% endif %}

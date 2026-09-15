@@ -1,5 +1,6 @@
 from django.contrib import admin, messages
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from django.urls import reverse
 from django.http import HttpResponseRedirect
 from django.utils import timezone
@@ -123,18 +124,18 @@ class FineTuningDatasetAdmin(admin.ModelAdmin):
     @admin.display(description='Dataset Adequacy')
     def adequacy_status(self, obj):
         if obj.example_count < 50:
-            return format_html('<span style="color: red; font-weight: bold;">🔴 Too Small</span>')
+            return mark_safe('<span style="color: red; font-weight: bold;">🔴 Too Small</span>')
         elif obj.semantic_diversity_score is not None and obj.semantic_diversity_score < 0.2:
-            return format_html('<span style="color: orange; font-weight: bold;">⚠️ Low Diversity</span>')
+            return mark_safe('<span style="color: orange; font-weight: bold;">⚠️ Low Diversity</span>')
         elif obj.example_count > 0:
-            return format_html('<span style="color: green; font-weight: bold;">✅ Good</span>')
+            return mark_safe('<span style="color: green; font-weight: bold;">✅ Good</span>')
         return "Unknown"
 
     @admin.display(description='Currency Status')
     def currency_status(self, obj):
         if obj.is_stale:
-            return format_html('<span style="color: orange; font-weight: bold;">⚠️ Stale (Source updated)</span>')
-        return format_html('<span style="color: green; font-weight: bold;">🟢 Up to date</span>')
+            return mark_safe('<span style="color: orange; font-weight: bold;">⚠️ Stale (Source updated)</span>')
+        return mark_safe('<span style="color: green; font-weight: bold;">🟢 Up to date</span>')
 
 @admin.register(ScenarioGroup)
 class ScenarioGroupAdmin(admin.ModelAdmin):

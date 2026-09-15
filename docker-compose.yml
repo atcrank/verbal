@@ -11,7 +11,7 @@ services:
     ports:
       - "127.0.0.1:5433:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql
+      - postgres_data:/var/lib/postgresql/data
   grobid:
     image: ${DOCKER_GROBID_IMAGE:-grobid/grobid:0.8.1}
     container_name: verbal_grobid
@@ -92,6 +92,19 @@ services:
           memory: 1G
     networks:
       - internal_network
+
+  # SilverBullet: Extensible Markdown knowledge base server for workspaces/grips_okf.
+  # Retained for future enablement when container image is available in the deployment environment.
+  # silverbullet:
+  #   image: ${DOCKER_SILVERBULLET_IMAGE:-zefhemel/silverbullet:latest}
+  #   container_name: verbal_silverbullet
+  #   restart: unless-stopped
+  #   volumes:
+  #     - ./workspaces/grips_okf:/space
+  #   ports:
+  #     - "127.0.0.1:3000:3000"
+  #   environment:
+  #     - SB_FOLDER=/space
 
 volumes:
   ollama_data:

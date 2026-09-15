@@ -2,6 +2,7 @@ from django.contrib import admin, messages
 from django import forms
 from django.urls import reverse
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from django.db.models import Count
 from .models import LocalAIModel, ExternalAIModel, UserActiveModel, UserAPIKey, SystemConfiguration, PromptResponseLog, Conversation, LoRAAdapter
 
@@ -191,7 +192,7 @@ class SystemConfigurationAdmin(admin.ModelAdmin):
                 <div style="margin-top: 6px; color: #94a3b8;">Recommended backend: Containerized Ollama with GGUF quantization.</div>
             </div>
             """
-        return format_html(html)
+        return mark_safe(html)
 
     hardware_advisor_display.short_description = "Host Hardware & VRAM Diagnostics"
 
@@ -208,5 +209,5 @@ class LoRAAdapterAdmin(admin.ModelAdmin):
     @admin.display(description='Currency Status')
     def currency_status(self, obj):
         if obj.is_stale:
-            return format_html('<span style="color: orange; font-weight: bold;">⚠️ Stale (Source data updated)</span>')
-        return format_html('<span style="color: green; font-weight: bold;">🟢 Up to date</span>')
+            return mark_safe('<span style="color: orange; font-weight: bold;">⚠️ Stale (Source data updated)</span>')
+        return mark_safe('<span style="color: green; font-weight: bold;">🟢 Up to date</span>')

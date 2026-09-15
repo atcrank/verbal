@@ -3,6 +3,7 @@ import subprocess
 from django.contrib import admin, messages
 from django.conf import settings
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from .models import SandboxConfiguration, SandboxExecutionLog
 from .utils import rebuild_sandbox_image
 
@@ -46,7 +47,7 @@ class SandboxConfigurationAdmin(admin.ModelAdmin):
             ).stdout.strip()
             
             if not state:
-                return format_html("<span style='color: red; font-weight: bold;'>Container 'verbal_sandbox' is offline or not created. Rebuild required.</span>")
+                return mark_safe("<span style='color: red; font-weight: bold;'>Container 'verbal_sandbox' is offline or not created. Rebuild required.</span>")
                 
             return format_html(
                 "<div style='background: #1e1e1e; color: #00ff00; padding: 10px; border-radius: 5px; font-family: monospace; max-width: 600px;'>"
