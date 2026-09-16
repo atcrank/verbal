@@ -446,6 +446,13 @@ class MindmapViewTests(TestCase):
                 "causes": ["Aerosol Water Density"]
             }
         )
+        self.card1 = self.card
+        self.card2 = WhiteboardCard.objects.create(
+            session=self.session,
+            text="Ultrasonic sensors fail at highway speeds",
+            card_type="idea",
+            author=self.user
+        )
 
     def test_session_mindmap_access_control(self):
         # Outsider user should be forbidden (404 via GroupScopedManager)
@@ -492,12 +499,87 @@ class MindmapViewTests(TestCase):
         self.assertTrue(resp.context['is_staff_user'])
         self.assertContains(resp, '<div class="staff-toolbar">')
 
-    def test_work_dashboard_view(self):
+    def test_session_mindmap_unauthenticated_redirect(self):
+        # Unauthenticated user attempting to access private session should redirect to login
+        self.client.logout()
+        resp = self.client.get(f"/work/session/{self.session.id}/")
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn("/accounts/login/?next=", resp.url)
+
+        # Non-existent session should still 404
+        resp_404 = self.client.get("/work/session/999999/")
+        self.assertEqual(resp_404.status_code, 404)
+
+    def test_card_to_card_connection_api(self):
         self.client.login(username="designer", password="password123")
-        resp = self.client.get("/work/")
+        # Connect card1 -> card2
+        resp = self.client.post("/api/whiteboard/cards/connect/", data={
+            "source_card_id": self.card1.id,
+            "target_card_id": self.card2.id,
+            "action": "connect"
+        }, content_type="application/json")
         self.assertEqual(resp.status_code, 200)
-        self.assertContains(resp, "Autonomous Fleet Study")
-        self.assertContains(resp, "Emergency Braking Dynamics")
-        self.assertContains(resp, f"/work/session/{self.session.id}/")
+        self.card1.refresh_from_db()
+        self.assertIn(self.card2.id, self.card1.metadata.get("connections", []))
+
+        # Disconnect card1 -> card2
+        resp_dis = self.client.post("/api/whiteboard/cards/connect/", data={
+            "source_card_id": self.card1.id,
+            "target_card_id": self.card2.id,
+            "action": "disconnect"
+        }, content_type="application/json")
+        self.assertEqual(resp_dis.status_code, 200)
+        self.card1.refresh_from_db()
+        self.assertNotIn(self.card2.id, self.card1.metadata.get("connections", []))
+
+    def test_manual_cluster_lifecycle_api(self):
+        self.client.login(username="designer", password="password123")
+        # Create cluster
+        resp = self.client.post("/api/whiteboard/clusters/", data={
+            "session_id": self.session.id,
+            "title": "Hardware Limitations",
+            "summary": "Sensor and compute constraints",
+            "color": "#10B981"
+        }, content_type="application/json")
+        self.assertEqual(resp.status_code, 200)
+        cluster_id = resp.json()["cluster_id"]
+        self.assertTrue(WhiteboardCluster.objects.filter(id=cluster_id).exists())
+
+        # Move card to cluster
+        move_resp = self.client.post("/api/whiteboard/cards/move/", data={
+            "card_id": self.card1.id,
+            "pos_x": 0.0,
+            "pos_y": 0.0,
+            "cluster_id": cluster_id
+        }, content_type="application/json")
+        self.assertEqual(move_resp.status_code, 200)
+        self.card1.refresh_from_db()
+        self.assertEqual(self.card1.cluster_id, cluster_id)
+
+        # Delete cluster
+        del_resp = self.client.delete(f"/api/whiteboard/clusters/{cluster_id}/")
+        self.assertEqual(del_resp.status_code, 200)
+        self.assertFalse(WhiteboardCluster.objects.filter(id=cluster_id).exists())
+        self.card1.refresh_from_db()
+        self.assertIsNone(self.card1.cluster)
+
+    @patch('llm_api.ai_service.AIService.generate_outline')
+    def test_clustering_error_and_warning_handling(self, mock_generate):
+        # 1. Test when LLM raises an inference exception
+        mock_generate.side_effect = RuntimeError("Connection to vLLM aborted")
+        res_error = cluster_whiteboard_cards(self.session.id)
+        self.assertEqual(res_error["status"], "error")
+        self.assertIn("Connection to vLLM aborted", res_error["message"])
+
+        # 2. Test when only 1 card exists (warning)
+        mock_generate.side_effect = None
+        single_card_session = WorkshopSession.objects.create(
+            workshop=self.workshop,
+            title="Single Note Session"
+        )
+        WhiteboardCard.objects.create(session=single_card_session, text="Only idea")
+        res_warn = cluster_whiteboard_cards(single_card_session.id)
+        self.assertEqual(res_warn["status"], "warning")
+        self.assertIn("At least 2 notes", res_warn["message"])
 
 

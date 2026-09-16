@@ -17,6 +17,16 @@ def session_mindmap(request, session_id: int):
     Provides hierarchical tree visualization, AI clustering triggers, and staff-scoped zoomability.
     """
     # Permission scoping
+    if not request.user.is_authenticated:
+        if WorkshopSession.objects.filter(id=session_id).exists():
+            # If session exists but is not accessible anonymously, redirect to login
+            qs_anon = WorkshopSession.objects.for_user(request.user)
+            if not qs_anon.filter(id=session_id).exists():
+                from django.contrib.auth.views import redirect_to_login
+                return redirect_to_login(request.get_full_path())
+        else:
+            raise Http404("Workshop session not found")
+
     qs = WorkshopSession.objects.for_user(request.user).select_related('workshop', 'workshop__project')
     session = get_object_or_404(qs, id=session_id)
     workshop = session.workshop
@@ -56,6 +66,7 @@ def session_mindmap(request, session_id: int):
             "state_options": meta.get("state_options", []),
             "causes": meta.get("causes", []),
             "justification": meta.get("justification", ""),
+            "connections": meta.get("connections", []),
         }
 
     prepared_clusters = []

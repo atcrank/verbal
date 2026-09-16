@@ -111,6 +111,24 @@ class CardMoveSchema(Schema):
     cluster_id: Optional[int] = None
 
 
+class ClusterCreateSchema(Schema):
+    session_id: int
+    title: str
+    summary: Optional[str] = ""
+    color: Optional[str] = "#3B82F6"
+
+
+class CardConnectSchema(Schema):
+    source_card_id: int
+    target_card_id: int
+    action: Optional[str] = "connect"
+
+
+class CardUpdateSchema(Schema):
+    text: Optional[str] = None
+    card_type: Optional[str] = None
+
+
 class ClusterRequestSchema(Schema):
     session_id: int
 
@@ -457,6 +475,121 @@ def move_card(request, payload: CardMoveSchema):
     })
 
     return {"status": "success", "card_id": card.id}
+
+
+@router.post("/clusters/")
+def create_cluster(request, payload: ClusterCreateSchema):
+    """
+    Creates a new thematic cluster manually on the whiteboard session.
+    """
+    session = get_object_or_404(WorkshopSession.objects.for_user(request.user), id=payload.session_id)
+    cluster = WhiteboardCluster.objects.create(
+        session=session,
+        title=payload.title,
+        summary=payload.summary or "",
+        color=payload.color or "#3B82F6"
+    )
+    publish_whiteboard_event(session.id, "cluster_created", {
+        "cluster_id": cluster.id,
+        "title": cluster.title,
+        "color": cluster.color
+    })
+    return {
+        "status": "success",
+        "cluster_id": cluster.id,
+        "title": cluster.title,
+        "summary": cluster.summary,
+        "color": cluster.color
+    }
+
+
+@router.delete("/clusters/{cluster_id}/")
+def delete_cluster(request, cluster_id: int):
+    """
+    Deletes a cluster and detaches all contained cards so they become standalone notes.
+    """
+    cluster = get_object_or_404(WhiteboardCluster.objects.for_user(request.user), id=cluster_id)
+    session_id = cluster.session_id
+    cluster.cards.update(cluster=None)
+    cluster.delete()
+
+    publish_whiteboard_event(session_id, "cluster_deleted", {
+        "cluster_id": cluster_id
+    })
+    return {"status": "success", "cluster_id": cluster_id}
+
+
+@router.post("/cards/connect/")
+def connect_cards(request, payload: CardConnectSchema):
+    """
+    Connects or disconnects two cards via directional or relational link stored in card metadata.
+    """
+    source_card = get_object_or_404(WhiteboardCard.objects.for_user(request.user), id=payload.source_card_id)
+    target_card = get_object_or_404(WhiteboardCard.objects.for_user(request.user), id=payload.target_card_id)
+
+    if source_card.session_id != target_card.session_id:
+        return JsonResponse({"status": "error", "message": "Cards must belong to the same session."}, status=400)
+
+    meta = source_card.metadata or {}
+    connections = set(meta.get("connections", []))
+    if payload.action == "disconnect":
+        connections.discard(target_card.id)
+    else:
+        connections.add(target_card.id)
+
+    meta["connections"] = sorted(list(connections))
+    source_card.metadata = meta
+    source_card.save(update_fields=['metadata'])
+
+    publish_whiteboard_event(source_card.session_id, "cards_connected", {
+        "source_card_id": source_card.id,
+        "target_card_id": target_card.id,
+        "action": payload.action
+    })
+
+    return {
+        "status": "success",
+        "source_card_id": source_card.id,
+        "target_card_id": target_card.id,
+        "action": payload.action,
+        "connections": meta["connections"]
+    }
+
+
+@router.put("/cards/{card_id}/")
+@router.post("/cards/{card_id}/update/")
+def update_card(request, card_id: int, payload: CardUpdateSchema):
+    """
+    Updates the text content or type of an existing card.
+    """
+    card = get_object_or_404(WhiteboardCard.objects.for_user(request.user), id=card_id)
+    if payload.text is not None:
+        card.text = payload.text
+    if payload.card_type is not None:
+        card.card_type = payload.card_type
+    card.save(update_fields=['text', 'card_type', 'updated_at'])
+
+    publish_whiteboard_event(card.session_id, "card_updated", {
+        "card_id": card.id,
+        "text": card.text,
+        "card_type": card.card_type
+    })
+    return {"status": "success", "card_id": card.id, "text": card.text, "card_type": card.card_type}
+
+
+@router.delete("/cards/{card_id}/")
+def delete_card(request, card_id: int):
+    """
+    Deletes a whiteboard card.
+    """
+    card = get_object_or_404(WhiteboardCard.objects.for_user(request.user), id=card_id)
+    session_id = card.session_id
+    card.delete()
+
+    publish_whiteboard_event(session_id, "card_deleted", {
+        "card_id": card_id
+    })
+    return {"status": "success", "card_id": card_id}
 
 
 @router.post("/cluster_ideas/")
