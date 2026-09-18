@@ -51,6 +51,23 @@ Grips is actively maintained through background tasks (`verbal_tasks`):
 * **Automated Node Linting (``lint_concept_node``)**: An automated critique pass inspects `claims_json` against the document store to flag unanchored assertions, vague predicates, or factual contradictions.
 * **Edge Linting (``lint_knowledge_edge``)**: Verifies that relationship edges between nodes are logically justified, improving edge annotations or recommending edge pruning.
 
+Interactive OKF Wiki & Bidirectional Linking
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To replace external standalone wiki containers (like SilverBullet.md) without adding runtime overhead or unapproved ports, Verbal integrates a native, Git-backed wiki for ``workspaces/grips_okf`` directly into Django and Granian:
+
+* **Vendored Frontend Editor**: Utilizes a standalone build of **Milkdown Crepe** (``crepe.bundle.mjs`` and ``crepe.css`` vendored in ``static/vendor/milkdown/`` via ``manage_vendored_resources.sh``). No Node.js or npm dependencies are required in deployment.
+* **Read-Only Default with In-Place Edit**: Wiki pages render read-only by default with styled typography and clickable ``[[wikilinks]]``. Clicking **Edit Page** toggles seamlessly into Milkdown Crepe WYSIWYG Markdown editing.
+* **Responsive Wikilink Autocomplete**: Typing ``[[`` in the editor activates an inline autocomplete dropdown querying ``/wiki/api/query-links/?q=...``, allowing users to rapidly cross-reference concepts, documents, and references.
+* **Two-Way Database Synchronization**: When a user saves a wiki page:
+  1. The Markdown file in ``workspaces/grips_okf`` is updated.
+  2. Git stages and commits the change with author metadata and commit message.
+  3. The corresponding ``ConceptNode`` and ``KnowledgeEdge`` records in PostgreSQL are updated atomically, triggering vector re-indexing for PGVector search.
+* **Git Version Tracking & Reflog**:
+  * Per-document commit history and diffs under ``/wiki/history/<path>/``.
+  * Concurrency safety with 3-way merges (``git merge-file``) if a user edits against an older commit.
+  * Global workspace activity reflog under ``/wiki/activity/`` displaying chronological commit logs, author attributions, and unified diffs.
+* **Strict Path Sandboxing**: Enforces that all file access resides strictly within ``workspaces/grips_okf``, preventing exposure of LLM scratch directories or host system paths.
+
 
 3. Observability & Health Signals
 ---------------------------------
@@ -58,12 +75,14 @@ Grips is actively maintained through background tasks (`verbal_tasks`):
 How to Know the Knowledge Graph is Working Well
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-1. **Integrated Admin Wiki Experience**:
+1. **Interactive OKF Wiki & Activity Reflog**:
+   Navigating to ``/wiki/`` presents the domain hierarchy and top concepts, while ``/wiki/activity/`` provides an audit stream of all human and automated knowledge revisions.
+2. **Integrated Admin Wiki Experience**:
    In Django Admin under **Grips > Concept Nodes**, the interface renders dynamic Markdown previews with contextual URL links, mirroring an Obsidian-like research wiki.
-2. **Dense Propositional Grounding**:
+3. **Dense Propositional Grounding**:
    Healthy concept nodes feature rich `claims_json` where each claim maps to specific citations or `source_chunk_id` references rather than ungrounded generalities.
-3. **Graph Connectivity**:
-   Navigating to a node displays its incoming and outgoing `KnowledgeEdge` links. Concepts should form coherent, navigable clusters within their `ConceptDomain`.
+4. **Graph Connectivity & Backlinks**:
+   Navigating to a node displays its incoming backlinks and outgoing `KnowledgeEdge` links. Concepts form coherent, navigable clusters within their `ConceptDomain`.
 
 
 4. Diagnostic Tips & Failure Modes
@@ -97,3 +116,16 @@ Module Reference
    :undoc-members:
    :show-inheritance:
    :member-order: bysource
+
+.. automodule:: grips.wiki_service
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :member-order: bysource
+
+.. automodule:: grips.wiki_views
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :member-order: bysource
+

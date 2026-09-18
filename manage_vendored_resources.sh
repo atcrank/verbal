@@ -83,6 +83,17 @@ DATASTAR_JS_URL="https://cdn.jsdelivr.net/gh/starfederation/datastar@1.0.0-beta.
 DATASTAR_JS_FILE="datastar.js"
 DATASTAR_JS_HASH="11d9e34fecd2ca69b9faf9096bbd33feea2c79a732372337f34950a617538768"
 
+# Milkdown Crepe (WYSIWYG Markdown Editor for Grips OKF Wiki)
+MILKDOWN_DIR="./static/vendor/milkdown"
+mkdir -p "$MILKDOWN_DIR"
+MILKDOWN_JS_URL="https://esm.sh/@milkdown/crepe@7.22.1/es2022/crepe.bundle.mjs"
+MILKDOWN_JS_FILE="crepe.bundle.mjs"
+MILKDOWN_JS_HASH="40680c926a1440834c96b42a3c4faf4e66880afe00f0f339096cd57ec9f9b375"
+
+MILKDOWN_CSS_URL="https://unpkg.com/@milkdown/crepe@7.22.1/lib/theme/frame/style.css"
+MILKDOWN_CSS_FILE="crepe.css"
+MILKDOWN_CSS_HASH="c6009ffea2f5a5b69f356d26dde579e75920a401d49946c58e480ac656ba0631"
+
 # We override RESOURCES_DIR temporarily for the download_and_verify function
 ORIGINAL_RESOURCES_DIR="$RESOURCES_DIR"
 RESOURCES_DIR="$FRONTEND_DIR"
@@ -92,6 +103,10 @@ download_and_verify "$SWAGGER_JS_URL" "$SWAGGER_JS_FILE" "$SWAGGER_JS_HASH"
 download_and_verify "$SWAGGER_CSS_URL" "$SWAGGER_CSS_FILE" "$SWAGGER_CSS_HASH"
 download_and_verify "$MERMAID_JS_URL" "$MERMAID_JS_FILE" "$MERMAID_JS_HASH"
 download_and_verify "$DATASTAR_JS_URL" "$DATASTAR_JS_FILE" "$DATASTAR_JS_HASH"
+
+RESOURCES_DIR="$MILKDOWN_DIR"
+download_and_verify "$MILKDOWN_JS_URL" "$MILKDOWN_JS_FILE" "$MILKDOWN_JS_HASH"
+download_and_verify "$MILKDOWN_CSS_URL" "$MILKDOWN_CSS_FILE" "$MILKDOWN_CSS_HASH"
 
 RESOURCES_DIR="$ORIGINAL_RESOURCES_DIR"
 

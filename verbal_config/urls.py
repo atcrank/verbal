@@ -167,6 +167,7 @@ urlpatterns = [
     path("accounts/", include("django.contrib.auth.urls")),
     path('demo/', include('demo_ui.urls')),
     path('work/', include('work_organisation.urls')),
+    path('wiki/', include('grips.wiki_urls', namespace='wiki')),
     
     # Broadcast and SSE Endpoints (WS12)
     path("api/broadcasts/current/", broadcast_views.current_broadcast, name="broadcast_current"),

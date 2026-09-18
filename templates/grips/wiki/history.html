@@ -1,0 +1,111 @@
+{% extends "grips/wiki/base_wiki.html" %}
+
+{% block title %}Revision History - {{ title }} | Grips OKF Wiki{% endblock %}
+
+{% block extra_head %}
+<style>
+    .history-layout {
+        display: grid;
+        grid-template-columns: 360px 1fr;
+        gap: 2rem;
+        align-items: start;
+    }
+    .commit-list {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+    }
+    .commit-item {
+        padding: 0.9rem 1.1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        display: block;
+        text-decoration: none;
+        color: var(--text-primary);
+        transition: background 0.15s;
+    }
+    .commit-item:hover, .commit-item.active {
+        background: var(--bg-card-hover);
+    }
+    .commit-item.active {
+        border-left: 3px solid var(--accent-primary);
+    }
+    .diff-container {
+        background: #030712;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        padding: 1.25rem;
+        overflow-x: auto;
+        font-family: 'JetBrains Mono', Menlo, Consolas, monospace;
+        font-size: 0.85rem;
+        line-height: 1.5;
+        white-space: pre-wrap;
+    }
+    .diff-line-add { color: #4ade80; background: rgba(74, 222, 128, 0.1); display: block; }
+    .diff-line-del { color: #f87171; background: rgba(248, 113, 113, 0.1); display: block; }
+    .diff-line-info { color: #94a3b8; font-weight: 600; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="history-wrapper">
+    <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
+        <div>
+            <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.25rem;">
+                <a href="{% url 'wiki:index' %}" style="color: var(--text-secondary); text-decoration: none;">Wiki</a> / 
+                <a href="/wiki/{{ rel_path }}" style="color: var(--text-secondary); text-decoration: none;">{{ rel_path }}</a> / History
+            </div>
+            <h1 style="font-size: 1.8rem; font-weight: 700;">Revision History: {{ title }}</h1>
+        </div>
+        <a href="/wiki/{{ rel_path }}" class="btn btn-secondary">
+            <span>&larr; Back to Page</span>
+        </a>
+    </div>
+
+    <div class="history-layout">
+        <!-- Commit List -->
+        <div class="commit-list">
+            <div style="padding: 0.75rem 1.1rem; background: var(--bg-card); font-weight: 600; font-size: 0.85rem; border-bottom: 1px solid var(--border-color);">
+                Revisions ({{ history|length }})
+            </div>
+            {% for c in history %}
+            <a href="?sha={{ c.sha }}" class="commit-item {% if selected_sha == c.sha %}active{% endif %}">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                    <span style="font-family: monospace; font-size: 0.8rem; color: var(--accent-teal); font-weight: 700;">{{ c.sha }}</span>
+                    <span style="font-size: 0.75rem; color: var(--text-muted);">{{ c.date }}</span>
+                </div>
+                <div style="font-weight: 500; font-size: 0.85rem; margin-bottom: 0.2rem;">{{ c.message }}</div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary);">By {{ c.author }}</div>
+            </a>
+            {% empty %}
+            <div style="padding: 1.5rem; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+                No Git commits recorded for this file yet.
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Diff Viewer -->
+        <div>
+            {% if selected_sha and diff_output %}
+            <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1.25rem;">
+                <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary);">
+                    Diff for Commit <code>{{ selected_sha }}</code>
+                </h3>
+                <div class="diff-container">
+{% for line in diff_output.splitlines %}{% if line|slice:":1" == "+" and line|slice:":3" != "+++" %}<span class="diff-line-add">{{ line }}</span>{% elif line|slice:":1" == "-" and line|slice:":3" != "---" %}<span class="diff-line-del">{{ line }}</span>{% elif line|slice:":2" == "@@" %}<span class="diff-line-info">{{ line }}</span>{% else %}{{ line }}
+{% endif %}{% endfor %}
+                </div>
+            </div>
+            {% elif selected_sha %}
+            <div style="padding: 2rem; text-align: center; color: var(--text-muted); background: var(--bg-surface); border-radius: var(--radius-md);">
+                No changes or empty diff for commit <code>{{ selected_sha }}</code>.
+            </div>
+            {% else %}
+            <div style="padding: 3rem; text-align: center; color: var(--text-muted); background: var(--bg-surface); border-radius: var(--radius-md); border: 1px dashed var(--border-color);">
+                👈 Select a commit from the history on the left to inspect its diff.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

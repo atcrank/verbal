@@ -1,0 +1,472 @@
+{% extends "grips/wiki/base_wiki.html" %}
+{% load static %}
+
+{% block title %}{{ page.title }} | Grips OKF Wiki{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Breadcrumb and Header */
+    .page-header {
+        margin-bottom: 2rem;
+        padding-bottom: 1.25rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-bottom: 0.75rem;
+    }
+    .breadcrumb a {
+        color: var(--text-secondary);
+        text-decoration: none;
+    }
+    .breadcrumb a:hover { color: var(--accent-primary); }
+
+    .header-meta-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-top: 0.5rem;
+    }
+
+    .meta-badges {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .badge-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        font-size: 0.75rem;
+        padding: 3px 8px;
+        border-radius: 6px;
+        background-color: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+    }
+
+    .badge-domain {
+        background-color: rgba(99, 102, 241, 0.15);
+        border-color: rgba(99, 102, 241, 0.35);
+        color: #a5b4fc;
+        font-weight: 500;
+    }
+
+    .badge-sha {
+        font-family: monospace;
+        color: var(--accent-teal);
+        text-decoration: none;
+    }
+    .badge-sha:hover { text-decoration: underline; }
+
+    .focus-hint-box {
+        margin-top: 1rem;
+        padding: 0.75rem 1rem;
+        background: rgba(20, 184, 166, 0.08);
+        border-left: 3px solid var(--accent-teal);
+        border-radius: 0 var(--radius-md) var(--radius-md) 0;
+        font-size: 0.9rem;
+        color: #99f6e4;
+    }
+
+    /* Editor Controls */
+    .editor-controls {
+        background-color: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: 0.75rem 1rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .commit-message-input {
+        flex: 1;
+        min-width: 260px;
+        background-color: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: 0.45rem 0.75rem;
+        color: var(--text-primary);
+        font-size: 0.85rem;
+        outline: none;
+    }
+    .commit-message-input:focus { border-color: var(--accent-primary); }
+
+    .conflict-banner {
+        background-color: rgba(244, 63, 94, 0.15);
+        border: 1px solid var(--accent-rose);
+        color: #fecdd3;
+        padding: 0.85rem 1.25rem;
+        border-radius: var(--radius-md);
+        margin-bottom: 1.5rem;
+        display: none;
+    }
+
+    /* Backlinks Section */
+    .backlinks-section {
+        margin-top: 3.5rem;
+        padding-top: 2rem;
+        border-top: 1px solid var(--border-color);
+    }
+    .backlinks-header {
+        font-size: 1.15rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .backlinks-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 1rem;
+    }
+    .backlink-card {
+        background-color: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: 1rem;
+        text-decoration: none;
+        color: var(--text-primary);
+        transition: all 0.15s ease;
+    }
+    .backlink-card:hover {
+        background-color: var(--bg-card-hover);
+        border-color: var(--accent-primary);
+        transform: translateY(-2px);
+    }
+    .backlink-title {
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: var(--link-color);
+        margin-bottom: 0.4rem;
+    }
+    .backlink-snippet {
+        font-size: 0.82rem;
+        color: var(--text-secondary);
+        line-height: 1.4;
+    }
+
+    /* Milkdown Editor Container */
+    #editor-container {
+        background-color: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        min-height: 520px;
+        padding: 1.5rem;
+    }
+
+    /* Floating Autocomplete for [[ */
+    .wikilink-autocomplete {
+        position: absolute;
+        background-color: var(--bg-surface);
+        border: 1px solid var(--border-highlight);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-lg);
+        width: 340px;
+        max-height: 280px;
+        overflow-y: auto;
+        z-index: 1000;
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+
+    <!-- Page Header & Metadata -->
+    <div class="page-header">
+        <div class="breadcrumb">
+            <a href="{% url 'wiki:index' %}">Wiki</a>
+            <span>/</span>
+            <span>{{ rel_path }}</span>
+        </div>
+
+        <div class="header-meta-row">
+            <div class="meta-badges">
+                {% if page.frontmatter.domain %}
+                <span class="badge-tag badge-domain">🏷️ {{ page.frontmatter.domain }}</span>
+                {% endif %}
+                <span class="badge-tag">📄 {{ page.frontmatter.type|default:"concept"|title }}</span>
+                {% if page.commit_sha %}
+                <span class="badge-tag">
+                    Commit: <a href="{% url 'wiki:history' rel_path %}?sha={{ page.commit_sha }}" class="badge-sha">{{ page.commit_sha }}</a>
+                </span>
+                {% endif %}
+                {% if page.last_modified %}
+                <span class="badge-tag">🕒 {{ page.last_modified }}</span>
+                {% endif %}
+            </div>
+
+            <!-- Header Action Buttons -->
+            <div class="page-actions" id="page-actions">
+                <button id="btn-toggle-edit" class="btn btn-primary">
+                    <span>✏️ Edit Page</span>
+                </button>
+                <a href="{% url 'wiki:history' rel_path %}" class="btn btn-secondary">
+                    <span>📜 Revision History</span>
+                </a>
+            </div>
+        </div>
+
+        {% if page.frontmatter.focus_hint %}
+        <div class="focus-hint-box">
+            <strong>🎯 Focus Hint:</strong> {{ page.frontmatter.focus_hint }}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Read-Only View Container (Default) -->
+    <div id="view-mode">
+        <div class="markdown-body">
+            {{ rendered_body_html }}
+        </div>
+
+        <!-- Incoming Backlinks Panel -->
+        {% if page.backlinks %}
+        <div class="backlinks-section">
+            <div class="backlinks-header">
+                <span>🔗 Incoming Backlinks ({{ page.backlinks|length }})</span>
+            </div>
+            <div class="backlinks-grid">
+                {% for b in page.backlinks %}
+                <a href="/wiki/{{ b.slug }}/" class="backlink-card">
+                    <div class="backlink-title">{{ b.title }}</div>
+                    <div class="backlink-snippet">{{ b.snippet }}</div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Edit Mode Container (Hidden by default) -->
+    <div id="edit-mode" style="display: none;">
+        <!-- Conflict Alert Banner -->
+        <div id="conflict-alert" class="conflict-banner">
+            ⚠️ <strong>Concurrent edit detected:</strong> A 3-way merge was performed against the latest commit. Please review any conflict markers before saving.
+        </div>
+
+        <!-- Editor Toolbar / Action Bar -->
+        <div class="editor-controls">
+            <div style="display: flex; gap: 0.75rem; align-items: center; flex: 1;">
+                <input type="text" id="commit-message" class="commit-message-input" placeholder="Commit message (e.g., Update causal claims and references)">
+                <button id="btn-save-wiki" class="btn btn-primary">
+                    <span>💾 Save Changes</span>
+                </button>
+                <button id="btn-cancel-edit" class="btn btn-secondary">
+                    <span>Cancel</span>
+                </button>
+            </div>
+            <div id="save-status" style="font-size: 0.85rem; color: var(--text-muted);"></div>
+        </div>
+
+        <!-- Milkdown Crepe Mount Target -->
+        <div id="editor-container"></div>
+    </div>
+
+    <!-- Autocomplete Popup for [[ -->
+    <div id="wikilink-popup" class="wikilink-autocomplete"></div>
+
+</div>
+
+<!-- Raw markdown data for editor initialization -->
+<script id="initial-markdown-data" type="text/plain">
+{{ page.markdown|safe }}
+</script>
+{% endblock %}
+
+{% block extra_scripts %}
+<script type="module">
+    import { Crepe } from "{% static 'vendor/milkdown/crepe.bundle.mjs' %}";
+
+    let crepeInstance = null;
+    let isEditorActive = false;
+    const baseCommitSha = "{{ page.commit_sha|default:'' }}";
+    const relPath = "{{ rel_path }}";
+
+    const viewMode = document.getElementById('view-mode');
+    const editMode = document.getElementById('edit-mode');
+    const btnToggleEdit = document.getElementById('btn-toggle-edit');
+    const btnCancelEdit = document.getElementById('btn-cancel-edit');
+    const btnSaveWiki = document.getElementById('btn-save-wiki');
+    const commitMsgInput = document.getElementById('commit-message');
+    const saveStatus = document.getElementById('save-status');
+    const conflictAlert = document.getElementById('conflict-alert');
+    const initialMarkdown = document.getElementById('initial-markdown-data').textContent.trim();
+
+    // Toggle into Edit Mode
+    btnToggleEdit.addEventListener('click', async () => {
+        viewMode.style.display = 'none';
+        btnToggleEdit.style.display = 'none';
+        editMode.style.display = 'block';
+
+        if (!crepeInstance) {
+            saveStatus.textContent = 'Initializing editor...';
+            try {
+                crepeInstance = new Crepe({
+                    root: document.getElementById('editor-container'),
+                    defaultValue: initialMarkdown,
+                });
+                await crepeInstance.create();
+                saveStatus.textContent = '';
+                setupWikilinkTrigger();
+            } catch (err) {
+                console.error("Failed to initialize Milkdown Crepe:", err);
+                saveStatus.textContent = 'Editor initialization failed, falling back to textarea.';
+                fallbackTextarea(initialMarkdown);
+            }
+        }
+        isEditorActive = true;
+    });
+
+    // Cancel Edit Mode
+    btnCancelEdit.addEventListener('click', () => {
+        editMode.style.display = 'none';
+        viewMode.style.display = 'block';
+        btnToggleEdit.style.display = 'inline-flex';
+        isEditorActive = false;
+    });
+
+    // Fallback Textarea if WebComponent/Crepe has browser issue
+    function fallbackTextarea(content) {
+        const container = document.getElementById('editor-container');
+        container.innerHTML = `<textarea id="raw-markdown-textarea" style="width:100%; min-height:480px; background:var(--bg-card); color:var(--text-primary); border:1px solid var(--border-color); border-radius:8px; padding:1rem; font-family:monospace; font-size:0.95rem; line-height:1.5;">${content}</textarea>`;
+    }
+
+    function getCurrentMarkdown() {
+        if (crepeInstance && typeof crepeInstance.getMarkdown === 'function') {
+            return crepeInstance.getMarkdown();
+        }
+        const textarea = document.getElementById('raw-markdown-textarea');
+        return textarea ? textarea.value : '';
+    }
+
+    // Save Changes via POST
+    btnSaveWiki.addEventListener('click', async () => {
+        const markdown = getCurrentMarkdown();
+        if (!markdown) {
+            alert("Content cannot be empty.");
+            return;
+        }
+
+        const message = commitMsgInput.value.trim() || `Update ${relPath}`;
+        btnSaveWiki.disabled = true;
+        saveStatus.textContent = 'Saving & committing to Git...';
+
+        try {
+            const response = await fetch(`/wiki/api/save/${relPath}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                },
+                body: JSON.stringify({
+                    markdown: markdown,
+                    message: message,
+                    base_sha: baseCommitSha
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                saveStatus.textContent = '✅ Saved successfully! Reloading...';
+                if (data.conflict) {
+                    conflictAlert.style.display = 'block';
+                }
+                setTimeout(() => {
+                    window.location.reload();
+                }, 700);
+            } else {
+                saveStatus.textContent = `❌ Save failed: ${data.error || 'Unknown error'}`;
+                btnSaveWiki.disabled = false;
+            }
+        } catch (err) {
+            console.error("Save error:", err);
+            saveStatus.textContent = '❌ Network error during save.';
+            btnSaveWiki.disabled = false;
+        }
+    });
+
+    // [[ Wikilink Autocomplete Logic
+    function setupWikilinkTrigger() {
+        const popup = document.getElementById('wikilink-popup');
+        const container = document.getElementById('editor-container');
+        let queryMode = false;
+        let queryText = '';
+
+        container.addEventListener('keyup', (e) => {
+            const selection = window.getSelection();
+            if (!selection || !selection.focusNode) return;
+
+            const textBefore = selection.focusNode.textContent ? selection.focusNode.textContent.slice(0, selection.focusOffset) : '';
+            const match = textBefore.match(/\[\[([^\]]*)$/);
+
+            if (match) {
+                queryMode = true;
+                queryText = match[1];
+                fetchAndShowLinks(queryText, selection);
+            } else {
+                queryMode = false;
+                popup.style.display = 'none';
+            }
+        });
+
+        function fetchAndShowLinks(query, selection) {
+            fetch(`/wiki/api/query-links/?q=${encodeURIComponent(query)}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.results || data.results.length === 0) {
+                        popup.style.display = 'none';
+                        return;
+                    }
+                    popup.innerHTML = '';
+                    data.results.forEach(item => {
+                        const itemEl = document.createElement('div');
+                        itemEl.className = 'search-item';
+                        itemEl.innerHTML = `
+                            <div>
+                                <div class="search-item-title">${item.title}</div>
+                                <div class="search-item-meta">${item.slug}</div>
+                            </div>
+                            <span style="font-size:0.75rem; color:var(--text-muted);">${item.type}</span>
+                        `;
+                        itemEl.addEventListener('click', () => {
+                            insertWikilink(item.slug);
+                            popup.style.display = 'none';
+                        });
+                        popup.appendChild(itemEl);
+                    });
+
+                    // Position near editor top
+                    popup.style.top = '140px';
+                    popup.style.left = '40px';
+                    popup.style.display = 'block';
+                });
+        }
+
+        function insertWikilink(slug) {
+            document.execCommand('insertText', false, `${slug}]]`);
+        }
+    }
+
+    function getCsrfToken() {
+        const match = document.cookie.match(/csrftoken=([^;]+)/);
+        return match ? match[1] : '';
+    }
+</script>
+{% endblock %}

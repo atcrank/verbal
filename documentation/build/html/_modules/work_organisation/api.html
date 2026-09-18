@@ -5,9 +5,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>work_organisation.api &mdash; Verbal 0.1 documentation</title>
+  <title>work_organisation.api &mdash; reason 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=aaf24e6f" />
 
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
@@ -29,7 +30,7 @@
           
           
           <a href="../../index.html" class="icon icon-home">
-            Verbal
+            reason
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -41,18 +42,22 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../llm_api_app.html">LLM API</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../background_resources_app.html">Background Resources - context documents</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../grips_app.html">Grips - wiki knowledge banks</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../llm_api_app.html">LLM API - Local Inference, Proxy Routing &amp; Hardware-Aware Serving</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../verbal_tasks_app.html">Verbal Tasks - Database-Backed Asynchronous Execution &amp; Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../sandbox_manager_app.html">Sandbox Manager - Isolated Python Execution Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grobid_client_app.html">Grobid Client - Deterministic Scientific PDF Parsing &amp; Citation Extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../background_resources_app.html">Background Resources - Retrieval-Augmented Generation &amp; Document Ingestion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grips_app.html">Grips - Structured Knowledge Graph &amp; Propositional Claims</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../metacognition_app.html">Metacognition - Cognitive Blueprints, Agentic Workflows &amp; Self-Evaluation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_app.html">Demo UI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmarking_app.html">Benchmarking - Automated Evaluation, Synthetic Generation &amp; LoRA Flywheels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_app.html">Demo UI - Empirical Research &amp; Cognitive Workbench</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../using_ollama.html">Ollama as Local AI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_trials.html">Demo UI Empirical Trials &amp; Verification Reports</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../tests.html">Testing</a></li>
 </ul>
 
@@ -62,7 +67,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../index.html">Verbal</a>
+          <a href="../../index.html">reason</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -221,6 +226,33 @@
     <span class="n">pos_x</span><span class="p">:</span> <span class="nb">float</span>
     <span class="n">pos_y</span><span class="p">:</span> <span class="nb">float</span>
     <span class="n">cluster_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="ClusterCreateSchema">
+<a class="viewcode-back" href="../../work_organisation_app.html#work_organisation.api.ClusterCreateSchema">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ClusterCreateSchema</span><span class="p">(</span><span class="n">Schema</span><span class="p">):</span>
+    <span class="n">session_id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">summary</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">color</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;#3B82F6&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="CardConnectSchema">
+<a class="viewcode-back" href="../../work_organisation_app.html#work_organisation.api.CardConnectSchema">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CardConnectSchema</span><span class="p">(</span><span class="n">Schema</span><span class="p">):</span>
+    <span class="n">source_card_id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">target_card_id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">action</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;connect&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="CardUpdateSchema">
+<a class="viewcode-back" href="../../work_organisation_app.html#work_organisation.api.CardUpdateSchema">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CardUpdateSchema</span><span class="p">(</span><span class="n">Schema</span><span class="p">):</span>
+    <span class="n">text</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">card_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
 
@@ -605,6 +637,136 @@
     <span class="p">})</span>
 
     <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;success&quot;</span><span class="p">,</span> <span class="s2">&quot;card_id&quot;</span><span class="p">:</span> <span class="n">card</span><span class="o">.</span><span class="n">id</span><span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="create_cluster">
+<a class="viewcode-back" href="../../work_organisation_app.html#work_organisation.api.create_cluster">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/clusters/&quot;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_cluster</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">ClusterCreateSchema</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates a new thematic cluster manually on the whiteboard session.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">session</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span><span class="n">WorkshopSession</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">for_user</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">),</span> <span class="nb">id</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">session_id</span><span class="p">)</span>
+    <span class="n">cluster</span> <span class="o">=</span> <span class="n">WhiteboardCluster</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+        <span class="n">session</span><span class="o">=</span><span class="n">session</span><span class="p">,</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+        <span class="n">summary</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">summary</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="n">color</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">color</span> <span class="ow">or</span> <span class="s2">&quot;#3B82F6&quot;</span>
+    <span class="p">)</span>
+    <span class="n">publish_whiteboard_event</span><span class="p">(</span><span class="n">session</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s2">&quot;cluster_created&quot;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s2">&quot;cluster_id&quot;</span><span class="p">:</span> <span class="n">cluster</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">cluster</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+        <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="n">cluster</span><span class="o">.</span><span class="n">color</span>
+    <span class="p">})</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;success&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;cluster_id&quot;</span><span class="p">:</span> <span class="n">cluster</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">cluster</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+        <span class="s2">&quot;summary&quot;</span><span class="p">:</span> <span class="n">cluster</span><span class="o">.</span><span class="n">summary</span><span class="p">,</span>
+        <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="n">cluster</span><span class="o">.</span><span class="n">color</span>
+    <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="delete_cluster">
+<a class="viewcode-back" href="../../work_organisation_app.html#work_organisation.api.delete_cluster">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="s2">&quot;/clusters/</span><span class="si">{cluster_id}</span><span class="s2">/&quot;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">delete_cluster</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">cluster_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Deletes a cluster and detaches all contained cards so they become standalone notes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cluster</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span><span class="n">WhiteboardCluster</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">for_user</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">),</span> <span class="nb">id</span><span class="o">=</span><span class="n">cluster_id</span><span class="p">)</span>
+    <span class="n">session_id</span> <span class="o">=</span> <span class="n">cluster</span><span class="o">.</span><span class="n">session_id</span>
+    <span class="n">cluster</span><span class="o">.</span><span class="n">cards</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">cluster</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">cluster</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+
+    <span class="n">publish_whiteboard_event</span><span class="p">(</span><span class="n">session_id</span><span class="p">,</span> <span class="s2">&quot;cluster_deleted&quot;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s2">&quot;cluster_id&quot;</span><span class="p">:</span> <span class="n">cluster_id</span>
+    <span class="p">})</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;success&quot;</span><span class="p">,</span> <span class="s2">&quot;cluster_id&quot;</span><span class="p">:</span> <span class="n">cluster_id</span><span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="connect_cards">
+<a class="viewcode-back" href="../../work_organisation_app.html#work_organisation.api.connect_cards">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/cards/connect/&quot;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">connect_cards</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">CardConnectSchema</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Connects or disconnects two cards via directional or relational link stored in card metadata.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">source_card</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span><span class="n">WhiteboardCard</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">for_user</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">),</span> <span class="nb">id</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">source_card_id</span><span class="p">)</span>
+    <span class="n">target_card</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span><span class="n">WhiteboardCard</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">for_user</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">),</span> <span class="nb">id</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">target_card_id</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">source_card</span><span class="o">.</span><span class="n">session_id</span> <span class="o">!=</span> <span class="n">target_card</span><span class="o">.</span><span class="n">session_id</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;error&quot;</span><span class="p">,</span> <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Cards must belong to the same session.&quot;</span><span class="p">},</span> <span class="n">status</span><span class="o">=</span><span class="mi">400</span><span class="p">)</span>
+
+    <span class="n">meta</span> <span class="o">=</span> <span class="n">source_card</span><span class="o">.</span><span class="n">metadata</span> <span class="ow">or</span> <span class="p">{}</span>
+    <span class="n">connections</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;connections&quot;</span><span class="p">,</span> <span class="p">[]))</span>
+    <span class="k">if</span> <span class="n">payload</span><span class="o">.</span><span class="n">action</span> <span class="o">==</span> <span class="s2">&quot;disconnect&quot;</span><span class="p">:</span>
+        <span class="n">connections</span><span class="o">.</span><span class="n">discard</span><span class="p">(</span><span class="n">target_card</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">connections</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">target_card</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+
+    <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;connections&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">connections</span><span class="p">))</span>
+    <span class="n">source_card</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="n">meta</span>
+    <span class="n">source_card</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">update_fields</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">])</span>
+
+    <span class="n">publish_whiteboard_event</span><span class="p">(</span><span class="n">source_card</span><span class="o">.</span><span class="n">session_id</span><span class="p">,</span> <span class="s2">&quot;cards_connected&quot;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s2">&quot;source_card_id&quot;</span><span class="p">:</span> <span class="n">source_card</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+        <span class="s2">&quot;target_card_id&quot;</span><span class="p">:</span> <span class="n">target_card</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+        <span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="n">payload</span><span class="o">.</span><span class="n">action</span>
+    <span class="p">})</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;success&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;source_card_id&quot;</span><span class="p">:</span> <span class="n">source_card</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+        <span class="s2">&quot;target_card_id&quot;</span><span class="p">:</span> <span class="n">target_card</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+        <span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="n">payload</span><span class="o">.</span><span class="n">action</span><span class="p">,</span>
+        <span class="s2">&quot;connections&quot;</span><span class="p">:</span> <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;connections&quot;</span><span class="p">]</span>
+    <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="update_card">
+<a class="viewcode-back" href="../../work_organisation_app.html#work_organisation.api.update_card">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">&quot;/cards/</span><span class="si">{card_id}</span><span class="s2">/&quot;</span><span class="p">)</span>
+<span class="nd">@router</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/cards/</span><span class="si">{card_id}</span><span class="s2">/update/&quot;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">update_card</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">card_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">CardUpdateSchema</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Updates the text content or type of an existing card.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">card</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span><span class="n">WhiteboardCard</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">for_user</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">),</span> <span class="nb">id</span><span class="o">=</span><span class="n">card_id</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">payload</span><span class="o">.</span><span class="n">text</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">card</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">text</span>
+    <span class="k">if</span> <span class="n">payload</span><span class="o">.</span><span class="n">card_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">card</span><span class="o">.</span><span class="n">card_type</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">card_type</span>
+    <span class="n">card</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">update_fields</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">,</span> <span class="s1">&#39;card_type&#39;</span><span class="p">,</span> <span class="s1">&#39;updated_at&#39;</span><span class="p">])</span>
+
+    <span class="n">publish_whiteboard_event</span><span class="p">(</span><span class="n">card</span><span class="o">.</span><span class="n">session_id</span><span class="p">,</span> <span class="s2">&quot;card_updated&quot;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s2">&quot;card_id&quot;</span><span class="p">:</span> <span class="n">card</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+        <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">card</span><span class="o">.</span><span class="n">text</span><span class="p">,</span>
+        <span class="s2">&quot;card_type&quot;</span><span class="p">:</span> <span class="n">card</span><span class="o">.</span><span class="n">card_type</span>
+    <span class="p">})</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;success&quot;</span><span class="p">,</span> <span class="s2">&quot;card_id&quot;</span><span class="p">:</span> <span class="n">card</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">card</span><span class="o">.</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;card_type&quot;</span><span class="p">:</span> <span class="n">card</span><span class="o">.</span><span class="n">card_type</span><span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="delete_card">
+<a class="viewcode-back" href="../../work_organisation_app.html#work_organisation.api.delete_card">[docs]</a>
+<span class="nd">@router</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="s2">&quot;/cards/</span><span class="si">{card_id}</span><span class="s2">/&quot;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">delete_card</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">card_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Deletes a whiteboard card.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">card</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span><span class="n">WhiteboardCard</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">for_user</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">),</span> <span class="nb">id</span><span class="o">=</span><span class="n">card_id</span><span class="p">)</span>
+    <span class="n">session_id</span> <span class="o">=</span> <span class="n">card</span><span class="o">.</span><span class="n">session_id</span>
+    <span class="n">card</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+
+    <span class="n">publish_whiteboard_event</span><span class="p">(</span><span class="n">session_id</span><span class="p">,</span> <span class="s2">&quot;card_deleted&quot;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s2">&quot;card_id&quot;</span><span class="p">:</span> <span class="n">card_id</span>
+    <span class="p">})</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;success&quot;</span><span class="p">,</span> <span class="s2">&quot;card_id&quot;</span><span class="p">:</span> <span class="n">card_id</span><span class="p">}</span></div>
 
 
 

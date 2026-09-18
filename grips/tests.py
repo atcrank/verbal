@@ -195,3 +195,162 @@ class TestGripsServiceIntegration(TestCase):
         self.assertTrue(len(results) > 0)
         self.assertEqual(results[0].metadata["concept_id"], node.id)
         self.assertEqual(results[0].metadata["title"], "Cell Membrane")
+
+
+class TestWikiServiceAndEndpoints(TestCase):
+    """Test suite for the Grips OKF Interactive Wiki service, Git tracking, and views."""
+
+    def test_wiki_path_jail_security(self):
+        from grips.wiki_service import assert_safe_path
+        
+        # Valid relative path inside grips_okf
+        safe = assert_safe_path("concepts/oceanography/derived/deep-sea-mining.md")
+        self.assertTrue(str(safe).endswith("deep-sea-mining.md"))
+
+        # Directory traversal attempts must raise PermissionError
+        with self.assertRaises(PermissionError):
+            assert_safe_path("../../etc/passwd")
+
+        with self.assertRaises(PermissionError):
+            assert_safe_path("../0945084a-044b-424b-9382-7ae121db10a1/sandbox_script.py")
+
+        with self.assertRaises(PermissionError):
+            assert_safe_path("/var/log/syslog")
+
+    def test_wiki_read_page_and_wikilinks(self):
+        from grips.wiki_service import get_page_content_and_sha, _resolve_wiki_rel_path
+        
+        rel_path = _resolve_wiki_rel_path("deep-sea-mining")
+        self.assertTrue(rel_path.endswith("deep-sea-mining.md"))
+
+        page = get_page_content_and_sha(rel_path)
+        self.assertTrue(page['exists'])
+        self.assertEqual(page['slug'], "deep-sea-mining")
+        self.assertEqual(page['title'], "Deep Sea Mining")
+        self.assertIn("Extracts battery minerals", page['markdown'])
+
+    def test_wiki_link_search_api(self):
+        from grips.wiki_service import search_wiki_links
+        
+        # Search for deep sea mining
+        results = search_wiki_links("deep", limit=5)
+        self.assertTrue(any(r['slug'] == 'deep-sea-mining' for r in results))
+
+        # Search for causal statistics
+        causal_results = search_wiki_links("causal", limit=5)
+        self.assertTrue(len(causal_results) > 0)
+
+    def test_wiki_backlinks_extraction(self):
+        from grips.wiki_service import get_backlinks_for_slug
+        
+        # doc-10-c0-unconfoundedness-assumption--strong-ignorability- is included in doc-10-quasi-experimental-designs-for-causal-inference.md
+        backlinks = get_backlinks_for_slug("doc-10-c0-unconfoundedness-assumption--strong-ignorability-")
+        self.assertTrue(len(backlinks) > 0)
+        self.assertTrue(any("quasi-experimental" in b['rel_path'].lower() for b in backlinks))
+
+    def test_wiki_save_and_database_sync(self):
+        from grips.models import ConceptNode, KnowledgeEdge, Domain
+        from grips.wiki_service import save_and_commit_page, get_wiki_root
+        import subprocess
+
+        test_rel = "concepts/testing/derived/test-wiki-node.md"
+        test_content = (
+            "---\n"
+            "type: concept\n"
+            "title: Test Wiki Node\n"
+            "domain: Testing\n"
+            "slug: test-wiki-node\n"
+            "focus_hint: Test focus hint for wiki integration\n"
+            "---\n\n"
+            "# Test Wiki Node\n\n"
+            "This is an automated test node narrative verifying full wiki to database synchronization.\n\n"
+            "## Graph Links\n\n"
+            "- **DEPENDS_ON:** [[deep-sea-mining]] (Prerequisite knowledge)\n"
+        )
+
+        wiki_root = get_wiki_root()
+        target_file = wiki_root / test_rel
+
+        try:
+            # 1. Save and commit
+            result = save_and_commit_page(
+                rel_path=test_rel,
+                content=test_content,
+                author_name="Wiki Test Suite",
+                author_email="test@verbal.local",
+                message="Add test-wiki-node for verification"
+            )
+            self.assertTrue(result['success'])
+            self.assertIsNotNone(result['commit_sha'])
+            self.assertTrue(result['db_sync']['synced'])
+
+            # 2. Verify ConceptNode in PostgreSQL
+            node = ConceptNode.objects.filter(slug="test-wiki-node").first()
+            self.assertIsNotNone(node)
+            self.assertEqual(node.title, "Test Wiki Node")
+            self.assertEqual(node.focus_hint, "Test focus hint for wiki integration")
+            self.assertIn("verifying full wiki to database synchronization", node.narrative_content)
+
+            # 3. Verify KnowledgeEdge in PostgreSQL
+            target_node = ConceptNode.objects.filter(slug="deep-sea-mining").first()
+            if not target_node:
+                d, _ = Domain.objects.get_or_create(name="Oceanography")
+                target_node = ConceptNode.objects.create(domain=d, slug="deep-sea-mining", title="Deep Sea Mining")
+
+            # Re-sync to verify edge connection
+            save_and_commit_page(
+                rel_path=test_rel,
+                content=test_content,
+                author_name="Wiki Test Suite",
+                author_email="test@verbal.local",
+                message="Sync edge"
+            )
+            edge = KnowledgeEdge.objects.filter(source=node, target=target_node).first()
+            self.assertIsNotNone(edge)
+            self.assertEqual(edge.relationship_type, KnowledgeEdge.RelationshipTypes.DEPENDS_ON)
+            self.assertEqual(edge.justification, "Prerequisite knowledge")
+
+        finally:
+            # Cleanup test file and git commit
+            if target_file.exists():
+                target_file.unlink()
+            subprocess.run(['git', 'rm', '-f', test_rel], cwd=str(wiki_root), capture_output=True, check=False)
+            subprocess.run(['git', 'commit', '-m', 'Cleanup test-wiki-node'], cwd=str(wiki_root), capture_output=True, check=False)
+            ConceptNode.objects.filter(slug="test-wiki-node").delete()
+
+    def test_wiki_views_endpoints(self):
+        from django.test import Client
+        client = Client()
+
+        # 1. Wiki Index
+        res = client.get('/wiki/')
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Grips Open Knowledge Base")
+
+        # 2. Wiki Page by slug
+        res = client.get('/wiki/deep-sea-mining/')
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Deep Sea Mining")
+        self.assertContains(res, "Edit Page")
+
+        # 3. Wiki Query Links JSON
+        res = client.get('/wiki/api/query-links/?q=ocean')
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertIn('results', data)
+        self.assertTrue(any(r['slug'] == 'deep-sea-mining' for r in data['results']))
+
+        # 4. History view
+        res = client.get('/wiki/history/concepts/oceanography/derived/deep-sea-mining.md')
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Revision History")
+
+        # 5. Activity reflog
+        res = client.get('/wiki/activity/')
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Wiki Activity Reflog")
+
+        # 6. Traversal attack blocked
+        res = client.get('/wiki/../../etc/passwd/')
+        self.assertIn(res.status_code, [404, 403])
+
