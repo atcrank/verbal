@@ -1492,7 +1492,17 @@ def seed_digest_document_chunk(CognitiveBlueprint, ReasoningStep, ResponseSchema
     step1 = ReasoningStep.objects.create(
         blueprint=bp, 
         name="Extract Concepts",
-        system_prompt="You are an expert ontologist. Extract the key operational concepts from the provided document chunk. For each concept, extract its operational logic (requirements, capabilities, incompatibilities, properties, composition) as structured claims using strictly the provided predicates. Once extracted, you MUST use the `create_concept_nodes_tool` to save them. If there are no operational concepts, output an empty list.", 
+        system_prompt=(
+            "You are an expert ontologist. Extract the key operational concepts from the provided document chunk.\n"
+            "RULES:\n"
+            "1. 'title' MUST be a clean, descriptive concept name (e.g. 'Back-Door Criterion', 'Inverse Probability Weighting'). "
+            "Never prefix titles with document IDs, category codes, numbers, or punctuation.\n"
+            "2. 'narrative_content' MUST be an authoritative, in-depth explanation (at least 150-300 words) structured with Markdown headings: "
+            "'## Definition', '## Operational Logic', and '## Empirical Context'. Single-sentence summaries are strictly rejected.\n"
+            "3. For each concept, extract its operational logic (requirements, capabilities, incompatibilities, properties, composition) "
+            "as structured claims using strictly the provided predicates.\n"
+            "4. Once extracted, you MUST use the `create_concept_nodes_tool` to save them. If there are no operational concepts, output an empty list."
+        ),
         is_start_node=True
     )
     step1.available_tools.add(save_tool)

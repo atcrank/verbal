@@ -1,0 +1,259 @@
+{% extends "grips/wiki/base_wiki.html" %}
+
+{% block title %}Research Reading List & Citation Analytics | Grips Wiki{% endblock %}
+
+{% block extra_head %}
+<style>
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background-color: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: 1rem 1.25rem;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .stat-val {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--accent-primary);
+        line-height: 1.2;
+    }
+
+    .stat-label {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-top: 0.25rem;
+    }
+
+    .paper-card {
+        background-color: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: 1.25rem;
+        margin-bottom: 0.85rem;
+        transition: border-color 0.2s, transform 0.15s;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1.25rem;
+    }
+
+    .paper-card:hover {
+        border-color: var(--accent-primary);
+        transform: translateY(-1px);
+    }
+
+    .paper-badge-full {
+        background-color: rgba(16, 185, 129, 0.15);
+        color: #34d399;
+        border: 1px solid rgba(16, 185, 129, 0.35);
+        font-size: 0.75rem;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .paper-badge-cited {
+        background-color: rgba(245, 158, 11, 0.15);
+        color: #fbbf24;
+        border: 1px solid rgba(245, 158, 11, 0.35);
+        font-size: 0.75rem;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .citation-count-badge {
+        background-color: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: 0.5rem 0.85rem;
+        text-align: center;
+        min-width: 85px;
+    }
+
+    .citation-count-num {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    .citation-count-lbl {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.75rem;">
+    <h1 style="font-size: 2rem; font-weight: 700;">📚 Research Reading Prioritization</h1>
+    <p style="color: var(--text-secondary); font-size: 1rem; margin-top: 0.3rem;">
+        Automated citation network analysis for seminal paper identification and corpus acquisition planning.
+    </p>
+</div>
+
+<!-- Stats Banner -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-val">{{ stats.total_documents }}</div>
+        <div class="stat-label">Ingested Documents</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val">{{ stats.total_references }}</div>
+        <div class="stat-label">Tracked References</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val">{{ stats.total_citations }}</div>
+        <div class="stat-label">Citation Links</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val">{{ stats.full_documents }} <span style="font-size: 1rem; color: var(--text-muted);">/ {{ stats.cited_only_references }}</span></div>
+        <div class="stat-label">Full PDFs / Cited-Only</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val">{{ stats.coverage_percentage }}%</div>
+        <div class="stat-label">Concept Source Ratio</div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+    <!-- Column 1: Seminal Papers -->
+    <div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+            <div>
+                <h2 style="font-size: 1.3rem; font-weight: 700;">🌟 Seminal Literature</h2>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">Most frequently cited works across our corpus</p>
+            </div>
+            <a href="{% url 'wiki:graph' %}?mode=citation" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.3rem 0.6rem;">
+                🕸️ Citation Graph
+            </a>
+        </div>
+
+        {% if seminal_papers %}
+            {% for paper in seminal_papers %}
+            <div class="paper-card">
+                <div style="flex: 1;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+                        {% if paper.is_full_document %}
+                            <span class="paper-badge-full">🟢 In Library</span>
+                        {% else %}
+                            <span class="paper-badge-cited">🟡 Cited Reference</span>
+                        {% endif %}
+                        <span style="font-size: 0.8rem; color: var(--text-muted);">{{ paper.year }}</span>
+                    </div>
+
+                    <a href="/wiki/{{ paper.slug }}/" style="font-size: 1.05rem; font-weight: 600; color: var(--text-primary); text-decoration: none; display: block; line-height: 1.35; margin-bottom: 0.25rem;">
+                        {{ paper.title }}
+                    </a>
+
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                        {{ paper.authors }}
+                    </div>
+
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <a href="/wiki/{{ paper.slug }}/" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.25rem 0.6rem;">
+                            View Wiki
+                        </a>
+                        {% if paper.pdf_url %}
+                        <a href="{{ paper.pdf_url }}" target="_blank" class="btn btn-primary" style="font-size: 0.75rem; padding: 0.25rem 0.6rem;">
+                            📄 Read PDF
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="citation-count-badge">
+                    <div class="citation-count-num">{{ paper.citations_count }}</div>
+                    <div class="citation-count-lbl">Citations</div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div style="background-color: var(--bg-surface); border: 1px dashed var(--border-color); border-radius: var(--radius-md); padding: 2rem; text-align: center; color: var(--text-muted);">
+                No citation links extracted yet. Upload more academic PDFs through Grobid to generate citation lineages.
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Column 2: Acquisition Wishlist -->
+    <div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+            <div>
+                <h2 style="font-size: 1.3rem; font-weight: 700;">🎯 Acquisition Wishlist</h2>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">High-impact cited references missing full text in library</p>
+            </div>
+            <a href="/admin/background_resources/document/add/" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.3rem 0.6rem;">
+                ➕ Upload PDF
+            </a>
+        </div>
+
+        {% if acquisition_wishlist %}
+            {% for item in acquisition_wishlist %}
+            <div class="paper-card" style="border-left: 3px solid var(--accent-amber);">
+                <div style="flex: 1;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+                        <span class="paper-badge-cited">⚠️ Missing PDF</span>
+                        <span style="font-size: 0.8rem; color: var(--text-muted);">{{ item.year }}</span>
+                    </div>
+
+                    <a href="/wiki/{{ item.slug }}/" style="font-size: 1.05rem; font-weight: 600; color: var(--text-primary); text-decoration: none; display: block; line-height: 1.35; margin-bottom: 0.25rem;">
+                        {{ item.title }}
+                    </a>
+
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                        {{ item.authors }}
+                    </div>
+
+                    {% if item.citing_sample %}
+                    <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.5rem; background: var(--bg-card); padding: 0.4rem 0.6rem; border-radius: 4px;">
+                        <b>Cited in:</b> {{ item.citing_sample|join:", " }}
+                    </div>
+                    {% endif %}
+
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <a href="/wiki/{{ item.slug }}/" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.25rem 0.6rem;">
+                            View Contexts
+                        </a>
+                        {% if item.doi %}
+                        <a href="https://doi.org/{{ item.doi }}" target="_blank" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.25rem 0.6rem;">
+                            🌐 DOI: {{ item.doi|truncatechars:20 }}
+                        </a>
+                        {% endif %}
+                        <a href="/admin/background_resources/document/add/" class="btn btn-primary" style="font-size: 0.75rem; padding: 0.25rem 0.6rem;">
+                            📥 Ingest PDF
+                        </a>
+                    </div>
+                </div>
+
+                <div class="citation-count-badge" style="border-color: rgba(245, 158, 11, 0.4);">
+                    <div class="citation-count-num" style="color: var(--accent-amber);">{{ item.citations_count }}</div>
+                    <div class="citation-count-lbl">Times Cited</div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div style="background-color: var(--bg-surface); border: 1px dashed var(--border-color); border-radius: var(--radius-md); padding: 2rem; text-align: center; color: var(--text-muted);">
+                All cited references in the library currently have full documents associated!
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -20,6 +20,9 @@ from grips.wiki_service import (
     get_wiki_reflog,
     search_wiki_links,
     WIKILINK_PATTERN,
+    get_graph_data,
+    get_reading_list_analytics,
+    get_synthesis_matrix_data,
 )
 
 _resolve_wiki_rel_path = resolve_wiki_rel_path
@@ -198,3 +201,51 @@ def wiki_activity(request):
         'diff_output': diff_output,
     }
     return render(request, 'grips/wiki/activity.html', context)
+
+
+def wiki_graph(request):
+    """
+    Interactive network graph visualization view supporting Knowledge, Citation,
+    and Hybrid modes. Renders vis-network.js canvas and Mermaid code toggle.
+    """
+    mode = request.GET.get('mode', 'knowledge').lower()
+    if mode not in ('knowledge', 'citation', 'hybrid'):
+        mode = 'knowledge'
+
+    graph_data = get_graph_data(mode)
+    context = {
+        'mode': mode,
+        'graph_data': graph_data,
+        'graph_data_json': mark_safe(json.dumps(graph_data)),
+    }
+    return render(request, 'grips/wiki/graph.html', context)
+
+
+def wiki_graph_data(request):
+    """
+    JSON API for dynamic, client-side switching of graph visualization modes.
+    """
+    mode = request.GET.get('mode', 'knowledge').lower()
+    if mode not in ('knowledge', 'citation', 'hybrid'):
+        mode = 'knowledge'
+
+    graph_data = get_graph_data(mode)
+    return JsonResponse(graph_data)
+
+
+def wiki_reading_list(request):
+    """
+    Academic research analytics view: seminal papers ranked by citation in-degree,
+    acquisition wishlist for missing PDFs, and concept coverage statistics.
+    """
+    data = get_reading_list_analytics()
+    return render(request, 'grips/wiki/research_reading.html', data)
+
+
+def wiki_synthesis_matrix(request):
+    """
+    Literature synthesis cross-tabulation: documents vs core concepts coverage grid.
+    """
+    data = get_synthesis_matrix_data()
+    return render(request, 'grips/wiki/synthesis_matrix.html', data)
+

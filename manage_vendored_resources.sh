@@ -83,6 +83,11 @@ DATASTAR_JS_URL="https://cdn.jsdelivr.net/gh/starfederation/datastar@1.0.0-beta.
 DATASTAR_JS_FILE="datastar.js"
 DATASTAR_JS_HASH="11d9e34fecd2ca69b9faf9096bbd33feea2c79a732372337f34950a617538768"
 
+# Vis-Network (Interactive Graph Explorer for Grips OKF Wiki)
+VIS_NETWORK_JS_URL="https://unpkg.com/vis-network@9.1.9/standalone/umd/vis-network.min.js"
+VIS_NETWORK_JS_FILE="vis-network.min.js"
+VIS_NETWORK_JS_HASH="f53f833ddb9bf97efe856bb0637d4fe88f39e39999c7e94a4b8afc8de8a1a2e5"
+
 # Milkdown Crepe (WYSIWYG Markdown Editor for Grips OKF Wiki)
 MILKDOWN_DIR="./static/vendor/milkdown"
 mkdir -p "$MILKDOWN_DIR"
@@ -103,10 +108,14 @@ download_and_verify "$SWAGGER_JS_URL" "$SWAGGER_JS_FILE" "$SWAGGER_JS_HASH"
 download_and_verify "$SWAGGER_CSS_URL" "$SWAGGER_CSS_FILE" "$SWAGGER_CSS_HASH"
 download_and_verify "$MERMAID_JS_URL" "$MERMAID_JS_FILE" "$MERMAID_JS_HASH"
 download_and_verify "$DATASTAR_JS_URL" "$DATASTAR_JS_FILE" "$DATASTAR_JS_HASH"
+download_and_verify "$VIS_NETWORK_JS_URL" "$VIS_NETWORK_JS_FILE" "$VIS_NETWORK_JS_HASH"
 
 RESOURCES_DIR="$MILKDOWN_DIR"
 download_and_verify "$MILKDOWN_JS_URL" "$MILKDOWN_JS_FILE" "$MILKDOWN_JS_HASH"
 download_and_verify "$MILKDOWN_CSS_URL" "$MILKDOWN_CSS_FILE" "$MILKDOWN_CSS_HASH"
+
+# Patch crepe.bundle.mjs to inline Node process polyfill (avoids browser 404 on /node/process.mjs)
+sed -i 's|import __Process\$ from "/node/process.mjs";|const __Process$ = { env: { NODE_ENV: "production" } };|g' "$MILKDOWN_DIR/$MILKDOWN_JS_FILE"
 
 RESOURCES_DIR="$ORIGINAL_RESOURCES_DIR"
 

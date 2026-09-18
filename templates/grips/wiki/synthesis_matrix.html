@@ -1,0 +1,191 @@
+{% extends "grips/wiki/base_wiki.html" %}
+
+{% block title %}Literature Synthesis Matrix | Grips Wiki{% endblock %}
+
+{% block extra_head %}
+<style>
+    .matrix-wrapper {
+        background-color: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .matrix-scroll {
+        overflow-x: auto;
+        max-height: calc(100vh - 240px);
+    }
+
+    .matrix-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 0.85rem;
+    }
+
+    .matrix-table th, .matrix-table td {
+        padding: 0.75rem 0.85rem;
+        border-bottom: 1px solid var(--border-color);
+        border-right: 1px solid var(--border-color);
+        white-space: nowrap;
+    }
+
+    .matrix-table thead th {
+        position: sticky;
+        top: 0;
+        background-color: var(--bg-card);
+        color: var(--text-primary);
+        font-weight: 600;
+        z-index: 10;
+        text-align: center;
+    }
+
+    .matrix-table thead th.doc-header-col {
+        position: sticky;
+        left: 0;
+        top: 0;
+        z-index: 20;
+        background-color: var(--bg-card);
+        text-align: left;
+        min-width: 280px;
+        max-width: 320px;
+    }
+
+    .matrix-table tbody th.doc-title-cell {
+        position: sticky;
+        left: 0;
+        background-color: var(--bg-surface);
+        z-index: 5;
+        text-align: left;
+        font-weight: 500;
+        min-width: 280px;
+        max-width: 320px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .matrix-cell-sourced {
+        background-color: rgba(16, 185, 129, 0.15);
+        color: #34d399;
+        text-align: center;
+        font-weight: 700;
+    }
+
+    .matrix-cell-mentioned {
+        background-color: rgba(99, 102, 241, 0.15);
+        color: #a5b4fc;
+        text-align: center;
+        font-weight: 600;
+    }
+
+    .matrix-cell-none {
+        color: var(--text-muted);
+        text-align: center;
+        opacity: 0.4;
+    }
+
+    .legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin-right: 1.5rem;
+    }
+
+    .legend-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: flex-end;">
+    <div>
+        <h1 style="font-size: 2rem; font-weight: 700;">📊 Comparative Literature Synthesis Matrix</h1>
+        <p style="color: var(--text-secondary); font-size: 0.95rem; margin-top: 0.3rem;">
+            Cross-tabulation comparing ingested scientific documents against core knowledge concepts.
+        </p>
+    </div>
+    <div style="display: flex; align-items: center;">
+        <div class="legend-item">
+            <span class="legend-indicator" style="background-color: #10b981;"></span>
+            <span>Direct Concept Source</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-indicator" style="background-color: #6366f1;"></span>
+            <span>Title / Abstract Mention</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-indicator" style="background-color: var(--border-color);"></span>
+            <span>Unlinked</span>
+        </div>
+    </div>
+</div>
+
+<div class="matrix-wrapper">
+    <div class="matrix-scroll">
+        <table class="matrix-table">
+            <thead>
+                <tr>
+                    <th class="doc-header-col">Document / Publication</th>
+                    {% for c in concept_headers %}
+                    <th title="Domain: {{ c.domain }}">
+                        <a href="/wiki/{{ c.slug }}/" style="color: var(--text-primary); text-decoration: none;">
+                            {{ c.title|truncatechars:22 }}
+                        </a>
+                        {% if c.domain %}
+                        <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 400;">{{ c.domain }}</div>
+                        {% endif %}
+                    </th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% if rows %}
+                    {% for row in rows %}
+                    <tr>
+                        <th class="doc-title-cell" title="{{ row.document.title }}">
+                            <a href="/wiki/{{ row.document.slug }}/" style="color: var(--text-primary); text-decoration: none; font-weight: 600;">
+                                {{ row.document.title|truncatechars:35 }}
+                            </a>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">
+                                {{ row.document.author|truncatechars:25 }}
+                                {% if row.document.file_url %}
+                                &bull; <a href="{{ row.document.file_url }}" target="_blank" style="color: var(--accent-primary);">PDF</a>
+                                {% endif %}
+                            </div>
+                        </th>
+                        {% for cell in row.cells %}
+                            {% if cell.status == 'sourced' %}
+                                <td class="matrix-cell-sourced" title="Concept directly derived from this document">
+                                    ✓ Sourced
+                                </td>
+                            {% elif cell.status == 'mentioned' %}
+                                <td class="matrix-cell-mentioned" title="Concept mentioned in document metadata">
+                                    • Mentioned
+                                </td>
+                            {% else %}
+                                <td class="matrix-cell-none">
+                                    —
+                                </td>
+                            {% endif %}
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="{{ concept_headers|length|add:1 }}" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                            No documents or concepts available to construct synthesis matrix.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

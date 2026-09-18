@@ -302,8 +302,17 @@
         </div>
 
         <div class="header-actions">
+            <a href="{% url 'wiki:graph' %}" class="btn btn-secondary">
+                <span>🕸️ Graph Explorer</span>
+            </a>
+            <a href="{% url 'wiki:reading_list' %}" class="btn btn-secondary">
+                <span>📚 Reading List</span>
+            </a>
+            <a href="{% url 'wiki:synthesis_matrix' %}" class="btn btn-secondary">
+                <span>📊 Matrix</span>
+            </a>
             <a href="{% url 'wiki:activity' %}" class="btn btn-secondary">
-                <span>⏱️ Activity Reflog</span>
+                <span>⏱️ Reflog</span>
             </a>
             <a href="/admin/grips/conceptnode/" class="btn btn-secondary">
                 <span>⚙️ Admin</span>

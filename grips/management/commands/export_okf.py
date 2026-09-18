@@ -89,10 +89,21 @@ class Command(BaseCommand):
             frontmatter = {
                 'type': 'document',
                 'title': doc.title,
+                'is_full_document': True,
             }
             if doc.author:
                 frontmatter['author'] = doc.author
                 
+            # Check Grobid Metadata
+            if hasattr(doc, 'grobid_metadata') and doc.grobid_metadata:
+                ref = doc.grobid_metadata
+                if ref.year:
+                    frontmatter['year'] = ref.year
+                if ref.doi:
+                    frontmatter['doi'] = ref.doi
+                if ref.authors:
+                    frontmatter['authors'] = ref.authors
+
             content = f"---\n{yaml.dump(frontmatter, sort_keys=False)}---\n\n"
             content += f"# {doc.title}\n\n"
             
@@ -100,7 +111,7 @@ class Command(BaseCommand):
             if hasattr(doc, 'grobid_metadata') and doc.grobid_metadata:
                 ref = doc.grobid_metadata
                 if ref.abstract:
-                    content += f"## Abstract\n{ref.abstract}\n\n"
+                    content += f"## Abstract\n\n{ref.abstract}\n\n"
                     
                 citations = Citation.objects.filter(source_reference=ref).select_related('target_reference__document')
                 if citations.exists():
@@ -120,7 +131,7 @@ class Command(BaseCommand):
             with open(filepath, 'w') as f:
                 f.write(content)
 
-        # 2.5 Export Orphaned References
+        # 2.5 Export Orphaned References (Cited Only)
         orphaned_refs = Reference.objects.filter(document__isnull=True)
         for ref in orphaned_refs:
             safe_t = re.sub(r'[^a-zA-Z0-9]', '-', (ref.title or 'unknown').lower())[:50]
@@ -130,13 +141,30 @@ class Command(BaseCommand):
             frontmatter = {
                 'type': 'reference',
                 'title': ref.title or 'Unknown Title',
+                'is_full_document': False,
             }
             if ref.authors:
                 frontmatter['authors'] = ref.authors
+            if ref.year:
+                frontmatter['year'] = ref.year
+            if ref.doi:
+                frontmatter['doi'] = ref.doi
                 
             content = f"---\n{yaml.dump(frontmatter, sort_keys=False)}---\n\n"
             content += f"# {ref.title or 'Unknown Reference'}\n\n"
             
+            # Incoming citations: show who in our library cited this
+            incoming_cits = Citation.objects.filter(target_reference=ref).select_related('source_reference__document')
+            if incoming_cits.exists():
+                content += "## Cited By In Library\n\n"
+                for cit in incoming_cits:
+                    src = cit.source_reference
+                    src_title = src.title or 'Unknown Source Document'
+                    content += f"- **{src_title}**\n"
+                    if cit.context_text:
+                        content += f"  > \"{cit.context_text.strip()}\"\n"
+                content += "\n"
+
             with open(filepath, 'w') as f:
                 f.write(content)
 

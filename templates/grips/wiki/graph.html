@@ -1,0 +1,415 @@
+{% extends "grips/wiki/base_wiki.html" %}
+{% load static %}
+
+{% block title %}Knowledge & Literature Graph Explorer | Grips Wiki{% endblock %}
+
+{% block extra_head %}
+<script src="{% static 'vendor/vis-network.min.js' %}"></script>
+<style>
+    .graph-container {
+        position: relative;
+        background-color: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        height: calc(100vh - 180px);
+        min-height: 600px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .graph-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 1.25rem;
+        background-color: var(--bg-card);
+        border-bottom: 1px solid var(--border-color);
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        z-index: 10;
+    }
+
+    .graph-modes {
+        display: flex;
+        gap: 0.35rem;
+        background-color: var(--bg-canvas);
+        padding: 3px;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border-color);
+    }
+
+    .mode-btn {
+        background: transparent;
+        color: var(--text-secondary);
+        border: none;
+        padding: 0.35rem 0.85rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.15s;
+        text-decoration: none;
+    }
+
+    .mode-btn.active {
+        background-color: var(--accent-primary);
+        color: white;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .mode-btn:hover:not(.active) {
+        color: var(--text-primary);
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .graph-controls {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .graph-viewport {
+        flex: 1;
+        position: relative;
+        width: 100%;
+        height: 100%;
+    }
+
+    #network-canvas {
+        width: 100%;
+        height: 100%;
+        outline: none;
+    }
+
+    /* Node Inspector Drawer */
+    .inspector-drawer {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        width: 320px;
+        max-height: calc(100% - 2rem);
+        background-color: rgba(19, 29, 51, 0.95);
+        backdrop-filter: blur(8px);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-lg);
+        padding: 1.25rem;
+        display: none;
+        z-index: 20;
+        overflow-y: auto;
+    }
+
+    .inspector-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 0.75rem;
+    }
+
+    .inspector-close {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        font-size: 1.25rem;
+        line-height: 1;
+    }
+
+    .inspector-close:hover { color: var(--text-primary); }
+
+    /* Mermaid Modal */
+    .mermaid-modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.75);
+        backdrop-filter: blur(4px);
+        z-index: 100;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .mermaid-modal.open {
+        display: flex;
+    }
+
+    .mermaid-content {
+        background-color: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        width: 90%;
+        max-width: 750px;
+        max-height: 85vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .mermaid-header {
+        padding: 1rem 1.25rem;
+        background-color: var(--bg-card);
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .mermaid-code-box {
+        padding: 1rem;
+        background-color: #030712;
+        color: #e2e8f0;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.85rem;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        margin: 0;
+        flex: 1;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: flex-end;">
+    <div>
+        <h1 style="font-size: 1.75rem; font-weight: 700;">🕸️ Graph Representation of Problem Solving</h1>
+        <p style="color: var(--text-secondary); font-size: 0.95rem; margin-top: 0.2rem;">
+            Explore interactive conceptual hierarchies, domain taxonomies, and academic citation lineages.
+        </p>
+    </div>
+    <div style="font-size: 0.85rem; color: var(--text-muted);">
+        <span id="stat-node-count">{{ graph_data.node_count }}</span> nodes &bull; 
+        <span id="stat-edge-count">{{ graph_data.edge_count }}</span> connections
+    </div>
+</div>
+
+<div class="graph-container">
+    <!-- Toolbar -->
+    <div class="graph-toolbar">
+        <div class="graph-modes">
+            <a href="?mode=knowledge" class="mode-btn {% if mode == 'knowledge' %}active{% endif %}" id="btn-mode-knowledge">
+                💡 Knowledge Concepts
+            </a>
+            <a href="?mode=citation" class="mode-btn {% if mode == 'citation' %}active{% endif %}" id="btn-mode-citation">
+                📄 Citation Network
+            </a>
+            <a href="?mode=hybrid" class="mode-btn {% if mode == 'hybrid' %}active{% endif %}" id="btn-mode-hybrid">
+                🔗 Document-Concept Hybrid
+            </a>
+        </div>
+
+        <div class="graph-controls">
+            <input type="text" id="graph-filter-input" placeholder="Filter nodes..." class="search-input" style="width: 180px; padding: 0.35rem 0.75rem; font-size: 0.85rem;">
+            <button id="btn-fit-screen" class="btn btn-secondary" title="Fit to Screen" style="padding: 0.35rem 0.65rem;">
+                🎯 Fit
+            </button>
+            <button id="btn-toggle-physics" class="btn btn-secondary" title="Pause / Resume Physics" style="padding: 0.35rem 0.65rem;">
+                ⏸️ Pause
+            </button>
+            <button id="btn-show-mermaid" class="btn btn-secondary" style="padding: 0.35rem 0.65rem;">
+                📊 Mermaid
+            </button>
+        </div>
+    </div>
+
+    <!-- Network Canvas -->
+    <div class="graph-viewport">
+        <div id="network-canvas"></div>
+
+        <!-- Node Inspector Drawer -->
+        <div id="inspector-drawer" class="inspector-drawer">
+            <div class="inspector-header">
+                <span id="insp-group" style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--accent-primary);">Group</span>
+                <button class="inspector-close" id="insp-close">&times;</button>
+            </div>
+            <h3 id="insp-title" style="font-size: 1.1rem; margin-bottom: 0.5rem; line-height: 1.3;">Node Title</h3>
+            <div id="insp-desc" style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;"></div>
+            
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <a id="insp-wiki-link" href="#" class="btn btn-primary" style="justify-content: center;">
+                    📖 Open Wiki Entry
+                </a>
+                <a id="insp-pdf-link" href="#" target="_blank" class="btn btn-secondary" style="justify-content: center; display: none;">
+                    📄 Read Original PDF
+                </a>
+            </div>
+
+            <div id="insp-neighbors-section" style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
+                <div style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.5rem;">CONNECTED NODES</div>
+                <div id="insp-neighbors-list" style="display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.85rem;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mermaid Modal -->
+<div id="mermaid-modal" class="mermaid-modal">
+    <div class="mermaid-content">
+        <div class="mermaid-header">
+            <h3 style="font-size: 1.1rem; font-weight: 600;">Mermaid Graph Definition</h3>
+            <div style="display: flex; gap: 0.5rem;">
+                <button id="btn-copy-mermaid" class="btn btn-primary" style="padding: 0.3rem 0.75rem; font-size: 0.8rem;">📋 Copy</button>
+                <button id="btn-close-mermaid" class="btn btn-secondary" style="padding: 0.3rem 0.75rem; font-size: 0.8rem;">✕ Close</button>
+            </div>
+        </div>
+        <pre id="mermaid-code-box" class="mermaid-code-box">{{ graph_data.mermaid_code }}</pre>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script id="graph-data-json" type="application/json">
+{{ graph_data_json|safe }}
+</script>
+<script>
+    const INITIAL_GRAPH_DATA = JSON.parse(document.getElementById('graph-data-json').textContent);
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const container = document.getElementById('network-canvas');
+        const inspector = document.getElementById('inspector-drawer');
+        const inspTitle = document.getElementById('insp-title');
+        const inspGroup = document.getElementById('insp-group');
+        const inspDesc = document.getElementById('insp-desc');
+        const inspWikiLink = document.getElementById('insp-wiki-link');
+        const inspPdfLink = document.getElementById('insp-pdf-link');
+        const inspNeighborsList = document.getElementById('insp-neighbors-list');
+        const inspClose = document.getElementById('insp-close');
+
+        let physicsEnabled = true;
+        let network = null;
+        let allNodes = new vis.DataSet(INITIAL_GRAPH_DATA.nodes);
+        let allEdges = new vis.DataSet(INITIAL_GRAPH_DATA.edges);
+
+        const options = {
+            nodes: {
+                font: { color: '#f8fafc', face: 'system-ui, sans-serif', size: 12 },
+                borderWidth: 1.5,
+                shadow: true
+            },
+            edges: {
+                smooth: { type: 'continuous' },
+                font: { color: '#94a3b8', size: 10, align: 'middle' },
+                arrows: { to: { enabled: true, scaleFactor: 0.8 } }
+            },
+            physics: {
+                solver: 'forceAtlas2Based',
+                forceAtlas2Based: {
+                    gravitationalConstant: -35,
+                    centralGravity: 0.008,
+                    springLength: 120,
+                    springConstant: 0.06
+                },
+                stabilization: { iterations: 100 }
+            },
+            interaction: {
+                hover: true,
+                tooltipDelay: 150,
+                navigationButtons: false,
+                keyboard: true
+            }
+        };
+
+        network = new vis.Network(container, { nodes: allNodes, edges: allEdges }, options);
+
+        // Click node handler
+        network.on('click', (params) => {
+            if (params.nodes.length > 0) {
+                const nodeId = params.nodes[0];
+                const node = allNodes.get(nodeId);
+                showInspector(node);
+            } else {
+                inspector.style.display = 'none';
+            }
+        });
+
+        function showInspector(node) {
+            if (!node) return;
+            inspTitle.textContent = node.label || 'Node';
+            inspGroup.textContent = node.group || 'General';
+            inspDesc.innerHTML = node.title || '';
+
+            if (node.slug) {
+                inspWikiLink.href = `/wiki/${node.slug}/`;
+                inspWikiLink.style.display = 'inline-flex';
+            } else {
+                inspWikiLink.style.display = 'none';
+            }
+
+            // Find connected neighbors
+            const connectedEdges = allEdges.get({
+                filter: (e) => e.from === node.id || e.to === node.id
+            });
+            inspNeighborsList.innerHTML = '';
+            connectedEdges.forEach(e => {
+                const targetId = e.from === node.id ? e.to : e.from;
+                const targetNode = allNodes.get(targetId);
+                if (targetNode) {
+                    const row = document.createElement('a');
+                    row.href = '#';
+                    row.className = 'wiki-link';
+                    row.style.display = 'block';
+                    row.style.marginBottom = '4px';
+                    row.textContent = targetNode.label;
+                    row.onclick = (ev) => {
+                        ev.preventDefault();
+                        network.focus(targetId, { scale: 1.2, animation: true });
+                        network.selectNodes([targetId]);
+                        showInspector(targetNode);
+                    };
+                    inspNeighborsList.appendChild(row);
+                }
+            });
+
+            inspector.style.display = 'block';
+        }
+
+        inspClose.addEventListener('click', () => {
+            inspector.style.display = 'none';
+        });
+
+        // Fit screen
+        document.getElementById('btn-fit-screen').addEventListener('click', () => {
+            network.fit({ animation: { duration: 600, easingFunction: 'easeInOutQuad' } });
+        });
+
+        // Physics toggle
+        const togglePhysicsBtn = document.getElementById('btn-toggle-physics');
+        togglePhysicsBtn.addEventListener('click', () => {
+            physicsEnabled = !physicsEnabled;
+            network.setOptions({ physics: { enabled: physicsEnabled } });
+            togglePhysicsBtn.textContent = physicsEnabled ? '⏸️ Pause' : '▶️ Resume';
+        });
+
+        // Filter search input
+        const filterInput = document.getElementById('graph-filter-input');
+        filterInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            if (!query) {
+                allNodes.forEach(n => allNodes.update({ id: n.id, hidden: false }));
+                return;
+            }
+            allNodes.forEach(n => {
+                const match = (n.label && n.label.toLowerCase().includes(query)) ||
+                              (n.group && n.group.toLowerCase().includes(query));
+                allNodes.update({ id: n.id, hidden: !match });
+            });
+        });
+
+        // Mermaid modal
+        const mermaidModal = document.getElementById('mermaid-modal');
+        const showMermaidBtn = document.getElementById('btn-show-mermaid');
+        const closeMermaidBtn = document.getElementById('btn-close-mermaid');
+        const copyMermaidBtn = document.getElementById('btn-copy-mermaid');
+
+        showMermaidBtn.addEventListener('click', () => mermaidModal.classList.add('open'));
+        closeMermaidBtn.addEventListener('click', () => mermaidModal.classList.remove('open'));
+        copyMermaidBtn.addEventListener('click', () => {
+            const code = document.getElementById('mermaid-code-box').innerText;
+            navigator.clipboard.writeText(code).then(() => {
+                copyMermaidBtn.textContent = '✓ Copied!';
+                setTimeout(() => { copyMermaidBtn.textContent = '📋 Copy'; }, 2000);
+            });
+        });
+    });
+</script>
+{% endblock %}

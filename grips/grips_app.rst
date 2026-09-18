@@ -67,6 +67,23 @@ To replace external standalone wiki containers (like SilverBullet.md) without ad
   * Concurrency safety with 3-way merges (``git merge-file``) if a user edits against an older commit.
   * Global workspace activity reflog under ``/wiki/activity/`` displaying chronological commit logs, author attributions, and unified diffs.
 * **Strict Path Sandboxing**: Enforces that all file access resides strictly within ``workspaces/grips_okf``, preventing exposure of LLM scratch directories or host system paths.
+* **Network Graph Explorer (``/wiki/graph/``)**:
+  * Interactive network visualization powered by vendored **vis-network.js** (no npm/Node runtime dependency).
+  * Three visualization modes:
+    * **Knowledge Concepts**: Clusters concept nodes by domain taxonomy and highlights directional semantic edges (``DEPENDS_ON``, ``INCLUDES``, etc.).
+    * **Citation Network**: Visualizes bibliometric citation lineages between ingested literature and external cited references.
+    * **Document-Concept Hybrid**: Bridges literature sources directly to the extracted concepts derived from them.
+  * Physics toggle, node search filter, fit-to-screen controls, interactive node inspector drawer, and exportable Mermaid graph syntax modal.
+* **Grobid Literature Clarification & Citation Contexts**:
+  * Clear differentiation between **🟢 Full Document in Library** (with PDF view button) and **🟡 Cited Reference** (extracted from bibliographies without ingested full text).
+  * Direct blockquote rendering of citing document context snippets (``Citation.context_text``), showing exact sentences where works were referenced.
+  * Easy pathways to ingest missing PDFs via Django Admin.
+* **Academic Research Analytics**:
+  * **Reading Prioritization (``/wiki/research/reading/``)**: Identifies seminal literature ranked by bibliometric in-degree and generates an acquisition wishlist of highly-cited works missing full PDFs.
+  * **Synthesis Matrix (``/wiki/research/matrix/``)**: Cross-tabulates ingested documents against core concepts to map empirical coverage and knowledge gaps.
+* **Title Sanitization & Defective Node Cleanup**:
+  * Human-readable title formatting (``clean_human_title``) strips technical prefixes (e.g., ``doc-11-c3-``) and formats proper titles.
+  * Automated pruning command (``python manage.py cleanup_grips_wiki``) eliminates corrupt placeholder nodes and dead directories.
 
 
 3. Observability & Health Signals

@@ -205,6 +205,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#grips.wiki_service.resolve_wiki_rel_path"><code class="docutils literal notranslate"><span class="pre">resolve_wiki_rel_path()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#grips.wiki_service.parse_frontmatter_and_body"><code class="docutils literal notranslate"><span class="pre">parse_frontmatter_and_body()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#grips.wiki_service.format_frontmatter_and_body"><code class="docutils literal notranslate"><span class="pre">format_frontmatter_and_body()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#grips.wiki_service.clean_human_title"><code class="docutils literal notranslate"><span class="pre">clean_human_title()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#grips.wiki_service.get_page_content_and_sha"><code class="docutils literal notranslate"><span class="pre">get_page_content_and_sha()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#grips.wiki_service.save_and_commit_page"><code class="docutils literal notranslate"><span class="pre">save_and_commit_page()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#grips.wiki_service.sync_markdown_to_database"><code class="docutils literal notranslate"><span class="pre">sync_markdown_to_database()</span></code></a></li>
@@ -213,12 +214,20 @@
 <li class="toctree-l3"><a class="reference internal" href="#grips.wiki_service.get_wiki_reflog"><code class="docutils literal notranslate"><span class="pre">get_wiki_reflog()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#grips.wiki_service.search_wiki_links"><code class="docutils literal notranslate"><span class="pre">search_wiki_links()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#grips.wiki_service.get_backlinks_for_slug"><code class="docutils literal notranslate"><span class="pre">get_backlinks_for_slug()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#grips.wiki_service.cleanup_defective_concepts"><code class="docutils literal notranslate"><span class="pre">cleanup_defective_concepts()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#grips.wiki_service.get_graph_data"><code class="docutils literal notranslate"><span class="pre">get_graph_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#grips.wiki_service.get_reading_list_analytics"><code class="docutils literal notranslate"><span class="pre">get_reading_list_analytics()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#grips.wiki_service.get_synthesis_matrix_data"><code class="docutils literal notranslate"><span class="pre">get_synthesis_matrix_data()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#grips.wiki_views.wiki_index"><code class="docutils literal notranslate"><span class="pre">wiki_index()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#grips.wiki_views.wiki_page"><code class="docutils literal notranslate"><span class="pre">wiki_page()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#grips.wiki_views.wiki_save"><code class="docutils literal notranslate"><span class="pre">wiki_save()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#grips.wiki_views.wiki_query_links"><code class="docutils literal notranslate"><span class="pre">wiki_query_links()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#grips.wiki_views.wiki_history"><code class="docutils literal notranslate"><span class="pre">wiki_history()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#grips.wiki_views.wiki_activity"><code class="docutils literal notranslate"><span class="pre">wiki_activity()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#grips.wiki_views.wiki_graph"><code class="docutils literal notranslate"><span class="pre">wiki_graph()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#grips.wiki_views.wiki_graph_data"><code class="docutils literal notranslate"><span class="pre">wiki_graph_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#grips.wiki_views.wiki_reading_list"><code class="docutils literal notranslate"><span class="pre">wiki_reading_list()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#grips.wiki_views.wiki_synthesis_matrix"><code class="docutils literal notranslate"><span class="pre">wiki_synthesis_matrix()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -336,7 +345,7 @@
 <section id="interactive-okf-wiki-bidirectional-linking">
 <h3><a class="toc-backref" href="#id6" role="doc-backlink">Interactive OKF Wiki &amp; Bidirectional Linking</a><a class="headerlink" href="#interactive-okf-wiki-bidirectional-linking" title="Link to this heading"></a></h3>
 <p>To replace external standalone wiki containers (like SilverBullet.md) without adding runtime overhead or unapproved ports, Verbal integrates a native, Git-backed wiki for <code class="docutils literal notranslate"><span class="pre">workspaces/grips_okf</span></code> directly into Django and Granian:</p>
-<ul class="simple">
+<ul>
 <li><p><strong>Vendored Frontend Editor</strong>: Utilizes a standalone build of <strong>Milkdown Crepe</strong> (<code class="docutils literal notranslate"><span class="pre">crepe.bundle.mjs</span></code> and <code class="docutils literal notranslate"><span class="pre">crepe.css</span></code> vendored in <code class="docutils literal notranslate"><span class="pre">static/vendor/milkdown/</span></code> via <code class="docutils literal notranslate"><span class="pre">manage_vendored_resources.sh</span></code>). No Node.js or npm dependencies are required in deployment.</p></li>
 <li><p><strong>Read-Only Default with In-Place Edit</strong>: Wiki pages render read-only by default with styled typography and clickable <code class="docutils literal notranslate"><span class="pre">[[wikilinks]]</span></code>. Clicking <strong>Edit Page</strong> toggles seamlessly into Milkdown Crepe WYSIWYG Markdown editing.</p></li>
 <li><p><strong>Responsive Wikilink Autocomplete</strong>: Typing <code class="docutils literal notranslate"><span class="pre">[[</span></code> in the editor activates an inline autocomplete dropdown querying <code class="docutils literal notranslate"><span class="pre">/wiki/api/query-links/?q=...</span></code>, allowing users to rapidly cross-reference concepts, documents, and references.</p></li>
@@ -349,6 +358,30 @@
 * Concurrency safety with 3-way merges (<code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">merge-file</span></code>) if a user edits against an older commit.
 * Global workspace activity reflog under <code class="docutils literal notranslate"><span class="pre">/wiki/activity/</span></code> displaying chronological commit logs, author attributions, and unified diffs.</p></li>
 <li><p><strong>Strict Path Sandboxing</strong>: Enforces that all file access resides strictly within <code class="docutils literal notranslate"><span class="pre">workspaces/grips_okf</span></code>, preventing exposure of LLM scratch directories or host system paths.</p></li>
+<li><p><strong>Network Graph Explorer (``/wiki/graph/``)</strong>:
+* Interactive network visualization powered by vendored <strong>vis-network.js</strong> (no npm/Node runtime dependency).
+* Three visualization modes:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><strong>Knowledge Concepts</strong>: Clusters concept nodes by domain taxonomy and highlights directional semantic edges (<code class="docutils literal notranslate"><span class="pre">DEPENDS_ON</span></code>, <code class="docutils literal notranslate"><span class="pre">INCLUDES</span></code>, etc.).</p></li>
+<li><p><strong>Citation Network</strong>: Visualizes bibliometric citation lineages between ingested literature and external cited references.</p></li>
+<li><p><strong>Document-Concept Hybrid</strong>: Bridges literature sources directly to the extracted concepts derived from them.</p></li>
+</ul>
+</div></blockquote>
+<ul class="simple">
+<li><p>Physics toggle, node search filter, fit-to-screen controls, interactive node inspector drawer, and exportable Mermaid graph syntax modal.</p></li>
+</ul>
+</li>
+<li><p><strong>Grobid Literature Clarification &amp; Citation Contexts</strong>:
+* Clear differentiation between <strong>🟢 Full Document in Library</strong> (with PDF view button) and <strong>🟡 Cited Reference</strong> (extracted from bibliographies without ingested full text).
+* Direct blockquote rendering of citing document context snippets (<code class="docutils literal notranslate"><span class="pre">Citation.context_text</span></code>), showing exact sentences where works were referenced.
+* Easy pathways to ingest missing PDFs via Django Admin.</p></li>
+<li><p><strong>Academic Research Analytics</strong>:
+* <strong>Reading Prioritization (``/wiki/research/reading/``)</strong>: Identifies seminal literature ranked by bibliometric in-degree and generates an acquisition wishlist of highly-cited works missing full PDFs.
+* <strong>Synthesis Matrix (``/wiki/research/matrix/``)</strong>: Cross-tabulates ingested documents against core concepts to map empirical coverage and knowledge gaps.</p></li>
+<li><p><strong>Title Sanitization &amp; Defective Node Cleanup</strong>:
+* Human-readable title formatting (<code class="docutils literal notranslate"><span class="pre">clean_human_title</span></code>) strips technical prefixes (e.g., <code class="docutils literal notranslate"><span class="pre">doc-11-c3-</span></code>) and formats proper titles.
+* Automated pruning command (<code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">manage.py</span> <span class="pre">cleanup_grips_wiki</span></code>) eliminates corrupt placeholder nodes and dead directories.</p></li>
 </ul>
 </section>
 </section>
@@ -1155,9 +1188,29 @@ Supports:</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="grips.wiki_service.clean_human_title">
+<span class="sig-prename descclassname"><span class="pre">grips.wiki_service.</span></span><span class="sig-name descname"><span class="pre">clean_human_title</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">raw_title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slug</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/grips/wiki_service.html#clean_human_title"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grips.wiki_service.clean_human_title" title="Link to this definition"></a></dt>
+<dd><p>Transforms raw or prefixed titles into clean, readable human titles.</p>
+<p>Strips technical document identifiers, category prefixes, and slug formatting.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">clean_human_title</span><span class="p">(</span><span class="s1">&#39;doc-11-c3-direct-vs--indirect-connections&#39;</span><span class="p">)</span>
+<span class="go">&#39;Direct vs. Indirect Connections&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">clean_human_title</span><span class="p">(</span><span class="s1">&#39;Doc: Neyman (1923) and Causal Inference&#39;</span><span class="p">)</span>
+<span class="go">&#39;Neyman (1923) and Causal Inference&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">clean_human_title</span><span class="p">(</span><span class="s1">&#39;doc-14-c9-subclassification-and-randomized-block-experiment-&#39;</span><span class="p">)</span>
+<span class="go">&#39;Subclassification and Randomized Block Experiment&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">clean_human_title</span><span class="p">(</span><span class="s1">&#39;unified-179-the-causal-inference-of-confounding-via-interventi&#39;</span><span class="p">)</span>
+<span class="go">&#39;The Causal Inference of Confounding via Interventi&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">clean_human_title</span><span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="p">)</span>
+<span class="go">&#39;Untitled Concept&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="grips.wiki_service.get_page_content_and_sha">
 <span class="sig-prename descclassname"><span class="pre">grips.wiki_service.</span></span><span class="sig-name descname"><span class="pre">get_page_content_and_sha</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rel_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/grips/wiki_service.html#get_page_content_and_sha"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grips.wiki_service.get_page_content_and_sha" title="Link to this definition"></a></dt>
-<dd><p>Reads a wiki markdown page, extracts frontmatter, markdown, and current Git SHA.</p>
+<dd><p>Reads a wiki markdown page, extracts frontmatter, markdown, and current Git SHA.
+Enriches documents and references with full document status and Grobid citation data.</p>
 </dd></dl>
 
 <dl class="py function">
@@ -1207,6 +1260,44 @@ commit message, and the list of affected files with change status.</p>
 Extracts an excerpt of the context around the link.</p>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="grips.wiki_service.cleanup_defective_concepts">
+<span class="sig-prename descclassname"><span class="pre">grips.wiki_service.</span></span><span class="sig-name descname"><span class="pre">cleanup_defective_concepts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dry_run</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/grips/wiki_service.html#cleanup_defective_concepts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grips.wiki_service.cleanup_defective_concepts" title="Link to this definition"></a></dt>
+<dd><p>Finds and cleans up defective concept entries in the database and OKF workspace.</p>
+<p>Defective entries include:
+- Domains with punctuation/empty names (e.g. ‘, ‘)
+- Concepts with empty, whitespace, or punctuation-only titles (e.g. ‘, ‘)
+- Stub concept nodes with uninformative UUID slugs and placeholder narratives</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="grips.wiki_service.get_graph_data">
+<span class="sig-prename descclassname"><span class="pre">grips.wiki_service.</span></span><span class="sig-name descname"><span class="pre">get_graph_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'knowledge'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/grips/wiki_service.html#get_graph_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grips.wiki_service.get_graph_data" title="Link to this definition"></a></dt>
+<dd><p>Constructs graph nodes and edges for Vis-Network and generates Mermaid code.
+Modes:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>‘knowledge’: ConceptNodes and KnowledgeEdges</p></li>
+<li><p>‘citation’: Literature References and Citations</p></li>
+<li><p>‘hybrid’: Concepts connected to their source Document/Reference</p></li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="grips.wiki_service.get_reading_list_analytics">
+<span class="sig-prename descclassname"><span class="pre">grips.wiki_service.</span></span><span class="sig-name descname"><span class="pre">get_reading_list_analytics</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/grips/wiki_service.html#get_reading_list_analytics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grips.wiki_service.get_reading_list_analytics" title="Link to this definition"></a></dt>
+<dd><p>Computes literature citation centrality, missing PDF wishlist, and concept coverage gaps.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="grips.wiki_service.get_synthesis_matrix_data">
+<span class="sig-prename descclassname"><span class="pre">grips.wiki_service.</span></span><span class="sig-name descname"><span class="pre">get_synthesis_matrix_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/grips/wiki_service.html#get_synthesis_matrix_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grips.wiki_service.get_synthesis_matrix_data" title="Link to this definition"></a></dt>
+<dd><p>Builds a literature synthesis cross-tabulation:
+Rows = Ingested Documents, Columns = Core Concepts.
+Cells = Relation / Mentions / Claims.</p>
+</dd></dl>
+
 <dl class="py function" id="module-grips.wiki_views">
 <dt class="sig sig-object py" id="grips.wiki_views.wiki_index">
 <span class="sig-prename descclassname"><span class="pre">grips.wiki_views.</span></span><span class="sig-name descname"><span class="pre">wiki_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grips/wiki_views.html#wiki_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grips.wiki_views.wiki_index" title="Link to this definition"></a></dt>
@@ -1245,6 +1336,32 @@ Query parameter: ?q=&lt;search term&gt;</p>
 <dt class="sig sig-object py" id="grips.wiki_views.wiki_activity">
 <span class="sig-prename descclassname"><span class="pre">grips.wiki_views.</span></span><span class="sig-name descname"><span class="pre">wiki_activity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grips/wiki_views.html#wiki_activity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grips.wiki_views.wiki_activity" title="Link to this definition"></a></dt>
 <dd><p>Global activity log showing commits and affected files across grips_okf.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="grips.wiki_views.wiki_graph">
+<span class="sig-prename descclassname"><span class="pre">grips.wiki_views.</span></span><span class="sig-name descname"><span class="pre">wiki_graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grips/wiki_views.html#wiki_graph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grips.wiki_views.wiki_graph" title="Link to this definition"></a></dt>
+<dd><p>Interactive network graph visualization view supporting Knowledge, Citation,
+and Hybrid modes. Renders vis-network.js canvas and Mermaid code toggle.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="grips.wiki_views.wiki_graph_data">
+<span class="sig-prename descclassname"><span class="pre">grips.wiki_views.</span></span><span class="sig-name descname"><span class="pre">wiki_graph_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grips/wiki_views.html#wiki_graph_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grips.wiki_views.wiki_graph_data" title="Link to this definition"></a></dt>
+<dd><p>JSON API for dynamic, client-side switching of graph visualization modes.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="grips.wiki_views.wiki_reading_list">
+<span class="sig-prename descclassname"><span class="pre">grips.wiki_views.</span></span><span class="sig-name descname"><span class="pre">wiki_reading_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grips/wiki_views.html#wiki_reading_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grips.wiki_views.wiki_reading_list" title="Link to this definition"></a></dt>
+<dd><p>Academic research analytics view: seminal papers ranked by citation in-degree,
+acquisition wishlist for missing PDFs, and concept coverage statistics.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="grips.wiki_views.wiki_synthesis_matrix">
+<span class="sig-prename descclassname"><span class="pre">grips.wiki_views.</span></span><span class="sig-name descname"><span class="pre">wiki_synthesis_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grips/wiki_views.html#wiki_synthesis_matrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grips.wiki_views.wiki_synthesis_matrix" title="Link to this definition"></a></dt>
+<dd><p>Literature synthesis cross-tabulation: documents vs core concepts coverage grid.</p>
 </dd></dl>
 
 </section>

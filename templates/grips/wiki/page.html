@@ -196,7 +196,13 @@
         </div>
 
         <div class="header-meta-row">
-            <div class="meta-badges">
+                {% if page.is_reference %}
+                    {% if page.is_full_document %}
+                    <span class="badge-tag" style="background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.4); color: #34d399; font-weight: 500;">🟢 Full Document in Library</span>
+                    {% else %}
+                    <span class="badge-tag" style="background: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.4); color: #fbbf24; font-weight: 500;">🟡 Cited Reference (Not Ingested)</span>
+                    {% endif %}
+                {% endif %}
                 {% if page.frontmatter.domain %}
                 <span class="badge-tag badge-domain">🏷️ {{ page.frontmatter.domain }}</span>
                 {% endif %}
@@ -213,6 +219,15 @@
 
             <!-- Header Action Buttons -->
             <div class="page-actions" id="page-actions">
+                {% if page.pdf_url %}
+                <a href="{{ page.pdf_url }}" target="_blank" class="btn btn-secondary">
+                    <span>📄 View PDF</span>
+                </a>
+                {% elif page.is_reference and not page.is_full_document %}
+                <a href="/admin/background_resources/document/add/" target="_blank" class="btn btn-secondary" title="Upload the PDF to convert this into a full library document">
+                    <span>📥 Upload PDF</span>
+                </a>
+                {% endif %}
                 <button id="btn-toggle-edit" class="btn btn-primary">
                     <span>✏️ Edit Page</span>
                 </button>
@@ -221,6 +236,32 @@
                 </a>
             </div>
         </div>
+
+        {% if page.clean_title and page.clean_title != page.title %}
+        <div style="font-size: 1.35rem; font-weight: 600; color: var(--text-primary); margin-top: 0.75rem;">
+            {{ page.clean_title }}
+        </div>
+        {% endif %}
+
+        {% if page.is_reference %}
+        <!-- Literature Reference Details Card -->
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem 1.25rem; margin-top: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
+                <div>
+                    {% if page.authors %}
+                    <div style="color: var(--text-primary); font-size: 0.95rem; margin-bottom: 0.35rem;">
+                        <strong>Authors:</strong> {{ page.authors }}
+                    </div>
+                    {% endif %}
+                    <div style="display: flex; gap: 1.5rem; color: var(--text-secondary); font-size: 0.85rem; flex-wrap: wrap;">
+                        {% if page.year %}<span><strong>Year:</strong> {{ page.year }}</span>{% endif %}
+                        {% if page.doi %}<span><strong>DOI:</strong> <a href="https://doi.org/{{ page.doi }}" target="_blank" style="color: var(--accent-teal);">{{ page.doi }}</a></span>{% endif %}
+                        <span><strong>Status:</strong> {% if page.is_full_document %}Full PDF Available{% else %}Known via Citations{% endif %}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
 
         {% if page.frontmatter.focus_hint %}
         <div class="focus-hint-box">
@@ -235,11 +276,39 @@
             {{ rendered_body_html }}
         </div>
 
+        <!-- Literature Citations Drawer (If Reference) -->
+        {% if page.incoming_citations %}
+        <div class="backlinks-section" style="margin-top: 2.5rem;">
+            <div class="backlinks-header" style="color: #fbbf24;">
+                <span>📚 Cited By In Library Literature ({{ page.incoming_citations|length }})</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                {% for cit in page.incoming_citations %}
+                <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <a href="/wiki/{{ cit.source_slug }}/" style="font-weight: 600; color: var(--link-color); text-decoration: none;">
+                            📖 {{ cit.source_title }}
+                        </a>
+                        {% if cit.is_full_document %}
+                        <span class="badge-tag" style="background: rgba(16, 185, 129, 0.15); color: #34d399; font-size: 0.7rem;">In Library</span>
+                        {% endif %}
+                    </div>
+                    {% if cit.context_text %}
+                    <blockquote style="margin: 0.5rem 0 0 0; padding-left: 0.75rem; border-left: 2px solid var(--accent-primary); font-size: 0.85rem; color: var(--text-secondary); font-style: italic;">
+                        "{{ cit.context_text }}"
+                    </blockquote>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Incoming Backlinks Panel -->
         {% if page.backlinks %}
         <div class="backlinks-section">
             <div class="backlinks-header">
-                <span>🔗 Incoming Backlinks ({{ page.backlinks|length }})</span>
+                <span>🔗 Incoming Concept Links ({{ page.backlinks|length }})</span>
             </div>
             <div class="backlinks-grid">
                 {% for b in page.backlinks %}

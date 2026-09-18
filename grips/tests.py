@@ -354,3 +354,99 @@ class TestWikiServiceAndEndpoints(TestCase):
         res = client.get('/wiki/../../etc/passwd/')
         self.assertIn(res.status_code, [404, 403])
 
+    def test_clean_human_title_sanitization(self):
+        from grips.wiki_service import clean_human_title
+
+        # Strips technical doc prefixes
+        self.assertEqual(
+            clean_human_title("doc-11-c3-interrupted-time-series-designs"),
+            "Interrupted Time Series Designs"
+        )
+        self.assertEqual(
+            clean_human_title("doc-10-c0-unconfoundedness-assumption--strong-ignorability-"),
+            "Unconfoundedness Assumption - Strong Ignorability"
+        )
+        self.assertEqual(
+            clean_human_title("Doc: Causal Inference in Statistics: A Primer"),
+            "Causal Inference in Statistics: A Primer"
+        )
+        self.assertEqual(
+            clean_human_title("unified-179-instrumental-variables"),
+            "Instrumental Variables"
+        )
+        self.assertEqual(
+            clean_human_title("ref-210-heckman-sample-selection"),
+            "Heckman Sample Selection"
+        )
+        # Corrupt / punctuation-only fallback
+        self.assertEqual(clean_human_title(", "), "Untitled Concept")
+        self.assertEqual(clean_human_title(""), "Untitled Concept")
+
+    def test_graph_data_and_research_analytics(self):
+        from grips.wiki_service import (
+            get_graph_data,
+            get_reading_list_analytics,
+            get_synthesis_matrix_data,
+        )
+
+        # 1. Graph Data modes
+        for mode in ('knowledge', 'citation', 'hybrid'):
+            data = get_graph_data(mode)
+            self.assertEqual(data['mode'], mode)
+            self.assertIn('nodes', data)
+            self.assertIn('edges', data)
+            self.assertIn('mermaid_code', data)
+            self.assertIn('node_count', data)
+            self.assertIn('edge_count', data)
+
+        # 2. Reading list analytics
+        reading_data = get_reading_list_analytics()
+        self.assertIn('seminal_papers', reading_data)
+        self.assertIn('acquisition_wishlist', reading_data)
+        self.assertIn('stats', reading_data)
+        self.assertIn('total_documents', reading_data['stats'])
+
+        # 3. Synthesis matrix
+        matrix_data = get_synthesis_matrix_data()
+        self.assertIn('concept_headers', matrix_data)
+        self.assertIn('rows', matrix_data)
+
+    def test_research_views_endpoints(self):
+        from django.test import Client
+        client = Client()
+
+        # 1. Graph view
+        res = client.get('/wiki/graph/')
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Graph Representation")
+        self.assertContains(res, "vis-network.min.js")
+
+        # 2. Graph data API
+        res = client.get('/wiki/api/graph-data/?mode=knowledge')
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertIn('nodes', data)
+        self.assertIn('edges', data)
+
+        # 3. Reading list view
+        res = client.get('/wiki/research/reading/')
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Research Reading Prioritization")
+
+        # 4. Synthesis matrix view
+        res = client.get('/wiki/research/matrix/')
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Comparative Literature Synthesis Matrix")
+
+    def test_milkdown_bundle_no_external_node_process(self):
+        from django.conf import settings
+        bundle_path = settings.BASE_DIR / 'static' / 'vendor' / 'milkdown' / 'crepe.bundle.mjs'
+        self.assertTrue(bundle_path.exists(), "crepe.bundle.mjs must exist in static vendor")
+        content = bundle_path.read_text(encoding='utf-8')
+        self.assertNotIn(
+            'import __Process$ from "/node/process.mjs";',
+            content,
+            "crepe.bundle.mjs must not import /node/process.mjs"
+        )
+        self.assertIn('const __Process$ = { env: { NODE_ENV: "production" } };', content)
+

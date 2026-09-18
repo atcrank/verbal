@@ -843,14 +843,14 @@ def handle_create_concept_nodes_tool(state: dict, params: dict) -> str:
         try:
             from background_resources.models import Document
             doc = Document.objects.get(id=document_id)
-            safe_doc_title = re.sub(r'[^a-zA-Z0-9]', '-', doc.title.lower())[:50]
+            safe_doc_title = re.sub(r'[^a-zA-Z0-9]+', '-', doc.title.lower()).strip('-')[:50]
             root_node, _ = ConceptNode.objects.get_or_create(
                 domain=domain,
                 slug=f"doc-{doc.id}-{safe_doc_title}",
                 defaults={
-                    "title": f"Doc: {doc.title[:200]}",
+                    "title": doc.title[:200],
                     "focus_hint": "Document Root Node",
-                    "narrative_content": "Extracted from document.",
+                    "narrative_content": f"Foundational literature extraction for {doc.title}.",
                     "needs_linting": True
                 }
             )
@@ -859,14 +859,21 @@ def handle_create_concept_nodes_tool(state: dict, params: dict) -> str:
 
     created_count = 0
     from grips.models import KnowledgeEdge
-    
+    from grips.wiki_service import clean_human_title
+
     for c in concepts:
-        title = c.get('title', 'Unknown Concept')
-        safe_title = re.sub(r'[^a-zA-Z0-9]', '-', title.lower())[:50]
-        
+        raw_title = c.get('title', '')
+        title = clean_human_title(raw_title)
+        if not title or title == 'Untitled Concept' or re.match(r'^[\W_]+$', title):
+            continue
+
+        safe_title = re.sub(r'[^a-zA-Z0-9]+', '-', title.lower()).strip('-')[:50]
+        if not safe_title:
+            continue
+
         # If part of a document, prefix the slug so chunks don't clash identically named concepts from other docs easily
         slug = f"doc-{document_id}-{safe_title}" if document_id else safe_title
-        
+
         node, created = ConceptNode.objects.get_or_create(
             domain=domain,
             slug=slug,

@@ -1050,14 +1050,14 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">background_resources.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Document</span>
             <span class="n">doc</span> <span class="o">=</span> <span class="n">Document</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">document_id</span><span class="p">)</span>
-            <span class="n">safe_doc_title</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;[^a-zA-Z0-9]&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">doc</span><span class="o">.</span><span class="n">title</span><span class="o">.</span><span class="n">lower</span><span class="p">())[:</span><span class="mi">50</span><span class="p">]</span>
+            <span class="n">safe_doc_title</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;[^a-zA-Z0-9]+&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">doc</span><span class="o">.</span><span class="n">title</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)[:</span><span class="mi">50</span><span class="p">]</span>
             <span class="n">root_node</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">ConceptNode</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span>
                 <span class="n">domain</span><span class="o">=</span><span class="n">domain</span><span class="p">,</span>
                 <span class="n">slug</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;doc-</span><span class="si">{</span><span class="n">doc</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">safe_doc_title</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
                 <span class="n">defaults</span><span class="o">=</span><span class="p">{</span>
-                    <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Doc: </span><span class="si">{</span><span class="n">doc</span><span class="o">.</span><span class="n">title</span><span class="p">[:</span><span class="mi">200</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">doc</span><span class="o">.</span><span class="n">title</span><span class="p">[:</span><span class="mi">200</span><span class="p">],</span>
                     <span class="s2">&quot;focus_hint&quot;</span><span class="p">:</span> <span class="s2">&quot;Document Root Node&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;narrative_content&quot;</span><span class="p">:</span> <span class="s2">&quot;Extracted from document.&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;narrative_content&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Foundational literature extraction for </span><span class="si">{</span><span class="n">doc</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">,</span>
                     <span class="s2">&quot;needs_linting&quot;</span><span class="p">:</span> <span class="kc">True</span>
                 <span class="p">}</span>
             <span class="p">)</span>
@@ -1066,14 +1066,21 @@
 
     <span class="n">created_count</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">grips.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">KnowledgeEdge</span>
-    
+    <span class="kn">from</span><span class="w"> </span><span class="nn">grips.wiki_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">clean_human_title</span>
+
     <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">concepts</span><span class="p">:</span>
-        <span class="n">title</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="s1">&#39;Unknown Concept&#39;</span><span class="p">)</span>
-        <span class="n">safe_title</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;[^a-zA-Z0-9]&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">title</span><span class="o">.</span><span class="n">lower</span><span class="p">())[:</span><span class="mi">50</span><span class="p">]</span>
-        
+        <span class="n">raw_title</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="n">clean_human_title</span><span class="p">(</span><span class="n">raw_title</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">title</span> <span class="ow">or</span> <span class="n">title</span> <span class="o">==</span> <span class="s1">&#39;Untitled Concept&#39;</span> <span class="ow">or</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^[\W_]+$&#39;</span><span class="p">,</span> <span class="n">title</span><span class="p">):</span>
+            <span class="k">continue</span>
+
+        <span class="n">safe_title</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;[^a-zA-Z0-9]+&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">title</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)[:</span><span class="mi">50</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">safe_title</span><span class="p">:</span>
+            <span class="k">continue</span>
+
         <span class="c1"># If part of a document, prefix the slug so chunks don&#39;t clash identically named concepts from other docs easily</span>
         <span class="n">slug</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;doc-</span><span class="si">{</span><span class="n">document_id</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">safe_title</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">document_id</span> <span class="k">else</span> <span class="n">safe_title</span>
-        
+
         <span class="n">node</span><span class="p">,</span> <span class="n">created</span> <span class="o">=</span> <span class="n">ConceptNode</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span>
             <span class="n">domain</span><span class="o">=</span><span class="n">domain</span><span class="p">,</span>
             <span class="n">slug</span><span class="o">=</span><span class="n">slug</span><span class="p">,</span>
