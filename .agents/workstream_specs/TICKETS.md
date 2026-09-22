@@ -39,4 +39,5 @@
 - [ ] [Feature/Architecture] Migration from Celery / Redis to Native Django Tasks (Status: pending) -> [Link to note](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260831_django_tasks_migration.md)
   *Summary*: Migrate background task execution and periodic scheduling from Celery, Celery Beat, and Redis to Django 6.0's native django.tasks module with a PostgreSQL database backend. Eliminates the Redis container dependency and consolidates state in Postgres.
 
-
+- [ ] [Review/Audit] Convene Multi-Model Comprehensive Review (Status: in-progress) -> [MULTI_MODEL_REVIEW_GUIDELINES.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/MULTI_MODEL_REVIEW_GUIDELINES.md)
+  *Summary*: Convene a multi-model evaluation of Reason across 5 pillars (sociotechnical physics simulation value proposition, code quality & async integration, empirical test coverage vs. number-padding, documentation & doctest trials, and growth paths/blockers). Participating agents produce candidate specs in `.agents/workstream_specs/`.
