@@ -29,7 +29,7 @@ from ninja.openapi.docs import Swagger
 from llm_api.api import router as llm_router
 from metacognition import api as metacognition_api
 from work_organisation import api as whiteboard_api
-from . import broadcast_views
+from . import broadcast_views, views
 
 class LocalSwagger(Swagger):
     def render_page(self, request, api, **kwargs):
@@ -161,6 +161,7 @@ def serve_docs(request, path=""):
 
 
 urlpatterns = [
+    path("", views.landing_page, name="landing_page"),
     path("admin/", admin.site.urls),
     path("api/", api.urls),
     path("benchmarking/", include("benchmarking.urls")),

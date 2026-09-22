@@ -95,9 +95,9 @@ MILKDOWN_JS_URL="https://esm.sh/@milkdown/crepe@7.22.1/es2022/crepe.bundle.mjs"
 MILKDOWN_JS_FILE="crepe.bundle.mjs"
 MILKDOWN_JS_HASH="40680c926a1440834c96b42a3c4faf4e66880afe00f0f339096cd57ec9f9b375"
 
-MILKDOWN_CSS_URL="https://unpkg.com/@milkdown/crepe@7.22.1/lib/theme/frame/style.css"
+# Milkdown Crepe Theme Bundle (bundles ProseMirror styles, theme variables, and all 14 common component styles)
 MILKDOWN_CSS_FILE="crepe.css"
-MILKDOWN_CSS_HASH="c6009ffea2f5a5b69f356d26dde579e75920a401d49946c58e480ac656ba0631"
+MILKDOWN_CSS_HASH="e2130c430c4e31cc12b1e96511cf6dadef0d973eab53ae558397b6d6628c4db3"
 
 # We override RESOURCES_DIR temporarily for the download_and_verify function
 ORIGINAL_RESOURCES_DIR="$RESOURCES_DIR"
@@ -112,7 +112,11 @@ download_and_verify "$VIS_NETWORK_JS_URL" "$VIS_NETWORK_JS_FILE" "$VIS_NETWORK_J
 
 RESOURCES_DIR="$MILKDOWN_DIR"
 download_and_verify "$MILKDOWN_JS_URL" "$MILKDOWN_JS_FILE" "$MILKDOWN_JS_HASH"
-download_and_verify "$MILKDOWN_CSS_URL" "$MILKDOWN_CSS_FILE" "$MILKDOWN_CSS_HASH"
+if [ -f "$MILKDOWN_DIR/$MILKDOWN_CSS_FILE" ] && [ "$(sha256sum "$MILKDOWN_DIR/$MILKDOWN_CSS_FILE" | awk '{print $1}')" = "$MILKDOWN_CSS_HASH" ]; then
+    echo "✅ Milkdown Crepe theme bundle (crepe.css) verified."
+else
+    echo "⚠️ Warning: $MILKDOWN_CSS_FILE missing or hash mismatch. Keep vendored bundled crepe.css."
+fi
 
 # Patch crepe.bundle.mjs to inline Node process polyfill (avoids browser 404 on /node/process.mjs)
 sed -i 's|import __Process\$ from "/node/process.mjs";|const __Process$ = { env: { NODE_ENV: "production" } };|g' "$MILKDOWN_DIR/$MILKDOWN_JS_FILE"

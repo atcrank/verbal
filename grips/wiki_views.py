@@ -5,6 +5,7 @@ from pathlib import Path
 from django.shortcuts import render, redirect
 from django.http import JsonResponse, Http404, HttpResponseBadRequest
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.contrib.auth.decorators import login_required
 from django.utils.safestring import mark_safe
 import markdown as md_lib
@@ -47,6 +48,7 @@ def _render_wikilinks_html(markdown_text: str) -> str:
     return html
 
 
+@ensure_csrf_cookie
 def wiki_index(request):
     """
     Landing page for the Grips OKF Wiki. Shows domain tree, statistics,
@@ -75,6 +77,7 @@ def wiki_index(request):
     return render(request, 'grips/wiki/index.html', context)
 
 
+@ensure_csrf_cookie
 def wiki_page(request, path=""):
     """
     Displays a wiki page in read-only mode with breadcrumbs, rendered markdown,
@@ -150,6 +153,7 @@ def wiki_query_links(request):
     return JsonResponse({'results': results})
 
 
+@ensure_csrf_cookie
 def wiki_history(request, path=""):
     """
     Displays the commit history log and diffs for a specific wiki file.
@@ -177,6 +181,7 @@ def wiki_history(request, path=""):
     return render(request, 'grips/wiki/history.html', context)
 
 
+@ensure_csrf_cookie
 def wiki_activity(request):
     """
     Global activity log showing commits and affected files across grips_okf.
@@ -203,6 +208,7 @@ def wiki_activity(request):
     return render(request, 'grips/wiki/activity.html', context)
 
 
+@ensure_csrf_cookie
 def wiki_graph(request):
     """
     Interactive network graph visualization view supporting Knowledge, Citation,
@@ -233,6 +239,7 @@ def wiki_graph_data(request):
     return JsonResponse(graph_data)
 
 
+@ensure_csrf_cookie
 def wiki_reading_list(request):
     """
     Academic research analytics view: seminal papers ranked by citation in-degree,
@@ -242,6 +249,7 @@ def wiki_reading_list(request):
     return render(request, 'grips/wiki/research_reading.html', data)
 
 
+@ensure_csrf_cookie
 def wiki_synthesis_matrix(request):
     """
     Literature synthesis cross-tabulation: documents vs core concepts coverage grid.

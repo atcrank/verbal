@@ -6,24 +6,24 @@
 <div class="wiki-index-wrapper">
 
     <!-- Top Hero Banner -->
-    <div style="margin-bottom: 2.5rem; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1.5rem;">
+    <div style="margin-bottom: 2.25rem; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1.5rem;">
         <div>
-            <h1 style="font-size: 2.2rem; font-weight: 800; margin-bottom: 0.5rem; background: linear-gradient(135deg, #fff, #94a3b8); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">
+            <h1 style="font-size: 1.85rem; font-weight: 700; margin-bottom: 0.4rem; color: var(--text-primary);">
                 Grips Open Knowledge Base
             </h1>
-            <p style="color: var(--text-secondary); font-size: 1.05rem; max-width: 650px;">
-                Interactive, cross-referenced concept graph and literature corpus backed by Git version control and PostgreSQL embeddings.
+            <p style="color: var(--text-secondary); font-size: 0.95rem; max-width: 650px;">
+                Cross-referenced concept graph, literature corpus, and computable claims for sociotechnical systems modeling.
             </p>
         </div>
 
-        <div style="display: flex; gap: 1rem; align-items: center;">
-            <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.75rem 1.25rem; text-align: center;">
-                <div style="font-size: 1.5rem; font-weight: 700; color: var(--accent-primary);">{{ total_concepts }}</div>
-                <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Concepts</div>
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.6rem 1rem; text-align: center; min-width: 80px;">
+                <div style="font-size: 1.35rem; font-weight: 700; color: var(--text-primary);">{{ total_concepts }}</div>
+                <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Concepts</div>
             </div>
-            <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.75rem 1.25rem; text-align: center;">
-                <div style="font-size: 1.5rem; font-weight: 700; color: var(--accent-teal);">{{ domains|length }}</div>
-                <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Domains</div>
+            <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.6rem 1rem; text-align: center; min-width: 80px;">
+                <div style="font-size: 1.35rem; font-weight: 700; color: var(--text-primary);">{{ domains|length }}</div>
+                <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Domains</div>
             </div>
         </div>
     </div>
@@ -33,18 +33,18 @@
         
         <!-- Left: Domain Categories & Concepts -->
         <div>
-            <h2 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+            <h2 style="font-size: 1.2rem; font-weight: 600; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
                 <span>📂 Knowledge Domains</span>
             </h2>
 
-            <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <div style="display: flex; flex-direction: column; gap: 1.25rem;">
                 {% for domain_name, concepts in domains %}
-                <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1.5rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                        <h3 style="font-size: 1.15rem; font-weight: 600; color: var(--text-primary); margin: 0;">
+                <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1.35rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem;">
+                        <h3 style="font-size: 1.1rem; font-weight: 600; color: var(--text-primary); margin: 0;">
                             {{ domain_name }}
                         </h3>
-                        <span style="font-size: 0.8rem; background: rgba(99, 102, 241, 0.15); color: #a5b4fc; padding: 2px 8px; border-radius: 6px;">
+                        <span style="font-size: 0.78rem; background: var(--bg-card); color: var(--text-secondary); border: 1px solid var(--border-color); padding: 2px 8px; border-radius: 4px;">
                             {{ concepts|length }} concepts
                         </span>
                     </div>

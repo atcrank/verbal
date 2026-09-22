@@ -300,3 +300,25 @@ class BroadcastEndpointsTestCase(TestCase):
         res = self.client.get('/docs/')
         self.assertEqual(res.status_code, 200)
         self.assertIn("text/html", res.headers.get("Content-Type", ""))
+
+    def test_root_landing_page(self):
+        res = self.client.get('/')
+        self.assertEqual(res.status_code, 200)
+        self.assertTemplateUsed(res, 'landing.html')
+        content = res.content.decode('utf-8')
+        self.assertIn("Reason", content)
+        self.assertIn("/demo/", content)
+        self.assertIn("/wiki/", content)
+        self.assertIn("/work/", content)
+        self.assertIn("/docs/", content)
+        self.assertIn("/api/docs", content)
+        self.assertIn("/admin/", content)
+
+    def test_wiki_index_no_git_badge(self):
+        res = self.client.get('/wiki/')
+        self.assertEqual(res.status_code, 200)
+        content = res.content.decode('utf-8')
+        self.assertNotIn("Git-Backed", content)
+        self.assertNotIn("linear-gradient(135deg, #fff, #94a3b8)", content)
+        self.assertIn("Grips Knowledge Base", content)
+

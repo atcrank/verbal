@@ -354,6 +354,57 @@ class TestWikiServiceAndEndpoints(TestCase):
         res = client.get('/wiki/../../etc/passwd/')
         self.assertIn(res.status_code, [404, 403])
 
+    def test_wiki_csrf_protection_and_save(self):
+        import re
+        import json
+        import subprocess
+        from django.test import Client
+        from grips.wiki_service import get_wiki_root
+        from grips.models import ConceptNode
+
+        client = Client(enforce_csrf_checks=True)
+
+        # 1. Direct GET to wiki page must set CSRF cookie and render CSRF meta tag
+        res = client.get('/wiki/deep-sea-mining/')
+        self.assertEqual(res.status_code, 200)
+        self.assertIn('csrftoken', res.cookies)
+        self.assertContains(res, 'name="csrf-token"')
+
+        token_match = re.search(r'name="csrf-token" content="([^"]+)"', res.content.decode())
+        self.assertIsNotNone(token_match)
+        csrf_token = token_match.group(1)
+
+        test_rel = 'concepts/testing/derived/test-csrf-node.md'
+        wiki_root = get_wiki_root()
+        target_file = wiki_root / test_rel
+
+        try:
+            # 2. POST to save without CSRF token must fail with 403 Forbidden
+            bad_client = Client(enforce_csrf_checks=True)
+            bad_res = bad_client.post(
+                f'/wiki/api/save/{test_rel}',
+                data=json.dumps({'markdown': '# Test Node', 'message': 'CSRF test'}),
+                content_type='application/json'
+            )
+            self.assertEqual(bad_res.status_code, 403)
+
+            # 3. POST to save with CSRF cookie & header must succeed (200)
+            good_res = client.post(
+                f'/wiki/api/save/{test_rel}',
+                data=json.dumps({'markdown': '# Test Node\n\nCSRF content', 'message': 'CSRF test pass'}),
+                content_type='application/json',
+                HTTP_X_CSRFTOKEN=csrf_token
+            )
+            self.assertEqual(good_res.status_code, 200)
+            data = good_res.json()
+            self.assertTrue(data.get('success'))
+        finally:
+            if target_file.exists():
+                target_file.unlink()
+            subprocess.run(['git', 'rm', '-f', test_rel], cwd=str(wiki_root), capture_output=True, check=False)
+            subprocess.run(['git', 'commit', '-m', 'Cleanup test-csrf-node'], cwd=str(wiki_root), capture_output=True, check=False)
+            ConceptNode.objects.filter(slug="test-csrf-node").delete()
+
     def test_clean_human_title_sanitization(self):
         from grips.wiki_service import clean_human_title
 
