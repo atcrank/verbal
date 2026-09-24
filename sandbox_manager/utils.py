@@ -12,9 +12,7 @@ def rebuild_sandbox_image():
     config = SandboxConfiguration.get_solo()
 
     # 1. Write the requirements.txt to the sandbox folder
-    req_path = os.path.join(settings.BASE_DIR, 'sandbox', 'requirements.txt')
-    with open(req_path, 'w', encoding='utf-8') as f:
-        f.write(config.requirements_txt)
+    config.sync_requirements_file()
 
     # 2. Execute docker compose build
     try:

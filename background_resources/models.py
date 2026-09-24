@@ -310,6 +310,7 @@ class ReadingStrategy(models.Model):
         # If chunks are reused (chunks is empty but chunk_ids is not), fetch them from store
         if not chunks and chunk_ids:
             chunks = rag_service_inject.store.mget(chunk_ids)
+        ct = ContentType.objects.get_for_model(self)
         for chunk_id, chunk in zip(chunk_ids, chunks):
             rag_chunk, _ = RAGChunk.objects.get_or_create(
                 chunk_id=chunk_id,
@@ -320,8 +321,12 @@ class ReadingStrategy(models.Model):
                     'in_byte_store': True
                 }
             )
-            StrategyChunkUsage.objects.get_or_create(chunk=rag_chunk, content_object=self,
-                                                     role=StrategyChunkUsage.Role.CLIPPED)
+            StrategyChunkUsage.objects.get_or_create(
+                chunk=rag_chunk,
+                content_type=ct,
+                object_id=self.id,
+                role=StrategyChunkUsage.Role.CLIPPED
+            )
         rag_service_inject.index_unindexed_chunks()
         logger.info(f'{self.__class__.__name__}[{self.id}] logged {len(chunk_ids)} usages to db.')
 
@@ -366,6 +371,7 @@ class GrobidReadingStrategy(models.Model):
         
         if not chunks and chunk_ids:
             chunks = rag_service_inject.store.mget(chunk_ids)
+        ct = ContentType.objects.get_for_model(self)
         for chunk_id, chunk in zip(chunk_ids, chunks):
             rag_chunk, _ = RAGChunk.objects.get_or_create(
                 chunk_id=chunk_id,
@@ -376,7 +382,12 @@ class GrobidReadingStrategy(models.Model):
                     'in_byte_store': True
                 }
             )
-            StrategyChunkUsage.objects.get_or_create(chunk=rag_chunk, content_object=self, role=StrategyChunkUsage.Role.CLIPPED)
+            StrategyChunkUsage.objects.get_or_create(
+                chunk=rag_chunk,
+                content_type=ct,
+                object_id=self.id,
+                role=StrategyChunkUsage.Role.CLIPPED
+            )
         rag_service_inject.index_unindexed_chunks()
         logger.info(f'{self.__class__.__name__}[{self.id}] logged {len(chunk_ids)} usages to db.')
 

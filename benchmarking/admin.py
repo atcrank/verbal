@@ -16,7 +16,7 @@ def run_experiment_benchmark(modeladmin, request, queryset):
             continue
         try:
             # This runs synchronously. For large suites, this might timeout the browser.
-            # In production, this should be offloaded to Celery.
+            # In production, this should be offloaded to verbal_tasks.
             run_record = run_benchmark_suite(experiment, experiment.corpus)
             if run_record:
                 modeladmin.message_user(request, f"Completed Run #{run_record.id} for {experiment.name}.", level=messages.SUCCESS)

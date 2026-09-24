@@ -90,7 +90,7 @@ def execute_blueprint(request, payload: BlueprintRunIn):
 @ensure_csrf_cookie
 def dispatch_blueprint(request, payload: BlueprintDispatchIn):
     """
-    Asynchronously dispatches a Cognitive Blueprint execution to Celery.
+    Asynchronously dispatches a Cognitive Blueprint execution to background task worker.
     Returns the run_id and stream URL for Datastar SSE consumption.
     """
     user_id = getattr(request.auth, 'id', None) if hasattr(request, 'auth') else None

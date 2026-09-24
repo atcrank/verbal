@@ -1,5 +1,6 @@
 import logging
 import json
+import ast
 from .models import ToolDefinition, CognitiveBlueprint, ReasoningStep, ResponseSchema
 
 logger = logging.getLogger(__name__)
@@ -98,18 +99,87 @@ def create_blueprint(state: dict, params: dict) -> str:
 
 def clone_and_modify_blueprint(state: dict, params: dict) -> str:
     """
-    Clones an existing blueprint and applies modifications.
+    Clones an existing CognitiveBlueprint and its ReasoningSteps graph, applying modifications.
     """
+    from django.db import transaction
+    from metacognition.models import CognitiveBlueprint, ReasoningStep
+
     try:
         source_id = params.get("source_id")
+        if not source_id:
+            return "Error: 'source_id' parameter is required to clone a blueprint."
         source_bp = CognitiveBlueprint.objects.get(id=source_id)
         
-        # ... logic for cloning steps and wiring them ...
-        # (Omitted for brevity in prototype, would deep-copy ReasoningSteps)
-        
-        return f"Cloned blueprint {source_bp.name}. Modification not fully implemented."
+        new_name = params.get("name") or f"{source_bp.name} (Cloned)"
+        new_desc = params.get("description", source_bp.description)
+        is_autonomous = params.get("is_autonomous", source_bp.is_autonomous)
+        step_modifications = params.get("step_modifications", {})
+
+        with transaction.atomic():
+            new_bp = CognitiveBlueprint.objects.create(
+                name=new_name,
+                description=new_desc,
+                parent=source_bp,
+                is_autonomous=is_autonomous,
+                is_canonical=False
+            )
+            # Copy moderation lists
+            new_bp.moderation_lists.set(source_bp.moderation_lists.all())
+
+            # First pass: clone all steps
+            old_steps = list(source_bp.steps.all())
+            old_to_new = {}
+            for old_step in old_steps:
+                step_mod = step_modifications.get(old_step.name, step_modifications.get(str(old_step.id), {}))
+                
+                cloned_step = ReasoningStep.objects.create(
+                    blueprint=new_bp,
+                    name=step_mod.get("name", old_step.name),
+                    is_start_node=old_step.is_start_node,
+                    is_canonical=False,
+                    is_active=step_mod.get("is_active", old_step.is_active),
+                    lora_adapter=old_step.lora_adapter,
+                    is_pending_review=step_mod.get("is_pending_review", False),
+                    proposed_by="system",
+                    system_prompt=step_mod.get("system_prompt", old_step.system_prompt),
+                    sub_blueprint=old_step.sub_blueprint,
+                    max_retries=step_mod.get("max_retries", old_step.max_retries),
+                    output_schema=old_step.output_schema,
+                    max_new_tokens=step_mod.get("max_new_tokens", old_step.max_new_tokens),
+                    include_state_tree=step_mod.get("include_state_tree", old_step.include_state_tree),
+                    evaluation_criteria=step_mod.get("evaluation_criteria", old_step.evaluation_criteria),
+                    parent_step=old_step,
+                    variant_intent=step_mod.get("variant_intent", f"Cloned from {old_step.name}"),
+                    performance_score=0.0,
+                    selection_weight=1.0,
+                )
+                cloned_step.available_tools.set(old_step.available_tools.all())
+                old_to_new[old_step.id] = cloned_step
+
+            # Second pass: wire edges
+            for old_step in old_steps:
+                cloned_step = old_to_new[old_step.id]
+                updated_fields = []
+                if old_step.on_success_step_id:
+                    cloned_step.on_success_step = old_to_new.get(old_step.on_success_step_id, old_step.on_success_step)
+                    updated_fields.append("on_success_step")
+                if old_step.on_failure_step_id:
+                    cloned_step.on_failure_step = old_to_new.get(old_step.on_failure_step_id, old_step.on_failure_step)
+                    updated_fields.append("on_failure_step")
+                if updated_fields:
+                    cloned_step.save(update_fields=updated_fields)
+
+                # Parallel steps
+                parallel_old_ids = list(old_step.parallel_steps.values_list("id", flat=True))
+                if parallel_old_ids:
+                    cloned_parallels = [old_to_new[pid] for pid in parallel_old_ids if pid in old_to_new]
+                    if cloned_parallels:
+                        cloned_step.parallel_steps.set(cloned_parallels)
+
+        return f"Successfully cloned blueprint '{source_bp.name}' (id={source_bp.id}) into '{new_bp.name}' (id={new_bp.id}) with {len(old_to_new)} steps cloned and wired."
     except Exception as e:
         return f"Failed to clone blueprint: {e}"
+
 
 def review_benchmark_results(state: dict, params: dict) -> str:
     """Fetches and summarises benchmark results for analysis."""
@@ -254,19 +324,22 @@ def document_reader(state: dict, params: dict) -> str:
 
 def delegate_task(state: dict, params: dict) -> str:
     """
-    Spawns a new Conversation using a specified Blueprint and assigns it to a Celery worker.
+    Spawns a new Conversation using a specified Blueprint and assigns it to a verbal_tasks worker.
     """
     blueprint_name = params.get('blueprint_name')
     task_prompt = params.get('task_prompt')
     user_id = params.get('user_id')
     conversation_id = params.get('conversation_id')
     from metacognition.tasks import task_run_blueprint_async
+    from metacognition.models import CognitiveBlueprint
     try:
+        bp = CognitiveBlueprint.objects.filter(name=blueprint_name).first() if blueprint_name else None
+        bp_id = bp.id if bp else 1
         task_run_blueprint_async.enqueue(
-            blueprint_id=1, # Note: Needs name -> ID resolution, simplified here
+            blueprint_id=bp_id,
             user_prompt=task_prompt
         )
-        return f"Delegated task '{task_prompt[:30]}...' to blueprint '{blueprint_name}'"
+        return f"Delegated task '{task_prompt[:30]}...' to blueprint '{blueprint_name or bp_id}'"
     except Exception as e:
         return f"Failed to delegate task: {e}"
 
@@ -282,55 +355,127 @@ def run_benchmark(state: dict, params: dict) -> str:
     except Exception as e:
         return f"Failed to start benchmark: {e}"
 
+class SecurityASTVisitor(ast.NodeVisitor):
+    """
+    AST Visitor that strictly rejects:
+    - Dangerous imports (os, sys, subprocess, shutil, socket, requests, urllib, http, importlib, etc.)
+    - Builtin introspection (__builtins__, __subclasses__, __bases__, __class__, etc.)
+    - Dangerous builtins (eval, exec, compile, __import__, getattr, setattr, delattr)
+    - Hard deletions (.delete())
+    """
+    FORBIDDEN_CALLS = {'eval', 'exec', 'compile', '__import__', 'getattr', 'setattr', 'delattr'}
+    FORBIDDEN_MODULES = {
+        'os', 'sys', 'subprocess', 'shutil', 'socket', 'requests', 'urllib',
+        'http', 'importlib', 'ctypes', 'posix', 'pty', 'builtins'
+    }
+    FORBIDDEN_ATTRS = {'__builtins__', '__subclasses__', '__bases__', '__class__', '__globals__', '__code__'}
+
+    def __init__(self):
+        self.errors = []
+
+    def visit_Import(self, node):
+        for alias in node.names:
+            root_mod = alias.name.split('.')[0]
+            if root_mod in self.FORBIDDEN_MODULES:
+                self.errors.append(f"Importing '{alias.name}' is blocked for security.")
+            if alias.name.startswith('django.core.management'):
+                self.errors.append("Importing django management commands is blocked.")
+        self.generic_visit(node)
+
+    def visit_ImportFrom(self, node):
+        if node.module:
+            root_mod = node.module.split('.')[0]
+            if root_mod in self.FORBIDDEN_MODULES:
+                self.errors.append(f"Importing from '{node.module}' is blocked for security.")
+            if node.module.startswith('django.core.management'):
+                self.errors.append("Importing django management commands is blocked.")
+        self.generic_visit(node)
+
+    def visit_Call(self, node):
+        if isinstance(node.func, ast.Name) and node.func.id in self.FORBIDDEN_CALLS:
+            self.errors.append(f"Direct call to '{node.func.id}()' is forbidden for security.")
+        if isinstance(node.func, ast.Attribute):
+            if node.func.attr == 'delete':
+                self.errors.append("Hard deletes via .delete() are blocked.")
+            if node.func.attr in self.FORBIDDEN_CALLS:
+                self.errors.append(f"Calling attribute '{node.func.attr}()' is forbidden for security.")
+        self.generic_visit(node)
+
+    def visit_Attribute(self, node):
+        if node.attr in self.FORBIDDEN_ATTRS:
+            self.errors.append(f"Introspection attribute '{node.attr}' is forbidden.")
+        self.generic_visit(node)
+
+
 def django_shell_script(state: dict, params: dict) -> str:
     """
-    Executes raw Python code in the host Django environment. 
-    Allows full access to models and scheduling. 
-    For safety, explicit calls to `.delete()` are blocked.
+    Executes Python code in an isolated Docker sandbox container.
+    Rejects host breakout vectors, builtin introspection, and hard deletes.
     """
     script_content = params.get("script_content", "")
-    
-    # Safety check
-    if ".delete(" in script_content:
-        return "Error: Hard deletes are blocked. Use is_active=False or flag for review."
+    if not script_content.strip():
+        return "Error: script_content is empty."
 
-    # AST Security Patch
-    import ast
+    # 1. AST Security Validation
     try:
         tree = ast.parse(script_content)
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Import) or isinstance(node, ast.ImportFrom):
-                module_name = getattr(node, 'module', None) or node.names[0].name
-                if module_name in ['os', 'sys', 'subprocess']:
-                    return f"Error: Importing '{module_name}' is blocked for security."
-                if module_name.startswith('django.core.management'):
-                    return "Error: Importing django management commands is blocked to prevent rogue migrations."
+        visitor = SecurityASTVisitor()
+        visitor.visit(tree)
+        if visitor.errors:
+            return f"Error: Security violation: {'; '.join(visitor.errors)}"
     except SyntaxError as e:
         return f"Syntax error in script: {e}"
 
+    # 2. Stage script into workspaces/agent_scripts/
+    import os
+    import uuid
+    import requests
+    from django.conf import settings
+    from sandbox_manager.models import SandboxExecutionLog
+
+    script_id = uuid.uuid4().hex
+    rel_path = f"agent_scripts/{script_id}.py"
+    host_workspace = getattr(settings, 'WORKSPACE_ROOT', os.path.join(settings.BASE_DIR, 'workspaces'))
+    full_path = os.path.join(host_workspace, rel_path)
+    os.makedirs(os.path.dirname(full_path), exist_ok=True)
+
+    with open(full_path, "w", encoding="utf-8") as f:
+        f.write(script_content)
+
+    sandbox_url = getattr(settings, 'SANDBOX_URL', "http://127.0.0.1:8002/execute")
+    timeout = int(params.get("timeout", 30))
+    conversation_id = state.get("conversation_id") if isinstance(state, dict) else None
+
+    # 3. Execute via Sandbox HTTP API
     try:
-        # We need a string buffer to capture stdout
-        import sys
-        from io import StringIO
-        
-        old_stdout = sys.stdout
-        redirected_output = sys.stdout = StringIO()
-        
-        try:
-            from django.db import connection
-            connection.ensure_connection()
-            # We must pass globals() and a local dict so the script can import
-            # and mutate variables safely.
-            local_vars = {}
-            exec(script_content, globals(), local_vars)
-            output = redirected_output.getvalue()
-            if not output:
-                output = "Script executed successfully (no output)."
-            return output
-        finally:
-            sys.stdout = old_stdout
-    except Exception as e:
-        return f"Error executing script: {e}"
+        response = requests.post(
+            sandbox_url,
+            json={"filepath": rel_path, "timeout": timeout},
+            timeout=timeout + 5
+        )
+        if response.status_code == 200:
+            data = response.json()
+            stdout = data.get("stdout", "")
+            stderr = data.get("stderr", "")
+            retcode = data.get("returncode", 0)
+
+            # Audit log
+            SandboxExecutionLog.objects.create(
+                filepath=rel_path,
+                conversation_id=conversation_id,
+                return_code=retcode,
+                stdout=stdout,
+                stderr=stderr
+            )
+
+            if retcode == 0:
+                return stdout if stdout.strip() else "Script executed successfully (no output)."
+            else:
+                return f"Execution error (exit code {retcode}):\n{stderr}\n{stdout}".strip()
+        else:
+            return f"Sandbox error (HTTP {response.status_code}): {response.text}"
+    except requests.exceptions.RequestException as e:
+        return f"Error: Sandbox service unreachable at {sandbox_url}: {e}"
 
 def system_janitor(state: dict, params: dict) -> str:
     """
@@ -555,18 +700,12 @@ def manage_dynamic_tools(state: dict, params: dict) -> str:
     if not name or not script_content:
         return "Error: name and script_content are required."
         
-    import ast
     try:
         tree = ast.parse(script_content)
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Import) or isinstance(node, ast.ImportFrom):
-                module_name = getattr(node, 'module', None) or node.names[0].name
-                if module_name in ['os', 'sys', 'subprocess', 'requests', 'socket', 'urllib']:
-                    return f"Error: Importing '{module_name}' is not allowed for security reasons."
-            if isinstance(node, ast.Call):
-                if isinstance(node.func, ast.Attribute):
-                    if node.func.attr == 'delete':
-                        return "Error: calling .delete() is not allowed."
+        visitor = SecurityASTVisitor()
+        visitor.visit(tree)
+        if visitor.errors:
+            return f"Error: Security violation in dynamic tool: {'; '.join(visitor.errors)}"
     except SyntaxError as e:
         return f"Syntax error in script: {e}"
         

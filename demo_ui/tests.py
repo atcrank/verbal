@@ -296,6 +296,16 @@ class BroadcastEndpointsTestCase(TestCase):
         self.assertEqual(data['message'], "OK times up, redirecting to exercise 2")
         self.assertEqual(data['level'], "redirect")
 
+    def test_broadcast_stream_endpoint(self):
+        """Verifies SSE broadcast stream headers and non-blocking delivery."""
+        res = self.client.get(reverse('broadcast_stream') + '?timeout=0')
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.headers.get("Content-Type"), "text/event-stream")
+        content = b"".join(res.streaming_content).decode("utf-8")
+        self.assertIn("retry: 3000", content)
+        self.assertIn("data:", content)
+
+
     def test_docs_serve_landing_page(self):
         res = self.client.get('/docs/')
         self.assertEqual(res.status_code, 200)

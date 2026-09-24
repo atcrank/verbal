@@ -360,10 +360,7 @@ class MetacognitionE2EExternalProxyTests(TestCase):
     @classmethod
     def setUpClass(cls):
         from django.test.utils import override_settings
-        cls.settings_override = override_settings(
-            CELERY_TASK_ALWAYS_EAGER=True,
-            CELERY_TASK_EAGER_PROPAGATES=True,
-        )
+        cls.settings_override = override_settings()
         cls.settings_override.enable()
         super().setUpClass()
 
@@ -374,6 +371,15 @@ class MetacognitionE2EExternalProxyTests(TestCase):
         from llm_api.models import ExternalAIModel, UserActiveModel
 
         cls.test_system_user, _ = User.objects.get_or_create(username='test_system_user')
+
+        # Check if live inference server at 127.0.0.1:8001 is running; skip if not
+        import socket
+        import unittest
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(0.5)
+            if s.connect_ex(('127.0.0.1', 8001)) != 0:
+                raise unittest.SkipTest("Live inference server is not running on 127.0.0.1:8001")
+
         # Dynamically discover the active model to avoid 404s
         import urllib.request
         import json
@@ -498,8 +504,6 @@ class MetacognitionE2ELocalProxyTests(TestCase):
     def setUpClass(cls):
         from django.test.utils import override_settings
         cls.settings_override = override_settings(
-            CELERY_TASK_ALWAYS_EAGER=True,
-            CELERY_TASK_EAGER_PROPAGATES=True,
             OLLAMA_BASE_URL="http://127.0.0.1:11434",
             VLLM_BASE_URL="http://127.0.0.1:8003",
         )
@@ -585,29 +589,60 @@ class MetacognitionE2ELocalProxyTests(TestCase):
             self.assertNotIn("Generation failed", str(step.get("output", "")))
         print("✅ Local E2E test for IDEA protocol passed.")
 
+    @classmethod
+    def tearDownClass(cls):
+        from llm_api.models import SystemConfiguration
+        config = SystemConfiguration.get_solo()
+        config.active_local_model = None
+        config.active_ollama_model = None
+        config.active_vllm_model = None
+        config.save()
+        super().tearDownClass()
+
+
 class NightManagerToolTests(TestCase):
     """
     Tests the specialized tools available to the NightManager for Sysadmin duties.
     """
     def test_django_shell_script_safe(self):
-        from metacognition.meta_tools import django_shell_script
+        from metacognition.meta_tools import django_shell_script, write_django_model
+        from metacognition.models import CognitiveBlueprint
         
-        # Test 1: Simple DB creation using django shell script
+        # Test 1: Dynamic Python calculation executed safely in Docker sandbox
         script = """
-from metacognition.models import CognitiveBlueprint
-CognitiveBlueprint.objects.create(name="Script created BP")
-print("Successfully created BP")
+import math
+vals = [1, 4, 9, 16, 25]
+result = sum([math.sqrt(v) for v in vals])
+print(f"Computed sum: {result}")
 """
         result = django_shell_script({}, {"script_content": script})
-        self.assertIn("Successfully created BP", result)
-        self.assertTrue(CognitiveBlueprint.objects.filter(name="Script created BP").exists())
+        self.assertIn("Computed sum: 15.0", result)
         
-        # Test 2: Deletion block
+        # Test 2: Security AST visitor blocks forbidden modules (e.g. os/subprocess) and hard deletes
         bad_script = """
+import os
+os.system("rm -rf /")
+"""
+        result_bad = django_shell_script({}, {"script_content": bad_script})
+        self.assertIn("Security violation", result_bad)
+
+        delete_script = """
 CognitiveBlueprint.objects.all().delete()
 """
-        result = django_shell_script({}, {"script_content": bad_script})
-        self.assertIn("Error: Hard deletes are blocked", result)
+        result_del = django_shell_script({}, {"script_content": delete_script})
+        self.assertIn("Hard deletes via .delete() are blocked", result_del)
+
+
+        # Test 3: NightManager engages with database via structured write_django_model
+        bp_res = write_django_model({}, {
+            "app_label": "metacognition",
+            "model_name": "CognitiveBlueprint",
+            "action": "create",
+            "parameters": {"name": "NM Managed Blueprint"}
+        })
+        self.assertIn("Successfully created CognitiveBlueprint", bp_res)
+        self.assertTrue(CognitiveBlueprint.objects.filter(name="NM Managed Blueprint").exists())
+
 
     @patch('django.core.management.call_command')
     def test_database_backup(self, mock_call_command):
@@ -628,6 +663,36 @@ CognitiveBlueprint.objects.all().delete()
         backup_dir = os.path.join(settings.BASE_DIR, "backups")
         files = os.listdir(backup_dir)
         self.assertTrue(any(f.startswith("db_backup_") and f.endswith(".json") for f in files))
+
+    def test_clone_and_modify_blueprint(self):
+        """Verifies deep copying and edge rewiring of blueprints and steps."""
+        from metacognition.meta_tools import clone_and_modify_blueprint
+        from metacognition.models import CognitiveBlueprint, ReasoningStep
+        
+        source_bp = CognitiveBlueprint.objects.create(name="Original Strategy", description="Source description")
+        step1 = ReasoningStep.objects.create(blueprint=source_bp, name="Step 1", is_start_node=True, system_prompt="Prompt 1")
+        step2 = ReasoningStep.objects.create(blueprint=source_bp, name="Step 2", system_prompt="Prompt 2")
+        step1.on_success_step = step2
+        step1.save()
+        
+        res = clone_and_modify_blueprint({}, {
+            "source_id": source_bp.id,
+            "name": "Cloned Strategy",
+            "step_modifications": {
+                "Step 1": {"system_prompt": "Modified Prompt 1"}
+            }
+        })
+        self.assertIn("Successfully cloned blueprint", res)
+        cloned_bp = CognitiveBlueprint.objects.filter(name="Cloned Strategy").first()
+        self.assertIsNotNone(cloned_bp)
+        self.assertEqual(cloned_bp.parent, source_bp)
+        self.assertEqual(cloned_bp.steps.count(), 2)
+        cloned_step1 = cloned_bp.steps.filter(name="Step 1").first()
+        self.assertEqual(cloned_step1.system_prompt, "Modified Prompt 1")
+        self.assertIsNotNone(cloned_step1.on_success_step)
+        self.assertEqual(cloned_step1.on_success_step.blueprint, cloned_bp)
+        self.assertEqual(cloned_step1.on_success_step.name, "Step 2")
+
 
 
 class BlueprintEvolutionTests(TestCase):
@@ -1058,8 +1123,8 @@ class ReasoningStepStateTreeTests(TestCase):
         self.assertIn("- **Working Hypotheses:**", formatted)
         self.assertIn("- **Open Questions:**", formatted)
 
-    @patch('llm_api.ai_service.AIService.generate_response2')
-    @patch('llm_api.ai_service.AIService.clean_response')
+    @patch('llm_api.apps.service_registry.ai_service.generate_response2')
+    @patch('llm_api.apps.service_registry.ai_service.clean_response')
     def test_include_state_tree_flag_controls_prompt_injection(self, mock_clean, mock_generate):
         """Verifies include_state_tree=True injects state_tree, while False suppresses it."""
         from metacognition.compiler import compile_graph_from_blueprint

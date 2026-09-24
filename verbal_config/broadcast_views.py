@@ -15,9 +15,15 @@ def current_broadcast(request):
 def stream_broadcasts(request):
     """
     Server-Sent Events (SSE) stream endpoint for live announcements.
-    Pushes messages when changes occur and sends periodic heartbeats.
+    Pushes messages with SSE auto-reconnect headers (retry: 3000).
+    Limits synchronous stream duration (max 10s) to prevent WSGI worker pool starvation.
     """
+    max_duration = min(max(int(request.GET.get("timeout", 5)), 0), 10)
+
     def event_stream():
+        # Instruct SSE client to reconnect after 3 seconds upon stream close
+        yield "retry: 3000\n\n"
+
         last_id = None
         # Send initial state immediately
         initial = BroadcastService.get_current_broadcast()
@@ -27,10 +33,10 @@ def stream_broadcasts(request):
         else:
             yield f"data: {json.dumps({'active': False})}\n\n"
 
-        # Stream loop for up to 60 seconds (client will auto-reconnect)
+        # Short stream loop (client EventSource auto-reconnects cleanly)
         start_time = time.time()
-        while time.time() - start_time < 55:
-            time.sleep(2)
+        while time.time() - start_time < max_duration:
+            time.sleep(1)
             current = BroadcastService.get_current_broadcast()
             current_id = current.get("id") if current else None
 
@@ -46,6 +52,7 @@ def stream_broadcasts(request):
     response["Cache-Control"] = "no-cache"
     response["X-Accel-Buffering"] = "no"
     return response
+
 
 
 @login_required

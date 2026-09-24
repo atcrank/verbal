@@ -27,8 +27,7 @@ class SandboxConfiguration(models.Model):
     def clean(self):
         """Validates the PEP-508 syntax of the requirements before saving."""
         try:
-            from packaging.requirements import Requirement
-            from packaging.exceptions import InvalidRequirement
+            from packaging.requirements import Requirement, InvalidRequirement
             
             for line in self.requirements_txt.splitlines():
                 line = line.strip()
@@ -41,15 +40,18 @@ class SandboxConfiguration(models.Model):
         except ImportError:
             pass  # Fallback if packaging library is missing
 
-    def save(self, *args, **kwargs):
-        self.pk = 1  # Enforce singleton
-        super().save(*args, **kwargs)
-        
-        # Ensure the physical file stays in sync with the database on every save
+    def sync_requirements_file(self):
+        """Explicitly synchronizes the database requirements to sandbox/requirements.txt."""
         req_path = os.path.join(settings.BASE_DIR, 'sandbox', 'requirements.txt')
         os.makedirs(os.path.dirname(req_path), exist_ok=True)
         with open(req_path, 'w', encoding='utf-8') as f:
             f.write(self.requirements_txt)
+
+    def save(self, *args, sync_to_file=False, **kwargs):
+        self.pk = 1  # Enforce singleton
+        super().save(*args, **kwargs)
+        if sync_to_file:
+            self.sync_requirements_file()
 
     @classmethod
     def get_solo(cls):

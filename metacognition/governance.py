@@ -78,7 +78,7 @@ def night_manager_task():
         if created:
             logger.info(f"Night Manager created new experiment for {bp.name}")
 
-            # Run the benchmark suite synchronously (we're in a Celery worker)
+            # Run the benchmark suite synchronously (we're in a background task worker)
             try:
                 if experiment.scenario_group and experiment.scenario_group.scenarios.exists():
                     corpus = experiment.corpus

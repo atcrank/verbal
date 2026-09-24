@@ -26,7 +26,8 @@ class Reference(models.Model):
 
     parsed_at = models.DateTimeField(auto_now_add=True)
 
-    def save(self, *args, **kwargs):
+    def clean(self):
+        super().clean()
         # Explicitly truncate strings to prevent PostgreSQL DataErrors during programmatic inserts
         if self.title and len(self.title) > 996: self.title = self.title[:996] + "..."
         if self.journal and len(self.journal) > 996: self.journal = self.journal[:996] + "..."
@@ -37,7 +38,9 @@ class Reference(models.Model):
         if self.issue and len(self.issue) > 46: self.issue = self.issue[:46] + "..."
         if self.pages and len(self.pages) > 46: self.pages = self.pages[:46] + "..."
         if self.doi and len(self.doi) > 96: self.doi = self.doi[:96] + "..."
-        
+
+    def save(self, *args, **kwargs):
+        self.clean()
         super().save(*args, **kwargs)
 
     def __str__(self):

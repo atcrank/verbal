@@ -257,7 +257,7 @@ def seed_tools(ToolDefinition):
         ("get_grips_metrics", "Summarizes Grips ConceptNode stats and flags downstream failures.", "builtin", "metacognition.meta_tools.get_grips_metrics"),
         ("create_benchmark_scenario", "Creates a new BenchmarkScenario from the agent's analysis.", "builtin", "metacognition.meta_tools.create_benchmark_scenario"),
         ("document_reader", "Unified tool for navigating and fetching documents from the RAG database. You MUST specify the 'action' parameter.", "builtin", "metacognition.meta_tools.document_reader"),
-        ("delegate_task", "Delegates a sub-task to another blueprint via Celery.", "builtin", "metacognition.meta_tools.delegate_task"),
+        ("delegate_task", "Delegates a sub-task to another blueprint via verbal_tasks.", "builtin", "metacognition.meta_tools.delegate_task"),
         ("run_benchmark", "Triggers a benchmarking test for a group of scenarios.", "builtin", "metacognition.meta_tools.run_benchmark"),
         ("django_shell_script", "Executes raw Python code in the host Django environment. Pass code via 'script_content' parameter.", "builtin", "metacognition.meta_tools.django_shell_script"),
         ("system_janitor", "Deletes empty workspace directories.", "builtin", "metacognition.meta_tools.system_janitor"),

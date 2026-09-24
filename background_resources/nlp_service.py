@@ -12,7 +12,16 @@ class NLPService:
     primary_nlp = None
     abbreviation_model = None
     basic_spellcheck_model = None
-    domain_terms = ["term1", "term2", "term3"]
+    
+    @property
+    def domain_terms(self) -> list[str]:
+        """Dynamically fetch active Domain names from grips."""
+        try:
+            from grips.models import Domain
+            return list(Domain.objects.values_list('name', flat=True))
+        except Exception as e:
+            logger.debug(f"Could not load domain terms: {e}")
+            return []
 
     def get_primary_nlp(self):
         if self.primary_nlp is None:

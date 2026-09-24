@@ -20,4 +20,4 @@ fi
 
 export VERBAL_ROLE=web
 . ${PYENV_ACTIVATE}
-python manage.py runserver 8000
+python manage.py runserver 127.0.0.1:8000

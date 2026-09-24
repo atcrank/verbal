@@ -1,6 +1,9 @@
 from django.tasks import task
+import logging
 import json
 import re
+
+logger = logging.getLogger(__name__)
 from llm_api.apps import service_registry
 from background_resources.models import Document, RAGChunk
 from .models import Reference, Citation
@@ -279,7 +282,14 @@ def task_extract_grobid_metadata(document_id: int):
         return f"Document {doc.title} is not a PDF. Grobid processing skipped."
 
     file_path = doc.file.path
-    tei_xml = process_pdf_with_grobid(file_path)
+    try:
+        tei_xml = process_pdf_with_grobid(file_path)
+    except ConnectionError as e:
+        logger.warning(f"Grobid daemon unreachable for {doc.title}: {e}")
+        return f"Grobid service unavailable: {e}"
+    except Exception as e:
+        logger.exception(f"Grobid processing failed for {doc.title}: {e}")
+        return f"Grobid processing error: {e}"
     
     soup = BeautifulSoup(tei_xml, "xml")
     ai_service = service_registry.ai_service

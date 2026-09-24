@@ -55,6 +55,16 @@ class DjangoCheckpointer(BaseCheckpointSaver):
             checkpoint = self.serde.loads_typed((record.state_json["type"], state_data_bytes))
             metadata = self.serde.loads_typed((record.metadata_json["type"], meta_data_bytes))
             
+            # Pending writes
+            pending_writes = None
+            if isinstance(record.metadata_json, dict) and "pending_writes" in record.metadata_json:
+                pending_writes = []
+                for w in record.metadata_json.get("pending_writes", []):
+                    w_data = w.get("data")
+                    w_bytes = base64.b64decode(w_data) if isinstance(w_data, str) else w_data
+                    val = self.serde.loads_typed((w["type"], w_bytes))
+                    pending_writes.append((w["task_id"], w["channel"], val))
+
             # Reconstruct the config with the found checkpoint_id
             found_config = {
                 "configurable": {
@@ -72,7 +82,8 @@ class DjangoCheckpointer(BaseCheckpointSaver):
                         "thread_id": thread_id,
                         "checkpoint_id": record.parent_id,
                     }
-                } if record.parent_id else None
+                } if record.parent_id else None,
+                pending_writes=pending_writes
             )
             
         except AgentCheckpoint.DoesNotExist:
@@ -102,9 +113,6 @@ class DjangoCheckpointer(BaseCheckpointSaver):
         qs = AgentCheckpoint.objects.filter(thread_id=thread_id)
         
         if before and "configurable" in before and "checkpoint_id" in before["configurable"]:
-            # A bit tricky to filter by ID which is a string timestamp in LangGraph, 
-            # but we can filter by the created_at timestamp if we mapped it, or just 
-            # string comparison if the IDs are monotonic
             qs = qs.filter(checkpoint_id__lt=before["configurable"]["checkpoint_id"])
             
         if limit:
@@ -112,8 +120,8 @@ class DjangoCheckpointer(BaseCheckpointSaver):
             
         for record in qs:
             import base64
-            state_data_val = record.state_json["data"]
-            meta_data_val = record.metadata_json["data"]
+            state_data_val = record.state_json.get("data")
+            meta_data_val = record.metadata_json.get("data")
             
             state_data_bytes = base64.b64decode(state_data_val) if isinstance(state_data_val, str) else state_data_val
             meta_data_bytes = base64.b64decode(meta_data_val) if isinstance(meta_data_val, str) else meta_data_val
@@ -121,6 +129,15 @@ class DjangoCheckpointer(BaseCheckpointSaver):
             checkpoint = self.serde.loads_typed((record.state_json["type"], state_data_bytes))
             metadata = self.serde.loads_typed((record.metadata_json["type"], meta_data_bytes))
             
+            pending_writes = None
+            if isinstance(record.metadata_json, dict) and "pending_writes" in record.metadata_json:
+                pending_writes = []
+                for w in record.metadata_json.get("pending_writes", []):
+                    w_data = w.get("data")
+                    w_bytes = base64.b64decode(w_data) if isinstance(w_data, str) else w_data
+                    val = self.serde.loads_typed((w["type"], w_bytes))
+                    pending_writes.append((w["task_id"], w["channel"], val))
+
             yield CheckpointTuple(
                 config={
                     "configurable": {
@@ -135,7 +152,8 @@ class DjangoCheckpointer(BaseCheckpointSaver):
                         "thread_id": thread_id,
                         "checkpoint_id": record.parent_id,
                     }
-                } if record.parent_id else None
+                } if record.parent_id else None,
+                pending_writes=pending_writes
             )
 
     def put(self, config: dict, checkpoint: Checkpoint, metadata: CheckpointMetadata, new_versions: Any) -> dict:
@@ -157,7 +175,7 @@ class DjangoCheckpointer(BaseCheckpointSaver):
         
         try:
             with transaction.atomic():
-                AgentCheckpoint.objects.update_or_create(
+                record, _ = AgentCheckpoint.objects.get_or_create(
                     thread_id=thread_id,
                     checkpoint_id=checkpoint_id,
                     defaults={
@@ -166,9 +184,17 @@ class DjangoCheckpointer(BaseCheckpointSaver):
                         "metadata_json": {"type": meta_type, "data": meta_data},
                     }
                 )
+                if not _:
+                    record.parent_id = parent_id
+                    record.state_json = {"type": state_type, "data": state_data}
+                    # Preserve any pending writes already attached to this checkpoint
+                    existing_meta = record.metadata_json or {}
+                    new_meta = {"type": meta_type, "data": meta_data}
+                    if "pending_writes" in existing_meta:
+                        new_meta["pending_writes"] = existing_meta["pending_writes"]
+                    record.metadata_json = new_meta
+                    record.save()
         except Exception as e:
-            # We must swallow or handle exception, but the signature doesn't say
-            # Just let it bubble up
             raise
             
         return {
@@ -178,10 +204,52 @@ class DjangoCheckpointer(BaseCheckpointSaver):
             }
         }
 
-    def put_writes(self, config, writes, task_id, task_path=""):
+    def put_writes(
+        self,
+        config: dict,
+        writes: Any,
+        task_id: str,
+        task_path: str = "",
+    ) -> None:
         """
         Store intermediate writes for a task.
-        For simplicity in this synchronous Django runner, we can ignore this or implement a separate model if needed.
-        LangGraph requires this to be implemented (not raise NotImplementedError).
+        Persisted inside AgentCheckpoint.metadata_json['pending_writes'].
         """
-        pass
+        from .models import AgentCheckpoint
+        import base64
+
+        thread_id = config["configurable"]["thread_id"]
+        checkpoint_id = config["configurable"]["checkpoint_id"]
+
+        serialized_writes = []
+        for channel, val in writes:
+            w_type, w_bytes = self.serde.dumps_typed(val)
+            w_data = base64.b64encode(w_bytes).decode("ascii")
+            serialized_writes.append({
+                "task_id": task_id,
+                "task_path": task_path,
+                "channel": channel,
+                "type": w_type,
+                "data": w_data,
+            })
+
+        try:
+            with transaction.atomic():
+                record, created = AgentCheckpoint.objects.get_or_create(
+                    thread_id=thread_id,
+                    checkpoint_id=checkpoint_id,
+                    defaults={
+                        "state_json": {},
+                        "metadata_json": {"pending_writes": serialized_writes}
+                    }
+                )
+                if not created:
+                    meta = record.metadata_json or {}
+                    current_writes = meta.get("pending_writes", [])
+                    current_writes.extend(serialized_writes)
+                    meta["pending_writes"] = current_writes
+                    record.metadata_json = meta
+                    record.save(update_fields=["metadata_json"])
+        except Exception as e:
+            logger.error(f"Error saving intermediate writes: {e}")
+

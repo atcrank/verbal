@@ -31,8 +31,6 @@ class LlmApiIntegrationTests(TestCase):
             CHUNK_STORE=TEST_CHUNK_STORE,
             FILES=TEST_FILES_DIR,
             MEDIA_ROOT=TEST_FILES_DIR,
-            CELERY_TASK_ALWAYS_EAGER=True,
-            CELERY_TASK_EAGER_PROPAGATES=True,
         )
         cls.settings_override.enable()
         super().setUpClass()

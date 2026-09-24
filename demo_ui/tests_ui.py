@@ -10,14 +10,25 @@ class DemoUIWalkthroughTestCase(StaticLiveServerTestCase):
     def setUpClass(cls):
         super().setUpClass()
         os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
-        cls.playwright = sync_playwright().start()
-        cls.browser = cls.playwright.chromium.launch(headless=True)
+        import unittest
+        cls.playwright = None
+        cls.browser = None
+        try:
+            cls.playwright = sync_playwright().start()
+            cls.browser = cls.playwright.chromium.launch(headless=True)
+        except Exception as e:
+            if cls.playwright:
+                cls.playwright.stop()
+            raise unittest.SkipTest(f"Playwright browser unavailable: {e}")
         
     @classmethod
     def tearDownClass(cls):
-        cls.browser.close()
-        cls.playwright.stop()
+        if cls.browser:
+            cls.browser.close()
+        if cls.playwright:
+            cls.playwright.stop()
         super().tearDownClass()
+
         
     def setUp(self):
         User = get_user_model()

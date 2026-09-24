@@ -61,10 +61,11 @@ def execute(req: ExecuteRequest):
             "status": "success" if result.returncode == 0 else "error"
         }
     except subprocess.TimeoutExpired as e:
+        stdout_str = e.stdout.decode() if isinstance(e.stdout, bytes) else (e.stdout or "")
+        stderr_str = e.stderr.decode() if isinstance(e.stderr, bytes) else (e.stderr or "")
         return {
-            "stdout": e.stdout.decode() if e.stdout else "",
-            "stderr": (
-                          e.stderr.decode() if e.stderr else "") + f"\n[SYSTEM] Execution timed out after {req.timeout} seconds.",
+            "stdout": stdout_str,
+            "stderr": stderr_str + f"\n[SYSTEM] Execution timed out after {req.timeout} seconds.",
             "returncode": 124,
             "status": "timeout"
         }

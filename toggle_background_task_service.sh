@@ -1,35 +1,37 @@
 #!/bin/bash
 
-# Check if Celery is currently running by searching for its process
-CELERY_PIDS=$(pgrep -f "watchmedo auto-restart")
+# Check if background task worker is currently running
+WORKER_PIDS=$(pgrep -f "manage.py runtaskworker")
 
-if [ -n "$CELERY_PIDS" ]; then
+if [ -n "$WORKER_PIDS" ]; then
     echo "Background services are currently RUNNING. Shutting them down..."
 
-    echo "1/2: Stopping Celery workers gracefully..."
-    pkill -f "watchmedo auto-restart"
-    pkill -f "celery -A verbal_config worker"
+    echo "1/2: Stopping task worker and scheduler..."
+    pkill -f "manage.py runtaskworker"
+    pkill -f "manage.py runtaskscheduler"
 
-    echo "2/2: Stopping Redis container..."
+    echo "2/2: Stopping Docker containers..."
     docker compose down
 
     echo "Background services stopped."
 else
     echo "Background services are currently STOPPED. Starting them up..."
 
-    echo "1/2: Starting Redis container..."
+    echo "1/3: Starting Docker containers..."
     docker compose up -d
 
-    echo "2/2: Starting Celery worker..."
-    # Source the virtual environment properly
-    source ../py313/bin/activate
-
-    # Tell the Django settings to run in lightweight proxy mode
+    echo "2/3: Sourcing environment..."
+    if [ -n "$PYENV_ACTIVATE" ]; then
+        source "$PYENV_ACTIVATE"
+    else
+        source ../../py312/bin/activate
+    fi
     export VERBAL_ROLE=worker
 
-    # Run celery in the background using watchmedo for auto-restart on code changes
-    nohup watchmedo auto-restart --directory=./ --pattern="*.py" --recursive -- celery -A verbal_config worker -c 1 -l INFO > celery.log 2>&1 &
+    echo "3/3: Starting task worker and scheduler..."
+    nohup python manage.py runtaskworker > worker.log 2>&1 &
+    nohup python manage.py runtaskscheduler > scheduler.log 2>&1 &
 
-    echo "Background services started! (Logs are being written to celery.log)"
-    echo "Run 'tail -f celery.log' to view the live logs."
+    echo "Background task worker and scheduler started!"
+    echo "Run 'tail -f worker.log' to view live worker logs."
 fi

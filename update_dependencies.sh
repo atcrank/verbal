@@ -151,7 +151,9 @@ elif [ -n "$PYENV_ACTIVATE" ]; then
 fi
 
 if [ -z "$PYTHON_BIN" ] || [ ! -x "$PYTHON_BIN" ]; then
-    if [ -x "../../py313/bin/python" ]; then
+    if [ -x "../../py312/bin/python" ]; then
+        PYTHON_BIN="../../py312/bin/python"
+    elif [ -x "../../py313/bin/python" ]; then
         PYTHON_BIN="../../py313/bin/python"
     elif [ -x ".venv/bin/python" ]; then
         PYTHON_BIN=".venv/bin/python"
@@ -370,6 +372,6 @@ if [ "$DO_SYNC" = "true" ]; then
 
     if [ "$INSTALL_PLAYWRIGHT" = "true" ]; then
         echo "🎭 Attempting to install Playwright browser binaries..."
-        uv pip run --python "$PYTHON_BIN" playwright install chromium || echo "⚠️ Playwright not installed or unavailable, skipping browser installation."
+        "$PYTHON_BIN" -m playwright install chromium || echo "⚠️ Playwright not installed or unavailable, skipping browser installation."
     fi
 fi

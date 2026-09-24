@@ -1,9 +1,8 @@
 #!/bin/bash
 
-echo "1/2: Stopping Celery workers gracefully..."
-pkill -f "watchmedo auto-restart"
-pkill -f "celery -A verbal_config worker"
-pkill -f 'celery -A verbal_config beat'
+echo "1/2: Stopping task workers and schedulers gracefully..."
+pkill -f "manage.py runtaskworker"
+pkill -f "manage.py runtaskscheduler"
 
 echo "2/2: Stopping Docker containers..."
 docker compose down

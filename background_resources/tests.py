@@ -98,8 +98,6 @@ class BackgroundResourcesIntegrationTest(TestCase):
         cls.settings_override = override_settings(
             FILES=TEST_FILES_DIR,
             MEDIA_ROOT=TEST_FILES_DIR,
-            CELERY_TASK_ALWAYS_EAGER=True,
-            CELERY_TASK_EAGER_PROPAGATES=True,
         )
         cls.settings_override.enable()
         super().setUpClass()

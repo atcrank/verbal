@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xml:space="preserve" xmlns="http://www.tei-c.org/ns/1.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.tei-c.org/ns/1.0 https://raw.githubusercontent.com/kermitt2/grobid/master/grobid-home/schemas/xsd/Grobid.xsd">
+	<teiHeader xml:lang="en">
+		<fileDesc>
+			<titleStmt>
+				<title level="a" type="main">Autonomous Robotics for Indoor Firefighting Search and Rescue</title>
+			</titleStmt>
+			<publicationStmt>
+				<publisher>Wiley</publisher>
+				<availability status="unknown"><licence/></availability>
+				<date type="published" when="2023-04-15">April 15, 2023</date>
+			</publicationStmt>
+			<sourceDesc>
+				<biblStruct>
+					<analytic>
+						<author>
+							<persName><forename type="first">Juan</forename><surname>Talavera</surname></persName>
+							<affiliation key="aff0">
+								<orgName type="department">Department of Robotics</orgName>
+								<orgName type="institution">University of Fire Protection</orgName>
+							</affiliation>
+						</author>
+						<author>
+							<persName><forename type="first">Jacques</forename><surname>Penders</surname></persName>
+						</author>
+						<title level="a" type="main">Autonomous Robotics for Indoor Firefighting Search and Rescue</title>
+						<idno type="DOI">10.1002/rob.22150</idno>
+					</analytic>
+					<monogr>
+						<title level="j" type="main">Journal of Field Robotics</title>
+						<imprint>
+							<publisher>Wiley</publisher>
+							<date type="published" when="2023">2023</date>
+							<biblScope unit="volume">40</biblScope>
+							<biblScope unit="issue">3</biblScope>
+							<biblScope unit="page" from="412" to="435"/>
+						</imprint>
+					</monogr>
+				</biblStruct>
+			</sourceDesc>
+		</fileDesc>
+		<profileDesc>
+			<abstract>
+				<p>This paper presents an autonomous ground robot architecture designed to assist first responders in indoor search and rescue operations during structural fires. We validate localization in zero-visibility smoke environments using combined thermal and LiDAR SLAM.</p>
+			</abstract>
+		</profileDesc>
+	</teiHeader>
+	<text xml:lang="en">
+		<body>
+			<div>
+				<p>Indoor structural firefighting presents extreme thermal and perceptual challenges for personnel. Previous work in swarm robotics demonstrated decentralized mapping in degraded environments <ref type="bibr" target="#b0">(Penders et al., 2018)</ref>. Modern infrared sensor fusion provides robust penetration through dense particulate suspensions <ref type="bibr" target="#b1">(Talavera, 2021)</ref>.</p>
+			</div>
+			<div type="references">
+				<listBibl>
+					<biblStruct xml:id="b0">
+						<analytic>
+							<title level="a" type="main">Swarm Intelligence for Disaster Relief</title>
+							<author>
+								<persName><forename type="first">Jacques</forename><surname>Penders</surname></persName>
+							</author>
+							<idno type="DOI">10.1016/j.adhoc.2018.02.001</idno>
+						</analytic>
+						<monogr>
+							<title level="j" type="main">Ad Hoc Networks</title>
+							<imprint>
+								<publisher>Elsevier</publisher>
+								<date type="published" when="2018">2018</date>
+							</imprint>
+						</monogr>
+					</biblStruct>
+					<biblStruct xml:id="b1">
+						<analytic>
+							<title level="a" type="main">Thermal Imaging in Dense Smoke Environments</title>
+							<author>
+								<persName><forename type="first">Juan</forename><surname>Talavera</surname></persName>
+							</author>
+						</analytic>
+						<monogr>
+							<title level="j" type="main">Fire Safety Journal</title>
+							<imprint>
+								<date type="published" when="2021">2021</date>
+							</imprint>
+						</monogr>
+					</biblStruct>
+				</listBibl>
+			</div>
+		</body>
+	</text>
+</TEI>
