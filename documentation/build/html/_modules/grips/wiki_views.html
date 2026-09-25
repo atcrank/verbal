@@ -93,6 +93,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">django.shortcuts</span><span class="w"> </span><span class="kn">import</span> <span class="n">render</span><span class="p">,</span> <span class="n">redirect</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">django.http</span><span class="w"> </span><span class="kn">import</span> <span class="n">JsonResponse</span><span class="p">,</span> <span class="n">Http404</span><span class="p">,</span> <span class="n">HttpResponseBadRequest</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">django.views.decorators.http</span><span class="w"> </span><span class="kn">import</span> <span class="n">require_http_methods</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.views.decorators.csrf</span><span class="w"> </span><span class="kn">import</span> <span class="n">ensure_csrf_cookie</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">django.contrib.auth.decorators</span><span class="w"> </span><span class="kn">import</span> <span class="n">login_required</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">django.utils.safestring</span><span class="w"> </span><span class="kn">import</span> <span class="n">mark_safe</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">markdown</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">md_lib</span>
@@ -137,6 +138,7 @@
 
 <div class="viewcode-block" id="wiki_index">
 <a class="viewcode-back" href="../../grips_app.html#grips.wiki_views.wiki_index">[docs]</a>
+<span class="nd">@ensure_csrf_cookie</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">wiki_index</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Landing page for the Grips OKF Wiki. Shows domain tree, statistics,</span>
@@ -168,6 +170,7 @@
 
 <div class="viewcode-block" id="wiki_page">
 <a class="viewcode-back" href="../../grips_app.html#grips.wiki_views.wiki_page">[docs]</a>
+<span class="nd">@ensure_csrf_cookie</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">wiki_page</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Displays a wiki page in read-only mode with breadcrumbs, rendered markdown,</span>
@@ -252,6 +255,7 @@
 
 <div class="viewcode-block" id="wiki_history">
 <a class="viewcode-back" href="../../grips_app.html#grips.wiki_views.wiki_history">[docs]</a>
+<span class="nd">@ensure_csrf_cookie</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">wiki_history</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Displays the commit history log and diffs for a specific wiki file.</span>
@@ -282,6 +286,7 @@
 
 <div class="viewcode-block" id="wiki_activity">
 <a class="viewcode-back" href="../../grips_app.html#grips.wiki_views.wiki_activity">[docs]</a>
+<span class="nd">@ensure_csrf_cookie</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">wiki_activity</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Global activity log showing commits and affected files across grips_okf.</span>
@@ -311,6 +316,7 @@
 
 <div class="viewcode-block" id="wiki_graph">
 <a class="viewcode-back" href="../../grips_app.html#grips.wiki_views.wiki_graph">[docs]</a>
+<span class="nd">@ensure_csrf_cookie</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">wiki_graph</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Interactive network graph visualization view supporting Knowledge, Citation,</span>
@@ -347,6 +353,7 @@
 
 <div class="viewcode-block" id="wiki_reading_list">
 <a class="viewcode-back" href="../../grips_app.html#grips.wiki_views.wiki_reading_list">[docs]</a>
+<span class="nd">@ensure_csrf_cookie</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">wiki_reading_list</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Academic research analytics view: seminal papers ranked by citation in-degree,</span>
@@ -359,6 +366,7 @@
 
 <div class="viewcode-block" id="wiki_synthesis_matrix">
 <a class="viewcode-back" href="../../grips_app.html#grips.wiki_views.wiki_synthesis_matrix">[docs]</a>
+<span class="nd">@ensure_csrf_cookie</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">wiki_synthesis_matrix</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Literature synthesis cross-tabulation: documents vs core concepts coverage grid.</span>

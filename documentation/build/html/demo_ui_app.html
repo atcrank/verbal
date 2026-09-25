@@ -84,6 +84,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.preview_context_item"><code class="docutils literal notranslate"><span class="pre">preview_context_item()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.search_knowledge_base"><code class="docutils literal notranslate"><span class="pre">search_knowledge_base()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.send_message"><code class="docutils literal notranslate"><span class="pre">send_message()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.stream_generation"><code class="docutils literal notranslate"><span class="pre">stream_generation()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.trigger_document_ingestion"><code class="docutils literal notranslate"><span class="pre">trigger_document_ingestion()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.upload_document"><code class="docutils literal notranslate"><span class="pre">upload_document()</span></code></a></li>
 </ul>
@@ -344,6 +345,13 @@ Because branching creates an entirely new <code class="docutils literal notransl
 <dt class="sig sig-object py" id="demo_ui.views.send_message">
 <span class="sig-prename descclassname"><span class="pre">demo_ui.views.</span></span><span class="sig-name descname"><span class="pre">send_message</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/demo_ui/views.html#send_message"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#demo_ui.views.send_message" title="Link to this definition"></a></dt>
 <dd><p>HTMX endpoint to process a prompt, run AI/Blueprint, and return the new bubbles.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="demo_ui.views.stream_generation">
+<span class="sig-prename descclassname"><span class="pre">demo_ui.views.</span></span><span class="sig-name descname"><span class="pre">stream_generation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/demo_ui/views.html#stream_generation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#demo_ui.views.stream_generation" title="Link to this definition"></a></dt>
+<dd><p>Server-Sent Events (SSE) streaming endpoint using Datastar protocol.
+Streams DOM fragment patches when background LLM generation completes.</p>
 </dd></dl>
 
 <dl class="py function">

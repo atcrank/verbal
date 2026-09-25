@@ -66,6 +66,15 @@ Structured JSON Generation with Outlines
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 When structured schema output is required (e.g. factor extraction, plan generation, claim evaluation), the service uses `outlines` to construct regex-based finite-state machines. Only tokens that conform to the Pydantic schema are permitted to be sampled from the vocabulary logits, guaranteeing 100% valid JSON without parsing retries.
 
+Working Memory State Trees & Focal Projection (``state_tree.py``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To support non-linear conversational topologies and prevent context window exhaustion, [llm_api/state_tree.py](file:///home/crank/coding/antigrav/verbal/llm_api/state_tree.py) provides working memory management utilities:
+
+* **Dynamic Focal Projection (``format_focal_state_tree``)**: Transforms complex state trees into concise prompt projections, expanding the active task branch (marked with ``>> [ACTIVE]``) while collapsing inactive siblings to single-line summaries.
+* **Inline Compaction (``fast_compact_state_tree``)**: Deterministic, sub-millisecond Python rule guardrail that rolls settled tasks into milestone lists, clamps bulky string values (>300 characters), and preserves invariants in `established_facts`.
+* **Intelligent Compaction (``intelligent_compact_state_tree``)**: Synthesizes older conversation milestones into low-confidence breadcrumb summaries (*"I can see a long time ago we explored..."*).
+* **Branch-Aware History (``Conversation.as_messages()``)**: Traverses DAG lineages using `leaf_log_id` to replay exact conversational branches, automatically embedding the active focal state tree into condensation notes whenever older turns are omitted.
+
 Endpoints
 ~~~~~~~~~
 

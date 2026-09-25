@@ -119,8 +119,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">clean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Validates the PEP-508 syntax of the requirements before saving.&quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="kn">from</span><span class="w"> </span><span class="nn">packaging.requirements</span><span class="w"> </span><span class="kn">import</span> <span class="n">Requirement</span>
-            <span class="kn">from</span><span class="w"> </span><span class="nn">packaging.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">InvalidRequirement</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">packaging.requirements</span><span class="w"> </span><span class="kn">import</span> <span class="n">Requirement</span><span class="p">,</span> <span class="n">InvalidRequirement</span>
             
             <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">requirements_txt</span><span class="o">.</span><span class="n">splitlines</span><span class="p">():</span>
                 <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
@@ -134,17 +133,23 @@
             <span class="k">pass</span>  <span class="c1"># Fallback if packaging library is missing</span></div>
 
 
-<div class="viewcode-block" id="SandboxConfiguration.save">
-<a class="viewcode-back" href="../../sandbox_manager_app.html#sandbox_manager.models.SandboxConfiguration.save">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pk</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># Enforce singleton</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        
-        <span class="c1"># Ensure the physical file stays in sync with the database on every save</span>
+<div class="viewcode-block" id="SandboxConfiguration.sync_requirements_file">
+<a class="viewcode-back" href="../../sandbox_manager_app.html#sandbox_manager.models.SandboxConfiguration.sync_requirements_file">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sync_requirements_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Explicitly synchronizes the database requirements to sandbox/requirements.txt.&quot;&quot;&quot;</span>
         <span class="n">req_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">BASE_DIR</span><span class="p">,</span> <span class="s1">&#39;sandbox&#39;</span><span class="p">,</span> <span class="s1">&#39;requirements.txt&#39;</span><span class="p">)</span>
         <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">req_path</span><span class="p">),</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">req_path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">requirements_txt</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SandboxConfiguration.save">
+<a class="viewcode-back" href="../../sandbox_manager_app.html#sandbox_manager.models.SandboxConfiguration.save">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">sync_to_file</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pk</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># Enforce singleton</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">sync_to_file</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sync_requirements_file</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="SandboxConfiguration.get_solo">

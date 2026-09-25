@@ -59,6 +59,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#architecture-mechanism">2. Architecture &amp; Mechanism</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#database-blueprint-architecture">Database Blueprint Architecture</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#langgraph-compilation-engine-compiler-py">LangGraph Compilation Engine (<code class="docutils literal notranslate"><span class="pre">compiler.py</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#working-memory-dynamic-focal-projections">Working Memory &amp; Dynamic Focal Projections</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#api-endpoints-metacognition-api-py">API Endpoints (<code class="docutils literal notranslate"><span class="pre">metacognition/api.py</span></code>)</a></li>
 </ul>
 </li>
@@ -68,6 +69,15 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#diagnostic-tips-failure-modes">4. Diagnostic Tips &amp; Failure Modes</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#when-blueprints-miss-the-mark-how-to-tune">When Blueprints Miss the Mark &amp; How to Tune</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#practical-guidance-for-prompt-authors-blueprint-designers">5. Practical Guidance for Prompt Authors &amp; Blueprint Designers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#guidance-1-working-memory-vs-conversation-history">Guidance 1: Working Memory vs. Conversation History</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#guidance-2-structuring-the-state-tree-for-model-clarity">Guidance 2: Structuring the State Tree for Model Clarity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#guidance-3-design-patterns-plans-vs-uncertainty-trees-the-grill-me-pattern">Guidance 3: Design Patterns — Plans vs. Uncertainty Trees (The Grill-Me Pattern)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#guidance-4-context-isolation-with-sub-blueprints">Guidance 4: Context Isolation with Sub-Blueprints</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#guidance-5-workspace-file-hygiene">Guidance 5: Workspace File Hygiene</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#guidance-6-choosing-structured-output-vs-react-tool-calling">Guidance 6: Choosing Structured Output vs. ReAct Tool Calling</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#module-metacognition.models">Module Reference</a><ul>
@@ -457,6 +467,7 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#metacognition.api.BlueprintRunIn"><code class="docutils literal notranslate"><span class="pre">BlueprintRunIn</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.api.BlueprintRunIn.async_mode"><code class="docutils literal notranslate"><span class="pre">BlueprintRunIn.async_mode</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#metacognition.api.BlueprintRunIn.blueprint_id"><code class="docutils literal notranslate"><span class="pre">BlueprintRunIn.blueprint_id</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#metacognition.api.BlueprintRunIn.conversation_id"><code class="docutils literal notranslate"><span class="pre">BlueprintRunIn.conversation_id</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#metacognition.api.BlueprintRunIn.model_config"><code class="docutils literal notranslate"><span class="pre">BlueprintRunIn.model_config</span></code></a></li>
@@ -536,20 +547,31 @@
 <ul>
 <li><p><a class="reference internal" href="#database-blueprint-architecture" id="id4">Database Blueprint Architecture</a></p></li>
 <li><p><a class="reference internal" href="#langgraph-compilation-engine-compiler-py" id="id5">LangGraph Compilation Engine (<code class="docutils literal notranslate"><span class="pre">compiler.py</span></code>)</a></p></li>
-<li><p><a class="reference internal" href="#api-endpoints-metacognition-api-py" id="id6">API Endpoints (<code class="docutils literal notranslate"><span class="pre">metacognition/api.py</span></code>)</a></p></li>
+<li><p><a class="reference internal" href="#working-memory-dynamic-focal-projections" id="id6">Working Memory &amp; Dynamic Focal Projections</a></p></li>
+<li><p><a class="reference internal" href="#api-endpoints-metacognition-api-py" id="id7">API Endpoints (<code class="docutils literal notranslate"><span class="pre">metacognition/api.py</span></code>)</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#observability-health-signals" id="id7">3. Observability &amp; Health Signals</a></p>
+<li><p><a class="reference internal" href="#observability-health-signals" id="id8">3. Observability &amp; Health Signals</a></p>
 <ul>
-<li><p><a class="reference internal" href="#how-to-know-blueprints-are-working-well" id="id8">How to Know Blueprints are Working Well</a></p></li>
+<li><p><a class="reference internal" href="#how-to-know-blueprints-are-working-well" id="id9">How to Know Blueprints are Working Well</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#diagnostic-tips-failure-modes" id="id9">4. Diagnostic Tips &amp; Failure Modes</a></p>
+<li><p><a class="reference internal" href="#diagnostic-tips-failure-modes" id="id10">4. Diagnostic Tips &amp; Failure Modes</a></p>
 <ul>
-<li><p><a class="reference internal" href="#when-blueprints-miss-the-mark-how-to-tune" id="id10">When Blueprints Miss the Mark &amp; How to Tune</a></p></li>
+<li><p><a class="reference internal" href="#when-blueprints-miss-the-mark-how-to-tune" id="id11">When Blueprints Miss the Mark &amp; How to Tune</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#module-metacognition.models" id="id11">Module Reference</a></p></li>
+<li><p><a class="reference internal" href="#practical-guidance-for-prompt-authors-blueprint-designers" id="id12">5. Practical Guidance for Prompt Authors &amp; Blueprint Designers</a></p>
+<ul>
+<li><p><a class="reference internal" href="#guidance-1-working-memory-vs-conversation-history" id="id13">Guidance 1: Working Memory vs. Conversation History</a></p></li>
+<li><p><a class="reference internal" href="#guidance-2-structuring-the-state-tree-for-model-clarity" id="id14">Guidance 2: Structuring the State Tree for Model Clarity</a></p></li>
+<li><p><a class="reference internal" href="#guidance-3-design-patterns-plans-vs-uncertainty-trees-the-grill-me-pattern" id="id15">Guidance 3: Design Patterns — Plans vs. Uncertainty Trees (The Grill-Me Pattern)</a></p></li>
+<li><p><a class="reference internal" href="#guidance-4-context-isolation-with-sub-blueprints" id="id16">Guidance 4: Context Isolation with Sub-Blueprints</a></p></li>
+<li><p><a class="reference internal" href="#guidance-5-workspace-file-hygiene" id="id17">Guidance 5: Workspace File Hygiene</a></p></li>
+<li><p><a class="reference internal" href="#guidance-6-choosing-structured-output-vs-react-tool-calling" id="id18">Guidance 6: Choosing Structured Output vs. ReAct Tool Calling</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#module-metacognition.models" id="id19">Module Reference</a></p></li>
 </ul>
 </nav>
 <section id="purpose-motivating-problem">
@@ -585,16 +607,40 @@
 <h3><a class="toc-backref" href="#id5" role="doc-backlink">LangGraph Compilation Engine (<code class="docutils literal notranslate"><span class="pre">compiler.py</span></code>)</a><a class="headerlink" href="#langgraph-compilation-engine-compiler-py" title="Link to this heading"></a></h3>
 <p>At runtime, <cite>compiler.py</cite> translates the relational <cite>CognitiveBlueprint</cite> and its <cite>ReasoningStep</cite> edges into an executable LangGraph <cite>StateGraph</cite>:</p>
 <ol class="arabic simple">
-<li><p><strong>State Dictionary Contract</strong>: A shared state dictionary flows across all graph nodes, containing:
-* <code class="docutils literal notranslate"><span class="pre">messages</span></code>: Conversation turn history.
-* <code class="docutils literal notranslate"><span class="pre">state_tree</span></code>: Structured hierarchical state tracking active tasks, research hypotheses, and extracted factors.
-* <code class="docutils literal notranslate"><span class="pre">context</span></code>: Accumulated RAG excerpts and tool outputs.
-* <code class="docutils literal notranslate"><span class="pre">task_queue</span></code>: Pending sub-tasks dispatched by planning steps.</p></li>
-<li><p><strong>Conditional Transitions</strong>: Evaluates step completion results (e.g. <cite>ResultCritique</cite> decisions) to dynamically route flow: proceeding to the next phase, looping back for refinement, or halting for user clarification.</p></li>
+<li><p><strong>State Contract (``AgentState``)</strong>: A typed dictionary (<cite>AgentState</cite>) flows across all graph nodes, containing:
+* <code class="docutils literal notranslate"><span class="pre">working_memory</span></code>: Ephemeral sequence of LangChain message objects (<cite>HumanMessage</cite>, <cite>AIMessage</cite>, <cite>SystemMessage</cite>) representing immediate dialogue and step interactions.
+* <code class="docutils literal notranslate"><span class="pre">state_tree</span></code>: Persistent structured dictionary tracking milestones, tasks, active focal points, hypotheses, and established facts.
+* <code class="docutils literal notranslate"><span class="pre">scratch</span></code>: Step-level transient variables (e.g., active task queues, chunk indices, parsed schema objects).
+* <code class="docutils literal notranslate"><span class="pre">rag_context</span></code>: Text excerpts retrieved from vector or keyword search.
+* <code class="docutils literal notranslate"><span class="pre">approved_tools</span></code>: Authorization signatures for tools approved during human-in-the-loop pauses.
+* <code class="docutils literal notranslate"><span class="pre">route_to</span></code> &amp; <code class="docutils literal notranslate"><span class="pre">resume_to</span></code>: Dynamic transition targets determining whether the graph loops (<cite>SELF</cite>), progresses to another step, halts for human input (<cite>USER_INPUT_REQUIRED</cite>), or terminates.</p></li>
+<li><p><strong>Conditional Transitions</strong>: Evaluates step completion results (e.g. <cite>ResultCritique</cite> decisions, Pydantic schema action handlers) to dynamically route flow: proceeding to the next phase, looping back for refinement, or halting for user clarification.</p></li>
+<li><p><strong>Sub-Blueprint Bypasses</strong>: When a <cite>ReasoningStep</cite> specifies <cite>sub_blueprint_id</cite>, the node bypasses LLM inference entirely and recursively executes the sub-blueprint via <cite>run_blueprint()</cite>, maintaining clean context boundaries.</p></li>
+</ol>
+</section>
+<section id="working-memory-dynamic-focal-projections">
+<h3><a class="toc-backref" href="#id6" role="doc-backlink">Working Memory &amp; Dynamic Focal Projections</a><a class="headerlink" href="#working-memory-dynamic-focal-projections" title="Link to this heading"></a></h3>
+<p>Rather than treating an agent conversation as a monolithic, unbounded list of chat messages, Metacognition employs a dual-layer working memory model:</p>
+<ol class="arabic simple">
+<li><p><strong>Ephemeral Dialogue Working Memory (``working_memory``)</strong>:
+* Managed as a list of LangChain messages.
+* Initialized by replaying the conversation’s active branch from <cite>conversation.as_messages(leaf_log_id=parent_log_id)</cite>.
+* Automatically pruned when the dialogue turn count exceeds the active model’s context budget.</p></li>
+<li><p><strong>Persistent Structured Working Memory (``Conversation.state_tree``)</strong>:
+* A JSON tree storing structured milestones, task breakdowns, hypotheses, and settled constraints.
+* Attached to <cite>Conversation</cite> and snapshotted at every turn in <cite>PromptResponseLog.state_tree_snapshot</cite> to maintain exact DAG branch isolation.</p></li>
+<li><p><strong>Dynamic Focal Projection (``format_focal_state_tree``)</strong>:
+* Small local models (2B to 9B parameters) suffer severe degradation when presented with raw, deeply nested dictionaries in their prompt context.
+* The focal projector scans the tree for the active task (<cite>current_focus</cite> or tasks with <cite>status: “in_progress”</cite>).
+* It renders the active branch in complete, actionable detail (prefixed with <code class="docutils literal notranslate"><span class="pre">&gt;&gt;</span> <span class="pre">[ACTIVE]</span></code>), while automatically collapsing sibling, pending, and completed branches into compact single-line stubs.
+* Keeps injected working memory small (typically 100–250 tokens), preventing prompt bloat while giving the model crystal-clear context about <em>what to do next</em>.</p></li>
+<li><p><strong>Dual-Phase Compaction Lifecycle</strong>:
+* <strong>Fast Inline Compaction (``fast_compact_state_tree``)</strong>: Deterministic, sub-millisecond Python rules running inside <cite>AgentState</cite> reducers. Rolls settled tasks into compact milestone lists, clamps bulky string values exceeding 300 characters, and strictly protects invariants stored under <cite>established_facts</cite>.
+* <strong>Overnight Intelligent Compaction (``task_compact_conversation_state_trees``)</strong>: Periodic background task scheduled via the NightManager infrastructure. Analyzes mature, inactive conversations and synthesizes distant milestones into high-level breadcrumb summaries (<em>“I can see a long time ago we explored…”</em>).</p></li>
 </ol>
 </section>
 <section id="api-endpoints-metacognition-api-py">
-<h3><a class="toc-backref" href="#id6" role="doc-backlink">API Endpoints (<code class="docutils literal notranslate"><span class="pre">metacognition/api.py</span></code>)</a><a class="headerlink" href="#api-endpoints-metacognition-api-py" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id7" role="doc-backlink">API Endpoints (<code class="docutils literal notranslate"><span class="pre">metacognition/api.py</span></code>)</a><a class="headerlink" href="#api-endpoints-metacognition-api-py" title="Link to this heading"></a></h3>
 <p>Exposes Django Ninja REST and Server-Sent Events (SSE) streaming endpoints:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/metacognition/dispatch/</span></code>: Enqueues a blueprint run asynchronously via <cite>verbal_tasks</cite>.</p></li>
@@ -605,9 +651,9 @@
 </section>
 </section>
 <section id="observability-health-signals">
-<h2><a class="toc-backref" href="#id7" role="doc-backlink">3. Observability &amp; Health Signals</a><a class="headerlink" href="#observability-health-signals" title="Link to this heading"></a></h2>
+<h2><a class="toc-backref" href="#id8" role="doc-backlink">3. Observability &amp; Health Signals</a><a class="headerlink" href="#observability-health-signals" title="Link to this heading"></a></h2>
 <section id="how-to-know-blueprints-are-working-well">
-<h3><a class="toc-backref" href="#id8" role="doc-backlink">How to Know Blueprints are Working Well</a><a class="headerlink" href="#how-to-know-blueprints-are-working-well" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id9" role="doc-backlink">How to Know Blueprints are Working Well</a><a class="headerlink" href="#how-to-know-blueprints-are-working-well" title="Link to this heading"></a></h3>
 <ol class="arabic simple">
 <li><p><strong>Streaming Reasoning Traces in the Demo UI</strong>:
 In the Demo UI chat interface, expanding the <strong>Reasoning Trace</strong> accordion displays real-time step progress (e.g. <em>Step 1: Extract Factors</em> $rightarrow$ <em>Step 2: Simulate in Sandbox</em> $rightarrow$ <em>Step 3: Self-Critique</em>).</p></li>
@@ -619,9 +665,9 @@ Tool executions log their exact JSON inputs and outputs, verifying that argument
 </section>
 </section>
 <section id="diagnostic-tips-failure-modes">
-<h2><a class="toc-backref" href="#id9" role="doc-backlink">4. Diagnostic Tips &amp; Failure Modes</a><a class="headerlink" href="#diagnostic-tips-failure-modes" title="Link to this heading"></a></h2>
+<h2><a class="toc-backref" href="#id10" role="doc-backlink">4. Diagnostic Tips &amp; Failure Modes</a><a class="headerlink" href="#diagnostic-tips-failure-modes" title="Link to this heading"></a></h2>
 <section id="when-blueprints-miss-the-mark-how-to-tune">
-<h3><a class="toc-backref" href="#id10" role="doc-backlink">When Blueprints Miss the Mark &amp; How to Tune</a><a class="headerlink" href="#when-blueprints-miss-the-mark-how-to-tune" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id11" role="doc-backlink">When Blueprints Miss the Mark &amp; How to Tune</a><a class="headerlink" href="#when-blueprints-miss-the-mark-how-to-tune" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p><strong>Infinite Refinement Loops (Step Bounces Back Continuously)</strong>:
 * <em>Hazard</em>: A critique step (e.g., <cite>ResultCritique</cite>) continuously rejects candidate outputs because validation criteria are overly stringent or ambiguous.
@@ -635,8 +681,104 @@ Tool executions log their exact JSON inputs and outputs, verifying that argument
 </ul>
 </section>
 </section>
+<section id="practical-guidance-for-prompt-authors-blueprint-designers">
+<h2><a class="toc-backref" href="#id12" role="doc-backlink">5. Practical Guidance for Prompt Authors &amp; Blueprint Designers</a><a class="headerlink" href="#practical-guidance-for-prompt-authors-blueprint-designers" title="Link to this heading"></a></h2>
+<p>Designing agent workflows that run reliably on local open-weight models requires deliberate architectural choices. The following best practices apply when drafting reasoning step prompts and assembling cognitive blueprints:</p>
+<section id="guidance-1-working-memory-vs-conversation-history">
+<h3><a class="toc-backref" href="#id13" role="doc-backlink">Guidance 1: Working Memory vs. Conversation History</a><a class="headerlink" href="#guidance-1-working-memory-vs-conversation-history" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Do Not Replicate State in Prompts</strong>: Do not attempt to manually format or summarize conversation history inside your system prompts. When <cite>ReasoningStep.include_state_tree</cite> is enabled (the default), the compiler automatically injects the focal state tree projection into the prompt context.</p></li>
+<li><p><strong>Rely on Continuous Dialogue</strong>: <cite>run_blueprint</cite> automatically restores previous turns from <cite>conversation.as_messages()</cite>. System prompts should be written assuming recent conversational dialogue is already visible in the message stream, while older context is condensed into the state tree.</p></li>
+</ul>
+</section>
+<section id="guidance-2-structuring-the-state-tree-for-model-clarity">
+<h3><a class="toc-backref" href="#id14" role="doc-backlink">Guidance 2: Structuring the State Tree for Model Clarity</a><a class="headerlink" href="#guidance-2-structuring-the-state-tree-for-model-clarity" title="Link to this heading"></a></h3>
+<p>When prompts or schemas update <cite>state_tree</cite>, adhere to the standard key hierarchy to ensure the focal projection and compaction engines function optimally:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;milestones&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;Settled hypothesis: price shocks impact local consumer sentiment&quot;</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;current_focus&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;task_simulate_elasticity&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;tasks&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;task_extract_parameters&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;completed&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Extracted parameters alpha=0.3, beta=0.7&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;task_simulate_elasticity&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;in_progress&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;details&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Simulate demand elasticity under varying shock scenarios&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;subtasks&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;prepare_grid&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;run_monte_carlo&quot;</span><span class="p">]</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;task_critique_methodology&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pending&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;details&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Run ResultCritique schema on simulation outcomes&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;established_facts&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;target_market&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Retail domestic energy&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;time_horizon&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;12 months&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Explicit Active Status</strong>: Mark the active item with <code class="docutils literal notranslate"><span class="pre">status:</span> <span class="pre">&quot;in_progress&quot;</span></code> or specify <code class="docutils literal notranslate"><span class="pre">current_focus</span></code>. This causes <cite>format_focal_state_tree</cite> to spotlight it with <code class="docutils literal notranslate"><span class="pre">&gt;&gt;</span> <span class="pre">[ACTIVE]</span></code>, collapsing completed and pending siblings into one-line stubs. This prevents models from hallucinating or attempting future steps prematurely.</p></li>
+<li><p><strong>Invariants in ``established_facts``</strong>: Place immutable domain constraints or confirmed user specifications under <cite>established_facts</cite>. Compaction routines will never prune or summarize these keys.</p></li>
+</ul>
+</section>
+<section id="guidance-3-design-patterns-plans-vs-uncertainty-trees-the-grill-me-pattern">
+<h3><a class="toc-backref" href="#id15" role="doc-backlink">Guidance 3: Design Patterns — Plans vs. Uncertainty Trees (The Grill-Me Pattern)</a><a class="headerlink" href="#guidance-3-design-patterns-plans-vs-uncertainty-trees-the-grill-me-pattern" title="Link to this heading"></a></h3>
+<p>Blueprint designers often instinctively reach for an <cite>ExecutionPlan</cite> or <cite>TaskQueue</cite> for every workflow. This is effective for deterministic workflows, but backfires in interactive clarification loops:</p>
+<ul>
+<li><p><strong>When to use Execution Plans / Task Queues</strong>:
+Use linear task queues when the problem is already well-scoped and the agent needs to decompose work into sequential execution passes (e.g., <em>Task 1: Search literature</em> $rightarrow$ <em>Task 2: Write code</em> $rightarrow$ <em>Task 3: Compile summary</em>).</p></li>
+<li><p><strong>When to use Uncertainty / Inquiry Trees (The Grill-Me Pattern)</strong>:
+In clarification and interview loops (such as the <em>Grill-Me</em> blueprint), the agent <strong>cannot predict user answers</strong>. Forcing the model to generate a sequential multi-step execution plan produces brittle or irrelevant steps. Instead, instruct the model to maintain an <strong>inquiry tree</strong> tracking unresolved facets and depth:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;inquiry_facets&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;macro_goal&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;clarified&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;dataset_specifications&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;unresolved&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;failure_risks_and_adversarial_factors&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;unresolved&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;settled_constraints&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;Must run on consumer GPU with 6 GB VRAM&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;Dataset is unlabelled PDF reports&quot;</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;clarification_depth&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;current_focus&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;dataset_specifications&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>This allows the model to daisy-chain follow-up questions organically, drilling deeper where ambiguity remains without getting tangled in a rigid, premature plan.</p>
+</li>
+</ul>
+</section>
+<section id="guidance-4-context-isolation-with-sub-blueprints">
+<h3><a class="toc-backref" href="#id16" role="doc-backlink">Guidance 4: Context Isolation with Sub-Blueprints</a><a class="headerlink" href="#guidance-4-context-isolation-with-sub-blueprints" title="Link to this heading"></a></h3>
+<p>When a reasoning step requires extensive exploration, heavy tool usage, or sandbox code execution:</p>
+<ul class="simple">
+<li><p><strong>Bypass the LLM with a Sub-Blueprint</strong>: Assign <cite>step.sub_blueprint_id</cite>. The engine will invoke the sub-blueprint in its own dedicated conversation.</p></li>
+<li><p><strong>Why Isolation Matters</strong>: A subagent trying to verify facts in the document store or execute a python simulation might invoke tools 5 to 10 times, encounter errors, retry, and inspect files. If all of those intermediate steps were recorded in the main conversation, the user’s primary context window would quickly fill with irrelevant scratchpad noise.</p></li>
+<li><p><strong>Distilled Return</strong>: The sub-blueprint completes in its private sandbox. Its state tree milestones are merged into the parent conversation via <cite>merge_state_trees()</cite>, and only a single high-level summary is returned into the parent’s working memory.</p></li>
+</ul>
+</section>
+<section id="guidance-5-workspace-file-hygiene">
+<h3><a class="toc-backref" href="#id17" role="doc-backlink">Guidance 5: Workspace File Hygiene</a><a class="headerlink" href="#guidance-5-workspace-file-hygiene" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Write Data to Files, Not to Messages</strong>: When tools generate large datasets, simulation tables, or multi-page reports, instruct the model to write the content directly to the conversation’s workspace using <cite>WRITE_FILE</cite>.</p></li>
+<li><p><strong>Store Handles in State Tree</strong>: In <cite>state_tree</cite> or scratchpad variables, store only the file path (e.g., <cite>results/simulation_run_1.csv</cite>) and brief statistical summaries—never the raw content. This keeps prompt tokens under 250 tokens per step.</p></li>
+</ul>
+</section>
+<section id="guidance-6-choosing-structured-output-vs-react-tool-calling">
+<h3><a class="toc-backref" href="#id18" role="doc-backlink">Guidance 6: Choosing Structured Output vs. ReAct Tool Calling</a><a class="headerlink" href="#guidance-6-choosing-structured-output-vs-react-tool-calling" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Use Pydantic Schemas (Outlines Guided Generation)</strong>: Whenever a step requires an explicit, structured decision (e.g., <cite>ResultCritique</cite>, <cite>Factor</cite>, <cite>StrategicPlan</cite>, <cite>DifficultPromptEvaluation</cite>), configure <cite>ReasoningStep.output_schema</cite>. The Outlines FSM constraint guarantees 100% syntactically valid JSON on local models without retries.</p></li>
+<li><p><strong>Use ReAct Tool Calling</strong>: Reserve <cite>step.available_tools</cite> for open-ended exploration phases where the agent must freely decide which tools to invoke and with what arguments.</p></li>
+</ul>
+</section>
+</section>
 <section id="module-metacognition.models">
-<span id="module-reference"></span><h2><a class="toc-backref" href="#id11" role="doc-backlink">Module Reference</a><a class="headerlink" href="#module-metacognition.models" title="Link to this heading"></a></h2>
+<span id="module-reference"></span><h2><a class="toc-backref" href="#id19" role="doc-backlink">Module Reference</a><a class="headerlink" href="#module-metacognition.models" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="metacognition.models.AgentCheckpoint">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">metacognition.models.</span></span><span class="sig-name descname"><span class="pre">AgentCheckpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/models.html#AgentCheckpoint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.models.AgentCheckpoint" title="Link to this definition"></a></dt>
@@ -2691,8 +2833,13 @@ Following Nodes: ExecutionPlan</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="metacognition.api.BlueprintRunIn">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">metacognition.api.</span></span><span class="sig-name descname"><span class="pre">BlueprintRunIn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blueprint_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_prompt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conversation_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_log_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/api.html#BlueprintRunIn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.api.BlueprintRunIn" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">metacognition.api.</span></span><span class="sig-name descname"><span class="pre">BlueprintRunIn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blueprint_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_prompt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conversation_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_log_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">async_mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/api.html#BlueprintRunIn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.api.BlueprintRunIn" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Schema</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.api.BlueprintRunIn.async_mode">
+<span class="sig-name descname"><span class="pre">async_mode</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#metacognition.api.BlueprintRunIn.async_mode" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="metacognition.api.BlueprintRunIn.blueprint_id">
 <span class="sig-name descname"><span class="pre">blueprint_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#metacognition.api.BlueprintRunIn.blueprint_id" title="Link to this definition"></a></dt>
@@ -2758,14 +2905,15 @@ Following Nodes: ExecutionPlan</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="metacognition.api.dispatch_blueprint">
 <span class="sig-prename descclassname"><span class="pre">metacognition.api.</span></span><span class="sig-name descname"><span class="pre">dispatch_blueprint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">payload</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#metacognition.api.BlueprintDispatchIn" title="metacognition.api.BlueprintDispatchIn"><span class="pre">BlueprintDispatchIn</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/api.html#dispatch_blueprint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.api.dispatch_blueprint" title="Link to this definition"></a></dt>
-<dd><p>Asynchronously dispatches a Cognitive Blueprint execution to Celery.
-Returns the run_id and stream URL for Datastar SSE consumption.</p>
+<dd><p>Asynchronously dispatches a Cognitive Blueprint execution to background task worker.
+Returns the task_id, run_id, and stream URL for Datastar SSE consumption.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="metacognition.api.execute_blueprint">
 <span class="sig-prename descclassname"><span class="pre">metacognition.api.</span></span><span class="sig-name descname"><span class="pre">execute_blueprint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">payload</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#metacognition.api.BlueprintRunIn" title="metacognition.api.BlueprintRunIn"><span class="pre">BlueprintRunIn</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/api.html#execute_blueprint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.api.execute_blueprint" title="Link to this definition"></a></dt>
-<dd><p>Synchronously executes a multi-step Cognitive Blueprint via the backend executor.</p>
+<dd><p>Executes a multi-step Cognitive Blueprint via the backend executor.
+Supports async_mode=True delegating to dispatch_blueprint with task tracking.</p>
 </dd></dl>
 
 <dl class="py function">

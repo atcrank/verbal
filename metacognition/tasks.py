@@ -173,12 +173,28 @@ def run_blueprint(blueprint_id: int,
 
     # 2. Setup initial state
     from .state import AgentState
-    
+    from langchain_core.messages import HumanMessage, AIMessage
+
+    # Reconstruct prior conversation messages along the active DAG path if continuing a conversation
+    working_messages = []
+    if conversation_id and conversation:
+        prior_raw = conversation.as_messages(leaf_log_id=parent_log_id, include_state_tree=False)
+        for msg in prior_raw:
+            role = msg.get("role")
+            content = msg.get("content", "")
+            if role == "user":
+                working_messages.append(HumanMessage(content=content))
+            elif role == "assistant":
+                working_messages.append(AIMessage(content=content))
+
+    if not working_messages or getattr(working_messages[-1], "content", None) != user_prompt:
+        working_messages.append(HumanMessage(content=user_prompt))
+
     # Check Langgraph compile setup
     graph = compile_graph_from_blueprint(blueprint)
 
     initial_state = AgentState(
-        working_memory=[HumanMessage(content=user_prompt)],
+        working_memory=working_messages,
         state_tree=dict(conversation.state_tree or {}),
         rag_context="",
         route_to=None,

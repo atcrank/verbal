@@ -8,6 +8,7 @@
   <title>demo_ui.views &mdash; reason 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=aaf24e6f" />
 
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
@@ -41,19 +42,22 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../llm_api_app.html">LLM API</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../background_resources_app.html">Background Resources - context documents</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../grips_app.html">Grips - wiki knowledge banks</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../llm_api_app.html">LLM API - Local Inference, Proxy Routing &amp; Hardware-Aware Serving</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../verbal_tasks_app.html">Verbal Tasks - Database-Backed Asynchronous Execution &amp; Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../sandbox_manager_app.html">Sandbox Manager - Isolated Python Execution Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grobid_client_app.html">Grobid Client - Deterministic Scientific PDF Parsing &amp; Citation Extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../background_resources_app.html">Background Resources - Retrieval-Augmented Generation &amp; Document Ingestion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grips_app.html">Grips - Structured Knowledge Graph &amp; Propositional Claims</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../metacognition_app.html">Metacognition - Cognitive Blueprints, Agentic Workflows &amp; Self-Evaluation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_app.html">Demo UI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmarking_app.html">Benchmarking - Automated Evaluation, Synthetic Generation &amp; LoRA Flywheels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_app.html">Demo UI - Empirical Research &amp; Cognitive Workbench</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../using_ollama.html">Ollama as Local AI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_trials.html">Demo UI Interactive Trials &amp; Feature Walkthroughs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_trials.html">Demo UI Empirical Trials &amp; Verification Reports</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../tests.html">Testing</a></li>
 </ul>
 
@@ -88,13 +92,15 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">django.shortcuts</span><span class="w"> </span><span class="kn">import</span> <span class="n">render</span><span class="p">,</span> <span class="n">HttpResponse</span><span class="p">,</span> <span class="n">get_object_or_404</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">django.http</span><span class="w"> </span><span class="kn">import</span> <span class="n">JsonResponse</span><span class="p">,</span> <span class="n">FileResponse</span><span class="p">,</span> <span class="n">Http404</span><span class="p">,</span> <span class="n">HttpResponseForbidden</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.http</span><span class="w"> </span><span class="kn">import</span> <span class="n">JsonResponse</span><span class="p">,</span> <span class="n">FileResponse</span><span class="p">,</span> <span class="n">Http404</span><span class="p">,</span> <span class="n">HttpResponseForbidden</span><span class="p">,</span> <span class="n">StreamingHttpResponse</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">django.contrib.auth.decorators</span><span class="w"> </span><span class="kn">import</span> <span class="n">login_required</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">django.utils.safestring</span><span class="w"> </span><span class="kn">import</span> <span class="n">mark_safe</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Conversation</span><span class="p">,</span> <span class="n">PromptResponseLog</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">CognitiveBlueprint</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.apps</span><span class="w"> </span><span class="kn">import</span> <span class="n">service_registry</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">grips.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConceptNode</span><span class="p">,</span> <span class="n">Domain</span><span class="p">,</span> <span class="n">KnowledgeEdge</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">task_generate_response</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verbal_tasks.postgres_events</span><span class="w"> </span><span class="kn">import</span> <span class="n">subscribe_pg_events_sync</span>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">markdown</span>
@@ -386,18 +392,47 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">messages_for_llm</span> <span class="o">=</span> <span class="n">messages</span> <span class="o">+</span> <span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">user_prompt</span><span class="p">}]</span>
         
-        <span class="n">input_tokens</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">ai_service</span><span class="o">.</span><span class="n">count_conversation_tokens</span><span class="p">(</span><span class="n">messages_for_llm</span><span class="p">)</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">uuid</span><span class="w"> </span><span class="kn">import</span> <span class="n">uuid4</span>
+
+        <span class="n">run_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid4</span><span class="p">())</span>
         <span class="n">max_new_tokens</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;max_new_tokens&#39;</span><span class="p">,</span> <span class="mi">1500</span><span class="p">))</span>
-        <span class="p">[</span><span class="n">response</span><span class="p">]</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">ai_service</span><span class="o">.</span><span class="n">generate_response2</span><span class="p">(</span><span class="n">messages</span><span class="o">=</span><span class="n">messages_for_llm</span><span class="p">,</span> <span class="n">max_new_tokens</span><span class="o">=</span><span class="n">max_new_tokens</span><span class="p">,</span> <span class="n">log_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;skip_log&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span> <span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>
-        <span class="n">cleaned_response</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">ai_service</span><span class="o">.</span><span class="n">clean_response</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
-        
-        <span class="n">output_tokens</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">ai_service</span><span class="o">.</span><span class="n">count_conversation_tokens</span><span class="p">([{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;assistant&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">cleaned_response</span><span class="p">}])</span>
-        
+        <span class="n">input_tokens</span> <span class="o">=</span> <span class="n">service_registry</span><span class="o">.</span><span class="n">ai_service</span><span class="o">.</span><span class="n">count_conversation_tokens</span><span class="p">(</span><span class="n">messages_for_llm</span><span class="p">)</span>
+
         <span class="n">log</span> <span class="o">=</span> <span class="n">PromptResponseLog</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
-            <span class="n">system_prompt</span><span class="o">=</span><span class="n">messages</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;content&quot;</span><span class="p">],</span> <span class="n">user_prompt</span><span class="o">=</span><span class="n">user_prompt</span><span class="p">,</span> <span class="n">rag_selections</span><span class="o">=</span><span class="n">rag_selections</span><span class="p">,</span> 
-            <span class="n">conversation</span><span class="o">=</span><span class="n">conversation</span><span class="p">,</span> <span class="n">parent_log</span><span class="o">=</span><span class="n">parent_log</span><span class="p">,</span> <span class="n">generated_response</span><span class="o">=</span><span class="n">cleaned_response</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">,</span>
-            <span class="n">input_tokens</span><span class="o">=</span><span class="n">input_tokens</span><span class="p">,</span> <span class="n">output_tokens</span><span class="o">=</span><span class="n">output_tokens</span>
+            <span class="n">system_prompt</span><span class="o">=</span><span class="n">messages</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;content&quot;</span><span class="p">],</span>
+            <span class="n">user_prompt</span><span class="o">=</span><span class="n">user_prompt</span><span class="p">,</span>
+            <span class="n">rag_selections</span><span class="o">=</span><span class="n">rag_selections</span><span class="p">,</span>
+            <span class="n">conversation</span><span class="o">=</span><span class="n">conversation</span><span class="p">,</span>
+            <span class="n">parent_log</span><span class="o">=</span><span class="n">parent_log</span><span class="p">,</span>
+            <span class="n">generated_response</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="n">user</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">,</span>
+            <span class="n">input_tokens</span><span class="o">=</span><span class="n">input_tokens</span><span class="p">,</span>
+            <span class="n">output_tokens</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
         <span class="p">)</span>
+
+        <span class="n">streaming_markup</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;&lt;div id=&quot;gen-stream-</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s1">&quot; data-signals=&quot;</span><span class="se">{{</span><span class="s1">isStreaming: true</span><span class="se">}}</span><span class="s1">&quot; &#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;data-on-load=&quot;@get(</span><span class="se">\&#39;</span><span class="s1">/demo/stream_generation/?run_id=</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s1">&amp;log_id=</span><span class="si">{</span><span class="n">log</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="se">\&#39;</span><span class="s1">)&quot;&gt;&#39;</span>
+            <span class="s1">&#39;&lt;div class=&quot;agent-step active&quot;&gt;&#39;</span>
+            <span class="s1">&#39;&lt;span class=&quot;badge&quot;&gt;Generating&lt;/span&gt;&#39;</span>
+            <span class="s1">&#39;&lt;strong&gt;Generating response...&lt;/strong&gt;&#39;</span>
+            <span class="s1">&#39;&lt;/div&gt;&#39;</span>
+            <span class="s1">&#39;&lt;/div&gt;&#39;</span>
+        <span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">generated_response</span> <span class="o">=</span> <span class="n">streaming_markup</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">update_fields</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;generated_response&quot;</span><span class="p">])</span>
+
+        <span class="n">task_generate_response</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span>
+            <span class="n">messages</span><span class="o">=</span><span class="n">messages_for_llm</span><span class="p">,</span>
+            <span class="n">max_new_tokens</span><span class="o">=</span><span class="n">max_new_tokens</span><span class="p">,</span>
+            <span class="n">user_id</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">id</span> <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">is_authenticated</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">run_id</span><span class="o">=</span><span class="n">run_id</span><span class="p">,</span>
+            <span class="n">log_id</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">log</span><span class="o">.</span><span class="n">id</span><span class="p">),</span>
+            <span class="n">parent_log_id</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">parent_log</span><span class="o">.</span><span class="n">id</span><span class="p">)</span> <span class="k">if</span> <span class="n">parent_log</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">conversation_id</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">conversation</span><span class="o">.</span><span class="n">id</span><span class="p">),</span>
+            <span class="n">rag_selections</span><span class="o">=</span><span class="n">rag_selections</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">refresh_from_db</span><span class="p">()</span>
         
     <span class="c1"># 3. Render formatting</span>
     <span class="n">_prepare_log_for_display</span><span class="p">(</span><span class="n">log</span><span class="p">)</span>
@@ -412,6 +447,60 @@
     <span class="p">})</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="n">response_html</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">files_html</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="stream_generation">
+<a class="viewcode-back" href="../../demo_ui_app.html#demo_ui.views.stream_generation">[docs]</a>
+<span class="nd">@login_required</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">stream_generation</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Server-Sent Events (SSE) streaming endpoint using Datastar protocol.</span>
+<span class="sd">    Streams DOM fragment patches when background LLM generation completes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.datastar</span><span class="w"> </span><span class="kn">import</span> <span class="n">DatastarSSE</span>
+
+    <span class="n">run_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;run_id&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">log_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;log_id&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">event_generator</span><span class="p">():</span>
+        <span class="k">yield</span> <span class="n">DatastarSSE</span><span class="o">.</span><span class="n">merge_signals</span><span class="p">({</span>
+            <span class="s2">&quot;isStreaming&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;runId&quot;</span><span class="p">:</span> <span class="n">run_id</span><span class="p">,</span>
+            <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;generating&quot;</span>
+        <span class="p">})</span>
+
+        <span class="c1"># Fast path: check if the log already has a completed response</span>
+        <span class="k">if</span> <span class="n">log_id</span><span class="p">:</span>
+            <span class="n">log</span> <span class="o">=</span> <span class="n">PromptResponseLog</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">log_id</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">log</span> <span class="ow">and</span> <span class="n">log</span><span class="o">.</span><span class="n">generated_response</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">log</span><span class="o">.</span><span class="n">generated_response</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;&lt;div id=&quot;gen-stream-&#39;</span><span class="p">):</span>
+                <span class="n">html</span> <span class="o">=</span> <span class="n">markdown</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="n">log</span><span class="o">.</span><span class="n">generated_response</span><span class="p">,</span> <span class="n">extensions</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;fenced_code&#39;</span><span class="p">,</span> <span class="s1">&#39;tables&#39;</span><span class="p">,</span> <span class="s1">&#39;nl2br&#39;</span><span class="p">,</span> <span class="s1">&#39;sane_lists&#39;</span><span class="p">])</span> <span class="k">if</span> <span class="n">markdown</span> <span class="k">else</span> <span class="n">log</span><span class="o">.</span><span class="n">generated_response</span>
+                <span class="n">frag</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;&lt;div id=&quot;gen-stream-</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s1">&quot; class=&quot;markdown-body&quot;&gt;</span><span class="si">{</span><span class="n">html</span><span class="si">}</span><span class="s1">&lt;/div&gt;&#39;</span>
+                <span class="k">yield</span> <span class="n">DatastarSSE</span><span class="o">.</span><span class="n">merge_fragments</span><span class="p">(</span><span class="n">frag</span><span class="p">,</span> <span class="n">selector</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;#gen-stream-</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">merge_mode</span><span class="o">=</span><span class="s2">&quot;morph&quot;</span><span class="p">)</span>
+                <span class="k">yield</span> <span class="n">DatastarSSE</span><span class="o">.</span><span class="n">merge_signals</span><span class="p">({</span><span class="s2">&quot;isStreaming&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;completed&quot;</span><span class="p">})</span>
+                <span class="k">return</span>
+
+        <span class="n">channel_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;verbal_events_</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">subscribe_pg_events_sync</span><span class="p">(</span><span class="n">channel_name</span><span class="p">):</span>
+            <span class="n">event_type</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;event&quot;</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="p">{})</span>
+
+            <span class="k">if</span> <span class="n">event_type</span> <span class="o">==</span> <span class="s2">&quot;completed&quot;</span><span class="p">:</span>
+                <span class="n">final_text</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;final_response&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="n">html</span> <span class="o">=</span> <span class="n">markdown</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="n">final_text</span><span class="p">,</span> <span class="n">extensions</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;fenced_code&#39;</span><span class="p">,</span> <span class="s1">&#39;tables&#39;</span><span class="p">,</span> <span class="s1">&#39;nl2br&#39;</span><span class="p">,</span> <span class="s1">&#39;sane_lists&#39;</span><span class="p">])</span> <span class="k">if</span> <span class="n">markdown</span> <span class="k">else</span> <span class="n">final_text</span>
+                <span class="n">frag</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;&lt;div id=&quot;gen-stream-</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s1">&quot; class=&quot;markdown-body&quot;&gt;</span><span class="si">{</span><span class="n">html</span><span class="si">}</span><span class="s1">&lt;/div&gt;&#39;</span>
+                <span class="k">yield</span> <span class="n">DatastarSSE</span><span class="o">.</span><span class="n">merge_fragments</span><span class="p">(</span><span class="n">frag</span><span class="p">,</span> <span class="n">selector</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;#gen-stream-</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">merge_mode</span><span class="o">=</span><span class="s2">&quot;morph&quot;</span><span class="p">)</span>
+                <span class="k">yield</span> <span class="n">DatastarSSE</span><span class="o">.</span><span class="n">merge_signals</span><span class="p">({</span><span class="s2">&quot;isStreaming&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;completed&quot;</span><span class="p">})</span>
+                <span class="k">break</span>
+            <span class="k">elif</span> <span class="n">event_type</span> <span class="o">==</span> <span class="s2">&quot;error&quot;</span><span class="p">:</span>
+                <span class="n">err_msg</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;error&quot;</span><span class="p">,</span> <span class="s2">&quot;Generation error&quot;</span><span class="p">)</span>
+                <span class="n">frag</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;&lt;div id=&quot;gen-stream-</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s1">&quot; class=&quot;agent-step error&quot;&gt;&lt;span class=&quot;badge badge-error&quot;&gt;Error&lt;/span&gt;&lt;strong&gt;</span><span class="si">{</span><span class="n">err_msg</span><span class="si">}</span><span class="s1">&lt;/strong&gt;&lt;/div&gt;&#39;</span>
+                <span class="k">yield</span> <span class="n">DatastarSSE</span><span class="o">.</span><span class="n">merge_fragments</span><span class="p">(</span><span class="n">frag</span><span class="p">,</span> <span class="n">selector</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;#gen-stream-</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">merge_mode</span><span class="o">=</span><span class="s2">&quot;morph&quot;</span><span class="p">)</span>
+                <span class="k">yield</span> <span class="n">DatastarSSE</span><span class="o">.</span><span class="n">merge_signals</span><span class="p">({</span><span class="s2">&quot;isStreaming&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;error&quot;</span><span class="p">})</span>
+                <span class="k">break</span>
+
+    <span class="k">return</span> <span class="n">StreamingHttpResponse</span><span class="p">(</span><span class="n">event_generator</span><span class="p">(),</span> <span class="n">content_type</span><span class="o">=</span><span class="s2">&quot;text/event-stream&quot;</span><span class="p">)</span></div>
+
 
 
 

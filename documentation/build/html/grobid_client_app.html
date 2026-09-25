@@ -96,6 +96,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Reference.NotUpdated"><code class="docutils literal notranslate"><span class="pre">Reference.NotUpdated</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Reference.abstract"><code class="docutils literal notranslate"><span class="pre">Reference.abstract</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Reference.authors"><code class="docutils literal notranslate"><span class="pre">Reference.authors</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Reference.clean"><code class="docutils literal notranslate"><span class="pre">Reference.clean()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Reference.document"><code class="docutils literal notranslate"><span class="pre">Reference.document</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Reference.document_id"><code class="docutils literal notranslate"><span class="pre">Reference.document_id</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#grobid_client.models.Reference.doi"><code class="docutils literal notranslate"><span class="pre">Reference.doi</span></code></a></li>
@@ -451,6 +452,16 @@ object the first time, the query is executed.</p>
 <span class="sig-name descname"><span class="pre">authors</span></span><a class="headerlink" href="#grobid_client.models.Reference.authors" title="Link to this definition"></a></dt>
 <dd><p>A wrapper for a deferred-loading field. When the value is read from this
 object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="grobid_client.models.Reference.clean">
+<span class="sig-name descname"><span class="pre">clean</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grobid_client/models.html#Reference.clean"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grobid_client.models.Reference.clean" title="Link to this definition"></a></dt>
+<dd><p>Hook for doing any extra model-wide validation after clean() has been
+called on every field by self.clean_fields. Any ValidationError raised
+by this method will not be associated with a particular field; it will
+have a special-case association with the field defined by
+NON_FIELD_ERRORS.</p>
 </dd></dl>
 
 <dl class="py attribute">

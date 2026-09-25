@@ -42,13 +42,16 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../llm_api_app.html">LLM API</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../background_resources_app.html">Background Resources - context documents</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../grips_app.html">Grips - wiki knowledge banks</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../llm_api_app.html">LLM API - Local Inference, Proxy Routing &amp; Hardware-Aware Serving</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../verbal_tasks_app.html">Verbal Tasks - Database-Backed Asynchronous Execution &amp; Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../sandbox_manager_app.html">Sandbox Manager - Isolated Python Execution Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grobid_client_app.html">Grobid Client - Deterministic Scientific PDF Parsing &amp; Citation Extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../background_resources_app.html">Background Resources - Retrieval-Augmented Generation &amp; Document Ingestion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grips_app.html">Grips - Structured Knowledge Graph &amp; Propositional Claims</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../metacognition_app.html">Metacognition - Cognitive Blueprints, Agentic Workflows &amp; Self-Evaluation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_app.html">Demo UI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmarking_app.html">Benchmarking - Automated Evaluation, Synthetic Generation &amp; LoRA Flywheels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_app.html">Demo UI - Empirical Research &amp; Cognitive Workbench</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
 <ul>
@@ -176,7 +179,7 @@
 
 <div class="viewcode-block" id="Conversation.as_messages">
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.Conversation.as_messages">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">as_messages</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">leaf_log_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_logs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">system_override</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">as_messages</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">leaf_log_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_logs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">system_override</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">include_state_tree</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Reconstructs the conversation as a list of message dicts along the active DAG path.</span>
 
@@ -189,7 +192,8 @@
 <span class="sd">        either `system_override` (if provided) or the root system prompt.</span>
 
 <span class="sd">        When max_logs is set, only the most recent N logs are included in the</span>
-<span class="sd">        returned messages, with a condensation note inserted.</span>
+<span class="sd">        returned messages, with a condensation note inserted. When include_state_tree</span>
+<span class="sd">        is enabled, the condensation note anchors the active focal state tree.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">messages</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">logs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">logs</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s1">&#39;created_at&#39;</span><span class="p">))</span>
@@ -237,9 +241,21 @@
 
         <span class="c1"># Insert condensation note if logs were omitted</span>
         <span class="k">if</span> <span class="n">condensed_count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;[Context note: </span><span class="si">{</span><span class="n">condensed_count</span><span class="si">}</span><span class="s2"> earlier conversation turns were omitted to fit the context window. The conversation continues from this point.]&quot;</span>
+            <span class="k">if</span> <span class="n">include_state_tree</span><span class="p">:</span>
+                <span class="c1"># Prioritize active leaf log snapshot for branch isolation, fallback to conv.state_tree</span>
+                <span class="n">active_snapshot</span> <span class="o">=</span> <span class="n">path</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">state_tree_snapshot</span> <span class="k">if</span> <span class="n">path</span> <span class="ow">and</span> <span class="n">path</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">state_tree_snapshot</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_tree</span>
+                <span class="k">if</span> <span class="n">active_snapshot</span><span class="p">:</span>
+                    <span class="kn">from</span><span class="w"> </span><span class="nn">.state_tree</span><span class="w"> </span><span class="kn">import</span> <span class="n">format_focal_state_tree</span>
+                    <span class="n">focal_tree</span> <span class="o">=</span> <span class="n">format_focal_state_tree</span><span class="p">(</span><span class="n">active_snapshot</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">focal_tree</span><span class="p">:</span>
+                        <span class="n">content</span> <span class="o">=</span> <span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;[Context note: </span><span class="si">{</span><span class="n">condensed_count</span><span class="si">}</span><span class="s2"> earlier conversation turns were omitted to fit the context window. &quot;</span>
+                            <span class="sa">f</span><span class="s2">&quot;The active working memory map is preserved below:]</span><span class="se">\n\n</span><span class="si">{</span><span class="n">focal_tree</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="p">)</span>
             <span class="n">messages</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
                 <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;assistant&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;[Context note: </span><span class="si">{</span><span class="n">condensed_count</span><span class="si">}</span><span class="s2"> earlier conversation turns were omitted to fit the context window. The conversation continues from this point.]&quot;</span>
+                <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">content</span>
             <span class="p">})</span>
 
         <span class="c1"># Reconstruct chat history turn-by-turn along the path</span>

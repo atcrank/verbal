@@ -56,6 +56,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#hardware-inspection-resource-advisor">Hardware Inspection &amp; Resource Advisor</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#expanded-quantization-modes">Expanded Quantization Modes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#structured-json-generation-with-outlines">Structured JSON Generation with Outlines</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#working-memory-state-trees-focal-projection-state-tree-py">Working Memory State Trees &amp; Focal Projection (<code class="docutils literal notranslate"><span class="pre">state_tree.py</span></code>)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#endpoints">Endpoints</a></li>
 </ul>
 </li>
@@ -341,6 +342,7 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#llm_api.api.GenerateIn"><code class="docutils literal notranslate"><span class="pre">GenerateIn</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#llm_api.api.GenerateIn.async_mode"><code class="docutils literal notranslate"><span class="pre">GenerateIn.async_mode</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#llm_api.api.GenerateIn.conversation_id"><code class="docutils literal notranslate"><span class="pre">GenerateIn.conversation_id</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#llm_api.api.GenerateIn.max_new_tokens"><code class="docutils literal notranslate"><span class="pre">GenerateIn.max_new_tokens</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#llm_api.api.GenerateIn.model_config"><code class="docutils literal notranslate"><span class="pre">GenerateIn.model_config</span></code></a></li>
@@ -524,20 +526,21 @@
 <li><p><a class="reference internal" href="#hardware-inspection-resource-advisor" id="id6">Hardware Inspection &amp; Resource Advisor</a></p></li>
 <li><p><a class="reference internal" href="#expanded-quantization-modes" id="id7">Expanded Quantization Modes</a></p></li>
 <li><p><a class="reference internal" href="#structured-json-generation-with-outlines" id="id8">Structured JSON Generation with Outlines</a></p></li>
-<li><p><a class="reference internal" href="#endpoints" id="id9">Endpoints</a></p></li>
+<li><p><a class="reference internal" href="#working-memory-state-trees-focal-projection-state-tree-py" id="id9">Working Memory State Trees &amp; Focal Projection (<code class="docutils literal notranslate"><span class="pre">state_tree.py</span></code>)</a></p></li>
+<li><p><a class="reference internal" href="#endpoints" id="id10">Endpoints</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#observability-health-signals" id="id10">3. Observability &amp; Health Signals</a></p>
+<li><p><a class="reference internal" href="#observability-health-signals" id="id11">3. Observability &amp; Health Signals</a></p>
 <ul>
-<li><p><a class="reference internal" href="#how-to-know-inference-is-working-well" id="id11">How to Know Inference is Working Well</a></p></li>
+<li><p><a class="reference internal" href="#how-to-know-inference-is-working-well" id="id12">How to Know Inference is Working Well</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#diagnostic-tips-failure-modes" id="id12">4. Diagnostic Tips &amp; Failure Modes</a></p>
+<li><p><a class="reference internal" href="#diagnostic-tips-failure-modes" id="id13">4. Diagnostic Tips &amp; Failure Modes</a></p>
 <ul>
-<li><p><a class="reference internal" href="#when-inference-misses-the-mark-how-to-tune" id="id13">When Inference Misses the Mark &amp; How to Tune</a></p></li>
+<li><p><a class="reference internal" href="#when-inference-misses-the-mark-how-to-tune" id="id14">When Inference Misses the Mark &amp; How to Tune</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#module-llm_api.models" id="id14">Module Reference</a></p></li>
+<li><p><a class="reference internal" href="#module-llm_api.models" id="id15">Module Reference</a></p></li>
 </ul>
 </nav>
 <section id="purpose-motivating-problem">
@@ -600,8 +603,18 @@ Routes requests to an Ollama container (<cite>verbal_ollama</cite> on port 11434
 <h3><a class="toc-backref" href="#id8" role="doc-backlink">Structured JSON Generation with Outlines</a><a class="headerlink" href="#structured-json-generation-with-outlines" title="Link to this heading"></a></h3>
 <p>When structured schema output is required (e.g. factor extraction, plan generation, claim evaluation), the service uses <cite>outlines</cite> to construct regex-based finite-state machines. Only tokens that conform to the Pydantic schema are permitted to be sampled from the vocabulary logits, guaranteeing 100% valid JSON without parsing retries.</p>
 </section>
+<section id="working-memory-state-trees-focal-projection-state-tree-py">
+<h3><a class="toc-backref" href="#id9" role="doc-backlink">Working Memory State Trees &amp; Focal Projection (<code class="docutils literal notranslate"><span class="pre">state_tree.py</span></code>)</a><a class="headerlink" href="#working-memory-state-trees-focal-projection-state-tree-py" title="Link to this heading"></a></h3>
+<p>To support non-linear conversational topologies and prevent context window exhaustion, [llm_api/state_tree.py](<a class="reference external" href="file:///home/crank/coding/antigrav/verbal/llm_api/state_tree.py">file:///home/crank/coding/antigrav/verbal/llm_api/state_tree.py</a>) provides working memory management utilities:</p>
+<ul class="simple">
+<li><p><strong>Dynamic Focal Projection (``format_focal_state_tree``)</strong>: Transforms complex state trees into concise prompt projections, expanding the active task branch (marked with <code class="docutils literal notranslate"><span class="pre">&gt;&gt;</span> <span class="pre">[ACTIVE]</span></code>) while collapsing inactive siblings to single-line summaries.</p></li>
+<li><p><strong>Inline Compaction (``fast_compact_state_tree``)</strong>: Deterministic, sub-millisecond Python rule guardrail that rolls settled tasks into milestone lists, clamps bulky string values (&gt;300 characters), and preserves invariants in <cite>established_facts</cite>.</p></li>
+<li><p><strong>Intelligent Compaction (``intelligent_compact_state_tree``)</strong>: Synthesizes older conversation milestones into low-confidence breadcrumb summaries (<em>“I can see a long time ago we explored…”</em>).</p></li>
+<li><p><strong>Branch-Aware History (``Conversation.as_messages()``)</strong>: Traverses DAG lineages using <cite>leaf_log_id</cite> to replay exact conversational branches, automatically embedding the active focal state tree into condensation notes whenever older turns are omitted.</p></li>
+</ul>
+</section>
 <section id="endpoints">
-<h3><a class="toc-backref" href="#id9" role="doc-backlink">Endpoints</a><a class="headerlink" href="#endpoints" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id10" role="doc-backlink">Endpoints</a><a class="headerlink" href="#endpoints" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/llm/v1/chat/completions</span></code>: Standardized OpenAI-compatible chat completion endpoint supporting streaming, tools, and JSON schema constraints.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/api/llm/hardware/</span></code>: Diagnostic endpoint returning detected GPU/CPU metrics, free VRAM, and recommended engine configurations.</p></li>
@@ -610,9 +623,9 @@ Routes requests to an Ollama container (<cite>verbal_ollama</cite> on port 11434
 </section>
 </section>
 <section id="observability-health-signals">
-<h2><a class="toc-backref" href="#id10" role="doc-backlink">3. Observability &amp; Health Signals</a><a class="headerlink" href="#observability-health-signals" title="Link to this heading"></a></h2>
+<h2><a class="toc-backref" href="#id11" role="doc-backlink">3. Observability &amp; Health Signals</a><a class="headerlink" href="#observability-health-signals" title="Link to this heading"></a></h2>
 <section id="how-to-know-inference-is-working-well">
-<h3><a class="toc-backref" href="#id11" role="doc-backlink">How to Know Inference is Working Well</a><a class="headerlink" href="#how-to-know-inference-is-working-well" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id12" role="doc-backlink">How to Know Inference is Working Well</a><a class="headerlink" href="#how-to-know-inference-is-working-well" title="Link to this heading"></a></h3>
 <ol class="arabic simple">
 <li><p><strong>Host Hardware &amp; Resource Advisor Banner</strong>:
 In Django Admin under <strong>LLM API &gt; Global System Configurations</strong>, inspect the live diagnostic card. It reports active VRAM utilization, detected compute capability, precision compatibility badges (e.g., native FP16 vs emulated BF16), and recommended sequence lengths.</p></li>
@@ -626,9 +639,9 @@ Structured requests (<cite>generate_outline</cite>) should return instantly upon
 </section>
 </section>
 <section id="diagnostic-tips-failure-modes">
-<h2><a class="toc-backref" href="#id12" role="doc-backlink">4. Diagnostic Tips &amp; Failure Modes</a><a class="headerlink" href="#diagnostic-tips-failure-modes" title="Link to this heading"></a></h2>
+<h2><a class="toc-backref" href="#id13" role="doc-backlink">4. Diagnostic Tips &amp; Failure Modes</a><a class="headerlink" href="#diagnostic-tips-failure-modes" title="Link to this heading"></a></h2>
 <section id="when-inference-misses-the-mark-how-to-tune">
-<h3><a class="toc-backref" href="#id13" role="doc-backlink">When Inference Misses the Mark &amp; How to Tune</a><a class="headerlink" href="#when-inference-misses-the-mark-how-to-tune" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id14" role="doc-backlink">When Inference Misses the Mark &amp; How to Tune</a><a class="headerlink" href="#when-inference-misses-the-mark-how-to-tune" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p><strong>vLLM Container Crashes on Startup (Allocation Mismatch)</strong>:
 * <em>Hazard</em>: vLLM defaults to requesting 92% of <em>total physical</em> device VRAM. On consumer systems with active desktop environments (which consume ~1 GB VRAM), free memory is less than requested, causing vLLM to exit with an allocation error.
@@ -646,7 +659,7 @@ Structured requests (<cite>generate_outline</cite>) should return instantly upon
 </section>
 </section>
 <section id="module-llm_api.models">
-<span id="module-reference"></span><h2><a class="toc-backref" href="#id14" role="doc-backlink">Module Reference</a><a class="headerlink" href="#module-llm_api.models" title="Link to this heading"></a></h2>
+<span id="module-reference"></span><h2><a class="toc-backref" href="#id15" role="doc-backlink">Module Reference</a><a class="headerlink" href="#module-llm_api.models" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="llm_api.models.Conversation">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">llm_api.models.</span></span><span class="sig-name descname"><span class="pre">Conversation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/llm_api/models.html#Conversation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_api.models.Conversation" title="Link to this definition"></a></dt>
@@ -672,7 +685,7 @@ Structured requests (<cite>generate_outline</cite>) should return instantly upon
 
 <dl class="py method">
 <dt class="sig sig-object py" id="llm_api.models.Conversation.as_messages">
-<span class="sig-name descname"><span class="pre">as_messages</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">leaf_log_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_logs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">system_override</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/llm_api/models.html#Conversation.as_messages"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_api.models.Conversation.as_messages" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">as_messages</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">leaf_log_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_logs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">system_override</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_state_tree</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/llm_api/models.html#Conversation.as_messages"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_api.models.Conversation.as_messages" title="Link to this definition"></a></dt>
 <dd><p>Reconstructs the conversation as a list of message dicts along the active DAG path.</p>
 <p>Traces the path from the specified leaf_log_id back to the root via parent_log_id.
 If no leaf is provided, it defaults to the most recently created log.</p>
@@ -681,7 +694,8 @@ different ReasoningSteps, intermediate step system prompts are NOT concatenated
 into the message history. Exactly ONE system prompt is placed at index 0:
 either <cite>system_override</cite> (if provided) or the root system prompt.</p>
 <p>When max_logs is set, only the most recent N logs are included in the
-returned messages, with a condensation note inserted.</p>
+returned messages, with a condensation note inserted. When include_state_tree
+is enabled, the condensation note anchors the active focal state tree.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -2408,8 +2422,13 @@ summarized by the LLM and injected as a condensed system note.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="llm_api.api.GenerateIn">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">llm_api.api.</span></span><span class="sig-name descname"><span class="pre">GenerateIn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conversation_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">system_prompt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_prompt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_new_tokens</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_rag</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_grips</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_log_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uncertainty_mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/llm_api/api.html#GenerateIn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_api.api.GenerateIn" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">llm_api.api.</span></span><span class="sig-name descname"><span class="pre">GenerateIn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conversation_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">system_prompt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_prompt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_new_tokens</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_rag</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_grips</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_log_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uncertainty_mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">async_mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/llm_api/api.html#GenerateIn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_api.api.GenerateIn" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Schema</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="llm_api.api.GenerateIn.async_mode">
+<span class="sig-name descname"><span class="pre">async_mode</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#llm_api.api.GenerateIn.async_mode" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="llm_api.api.GenerateIn.conversation_id">
 <span class="sig-name descname"><span class="pre">conversation_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#llm_api.api.GenerateIn.conversation_id" title="Link to this definition"></a></dt>

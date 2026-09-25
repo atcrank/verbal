@@ -79,6 +79,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#sandbox_manager.models.SandboxConfiguration.objects"><code class="docutils literal notranslate"><span class="pre">SandboxConfiguration.objects</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#sandbox_manager.models.SandboxConfiguration.requirements_txt"><code class="docutils literal notranslate"><span class="pre">SandboxConfiguration.requirements_txt</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#sandbox_manager.models.SandboxConfiguration.save"><code class="docutils literal notranslate"><span class="pre">SandboxConfiguration.save()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sandbox_manager.models.SandboxConfiguration.sync_requirements_file"><code class="docutils literal notranslate"><span class="pre">SandboxConfiguration.sync_requirements_file()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#sandbox_manager.models.SandboxExecutionLog"><code class="docutils literal notranslate"><span class="pre">SandboxExecutionLog</span></code></a><ul>
@@ -321,12 +322,18 @@ object the first time, the query is executed.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="sandbox_manager.models.SandboxConfiguration.save">
-<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sandbox_manager/models.html#SandboxConfiguration.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sandbox_manager.models.SandboxConfiguration.save" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sync_to_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sandbox_manager/models.html#SandboxConfiguration.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sandbox_manager.models.SandboxConfiguration.save" title="Link to this definition"></a></dt>
 <dd><p>Save the current instance. Override this in a subclass if you want to
 control the saving process.</p>
 <p>The ‘force_insert’ and ‘force_update’ parameters can be used to insist
 that the “save” must be an SQL insert or update (or equivalent for
 non-SQL backends), respectively. Normally, they should not be set.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sandbox_manager.models.SandboxConfiguration.sync_requirements_file">
+<span class="sig-name descname"><span class="pre">sync_requirements_file</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/sandbox_manager/models.html#SandboxConfiguration.sync_requirements_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sandbox_manager.models.SandboxConfiguration.sync_requirements_file" title="Link to this definition"></a></dt>
+<dd><p>Explicitly synchronizes the database requirements to sandbox/requirements.txt.</p>
 </dd></dl>
 
 </dd></dl>

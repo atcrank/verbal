@@ -42,13 +42,16 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../llm_api_app.html">LLM API</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../background_resources_app.html">Background Resources - context documents</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../grips_app.html">Grips - wiki knowledge banks</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../llm_api_app.html">LLM API - Local Inference, Proxy Routing &amp; Hardware-Aware Serving</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../verbal_tasks_app.html">Verbal Tasks - Database-Backed Asynchronous Execution &amp; Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../sandbox_manager_app.html">Sandbox Manager - Isolated Python Execution Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grobid_client_app.html">Grobid Client - Deterministic Scientific PDF Parsing &amp; Citation Extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../background_resources_app.html">Background Resources - Retrieval-Augmented Generation &amp; Document Ingestion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grips_app.html">Grips - Structured Knowledge Graph &amp; Propositional Claims</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../metacognition_app.html">Metacognition - Cognitive Blueprints, Agentic Workflows &amp; Self-Evaluation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_app.html">Demo UI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmarking_app.html">Benchmarking - Automated Evaluation, Synthetic Generation &amp; LoRA Flywheels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_app.html">Demo UI - Empirical Research &amp; Cognitive Workbench</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
 <ul>
@@ -113,7 +116,8 @@
     <span class="n">user_prompt</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">conversation_id</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">parent_log_id</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">run_id</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+    <span class="n">run_id</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">async_mode</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span></div>
 
 
 <div class="viewcode-block" id="BlueprintDispatchIn">
@@ -147,8 +151,17 @@
 <span class="nd">@ensure_csrf_cookie</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">execute_blueprint</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">BlueprintRunIn</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Synchronously executes a multi-step Cognitive Blueprint via the backend executor.</span>
+<span class="sd">    Executes a multi-step Cognitive Blueprint via the backend executor.</span>
+<span class="sd">    Supports async_mode=True delegating to dispatch_blueprint with task tracking.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">payload</span><span class="o">.</span><span class="n">async_mode</span><span class="p">:</span>
+        <span class="n">dispatch_in</span> <span class="o">=</span> <span class="n">BlueprintDispatchIn</span><span class="p">(</span>
+            <span class="n">blueprint_id</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">blueprint_id</span><span class="p">,</span>
+            <span class="n">user_prompt</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">user_prompt</span><span class="p">,</span>
+            <span class="n">conversation_id</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">conversation_id</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">dispatch_blueprint</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">dispatch_in</span><span class="p">)</span>
+
     <span class="n">user_id</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">auth</span><span class="p">,</span> <span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;auth&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">user_id</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;user&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">is_authenticated</span><span class="p">:</span>
         <span class="n">user_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">id</span>
@@ -192,8 +205,8 @@
 <span class="nd">@ensure_csrf_cookie</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">dispatch_blueprint</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">BlueprintDispatchIn</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Asynchronously dispatches a Cognitive Blueprint execution to Celery.</span>
-<span class="sd">    Returns the run_id and stream URL for Datastar SSE consumption.</span>
+<span class="sd">    Asynchronously dispatches a Cognitive Blueprint execution to background task worker.</span>
+<span class="sd">    Returns the task_id, run_id, and stream URL for Datastar SSE consumption.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">user_id</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">auth</span><span class="p">,</span> <span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;auth&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">user_id</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;user&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">is_authenticated</span><span class="p">:</span>
@@ -201,7 +214,7 @@
 
     <span class="n">run_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid4</span><span class="p">())</span>
     
-    <span class="n">task_run_blueprint_async</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span>
+    <span class="n">task_res</span> <span class="o">=</span> <span class="n">task_run_blueprint_async</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span>
         <span class="n">blueprint_id</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">blueprint_id</span><span class="p">,</span>
         <span class="n">user_prompt</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">user_prompt</span><span class="p">,</span>
         <span class="n">conversation_id</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">conversation_id</span><span class="p">,</span>
@@ -211,6 +224,7 @@
 
     <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span>
         <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;dispatched&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;task_id&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">task_res</span><span class="o">.</span><span class="n">id</span><span class="p">),</span>
         <span class="s2">&quot;run_id&quot;</span><span class="p">:</span> <span class="n">run_id</span><span class="p">,</span>
         <span class="s2">&quot;conversation_id&quot;</span><span class="p">:</span> <span class="n">payload</span><span class="o">.</span><span class="n">conversation_id</span><span class="p">,</span>
         <span class="s2">&quot;stream_url&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;/api/meta/stream_blueprint/?run_id=</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">&quot;</span>
