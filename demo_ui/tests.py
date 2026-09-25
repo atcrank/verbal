@@ -164,6 +164,70 @@ class DemoUIViewsTestCase(TestCase):
         log2 = conv.logs.order_by('-created_at').first()
         self.assertEqual(log2.parent_log, log1)
 
+    @patch('demo_ui.views.task_generate_response')
+    @patch('llm_api.ai_service.AIService.count_conversation_tokens', return_value=15)
+    def test_send_message_dispatches_task_and_renders_streaming_markup(self, mock_count, mock_task):
+        mock_task.enqueue.return_value = None
+        conv = Conversation.objects.create(user=self.user, title="Async Chat")
+        url = reverse('demo_ui:send_message')
+        resp = self.client.post(url, {
+            'conversation_id': str(conv.id),
+            'user_prompt': 'Explain factorial design',
+            'max_new_tokens': 1200
+        })
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(mock_task.enqueue.call_count, 1)
+        kwargs = mock_task.enqueue.call_args.kwargs
+        self.assertEqual(kwargs['max_new_tokens'], 1200)
+        self.assertEqual(kwargs['conversation_id'], str(conv.id))
+        self.assertEqual(kwargs['user_id'], self.user.id)
+        run_id = kwargs['run_id']
+
+        content = resp.content.decode('utf-8')
+        self.assertIn(f'id="gen-stream-{run_id}"', content)
+        self.assertIn('data-signals="{isStreaming: true}"', content)
+        self.assertIn(f'/demo/stream_generation/?run_id={run_id}', content)
+        self.assertIn('Generating response...', content)
+
+    def test_stream_generation_fast_path(self):
+        """Verifies Datastar SSE response when generation already completed before stream connected."""
+        conv = Conversation.objects.create(user=self.user, title="Fast path chat")
+        log = PromptResponseLog.objects.create(
+            user=self.user,
+            conversation=conv,
+            user_prompt="Hello",
+            generated_response="Finished generation text."
+        )
+        url = reverse('demo_ui:stream_generation') + f"?run_id=test-run-123&log_id={log.id}"
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.headers.get("Content-Type"), "text/event-stream")
+        body = b"".join(resp.streaming_content).decode('utf-8')
+        self.assertIn("datastar-merge-fragments", body)
+        self.assertIn("Finished generation text.", body)
+        self.assertIn('"isStreaming": false', body)
+
+    def test_stream_generation_sse_completed_event(self):
+        def mock_events(channel):
+            yield {"event": "completed", "data": {"final_response": "Asynchronously streamed text!"}}
+
+        with patch('demo_ui.views.subscribe_pg_events_sync', side_effect=mock_events):
+            conv = Conversation.objects.create(user=self.user, title="Event stream chat")
+            log = PromptResponseLog.objects.create(
+                user=self.user,
+                conversation=conv,
+                user_prompt="Hello",
+                generated_response='<div id="gen-stream-run-abc">placeholder</div>'
+            )
+            url = reverse('demo_ui:stream_generation') + f"?run_id=run-abc&log_id={log.id}"
+            resp = self.client.get(url)
+            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp.headers.get("Content-Type"), "text/event-stream")
+            body = b"".join(resp.streaming_content).decode('utf-8')
+            self.assertIn("datastar-merge-fragments", body)
+            self.assertIn("Asynchronously streamed text!", body)
+            self.assertIn('"status": "completed"', body)
+
     def test_preview_context_item(self):
         mock_file = SimpleUploadedFile("guide.txt", b"Guide content.", content_type="text/plain")
         doc = Document.objects.create(title="Study Guidelines", author="Dr. Smith", file=mock_file)

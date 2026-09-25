@@ -571,3 +571,44 @@ class SystemConfigurationAdminTests(TestCase):
     def test_lora_adapter_changelist_renders(self):
         resp = self.client.get("/admin/llm_api/loraadapter/")
         self.assertEqual(resp.status_code, 200)
+
+
+class ApiGenerateResponseAsyncTests(TestCase):
+    """Ticket 2.1: Unit tests for async_mode in /api/llm/generate_response/."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(username="api_user", password="password123")
+        self.client = Client()
+        self.client.login(username="api_user", password="password123")
+
+    def test_generate_response_async_mode_returns_task_id(self):
+        from unittest.mock import patch, MagicMock
+
+        with patch("llm_api.api.task_generate_response") as mock_task, \
+             patch("llm_api.api.service_registry.ai_service.count_conversation_tokens", return_value=12):
+            mock_task.enqueue.return_value = MagicMock(id="mock-gen-task-123")
+
+            payload = {
+                "user_prompt": "Suggest experimental factors for testing water quality.",
+                "async_mode": True,
+                "max_new_tokens": 800
+            }
+            resp = self.client.post(
+                "/api/llm/generate_response/",
+                data=json.dumps(payload),
+                content_type="application/json"
+            )
+            self.assertEqual(resp.status_code, 200)
+            data = resp.json()
+            self.assertEqual(data.get("status"), "enqueued")
+            self.assertEqual(data.get("task_id"), "mock-gen-task-123")
+            self.assertIsNotNone(data.get("run_id"))
+            self.assertIsNotNone(data.get("conversation_id"))
+            self.assertIn("/demo/stream_generation/?run_id=", data.get("stream_url"))
+
+            # Verify PromptResponseLog was created
+            log_id = data.get("log_id")
+            log = PromptResponseLog.objects.get(id=log_id)
+            self.assertEqual(log.user_prompt, payload["user_prompt"])
+            self.assertEqual(log.user_id, self.user.id)
+            self.assertEqual(mock_task.enqueue.call_count, 1)

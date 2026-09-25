@@ -14,6 +14,7 @@ from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from ninja.security import SessionAuth
 
 from .models import Conversation, PromptResponseLog, LocalAIModel, ExternalAIModel, UserActiveModel, UserAPIKey
+from .tasks import task_generate_response
 
 from llm_api.apps import service_registry
 from background_resources.models import Document
@@ -29,6 +30,8 @@ class GenerateIn(Schema):
     skip_grips: bool = True
     parent_log_id: typing.Optional[str] = None
     uncertainty_mode: int = 1  # 1: ask, 2: search, 3: guess
+    async_mode: bool = False
+
 
 @router.post("/generate_response/")
 @ensure_csrf_cookie
@@ -102,9 +105,45 @@ def generate_response(request, payload: GenerateIn):
     
     input_tokens = service_registry.ai_service.count_conversation_tokens(messages)
     logger.info(" ".join([str(x) for x in ['Token Count:', input_tokens]]))
-    
+
+    if payload.async_mode:
+        from uuid import uuid4
+
+        run_id = str(uuid4())
+        system_prompt = messages[0]["content"] if messages else ""
+        p = PromptResponseLog.objects.create(
+            system_prompt=system_prompt,
+            user_prompt=payload.user_prompt,
+            rag_selections=rag_selections,
+            conversation_id=conversation_id,
+            generated_response="",
+            user_id=request.auth.id,
+            parent_log=parent_log,
+            input_tokens=input_tokens,
+            output_tokens=0,
+        )
+        task_res = task_generate_response.enqueue(
+            messages=messages,
+            max_new_tokens=max_new_tokens,
+            user_id=request.auth.id,
+            run_id=run_id,
+            log_id=str(p.id),
+            parent_log_id=str(parent_log.id) if parent_log else None,
+            conversation_id=str(conversation_id),
+            rag_selections=rag_selections,
+        )
+        return JsonResponse({
+            "status": "enqueued",
+            "task_id": str(task_res.id),
+            "run_id": run_id,
+            "conversation_id": str(conversation_id),
+            "log_id": str(p.id),
+            "stream_url": f"/demo/stream_generation/?run_id={run_id}&log_id={p.id}"
+        })
+
     [response] = service_registry.ai_service.generate_response2(messages=messages, max_new_tokens=max_new_tokens, log_kwargs={"skip_log": True}, user=request.auth)
     cleaned_response = service_registry.ai_service.clean_response(response)
+
     
     output_tokens = service_registry.ai_service.count_conversation_tokens([{"role": "assistant", "content": cleaned_response}])
     

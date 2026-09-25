@@ -7,6 +7,7 @@ urlpatterns = [
     path('search/', views.search_knowledge_base, name='search_knowledge_base'),
     path('conversation/<uuid:conversation_id>/', views.get_conversation, name='get_conversation'),
     path('send/', views.send_message, name='send_message'),
+    path('stream_generation/', views.stream_generation, name='stream_generation'),
     path('upload/', views.upload_document, name='upload_document'),
     path('documents/', views.list_documents, name='list_documents'),
     path('documents/<int:document_id>/ingest/', views.trigger_document_ingestion, name='trigger_document_ingestion'),

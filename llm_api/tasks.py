@@ -96,3 +96,75 @@ def download_model_cache(context: TaskContext, hf_model_id: str):
         with TaskProgressTqdm._lock:
             if task_id in TaskProgressTqdm._active_bars:
                 del TaskProgressTqdm._active_bars[task_id]
+
+
+@task
+def task_generate_response(
+    messages: list,
+    max_new_tokens: int,
+    user_id: int | None,
+    run_id: str,
+    log_id: str,
+    parent_log_id: str | None = None,
+    conversation_id: str | None = None,
+    rag_selections: list | None = None
+):
+    """
+    Background worker task to generate an LLM response asynchronously,
+    updating PromptResponseLog and publishing completion events over PostgreSQL.
+    """
+    from django.contrib.auth import get_user_model
+    from llm_api.apps import service_registry
+    from llm_api.models import PromptResponseLog
+    from verbal_tasks.postgres_events import publish_pg_event
+
+    user = None
+    if user_id:
+        user = get_user_model().objects.filter(id=user_id).first()
+
+    log = PromptResponseLog.objects.filter(id=log_id).first()
+
+    try:
+        [raw_response] = service_registry.ai_service.generate_response2(
+            messages=messages,
+            max_new_tokens=max_new_tokens,
+            log_kwargs={"skip_log": True},
+            user=user
+        )
+        cleaned_response = service_registry.ai_service.clean_response(raw_response)
+        output_tokens = service_registry.ai_service.count_conversation_tokens(
+            [{"role": "assistant", "content": cleaned_response}]
+        )
+
+        if log:
+            log.generated_response = cleaned_response
+            log.output_tokens = output_tokens
+            log.save(update_fields=["generated_response", "output_tokens"])
+
+        publish_pg_event(f"verbal_events_{run_id}", "completed", {
+            "final_response": cleaned_response,
+            "log_id": str(log_id),
+            "run_id": run_id
+        })
+
+        return {
+            "status": "completed",
+            "log_id": str(log_id),
+            "run_id": run_id,
+            "output_tokens": output_tokens
+        }
+
+    except Exception as e:
+        logger.error(f"Error in task_generate_response for run {run_id}: {e}")
+        err_msg = f"Generation failed: {str(e)}"
+        if log:
+            log.generated_response = err_msg
+            log.save(update_fields=["generated_response"])
+
+        publish_pg_event(f"verbal_events_{run_id}", "error", {
+            "error": err_msg,
+            "log_id": str(log_id),
+            "run_id": run_id
+        })
+        raise
+

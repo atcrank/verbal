@@ -4,13 +4,15 @@ logger = logging.getLogger(__name__)
 
 import json
 from django.shortcuts import render, HttpResponse, get_object_or_404
-from django.http import JsonResponse, FileResponse, Http404, HttpResponseForbidden
+from django.http import JsonResponse, FileResponse, Http404, HttpResponseForbidden, StreamingHttpResponse
 from django.contrib.auth.decorators import login_required
 from django.utils.safestring import mark_safe
 from llm_api.models import Conversation, PromptResponseLog
 from metacognition.models import CognitiveBlueprint
 from llm_api.apps import service_registry
 from grips.models import ConceptNode, Domain, KnowledgeEdge
+from llm_api.tasks import task_generate_response
+from verbal_tasks.postgres_events import subscribe_pg_events_sync
 
 try:
     import markdown
@@ -291,18 +293,47 @@ def send_message(request):
         else:
             messages_for_llm = messages + [{"role": "user", "content": user_prompt}]
         
-        input_tokens = service_registry.ai_service.count_conversation_tokens(messages_for_llm)
+        from uuid import uuid4
+
+        run_id = str(uuid4())
         max_new_tokens = int(request.POST.get('max_new_tokens', 1500))
-        [response] = service_registry.ai_service.generate_response2(messages=messages_for_llm, max_new_tokens=max_new_tokens, log_kwargs={"skip_log": True}, user=request.user)
-        cleaned_response = service_registry.ai_service.clean_response(response)
-        
-        output_tokens = service_registry.ai_service.count_conversation_tokens([{"role": "assistant", "content": cleaned_response}])
-        
+        input_tokens = service_registry.ai_service.count_conversation_tokens(messages_for_llm)
+
         log = PromptResponseLog.objects.create(
-            system_prompt=messages[0]["content"], user_prompt=user_prompt, rag_selections=rag_selections, 
-            conversation=conversation, parent_log=parent_log, generated_response=cleaned_response, user=request.user,
-            input_tokens=input_tokens, output_tokens=output_tokens
+            system_prompt=messages[0]["content"],
+            user_prompt=user_prompt,
+            rag_selections=rag_selections,
+            conversation=conversation,
+            parent_log=parent_log,
+            generated_response="",
+            user=request.user,
+            input_tokens=input_tokens,
+            output_tokens=0,
         )
+
+        streaming_markup = (
+            f'<div id="gen-stream-{run_id}" data-signals="{{isStreaming: true}}" '
+            f'data-on-load="@get(\'/demo/stream_generation/?run_id={run_id}&log_id={log.id}\')">'
+            '<div class="agent-step active">'
+            '<span class="badge">Generating</span>'
+            '<strong>Generating response...</strong>'
+            '</div>'
+            '</div>'
+        )
+        log.generated_response = streaming_markup
+        log.save(update_fields=["generated_response"])
+
+        task_generate_response.enqueue(
+            messages=messages_for_llm,
+            max_new_tokens=max_new_tokens,
+            user_id=request.user.id if request.user.is_authenticated else None,
+            run_id=run_id,
+            log_id=str(log.id),
+            parent_log_id=str(parent_log.id) if parent_log else None,
+            conversation_id=str(conversation.id),
+            rag_selections=rag_selections,
+        )
+        log.refresh_from_db()
         
     # 3. Render formatting
     _prepare_log_for_display(log)
@@ -317,6 +348,57 @@ def send_message(request):
     }).content.decode('utf-8')
 
     return HttpResponse(response_html + "\n" + files_html)
+
+
+@login_required
+def stream_generation(request):
+    """
+    Server-Sent Events (SSE) streaming endpoint using Datastar protocol.
+    Streams DOM fragment patches when background LLM generation completes.
+    """
+    from metacognition.datastar import DatastarSSE
+
+    run_id = request.GET.get("run_id", "")
+    log_id = request.GET.get("log_id", "")
+
+    def event_generator():
+        yield DatastarSSE.merge_signals({
+            "isStreaming": True,
+            "runId": run_id,
+            "status": "generating"
+        })
+
+        # Fast path: check if the log already has a completed response
+        if log_id:
+            log = PromptResponseLog.objects.filter(id=log_id).first()
+            if log and log.generated_response and not log.generated_response.startswith('<div id="gen-stream-'):
+                html = markdown.markdown(log.generated_response, extensions=['fenced_code', 'tables', 'nl2br', 'sane_lists']) if markdown else log.generated_response
+                frag = f'<div id="gen-stream-{run_id}" class="markdown-body">{html}</div>'
+                yield DatastarSSE.merge_fragments(frag, selector=f"#gen-stream-{run_id}", merge_mode="morph")
+                yield DatastarSSE.merge_signals({"isStreaming": False, "status": "completed"})
+                return
+
+        channel_name = f"verbal_events_{run_id}"
+        for event in subscribe_pg_events_sync(channel_name):
+            event_type = event.get("event")
+            data = event.get("data", {})
+
+            if event_type == "completed":
+                final_text = data.get("final_response", "")
+                html = markdown.markdown(final_text, extensions=['fenced_code', 'tables', 'nl2br', 'sane_lists']) if markdown else final_text
+                frag = f'<div id="gen-stream-{run_id}" class="markdown-body">{html}</div>'
+                yield DatastarSSE.merge_fragments(frag, selector=f"#gen-stream-{run_id}", merge_mode="morph")
+                yield DatastarSSE.merge_signals({"isStreaming": False, "status": "completed"})
+                break
+            elif event_type == "error":
+                err_msg = data.get("error", "Generation error")
+                frag = f'<div id="gen-stream-{run_id}" class="agent-step error"><span class="badge badge-error">Error</span><strong>{err_msg}</strong></div>'
+                yield DatastarSSE.merge_fragments(frag, selector=f"#gen-stream-{run_id}", merge_mode="morph")
+                yield DatastarSSE.merge_signals({"isStreaming": False, "status": "error"})
+                break
+
+    return StreamingHttpResponse(event_generator(), content_type="text/event-stream")
+
 
 
 from django.views.decorators.http import require_POST

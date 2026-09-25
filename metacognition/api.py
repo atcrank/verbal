@@ -27,6 +27,7 @@ class BlueprintRunIn(Schema):
     conversation_id: typing.Optional[str] = None
     parent_log_id: typing.Optional[str] = None
     run_id: typing.Optional[str] = None
+    async_mode: bool = False
 
 class BlueprintDispatchIn(Schema):
     blueprint_id: int
@@ -48,8 +49,17 @@ class ApproveToolIn(Schema):
 @ensure_csrf_cookie
 def execute_blueprint(request, payload: BlueprintRunIn):
     """
-    Synchronously executes a multi-step Cognitive Blueprint via the backend executor.
+    Executes a multi-step Cognitive Blueprint via the backend executor.
+    Supports async_mode=True delegating to dispatch_blueprint with task tracking.
     """
+    if payload.async_mode:
+        dispatch_in = BlueprintDispatchIn(
+            blueprint_id=payload.blueprint_id,
+            user_prompt=payload.user_prompt,
+            conversation_id=payload.conversation_id
+        )
+        return dispatch_blueprint(request, dispatch_in)
+
     user_id = getattr(request.auth, 'id', None) if hasattr(request, 'auth') else None
     if not user_id and hasattr(request, 'user') and request.user.is_authenticated:
         user_id = request.user.id
@@ -91,7 +101,7 @@ def execute_blueprint(request, payload: BlueprintRunIn):
 def dispatch_blueprint(request, payload: BlueprintDispatchIn):
     """
     Asynchronously dispatches a Cognitive Blueprint execution to background task worker.
-    Returns the run_id and stream URL for Datastar SSE consumption.
+    Returns the task_id, run_id, and stream URL for Datastar SSE consumption.
     """
     user_id = getattr(request.auth, 'id', None) if hasattr(request, 'auth') else None
     if not user_id and hasattr(request, 'user') and request.user.is_authenticated:
@@ -99,7 +109,7 @@ def dispatch_blueprint(request, payload: BlueprintDispatchIn):
 
     run_id = str(uuid4())
     
-    task_run_blueprint_async.enqueue(
+    task_res = task_run_blueprint_async.enqueue(
         blueprint_id=payload.blueprint_id,
         user_prompt=payload.user_prompt,
         conversation_id=payload.conversation_id,
@@ -109,6 +119,7 @@ def dispatch_blueprint(request, payload: BlueprintDispatchIn):
 
     return JsonResponse({
         "status": "dispatched",
+        "task_id": str(task_res.id),
         "run_id": run_id,
         "conversation_id": payload.conversation_id,
         "stream_url": f"/api/meta/stream_blueprint/?run_id={run_id}"

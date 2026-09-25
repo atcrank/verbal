@@ -1051,6 +1051,7 @@ class AsyncStreamingAndGovernanceTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         data = resp.json()
         self.assertEqual(data.get("status"), "dispatched")
+        self.assertIsNotNone(data.get("task_id"))
         run_id = data.get("run_id")
         self.assertIsNotNone(run_id)
         self.assertIn("/api/meta/stream_blueprint/?run_id=", data.get("stream_url"))
@@ -1077,6 +1078,33 @@ class AsyncStreamingAndGovernanceTests(TestCase):
         )
         self.assertEqual(resp_approve.status_code, 200)
         self.assertEqual(resp_approve.json().get("status"), "resumed")
+
+    def test_execute_blueprint_async_mode(self):
+        """Ticket 2.1: Verifies /api/meta/execute_blueprint/ returns task_id and stream_url with async_mode=True."""
+        import json
+        from django.test import Client
+        from unittest.mock import patch, MagicMock
+
+        client = Client()
+        client.force_login(self.user)
+
+        with patch("metacognition.api.task_run_blueprint_async") as mock_task:
+            mock_task.enqueue.return_value = MagicMock(id="mock-blueprint-task-999")
+
+            resp = client.post(
+                "/api/meta/execute_blueprint/",
+                data=json.dumps({
+                    "blueprint_id": self.bp.id,
+                    "user_prompt": "Async execution test",
+                    "async_mode": True
+                }),
+                content_type="application/json"
+            )
+            self.assertEqual(resp.status_code, 200)
+            data = resp.json()
+            self.assertEqual(data.get("status"), "dispatched")
+            self.assertEqual(data.get("task_id"), "mock-blueprint-task-999")
+            self.assertIn("/api/meta/stream_blueprint/?run_id=", data.get("stream_url"))
 
 
 class ReasoningStepStateTreeTests(TestCase):
