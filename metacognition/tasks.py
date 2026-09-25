@@ -179,6 +179,7 @@ def run_blueprint(blueprint_id: int,
 
     initial_state = AgentState(
         working_memory=[HumanMessage(content=user_prompt)],
+        state_tree=dict(conversation.state_tree or {}),
         rag_context="",
         route_to=None,
         resume_to=None,
@@ -232,6 +233,13 @@ def run_blueprint(blueprint_id: int,
         logger.error(f"LangGraph execution failed: {traceback.format_exc()}")
         publish_blueprint_event(run_id, "error", {"error": str(e)})
         return {"error": f"Execution failed: {str(e)}", "status": 500}
+
+    # Sync updated state_tree from LangGraph back to conversation.state_tree
+    if result_state.get("state_tree"):
+        from llm_api.state_tree import fast_compact_state_tree
+        compacted = fast_compact_state_tree(result_state["state_tree"])
+        conversation.state_tree = compacted
+        conversation.save(update_fields=['state_tree'])
 
     monologue = result_state.get("internal_monologue", [])
     final_response = monologue[-1].get("output", monologue[-1].get("result", "No output.")) if monologue else "No output."
@@ -295,3 +303,32 @@ def task_update_performance_scores():
         step.performance_score = score
         step.save()
     logger.info("Updated performance_scores for all ReasoningSteps.")
+
+@task
+def task_compact_conversation_state_trees(threshold_chars: int = 2500, target_ratio: float = 0.5):
+    """
+    Periodic NightManager task to discover conversations with bloated state_trees (>75% capacity)
+    and intelligently compact them down to ~target_ratio (~50%) while synthesizing
+    older resolved milestones into ancient_discussions breadcrumbs.
+    """
+    from llm_api.state_tree import intelligent_compact_state_tree
+    import json
+
+    conversations = Conversation.objects.filter(state_tree__isnull=False)
+    compacted_count = 0
+
+    for conv in conversations:
+        tree = conv.state_tree
+        if not tree or not isinstance(tree, dict):
+            continue
+        serialized = json.dumps(tree)
+        if len(serialized) >= threshold_chars:
+            logger.info(f"🌙 NightManager compacting state_tree for Conversation {conv.id} ({len(serialized)} chars)")
+            new_tree = intelligent_compact_state_tree(tree, target_ratio=target_ratio)
+            conv.state_tree = new_tree
+            conv.save(update_fields=['state_tree'])
+            compacted_count += 1
+
+    logger.info(f"🌙 NightManager state tree compaction complete. Compacted {compacted_count} conversations.")
+    return {"status": "success", "compacted_count": compacted_count}
+

@@ -355,9 +355,15 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
         if getattr(step, 'include_state_tree', True) and state.get("conversation_id"):
             try:
                 from llm_api.models import Conversation
-                conv = Conversation.objects.get(id=state["conversation_id"])
-                if conv.state_tree:
-                    formatted_tree = _format_state_tree(conv.state_tree)
+                from llm_api.state_tree import format_focal_state_tree
+                active_tree = state.get("state_tree")
+                if not active_tree:
+                    conv = Conversation.objects.filter(id=state["conversation_id"]).first()
+                    active_tree = conv.state_tree if conv else None
+                if active_tree:
+                    formatted_tree = format_focal_state_tree(active_tree)
+                    if not formatted_tree:
+                        formatted_tree = _format_state_tree(active_tree)
                     if formatted_tree:
                         system_prompt += f"\n\n{formatted_tree}"
             except Exception:

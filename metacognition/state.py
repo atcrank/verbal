@@ -22,11 +22,20 @@ def update_dict(left: dict, right: dict) -> dict:
     new_dict.update(right)
     return new_dict
 
+def update_compact_state_tree(left: Optional[dict], right: Optional[dict]) -> dict:
+    """Reducer for hierarchical state tree: merges and runs fast inline compaction."""
+    from llm_api.state_tree import merge_state_trees, fast_compact_state_tree
+    merged = merge_state_trees(left, right)
+    return fast_compact_state_tree(merged)
+
 class AgentState(TypedDict):
     """The shared state for all nodes in a reason agent graph."""
     
     # Message-based working memory (replaces unbounded string concatenation)
     working_memory: Annotated[list[BaseMessage], add_messages]
+    
+    # Topic and hierarchical working memory map (WS7 / Ticket 2.2)
+    state_tree: Annotated[Optional[Dict[str, Any]], update_compact_state_tree]
     
     # RAG context fetched at graph entry (constant for the duration of the graph, or updated via scratch)
     rag_context: str

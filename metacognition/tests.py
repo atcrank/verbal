@@ -1394,4 +1394,89 @@ class SubBlueprintStateTreePropagationTests(TestCase):
         self.assertEqual(merged["open_questions"], ["Question 1", "Question 2"])
 
 
+class MetacognitionStateTreeCompactionTests(TestCase):
+    """
+    Tests for LangGraph AgentState state_tree reducer and NightManager state tree compaction task.
+    """
+
+    def setUp(self):
+        from llm_api.models import Conversation
+        self.user = User.objects.create_user(username='meta_st_user', password='password123')
+        self.conv = Conversation.objects.create(
+            user=self.user,
+            title="Metacognition State Tree Test",
+            state_tree={
+                "macro_objective": "Test Metacognition Working Memory",
+                "active_task": "task_active",
+                "established_facts": ["PostgreSQL 18 active"],
+                "settled_milestones": {
+                    f"m_{i}": {"title": f"Milestone {i}", "status": "COMPLETED"}
+                    for i in range(15)
+                },
+                "tasks": {
+                    "task_active": {"title": "Active Task", "status": "IN_PROGRESS"}
+                }
+            }
+        )
+
+    def test_update_compact_state_tree_reducer(self):
+        """Verifies update_compact_state_tree merges trees and runs fast inline compaction."""
+        from metacognition.state import update_compact_state_tree
+
+        left = {
+            "tasks": {
+                "t1": {"title": "Task 1", "status": "IN_PROGRESS"}
+            },
+            "established_facts": ["Fact 1"]
+        }
+        right = {
+            "tasks": {
+                "t1": {"title": "Task 1", "status": "COMPLETED"},
+                "t2": {"title": "Task 2", "status": "IN_PROGRESS"}
+            },
+            "established_facts": ["Fact 2"]
+        }
+        merged = update_compact_state_tree(left, right)
+        self.assertEqual(merged["tasks"]["t1"]["status"], "COMPLETED")
+        self.assertEqual(merged["tasks"]["t2"]["status"], "IN_PROGRESS")
+        self.assertEqual(merged["established_facts"], ["Fact 1", "Fact 2"])
+
+    def test_task_compact_conversation_state_trees_task(self):
+        """Verifies NightManager task detects bloated state_trees, reduces them, and synthesizes breadcrumbs."""
+        from metacognition.tasks import task_compact_conversation_state_trees
+        import json
+
+        initial_len = len(json.dumps(self.conv.state_tree))
+        self.assertGreater(initial_len, 500)
+
+        # Run compaction with threshold lower than initial_len
+        res = task_compact_conversation_state_trees.func(threshold_chars=400)
+        self.assertEqual(res.get("status"), "success")
+        self.assertEqual(res.get("compacted_count"), 1)
+
+        self.conv.refresh_from_db()
+        new_len = len(json.dumps(self.conv.state_tree))
+        self.assertLess(new_len, initial_len)
+        self.assertIn("ancient_discussions", self.conv.state_tree)
+        breadcrumbs = self.conv.state_tree["ancient_discussions"]
+        self.assertGreater(len(breadcrumbs), 0)
+        self.assertIn("start me off again", breadcrumbs[0]["prompt_anchor"])
+
+    def test_seed_nightmanager_schedules_state_tree_compaction(self):
+        """Verifies seed_nightmanager registers the Nightly State Tree Compaction task."""
+        from verbal_tasks.models import ScheduledTask
+        from metacognition.models import CognitiveBlueprint, ReasoningStep, ResponseSchema, ToolDefinition, bypass_canonical_lock
+        from metacognition.seed import seed_nightmanager
+
+        with bypass_canonical_lock():
+            seed_nightmanager(CognitiveBlueprint, ReasoningStep, ResponseSchema, ToolDefinition)
+
+        compaction_task = ScheduledTask.objects.filter(name="Nightly State Tree Compaction").first()
+        self.assertIsNotNone(compaction_task)
+        self.assertEqual(compaction_task.cron_expression, "0 22 * * *")
+        self.assertEqual(compaction_task.task_name, "metacognition.tasks.task_compact_conversation_state_trees")
+        self.assertTrue(compaction_task.is_active)
+
+
+
 

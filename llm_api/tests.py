@@ -8,7 +8,7 @@ from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from llm_api.apps import service_registry
-from llm_api.models import PromptResponseLog
+from llm_api.models import PromptResponseLog, Conversation
 from background_resources.models import Document, ReadingStrategy
 
 # Define test paths (Isolated from production)
@@ -612,3 +612,199 @@ class ApiGenerateResponseAsyncTests(TestCase):
             self.assertEqual(log.user_prompt, payload["user_prompt"])
             self.assertEqual(log.user_id, self.user.id)
             self.assertEqual(mock_task.enqueue.call_count, 1)
+
+
+class StateTreeWorkingMemoryTests(TestCase):
+    """
+    Tests for Ticket 2.2: Agent Working Memory, Dynamic Focal Projections, and State Tree Compaction.
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_user(username="st_user", password="password123")
+        self.conv = Conversation.objects.create(
+            user=self.user,
+            title="State Tree Working Memory Test",
+            state_tree={
+                "macro_objective": "Validate Wildfire Robotics Simulation",
+                "active_task": "task_path_planning",
+                "established_facts": ["PostgreSQL 18 on port 5433", "No Redis"],
+                "tasks": {
+                    "task_physics": {
+                        "title": "Simulation Physics",
+                        "status": "COMPLETED",
+                        "subtasks": ["Rigid body", "Fluid dynamics"]
+                    },
+                    "task_path_planning": {
+                        "title": "Path Planning",
+                        "status": "IN_PROGRESS",
+                        "retry_note": "Use standard library math",
+                        "subtasks": ["Grid decomposition", "A* search"]
+                    },
+                    "task_reporting": {
+                        "title": "Reporting & Metrics",
+                        "status": "PENDING"
+                    }
+                },
+                "working_hypotheses": ["Focal trees reduce prompt distraction for small models"],
+                "open_questions": ["What is the maximum allowed replanning cycle?"]
+            }
+        )
+
+    def test_format_focal_state_tree_projection(self):
+        """Verifies active branch is expanded with '>> [ACTIVE]' while inactive branches are collapsed stubs."""
+        from llm_api.state_tree import format_focal_state_tree
+
+        rendered = format_focal_state_tree(self.conv.state_tree)
+        self.assertIn("### Conversation State Tree (Working Memory Map):", rendered)
+        self.assertIn("- **Objective:** Validate Wildfire Robotics Simulation", rendered)
+        self.assertIn("- **Invariants & Established Facts:**", rendered)
+        self.assertIn("PostgreSQL 18 on port 5433", rendered)
+        self.assertIn("No Redis", rendered)
+
+        # Active branch expanded
+        self.assertIn(">> [ACTIVE] Path Planning", rendered)
+        self.assertIn("Retry Note: Use standard library math", rendered)
+        self.assertIn("Grid decomposition", rendered)
+
+        # Completed branch collapsed stub
+        self.assertIn("[COMPLETED] Simulation Physics (subtasks omitted)", rendered)
+        self.assertNotIn("Rigid body", rendered)  # Details omitted
+
+        # Pending branch stub
+        self.assertIn("[PENDING] Reporting & Metrics", rendered)
+
+    def test_fast_compact_state_tree_settled_milestones_and_sanitization(self):
+        """Verifies fast inline compaction rolls completed tasks, preserves facts, and clamps strings."""
+        from llm_api.state_tree import fast_compact_state_tree
+
+        bloated_tree = {
+            "macro_objective": "A" * 500,  # Oversized string
+            "established_facts": ["Keep this fact safe", "Keep this invariant safe"],
+            "tasks": {
+                f"task_{i}": {"title": f"Subtask {i}", "status": "COMPLETED"}
+                for i in range(10)
+            },
+            "working_hypotheses": [f"Hypothesis {i}" for i in range(8)],
+            "open_questions": [f"Question {i}" for i in range(8)]
+        }
+
+        compacted = fast_compact_state_tree(bloated_tree, max_active_tasks=4, max_str_len=100)
+
+        # 1. String clamped
+        self.assertTrue(compacted["macro_objective"].endswith("... [truncated]"))
+        self.assertLessEqual(len(compacted["macro_objective"]), 125)
+
+        # 2. Invariants strictly preserved
+        self.assertEqual(compacted["established_facts"], ["Keep this fact safe", "Keep this invariant safe"])
+
+        # 3. Settled milestones created for older completed tasks
+        self.assertIn("settled_milestones", compacted)
+        self.assertGreater(len(compacted["settled_milestones"]), 0)
+        self.assertLessEqual(len(compacted["tasks"]), 4)
+
+        # 4. Lists capped to recent items
+        self.assertEqual(len(compacted["working_hypotheses"]), 5)
+        self.assertEqual(len(compacted["open_questions"]), 5)
+
+    def test_intelligent_compact_state_tree_ancient_discussions(self):
+        """Verifies intelligent compaction converts settled milestones into ancient_discussions breadcrumbs."""
+        from llm_api.state_tree import intelligent_compact_state_tree
+
+        tree = {
+            "settled_milestones": {
+                "m1": {"title": "Legacy Redis Cleanup", "status": "COMPLETED"},
+                "m2": {"title": "Docker Sandbox Port Isolation", "status": "COMPLETED"}
+            },
+            "tasks": {
+                "active_task": {"title": "Postgres SSE Streaming", "status": "IN_PROGRESS"}
+            }
+        }
+
+        compacted = intelligent_compact_state_tree(tree)
+        self.assertIn("ancient_discussions", compacted)
+        breadcrumbs = compacted["ancient_discussions"]
+        self.assertEqual(len(breadcrumbs), 1)
+        self.assertIn("Legacy Redis Cleanup", breadcrumbs[0]["topic"])
+        self.assertIn("start me off again", breadcrumbs[0]["prompt_anchor"])
+        # Milestones emptied
+        self.assertEqual(compacted["settled_milestones"], {})
+
+    def test_as_messages_with_focal_state_tree_anchor(self):
+        """Verifies as_messages embeds the focal state tree in the condensation note when turns are omitted."""
+        log_0 = PromptResponseLog.objects.create(
+            conversation=self.conv,
+            user=self.user,
+            system_prompt="You are Reason.",
+            user_prompt="Step 0",
+            generated_response="Response 0",
+            state_tree_snapshot=self.conv.state_tree
+        )
+        log_1 = PromptResponseLog.objects.create(
+            conversation=self.conv,
+            user=self.user,
+            parent_log=log_0,
+            system_prompt="You are Reason.",
+            user_prompt="Step 1",
+            generated_response="Response 1",
+            state_tree_snapshot=self.conv.state_tree
+        )
+        log_2 = PromptResponseLog.objects.create(
+            conversation=self.conv,
+            user=self.user,
+            parent_log=log_1,
+            system_prompt="You are Reason.",
+            user_prompt="Step 2",
+            generated_response="Response 2",
+            state_tree_snapshot=self.conv.state_tree
+        )
+
+        # Request window of 1 turn -> 2 turns omitted
+        messages = self.conv.as_messages(leaf_log_id=log_2.id, max_logs=1, include_state_tree=True)
+
+        # Must have: System prompt, condensation note assistant, user prompt, assistant response
+        self.assertEqual(len(messages), 4)
+        self.assertEqual(messages[0]["role"], "system")
+        condensation_msg = messages[1]
+        self.assertEqual(condensation_msg["role"], "assistant")
+        self.assertIn("2 earlier conversation turns were omitted", condensation_msg["content"])
+        self.assertIn("The active working memory map is preserved below:", condensation_msg["content"])
+        self.assertIn(">> [ACTIVE] Path Planning", condensation_msg["content"])
+
+    def test_as_messages_dag_branch_isolation_snapshot(self):
+        """Verifies branching conversations read the branch's specific leaf snapshot, preventing cross-branch bleed."""
+        tree_A = {"macro_objective": "Branch A Objective", "active_task": "task_A", "tasks": {"task_A": {"title": "Task A", "status": "IN_PROGRESS"}}}
+        tree_B = {"macro_objective": "Branch B Objective", "active_task": "task_B", "tasks": {"task_B": {"title": "Task B", "status": "IN_PROGRESS"}}}
+
+        root_log = PromptResponseLog.objects.create(
+            conversation=self.conv,
+            user=self.user,
+            system_prompt="Root prompt",
+            user_prompt="Root user",
+            generated_response="Root response"
+        )
+        log_A = PromptResponseLog.objects.create(
+            conversation=self.conv,
+            user=self.user,
+            parent_log=root_log,
+            system_prompt="Branch A",
+            user_prompt="User A",
+            generated_response="Response A",
+            state_tree_snapshot=tree_A
+        )
+        log_B = PromptResponseLog.objects.create(
+            conversation=self.conv,
+            user=self.user,
+            parent_log=root_log,
+            system_prompt="Branch B",
+            user_prompt="User B",
+            generated_response="Response B",
+            state_tree_snapshot=tree_B
+        )
+
+        msgs_A = self.conv.as_messages(leaf_log_id=log_A.id, max_logs=1)
+        self.assertIn("Branch A Objective", msgs_A[1]["content"])
+        self.assertNotIn("Branch B Objective", msgs_A[1]["content"])
+
+        msgs_B = self.conv.as_messages(leaf_log_id=log_B.id, max_logs=1)
+        self.assertIn("Branch B Objective", msgs_B[1]["content"])
+        self.assertNotIn("Branch A Objective", msgs_B[1]["content"])

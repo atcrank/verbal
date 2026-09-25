@@ -956,6 +956,16 @@ def seed_nightmanager(CognitiveBlueprint, ReasoningStep, ResponseSchema, ToolDef
                     'is_active': True,
                 }
             )
+
+            # 3. State Tree Compaction at 10:00 PM (22:00)
+            ScheduledTask.objects.update_or_create(
+                name='Nightly State Tree Compaction',
+                defaults={
+                    'task_name': 'metacognition.tasks.task_compact_conversation_state_trees',
+                    'cron_expression': '0 22 * * *',
+                    'is_active': True,
+                }
+            )
         except Exception:
             pass
 

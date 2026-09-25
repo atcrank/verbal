@@ -72,7 +72,7 @@ class Conversation(models.Model):
     def __str__(self):
         return f"Conversation with {self.user.username} (started {self.start_time.strftime('%Y-%m-%d')})"
 
-    def as_messages(self, leaf_log_id=None, max_logs: int | None = None, system_override: str | None = None):
+    def as_messages(self, leaf_log_id=None, max_logs: int | None = None, system_override: str | None = None, include_state_tree: bool = True):
         """
         Reconstructs the conversation as a list of message dicts along the active DAG path.
 
@@ -85,7 +85,8 @@ class Conversation(models.Model):
         either `system_override` (if provided) or the root system prompt.
 
         When max_logs is set, only the most recent N logs are included in the
-        returned messages, with a condensation note inserted.
+        returned messages, with a condensation note inserted. When include_state_tree
+        is enabled, the condensation note anchors the active focal state tree.
         """
         messages = []
         logs = list(self.logs.order_by('created_at'))
@@ -133,9 +134,21 @@ class Conversation(models.Model):
 
         # Insert condensation note if logs were omitted
         if condensed_count > 0:
+            content = f"[Context note: {condensed_count} earlier conversation turns were omitted to fit the context window. The conversation continues from this point.]"
+            if include_state_tree:
+                # Prioritize active leaf log snapshot for branch isolation, fallback to conv.state_tree
+                active_snapshot = path[-1].state_tree_snapshot if path and path[-1].state_tree_snapshot else self.state_tree
+                if active_snapshot:
+                    from .state_tree import format_focal_state_tree
+                    focal_tree = format_focal_state_tree(active_snapshot)
+                    if focal_tree:
+                        content = (
+                            f"[Context note: {condensed_count} earlier conversation turns were omitted to fit the context window. "
+                            f"The active working memory map is preserved below:]\n\n{focal_tree}"
+                        )
             messages.append({
                 "role": "assistant",
-                "content": f"[Context note: {condensed_count} earlier conversation turns were omitted to fit the context window. The conversation continues from this point.]"
+                "content": content
             })
 
         # Reconstruct chat history turn-by-turn along the path
