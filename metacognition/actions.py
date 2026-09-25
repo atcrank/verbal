@@ -286,16 +286,23 @@ def _tool_check_parsing(params: CheckParsingArgs) -> str:
     except SyntaxError as e:
         return f"\n\n[CHECK_PARSING Error]\nSyntaxError: {e}\nLine {e.lineno}: {e.text}"
 
-def _get_workspace_dir(conversation_id: str) -> str:
+def _get_workspace_dir(conversation_id: str = None) -> str:
     """Ensures a Git-tracked workspace exists for the conversation."""
-    cid_str = str(conversation_id) if conversation_id else "temp_workspace"
-    workspace_dir = os.path.join(settings.BASE_DIR, 'workspaces', cid_str)
-    
+    if conversation_id:
+        try:
+            from llm_api.models import Conversation
+            conv = Conversation.objects.get(id=conversation_id)
+            workspace_dir = conv.get_workspace_dir()
+        except Exception:
+            workspace_dir = os.path.join(settings.BASE_DIR, 'workspaces', 'conversations', str(conversation_id))
+    else:
+        workspace_dir = os.path.join(settings.BASE_DIR, 'workspaces', 'temp_workspace')
+
     if not os.path.exists(workspace_dir):
         os.makedirs(workspace_dir, exist_ok=True)
         # Initialize git tracking
         subprocess.run(["git", "init"], cwd=workspace_dir, capture_output=True)
-        
+
     return workspace_dir
 
 def _commit_workspace(workspace_dir: str, message: str) -> str:
@@ -401,11 +408,12 @@ def _tool_list_files(params: ListFilesArgs, workspace_dir: str) -> str:
 
 def _tool_execute_script(params: ExecuteScriptArgs, workspace_dir: str) -> str:
     import requests
-    
-    # We pass only the relative path (conversation_id/script.py) to the sandbox
+
+    # Pass relative path from workspaces root to the sandbox
     safe_filepath = params.filepath.lstrip("/\\")
-    cid_str = os.path.basename(workspace_dir)
-    sandbox_filepath = f"{cid_str}/{safe_filepath}"
+    workspaces_root = getattr(settings, 'WORKSPACE_ROOT', os.path.join(settings.BASE_DIR, 'workspaces'))
+    rel_workspace = os.path.relpath(workspace_dir, workspaces_root)
+    sandbox_filepath = os.path.join(rel_workspace, safe_filepath).replace("\\", "/")
     
     sandbox_url = getattr(settings, "SANDBOX_URL", "http://sandbox:8000/execute")
     
@@ -715,9 +723,10 @@ def python_sandbox(state: dict, params: dict) -> dict:
     
     with open(script_path, "w") as f:
         f.write(code)
-        
-    cid_str = str(conversation_id) if conversation_id else "temp_workspace"
-    sandbox_filepath = f"{cid_str}/{safe_filepath}"
+
+    workspaces_root = getattr(settings, 'WORKSPACE_ROOT', os.path.join(settings.BASE_DIR, 'workspaces'))
+    rel_workspace = os.path.relpath(workspace_dir, workspaces_root)
+    sandbox_filepath = os.path.join(rel_workspace, safe_filepath).replace("\\", "/")
     
     sandbox_url = getattr(settings, "SANDBOX_URL", "http://sandbox:8000/execute")
     try:

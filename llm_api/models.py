@@ -194,9 +194,43 @@ class Conversation(models.Model):
         except Exception:
             return 20  # Safe fallback
 
-    def get_workspace_dir(self):
-        """Returns the absolute path to this conversation's dedicated workspace."""
-        return os.path.join(settings.BASE_DIR, 'workspaces', str(self.id))
+    def get_workspace_dir(self) -> str:
+        """
+        Returns the absolute path to this conversation's dedicated workspace.
+
+        Resolution hierarchy:
+        1. In-memory override (_workspace_dir_override).
+        2. State tree metadata override (state_tree['_workspace_dir']).
+        3. Doctest / trial detection (test_user, rag_test_user, or trial titles).
+        4. Standard conversation workspace under workspaces/conversations/<uuid>.
+        5. Legacy fallback to workspaces/<uuid> if the folder already exists.
+        """
+        # 1. In-memory override
+        if getattr(self, '_workspace_dir_override', None):
+            return self._workspace_dir_override
+
+        # 2. State tree metadata override
+        if isinstance(self.state_tree, dict) and self.state_tree.get('_workspace_dir'):
+            override = self.state_tree['_workspace_dir']
+            if os.path.isabs(override):
+                return override
+            return os.path.join(settings.BASE_DIR, 'workspaces', override)
+
+        # 3. Doctest / trial detection
+        username = getattr(self.user, 'username', '') if self.user else ''
+        title = self.title or ''
+        if username in ('test_user', 'rag_test_user') or title.startswith(('Metacognition Trial:', 'Doctest:', 'Trial:')):
+            return os.path.join(settings.BASE_DIR, 'workspaces', 'doctests', 'metacognition')
+
+        # 4. Standard conversation workspace under workspaces/conversations/<uuid>
+        conv_dir = os.path.join(settings.BASE_DIR, 'workspaces', 'conversations', str(self.id))
+
+        # 5. Backward compatibility with existing flat workspaces/<uuid>
+        legacy_dir = os.path.join(settings.BASE_DIR, 'workspaces', str(self.id))
+        if os.path.exists(legacy_dir) and not os.path.exists(conv_dir):
+            return legacy_dir
+
+        return conv_dir
 
     def get_workspace_files(self) -> str:
         """Produces a directory listing of the workspace."""
@@ -254,18 +288,34 @@ def delete_conversation_workspace(sender, instance, **kwargs):
     """
     Automatically wipes the physical Git workspace folder when a Conversation 
     is deleted from the database to prevent disk space leaks.
+    Protects shared namespaces (doctests, agent_scripts, grips_okf, etc.).
     """
     if not instance.id:
         return
-        
-    workspace_dir = os.path.join(settings.BASE_DIR, 'workspaces', str(instance.id))
-    
-    if os.path.exists(workspace_dir):
+
+    try:
+        workspace_dir = instance.get_workspace_dir()
+    except Exception:
+        workspace_dir = os.path.join(settings.BASE_DIR, 'workspaces', 'conversations', str(instance.id))
+
+    workspaces_root = os.path.abspath(os.path.join(settings.BASE_DIR, 'workspaces'))
+    abs_workspace = os.path.abspath(workspace_dir)
+    rel_path = os.path.relpath(abs_workspace, workspaces_root)
+
+    # Safety guard: only delete if workspace is conversation-specific
+    # (i.e. under workspaces/conversations/ or legacy workspaces/<uuid>),
+    # NEVER delete shared directories like workspaces/doctests, agent_scripts, or grips_okf.
+    is_safe_to_delete = (
+        rel_path.startswith('conversations' + os.sep) or 
+        (os.sep not in rel_path and rel_path == str(instance.id))
+    )
+
+    if is_safe_to_delete and os.path.exists(abs_workspace):
         try:
-            shutil.rmtree(workspace_dir)
+            shutil.rmtree(abs_workspace)
             logger.info(f'🗑️ Cleaned up workspace folder for deleted conversation {instance.id}')
         except Exception as e:
-            logger.info(f'⚠️ Failed to delete workspace {workspace_dir}: {e}')
+            logger.info(f'⚠️ Failed to delete workspace {abs_workspace}: {e}')
 
 class PromptResponseLog(models.Model):
     class Feedback(models.IntegerChoices):

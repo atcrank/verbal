@@ -202,7 +202,14 @@ def _report_doctest_run(test_name, prompt, result):
         f.write("\n")
 
         f.write("Generated Workspace Files\n-------------------------\n\n")
-        workspace_dir = os.path.join("workspaces", str(cid)) if cid else None
+        workspace_dir = None
+        if cid:
+            try:
+                from llm_api.models import Conversation
+                conv = Conversation.objects.get(id=cid)
+                workspace_dir = conv.get_workspace_dir()
+            except Exception:
+                workspace_dir = os.path.join("workspaces", "conversations", str(cid))
         if workspace_dir and os.path.exists(workspace_dir):
             for root, dirs, files in os.walk(workspace_dir):
                 if ".git" in root: continue

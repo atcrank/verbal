@@ -808,3 +808,75 @@ class StateTreeWorkingMemoryTests(TestCase):
         msgs_B = self.conv.as_messages(leaf_log_id=log_B.id, max_logs=1)
         self.assertIn("Branch B Objective", msgs_B[1]["content"])
         self.assertNotIn("Branch A Objective", msgs_B[1]["content"])
+
+
+class ConversationWorkspaceTests(TestCase):
+    """
+    Tests workspace resolution hierarchy, namespaces, and cleanup protection.
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_user(username='regular_user', password='password123')
+        self.test_user = User.objects.create_user(username='test_user', password='password123')
+        self.rag_test_user = User.objects.create_user(username='rag_test_user', password='password123')
+
+    def test_default_conversation_workspace_path(self):
+        conv = Conversation.objects.create(user=self.user, title="My Chat")
+        expected = os.path.join(settings.BASE_DIR, 'workspaces', 'conversations', str(conv.id))
+        self.assertEqual(conv.get_workspace_dir(), expected)
+
+    def test_test_users_resolve_to_doctests_namespace(self):
+        conv1 = Conversation.objects.create(user=self.test_user, title="Doctest Trial")
+        conv2 = Conversation.objects.create(user=self.rag_test_user, title="RAG Trial")
+        expected = os.path.join(settings.BASE_DIR, 'workspaces', 'doctests', 'metacognition')
+        self.assertEqual(conv1.get_workspace_dir(), expected)
+        self.assertEqual(conv2.get_workspace_dir(), expected)
+
+    def test_trial_title_resolves_to_doctests_namespace(self):
+        conv = Conversation.objects.create(user=self.user, title="Trial: ResearchEvaluation")
+        expected = os.path.join(settings.BASE_DIR, 'workspaces', 'doctests', 'metacognition')
+        self.assertEqual(conv.get_workspace_dir(), expected)
+
+    def test_in_memory_override(self):
+        conv = Conversation.objects.create(user=self.user, title="Override Test")
+        custom_path = "/tmp/custom_workspace"
+        conv._workspace_dir_override = custom_path
+        self.assertEqual(conv.get_workspace_dir(), custom_path)
+
+    def test_state_tree_metadata_override(self):
+        conv = Conversation.objects.create(
+            user=self.user,
+            title="State Tree Override",
+            state_tree={"_workspace_dir": "tests/custom_test_ws"}
+        )
+        expected = os.path.join(settings.BASE_DIR, 'workspaces', 'tests', 'custom_test_ws')
+        self.assertEqual(conv.get_workspace_dir(), expected)
+
+    def test_delete_conversation_workspace_cleans_conversation_dir(self):
+        conv = Conversation.objects.create(user=self.user, title="To Delete")
+        ws_dir = conv.get_workspace_dir()
+        os.makedirs(ws_dir, exist_ok=True)
+        test_file = os.path.join(ws_dir, "test.txt")
+        with open(test_file, "w") as f:
+            f.write("hello")
+
+        self.assertTrue(os.path.exists(ws_dir))
+        conv.delete()
+        self.assertFalse(os.path.exists(ws_dir))
+
+    def test_delete_conversation_workspace_protects_shared_namespace(self):
+        conv = Conversation.objects.create(user=self.test_user, title="Trial: Protected")
+        ws_dir = conv.get_workspace_dir()
+        os.makedirs(ws_dir, exist_ok=True)
+        canary = os.path.join(ws_dir, "canary.txt")
+        with open(canary, "w") as f:
+            f.write("do not delete")
+
+        self.assertTrue(os.path.exists(canary))
+        conv.delete()
+        # The shared doctests folder and its contents must NOT be deleted
+        self.assertTrue(os.path.exists(ws_dir))
+        self.assertTrue(os.path.exists(canary))
+        # Cleanup canary
+        if os.path.exists(canary):
+            os.remove(canary)

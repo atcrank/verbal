@@ -1,3 +1,5 @@
+import os
+from django.conf import settings
 from django.test import TestCase
 from django.test import tag
 from unittest.mock import patch
@@ -1673,6 +1675,79 @@ class ReasoningStepVariantPruningTests(TestCase):
         self.assertEqual(task.cron_expression, "0 3 * * 0")
         self.assertEqual(task.task_name, "metacognition.tasks.task_prune_reasoning_step_variants")
         self.assertTrue(task.is_active)
+
+
+class SystemJanitorTests(TestCase):
+    """
+    Tests the hardened system_janitor tool:
+    - Prunes orphaned conversation workspaces.
+    - Prunes empty workspaces and workspaces containing only .git/.agents.
+    - Protects reserved directories.
+    - Does not corrupt internal .git metadata of active workspaces.
+    """
+
+    def setUp(self):
+        import os
+        from django.conf import settings
+        self.user = User.objects.create_user(username='janitor_test_user', password='password123')
+        self.workspaces_root = os.path.join(settings.BASE_DIR, "workspaces")
+        os.makedirs(self.workspaces_root, exist_ok=True)
+
+    def test_janitor_protects_reserved_namespaces(self):
+        from metacognition.meta_tools import system_janitor
+        for reserved in ["grips_okf", "agent_scripts", "conversations", "doctests", "tests"]:
+            p = os.path.join(self.workspaces_root, reserved)
+            os.makedirs(p, exist_ok=True)
+
+        system_janitor({}, {})
+
+        for reserved in ["grips_okf", "agent_scripts", "conversations", "doctests", "tests"]:
+            p = os.path.join(self.workspaces_root, reserved)
+            self.assertTrue(os.path.exists(p), f"Reserved namespace {reserved} must not be deleted")
+
+    def test_janitor_deletes_orphaned_conversation_workspace(self):
+        from metacognition.meta_tools import system_janitor
+        import uuid
+        import subprocess
+
+        orphan_id = str(uuid.uuid4())
+        orphan_dir = os.path.join(self.workspaces_root, "conversations", orphan_id)
+        os.makedirs(orphan_dir, exist_ok=True)
+        subprocess.run(["git", "init"], cwd=orphan_dir, capture_output=True)
+        with open(os.path.join(orphan_dir, "leftover_script.py"), "w") as f:
+            f.write("print('orphaned')")
+
+        self.assertTrue(os.path.exists(orphan_dir))
+        result = system_janitor({}, {})
+        self.assertFalse(os.path.exists(orphan_dir))
+        self.assertIn("Janitor deleted", result)
+
+    def test_janitor_preserves_active_conversation_workspace_and_git(self):
+        from metacognition.meta_tools import system_janitor
+        from llm_api.models import Conversation
+        import subprocess
+
+        conv = Conversation.objects.create(user=self.user, title="Active Janitor Test")
+        active_dir = conv.get_workspace_dir()
+        os.makedirs(active_dir, exist_ok=True)
+        subprocess.run(["git", "init"], cwd=active_dir, capture_output=True)
+        with open(os.path.join(active_dir, "active_script.py"), "w") as f:
+            f.write("print('active')")
+        subprocess.run(["git", "add", "."], cwd=active_dir, capture_output=True)
+        subprocess.run(["git", "commit", "-m", "initial commit"], cwd=active_dir, capture_output=True)
+
+        git_head = os.path.join(active_dir, ".git", "HEAD")
+        self.assertTrue(os.path.exists(git_head))
+
+        system_janitor({}, {})
+
+        # Active directory and its git HEAD must be fully preserved
+        self.assertTrue(os.path.exists(active_dir))
+        self.assertTrue(os.path.exists(git_head))
+        self.assertTrue(os.path.exists(os.path.join(active_dir, "active_script.py")))
+
+        # Clean up
+        conv.delete()
 
 
 

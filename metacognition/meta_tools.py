@@ -479,39 +479,96 @@ def django_shell_script(state: dict, params: dict) -> str:
 
 def system_janitor(state: dict, params: dict) -> str:
     """
-    Deletes completely empty directories inside the workspaces/ directory.
+    Cleans up empty and orphaned workspaces inside the workspaces/ directory.
+    - Prunes orphaned conversation workspaces whose database records no longer exist.
+    - Prunes workspaces that contain only version control metadata (.git/.agents) with no user files.
+    - Prunes completely empty directories without corrupting internal .git trees.
+    - Preserves reserved namespaces: grips_okf, agent_scripts, conversations, doctests, tests.
     """
     import os
+    import uuid
+    import shutil
     from django.conf import settings
-    
+    from llm_api.models import Conversation
+
     workspaces_dir = os.path.join(settings.BASE_DIR, "workspaces")
     if not os.path.exists(workspaces_dir):
         return f"Workspaces directory not found at {workspaces_dir}."
-        
-    deleted_dirs = []
-    
-    import shutil
 
-    # Walk bottom-up so we can delete nested empty dirs
+    deleted_dirs = []
+    reserved_top_level = {"grips_okf", "agent_scripts", "conversations", "doctests", "tests"}
+
+    # 1. Check for orphaned and empty conversation workspaces
+    # Check both workspaces/conversations/<uuid> and legacy workspaces/<uuid>
+    candidate_parents = [
+        os.path.join(workspaces_dir, "conversations"),
+        workspaces_dir,
+    ]
+
+    for parent in candidate_parents:
+        if not os.path.exists(parent):
+            continue
+        try:
+            entries = os.listdir(parent)
+        except OSError:
+            continue
+
+        for entry in entries:
+            entry_path = os.path.join(parent, entry)
+            if not os.path.isdir(entry_path):
+                continue
+            if parent == workspaces_dir and entry in reserved_top_level:
+                continue
+
+            try:
+                # Is it a UUID-named directory?
+                u = uuid.UUID(entry)
+                is_uuid = True
+            except ValueError:
+                is_uuid = False
+
+            try:
+                contents = os.listdir(entry_path)
+                user_files = [c for c in contents if c not in ('.git', '.agents')]
+
+                # Condition A: Orphaned workspace whose Conversation record was deleted
+                if is_uuid and not Conversation.objects.filter(id=u).exists():
+                    shutil.rmtree(entry_path)
+                    deleted_dirs.append(entry_path)
+                    continue
+
+                # Condition B: Workspace has only .git or .agents (no user-created content)
+                if not user_files:
+                    shutil.rmtree(entry_path)
+                    deleted_dirs.append(entry_path)
+                    continue
+
+            except Exception as e:
+                logger.error(f"Janitor failed to process {entry_path}: {e}")
+
+    # 2. Bottom-up sweep for completely empty directories, skipping .git internals
     for root, dirs, files in os.walk(workspaces_dir, topdown=False):
+        if '.git' in dirs:
+            dirs.remove('.git')
+        if '.git' in root or '.agents' in root:
+            continue
+
         for dir_name in dirs:
             dir_path = os.path.join(root, dir_name)
+            if dir_path in deleted_dirs:
+                continue
+            if root == workspaces_dir and dir_name in reserved_top_level:
+                continue
+
             try:
-                contents = os.listdir(dir_path)
-                if not contents:
+                if os.path.exists(dir_path) and not os.listdir(dir_path):
                     os.rmdir(dir_path)
                     deleted_dirs.append(dir_path)
-                elif root == workspaces_dir:
-                    # Top-level workspace dir, allow deletion if only .git or .agents
-                    allowed = {'.git', '.agents'}
-                    if not (set(contents) - allowed):
-                        shutil.rmtree(dir_path)
-                        deleted_dirs.append(dir_path)
             except Exception as e:
-                logger.error(f"Failed to delete {dir_path}: {e}")
-                
+                logger.error(f"Failed to delete empty dir {dir_path}: {e}")
+
     if deleted_dirs:
-        return f"Janitor deleted {len(deleted_dirs)} empty directories:\n" + "\n".join(deleted_dirs)
+        return f"Janitor deleted {len(deleted_dirs)} empty or orphaned directories:\n" + "\n".join(deleted_dirs)
     return "Janitor ran successfully. No empty directories found."
 
 def database_backup(state: dict, params: dict) -> str:

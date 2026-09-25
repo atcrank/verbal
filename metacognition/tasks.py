@@ -155,16 +155,40 @@ def run_blueprint(blueprint_id: int,
             publish_blueprint_event(run_id, "error", {"error": "Conversation not found."})
             return {"error": "Conversation not found.", "status": 404}
     else:
+        import os
+        import shutil
         from django.contrib.auth import get_user_model
         User = get_user_model()
         night_manager_user = User.objects.filter(username="NightManager").first()
-        
+        active_user = User.objects.filter(id=user_id).first()
+        username = active_user.username if active_user else ""
+
         if night_manager_user and user_id == night_manager_user.id:
             title = f"NightManager: {blueprint.name}"
             conversation, _ = Conversation.objects.get_or_create(
                 user_id=user_id,
                 title=title
             )
+        elif username in ("test_user", "rag_test_user") or username.startswith("test_"):
+            title = f"Trial: {blueprint.name}"
+            conversation, _ = Conversation.objects.get_or_create(
+                user_id=user_id,
+                title=title
+            )
+            # Reset / clean previous trial files from the shared doctests workspace
+            trial_workspace = conversation.get_workspace_dir()
+            if os.path.exists(trial_workspace):
+                for item in os.listdir(trial_workspace):
+                    if item == ".git":
+                        continue
+                    item_path = os.path.join(trial_workspace, item)
+                    try:
+                        if os.path.isdir(item_path):
+                            shutil.rmtree(item_path)
+                        else:
+                            os.remove(item_path)
+                    except Exception as e:
+                        logger.info(f"Failed to reset trial workspace item {item_path}: {e}")
         else:
             conversation = Conversation.objects.create(
                 user_id=user_id,
