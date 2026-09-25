@@ -150,11 +150,25 @@ def reject_variant(modeladmin, request, queryset):
     queryset.update(is_active=False, is_pending_review=False)
     modeladmin.message_user(request, f"Rejected {queryset.count()} variant(s).", level=messages.SUCCESS)
 
+@admin.action(description="Prune Variant Lineages (Depth Capping & Leaf Trimming)")
+def prune_variant_lineages(modeladmin, request, queryset):
+    from .pruning import prune_blueprint_variants
+    blueprints = set(step.blueprint for step in queryset)
+    total_pruned = 0
+    for bp in blueprints:
+        res = prune_blueprint_variants(blueprint=bp, max_depth=4)
+        total_pruned += res.get("total_pruned", 0)
+    modeladmin.message_user(
+        request,
+        f"Pruning complete across {len(blueprints)} blueprint(s). Removed/compressed {total_pruned} step(s).",
+        level=messages.SUCCESS
+    )
+
 @admin.register(ReasoningStep)
 class ReasoningStepAdmin(admin.ModelAdmin):
     list_display = ('name', 'blueprint', 'is_canonical', 'is_active', 'lineage_depth', 'is_pending_review', 'proposed_by')
     list_filter = ('blueprint', 'is_canonical', 'is_active', 'is_pending_review', 'proposed_by')
-    actions = [evolve_step, activate_variant_retire_parent, reject_variant]
+    actions = [evolve_step, activate_variant_retire_parent, reject_variant, prune_variant_lineages]
 
     def lineage_depth(self, obj):
         depth = 0

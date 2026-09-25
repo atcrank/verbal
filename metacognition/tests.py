@@ -1478,5 +1478,202 @@ class MetacognitionStateTreeCompactionTests(TestCase):
         self.assertTrue(compaction_task.is_active)
 
 
+class ReasoningStepVariantPruningTests(TestCase):
+    """
+    Unit tests for Ticket 2.3: NightManager ReasoningStep Variant Pruning and Lineage Management.
+    Validates depth capping, ancestor compression, dead-end leaf pruning, and graph edge rewiring.
+    """
+
+    def setUp(self):
+        from metacognition.models import CognitiveBlueprint, ReasoningStep, bypass_canonical_lock
+        with bypass_canonical_lock():
+            self.bp = CognitiveBlueprint.objects.create(
+                name="Pruning Test Blueprint",
+                description="Test blueprint for variant pruning",
+                is_canonical=False
+            )
+            # Create a 4-step pipeline: Start -> Step A -> Step B -> Step C
+            self.start_step = ReasoningStep.objects.create(
+                blueprint=self.bp,
+                name="Start Node",
+                is_start_node=True,
+                is_canonical=False,
+                system_prompt="Start prompt"
+            )
+            self.step_a = ReasoningStep.objects.create(
+                blueprint=self.bp,
+                name="Root Step A",
+                is_canonical=True,
+                system_prompt="Root step A prompt"
+            )
+            self.step_b = ReasoningStep.objects.create(
+                blueprint=self.bp,
+                name="Root Step B",
+                is_canonical=False,
+                system_prompt="Root step B prompt"
+            )
+            self.start_step.on_success_step = self.step_a
+            self.start_step.save()
+            self.step_a.on_success_step = self.step_b
+            self.step_a.save()
+
+    def test_lineage_depth_calculation(self):
+        """Validates that get_lineage_depth correctly computes generational distance from root."""
+        from metacognition.pruning import get_lineage_depth
+        from metacognition.models import bypass_canonical_lock
+
+        self.assertEqual(get_lineage_depth(self.step_a), 0)
+
+        with bypass_canonical_lock():
+            var_1 = self.step_a.create_variant(variant_intent="Gen 1")
+            var_2 = var_1.create_variant(variant_intent="Gen 2")
+            var_3 = var_2.create_variant(variant_intent="Gen 3")
+
+        self.assertEqual(get_lineage_depth(var_1), 1)
+        self.assertEqual(get_lineage_depth(var_2), 2)
+        self.assertEqual(get_lineage_depth(var_3), 3)
+
+    def test_compress_ancestors_reparents_active_champion(self):
+        """
+        Validates that when depth exceeds max_depth, inactive intermediate ancestors are pruned
+        and the active champion is re-parented directly to the root, preserving depth budget.
+        """
+        from metacognition.pruning import compress_lineage_ancestors, get_lineage_depth
+        from metacognition.models import bypass_canonical_lock
+
+        with bypass_canonical_lock():
+            # Create lineage: Step A (Root, d=0) -> Var 1 (d=1) -> Var 2 (d=2) -> Var 3 (d=3) -> Var 4 (d=4)
+            var_1 = self.step_a.create_variant(variant_intent="Gen 1")
+            var_1.is_active = False  # Retired
+            var_1.save()
+
+            var_2 = var_1.create_variant(variant_intent="Gen 2")
+            var_2.is_active = False  # Retired
+            var_2.save()
+
+            var_3 = var_2.create_variant(variant_intent="Gen 3")
+            var_3.is_active = False  # Retired
+            var_3.save()
+
+            var_4 = var_3.create_variant(variant_intent="Gen 4")
+            var_4.is_active = True  # Active Champion
+            var_4.save()
+
+        self.assertEqual(get_lineage_depth(var_4), 4)
+
+        # Compress with max_depth=2
+        pruned_ids = compress_lineage_ancestors(self.bp, max_depth=2)
+        self.assertIn(var_1.id, pruned_ids)
+        self.assertIn(var_2.id, pruned_ids)
+        self.assertIn(var_3.id, pruned_ids)
+
+        var_4.refresh_from_db()
+        self.assertEqual(var_4.parent_step_id, self.step_a.id)
+        self.assertEqual(get_lineage_depth(var_4), 1)
+        self.assertTrue(var_4.is_active)
+
+    def test_rewire_edges_on_pruning(self):
+        """
+        Validates that pruning a step safely rewires all incoming on_success_step, on_failure_step,
+        and parallel_steps references to the active replacement step.
+        """
+        from metacognition.pruning import rewire_step_references
+        from metacognition.models import bypass_canonical_lock
+
+        with bypass_canonical_lock():
+            child_variant = self.step_b.create_variant(variant_intent="Better B")
+            child_variant.is_active = True
+            child_variant.save()
+
+        # Step A points to Step B
+        self.assertEqual(self.step_a.on_success_step_id, self.step_b.id)
+
+        # Rewire Step B references to child_variant
+        rewire_step_references(self.step_b, child_variant)
+
+        self.step_a.refresh_from_db()
+        self.assertEqual(self.step_a.on_success_step_id, child_variant.id)
+
+    def test_canonical_steps_never_pruned(self):
+        """Ensures that canonical steps (is_canonical=True) are immune from pruning."""
+        from metacognition.pruning import prune_blueprint_variants
+        from metacognition.models import ReasoningStep
+
+        self.assertTrue(self.step_a.is_canonical)
+        pruned_info = prune_blueprint_variants(self.bp, max_depth=1)
+        self.assertNotIn(self.step_a.id, pruned_info.get("pruned_step_ids", []))
+        self.assertTrue(ReasoningStep.objects.filter(id=self.step_a.id).exists())
+
+    def test_lone_active_variant_never_pruned(self):
+        """Ensures an active step is never pruned if it is the sole active step in its lineage."""
+        from metacognition.pruning import prune_dead_leaf_variants
+        from metacognition.models import ReasoningStep
+
+        # self.step_b is active and the sole step in its lineage
+        pruned = prune_dead_leaf_variants(self.bp)
+        self.assertNotIn(self.step_b.id, pruned)
+        self.assertTrue(ReasoningStep.objects.filter(id=self.step_b.id).exists())
+
+    def test_prune_dead_leaf_variants(self):
+        """Validates that rejected or stagnant non-canonical leaf variants are removed."""
+        from metacognition.pruning import prune_dead_leaf_variants
+        from metacognition.models import ReasoningStep, bypass_canonical_lock
+
+        with bypass_canonical_lock():
+            # Create an active child and a rejected sibling
+            good_child = self.step_b.create_variant(variant_intent="Active Child")
+            good_child.is_active = True
+            good_child.save()
+
+            rejected_leaf = self.step_b.create_variant(variant_intent="Rejected Idea")
+            rejected_leaf.is_active = False
+            rejected_leaf.is_pending_review = False
+            rejected_leaf.save()
+
+        pruned_ids = prune_dead_leaf_variants(self.bp)
+        self.assertIn(rejected_leaf.id, pruned_ids)
+        self.assertFalse(ReasoningStep.objects.filter(id=rejected_leaf.id).exists())
+        self.assertTrue(ReasoningStep.objects.filter(id=good_child.id).exists())
+
+    def test_dry_run_mode(self):
+        """Validates that dry_run=True identifies candidates without deleting or mutating records."""
+        from metacognition.pruning import prune_blueprint_variants
+        from metacognition.models import ReasoningStep, bypass_canonical_lock
+
+        with bypass_canonical_lock():
+            dead_leaf = self.step_b.create_variant(variant_intent="Dead Leaf")
+            dead_leaf.is_active = False
+            dead_leaf.is_pending_review = False
+            dead_leaf.save()
+
+        res = prune_blueprint_variants(self.bp, dry_run=True)
+        self.assertTrue(res["dry_run"])
+        self.assertIn(dead_leaf.id, res["pruned_step_ids"])
+        # Assert record still exists in database
+        self.assertTrue(ReasoningStep.objects.filter(id=dead_leaf.id).exists())
+
+    def test_task_prune_reasoning_step_variants(self):
+        """Verifies the NightManager task executes and returns audit results."""
+        from metacognition.tasks import task_prune_reasoning_step_variants
+        res = task_prune_reasoning_step_variants.func(max_depth=4)
+        self.assertEqual(res.get("status"), "success")
+        self.assertIn("total_pruned", res)
+
+    def test_seed_nightmanager_registers_pruning_task(self):
+        """Verifies that seed_nightmanager registers the Weekly ReasoningStep Variant Pruning task."""
+        from verbal_tasks.models import ScheduledTask
+        from metacognition.models import CognitiveBlueprint, ReasoningStep, ResponseSchema, ToolDefinition, bypass_canonical_lock
+        from metacognition.seed import seed_nightmanager
+
+        with bypass_canonical_lock():
+            seed_nightmanager(CognitiveBlueprint, ReasoningStep, ResponseSchema, ToolDefinition)
+
+        task = ScheduledTask.objects.filter(name="Weekly ReasoningStep Variant Pruning").first()
+        self.assertIsNotNone(task)
+        self.assertEqual(task.cron_expression, "0 3 * * 0")
+        self.assertEqual(task.task_name, "metacognition.tasks.task_prune_reasoning_step_variants")
+        self.assertTrue(task.is_active)
+
+
 
 

@@ -12,9 +12,10 @@ The `metacognition` app manages autonomous agent loops, tool execution, and cogn
 * **Models**: `CognitiveBlueprint`: Defines an overarching AI workflow. `ReasoningStep`: A single node in a blueprint, detailing system prompts, LLM parameters, output schemas, sub-blueprint links, and connected tools.
 * **Views / API endpoints**: `api.py`: Exposes Django Ninja endpoints for blueprint dispatching, Datastar Server-Sent Events (SSE) streaming, cancellation, and human-in-the-loop tool approvals.
 * **Admin**: `admin.py`: Provides UI for modifying `CognitiveBlueprint`, `ReasoningStep`, and `ToolDefinition`.
-* **Tasks**: `tasks.py`: Contains `run_blueprint`, `task_run_blueprint_async`, `task_resume_blueprint_async`, and `task_compact_conversation_state_trees` orchestrated asynchronously via native `verbal_tasks`.
+* **Tasks**: `tasks.py`: Contains `run_blueprint`, `task_run_blueprint_async`, `task_resume_blueprint_async`, `task_compact_conversation_state_trees`, and `task_prune_reasoning_step_variants` orchestrated asynchronously via native `verbal_tasks`.
 * **Services**: 
   - `compiler.py`: Translates database models into executable LangGraph `StateGraph` instances. Handles context stripping, dynamic focal state tree projection injection (`include_state_tree`), sub-blueprint isolation bypasses, and conditional routing logic.
+  - `pruning.py`: Service routines for variant depth capping, intermediate ancestor compression, dead-end leaf pruning, and graph edge rewiring.
   - `state.py`: Defines the central `AgentState` TypedDict contract and reducers (`update_compact_state_tree`).
   - `checkpointer.py`: `DjangoCheckpointer` providing relational checkpoint persistence and human-in-the-loop state resumption.
   - `actions.py`: The executable python functions that run inside the LangGraph nodes (e.g., calling the LLM, parsing tools, evaluating step success, schema action dispatchers).

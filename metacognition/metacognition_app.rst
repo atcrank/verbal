@@ -77,6 +77,25 @@ Rather than treating an agent conversation as a monolithic, unbounded list of ch
    * **Overnight Intelligent Compaction (``task_compact_conversation_state_trees``)**: Periodic background task scheduled via the NightManager infrastructure. Analyzes mature, inactive conversations and synthesizes distant milestones into high-level breadcrumb summaries (*"I can see a long time ago we explored..."*).
 
 
+ReasoningStep Speciation & Variant Tree Pruning
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To support continuous self-improvement, Metacognition implements an evolutionary branching mechanism for prompts:
+
+1. **Canonical Immutability**:
+   Foundational blueprints and steps seeded by the codebase have `is_canonical=True`. Their prompts cannot be edited in-place; any optimization must branch into a child variant via `.create_variant(variant_intent=...)`.
+2. **Exploration & EWMA Scoring**:
+   * When compiling a blueprint, `compiler._resolve_blueprint_variants` discovers all active variants for a lineage and selects one probabilistically based on `selection_weight` (multi-armed bandit exploration).
+   * A periodic background task (`task_update_performance_scores`) tracks execution outcomes in `PromptResponseLog` and computes an Exponentially Weighted Moving Average (EWMA, $\alpha=0.3$) for each variant.
+3. **Depth Capping & Ancestor Compression (``pruning.py``)**:
+   * To prevent unbounded lineage trees, variant depth from the canonical root ($d=0$) is capped at 4 generations.
+   * When an active champion reaches $d > 4$, the pruning engine identifies intermediate retired ancestors that have been superseded. It re-parents the active champion directly to the canonical root ($d=1$) and safely deletes the retired stepping stones, freeing depth budget for future evolutionary speciation.
+4. **Dead-End Leaf Trimming**:
+   * Leaf variants that are explicitly rejected (`is_active=False, is_pending_review=False`) or severely underperform (`performance_score < 0.20` with $\ge 10$ runs) are automatically pruned.
+   * All incoming graph edges (`on_success_step`, `on_failure_step`, `parallel_steps`, and `is_start_node`) are deterministically rewired to the lineage root or active champion before deletion.
+5. **Scheduled Maintenance**:
+   * The `Weekly ReasoningStep Variant Pruning` task runs every Sunday at 03:00 (`task_prune_reasoning_step_variants`), keeping variant trees lean without manual intervention.
+
+
 API Endpoints (``metacognition/api.py``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Exposes Django Ninja REST and Server-Sent Events (SSE) streaming endpoints:

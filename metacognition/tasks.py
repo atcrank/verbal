@@ -348,3 +348,26 @@ def task_compact_conversation_state_trees(threshold_chars: int = 2500, target_ra
     logger.info(f"🌙 NightManager state tree compaction complete. Compacted {compacted_count} conversations.")
     return {"status": "success", "compacted_count": compacted_count}
 
+
+@task
+def task_prune_reasoning_step_variants(
+    max_depth: int = 4,
+    min_runs: int = 10,
+    score_threshold: float = 0.2,
+    dry_run: bool = False
+):
+    """
+    Scheduled NightManager task to prune variant trees, collapse intermediate
+    retired ancestors, and maintain maximum depth at <= max_depth generations.
+    """
+    from .pruning import prune_blueprint_variants
+
+    results = prune_blueprint_variants(
+        max_depth=max_depth,
+        min_runs=min_runs,
+        score_threshold=score_threshold,
+        dry_run=dry_run
+    )
+    logger.info(f"🌙 NightManager variant pruning complete: {results}")
+    return results
+

@@ -966,6 +966,16 @@ def seed_nightmanager(CognitiveBlueprint, ReasoningStep, ResponseSchema, ToolDef
                     'is_active': True,
                 }
             )
+
+            # 4. Variant Pruning weekly on Sunday at 3:00 AM (03:00)
+            ScheduledTask.objects.update_or_create(
+                name='Weekly ReasoningStep Variant Pruning',
+                defaults={
+                    'task_name': 'metacognition.tasks.task_prune_reasoning_step_variants',
+                    'cron_expression': '0 3 * * 0',
+                    'is_active': True,
+                }
+            )
         except Exception:
             pass
 
