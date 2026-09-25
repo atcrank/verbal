@@ -673,11 +673,44 @@ def handle_blueprint_proposal(state: dict, llm_output: CognitiveBlueprintProposa
 
 
 class TaskItem(BaseModel):
+    task_id: str = Field(default="", description="Unique identifier for the task, e.g. 'models_list'.")
+    title: str = Field(default="", description="Short title of the task.")
     goal: str = Field(description="The goal of this task item.")
-    delegated_blueprint: str | None = Field(None, description="Optional blueprint name to delegate this task to.")
+    delegated_blueprint: str = Field(
+        default="Escalation of Effort",
+        description="The blueprint name to delegate this task to, e.g. 'Escalation of Effort' or 'Computational Logic'."
+    )
 
 class TaskQueue(BaseModel):
-    queue: list[TaskItem] = Field(description="A list of task items to process sequentially.")
+    queue: list[TaskItem] = Field(min_length=3, description="A list of at least 3 task items to process sequentially.")
+
+def handle_task_queue(state: dict, llm_output: TaskQueue) -> dict:
+    """Populates state_tree and scratch from TaskQueue decomposition."""
+    queue_data = [item.model_dump() if hasattr(item, "model_dump") else item.dict() for item in llm_output.queue]
+    state.setdefault("scratch", {})["queue"] = queue_data
+
+    st = dict(state.get("state_tree") or {})
+    tasks = dict(st.get("tasks") or {})
+
+    for i, item in enumerate(queue_data):
+        tid = item.get("task_id") or f"task_{i+1}"
+        title = item.get("title") or item.get("goal") or f"Task {i+1}"
+        tasks[tid] = {
+            "title": title,
+            "goal": item.get("goal", ""),
+            "status": "PENDING",
+            "subtasks": []
+        }
+
+    if tasks and not st.get("active_task"):
+        first_tid = list(tasks.keys())[0]
+        st["active_task"] = first_tid
+        if isinstance(tasks[first_tid], dict):
+            tasks[first_tid]["status"] = "IN_PROGRESS"
+
+    st["tasks"] = tasks
+    state["state_tree"] = st
+    return state
 
 def process_task_queue(state: dict, llm_output) -> dict:
     task_queue = state.get("scratch", {}).get("queue", [])
@@ -1001,6 +1034,7 @@ SCHEMA_ACTION_HANDLERS = {
     "PromptVariant": create_prompt_variant,
     "GripsExpansionProposal": handle_grips_expansion,
     "CognitiveBlueprintProposal": handle_blueprint_proposal,
+    "TaskQueue": handle_task_queue,
 }
 
 

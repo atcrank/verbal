@@ -6,6 +6,7 @@ import sys
 import requests
 import os
 import datetime
+import json
 from django.core.management import call_command
 
 from llm_api.models import Conversation
@@ -186,6 +187,18 @@ def _report_doctest_run(test_name, prompt, result):
                         f.write(f"{indent}  {line}\n")
                     f.write("\n")
 
+                if "state_tree" in step_entry and step_entry["state_tree"]:
+                    try:
+                        from llm_api.state_tree import format_focal_state_tree
+                        st_rendered = format_focal_state_tree(step_entry["state_tree"])
+                        if st_rendered:
+                            f.write(f"{indent}*Working Memory Map*::\n\n")
+                            for line in st_rendered.splitlines():
+                                f.write(f"{indent}  {line}\n")
+                            f.write("\n")
+                    except Exception as e:
+                        logger.warning(f"Failed to render state_tree in step report: {e}")
+
                 if "sub_monologue" in step_entry and step_entry["sub_monologue"]:
                     f.write(f"{indent}  --- Sub-Blueprint Trace ---\n\n")
                     write_steps(f, step_entry["sub_monologue"], prefix_str=f"{step_num}.", indent=indent + "  ")
@@ -200,6 +213,19 @@ def _report_doctest_run(test_name, prompt, result):
         for line in str(result.get("final_response", "")).splitlines():
             f.write(f"    {line}\n")
         f.write("\n")
+
+        # Render Final Conversation State Tree
+        if cid:
+            try:
+                from llm_api.models import Conversation
+                conv = Conversation.objects.filter(id=cid).first()
+                if conv and conv.state_tree:
+                    f.write("Conversation State Tree\n-----------------------\n\n::\n\n")
+                    for line in json.dumps(conv.state_tree, indent=2).splitlines():
+                        f.write(f"    {line}\n")
+                    f.write("\n\n")
+            except Exception as e:
+                logger.warning(f"Failed to write conversation state tree: {e}")
 
         f.write("Generated Workspace Files\n-------------------------\n\n")
         workspace_dir = None

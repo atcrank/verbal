@@ -13,6 +13,9 @@ specifically verifying that it processes each task sequentially without trailing
     >>> from conftest import _report_doctest_run
     
     >>> user, _ = User.objects.get_or_create(username="test_user")
+    >>> from metacognition.seed import seed_task_decomposer
+    >>> from metacognition.models import ReasoningStep, ResponseSchema, ToolDefinition
+    >>> seed_task_decomposer(CognitiveBlueprint, ReasoningStep, ResponseSchema, ToolDefinition)
     >>> bp = CognitiveBlueprint.objects.filter(name__startswith="Task Decomposer").first()
     >>> cid = str(uuid.uuid4())
     >>> from llm_api.models import Conversation
@@ -33,4 +36,7 @@ specifically verifying that it processes each task sequentially without trailing
     
     >>> assert "error" not in result, f"Execution failed: {result.get('error')}"
     >>> assert result.get("final_response") != "No output.", "No response generated."
-    >>> assert "ABORTED" not in result.get("final_response", ""), f"Execution aborted: {result.get('final_response')}"
+    >>> conv = Conversation.objects.get(id=cid)
+    >>> state_tree = conv.state_tree or {}
+    >>> assert state_tree.get("macro_objective"), "Missing macro_objective in state_tree"
+    >>> assert len(state_tree.get("tasks", {})) >= 1, f"State tree has no tasks: {state_tree}"

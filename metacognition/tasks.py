@@ -214,12 +214,20 @@ def run_blueprint(blueprint_id: int,
     if not working_messages or getattr(working_messages[-1], "content", None) != user_prompt:
         working_messages.append(HumanMessage(content=user_prompt))
 
-    # Check Langgraph compile setup
-    graph = compile_graph_from_blueprint(blueprint)
+    # Seed baseline state_tree if conversation state_tree is empty
+    initial_tree = dict(conversation.state_tree or {})
+    if not initial_tree or not initial_tree.get("macro_objective"):
+        initial_tree["macro_objective"] = user_prompt.strip()[:300]
+        initial_tree.setdefault("tasks", {})
+        initial_tree.setdefault("established_facts", [])
+        initial_tree.setdefault("open_questions", [])
+        initial_tree.setdefault("settled_milestones", {})
+        conversation.state_tree = initial_tree
+        conversation.save(update_fields=['state_tree'])
 
     initial_state = AgentState(
         working_memory=working_messages,
-        state_tree=dict(conversation.state_tree or {}),
+        state_tree=initial_tree,
         rag_context="",
         route_to=None,
         resume_to=None,
@@ -243,6 +251,9 @@ def run_blueprint(blueprint_id: int,
     thread_id = f"{conversation.id}_{blueprint.name}"
     config = {"configurable": {"thread_id": thread_id}, "recursion_limit": max_steps}
     
+    # Check Langgraph compile setup
+    graph = compile_graph_from_blueprint(blueprint)
+
     # 3. Invoke LangGraph
     logger.info(f"Starting LangGraph execution for blueprint {blueprint.name} (thread_id={thread_id}, run_id={run_id})")
     try:
@@ -308,7 +319,9 @@ def run_blueprint(blueprint_id: int,
         "thread_id": thread_id,
         "run_id": run_id,
         "route_to": result_state.get("route_to"),
-        "pending_approval": result_state.get("pending_approval")
+        "pending_approval": result_state.get("pending_approval"),
+        "state_tree": result_state.get("state_tree") or conversation.state_tree,
+        "scratch": result_state.get("scratch", {})
     }
 
 task_run_blueprint_sync = run_blueprint

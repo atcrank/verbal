@@ -8,9 +8,12 @@ _thread_locals = threading.local()
 class bypass_canonical_lock:
     """Context manager to bypass the copy-on-write lock during seed.py operations."""
     def __enter__(self):
+        self.prev = getattr(_thread_locals, 'bypass', False)
         _thread_locals.bypass = True
+        return self
+
     def __exit__(self, exc_type, exc_val, exc_tb):
-        _thread_locals.bypass = False
+        _thread_locals.bypass = self.prev
 
 def is_lock_bypassed():
     return getattr(_thread_locals, 'bypass', False)

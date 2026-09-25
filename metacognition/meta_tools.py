@@ -857,17 +857,46 @@ def run_sub_blueprint(state: dict, params: dict) -> str:
     
     from metacognition.models import CognitiveBlueprint
     from metacognition.tasks import run_blueprint
+
+    prompt_str = str(task_prompt or "")
+
     try:
-        bp = CognitiveBlueprint.objects.get(name=blueprint_name)
+        bp = CognitiveBlueprint.objects.filter(name=blueprint_name).first()
+        if not bp:
+            bp = CognitiveBlueprint.objects.filter(name__iexact=blueprint_name).first()
+        if not bp and "/" in str(blueprint_name):
+            prefix = blueprint_name.split("/")[0].strip()
+            bp = CognitiveBlueprint.objects.filter(name__icontains=prefix).first()
+        if not bp:
+            bp = CognitiveBlueprint.objects.filter(name__icontains=blueprint_name).first()
+        if not bp:
+            bp = CognitiveBlueprint.objects.filter(name__in=["Escalation of Effort", "Computational Logic"]).first()
+
+        if not bp:
+            return f"Error: Sub-blueprint '{blueprint_name}' not found."
+
+        # Isolate sub-blueprint in its own conversation to prevent checkpoint collisions
+        import uuid
+        from llm_api.models import Conversation
+        parent_conv = Conversation.objects.filter(id=conversation_id).first()
+        parent_tree = dict(parent_conv.state_tree) if parent_conv and parent_conv.state_tree else {}
+        sub_cid = str(uuid.uuid4())
+        _ = Conversation.objects.create(
+            id=sub_cid,
+            user_id=user_id,
+            title=f"Subtask: {prompt_str[:50]}",
+            state_tree=parent_tree
+        )
+
         result = run_blueprint(
             blueprint_id=bp.id,
             user_prompt=task_prompt,
-            conversation_id=conversation_id,
-            user_id=user_id
+            conversation_id=sub_cid,
+            user_id=user_id,
+            max_steps=15
         )
-        return f"Sub-blueprint '{blueprint_name}' executed. Result: {result.get('final_response', 'No response')}"
-    except CognitiveBlueprint.DoesNotExist:
-        return f"Error: Sub-blueprint '{blueprint_name}' not found."
+        final_res = result.get('final_response', 'No response')
+        return f"Sub-blueprint '{bp.name}' executed successfully. Findings: {final_res}"
     except Exception as e:
         return f"Failed to run sub-blueprint: {e}"
 

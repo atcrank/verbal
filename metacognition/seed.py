@@ -1013,12 +1013,9 @@ def seed_computational_logic(CognitiveBlueprint, ReasoningStep, ToolDefinition):
         is_start_node=True,
     )
     python_sandbox_tool = ToolDefinition.objects.filter(name="python_sandbox").first()
-    tool_complete, _ = ToolDefinition.objects.get_or_create(name="TASK_COMPLETE")
-    step.system_prompt += "\nOnce you have successfully executed the required action, you MUST output the `TASK_COMPLETE` tool to finish."
     step.save()
     if python_sandbox_tool:
         step.available_tools.add(python_sandbox_tool)
-    step.available_tools.add(tool_complete)
 
 def seed_reasoning_with_code_sandbox(CognitiveBlueprint, ReasoningStep, ToolDefinition):
     bp, _ = CognitiveBlueprint.objects.update_or_create(
@@ -1074,21 +1071,17 @@ def seed_escalation_of_effort(CognitiveBlueprint, ReasoningStep, ToolDefinition)
         is_start_node=True,
     )
     python_sandbox_tool = ToolDefinition.objects.filter(name="python_sandbox").first()
-    tool_complete, _ = ToolDefinition.objects.get_or_create(name="TASK_COMPLETE")
-    step1.system_prompt += "\nOnce you have successfully executed the required action, you MUST output the `TASK_COMPLETE` tool to finish."
     step1.save()
     if python_sandbox_tool:
         step1.available_tools.add(python_sandbox_tool)
-    step1.available_tools.add(tool_complete)
 
     step2 = ReasoningStep.objects.create(
         blueprint=bp,
         name="Execution",
-        system_prompt="Review the sandbox execution output from your previous introspection step. Now, write the final Python script to solve the user's original request.\nOnce you have successfully executed the required action, you MUST output the `TASK_COMPLETE` tool to finish.",
+        system_prompt="Review the sandbox execution output from your previous introspection step. Now, write the final Python script to solve the user's original request.",
     )
     if python_sandbox_tool:
         step2.available_tools.add(python_sandbox_tool)
-    step2.available_tools.add(tool_complete)
 
     step3 = ReasoningStep.objects.create(
         blueprint=bp,
@@ -1296,47 +1289,76 @@ def seed_propose_blueprint(CognitiveBlueprint, ReasoningStep, ToolDefinition):
         step.available_tools.add(create_tool)
 
 def seed_task_decomposer(CognitiveBlueprint, ReasoningStep, ResponseSchema, ToolDefinition):
-    bp, _ = CognitiveBlueprint.objects.update_or_create(
-        name="Task Decomposer",
-        defaults={'description': "Iteratively process nested tasks using a JSON queue.", 'is_canonical': True}
-    )
-    
-    schema_queue, _ = ResponseSchema.objects.get_or_create(
-        name="TaskQueue_Schema", defaults={'schema_type': 'pydantic', 'pydantic_model_name': 'TaskQueue'}
-    )
-    
-    ReasoningStep.objects.filter(blueprint=bp).delete()
-    
-    step1 = ReasoningStep.objects.create(
-        blueprint=bp, name="Task Breakdown",
-        system_prompt="Break the user's complex request into a strict programmatic JSON queue of sub-tasks. Each task must be delegated to a specific blueprint. Available blueprints:\n- 'Escalation of Effort': General purpose python/django worker\n- 'Computational Logic': Data processing worker\n- 'Propose Blueprint': If no existing blueprint fits, use this to design a new one.",
-        is_start_node=True, output_schema=schema_queue
-    )
-    
-    step2 = ReasoningStep.objects.create(
-        blueprint=bp, name="Iterative Processor",
-        system_prompt="Check the 'queue' in your Scratchpad Variables. Pop the first pending task. Use the 'run_sub_blueprint' tool to execute it by passing 'blueprint_name' and 'task_prompt'. You MUST update the queue state (by deleting the task you just ran) using 'update_conversation_state' or by just describing the remaining queue. If no tasks remain, output the 'TASK_COMPLETE' tool.",
-    )
-    
-    run_tool = ToolDefinition.objects.filter(name="run_sub_blueprint").first()
-    update_tool = ToolDefinition.objects.filter(name="update_conversation_state").first()
-    complete_tool = ToolDefinition.objects.filter(name="TASK_COMPLETE").first()
-    
-    if run_tool:
-        step2.available_tools.add(run_tool)
-    if complete_tool:
-        step2.available_tools.add(complete_tool)
-    
-    step3 = ReasoningStep.objects.create(
-        blueprint=bp, name="Final Compiler",
-        system_prompt="All tasks are complete. Summarize the total work done based on the execution history.",
-    )
-    
-    step1.on_success_step = step2
-    step1.save()
-    step2.on_success_step = step3
-    step2.on_failure_step = step2 # Loop back
-    step2.save()
+    from .models import bypass_canonical_lock
+
+    with bypass_canonical_lock():
+        if not CognitiveBlueprint.objects.filter(name="Escalation of Effort").exists():
+            seed_escalation_of_effort(CognitiveBlueprint, ReasoningStep, ToolDefinition)
+        if not CognitiveBlueprint.objects.filter(name="Computational Logic").exists():
+            seed_computational_logic(CognitiveBlueprint, ReasoningStep, ToolDefinition)
+
+        bp, _ = CognitiveBlueprint.objects.update_or_create(
+            name="Task Decomposer",
+            defaults={
+                'description': "Iteratively process nested tasks using a JSON queue.",
+                'is_canonical': True,
+                'is_autonomous': True,
+            }
+        )
+        
+        schema_queue, _ = ResponseSchema.objects.get_or_create(
+            name="TaskQueue_Schema", defaults={'schema_type': 'pydantic', 'pydantic_model_name': 'TaskQueue'}
+        )
+        
+        ReasoningStep.objects.filter(blueprint=bp).delete()
+        
+        step1 = ReasoningStep.objects.create(
+            blueprint=bp, name="Task Breakdown",
+            system_prompt=(
+                "Decompose the user's complex request into a strict programmatic JSON queue of sub-tasks. "
+                "You must produce at least 3 sub-tasks, one for each component of the user's request (Task 1: models, Task 2: functions, Task 3: relations) "
+                "and delegate each to an available blueprint:\n"
+                "- 'Escalation of Effort': General purpose Python / Django code inspection and execution worker\n"
+                "- 'Computational Logic': Data processing and analysis worker\n"
+                "- 'Propose Blueprint': Blueprint design worker\n"
+            ),
+            is_start_node=True, output_schema=schema_queue
+        )
+        
+        step2 = ReasoningStep.objects.create(
+            blueprint=bp, name="Iterative Processor",
+            system_prompt=(
+                "Check the pending tasks in your Conversation State Tree and Scratchpad Variables. "
+                "Pop the next pending task and execute it using the 'run_sub_blueprint' tool by passing 'blueprint_name' and 'task_prompt'. "
+                "Continue executing pending tasks. If all sub-tasks in your queue have already been executed and recorded, output an empty list [] to finish processing."
+            ),
+            evaluation_criteria="All sub-tasks in the queue have been executed and their findings recorded. Pass only if no unexecuted pending tasks remain.",
+            max_retries=6
+        )
+        
+        run_tool = ToolDefinition.objects.filter(name="run_sub_blueprint").first()
+        update_tool = ToolDefinition.objects.filter(name="update_conversation_state").first()
+        
+        if run_tool:
+            step2.available_tools.add(run_tool)
+        if update_tool:
+            step2.available_tools.add(update_tool)
+        
+        step3 = ReasoningStep.objects.create(
+            blueprint=bp, name="Final Compiler",
+            system_prompt=(
+                "Inspect the execution history and state tree resolutions above. "
+                "Synthesize a comprehensive, factual summary of the models, functions, and relationships discovered in the project "
+                "based strictly on what was actually discovered in the execution trace. "
+                "If any task was not executed, clearly state that it was skipped."
+            ),
+        )
+        
+        step1.on_success_step = step2
+        step1.save()
+        step2.on_success_step = step3
+        step2.on_failure_step = step2 # Loop back
+        step2.save()
     
 def seed_lint_grips_edge(CognitiveBlueprint, ReasoningStep, ResponseSchema):
     from metacognition.models import ToolDefinition

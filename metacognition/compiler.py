@@ -553,11 +553,12 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                 lora_adapter=step.lora_adapter
             )
             result = ai_service.clean_response(raw_response)
-        
-        # Handle action hooks if defined
+             # Handle action hooks if defined
         route_to = None
         scratch_updates = dict(state.get("scratch", {}))
+        state_tree_updates = dict(state.get("state_tree") or {})
         additional_messages = []
+        
         if llm_result_message and hasattr(llm_result_message, "tool_calls") and llm_result_message.tool_calls:
             formatted_output = json.dumps(llm_result_message.tool_calls, indent=4)
         elif hasattr(result, "model_dump_json"):
@@ -572,7 +573,8 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
             "output": formatted_output,
             "step_count": step_count,
             "system_prompt": sys_msg.content,
-            "user_prompt": [{"role": _map_role(m.type), "content": m.content} for m in messages if m.type != "system"]
+            "user_prompt": [{"role": _map_role(m.type), "content": m.content} for m in messages if m.type != "system"],
+            "state_tree": state_tree_updates
         }
         
         # Parse result
@@ -623,6 +625,7 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                                 "retries_remaining": retries_remaining,
                                 "internal_monologue": [monologue_entry],
                                 "scratch": scratch_updates,
+                                "state_tree": state_tree_updates,
                                 "token_budget_remaining": current_budget
                             }
 
@@ -639,25 +642,46 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                                     monologue_entry["output"] += f"\\n{msg}"
                             if "current_chunk_index" in hook_result:
                                 scratch_updates["current_chunk_index"] = hook_result["current_chunk_index"]
+                            if "state_tree" in hook_result:
+                                state_tree_updates.update(hook_result["state_tree"])
                         else:
                             res_str = str(hook_result)
                             tool_results_str.append(res_str)
                             
-                            # Add a loud success signal to help the model understand the tool worked
                             success_prefix = ""
                             if not res_str.lower().startswith("error"):
                                 success_prefix = f"✅ THE TOOL '{tool_name}' EXECUTED SUCCESSFULLY.\n"
                                 
-                            reminder = f"\n\nIMPORTANT: If this result satisfies your goal, you MUST output the TASK_COMPLETE tool now. Do not call {tool_name} again unless you need to execute a DIFFERENT action." if "TASK_COMPLETE" in [t.name for t in tools] else ""
-                            additional_messages.append(SystemMessage(content=f"[Tool '{tool_name}' Result]:\n{success_prefix}Output:\n{res_str}{reminder}"))
+                            additional_messages.append(SystemMessage(content=f"[Tool '{tool_name}' Result]:\n{success_prefix}Output:\n{res_str}"))
+
+                            # Auto-ground tool execution into active task resolution in state_tree
+                            if state_tree_updates and "tasks" in state_tree_updates:
+                                tasks_dict = dict(state_tree_updates["tasks"])
+                                active_tid = state_tree_updates.get("active_task")
+                                if active_tid and active_tid in tasks_dict:
+                                    if isinstance(tasks_dict[active_tid], dict):
+                                        clean_res = res_str[:1000].strip().replace("\n", " ")
+                                        tasks_dict[active_tid]["resolution"] = f"{tool_name}: {clean_res}"
+                                        tasks_dict[active_tid]["status"] = "COMPLETED"
+                                        # Advance to next pending task
+                                        pending = [tid for tid, tinfo in tasks_dict.items() if isinstance(tinfo, dict) and tinfo.get("status") in ["PENDING", "pending"]]
+                                        state_tree_updates["active_task"] = pending[0] if pending else None
+                                        if state_tree_updates["active_task"] and isinstance(tasks_dict[state_tree_updates["active_task"]], dict):
+                                            tasks_dict[state_tree_updates["active_task"]]["status"] = "IN_PROGRESS"
+                                state_tree_updates["tasks"] = tasks_dict
+
+                                # Also pop completed task from scratchpad queue if present
+                                if scratch_updates and "queue" in scratch_updates and isinstance(scratch_updates["queue"], list):
+                                    queue_list = list(scratch_updates["queue"])
+                                    if queue_list:
+                                        queue_list.pop(0)
+                                        scratch_updates["queue"] = queue_list
+
                     except Exception as e:
                         logger.error(f"Error in tool {tool_name}: {e}")
                         tool_results_str.append(f"Error in tool {tool_name}: {e}")
                         additional_messages.append(SystemMessage(content=f"[Tool '{tool_name}' Error]: {e}"))
                         route_to = "FAILURE"
-                
-                if any(not msg.content.startswith("[Tool 'TASK_COMPLETE'") for msg in additional_messages) and "TASK_COMPLETE" in [t.name for t in tools]:
-                    additional_messages.append(HumanMessage(content="Tool execution completed. Review the results above. If you have achieved your goal, you MUST output the `TASK_COMPLETE` tool now. Do not call the same tools again with the same arguments."))
                 
                 monologue_entry["tool_result"] = "\n".join(tool_results_str)
                 if route_to is None:
@@ -684,6 +708,7 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                         "conversation_id": state.get("conversation_id"),
                         "user_id": state.get("user_id"),
                         "scratch": scratch_updates,
+                        "state_tree": state_tree_updates,
                         "route_to": route_to
                     }
                     handled_res = handler(action_state, result)
@@ -691,9 +716,13 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                         additional_messages.append(SystemMessage(content=handled_res["working_prompt"]))
                     if handled_res.get("route_to"):
                         route_to = handled_res["route_to"]
+                    if handled_res.get("state_tree"):
+                        state_tree_updates = handled_res["state_tree"]
                 except Exception as e:
                     logger.error(f"Error running schema action handler for {schema_cls_name}: {e}")
 
+        # Refresh state_tree in monologue entry
+        monologue_entry["state_tree"] = state_tree_updates
                 
         # Update state
         new_messages = [AIMessage(content=str(result))] + additional_messages
@@ -738,7 +767,7 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
             "route_to": route_to
         })
         
-        return {
+        action_ret = {
             "working_memory": final_memory,  # Reducer will append or overwrite
             "route_to": route_to,
             "resume_to": None,
@@ -748,6 +777,9 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
             "scratch": scratch_updates,
             "token_budget_remaining": final_budget
         }
+        if state_tree_updates:
+            action_ret["state_tree"] = state_tree_updates
+        return action_ret
         
     return action_node
 
