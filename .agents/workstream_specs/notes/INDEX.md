@@ -16,3 +16,5 @@
 * [2026-09-08] [Critique/Architecture] Empirical Rigor & Adversarial Verification in Demo UI Trials (Status: completed) -> [20260908_empirical_rigor_trials_audit.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260908_empirical_rigor_trials_audit.md)
 * [2026-09-08] [Architecture/Enduring] RAG Design History, Hazards & Lessons Learned for Small Local Models (Status: enduring) -> [20260908_rag_design_hazards_and_lessons_learned.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260908_rag_design_hazards_and_lessons_learned.md)
 * [2026-09-21] [Review/Protocol] Master Guidelines for Multi-Model Project Review (Status: in progress) -> [20260921_multi_model_review_guidelines.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260921_multi_model_review_guidelines.md)
+* [2026-09-26] [Architecture/Enduring] State Tree Working Memory Lifecycle & Trials Philosophy (Status: enduring) -> [20260926_state_tree_lifecycle_and_trials_philosophy.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260926_state_tree_lifecycle_and_trials_philosophy.md)
+

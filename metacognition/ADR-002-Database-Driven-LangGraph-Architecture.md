@@ -57,3 +57,50 @@ The `Deep_Reader` (Deep Research) blueprint serves as an example of parameterize
 When processing lists of items (like analyzing multiple benchmarks or unresolved reasoning optimization tasks), do not hardcode the behaviour in a Python `while` loop or try to process the entire batch in one massive prompt. 
 
 Instead, utilize LangGraph's native cyclic routing capabilities. Define edges using the ReasoningStep database fields `on_success_step` / `on_failure_step`, or instruct the agent to route back to the current node (compiling to `route_to="SELF"`). This creates resilient, native queue-processing loops that recover gracefully from single-step failures, maintaining the paradigm of providing a structured space for the agent to think.
+
+---
+
+## 6. Sub-Blueprint Conversation & Checkpoint Isolation
+
+When orchestrating nested or sub-blueprints (e.g., through the `run_sub_blueprint` tool or dynamic sub-graph execution), **never reuse the parent's `conversation_id`**.
+
+LangGraph's checkpointer identifies execution threads via `thread_id = f"{conversation.id}_{blueprint.name}"`. If a sub-blueprint is executed using the parent conversation ID:
+1. The checkpointer finds the existing checkpoint from previous invocations or the parent's graph state.
+2. Rather than starting a fresh execution from the start node, LangGraph attempts to resume an interrupted state, resulting in premature termination, state cross-contamination, or unexpected loop exits.
+
+**The Architectural Solution:**
+When `run_sub_blueprint` is called:
+- Create a distinct, isolated `Conversation` record with a fresh UUID (`sub_cid = str(uuid.uuid4())`).
+- Copy the parent conversation's current `state_tree` into the child record (`state_tree=parent_tree`).
+- Execute `run_blueprint` with `conversation_id=sub_cid`.
+
+This guarantees clean checkpoint isolation in LangGraph while maintaining seamless contextual continuity across the working memory hierarchy.
+
+---
+
+## 7. Working Memory Lifecycle: Semantic `state_tree` Grounding
+
+The `Conversation.state_tree` is not an optional scratchpad or an ad-hoc debugging field; it is the **default working memory across the entire agent lifecycle**.
+
+The working memory lifecycle operates through three automated phases:
+1. **Baseline Seeding**: Upon invocation in `tasks.py::run_blueprint`, an initial baseline `state_tree` is seeded if empty, capturing `macro_objective` from the user's prompt alongside placeholders for `tasks`, `established_facts`, `open_questions`, and `settled_milestones`.
+2. **Dynamic Task Decomposition**: When a node outputs a structured queue (via `ResponseSchema` using `TaskQueue`), `actions.py::handle_task_queue` dynamically populates `state_tree["tasks"]`, marking the first item `[ACTIVE]` and subsequent items `[PENDING]`.
+3. **Automated Tool Output Grounding**: When a tool completes execution in `compiler.py`:
+   - The tool's output is automatically grounded into `state_tree["tasks"][active_task]["resolution"]`.
+   - The active task is marked `COMPLETED`.
+   - The active pointer advances to the next pending task.
+   - The completed task is popped from `scratch["queue"]`.
+   - The updated `state_tree` is returned in LangGraph's node update dictionary, persisting it into the conversation record and formatting it into subsequent prompt injections (`*Working Memory Map*`).
+
+---
+
+## 8. Empirical Rigor: The Philosophy of Tests vs. Trials
+
+A critical distinction governs verification in this repository:
+
+- **Tests (`tests/`)**: Unit and functional tests that verify code correctness, API contracts, and infrastructure stability. Tests **must pass unconditionally**.
+- **Trials (`metacognition_trials/*.rst`)**: Empirical behavioral evaluations of model capability and transparency. 
+  - When executed against smaller local language models (like Gemma 4-2B), complex multi-step reasoning tasks may prove too difficult. The model may struggle, fail to locate sandbox files, or exhaust retries.
+  - **An informative trial that fails transparently is a successful trial.** The trial report (`*_report.rst`) must honestly document the model's exact decomposition, tool invocations, evaluator critiques, and working memory state progression.
+  - **Zero Tolerance for Test-Overfitting**: Developers and agents must never insert special-case code (e.g. `if "models.py" in prompt:`) into tools or force artificial routing (`route_to = "SUCCESS"`) in the compiler to fabricate a pass. Trials evaluate the true state of agent cognition; obscuring failure modes harms system evolution.
+
