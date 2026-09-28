@@ -3,7 +3,7 @@ import signal
 import sys
 import logging
 from django.core.management.base import BaseCommand
-from django.db import transaction
+from django.db import transaction, close_old_connections, OperationalError, InterfaceError
 from django.utils import timezone
 from verbal_tasks.models import ScheduledTask
 
@@ -43,7 +43,14 @@ class Command(BaseCommand):
         ))
 
         while not self.should_stop:
-            triggered_count = self._evaluate_and_trigger_schedules()
+            try:
+                triggered_count = self._evaluate_and_trigger_schedules()
+            except (OperationalError, InterfaceError) as db_err:
+                logger.warning(f"Database error in scheduler: {db_err}. Reconnecting in 5s...")
+                close_old_connections()
+                time.sleep(5)
+                continue
+
             if run_once:
                 self.stdout.write(self.style.SUCCESS(
                     f"Scheduler tick complete: {triggered_count} task(s) triggered."

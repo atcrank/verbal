@@ -6,7 +6,7 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.module_loading import import_string
-from django.db import transaction, models
+from django.db import transaction, models, close_old_connections, OperationalError, InterfaceError
 from django.tasks.base import TaskContext, TaskResult, TaskResultStatus
 from django.tasks.signals import task_started, task_finished
 from verbal_tasks.models import TaskRecord, TaskRecordStatus
@@ -53,6 +53,18 @@ class Command(BaseCommand):
         worker_id = f"worker-{get_random_string(8)}"
         self.stdout.write(self.style.SUCCESS(f"🚀 Starting Django Tasks worker [{worker_id}] on queues: {', '.join(queues)}"))
 
+        # Stale task recovery: Reset tasks stuck in RUNNING from terminated workers
+        try:
+            stale_threshold = timezone.now() - timezone.timedelta(minutes=15)
+            stale_count = TaskRecord.objects.filter(
+                status=TaskRecordStatus.RUNNING,
+                started_at__lt=stale_threshold
+            ).update(status=TaskRecordStatus.READY)
+            if stale_count:
+                self.stdout.write(self.style.WARNING(f"⚠️ Recovered {stale_count} stale RUNNING task(s) back to READY."))
+        except Exception as e:
+            logger.warning(f"Could not check for stale tasks on startup: {e}")
+
         self.running = True
 
         def _handle_signal(signum, frame):
@@ -65,10 +77,20 @@ class Command(BaseCommand):
         processed_count = 0
 
         while self.running:
-            record_id = self._claim_next_task(queues, worker_id)
+            try:
+                record_id = self._claim_next_task(queues, worker_id)
+            except (OperationalError, InterfaceError) as db_err:
+                logger.warning(f"Database error in worker [{worker_id}]: {db_err}. Reconnecting...")
+                close_old_connections()
+                time.sleep(max(interval, 2.0))
+                continue
 
             if record_id:
-                self._execute_claimed_task(record_id, worker_id)
+                try:
+                    self._execute_claimed_task(record_id, worker_id)
+                except (OperationalError, InterfaceError) as db_err:
+                    logger.warning(f"Database error executing task {record_id}: {db_err}")
+                    close_old_connections()
                 processed_count += 1
                 if max_tasks and processed_count >= max_tasks:
                     self.stdout.write(self.style.SUCCESS(f"Reached max task limit ({max_tasks}). Exiting."))
