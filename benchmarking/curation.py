@@ -45,6 +45,23 @@ class CurationCandidate:
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
+@dataclass
+class HarvestConfig:
+    """
+    Configuration specification for harvesting and splitting datasets.
+    """
+    scenario_group_ids: List[int] = field(default_factory=list)
+    include_chat_logs: bool = False
+    min_feedback_rating: int = 1
+    include_grips: bool = False
+    grips_domain_id: Optional[int] = None
+    train_split_ratio: float = 0.85
+    format: Literal["sharegpt", "openai"] = "sharegpt"
+    system_prompt: str = "You are a domain expert in causal modeling and quantitative analysis."
+    seed: int = 42
+    datasets_dir: Optional[str] = None
+
+
 def format_candidate_for_export(
     candidate: CurationCandidate,
     format: Literal["sharegpt", "openai"] = "sharegpt"
@@ -262,7 +279,8 @@ def curate_and_export_dataset(
     format: Literal["sharegpt", "openai"] = "sharegpt",
     system_prompt: str = "You are a domain expert in causal modeling and quantitative analysis.",
     seed: int = 42,
-    datasets_dir: Optional[str] = None
+    datasets_dir: Optional[str] = None,
+    config: Optional[HarvestConfig] = None,
 ):
     """
     Primary curation orchestrator.
@@ -275,6 +293,18 @@ def curate_and_export_dataset(
         The created FineTuningDataset instance.
     """
     from benchmarking.models import BenchmarkScenario, FineTuningDataset, ScenarioGroup
+
+    if config is not None:
+        scenario_group_ids = config.scenario_group_ids or scenario_group_ids
+        include_prompt_logs = config.include_chat_logs
+        min_feedback = config.min_feedback_rating
+        include_grips = config.include_grips
+        grips_domain_id = config.grips_domain_id
+        split_ratio = config.train_split_ratio
+        format = config.format
+        system_prompt = config.system_prompt
+        seed = config.seed
+        datasets_dir = config.datasets_dir or datasets_dir
 
     all_candidates: List[CurationCandidate] = []
 

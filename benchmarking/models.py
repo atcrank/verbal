@@ -88,6 +88,14 @@ class BenchmarkScenario(models.Model):
     source_doc = models.ForeignKey(Document, on_delete=models.CASCADE, null=True, blank=True)
     source_chunk = models.ForeignKey(RAGChunk, on_delete=models.CASCADE, null=True, blank=True)
 
+    @property
+    def ideal_response(self):
+        return self.ideal_answer
+
+    @ideal_response.setter
+    def ideal_response(self, value):
+        self.ideal_answer = value
+
     def __str__(self):
         return f"{self.question[:50]}"
 
@@ -236,7 +244,7 @@ class BenchmarkRun(models.Model):
 
 class BenchmarkResult(models.Model):
     """The atomic result of one Scenario in one Run."""
-    run = models.ForeignKey(BenchmarkRun, on_delete=models.CASCADE)
+    run = models.ForeignKey(BenchmarkRun, on_delete=models.CASCADE, related_name="results")
     scenario = models.ForeignKey(BenchmarkScenario, on_delete=models.CASCADE)
 
     prompt_text = models.TextField(default="")
@@ -249,3 +257,23 @@ class BenchmarkResult(models.Model):
     faithfulness_score = models.FloatField(null=True, blank=True, help_text="1-5 score normalized to 0-1")
     relevance_score = models.FloatField(null=True, blank=True, help_text="1-5 score normalized to 0-1")
     extra_metrics = models.JSONField(default=dict, help_text="For future evolving metrics")
+
+    @property
+    def response(self):
+        return self.generated_response
+
+    @response.setter
+    def response(self, val):
+        self.generated_response = val
+
+    @property
+    def rag_score(self):
+        return self.rag_recall_score
+
+    @property
+    def faithfulness(self):
+        return self.faithfulness_score
+
+    @property
+    def relevance(self):
+        return self.relevance_score

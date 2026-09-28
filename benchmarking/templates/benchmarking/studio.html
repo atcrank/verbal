@@ -1,0 +1,298 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Benchmarking Studio | Verbal</title>
+
+    <!-- Consolidated Studio Stylesheet (Shared dark design tokens) -->
+    <link rel="stylesheet" href="{% static 'benchmarking/css/studio.css' %}">
+
+    <!-- Datastar for reactive SSE streaming -->
+    <script type="module" src="{% static 'vendor/datastar.js' %}"></script>
+</head>
+<body class="benchmarking-body">
+
+    <!-- Studio Header -->
+    <header class="studio-header">
+        <a href="{% url 'benchmarking:studio' %}" class="studio-brand">
+            <div class="studio-brand-icon">&#9879;</div>
+            <span>Benchmarking Studio & Flywheel</span>
+        </a>
+
+        <div class="studio-badges">
+            <span class="badge badge-info">Active Engine: {{ active_backend|default:"PyTorch (Local)" }}</span>
+            <span class="badge badge-slate">Model: {{ active_model_id|default:"Standard LLM" }}</span>
+            <a href="{% url 'admin:app_list' 'benchmarking' %}" class="btn btn-secondary btn-sm" target="_blank" style="margin-left: 0.5rem;">
+                Django Admin &rarr;
+            </a>
+        </div>
+    </header>
+
+    <!-- Studio 3-Column Layout -->
+    <main class="studio-layout">
+
+        <!-- COLUMN 1: Matrix Experiment Composer & Curation Controls -->
+        <section class="studio-panel col-composer">
+            <div class="panel-header">
+                <span class="panel-title">&#9881; Matrix Composer</span>
+                <button class="btn btn-secondary btn-sm" onclick="document.getElementById('curation-modal').style.display='flex';">
+                    &#9776; Dataset Curation
+                </button>
+            </div>
+            <div class="panel-body">
+                <form id="matrix-form" data-on-submit="$$post('/benchmarking/api/run/')">
+                    {% csrf_token %}
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="id_investigation">Investigation</label>
+                        <select name="investigation_id" id="id_investigation" class="form-select">
+                            {% for inv in investigations %}
+                            <option value="{{ inv.id }}">{{ inv.name }}</option>
+                            {% empty %}
+                            <option value="new">+ Create Auto Investigation</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="id_experiment_name">Experiment Name</label>
+                        <input type="text" name="experiment_name" id="id_experiment_name" class="form-control" 
+                               value="Matrix Trial {{ current_time|date:'M j - H:i' }}" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="id_model_id">Target Model</label>
+                        <select name="model_id" id="id_model_id" class="form-select">
+                            <option value="current" selected>Active System Model ({{ active_model_id|default:"Default" }})</option>
+                            <option value="Qwen/Qwen2.5-7B-Instruct">Qwen/Qwen2.5-7B-Instruct</option>
+                            <option value="meta-llama/Llama-3.1-8B-Instruct">meta-llama/Llama-3.1-8B-Instruct</option>
+                            <option value="mistralai/Mistral-7B-Instruct-v0.3">mistralai/Mistral-7B-Instruct-v0.3</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="id_hosting_backend">Hosting Backend</label>
+                        <select name="hosting_backend" id="id_hosting_backend" class="form-select">
+                            <option value="pytorch" selected>PyTorch (In-Process Transformers)</option>
+                            <option value="vllm">vLLM Engine (High-Throughput)</option>
+                            <option value="ollama">Ollama Server</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="id_scenario_group">Scenario Group</label>
+                        <select name="scenario_group_id" id="id_scenario_group" class="form-select">
+                            {% for sg in scenario_groups %}
+                            <option value="{{ sg.id }}">{{ sg.name }} ({{ sg.scenarios.count }} scenarios)</option>
+                            {% empty %}
+                            <option value="" disabled selected>No scenario groups available</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="id_rag_strategy">RAG Strategy</label>
+                        <select name="rag_strategy" id="id_rag_strategy" class="form-select">
+                            <option value="none" selected>None (Raw Model Direct)</option>
+                            <option value="chunk">Chunk Search (Dense Retrieval)</option>
+                            <option value="summary">Summary-Guided Retrieval</option>
+                            <option value="agentic">Agentic Multi-Step RAG</option>
+                            <option value="all">All Combined Strategies</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="display: flex; gap: 0.75rem;">
+                        <div style="flex: 1;">
+                            <label class="form-label" for="id_iterations">Iterations</label>
+                            <input type="number" name="iterations" id="id_iterations" class="form-control" value="1" min="1" max="5">
+                        </div>
+                        <div style="flex: 1;">
+                            <label class="form-label" for="id_chunk_size">Chunk Size</label>
+                            <input type="number" name="chunk_size" id="id_chunk_size" class="form-control" value="512">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block" style="margin-top: 0.5rem;">
+                        &#9654; Launch Benchmark Run
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- COLUMN 2: Live Telemetry, Progress Stream & Comparison -->
+        <section class="studio-panel col-telemetry">
+            <div class="panel-header">
+                <span class="panel-title">&#9783; Live Telemetry & Execution Monitor</span>
+                {% if latest_run %}
+                <span class="badge badge-slate">Latest Run #{{ latest_run.id }}</span>
+                {% endif %}
+            </div>
+            
+            <!-- Target for Datastar SSE real-time streaming -->
+            <div id="run-monitor">
+                {% if active_run_view %}
+                    {% include "benchmarking/partials/run_progress.html" with run=latest_run status="READY" percent=100 total_steps=latest_run.results.count current_step=latest_run.results.count results=latest_run.results.all avg_rag=latest_run.average_rag_score avg_sem=latest_run.average_semantic_score avg_faith=latest_run.average_faithfulness avg_rel=latest_run.average_relevance %}
+                {% else %}
+                <div style="padding: 2.5rem 1.5rem; text-align: center; color: var(--text-secondary);">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem; color: var(--accent-primary);">&#9874;</div>
+                    <div style="font-weight: 600; font-size: 1rem; color: var(--text-primary);">Execution Ready</div>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">
+                        Select parameters in the Matrix Composer and click <strong>Launch Benchmark Run</strong> to stream live metrics, TTFT latency, and turn-by-turn evaluations.
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Recent Runs & Investigation Comparative Matrix -->
+            <div style="padding: 1rem 1.15rem; border-top: 1px solid var(--border-color);">
+                <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">
+                    Recent Runs in Active Investigation
+                </div>
+                <div style="overflow-x: auto;">
+                    <table class="studio-table">
+                        <thead>
+                            <tr>
+                                <th>Run</th>
+                                <th>Experiment</th>
+                                <th>Backend</th>
+                                <th>Sem Sim</th>
+                                <th>Faith</th>
+                                <th>Rel</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in recent_runs %}
+                            <tr>
+                                <td><span class="badge badge-slate">#{{ r.id }}</span></td>
+                                <td style="font-weight: 600;">{{ r.experiment.name }}</td>
+                                <td>{{ r.configuration_snapshot.hosting_backend|default:"default" }}</td>
+                                <td style="color: var(--accent-teal);">{{ r.average_semantic_score|floatformat:2|default:"-" }}</td>
+                                <td style="color: var(--accent-emerald);">{{ r.average_faithfulness|floatformat:2|default:"-" }}</td>
+                                <td style="color: var(--accent-primary);">{{ r.average_relevance|floatformat:2|default:"-" }}</td>
+                                <td>
+                                    <button class="btn btn-secondary btn-sm" data-on-click="$$get('/benchmarking/stream/{{ r.id }}/')">
+                                        View
+                                    </button>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+                                    No completed benchmark runs yet.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- COLUMN 3: Scenario Browser & Candidate Inspector -->
+        <section class="studio-panel col-inspector">
+            <div class="panel-header">
+                <span class="panel-title">&#128065; Inspection & Gold Standards</span>
+                <span class="badge badge-info" id="scenario-count-badge">{{ active_scenarios.count }} Scenarios</span>
+            </div>
+            <div class="panel-body">
+                
+                <!-- Inspector Content Container -->
+                <div id="inspector-content">
+                    <div style="padding: 1.5rem 0.5rem; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+                        Select a scenario from the list below or click <strong>Inspect Diff</strong> on any turn in the Live Telemetry log to view side-by-side ground truth comparisons.
+                    </div>
+                </div>
+
+                <!-- Scenario List Browser -->
+                <div style="margin-top: 1.25rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                    <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.65rem; color: var(--text-primary); display: flex; justify-content: space-between; align-items: center;">
+                        <span>Scenario Catalog</span>
+                        <small style="color: var(--text-muted);">Click to inspect</small>
+                    </div>
+                    <div class="scenario-list" style="max-height: 380px; overflow-y: auto;">
+                        {% for sc in active_scenarios %}
+                        <div class="scenario-card" data-on-click="$$get('/benchmarking/api/scenario/{{ sc.id }}/')">
+                            <div class="scenario-question">{{ sc.question }}</div>
+                            <div class="keyword-pills">
+                                {% for kw in sc.expected_keywords|slice:":4" %}
+                                <span class="pill-keyword">{{ kw }}</span>
+                                {% endfor %}
+                                {% if sc.expected_keywords|length > 4 %}
+                                <span class="pill-keyword">+{{ sc.expected_keywords|length|add:"-4" }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div style="color: var(--text-muted); font-size: 0.8rem; text-align: center; padding: 1rem;">
+                            No scenarios found in active group.
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- DATASET CURATION MODAL -->
+    <div id="curation-modal" class="drawer-backdrop" style="display: none;">
+        <div class="modal-content">
+            <div class="panel-header">
+                <span class="panel-title">&#9776; Dataset Curation & Auto-Validation Split</span>
+                <button class="btn btn-secondary btn-sm" onclick="document.getElementById('curation-modal').style.display='none';">&times;</button>
+            </div>
+            <div class="panel-body" style="padding: 1.25rem;">
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                    Harvest training candidate pairs from gold benchmark scenarios, thumbs-up chat logs, and GRIPS claims. Automatically splits into a train JSONL file and registers the held-out validation split as a first-class ScenarioGroup.
+                </p>
+
+                <form id="curation-form" data-on-submit="$$post('/benchmarking/api/curate/')">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label class="form-label" for="curate_name">Dataset Name</label>
+                        <input type="text" name="dataset_name" id="curate_name" class="form-control" value="FineTuning Dataset {{ current_time|date:'Ymd_Hi' }}" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="curate_source_groups">Source Scenario Groups</label>
+                        <select name="scenario_group_ids" id="curate_source_groups" class="form-select" multiple style="height: 90px;">
+                            {% for sg in scenario_groups %}
+                            <option value="{{ sg.id }}" selected>{{ sg.name }} ({{ sg.scenarios.count }} scenarios)</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                        <div style="flex: 1;">
+                            <label class="form-label" for="curate_split_ratio">Train/Val Split Ratio: <span id="split-ratio-val">0.85</span></label>
+                            <input type="range" name="split_ratio" id="curate_split_ratio" min="0.5" max="0.95" step="0.05" value="0.85" 
+                                   style="width: 100%;" oninput="document.getElementById('split-ratio-val').innerText = this.value">
+                        </div>
+                        <div style="flex: 1;">
+                            <label class="form-label" for="curate_min_feedback">Min Thumbs-Up Rating</label>
+                            <input type="number" name="min_feedback" id="curate_min_feedback" class="form-control" value="1" min="1" max="5">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-primary); cursor: pointer;">
+                            <input type="checkbox" name="include_chat_logs" value="true" checked>
+                            Include Approved Production Chat Logs (PromptResponseLog)
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block">
+                        &#9881; Curate & Split Dataset
+                    </button>
+                </form>
+
+                <div id="curation-result-container"></div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,57 @@
+<div id="inspector-content">
+    <div style="margin-bottom: 0.85rem;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem;">
+            <div>
+                <span class="badge badge-info">Scenario #{{ scenario.id }}</span>
+                {% if scenario.category %}
+                <span class="badge badge-slate">{{ scenario.category }}</span>
+                {% endif %}
+                {% if scenario.difficulty %}
+                <span class="badge badge-warning">Level {{ scenario.difficulty }}</span>
+                {% endif %}
+            </div>
+        </div>
+        <div style="font-size: 0.95rem; font-weight: 600; margin-top: 0.5rem; color: var(--text-primary);">
+            {{ scenario.question }}
+        </div>
+    </div>
+
+    <!-- Expected Keywords -->
+    <div style="background-color: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.6rem 0.75rem; margin-bottom: 0.85rem;">
+        <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary); margin-bottom: 0.35rem;">
+            Expected Ground-Truth Keywords
+        </div>
+        <div class="keyword-pills">
+            {% for kw in scenario.expected_keywords %}
+                <span class="pill-keyword">{{ kw }}</span>
+            {% empty %}
+                <span style="font-size: 0.75rem; color: var(--text-muted);">None specified</span>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Ideal Response -->
+    <div class="diff-col" style="margin-bottom: 0.85rem;">
+        <div class="diff-col-header">
+            <span>Verified Gold Standard Response</span>
+            <span class="badge badge-success">&#10003; Ideal</span>
+        </div>
+        <div class="diff-content">
+            {% if scenario.ideal_response %}
+                {{ scenario.ideal_response }}
+            {% else %}
+                <em style="color: var(--text-muted);">No ideal response provided. Run a benchmark and promote candidate output.</em>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Scenario Groups membership -->
+    {% if scenario.groups.all %}
+    <div style="font-size: 0.75rem; color: var(--text-secondary);">
+        Member of groups:
+        {% for g in scenario.groups.all %}
+            <span class="badge badge-slate" style="margin-left: 0.25rem;">{{ g.name }}</span>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>

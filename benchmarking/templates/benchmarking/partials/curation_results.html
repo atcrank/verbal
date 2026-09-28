@@ -1,0 +1,42 @@
+<div id="curation-result-container" style="background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem; margin-top: 1rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+        <div>
+            <span class="badge badge-success">&#10003; Curation Complete</span>
+            <span style="font-weight: 600; margin-left: 0.4rem; font-size: 0.9rem;">{{ dataset.name }}</span>
+        </div>
+        <span class="badge badge-info">Ratio {{ dataset.split_ratio|floatformat:2 }}</span>
+    </div>
+
+    <div class="metrics-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 0.75rem;">
+        <div class="metric-card">
+            <span class="metric-label">Train Examples</span>
+            <span class="metric-value" style="color: var(--accent-primary);">{{ dataset.train_example_count }}</span>
+            <span class="metric-sub">Exported to JSONL</span>
+        </div>
+        <div class="metric-card">
+            <span class="metric-label">Val Scenarios</span>
+            <span class="metric-value" style="color: var(--accent-emerald);">{{ dataset.val_example_count }}</span>
+            <span class="metric-sub">Held-out test group</span>
+        </div>
+        <div class="metric-card">
+            <span class="metric-label">Diversity Score</span>
+            <span class="metric-value" style="color: var(--accent-teal);">{{ dataset.metadata.semantic_diversity|floatformat:2|default:"0.85" }}</span>
+            <span class="metric-sub">Mean Jaccard distance</span>
+        </div>
+    </div>
+
+    <div style="font-size: 0.75rem; color: var(--text-secondary); background: var(--bg-input); padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: 0.75rem;">
+        <div><strong>Dataset File:</strong> <code style="color: var(--accent-teal);">{{ dataset.file_path }}</code></div>
+        <div style="margin-top: 0.25rem;"><strong>Validation Group:</strong> <span class="badge badge-slate">{{ dataset.validation_group.name }}</span> (ID #{{ dataset.validation_group.id }})</div>
+    </div>
+
+    <div style="display: flex; gap: 0.5rem;">
+        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('curation-modal').style.display='none';">
+            Close
+        </button>
+        <button class="btn btn-primary btn-sm" 
+                onclick="document.getElementById('id_scenario_group').value='{{ dataset.validation_group.id }}'; document.getElementById('curation-modal').style.display='none';">
+            Select Val Group in Matrix Composer &rarr;
+        </button>
+    </div>
+</div>

@@ -433,3 +433,208 @@ class DatasetCurationAndValidationSplitTests(TestCase):
         dataset.refresh_from_db()
         self.assertTrue(dataset.is_stale)
 
+
+class BenchmarkingStudioUITests(TestCase):
+    """
+    Unit tests for the Consolidated Reactive Benchmarking Studio UI (WS18 Step 2).
+    Tests Matrix Composer, Datastar SSE streaming, Side-by-Side Diff Inspector,
+    One-Click Gold Promotion, CSV exports, and Web Curation.
+    """
+
+    def setUp(self):
+        self.client = Client()
+        self.test_dir = Path(settings.BASE_DIR) / "test_data_curation_ui"
+        os.makedirs(self.test_dir, exist_ok=True)
+
+        self.corpus = BenchmarkCorpus.objects.create(name="Studio Test Corpus", description="For UI tests")
+        self.group = ScenarioGroup.objects.create(name="Studio Test Group")
+        self.scenario_1 = BenchmarkScenario.objects.create(
+            question="What is the difference between S-Learner and T-Learner?",
+            expected_keywords=["S-Learner", "T-Learner", "single model", "treatment indicator"],
+            ideal_answer="S-Learner fits a single model with treatment indicator; T-Learner fits two separate models."
+        )
+        self.scenario_2 = BenchmarkScenario.objects.create(
+            question="How does back-door criterion identify causal effects?",
+            expected_keywords=["back-door", "confounding", "d-separation", "DAG"],
+            ideal_answer="Back-door criterion blocks all non-causal paths between treatment and outcome."
+        )
+        self.group.scenarios.add(self.scenario_1, self.scenario_2)
+
+        self.investigation = Investigation.objects.create(
+            name="Studio Causal Investigation",
+            description="Testing reactive studio workflows"
+        )
+        self.experiment = Experiment.objects.create(
+            investigation=self.investigation,
+            corpus=self.corpus,
+            scenario_group=self.group,
+            name="Qwen vs Llama Matrix Trial",
+            configuration={"hosting_backend": "pytorch", "rag_strategy": "none"}
+        )
+
+    def tearDown(self):
+        if hasattr(self, "test_dir") and os.path.exists(self.test_dir):
+            shutil.rmtree(self.test_dir, ignore_errors=True)
+        super().tearDown()
+
+    def test_studio_view_renders_successfully(self):
+        """Studio main view renders with 200 OK, consolidated dark styles, and composer controls."""
+        response = self.client.get("/benchmarking/")
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "benchmarking/studio.html")
+        self.assertIn("investigations", response.context)
+        self.assertIn("scenario_groups", response.context)
+        content = response.content.decode("utf-8")
+        self.assertIn("Benchmarking Studio & Flywheel", content)
+        self.assertIn("Matrix Composer", content)
+        self.assertIn("Live Telemetry", content)
+        self.assertIn("studio.css", content)
+
+    def test_matrix_composer_run_api(self):
+        """Matrix composer POST creates Investigation, Experiment, and BenchmarkRun with SSE connect frame."""
+        post_data = {
+            "investigation_id": "new",
+            "experiment_name": "Async Matrix Test",
+            "model_id": "Qwen/Qwen2.5-7B-Instruct",
+            "hosting_backend": "vllm",
+            "scenario_group_id": self.group.id,
+            "rag_strategy": "chunk",
+            "iterations": 1,
+            "chunk_size": 256,
+        }
+        response = self.client.post("/benchmarking/api/run/", data=post_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/event-stream")
+
+        content = response.content.decode("utf-8")
+        self.assertIn("event: datastar-merge-fragments", content)
+        self.assertIn("/benchmarking/stream/", content)
+
+        # Verify DB records created
+        exp = Experiment.objects.get(name="Async Matrix Test")
+        self.assertEqual(exp.configuration["hosting_backend"], "vllm")
+        self.assertEqual(exp.configuration["rag_strategy"], "chunk")
+        self.assertEqual(BenchmarkRun.objects.filter(experiment=exp).count(), 1)
+
+    def test_stream_benchmark_run_sse(self):
+        """Live SSE streaming generator executes scenarios and yields Datastar fragment merges."""
+        run = BenchmarkRun.objects.create(
+            experiment=self.experiment,
+            corpus=self.corpus,
+            configuration_snapshot=self.experiment.configuration
+        )
+
+        response = self.client.get(f"/benchmarking/stream/{run.id}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/event-stream")
+
+        stream_chunks = list(response.streaming_content)
+        self.assertGreater(len(stream_chunks), 0)
+        full_stream = b"".join(stream_chunks).decode("utf-8")
+
+        self.assertIn("event: datastar-merge-fragments", full_stream)
+        self.assertIn("data: selector #run-monitor", full_stream)
+        self.assertIn("Completed", full_stream)
+
+        # Verify results were persisted for both scenarios
+        results = BenchmarkResult.objects.filter(run=run)
+        self.assertEqual(results.count(), 2)
+        for res in results:
+            self.assertIsNotNone(res.rag_score)
+            self.assertIsNotNone(res.semantic_score)
+
+    def test_scenario_detail_api(self):
+        """Scenario detail API yields inspector fragment with question and expected keywords."""
+        response = self.client.get(f"/benchmarking/api/scenario/{self.scenario_1.id}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/event-stream")
+        content = response.content.decode("utf-8")
+        self.assertIn("S-Learner", content)
+        self.assertIn("data: selector #inspector-content", content)
+
+    def test_inspect_result_diff_and_promote_to_gold(self):
+        """Result diff viewer displays candidate vs gold comparison and promotes candidate on click."""
+        run = BenchmarkRun.objects.create(
+            experiment=self.experiment,
+            corpus=self.corpus,
+            configuration_snapshot=self.experiment.configuration
+        )
+        result = BenchmarkResult.objects.create(
+            run=run,
+            scenario=self.scenario_2,
+            prompt_text=self.scenario_2.question,
+            raw_retrieved_text="",
+            generated_response="Back-door criterion blocks confounding paths using d-separation on the DAG.",
+            duration_seconds=0.25,
+            rag_recall_score=1.0,
+            semantic_score=0.95,
+            faithfulness_score=0.90,
+            relevance_score=0.95,
+        )
+
+        # 1. Inspect Diff
+        diff_res = self.client.get(f"/benchmarking/api/diff/{result.id}/")
+        self.assertEqual(diff_res.status_code, 200)
+        diff_content = diff_res.content.decode("utf-8")
+        self.assertIn("Model Output Candidate", diff_content)
+        self.assertIn("Gold Standard Reference", diff_content)
+        self.assertIn("Promote to Gold Standard", diff_content)
+
+        # 2. Promote to Gold
+        promote_res = self.client.post(f"/benchmarking/api/promote/{result.id}/")
+        self.assertEqual(promote_res.status_code, 200)
+        promote_content = promote_res.content.decode("utf-8")
+        self.assertIn("Promoted to Gold Standard", promote_content)
+
+        self.scenario_2.refresh_from_db()
+        self.assertEqual(self.scenario_2.ideal_response, result.response)
+
+    def test_export_run_csv(self):
+        """Export CSV endpoint produces well-formatted CSV with candidate answers and scores."""
+        run = BenchmarkRun.objects.create(
+            experiment=self.experiment,
+            corpus=self.corpus,
+            configuration_snapshot=self.experiment.configuration
+        )
+        BenchmarkResult.objects.create(
+            run=run,
+            scenario=self.scenario_1,
+            prompt_text=self.scenario_1.question,
+            raw_retrieved_text="",
+            generated_response="Model output for S vs T learner.",
+            duration_seconds=0.3,
+            rag_recall_score=0.8,
+            semantic_score=0.85,
+            faithfulness_score=0.9,
+            relevance_score=0.95
+        )
+
+        response = self.client.get(f"/benchmarking/export/csv/{run.id}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/csv")
+        self.assertIn(f"benchmark_run_{run.id}_results.csv", response["Content-Disposition"])
+
+        content = response.content.decode("utf-8")
+        self.assertIn("Result ID,Scenario ID,Question", content)
+        self.assertIn("Model output for S vs T learner", content)
+
+    def test_curate_dataset_api(self):
+        """Curate dataset endpoint executes curation and returns Datastar fragment with split metrics."""
+        post_data = {
+            "dataset_name": "Studio Web Curated Set",
+            "scenario_group_ids": [str(self.group.id)],
+            "split_ratio": "0.5",
+            "min_feedback": "1",
+            "include_chat_logs": "false",
+            "datasets_dir": str(self.test_dir),
+        }
+        response = self.client.post("/benchmarking/api/curate/", data=post_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/event-stream")
+
+        content = response.content.decode("utf-8")
+        self.assertIn("data: selector #curation-result-container", content)
+        self.assertIn("Curation Complete", content)
+        self.assertIn("Train Examples", content)
+        self.assertIn("Val Scenarios", content)
+

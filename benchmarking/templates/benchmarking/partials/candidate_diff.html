@@ -1,0 +1,95 @@
+<div id="inspector-content">
+    <div style="margin-bottom: 0.85rem;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem;">
+            <div>
+                <span class="badge badge-info">Result #{{ result.id }}</span>
+                <span class="badge badge-slate">{{ result.run.experiment.name }}</span>
+            </div>
+            <div id="promote-status-{{ result.id }}">
+                {% if is_gold %}
+                    <span class="badge badge-success">&#10003; Active Gold Standard</span>
+                {% else %}
+                    <button class="btn btn-success btn-sm" 
+                            data-on-click="$$post('/benchmarking/api/promote/{{ result.id }}/')">
+                        &#9733; Promote to Gold Standard
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+        <div style="font-size: 0.95rem; font-weight: 600; margin-top: 0.5rem; color: var(--text-primary);">
+            {{ result.scenario.question }}
+        </div>
+    </div>
+
+    <!-- Keyword Coverage Analysis -->
+    <div style="background-color: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.6rem 0.75rem; margin-bottom: 0.85rem;">
+        <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary); margin-bottom: 0.35rem;">
+            Expected Keyword Grounding Coverage
+        </div>
+        <div class="keyword-pills">
+            {% for kw, hit in keyword_hits %}
+                {% if hit %}
+                    <span class="pill-keyword pill-keyword-hit">&#10003; {{ kw }}</span>
+                {% else %}
+                    <span class="pill-keyword pill-keyword-miss">&#10007; {{ kw }}</span>
+                {% endif %}
+            {% empty %}
+                <span style="font-size: 0.75rem; color: var(--text-muted);">No ground-truth keywords specified for this scenario.</span>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Side-by-Side Diff Viewer -->
+    <div class="diff-viewer">
+        <!-- Gold Standard Reference Column -->
+        <div class="diff-col">
+            <div class="diff-col-header">
+                <span>Gold Standard Reference</span>
+                <span class="badge badge-slate">Ground Truth</span>
+            </div>
+            <div class="diff-content">
+                {% if result.scenario.ideal_response %}
+                    {{ result.scenario.ideal_response }}
+                {% else %}
+                    <em style="color: var(--text-muted);">No prior ideal response recorded. Promote candidate on the right to set one!</em>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Candidate Output Column -->
+        <div class="diff-col">
+            <div class="diff-col-header">
+                <span>Model Output Candidate</span>
+                <span class="badge badge-info">{{ result.run.configuration_snapshot.ai_model_id|default:"Model" }}</span>
+            </div>
+            <div class="diff-content" style="border-left: 2px solid var(--accent-primary); padding-left: 0.5rem;">
+                {{ result.response }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Score Breakdown Card -->
+    <div style="margin-top: 1rem; background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.75rem 1rem;">
+        <div style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.5rem; text-transform: uppercase;">
+            Automated Metric Evaluation
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; text-align: center;">
+            <div>
+                <div style="font-size: 0.7rem; color: var(--text-muted);">RAG Recall</div>
+                <div style="font-size: 1.1rem; font-weight: 700; color: var(--accent-blue);">{{ result.rag_score|floatformat:2|default:"-" }}</div>
+            </div>
+            <div>
+                <div style="font-size: 0.7rem; color: var(--text-muted);">Semantic Sim</div>
+                <div style="font-size: 1.1rem; font-weight: 700; color: var(--accent-teal);">{{ result.semantic_score|floatformat:2|default:"-" }}</div>
+            </div>
+            <div>
+                <div style="font-size: 0.7rem; color: var(--text-muted);">Faithfulness</div>
+                <div style="font-size: 1.1rem; font-weight: 700; color: var(--accent-emerald);">{{ result.faithfulness|floatformat:2|default:"-" }}</div>
+            </div>
+            <div>
+                <div style="font-size: 0.7rem; color: var(--text-muted);">Relevance</div>
+                <div style="font-size: 1.1rem; font-weight: 700; color: var(--accent-primary);">{{ result.relevance|floatformat:2|default:"-" }}</div>
+            </div>
+        </div>
+    </div>
+</div>
