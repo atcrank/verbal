@@ -37,9 +37,14 @@
         <section class="studio-panel col-composer">
             <div class="panel-header">
                 <span class="panel-title">&#9881; Matrix Composer</span>
-                <button class="btn btn-secondary btn-sm" onclick="document.getElementById('curation-modal').style.display='flex';">
-                    &#9776; Dataset Curation
-                </button>
+                <div style="display: flex; gap: 0.4rem;">
+                    <button class="btn btn-secondary btn-sm" onclick="document.getElementById('curation-modal').style.display='flex';">
+                        &#9776; Curation
+                    </button>
+                    <button class="btn btn-primary btn-sm" onclick="document.getElementById('training-modal').style.display='flex';">
+                        &#9889; QLoRA
+                    </button>
+                </div>
             </div>
             <div class="panel-body">
                 <form id="matrix-form" data-on-submit="$$post('/benchmarking/api/run/')">
@@ -293,6 +298,9 @@
             </div>
         </div>
     </div>
+
+    <!-- HARDWARE-AWARE QLORA TRAINING MODAL -->
+    {% include "benchmarking/partials/training_modal.html" %}
 
 </body>
 </html>

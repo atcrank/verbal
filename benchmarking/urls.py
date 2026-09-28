@@ -13,5 +13,8 @@ urlpatterns = [
     path("api/diff/<int:result_id>/", views.inspect_result_diff, name="inspect_diff"),
     path("api/promote/<int:result_id>/", views.promote_to_gold_api, name="promote_gold"),
     path("api/curate/", views.curate_dataset_api, name="curate_dataset"),
+    path("api/train/", views.train_adapter_api, name="train_adapter"),
+    path("api/ab-eval/<int:adapter_id>/", views.ab_evaluation_api, name="ab_evaluation"),
+    path("api/hardware/", views.hardware_profile_api, name="hardware_profile"),
     path("export/csv/<int:run_id>/", views.export_run_csv, name="export_run_csv"),
 ]

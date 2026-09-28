@@ -1,0 +1,48 @@
+<div id="training-status-container" style="background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem; margin-top: 1rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+        <div>
+            <span class="badge badge-success">&#10003; Adapter Ready</span>
+            <span style="font-weight: 600; margin-left: 0.4rem; font-size: 0.9rem;">{{ result.adapter.name }}</span>
+        </div>
+        <span class="badge badge-slate">{{ result.runtime_seconds }}s runtime</span>
+    </div>
+
+    <div class="metrics-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 0.75rem;">
+        <div class="metric-card">
+            <span class="metric-label">Final Loss</span>
+            <span class="metric-value" style="color: var(--accent-emerald);">{{ result.final_loss|floatformat:4 }}</span>
+            <span class="metric-sub">Training convergence</span>
+        </div>
+        <div class="metric-card">
+            <span class="metric-label">LoRA Rank</span>
+            <span class="metric-value" style="color: var(--accent-primary);">r={{ result.config.lora_r }}</span>
+            <span class="metric-sub">&alpha;={{ result.config.lora_alpha }}</span>
+        </div>
+        <div class="metric-card">
+            <span class="metric-label">Compute Tier</span>
+            <span class="metric-value" style="color: var(--accent-teal);">{{ result.hardware.tier|upper }}</span>
+            <span class="metric-sub">{{ result.config.precision|upper }}</span>
+        </div>
+    </div>
+
+    <div style="font-size: 0.75rem; color: var(--text-secondary); background: var(--bg-input); padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: 0.85rem;">
+        <div><strong>Adapter Weights Directory:</strong> <code style="color: var(--accent-teal);">{{ result.adapter.file_path }}</code></div>
+        <div style="margin-top: 0.25rem;"><strong>Registered Adapter ID:</strong> #{{ result.adapter.id }} (Linked to {{ result.adapter.base_model.name }})</div>
+    </div>
+
+    <!-- Closed-Loop A/B Evaluation Section -->
+    <div style="border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
+        <div style="font-size: 0.82rem; font-weight: 600; margin-bottom: 0.35rem; color: var(--text-primary);">
+            Closed-Loop Verification
+        </div>
+        <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.65rem;">
+            Run automated A/B benchmark comparing Base Model vs. Base + {{ result.adapter.name }} on the held-out validation ScenarioGroup.
+        </p>
+        <button class="btn btn-primary btn-sm" 
+                data-on-click="$$post('/benchmarking/api/ab-eval/{{ result.adapter.id }}/')">
+            &#9878; Run Closed-Loop A/B Evaluation &rarr;
+        </button>
+    </div>
+
+    <div id="ab-eval-container-{{ result.adapter.id }}" style="margin-top: 0.75rem;"></div>
+</div>

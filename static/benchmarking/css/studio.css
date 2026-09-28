@@ -496,3 +496,7 @@ header.studio-header {
     flex-direction: column;
     overflow: hidden;
 }
+
+.text-success { color: var(--accent-emerald) !important; }
+.text-danger { color: var(--accent-rose) !important; }
+

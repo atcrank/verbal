@@ -1,0 +1,79 @@
+<div id="ab-eval-container-{{ eval_res.adapter.id }}" style="background-color: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.85rem; margin-top: 0.75rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.65rem;">
+        <span style="font-weight: 600; font-size: 0.85rem; color: var(--text-primary);">A/B Verification Outcome</span>
+        {% if eval_res.verdict == "IMPROVED" %}
+            <span class="badge badge-success">&#10003; Certified: Domain Improvement</span>
+        {% elif eval_res.verdict == "REGRESSED" %}
+            <span class="badge badge-error">&#10007; Regression Detected</span>
+        {% else %}
+            <span class="badge badge-warning">Neutral Delta</span>
+        {% endif %}
+    </div>
+
+    <!-- Comparative Delta Tiles -->
+    <div class="metrics-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 0.75rem;">
+        <div class="metric-card">
+            <span class="metric-label">&Delta; Semantic Sim</span>
+            <span class="metric-value {% if eval_res.delta_semantic_pct >= 0 %}text-success{% else %}text-danger{% endif %}">
+                {{ eval_res.delta_semantic_pct|floatformat:1 }}%
+            </span>
+            <span class="metric-sub">Base vs LoRA</span>
+        </div>
+        <div class="metric-card">
+            <span class="metric-label">&Delta; Relevance</span>
+            <span class="metric-value {% if eval_res.delta_relevance_pct >= 0 %}text-success{% else %}text-danger{% endif %}">
+                {{ eval_res.delta_relevance_pct|floatformat:1 }}%
+            </span>
+            <span class="metric-sub">Prompt fidelity</span>
+        </div>
+        <div class="metric-card">
+            <span class="metric-label">&Delta; Faithfulness</span>
+            <span class="metric-value {% if eval_res.delta_faithfulness_pct >= 0 %}text-success{% else %}text-danger{% endif %}">
+                {{ eval_res.delta_faithfulness_pct|floatformat:1 }}%
+            </span>
+            <span class="metric-sub">Context grounding</span>
+        </div>
+        <div class="metric-card">
+            <span class="metric-label">&Delta; RAG Recall</span>
+            <span class="metric-value {% if eval_res.delta_rag_pct >= 0 %}text-success{% else %}text-danger{% endif %}">
+                {{ eval_res.delta_rag_pct|floatformat:1 }}%
+            </span>
+            <span class="metric-sub">Keyword coverage</span>
+        </div>
+    </div>
+
+    <!-- Comparative Table -->
+    <table class="studio-table" style="margin-bottom: 0.75rem; font-size: 0.75rem;">
+        <thead>
+            <tr>
+                <th>Model Variant</th>
+                <th>Sem Sim</th>
+                <th>Faith</th>
+                <th>Rel</th>
+                <th>RAG</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><span class="badge badge-slate">Baseline</span> {{ eval_res.adapter.base_model.name }}</td>
+                <td>{{ eval_res.base_run.average_semantic_score|floatformat:2 }}</td>
+                <td>{{ eval_res.base_run.average_faithfulness|floatformat:2 }}</td>
+                <td>{{ eval_res.base_run.average_relevance|floatformat:2 }}</td>
+                <td>{{ eval_res.base_run.average_rag_score|floatformat:2 }}</td>
+            </tr>
+            <tr style="background-color: rgba(99, 102, 241, 0.08);">
+                <td style="font-weight: 600;"><span class="badge badge-info">LoRA</span> {{ eval_res.adapter.name }}</td>
+                <td style="font-weight: 600; color: var(--accent-emerald);">{{ eval_res.adapter_run.average_semantic_score|floatformat:2 }}</td>
+                <td style="font-weight: 600; color: var(--accent-emerald);">{{ eval_res.adapter_run.average_faithfulness|floatformat:2 }}</td>
+                <td style="font-weight: 600; color: var(--accent-emerald);">{{ eval_res.adapter_run.average_relevance|floatformat:2 }}</td>
+                <td style="font-weight: 600; color: var(--accent-emerald);">{{ eval_res.adapter_run.average_rag_score|floatformat:2 }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+        <a href="{% url 'benchmarking:investigation_dashboard' eval_res.investigation.id %}" class="btn btn-secondary btn-sm" target="_blank">
+            Open Comparative Investigation Report &rarr;
+        </a>
+    </div>
+</div>

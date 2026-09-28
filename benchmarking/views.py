@@ -14,8 +14,12 @@ from django.views.decorators.http import require_GET, require_POST
 
 from background_resources.models import Document
 from llm_api.apps import service_registry
+from llm_api.models import LoRAAdapter
 from metacognition.datastar import DatastarSSE
 from .curation import curate_and_export_dataset, HarvestConfig
+from .hardware import detect_hardware_profile, recommend_training_config, TrainingConfig
+from .training import train_lora_adapter
+from .closed_loop import run_closed_loop_ab_evaluation
 from .models import (
     Investigation,
     Experiment,
@@ -34,10 +38,21 @@ def studio_view(request):
     """
     Main Benchmarking Studio view.
     Renders the consolidated dark-slate reactive interface with the Matrix Composer,
-    Live Telemetry Streamer, Scenario Browser, and Gold Standard Inspector.
+    Live Telemetry Streamer, Scenario Browser, Gold Standard Inspector, and QLoRA Training Drawer.
     """
     investigations = Investigation.objects.all().order_by("-id")
     scenario_groups = ScenarioGroup.objects.all().prefetch_related("scenarios").order_by("-id")
+    try:
+        datasets = list(FineTuningDataset.objects.all().order_by("-id"))
+    except Exception as e:
+        logger.warning(f"Could not load datasets (possibly unmigrated dev db): {e}")
+        datasets = []
+
+    try:
+        adapters = list(LoRAAdapter.objects.select_related("base_model", "dataset").order_by("-id"))
+    except Exception as e:
+        logger.warning(f"Could not load adapters: {e}")
+        adapters = []
     
     first_group = scenario_groups.first()
     if first_group:
@@ -60,6 +75,10 @@ def studio_view(request):
     except Exception:
         pass
 
+    # Hardware detection and adaptive config
+    hardware = detect_hardware_profile()
+    rec_config = recommend_training_config(hardware)
+
     context = {
         "investigations": investigations,
         "scenario_groups": scenario_groups,
@@ -69,6 +88,10 @@ def studio_view(request):
         "active_run_view": bool(latest_run and latest_run.results.exists()),
         "active_model_id": active_model_id,
         "active_backend": "PyTorch / Local",
+        "datasets": datasets,
+        "adapters": adapters,
+        "hardware": hardware,
+        "rec_config": rec_config,
         "current_time": timezone.now(),
     }
     return render(request, "benchmarking/studio.html", context)
@@ -471,3 +494,134 @@ def investigation_dashboard(request, pk):
         "df_describe_html": df_describe_html,
     }
     return render(request, "benchmarking/dashboard.html", context)
+
+
+@require_POST
+def train_adapter_api(request):
+    """
+    Executes hardware-adapted QLoRA fine-tuning and automatically registers the trained adapter.
+    Renders training metrics and triggers closed-loop A/B verification via Datastar SSE.
+    """
+    dataset_id = request.POST.get("dataset_id")
+    dataset = get_object_or_404(FineTuningDataset, pk=dataset_id)
+    base_model_id = request.POST.get("base_model_id", "google/gemma-4-E2B-it")
+    output_name = request.POST.get("output_name") or f"adapter_{dataset.name}_{int(time.time())}"
+
+    # Auto-detect host hardware and recommended config
+    hardware = detect_hardware_profile()
+    config = recommend_training_config(hardware)
+
+    # Allow user override from form
+    if request.POST.get("lora_r"):
+        try:
+            config.lora_r = int(request.POST.get("lora_r"))
+        except (ValueError, TypeError):
+            pass
+    if request.POST.get("lora_alpha"):
+        try:
+            config.lora_alpha = int(request.POST.get("lora_alpha"))
+        except (ValueError, TypeError):
+            pass
+    if request.POST.get("epochs"):
+        try:
+            config.num_train_epochs = int(request.POST.get("epochs"))
+        except (ValueError, TypeError):
+            pass
+    if request.POST.get("learning_rate"):
+        try:
+            config.learning_rate = float(request.POST.get("learning_rate"))
+        except (ValueError, TypeError):
+            pass
+
+    dry_run = request.POST.get("dry_run") in ["true", "True", "on", "1", True]
+
+    training_result = train_lora_adapter(
+        dataset=dataset,
+        base_model_id=base_model_id,
+        output_adapter_name=output_name,
+        config=config,
+        dry_run=dry_run,
+    )
+
+    if request.headers.get("Accept") == "application/json" and "text/event-stream" not in request.headers.get("Accept", ""):
+        return JsonResponse(training_result.to_dict())
+
+    html = render(
+        request,
+        "benchmarking/partials/training_results.html",
+        {"result": training_result},
+    ).content.decode("utf-8")
+    sse = DatastarSSE.merge_fragments(html, selector="#training-status-container", merge_mode="morph")
+    return HttpResponse(sse, content_type="text/event-stream")
+
+
+@require_POST
+def ab_evaluation_api(request, adapter_id: int):
+    """
+    Executes automated post-training A/B certification comparing base model vs base+adapter
+    on the held-out validation ScenarioGroup.
+    Yields comparative delta metrics, verdict badge, and side-by-side table via Datastar SSE.
+    """
+    adapter = get_object_or_404(LoRAAdapter, pk=adapter_id)
+    eval_res = run_closed_loop_ab_evaluation(adapter=adapter)
+
+    if request.headers.get("Accept") == "application/json" and "text/event-stream" not in request.headers.get("Accept", ""):
+        return JsonResponse({
+            "verdict": eval_res.verdict,
+            "delta_semantic_pct": eval_res.delta_semantic_pct,
+            "delta_relevance_pct": eval_res.delta_relevance_pct,
+            "delta_faithfulness_pct": eval_res.delta_faithfulness_pct,
+            "delta_rag_pct": eval_res.delta_rag_pct,
+            "investigation_id": eval_res.investigation.id,
+            "base_run_id": eval_res.base_run.id,
+            "adapter_run_id": eval_res.adapter_run.id,
+        })
+
+    html = render(
+        request,
+        "benchmarking/partials/ab_eval_results.html",
+        {"eval_res": eval_res},
+    ).content.decode("utf-8")
+    sse = DatastarSSE.merge_fragments(
+        html,
+        selector=f"#ab-eval-container-{adapter_id}",
+        merge_mode="morph",
+    )
+    return HttpResponse(sse, content_type="text/event-stream")
+
+
+@require_GET
+def hardware_profile_api(request):
+    """
+    Returns detected host compute hardware specs and auto-tuned hyperparameter recommendations.
+    Dynamically adapts to any consumer, workstation, or datacenter accelerator.
+    """
+    hw = detect_hardware_profile()
+    rec = recommend_training_config(hw)
+    return JsonResponse({
+        "hardware": {
+            "device_name": hw.device_name,
+            "total_vram_gb": hw.total_vram_gb,
+            "tier": hw.tier,
+            "cuda_available": hw.cuda_available,
+            "bf16_supported": hw.bf16_supported,
+            "flash_attn_supported": hw.flash_attn_supported,
+            "cpu_threads": hw.cpu_threads,
+        },
+        "recommended_config": {
+            "batch_size": rec.batch_size,
+            "gradient_accumulation_steps": rec.gradient_accumulation_steps,
+            "effective_batch_size": rec.effective_batch_size,
+            "quantization": rec.quantization,
+            "precision": rec.precision,
+            "max_seq_length": rec.max_seq_length,
+            "gradient_checkpointing": rec.gradient_checkpointing,
+            "use_unsloth": rec.use_unsloth,
+            "optim": rec.optim,
+            "lora_r": rec.lora_r,
+            "lora_alpha": rec.lora_alpha,
+            "learning_rate": rec.learning_rate,
+            "num_train_epochs": rec.num_train_epochs,
+        },
+    })
+

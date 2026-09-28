@@ -1,0 +1,89 @@
+<div id="training-modal" class="drawer-backdrop" style="display: none;">
+    <div class="modal-content" style="max-width: 780px;">
+        <div class="panel-header">
+            <span class="panel-title">&#9881; Hardware-Aware QLoRA Training Harness</span>
+            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('training-modal').style.display='none';">&times;</button>
+        </div>
+        <div class="panel-body" style="padding: 1.25rem;">
+            
+            <!-- Hardware Detection Card -->
+            <div style="background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.85rem 1rem; margin-bottom: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <div style="font-size: 0.78rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.04em;">
+                        Detected Host Compute Resources
+                    </div>
+                    <span class="badge badge-info">{{ hardware.tier|upper }} TIER</span>
+                </div>
+                <div style="display: flex; gap: 1.5rem; font-size: 0.82rem; color: var(--text-primary); flex-wrap: wrap;">
+                    <div><strong>Device:</strong> {{ hardware.device_name }}</div>
+                    <div><strong>VRAM:</strong> {{ hardware.total_vram_gb }} GB</div>
+                    <div><strong>Auto-Tune:</strong> {{ rec_config.batch_size }} batch &times; {{ rec_config.gradient_accumulation_steps }} accum (eff: {{ rec_config.effective_batch_size }})</div>
+                    <div><strong>Precision:</strong> {{ rec_config.precision|upper }} ({{ rec_config.quantization|upper }})</div>
+                </div>
+            </div>
+
+            <!-- Training Form -->
+            <form id="training-form" data-on-submit="$$post('/benchmarking/api/train/')">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label class="form-label" for="train_dataset_id">Fine-Tuning Dataset</label>
+                    <select name="dataset_id" id="train_dataset_id" class="form-select" required>
+                        {% for ds in datasets %}
+                        <option value="{{ ds.id }}">{{ ds.name }} ({{ ds.train_example_count }} train / {{ ds.val_example_count }} val)</option>
+                        {% empty %}
+                        <option value="" disabled selected>No datasets available. Create one in Dataset Curation first.</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group" style="display: flex; gap: 0.75rem;">
+                    <div style="flex: 2;">
+                        <label class="form-label" for="train_base_model">Base Foundation Model</label>
+                        <select name="base_model_id" id="train_base_model" class="form-select">
+                            <option value="google/gemma-4-E2B-it" selected>google/gemma-4-E2B-it (Local)</option>
+                            <option value="Qwen/Qwen2.5-7B-Instruct">Qwen/Qwen2.5-7B-Instruct</option>
+                            <option value="meta-llama/Llama-3.1-8B-Instruct">meta-llama/Llama-3.1-8B-Instruct</option>
+                        </select>
+                    </div>
+                    <div style="flex: 2;">
+                        <label class="form-label" for="train_output_name">LoRA Adapter Name</label>
+                        <input type="text" name="output_name" id="train_output_name" class="form-control" value="causal_adapter_{{ current_time|date:'Ymd_Hi' }}" required>
+                    </div>
+                </div>
+
+                <div class="form-group" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem;">
+                    <div>
+                        <label class="form-label" for="train_r">LoRA Rank (r)</label>
+                        <input type="number" name="lora_r" id="train_r" class="form-control" value="{{ rec_config.lora_r }}">
+                    </div>
+                    <div>
+                        <label class="form-label" for="train_alpha">LoRA Alpha</label>
+                        <input type="number" name="lora_alpha" id="train_alpha" class="form-control" value="{{ rec_config.lora_alpha }}">
+                    </div>
+                    <div>
+                        <label class="form-label" for="train_epochs">Epochs</label>
+                        <input type="number" name="epochs" id="train_epochs" class="form-control" value="{{ rec_config.num_train_epochs }}">
+                    </div>
+                    <div>
+                        <label class="form-label" for="train_lr">Learning Rate</label>
+                        <input type="text" name="learning_rate" id="train_lr" class="form-control" value="{{ rec_config.learning_rate }}">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1.25rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; color: var(--text-primary); cursor: pointer;">
+                        <input type="checkbox" name="dry_run" value="true" checked>
+                        Fast Dry-Run Mode (Verifies weights directory and registers LoRAAdapter instantly)
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">
+                    &#9889; Launch Hardware-Adapted QLoRA Training
+                </button>
+            </form>
+
+            <!-- Training Result / A/B Eval Trigger Container -->
+            <div id="training-status-container"></div>
+        </div>
+    </div>
+</div>

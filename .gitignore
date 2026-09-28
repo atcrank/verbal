@@ -201,3 +201,8 @@ sandbox_code.txt
 sandbox_code_full.txt
 view_actions.txt
 
+# Fine-tuning and testing artifacts
+adapters/
+test_data_*/
+
+

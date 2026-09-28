@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 from pathlib import Path
@@ -10,12 +11,22 @@ from django.contrib.auth.models import User
 from background_resources.models import Document, ReadingStrategy
 from benchmarking.models import (
     BenchmarkCorpus, ScenarioGroup, BenchmarkScenario, 
-    Investigation, Experiment, BenchmarkRun, BenchmarkResult
+    Investigation, Experiment, BenchmarkRun, BenchmarkResult,
+    FineTuningDataset
 )
 from benchmarking.generators import generate_scenarios_for_document
 from benchmarking.runner import EvaluationScore, run_benchmark_suite
 from benchmarking.long_context_evaluator import run_long_context_evaluation
+from benchmarking.hardware import (
+    HardwareProfile,
+    TrainingConfig,
+    detect_hardware_profile,
+    recommend_training_config,
+)
+from benchmarking.training import train_lora_adapter, TrainingResult
+from benchmarking.closed_loop import run_closed_loop_ab_evaluation, ABEvaluationResult
 from llm_api.apps import service_registry
+from llm_api.models import LoRAAdapter, LocalAIModel
 
 # Define isolated test paths
 TEST_BASE_DIR = Path(settings.BASE_DIR) / "test_data_benchmarking"
@@ -637,4 +648,228 @@ class BenchmarkingStudioUITests(TestCase):
         self.assertIn("Curation Complete", content)
         self.assertIn("Train Examples", content)
         self.assertIn("Val Scenarios", content)
+
+
+class HardwareAwareTrainingAndABEvalTests(TestCase):
+    """
+    WS18 Step 3: Comprehensive tests for Hardware-Aware QLoRA Training Harness,
+    Dynamic Hyperparameter Scaling across compute tiers, and Closed-Loop A/B Evaluation.
+    """
+
+    def setUp(self):
+        self.client = Client()
+        self.test_dir = Path(settings.BASE_DIR) / "test_data_training_step3"
+        os.makedirs(self.test_dir, exist_ok=True)
+
+        self.corpus = BenchmarkCorpus.objects.create(name="Step 3 Corpus", description="For training tests")
+        self.val_group = ScenarioGroup.objects.create(name="Val Holdout Group")
+        self.scenario_1 = BenchmarkScenario.objects.create(
+            question="What is the difference between S-Learner and T-Learner?",
+            expected_keywords=["S-Learner", "T-Learner", "single model"],
+            ideal_answer="S-Learner fits a single model with treatment indicator; T-Learner fits two separate models."
+        )
+        self.scenario_2 = BenchmarkScenario.objects.create(
+            question="How does back-door criterion identify causal effects?",
+            expected_keywords=["back-door", "confounding", "d-separation"],
+            ideal_answer="Back-door criterion blocks all non-causal paths between treatment and outcome."
+        )
+        self.val_group.scenarios.add(self.scenario_1, self.scenario_2)
+
+        # Create dummy JSONL files for dataset
+        self.train_file = self.test_dir / "train.jsonl"
+        with open(self.train_file, "w", encoding="utf-8") as f:
+            f.write(json.dumps({"prompt": "Explain S-Learner", "response": "S-Learner uses one model."}) + "\n")
+        self.val_file = self.test_dir / "val.jsonl"
+        with open(self.val_file, "w", encoding="utf-8") as f:
+            f.write(json.dumps({"prompt": "Explain T-Learner", "response": "T-Learner uses two models."}) + "\n")
+
+        self.dataset = FineTuningDataset.objects.create(
+            name="Causal Step 3 Dataset",
+            file_path=str(self.train_file),
+            train_example_count=1,
+            val_example_count=1,
+            validation_group=self.val_group,
+            metadata={"source": "test"},
+        )
+
+    def tearDown(self):
+        if hasattr(self, "test_dir") and os.path.exists(self.test_dir):
+            shutil.rmtree(self.test_dir, ignore_errors=True)
+        super().tearDown()
+
+    def test_hardware_detection_and_dynamic_scaling(self):
+        """Dynamic hardware profile correctly categorizes tiers and tunes batch/grad-accum/precision."""
+        # 1. Real profile detection
+        hw = detect_hardware_profile()
+        self.assertIn(hw.tier, ["consumer", "workstation", "datacenter", "cpu"])
+        self.assertIsInstance(hw.total_vram_gb, float)
+
+        # 2. Datacenter profile scaling (e.g. A100 / H100 with 80GB VRAM)
+        dc_hw = HardwareProfile(
+            device_type="cuda",
+            total_vram_gb=80.0,
+            compute_capability=(9, 0),
+            device_name="NVIDIA H100 SXM",
+            supports_bf16=True,
+            supports_flash_attn=True,
+        )
+        self.assertEqual(dc_hw.tier, "datacenter")
+        dc_cfg = recommend_training_config(dc_hw)
+        self.assertGreaterEqual(dc_cfg.batch_size, 4)
+        self.assertLessEqual(dc_cfg.gradient_accumulation_steps, 4)
+        self.assertEqual(dc_cfg.precision, "bf16")
+        self.assertGreaterEqual(dc_cfg.max_seq_length, 4096)
+
+        # 3. Workstation profile scaling (e.g. RTX 3090 / 4090 with 24GB VRAM)
+        ws_hw = HardwareProfile(
+            device_type="cuda",
+            total_vram_gb=24.0,
+            compute_capability=(8, 6),
+            device_name="NVIDIA GeForce RTX 3090",
+            supports_bf16=True,
+        )
+        self.assertEqual(ws_hw.tier, "workstation")
+        ws_cfg = recommend_training_config(ws_hw)
+        self.assertEqual(ws_cfg.batch_size, 4)
+        self.assertEqual(ws_cfg.gradient_accumulation_steps, 4)
+        self.assertEqual(ws_cfg.quantization, "4bit")
+
+        # 4. Consumer profile scaling (e.g. GTX 1660 Ti or 6GB-12GB GPU)
+        cons_hw = HardwareProfile(
+            device_type="cuda",
+            total_vram_gb=6.0,
+            compute_capability=(7, 5),
+            device_name="NVIDIA GeForce GTX 1660 Ti",
+            supports_bf16=False,
+        )
+        self.assertEqual(cons_hw.tier, "consumer")
+        cons_cfg = recommend_training_config(cons_hw)
+        self.assertEqual(cons_cfg.batch_size, 1)
+        self.assertGreaterEqual(cons_cfg.gradient_accumulation_steps, 16)
+        self.assertEqual(cons_cfg.quantization, "4bit")
+        self.assertTrue(cons_cfg.gradient_checkpointing)
+
+        # 5. CPU fallback scaling
+        cpu_hw = HardwareProfile(device_type="cpu", total_vram_gb=0.0)
+        self.assertEqual(cpu_hw.tier, "cpu")
+        cpu_cfg = recommend_training_config(cpu_hw)
+        self.assertEqual(cpu_cfg.quantization, "none")
+        self.assertEqual(cpu_cfg.precision, "fp32")
+
+    def test_train_lora_adapter_dry_run_and_registration(self):
+        """Dry-run training writes adapter structure and registers LoRAAdapter in database."""
+        out_dir = self.test_dir / "adapters"
+        result = train_lora_adapter(
+            dataset=self.dataset,
+            base_model_id="google/gemma-4-E2B-it",
+            output_adapter_name="step3_test_lora",
+            output_dir=str(out_dir),
+            dry_run=True,
+        )
+
+        self.assertTrue(result.success)
+        self.assertIsNotNone(result.adapter)
+        self.assertEqual(result.adapter.name, "step3_test_lora")
+        self.assertEqual(result.adapter.dataset, self.dataset)
+        self.assertTrue(os.path.exists(result.weights_path))
+        self.assertTrue(os.path.exists(os.path.join(result.weights_path, "adapter_config.json")))
+
+        # Verify in DB
+        adapter_in_db = LoRAAdapter.objects.get(name="step3_test_lora")
+        self.assertEqual(adapter_in_db.file_path, result.weights_path)
+        self.assertEqual(adapter_in_db.base_model.name, "google/gemma-4-E2B-it")
+
+    def test_run_closed_loop_ab_evaluation(self):
+        """Automated A/B evaluation benchmarks base vs adapter on held-out group and calculates deltas."""
+        base_model, _ = LocalAIModel.objects.get_or_create(
+            name="google/gemma-4-E2B-it",
+            defaults={"hf_model_id": "google/gemma-4-E2B-it"}
+        )
+        adapter = LoRAAdapter.objects.create(
+            name="certified_causal_lora",
+            base_model=base_model,
+            dataset=self.dataset,
+            file_path=str(self.test_dir / "certified_weights")
+        )
+
+        eval_res = run_closed_loop_ab_evaluation(adapter=adapter)
+        self.assertIsInstance(eval_res, ABEvaluationResult)
+        self.assertEqual(eval_res.adapter, adapter)
+        self.assertIn(eval_res.verdict, ["IMPROVED", "NEUTRAL", "REGRESSED"])
+        self.assertIsNotNone(eval_res.investigation)
+        self.assertIsNotNone(eval_res.base_run)
+        self.assertIsNotNone(eval_res.adapter_run)
+        self.assertIn("A/B Evaluation Certification Report", eval_res.summary_markdown)
+        self.assertIsInstance(eval_res.delta_semantic_pct, float)
+        self.assertIsInstance(eval_res.delta_relevance_pct, float)
+
+    def test_hardware_profile_api(self):
+        """GET /benchmarking/api/hardware/ returns valid JSON description of host hardware and recommendations."""
+        response = self.client.get("/benchmarking/api/hardware/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/json")
+        data = response.json()
+        self.assertIn("hardware", data)
+        self.assertIn("recommended_config", data)
+        self.assertIn("tier", data["hardware"])
+        self.assertIn("batch_size", data["recommended_config"])
+
+    def test_train_adapter_api(self):
+        """POST /benchmarking/api/train/ executes training and returns Datastar SSE with training results."""
+        post_data = {
+            "dataset_id": str(self.dataset.id),
+            "base_model_id": "google/gemma-4-E2B-it",
+            "output_name": "web_trained_lora",
+            "lora_r": "16",
+            "lora_alpha": "32",
+            "epochs": "1",
+            "learning_rate": "0.0002",
+            "dry_run": "true",
+        }
+        response = self.client.post("/benchmarking/api/train/", data=post_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/event-stream")
+        content = response.content.decode("utf-8")
+        self.assertIn("data: selector #training-status-container", content)
+        self.assertIn("Adapter Ready", content)
+        self.assertIn("web_trained_lora", content)
+        self.assertIn("Closed-Loop Verification", content)
+
+        # Check JSON format support
+        json_response = self.client.post(
+            "/benchmarking/api/train/",
+            data=post_data,
+            HTTP_ACCEPT="application/json"
+        )
+        self.assertEqual(json_response.status_code, 200)
+        self.assertTrue(json_response.json()["success"])
+
+    def test_ab_evaluation_api(self):
+        """POST /benchmarking/api/ab-eval/<id>/ triggers evaluation and returns Datastar SSE verdict."""
+        base_model, _ = LocalAIModel.objects.get_or_create(
+            name="google/gemma-4-E2B-it",
+            defaults={"hf_model_id": "google/gemma-4-E2B-it"}
+        )
+        adapter = LoRAAdapter.objects.create(
+            name="web_eval_lora",
+            base_model=base_model,
+            dataset=self.dataset,
+            file_path=str(self.test_dir / "eval_weights")
+        )
+        response = self.client.post(f"/benchmarking/api/ab-eval/{adapter.id}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/event-stream")
+        content = response.content.decode("utf-8")
+        self.assertIn(f"data: selector #ab-eval-container-{adapter.id}", content)
+        self.assertIn("A/B Verification Outcome", content)
+        self.assertIn("Open Comparative Investigation Report", content)
+
+        # Check JSON format support
+        json_response = self.client.post(
+            f"/benchmarking/api/ab-eval/{adapter.id}/",
+            HTTP_ACCEPT="application/json"
+        )
+        self.assertEqual(json_response.status_code, 200)
+        self.assertIn("verdict", json_response.json())
+
 
