@@ -636,14 +636,16 @@ CognitiveBlueprint.objects.all().delete()
 
 
         # Test 3: NightManager engages with database via structured write_django_model
-        bp_res = write_django_model({}, {
-            "app_label": "metacognition",
-            "model_name": "CognitiveBlueprint",
-            "action": "create",
-            "parameters": {"name": "NM Managed Blueprint"}
-        })
-        self.assertIn("Successfully created CognitiveBlueprint", bp_res)
-        self.assertTrue(CognitiveBlueprint.objects.filter(name="NM Managed Blueprint").exists())
+        # Requires self-modification allowance (e.g. DEVELOPMENT mode)
+        with self.settings(ALLOW_AGENT_SELF_MODIFICATION=True):
+            bp_res = write_django_model({}, {
+                "app_label": "metacognition",
+                "model_name": "CognitiveBlueprint",
+                "action": "create",
+                "parameters": {"name": "NM Managed Blueprint"}
+            })
+            self.assertIn("Successfully created CognitiveBlueprint", bp_res)
+            self.assertTrue(CognitiveBlueprint.objects.filter(name="NM Managed Blueprint").exists())
 
 
     @patch('django.core.management.call_command')
@@ -1750,5 +1752,152 @@ class SystemJanitorTests(TestCase):
         conv.delete()
 
 
+class ToolGovernancePolicyTests(TestCase):
+    """
+    Unit tests for WS17 Layered Tool Governance:
+    - Tier 1 settings clamps (AIR_GAPPED, CONTROLLED, DEVELOPMENT)
+    - Tier 2 tool capability categories and write_django_model allowlist
+    - Tier 3 user clearance level resolution
+    """
 
+    def setUp(self):
+        self.standard_user = User.objects.create_user(username="standard_user", password="password123")
+        self.trusted_user = User.objects.create_user(username="trusted_user", password="password123")
+        self.trusted_user.is_trusted = True
+        self.trusted_user.save()
+        self.admin_user = User.objects.create_superuser(username="admin_user", password="password123")
 
+    def test_is_tool_permitted_in_air_gapped_mode(self):
+        from metacognition.governance import is_tool_permitted, ToolCapability, ClearanceLevel
+        from unittest.mock import MagicMock
+
+        read_tool = MagicMock(name="read_tool", capability_category=ToolCapability.READ_ONLY, required_clearance=ClearanceLevel.STANDARD, is_active=True)
+        code_tool = MagicMock(name="code_tool", capability_category=ToolCapability.CODE_EXECUTION, required_clearance=ClearanceLevel.TRUSTED, is_active=True)
+        meta_tool = MagicMock(name="meta_tool", capability_category=ToolCapability.META_GOVERNANCE, required_clearance=ClearanceLevel.ADMIN, is_active=True)
+
+        with self.settings(
+            VERBAL_LOCKDOWN_LEVEL="AIR_GAPPED",
+            ALLOW_MODEL_CODE_EXECUTION=False,
+            ALLOW_AGENT_SELF_MODIFICATION=False
+        ):
+            # Read tool permitted for everyone
+            ok, msg = is_tool_permitted(read_tool, self.standard_user)
+            self.assertTrue(ok)
+
+            # Code tool blocked by host lockdown policy
+            ok, msg = is_tool_permitted(code_tool, self.standard_user)
+            self.assertFalse(ok)
+            self.assertIn("requires code execution", msg)
+
+            # Even admin cannot execute code if host policy clamps it
+            ok, msg = is_tool_permitted(code_tool, self.admin_user)
+            self.assertFalse(ok)
+
+            # Meta-tool blocked by host lockdown policy
+            ok, msg = is_tool_permitted(meta_tool, self.admin_user)
+            self.assertFalse(ok)
+            self.assertIn("meta-tool", msg)
+
+    def test_is_tool_permitted_controlled_mode_with_clearance(self):
+        from metacognition.governance import is_tool_permitted, ToolCapability, ClearanceLevel
+        from unittest.mock import MagicMock
+
+        code_tool = MagicMock(name="code_tool", capability_category=ToolCapability.CODE_EXECUTION, required_clearance=ClearanceLevel.TRUSTED, is_active=True)
+
+        with self.settings(
+            VERBAL_LOCKDOWN_LEVEL="CONTROLLED",
+            ALLOW_MODEL_CODE_EXECUTION=True,
+            ALLOW_AGENT_SELF_MODIFICATION=False
+        ):
+            # Standard user has insufficient clearance for TRUSTED code tool
+            ok, msg = is_tool_permitted(code_tool, self.standard_user)
+            self.assertFalse(ok)
+            self.assertIn("insufficient", msg)
+
+            # Trusted user has clearance
+            ok, msg = is_tool_permitted(code_tool, self.trusted_user)
+            self.assertTrue(ok)
+
+            # Admin user also has clearance
+            ok, msg = is_tool_permitted(code_tool, self.admin_user)
+            self.assertTrue(ok)
+
+    def test_is_tool_permitted_inactive_tool(self):
+        from metacognition.governance import is_tool_permitted, ToolCapability, ClearanceLevel
+        from unittest.mock import MagicMock
+
+        inactive_tool = MagicMock(name="dead_tool", capability_category=ToolCapability.READ_ONLY, required_clearance=ClearanceLevel.STANDARD, is_active=False)
+        ok, msg = is_tool_permitted(inactive_tool, self.admin_user)
+        self.assertFalse(ok)
+        self.assertIn("inactive", msg)
+
+    def test_write_django_model_allowlist_enforcement_in_air_gapped(self):
+        from metacognition.meta_tools import write_django_model
+
+        with self.settings(
+            VERBAL_LOCKDOWN_LEVEL="AIR_GAPPED",
+            ALLOW_AGENT_SELF_MODIFICATION=False
+        ):
+            # 1. Attacking ToolDefinition must be rejected
+            res1 = write_django_model({}, {
+                "app_label": "metacognition",
+                "model_name": "ToolDefinition",
+                "action": "create",
+                "parameters": {"name": "evil_tool", "python_path": "os.system"}
+            })
+            self.assertIn("Error: Security violation", res1)
+            self.assertIn("not in the permitted domain write allowlist", res1)
+
+            # 2. Attacking auth.User must be rejected
+            res2 = write_django_model({}, {
+                "app_label": "auth",
+                "model_name": "User",
+                "action": "create",
+                "parameters": {"username": "evil_admin"}
+            })
+            self.assertIn("Error: Security violation", res2)
+
+            # 3. Attacking CognitiveBlueprint in AIR_GAPPED mode must be rejected
+            res3 = write_django_model({}, {
+                "app_label": "metacognition",
+                "model_name": "CognitiveBlueprint",
+                "action": "create",
+                "parameters": {"name": "Self Mod BP"}
+            })
+            self.assertIn("Error: Security violation", res3)
+
+            # 4. Domain entity (grips.ConceptNode) is permitted
+            from grips.models import Domain
+            domain = Domain.objects.create(name="Governance Domain")
+            res4 = write_django_model({}, {
+                "app_label": "grips",
+                "model_name": "ConceptNode",
+                "action": "create",
+                "parameters": {"title": "Allowed Governance Concept", "domain_id": domain.id}
+            })
+            self.assertIn("Successfully created ConceptNode", res4)
+
+    def test_write_django_model_dev_self_mod_allowed(self):
+        from metacognition.meta_tools import write_django_model
+
+        with self.settings(
+            VERBAL_LOCKDOWN_LEVEL="DEVELOPMENT",
+            ALLOW_AGENT_SELF_MODIFICATION=True
+        ):
+            # In DEVELOPMENT mode, CognitiveBlueprint is permitted for self-mod research
+            res = write_django_model({}, {
+                "app_label": "metacognition",
+                "model_name": "CognitiveBlueprint",
+                "action": "create",
+                "parameters": {"name": "Dev Research Blueprint"}
+            })
+            self.assertIn("Successfully created CognitiveBlueprint", res)
+
+            # But auth.User and ToolDefinition are STILL strictly blocked
+            res_auth = write_django_model({}, {
+                "app_label": "auth",
+                "model_name": "User",
+                "action": "create",
+                "parameters": {"username": "still_blocked"}
+            })
+            self.assertIn("Error: Security violation", res_auth)

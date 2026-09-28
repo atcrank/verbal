@@ -209,6 +209,19 @@ TASKS = {
 
 SANDBOX_URL = "http://127.0.0.1:8002/execute"   # if django were dockerised, use docker dns "http://sandbox:8000/execute"
 
+# ------------------------------------------------------------------------
+# TOOL GOVERNANCE & LOCKDOWN CONFIGURATION (WS17)
+# ------------------------------------------------------------------------
+# Available levels: 'AIR_GAPPED' (default), 'RESTRICTED', 'CONTROLLED', 'DEVELOPMENT'
+VERBAL_LOCKDOWN_LEVEL = os.environ.get("VERBAL_LOCKDOWN_LEVEL", "AIR_GAPPED").upper()
+
+# Granular override clamps (default to the lockdown level preset)
+ALLOW_MODEL_CODE_EXECUTION = os.environ.get("ALLOW_MODEL_CODE_EXECUTION", "False").lower() in ("true", "1")
+ALLOW_TOOL_NETWORK_ACCESS = os.environ.get("ALLOW_TOOL_NETWORK_ACCESS", "False").lower() in ("true", "1")
+ALLOW_AGENT_SELF_MODIFICATION = (VERBAL_LOCKDOWN_LEVEL == "DEVELOPMENT") or (
+    os.environ.get("ALLOW_AGENT_SELF_MODIFICATION", "False").lower() in ("true", "1")
+)
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,

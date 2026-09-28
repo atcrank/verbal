@@ -694,12 +694,23 @@ def read_django_models(state: dict, params: dict) -> str:
 def write_django_model(state: dict, params: dict) -> str:
     """
     A generic write tool for Django models. Supports create, update, update_or_create, and create_variant.
+    Enforces the WS17 domain write allowlist to prevent privilege escalation or rogue mutations.
     """
     app_label = params.get("app_label")
     model_name = params.get("model_name")
     action = params.get("action", "create")
     pk = params.get("pk")
     model_params = params.get("parameters", {})
+
+    if not app_label or not model_name:
+        return "Error: Both 'app_label' and 'model_name' are required parameters."
+
+    # WS17 Governance: Enforce model write allowlist
+    from .governance import check_model_write_allowed
+    allowed, reason = check_model_write_allowed(app_label, model_name)
+    if not allowed:
+        logger.warning(f"write_django_model blocked by governance policy: {reason}")
+        return f"Error: {reason}"
     
     from django.apps import apps
     try:
