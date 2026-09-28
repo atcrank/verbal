@@ -74,8 +74,11 @@ def get_allowed_write_models() -> frozenset[str]:
 
 def get_lockdown_level() -> str:
     """Returns the active system lockdown level from Django settings."""
-    raw_level = getattr(settings, "VERBAL_LOCKDOWN_LEVEL", LockdownLevel.AIR_GAPPED)
-    return str(raw_level).upper()
+    raw_level = getattr(settings, "VERBAL_LOCKDOWN_LEVEL", LockdownLevel.DEVELOPMENT)
+    normalized = str(raw_level).upper().strip()
+    if normalized in ("TEXT_ONLY", "TEXT-ONLY", "LOCKED"):
+        return LockdownLevel.AIR_GAPPED
+    return normalized
 
 
 def get_user_clearance(user: Optional[User]) -> str:
@@ -180,8 +183,16 @@ def get_governance_summary(user: Optional[User] = None) -> dict:
     allow_net = getattr(settings, "ALLOW_TOOL_NETWORK_ACCESS", False)
     allow_self_mod = getattr(settings, "ALLOW_AGENT_SELF_MODIFICATION", False)
 
+    raw_setting = getattr(settings, "VERBAL_LOCKDOWN_LEVEL", LockdownLevel.DEVELOPMENT)
+    raw_upper = str(raw_setting).upper().strip()
+
     if level == LockdownLevel.AIR_GAPPED:
-        badge_label = "AIR-GAPPED"
+        if raw_upper in ("TEXT_ONLY", "TEXT-ONLY"):
+            badge_label = "TEXT-ONLY"
+        elif raw_upper == "LOCKED":
+            badge_label = "LOCKED"
+        else:
+            badge_label = "AIR-GAPPED"
         badge_icon = "🛡️"
         color_class = "gov-badge-airgapped"
         bg_style = "background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.35);"

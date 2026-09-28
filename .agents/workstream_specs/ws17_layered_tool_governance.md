@@ -67,7 +67,7 @@ The top-level configuration resides in `verbal_config/settings.py` and is config
 
 | Mode | Level | Model Code Execution | Meta-Tools (Self-Mod) | Permitted Capabilities & Rationale |
 | :--- | :--- | :--- | :--- | :--- |
-| **`AIR_GAPPED`** | 3 | **BLOCKED** | **BLOCKED** | **Deterministic inspection & domain state mutation only**: Safe queries (`READ_ONLY`), deterministic domain writes (`STATE_MUTATION`), graph traversal, RAG lookup. Zero code evaluation. |
+| **`AIR_GAPPED`**<br>*(or `TEXT_ONLY` / `LOCKED`)* | 3 | **BLOCKED** | **BLOCKED** | **Deterministic inspection & domain state mutation only**: Safe queries (`READ_ONLY`), deterministic domain writes (`STATE_MUTATION`), graph traversal, RAG lookup. Zero model-written code evaluation. *(Note: Platform microservice traffic such as web ↔ inference or web ↔ grobid is platform plumbing and is never blocked).* |
 | **`RESTRICTED`** | 2 | **BLOCKED** | **BLOCKED** | Standard operational mode: read-only queries, domain writes, and internal microservice integrations (e.g. Grobid, local vector embeddings). Code execution and self-modification blocked. |
 | **`CONTROLLED`** | 1 | Permitted for `TRUSTED` users | **BLOCKED** | Allows sandboxed Python script execution for verified analysts. Agent self-modification remains blocked. |
 | **`DEVELOPMENT`** | 0 | Permitted | **PERMITTED** | **Active Research Mode**: Unlocks all capabilities, including `create_tool`, `manage_dynamic_tools`, and blueprint modification for research into autonomous self-modifying agents. |

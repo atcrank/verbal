@@ -214,15 +214,28 @@ SANDBOX_URL = "http://127.0.0.1:8002/execute"   # if django were dockerised, use
 # ------------------------------------------------------------------------
 # TOOL GOVERNANCE & LOCKDOWN CONFIGURATION (WS17)
 # ------------------------------------------------------------------------
-# Available levels: 'AIR_GAPPED' (default), 'RESTRICTED', 'CONTROLLED', 'DEVELOPMENT'
-VERBAL_LOCKDOWN_LEVEL = os.environ.get("VERBAL_LOCKDOWN_LEVEL", "AIR_GAPPED").upper()
+# Available levels: 'DEVELOPMENT' (default for dev), 'CONTROLLED', 'RESTRICTED', 'AIR_GAPPED' (or 'TEXT_ONLY' / 'LOCKED')
+raw_lockdown = os.environ.get("VERBAL_LOCKDOWN_LEVEL", "DEVELOPMENT").upper().strip()
+if raw_lockdown in ("TEXT_ONLY", "TEXT-ONLY", "LOCKED"):
+    VERBAL_LOCKDOWN_LEVEL = "AIR_GAPPED"
+else:
+    VERBAL_LOCKDOWN_LEVEL = raw_lockdown
 
-# Granular override clamps (default to the lockdown level preset)
-ALLOW_MODEL_CODE_EXECUTION = os.environ.get("ALLOW_MODEL_CODE_EXECUTION", "False").lower() in ("true", "1")
-ALLOW_TOOL_NETWORK_ACCESS = os.environ.get("ALLOW_TOOL_NETWORK_ACCESS", "False").lower() in ("true", "1")
-ALLOW_AGENT_SELF_MODIFICATION = (VERBAL_LOCKDOWN_LEVEL == "DEVELOPMENT") or (
-    os.environ.get("ALLOW_AGENT_SELF_MODIFICATION", "False").lower() in ("true", "1")
-)
+# Granular override clamps (default intelligently from the lockdown level preset)
+if "ALLOW_MODEL_CODE_EXECUTION" in os.environ:
+    ALLOW_MODEL_CODE_EXECUTION = os.environ["ALLOW_MODEL_CODE_EXECUTION"].lower() in ("true", "1")
+else:
+    ALLOW_MODEL_CODE_EXECUTION = VERBAL_LOCKDOWN_LEVEL in ("DEVELOPMENT", "CONTROLLED")
+
+if "ALLOW_TOOL_NETWORK_ACCESS" in os.environ:
+    ALLOW_TOOL_NETWORK_ACCESS = os.environ["ALLOW_TOOL_NETWORK_ACCESS"].lower() in ("true", "1")
+else:
+    ALLOW_TOOL_NETWORK_ACCESS = VERBAL_LOCKDOWN_LEVEL in ("DEVELOPMENT",)
+
+if "ALLOW_AGENT_SELF_MODIFICATION" in os.environ:
+    ALLOW_AGENT_SELF_MODIFICATION = os.environ["ALLOW_AGENT_SELF_MODIFICATION"].lower() in ("true", "1")
+else:
+    ALLOW_AGENT_SELF_MODIFICATION = VERBAL_LOCKDOWN_LEVEL in ("DEVELOPMENT",)
 
 LOGGING = {
     "version": 1,
