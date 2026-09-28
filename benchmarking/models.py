@@ -36,6 +36,29 @@ class FineTuningDataset(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     format = models.CharField(max_length=50, default="sharegpt", choices=[("sharegpt", "ShareGPT"), ("openai", "OpenAI")])
 
+    validation_group = models.ForeignKey(
+        ScenarioGroup, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="validation_datasets",
+        help_text="Held-out ScenarioGroup created automatically for post-training validation."
+    )
+    split_ratio = models.FloatField(
+        default=0.85,
+        help_text="Train/validation split fraction (e.g. 0.85 for 85% train, 15% validation)."
+    )
+    train_example_count = models.IntegerField(
+        default=0,
+        help_text="Number of training examples in the exported training file."
+    )
+    val_example_count = models.IntegerField(
+        default=0,
+        help_text="Number of validation scenarios in the held-out validation group."
+    )
+    metadata = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Source breakdown, filtering parameters, and dataset health metrics."
+    )
+
     # Calculated Metrics
     example_count = models.IntegerField(default=0, help_text="Number of scenarios in dataset")
     total_tokens = models.IntegerField(default=0, help_text="Estimated total tokens")
@@ -44,9 +67,13 @@ class FineTuningDataset(models.Model):
 
     @property
     def is_stale(self):
-        """Returns True if the parent ScenarioGroup has been updated since this dataset was created."""
+        """Returns True if the parent or validation ScenarioGroup has been updated since this dataset was created."""
         if self.scenario_group and self.scenario_group.updated_at:
-            return self.scenario_group.updated_at > self.created_at
+            if self.scenario_group.updated_at > self.created_at:
+                return True
+        if self.validation_group and self.validation_group.updated_at:
+            if self.validation_group.updated_at > self.created_at:
+                return True
         return False
 
     def __str__(self):

@@ -296,3 +296,140 @@ class BenchmarkingIntegrationTests(TestCase):
             current_tokens = res.extra_metrics["cumulative_input_tokens"]
             self.assertGreater(current_tokens, prev_tokens)
             prev_tokens = current_tokens
+
+
+class DatasetCurationAndValidationSplitTests(TestCase):
+    """Unit tests for multi-source dataset curation and automated validation splitting."""
+
+    def setUp(self):
+        self.test_dir = Path(settings.BASE_DIR) / "test_data_curation"
+        os.makedirs(self.test_dir, exist_ok=True)
+
+    def tearDown(self):
+        if self.test_dir.exists():
+            shutil.rmtree(self.test_dir, ignore_errors=True)
+
+    def test_harvest_from_scenario_group(self):
+        """Verify harvesting extraction from existing ScenarioGroups."""
+        from benchmarking.curation import harvest_from_scenario_group
+        group = ScenarioGroup.objects.create(name="Curation Harvest Group")
+        for i in range(5):
+            s = BenchmarkScenario.objects.create(
+                question=f"Question {i} on Causal Bounds?",
+                ideal_answer=f"Answer {i} detailing Manski bounds.",
+                expected_keywords=["bounds", "causal"]
+            )
+            group.scenarios.add(s)
+
+        cands = harvest_from_scenario_group(group.id)
+        self.assertEqual(len(cands), 5)
+        self.assertEqual(cands[0].source_type, "scenario")
+        self.assertIn("Causal Bounds", cands[0].prompt)
+        self.assertEqual(cands[0].expected_keywords, ["bounds", "causal"])
+
+    def test_harvest_from_prompt_logs(self):
+        """Verify harvesting only high-signal thumbs-up production logs."""
+        from llm_api.models import PromptResponseLog
+        from benchmarking.curation import harvest_from_prompt_logs
+
+        # Approved log
+        PromptResponseLog.objects.create(
+            user_prompt="Explain instrumental variables.",
+            generated_response="An instrumental variable is exogenous...",
+            user_feedback=1,
+            step_status="SUCCESS"
+        )
+        # Unapproved or negative feedback log
+        PromptResponseLog.objects.create(
+            user_prompt="What is p-hacking?",
+            generated_response="P-hacking is...",
+            user_feedback=0,
+            step_status="SUCCESS"
+        )
+        # Failed step log
+        PromptResponseLog.objects.create(
+            user_prompt="Calculate ATE.",
+            generated_response="",
+            user_feedback=1,
+            step_status="FAILED"
+        )
+
+        cands = harvest_from_prompt_logs(min_feedback=1)
+        self.assertEqual(len(cands), 1)
+        self.assertEqual(cands[0].prompt, "Explain instrumental variables.")
+        self.assertEqual(cands[0].source_type, "prompt_log")
+
+    def test_split_candidates_deterministic(self):
+        """Verify deterministic train/val splitting logic with edge case guards."""
+        from benchmarking.curation import CurationCandidate, split_candidates
+        cands = [CurationCandidate(prompt=f"Q{i}", completion=f"A{i}", source_type="scenario") for i in range(10)]
+
+        train, val = split_candidates(cands, split_ratio=0.8, seed=42)
+        self.assertEqual(len(train), 8)
+        self.assertEqual(len(val), 2)
+
+        # Confirm non-overlapping
+        train_prompts = set(c.prompt for c in train)
+        val_prompts = set(c.prompt for c in val)
+        self.assertEqual(len(train_prompts.intersection(val_prompts)), 0)
+
+        # Confirm seed reproducibility
+        train2, val2 = split_candidates(cands, split_ratio=0.8, seed=42)
+        self.assertEqual([c.prompt for c in train], [c.prompt for c in train2])
+        self.assertEqual([c.prompt for c in val], [c.prompt for c in val2])
+
+    def test_curate_and_export_dataset_end_to_end(self):
+        """Verify end-to-end dataset creation, file writing, and validation ScenarioGroup auto-generation."""
+        import json
+        from benchmarking.curation import curate_and_export_dataset
+        from benchmarking.models import FineTuningDataset
+
+        group = ScenarioGroup.objects.create(name="Source Group for Curation")
+        for i in range(10):
+            s = BenchmarkScenario.objects.create(
+                question=f"Unique Question {i}: What is DAG factor {i}?",
+                ideal_answer=f"Unique Answer {i}: DAG factor {i} represents confounder node."
+            )
+            group.scenarios.add(s)
+
+        dataset = curate_and_export_dataset(
+            name="Causal Inference Tuning",
+            scenario_group_ids=[group.id],
+            split_ratio=0.8,
+            format="sharegpt",
+            seed=42,
+            datasets_dir=str(self.test_dir)
+        )
+
+        self.assertIsInstance(dataset, FineTuningDataset)
+        self.assertEqual(dataset.train_example_count, 8)
+        self.assertEqual(dataset.val_example_count, 2)
+        self.assertEqual(dataset.split_ratio, 0.8)
+        self.assertIsNotNone(dataset.validation_group)
+        self.assertEqual(dataset.validation_group.scenarios.count(), 2)
+        self.assertTrue(os.path.exists(dataset.file_path))
+
+        # Inspect the exported JSONL content
+        with open(dataset.file_path, "r", encoding="utf-8") as f:
+            lines = [json.loads(line) for line in f if line.strip()]
+        self.assertEqual(len(lines), 8)
+        self.assertIn("conversations", lines[0])
+        self.assertEqual(lines[0]["conversations"][0]["from"], "system")
+        self.assertEqual(lines[0]["conversations"][1]["from"], "human")
+        self.assertEqual(lines[0]["conversations"][2]["from"], "gpt")
+
+        # Verify held-out validation scenarios do not appear in training file
+        train_prompts = [line["conversations"][1]["value"] for line in lines]
+        for val_scenario in dataset.validation_group.scenarios.all():
+            self.assertNotIn(val_scenario.question, train_prompts)
+
+        # Verify staleness detection
+        self.assertFalse(dataset.is_stale)
+        # Advance updated_at to simulate source group update after creation
+        from django.utils import timezone
+        ScenarioGroup.objects.filter(id=group.id).update(
+            updated_at=timezone.now() + timezone.timedelta(seconds=5)
+        )
+        dataset.refresh_from_db()
+        self.assertTrue(dataset.is_stale)
+

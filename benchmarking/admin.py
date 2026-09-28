@@ -57,11 +57,36 @@ def generate_matrix_action(modeladmin, request, queryset):
 class BenchmarkCorpusAdmin(admin.ModelAdmin):
     filter_horizontal = ('documents',)
 
+from .curation import curate_and_export_dataset
 from .exporters import export_scenarios
 import os
 from django.conf import settings
 
-@admin.action(description="Export to new Fine-Tuning Dataset")
+@admin.action(description="Curate & Split into Fine-Tuning Dataset (85% Train / 15% Val)")
+def curate_and_split_action(modeladmin, request, queryset):
+    count = 0
+    for group in queryset:
+        if not group.scenarios.exists():
+            modeladmin.message_user(request, f"Skipped '{group.name}' because it has no scenarios.", level=messages.WARNING)
+            continue
+        try:
+            ds = curate_and_export_dataset(
+                name=f"{group.name} Curated",
+                scenario_group_ids=[group.id],
+                split_ratio=0.85,
+                format="sharegpt"
+            )
+            count += 1
+            modeladmin.message_user(
+                request,
+                f"✅ Curated '{ds.name}': {ds.train_example_count} train examples, "
+                f"{ds.val_example_count} held-out validation scenarios.",
+                level=messages.SUCCESS
+            )
+        except Exception as e:
+            modeladmin.message_user(request, f"Error curating '{group.name}': {e}", level=messages.ERROR)
+
+@admin.action(description="Export to new Fine-Tuning Dataset (100% Train)")
 def export_to_dataset(modeladmin, request, queryset):
     count = 0
     # Ensure datasets directory exists
@@ -97,8 +122,9 @@ def export_to_dataset(modeladmin, request, queryset):
 
 class FineTuningDatasetInline(admin.TabularInline):
     model = FineTuningDataset
-    fields = ('name', 'file_path', 'format', 'created_at')
-    readonly_fields = ('name', 'file_path', 'format', 'created_at')
+    fk_name = 'scenario_group'
+    fields = ('name', 'validation_group', 'train_example_count', 'val_example_count', 'format', 'created_at')
+    readonly_fields = ('name', 'validation_group', 'train_example_count', 'val_example_count', 'format', 'created_at')
     extra = 0
     show_change_link = True
     can_delete = False
@@ -115,10 +141,18 @@ def train_lora_on_dataset(modeladmin, request, queryset):
 
 @admin.register(FineTuningDataset)
 class FineTuningDatasetAdmin(admin.ModelAdmin):
-    list_display = ('name', 'scenario_group', 'format', 'example_count', 'adequacy_status', 'currency_status', 'created_at')
+    list_display = (
+        'name', 'scenario_group', 'validation_group', 'format',
+        'train_example_count', 'val_example_count', 'split_ratio',
+        'adequacy_status', 'currency_status', 'created_at'
+    )
     search_fields = ('name', 'file_path')
     list_filter = ('format',)
-    readonly_fields = ('example_count', 'total_tokens', 'semantic_diversity_score', 'estimated_training_minutes', 'adequacy_status', 'currency_status')
+    readonly_fields = (
+        'example_count', 'train_example_count', 'val_example_count', 'split_ratio',
+        'total_tokens', 'semantic_diversity_score', 'estimated_training_minutes',
+        'adequacy_status', 'currency_status', 'metadata'
+    )
     actions = [train_lora_on_dataset]
 
     @admin.display(description='Dataset Adequacy')
@@ -143,7 +177,7 @@ class ScenarioGroupAdmin(admin.ModelAdmin):
     search_fields = ('name', 'description')
     filter_horizontal = ('scenarios',)
     inlines = [FineTuningDatasetInline]
-    actions = [export_to_dataset]
+    actions = [curate_and_split_action, export_to_dataset]
 
 @admin.action(description="Copy selected scenarios to a new Scenario Group")
 def create_new_scenario_group(modeladmin, request, queryset):
