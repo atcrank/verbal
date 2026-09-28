@@ -115,9 +115,11 @@ def run_benchmark_api(request):
 
     # Resolve or create Investigation
     if not investigation_id or investigation_id == "new":
+        new_name = request.POST.get("new_investigation_name", "").strip()
+        inv_title = new_name if new_name else f"Investigation {timezone.now().strftime('%Y-%m-%d %H:%M')}"
         investigation = Investigation.objects.create(
-            name=f"Investigation {timezone.now().strftime('%Y-%m-%d %H:%M')}",
-            description="Auto-generated investigation via Benchmarking Studio Matrix Composer.",
+            name=inv_title,
+            description="Created via Benchmarking Studio Matrix Composer.",
         )
     else:
         investigation = get_object_or_404(Investigation, pk=investigation_id)

@@ -52,13 +52,22 @@
                     
                     <div class="form-group">
                         <label class="form-label" for="id_investigation">Investigation</label>
-                        <select name="investigation_id" id="id_investigation" class="form-select">
+                        <select name="investigation_id" id="id_investigation" class="form-select" onchange="document.getElementById('new-inv-name-group').style.display = (this.value === 'new') ? 'block' : 'none';">
+                            <option value="new">+ Create New Investigation</option>
                             {% for inv in investigations %}
-                            <option value="{{ inv.id }}">{{ inv.name }}</option>
-                            {% empty %}
-                            <option value="new">+ Create Auto Investigation</option>
+                            <option value="{{ inv.id }}" {% if forloop.first %}selected{% endif %}>{{ inv.name }}</option>
                             {% endfor %}
                         </select>
+                    </div>
+
+                    {% if investigations %}
+                    <div class="form-group" id="new-inv-name-group" style="display: none;">
+                    {% else %}
+                    <div class="form-group" id="new-inv-name-group">
+                    {% endif %}
+                        <label class="form-label" for="id_new_investigation_name">New Investigation Title</label>
+                        <input type="text" name="new_investigation_name" id="id_new_investigation_name" class="form-control" 
+                               placeholder="e.g. Gemma vs Qwen Architecture Trial">
                     </div>
 
                     <div class="form-group">
