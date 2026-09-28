@@ -74,21 +74,47 @@ def evaluate_metric(ai_service, prompt_template, num_sequences=5, **kwargs):
 
 
 def _switch_active_model(experiment, log_callback):
-    """Switches the globally active AI model if the experiment demands it."""
-    if not experiment.selected_model:
-        return
-        
-    current_model_id = getattr(service_registry.ai_service, 'model_id', None)
-    target_model_id = experiment.selected_model.hf_model_id
+    """Switches the globally active AI model and hosting backend if the experiment demands it."""
+    config_dict = experiment.configuration or {}
+    desired_backend = config_dict.get('hosting_backend')
     
-    if current_model_id != target_model_id:
-        log_callback(f"⚠️ Switching AI Model to {experiment.selected_model.name}...")
-        from llm_api.models import LocalAIModel
-        LocalAIModel.objects.update(is_system_active=False)
-        experiment.selected_model.is_system_active = True
-        experiment.selected_model.save()
+    from llm_api.models import SystemConfiguration, LocalAIModel
+    system_config = SystemConfiguration.get_solo()
+    
+    backend_changed = False
+    model_changed = False
+    
+    if desired_backend and system_config and system_config.hosting_backend != desired_backend:
+        log_callback(f"⚠️ Switching Hosting Backend from '{system_config.hosting_backend}' to '{desired_backend}'...")
+        system_config.hosting_backend = desired_backend
+        backend_changed = True
+        
+    if experiment.selected_model and system_config:
+        target_model = experiment.selected_model
+        backend = desired_backend or system_config.hosting_backend
+        
+        if backend == 'ollama':
+            if system_config.active_ollama_model != target_model:
+                system_config.active_ollama_model = target_model
+                model_changed = True
+        elif backend == 'vllm':
+            if system_config.active_vllm_model != target_model:
+                system_config.active_vllm_model = target_model
+                model_changed = True
+        else:
+            if system_config.active_local_model != target_model:
+                system_config.active_local_model = target_model
+                model_changed = True
+
+            
+    if backend_changed or model_changed:
+        system_config.save()
         service_registry.reload_ai_service()
-        log_callback(f"✅ Model switched to {target_model_id}")
+        log_callback(f"✅ Active backend is now '{system_config.hosting_backend}', model set to {experiment.selected_model.name if experiment.selected_model else 'None'}")
+    else:
+        current_model_id = getattr(service_registry.ai_service, 'model_id', None)
+        if experiment.selected_model and current_model_id != experiment.selected_model.hf_model_id:
+            service_registry.reload_ai_service()
 
 
 def _ingest_test_corpus(corpus, rag_service, rag_strategy, chunk_size_override, chunk_overlap_override, log_callback):

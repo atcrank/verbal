@@ -44,21 +44,22 @@ services:
     volumes:
       - ./lora_adapters:/lora_adapters
       - ~/.cache/huggingface:/root/.cache/huggingface
-    entrypoint: ["/bin/sh", "-c"]
     command: >
-      "exec vllm serve $${VLLM_MODEL:-google/gemma-4-E2B-it}
-             --gpu-memory-utilization $${VLLM_GPU_MEMORY_UTILIZATION:-0.75}
-             --max-model-len $${VLLM_MAX_MODEL_LEN:-4096}
-             --dtype $${VLLM_DTYPE:-auto}
-             $${VLLM_EXTRA_ARGS:---enable-lora}"
+      ${VLLM_MODEL:-google/gemma-2-2b-it}
+      --gpu-memory-utilization ${VLLM_GPU_MEMORY_UTILIZATION:-0.4}
+      --max-model-len ${VLLM_MAX_MODEL_LEN:-2048}
+      --dtype ${VLLM_DTYPE:-float16}
+      ${VLLM_EXTRA_ARGS:-}
     profiles: ["inference"]
     environment:
-      - VLLM_MODEL=${VLLM_MODEL:-google/gemma-4-E2B-it}
-      - VLLM_GPU_MEMORY_UTILIZATION=${VLLM_GPU_MEMORY_UTILIZATION:-0.75}
-      - VLLM_MAX_MODEL_LEN=${VLLM_MAX_MODEL_LEN:-4096}
-      - VLLM_DTYPE=${VLLM_DTYPE:-auto}
-      - VLLM_EXTRA_ARGS=${VLLM_EXTRA_ARGS:---enable-lora}
+      - VLLM_MODEL=${VLLM_MODEL:-google/gemma-2-2b-it}
+      - VLLM_GPU_MEMORY_UTILIZATION=${VLLM_GPU_MEMORY_UTILIZATION:-0.4}
+      - VLLM_MAX_MODEL_LEN=${VLLM_MAX_MODEL_LEN:-2048}
+      - VLLM_DTYPE=${VLLM_DTYPE:-float16}
+      - VLLM_EXTRA_ARGS=${VLLM_EXTRA_ARGS:-}
       - VLLM_DEVICE=cuda
+      - VLLM_USE_V2_MODEL_RUNNER=0
+      - VLLM_WSL2_ENABLE_PIN_MEMORY=1
       - HUGGING_FACE_HUB_TOKEN=${HUGGING_FACE_HUB_TOKEN:-}
     deploy:
       resources:

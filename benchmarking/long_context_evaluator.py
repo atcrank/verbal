@@ -155,6 +155,9 @@ def run_long_context_evaluation(experiment, corpus, log_callback=None):
                 if metrics:
                     traj_metrics["tokens_per_second"] = metrics.tokens_per_second
                     traj_metrics["generation_duration_ms"] = metrics.total_duration_ms
+                    traj_metrics["output_tokens"] = metrics.output_tokens
+                    traj_metrics["time_to_first_token_ms"] = metrics.time_to_first_token_ms
+                    traj_metrics["prompt_eval_tokens_per_second"] = metrics.prompt_eval_tokens_per_second
                     
                 # Extract cumulative input tokens for this turn
                 cumulative_tokens = ai_service.count_conversation_tokens(messages[:-1])
@@ -163,13 +166,15 @@ def run_long_context_evaluation(experiment, corpus, log_callback=None):
             duration = time.perf_counter() - start_time
             sem_score = _calculate_semantic_similarity(rag_service.embeddings, cleaned_response, scenario.ideal_answer)
 
-            faith_score, faith_success, rel_score, rel_success = _evaluate_llm_metrics(
-                ai_service, rag_strategy, rag_text_block, scenario.question, cleaned_response
-            )
-            
-            if faith_score != -1.0 or rel_score != -1.0:
-                total_eval_success += (faith_success + rel_success) / 2.0
-                eval_attempts += 1
+            if config_snapshot.get('eval_llm_metrics', False):
+                faith_score, faith_success, rel_score, rel_success = _evaluate_llm_metrics(
+                    ai_service, rag_strategy, rag_text_block, scenario.question, cleaned_response
+                )
+                if faith_score != -1.0 or rel_score != -1.0:
+                    total_eval_success += (faith_success + rel_success) / 2.0
+                    eval_attempts += 1
+            else:
+                faith_score, faith_success, rel_score, rel_success = -1.0, 0.0, -1.0, 0.0
                 
             BenchmarkResult.objects.create(
                 run=run_record,
