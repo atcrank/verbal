@@ -65,56 +65,95 @@ The top-level configuration resides in `verbal_config/settings.py` and is config
 
 #### Lockdown Modes
 
-| Mode | Level | Model Code Execution | Network Access | Dynamic Tools / Meta-Tools | Permitted Capabilities |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **`AIR_GAPPED`** | 3 | **BLOCKED** | **BLOCKED** | **BLOCKED** | Deterministic domain queries (`DOMAIN_READ`), safe domain writes (`DOMAIN_WRITE`), graph traversal, RAG lookup. |
-| **`RESTRICTED`** | 2 | **BLOCKED** | Whitelisted internal only | **BLOCKED** | Domain read/write, internal microservices (e.g. Grobid, local vector stores). External internet blocked. |
-| **`CONTROLLED`** | 1 | Permitted for `TRUSTED` users | Whitelisted endpoints | **BLOCKED** | Domain read/write, sandboxed Python scripts for trusted analysts, vetted APIs. |
-| **`PERMISSIVE`** | 0 | Permitted | Permitted | Gated (Admin only) | Unrestricted local research/development mode. |
+| Mode | Level | Model Code Execution | Meta-Tools (Self-Mod) | Permitted Capabilities & Rationale |
+| :--- | :--- | :--- | :--- | :--- |
+| **`AIR_GAPPED`** | 3 | **BLOCKED** | **BLOCKED** | **Deterministic inspection & domain state mutation only**: Safe queries (`READ_ONLY`), deterministic domain writes (`STATE_MUTATION`), graph traversal, RAG lookup. Zero code evaluation. |
+| **`RESTRICTED`** | 2 | **BLOCKED** | **BLOCKED** | Standard operational mode: read-only queries, domain writes, and internal microservice integrations (e.g. Grobid, local vector embeddings). Code execution and self-modification blocked. |
+| **`CONTROLLED`** | 1 | Permitted for `TRUSTED` users | **BLOCKED** | Allows sandboxed Python script execution for verified analysts. Agent self-modification remains blocked. |
+| **`DEVELOPMENT`** | 0 | Permitted | **PERMITTED** | **Active Research Mode**: Unlocks all capabilities, including `create_tool`, `manage_dynamic_tools`, and blueprint modification for research into autonomous self-modifying agents. |
 
 #### Settings Implementation (`verbal_config/settings.py`)
 ```python
-# Lockdown Levels: 'AIR_GAPPED', 'RESTRICTED', 'CONTROLLED', 'PERMISSIVE'
+# Lockdown Levels: 'AIR_GAPPED', 'RESTRICTED', 'CONTROLLED', 'DEVELOPMENT'
 VERBAL_LOCKDOWN_LEVEL = os.getenv('VERBAL_LOCKDOWN_LEVEL', 'AIR_GAPPED').upper()
 
 # Granular override clamps (default to the lockdown level preset)
 ALLOW_MODEL_CODE_EXECUTION = os.getenv('ALLOW_MODEL_CODE_EXECUTION', 'False').lower() == 'true'
-ALLOW_TOOL_NETWORK_ACCESS = os.getenv('ALLOW_TOOL_NETWORK_ACCESS', 'False').lower() == 'true'
-ALLOW_AGENT_SELF_MODIFICATION = False  # Always False in production deployments
+ALLOW_AGENT_SELF_MODIFICATION = (VERBAL_LOCKDOWN_LEVEL == 'DEVELOPMENT')
 ```
 
-> [!IMPORTANT]
-> The Tier 1 ceiling is mathematically non-bypassable. If `VERBAL_LOCKDOWN_LEVEL = 'AIR_GAPPED'`, no database flag, superuser account, or prompt trick can enable code execution or network requests.
+> [!NOTE]
+> **Network Clarification**: In Verbal, the LLM has **no external web-access tools**. Internal microservice communication (e.g. Grobid PDF extraction, Postgres queries, local LLM inference) is handled by the application runtime, not by model-facing tools. Network concerns from the organization are therefore fully addressed: the model cannot make arbitrary outbound HTTP calls.
 
 ---
 
 ### 2.2 Tier 2: Database Registry & Control Plane Separation
 
-To prevent privilege escalation, the system strictly separates the **Control Plane** (managing tools) from the **Data Plane** (agents executing tools).
+To prevent privilege escalation while preserving research flexibility in development, the system cleanly categorizes every tool by its functional capability.
 
-#### 1. Capability & Clearance on `ToolDefinition`
-Add two fields to [ToolDefinition](file:///home/crank/coding/antigrav/verbal/metacognition/models.py#L276):
-- `capability_category`:
-  - `DOMAIN_READ`: Safe data inspection (e.g. `read_django_models`, `document_reader`, `get_grips_metrics`).
-  - `DOMAIN_WRITE`: Mutation of allowed business entities (e.g. `update_conversation_state`, `record_signal`).
-  - `CODE_EXECUTION`: Script execution (`django_shell_script`, `python_sandbox`).
-  - `NETWORK_CALL`: Outbound HTTP calls (`tool_type='api'`).
-  - `META_GOVERNANCE`: System management (`create_tool`, `manage_dynamic_tools`, `promote_artifact`, `deprecate_tool`).
-- `required_clearance`:
-  - `STANDARD`: Available to all authenticated users (provided capability is permitted by Tier 1).
-  - `TRUSTED`: Available to trusted operators (e.g. Python sandbox when in `CONTROLLED` mode).
-  - `ADMIN`: Reserved for administrative tasks.
+#### 1. Concrete Tool Capability Categories
+Instead of vague labels, tools are classified into 4 distinct categories based on what they actually do:
 
-#### 2. Decommissioning Runtime Meta-Tools
-The following meta-tools will be permanently excluded from all agent blueprints:
-- `create_tool`
-- `manage_dynamic_tools`
-- `promote_artifact`
-- `deprecate_tool`
+1. **`READ_ONLY` (Knowledge & Database Inspection)**:
+   - Pure read operations that inspect existing state without side-effects.
+   - Examples: querying the database ([read_django_models](file:///home/crank/coding/antigrav/verbal/metacognition/meta_tools.py#L657)), fetching RAG context ([document_reader](file:///home/crank/coding/antigrav/verbal/metacognition/meta_tools.py#L275), [search_rag_chunks](file:///home/crank/coding/antigrav/verbal/metacognition/meta_tools.py#L1066)), exploring the knowledge graph ([get_grips_metrics](file:///home/crank/coding/antigrav/verbal/metacognition/meta_tools.py#L1000), [search_grips_nodes](file:///home/crank/coding/antigrav/verbal/metacognition/meta_tools.py#L1082)), and reading logs ([fetch_log_details](file:///home/crank/coding/antigrav/verbal/metacognition/meta_tools.py#L954)).
+   - **Risk**: None. Safe in all environments.
 
-Tool definitions and blueprint topologies may only be created, modified, or activated by authorized human developers using Django migrations or staff with Django Admin permissions (`metacognition.change_tooldefinition`).
+2. **`STATE_MUTATION` (Deterministic State & Domain Writes)**:
+   - Operations that write or mutate application data using strictly parameterized Django ORM logic (no code execution).
+   - Examples: updating working memory ([update_conversation_state](file:///home/crank/coding/antigrav/verbal/metacognition/meta_tools.py#L805)), creating/updating allowed domain objects via [write_django_model](file:///home/crank/coding/antigrav/verbal/metacognition/meta_tools.py#L694) (e.g. ConceptNodes, WhiteboardCards, Notes), recording telemetry ([record_signal](file:///home/crank/coding/antigrav/verbal/metacognition/meta_tools.py#L1120)), or completing tasks ([TASK_COMPLETE](file:///home/crank/coding/antigrav/verbal/metacognition/meta_tools.py#L597)).
+   - **Risk**: Low. Safe when bounded by model allowlists.
 
-#### 3. Hardening `write_django_model`
+3. **`CODE_EXECUTION` (Model-Written Script Execution)**:
+   - Tools that take raw code strings generated by an LLM and execute them in a runtime ([django_shell_script](file:///home/crank/coding/antigrav/verbal/metacognition/meta_tools.py#L410), [python_sandbox](file:///home/crank/coding/antigrav/verbal/metacognition/actions.py#L745)).
+   - **Risk**: High (sandbox escape, resource exhaustion). Gated strictly by Tier 1 and restricted to `TRUSTED` users in `CONTROLLED` mode.
+
+4. **`META_GOVERNANCE` (Self-Modification & Dynamic Tools)**:
+   - Tools that modify the agent's own execution graph, create new tools on disk, or promote artifacts ([create_tool](file:///home/crank/coding/antigrav/verbal/metacognition/meta_tools.py#L21), [manage_dynamic_tools](file:///home/crank/coding/antigrav/verbal/metacognition/meta_tools.py#L746), [promote_artifact](file:///home/crank/coding/antigrav/verbal/metacognition/meta_tools.py#L241), [deprecate_tool](file:///home/crank/coding/antigrav/verbal/metacognition/meta_tools.py#L230), [create_blueprint](file:///home/crank/coding/antigrav/verbal/metacognition/meta_tools.py#L61)).
+   - **Preserved for Development Research**: These tools remain active and available in `DEVELOPMENT` mode to support ongoing research into autonomous self-modifying agents and dynamic tool synthesis. In production/air-gapped deployments, they are strictly blocked by Tier 1 (`ALLOW_AGENT_SELF_MODIFICATION = False`).
+
+---
+
+### 2.3 Inventory of Existing Verbal Tools
+
+| Tool Name | Capability Category | Default Clearance | Operational Description |
+| :--- | :--- | :--- | :--- |
+| `read_django_models` | `READ_ONLY` | `STANDARD` | Inspects database records safely via read-only queries. |
+| `discover_django_models` | `READ_ONLY` | `STANDARD` | Returns field schemas and model relationships. |
+| `document_reader` | `READ_ONLY` | `STANDARD` | Reads and navigates documents in the RAG repository. |
+| `search_rag_chunks` | `READ_ONLY` | `STANDARD` | Performs vector and keyword retrieval over indexed documents. |
+| `search_grips_nodes` | `READ_ONLY` | `STANDARD` | Semantic and keyword search across GRIPS knowledge graph. |
+| `get_grips_metrics` | `READ_ONLY` | `STANDARD` | Reads aggregate metrics on concept nodes and failure flags. |
+| `get_empty_grips_stubs`| `READ_ONLY` | `STANDARD` | Identifies concept nodes that require enrichment. |
+| `search_past_conversations` | `READ_ONLY` | `STANDARD` | Queries historical conversation logs for RAG context. |
+| `fetch_log_details` | `READ_ONLY` | `STANDARD` | Deep reads of specific prompt and response logs. |
+| `get_conversation_metrics` | `READ_ONLY` | `STANDARD` | Summarizes reasoning step pass/fail statistics. |
+| `get_benchmark_stats` | `READ_ONLY` | `STANDARD` | Reads benchmark summary statistics. |
+| `read_benchmark_topic` | `READ_ONLY` | `STANDARD` | Reads detailed benchmark logs for specific investigations. |
+| `review_benchmark_results`| `READ_ONLY` | `STANDARD` | Fetches and aggregates benchmark outcomes. |
+| `inspect_nightmanager_performance` | `READ_ONLY` | `STANDARD` | Reads health metrics and telemetry for background tasks. |
+| `list_available_tools` | `READ_ONLY` | `STANDARD` | Informational listing of active tools for reasoning steps. |
+| `list_blueprints` | `READ_ONLY` | `STANDARD` | Informational summary of blueprints and step topology. |
+| `update_conversation_state` | `STATE_MUTATION` | `STANDARD` | Updates the active `Conversation.state_tree` working memory. |
+| `record_signal` | `STATE_MUTATION` | `STANDARD` | Writes structured signals/telemetry to database. |
+| `TASK_COMPLETE` | `STATE_MUTATION` | `STANDARD` | Signals task completion and updates working prompt. |
+| `delegate_task` | `STATE_MUTATION` | `STANDARD` | Enqueues a sub-task for another blueprint to process. |
+| `run_sub_blueprint` | `STATE_MUTATION` | `STANDARD` | Runs a sub-blueprint synchronously and returns output. |
+| `write_django_model` | `STATE_MUTATION` | `STANDARD` | Parameterized CRUD for allowlisted domain models only. |
+| `system_janitor` | `STATE_MUTATION` | `TRUSTED` | Cleans up empty workspace directories on disk. |
+| `database_backup` | `STATE_MUTATION` | `ADMIN` | Takes a JSON backup dump of the database. |
+| `django_shell_script` | `CODE_EXECUTION` | `TRUSTED` | Executes model-generated Python code in Docker sandbox. |
+| `python_sandbox` | `CODE_EXECUTION` | `TRUSTED` | Dispatches script execution to sandbox HTTP daemon. |
+| `create_tool` | `META_GOVERNANCE` | `ADMIN` | Creates new `ToolDefinition` (Dev research mode only). |
+| `manage_dynamic_tools` | `META_GOVERNANCE` | `ADMIN` | Writes dynamic Python tools to disk (Dev research mode only). |
+| `promote_artifact` | `META_GOVERNANCE` | `ADMIN` | Promotes tools or blueprints (Dev research mode only). |
+| `deprecate_tool` | `META_GOVERNANCE` | `ADMIN` | Deactivates tools (Dev research mode only). |
+| `create_blueprint` | `META_GOVERNANCE` | `ADMIN` | Synthesizes new cognitive blueprints (Dev research mode only). |
+| `clone_and_modify_blueprint` | `META_GOVERNANCE` | `ADMIN` | Clones and alters blueprint steps (Dev research mode only). |
+
+---
+
+### 2.4 Hardening `write_django_model`
 [write_django_model](file:///home/crank/coding/antigrav/verbal/metacognition/meta_tools.py#L694) is restricted with an explicit model **allowlist**:
 ```python
 ALLOWED_DOMAIN_MODELS = {
