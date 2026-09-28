@@ -41,3 +41,6 @@
 
 - [ ] [Review/Audit] Convene Multi-Model Comprehensive Review (Status: in-progress) -> [MULTI_MODEL_REVIEW_GUIDELINES.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/MULTI_MODEL_REVIEW_GUIDELINES.md)
   *Summary*: Convene a multi-model evaluation of Reason across 5 pillars (sociotechnical physics simulation value proposition, code quality & async integration, empirical test coverage vs. number-padding, documentation & doctest trials, and growth paths/blockers). Participating agents produce candidate specs in `.agents/workstream_specs/`.
+
+- [ ] [Security/Architecture] Layered Tool Governance & Lockdown Levels (Status: pending) -> [ws17_layered_tool_governance.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/ws17_layered_tool_governance.md)
+  *Summary*: Implement a 3-tier defense-in-depth governance model for model tools (Tier 1 .env/settings ceiling, Tier 2 database registry & RBAC, Tier 3 user clearance) with zero-trust compiler/executor enforcement, write_django_model allowlisting, UI lockdown header badge, and visual blueprint compatibility indicators.
