@@ -16,8 +16,21 @@ def resolve_tool(tool_definition) -> callable:
 def execute_tool(tool_def, state: dict, params: dict, dry_run: bool = False) -> str:
     """
     Executes a ToolDefinition. If dry_run is True, database mutations are rolled back.
+    Enforces the WS17 3-tier governance policy invariant before execution.
     """
     try:
+        # WS17 Governance: Execution gateway invariant check
+        from .governance import is_tool_permitted
+        user = state.get("user") if isinstance(state, dict) else None
+        if not user and isinstance(state, dict) and state.get("user_id"):
+            from django.contrib.auth.models import User
+            user = User.objects.filter(id=state.get("user_id")).first()
+
+        permitted, reason = is_tool_permitted(tool_def, user)
+        if not permitted:
+            logger.warning(f"execute_tool blocked execution of '{tool_def.name}': {reason}")
+            return f"Error: Governance violation: {reason}"
+
         if tool_def.tool_type == 'builtin':
             func = resolve_tool(tool_def)
             

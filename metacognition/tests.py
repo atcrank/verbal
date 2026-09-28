@@ -1901,3 +1901,85 @@ class ToolGovernancePolicyTests(TestCase):
                 "parameters": {"username": "still_blocked"}
             })
             self.assertIn("Error: Security violation", res_auth)
+
+    def test_execute_tool_blocks_prohibited_execution(self):
+        from metacognition.tool_executor import execute_tool
+        from metacognition.models import ToolDefinition
+
+        code_tool, _ = ToolDefinition.objects.get_or_create(
+            name="test_gov_code_tool",
+            defaults={
+                "tool_type": "builtin",
+                "python_path": "metacognition.meta_tools.TASK_COMPLETE",
+                "capability_category": "CODE_EXECUTION",
+                "required_clearance": "TRUSTED",
+            }
+        )
+
+        with self.settings(
+            VERBAL_LOCKDOWN_LEVEL="AIR_GAPPED",
+            ALLOW_MODEL_CODE_EXECUTION=False
+        ):
+            # Direct invocation via execute_tool in AIR_GAPPED mode must return governance violation
+            res = execute_tool(code_tool, {"user": self.standard_user}, {})
+            self.assertIn("Error: Governance violation", res)
+            self.assertIn("requires code execution", res)
+
+    def test_compiler_filters_tools_and_injects_directive(self):
+        from unittest.mock import patch
+        from metacognition.models import CognitiveBlueprint, ReasoningStep, ToolDefinition
+        from metacognition.compiler import compile_graph_from_blueprint
+
+        bp = CognitiveBlueprint.objects.create(name="Gov Compiler BP", description="Test")
+        step = ReasoningStep.objects.create(
+            blueprint=bp,
+            name="Gov Step",
+            is_start_node=True,
+            system_prompt="Base system prompt"
+        )
+        read_tool, _ = ToolDefinition.objects.get_or_create(
+            name="test_gov_read",
+            defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.TASK_COMPLETE", "capability_category": "READ_ONLY"}
+        )
+        code_tool, _ = ToolDefinition.objects.get_or_create(
+            name="test_gov_code",
+            defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.TASK_COMPLETE", "capability_category": "CODE_EXECUTION", "required_clearance": "TRUSTED"}
+        )
+        step.available_tools.add(read_tool, code_tool)
+
+        with self.settings(
+            VERBAL_LOCKDOWN_LEVEL="AIR_GAPPED",
+            ALLOW_MODEL_CODE_EXECUTION=False
+        ):
+            with patch("llm_api.ai_service.AIService.generate_response2") as mock_gen, \
+                 patch("llm_api.ai_service.AIService.supports_native_tools", return_value=True):
+                mock_gen.return_value = ["Analysis complete."]
+                graph = compile_graph_from_blueprint(bp)
+                state = {
+                    "working_memory": [],
+                    "rag_context": "",
+                    "route_to": None,
+                    "conversation_id": "test_gov_conv",
+                    "user_id": self.standard_user.id,
+                    "step_count": 0,
+                    "max_steps": 5,
+                    "retries_remaining": {},
+                    "internal_monologue": [],
+                    "scratch": {},
+                    "token_budget_remaining": 8000
+                }
+                res = graph.invoke(state, {"configurable": {"thread_id": "test_gov_conv_1"}})
+                
+                # Check system prompt received governance directive
+                monologue = res.get("internal_monologue", [])
+                self.assertTrue(len(monologue) > 0)
+                sys_prompt = monologue[0].get("system_prompt", "")
+                self.assertIn("[SYSTEM GOVERNANCE DIRECTIVE]", sys_prompt)
+                self.assertIn("Active Lockdown Mode: AIR_GAPPED", sys_prompt)
+
+                # Verify mock_gen received tools: only read_tool should be present, code_tool filtered out
+                call_kwargs = mock_gen.call_args.kwargs
+                passed_tools = call_kwargs.get("tools", [])
+                tool_names = [t["function"]["name"] for t in passed_tools]
+                self.assertIn("test_gov_read", tool_names)
+                self.assertNotIn("test_gov_code", tool_names)

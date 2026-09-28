@@ -368,6 +368,18 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                         system_prompt += f"\n\n{formatted_tree}"
             except Exception:
                 pass
+
+        # WS17: Inject Governance Context Directive
+        from .governance import get_lockdown_level
+        lockdown_level = get_lockdown_level()
+        gov_directive = f"\n\n[SYSTEM GOVERNANCE DIRECTIVE]\nActive Lockdown Mode: {lockdown_level}."
+        if lockdown_level in ("AIR_GAPPED", "RESTRICTED"):
+            gov_directive += " Model-written code execution and external network tools are disabled by host policy. Answer requests using deterministic reasoning and available domain tools."
+        elif lockdown_level == "CONTROLLED":
+            gov_directive += " Model code execution is restricted to authorized operators."
+        elif lockdown_level == "DEVELOPMENT":
+            gov_directive += " Active Research Mode: Extended tools permitted for development research."
+        system_prompt += gov_directive
             
         sys_msg = SystemMessage(content=system_prompt)
         
@@ -403,7 +415,22 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                 return "assistant"
             return m_type
             
-        tools = list(step.available_tools.all())
+        # WS17 Governance: Filter tools by 3-tier governance policy
+        from .governance import is_tool_permitted
+        user = state.get("user")
+        if not user and state.get("user_id"):
+            from django.contrib.auth.models import User
+            user = User.objects.filter(id=state.get("user_id")).first()
+
+        all_tools = list(step.available_tools.all())
+        tools = []
+        for t in all_tools:
+            permitted, reason = is_tool_permitted(t, user)
+            if permitted:
+                tools.append(t)
+            else:
+                logger.info(f"Tool '{t.name}' filtered out by governance policy: {reason}")
+
         llm_result_message = None
         
         if tools:
