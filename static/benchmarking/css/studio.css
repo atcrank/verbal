@@ -500,3 +500,109 @@ header.studio-header {
 .text-success { color: var(--accent-emerald) !important; }
 .text-danger { color: var(--accent-rose) !important; }
 
+/* Combinatorial Matrix Composer & Pill Checkboxes */
+.pill-checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.pill-checkbox {
+    position: relative;
+    cursor: pointer;
+    user-select: none;
+    margin: 0;
+}
+
+.pill-checkbox input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}
+
+.pill-content {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.65rem;
+    font-size: 0.76rem;
+    font-weight: 500;
+    border-radius: var(--radius-sm);
+    background-color: var(--bg-input);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    transition: all 0.15s ease;
+}
+
+.pill-checkbox:hover .pill-content {
+    border-color: var(--border-highlight);
+    color: var(--text-primary);
+}
+
+.pill-checkbox input:checked + .pill-content {
+    background-color: rgba(99, 102, 241, 0.16);
+    border-color: var(--accent-primary);
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 0 8px rgba(99, 102, 241, 0.25);
+}
+
+.pill-checkbox input:checked + .pill-content::before {
+    content: "✓";
+    font-size: 0.72rem;
+    color: var(--accent-teal);
+    font-weight: 700;
+}
+
+.matrix-calc-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 0.85rem;
+    margin-top: 0.85rem;
+    margin-bottom: 0.85rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.matrix-calc-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    text-align: center;
+    margin-bottom: 0.65rem;
+}
+
+.matrix-calc-stat {
+    background: var(--bg-input);
+    padding: 0.45rem 0.3rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+}
+
+.matrix-calc-label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+}
+
+.matrix-calc-val {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-top: 0.15rem;
+}
+
+.matrix-preview-chip {
+    display: inline-flex;
+    align-items: center;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    padding: 0.2rem 0.45rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+}
+
+

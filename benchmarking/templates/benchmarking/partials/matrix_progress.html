@@ -1,0 +1,146 @@
+<div id="run-progress-stream" class="panel-body" style="padding-top: 0.5rem;">
+    <!-- Investigation Header & Matrix Badges -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+        <div>
+            <span class="badge badge-primary">Investigation #{{ investigation.id }}</span>
+            <span style="font-weight: 700; margin-left: 0.4rem; font-size: 0.95rem; color: var(--text-primary);">{{ investigation.name }}</span>
+        </div>
+        <div>
+            {% if is_complete %}
+                <span class="badge badge-success">&#10003; Matrix Completed</span>
+            {% else %}
+                <span class="badge badge-warning">Experiment {{ current_exp_idx|default:1 }} of {{ total_experiments|default:1 }}</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Overall Matrix Progress Bar -->
+    <div style="margin-bottom: 0.85rem;">
+        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.25rem;">
+            <span>Overall Matrix Progress ({{ current_exp_idx|default:1 }}/{{ total_experiments|default:1 }} Experiments)</span>
+            <span>{{ matrix_percent|default:0 }}%</span>
+        </div>
+        <div class="progress-container">
+            <div class="progress-bar-fill" id="matrix-progress-fill"></div>
+        </div>
+        <script>
+            (function() {
+                var el = document.getElementById('matrix-progress-fill');
+                if (el) el.style.width = '{{ matrix_percent|default:0 }}%';
+            })();
+        </script>
+    </div>
+
+    <!-- Active Experiment Card (if running) -->
+    {% if current_experiment and not is_complete %}
+    <div style="background-color: var(--bg-card); border: 1px solid var(--border-highlight); border-radius: var(--radius-md); padding: 0.75rem 0.9rem; margin-bottom: 0.85rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+            <div style="font-size: 0.82rem; font-weight: 600; color: var(--accent-primary);">
+                Active: {{ current_experiment.name }}
+            </div>
+            <div style="display: flex; gap: 0.3rem;">
+                <span class="badge badge-slate">{{ current_experiment.configuration.hosting_backend|upper }}</span>
+                <span class="badge badge-info">{{ current_experiment.configuration.rag_strategy }}</span>
+            </div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.2rem;">
+            <span>Scenario Evaluation: {{ scenario_step|default:0 }} / {{ total_scenarios|default:0 }}</span>
+            <span>{{ scenario_percent|default:0 }}%</span>
+        </div>
+        <div class="progress-container" style="height: 4px;">
+            <div class="progress-bar-fill" id="matrix-scenario-fill" style="background: linear-gradient(90deg, var(--accent-teal), var(--accent-emerald));"></div>
+        </div>
+        <script>
+            (function() {
+                var el = document.getElementById('matrix-scenario-fill');
+                if (el) el.style.width = '{{ scenario_percent|default:0 }}%';
+            })();
+        </script>
+    </div>
+    {% endif %}
+
+    <!-- Live Comparative Matrix Scorecard Table -->
+    <div style="margin-bottom: 0.85rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+            <span style="font-size: 0.78rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.04em;">
+                Comparative Experiment Scorecard
+            </span>
+            {% if is_complete %}
+            <a href="{% url 'benchmarking:investigation_dashboard' investigation.id %}" target="_blank" class="btn btn-secondary btn-sm" style="font-size: 0.72rem; padding: 0.25rem 0.5rem;">
+                Open Full Analytics Report &rarr;
+            </a>
+            {% endif %}
+        </div>
+        
+        <div style="overflow-x: auto;">
+            <table class="studio-table" style="font-size: 0.74rem;">
+                <thead>
+                    <tr>
+                        <th style="width: 25px;">#</th>
+                        <th>Model</th>
+                        <th>Backend</th>
+                        <th>RAG Strategy</th>
+                        <th>Sem Sim</th>
+                        <th>Faithfulness</th>
+                        <th>Relevance</th>
+                        <th>RAG Recall</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in scorecard_rows %}
+                    <tr {% if row.is_active %}style="background-color: rgba(99, 102, 241, 0.08); font-weight: 600;"{% endif %}>
+                        <td style="color: var(--text-muted);">{{ forloop.counter }}</td>
+                        <td>{{ row.model_short }}</td>
+                        <td><span class="badge badge-slate">{{ row.backend|upper }}</span></td>
+                        <td>{{ row.rag }}</td>
+                        <td {% if row.avg_sem %}style="color: var(--accent-teal); font-weight: 600;"{% endif %}>
+                            {{ row.avg_sem|floatformat:2|default:"-" }}
+                        </td>
+                        <td {% if row.avg_faith %}style="color: var(--accent-emerald); font-weight: 600;"{% endif %}>
+                            {{ row.avg_faith|floatformat:2|default:"-" }}
+                        </td>
+                        <td {% if row.avg_rel %}style="color: var(--accent-primary); font-weight: 600;"{% endif %}>
+                            {{ row.avg_rel|floatformat:2|default:"-" }}
+                        </td>
+                        <td>{{ row.avg_rag|floatformat:2|default:"-" }}</td>
+                        <td>
+                            {% if row.status == "COMPLETED" %}
+                                <span class="badge badge-success">&#10003; Done</span>
+                            {% elif row.status == "RUNNING" %}
+                                <span class="badge badge-warning">Running</span>
+                            {% else %}
+                                <span class="badge badge-slate">Queued</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" style="text-align: center; color: var(--text-muted);">No experiments initialized.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Live Execution Event Stream -->
+    <div>
+        <div style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem;">
+            Turn Execution Stream
+        </div>
+        <div class="stream-event-list" style="max-height: 140px;">
+            {% for evt in event_logs %}
+            <div class="stream-event-item">
+                <span class="badge badge-slate" style="font-size: 0.68rem;">{{ evt.time|default:"Live" }}</span>
+                <span style="color: var(--text-primary); font-weight: 500;">{{ evt.message }}</span>
+            </div>
+            {% empty %}
+            <div style="padding: 0.6rem; text-align: center; color: var(--text-muted); font-size: 0.75rem;">
+                Streaming turn evaluations...
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>

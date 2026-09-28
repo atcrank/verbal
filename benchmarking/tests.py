@@ -649,6 +649,79 @@ class BenchmarkingStudioUITests(TestCase):
         self.assertIn("Train Examples", content)
         self.assertIn("Val Scenarios", content)
 
+    def test_matrix_composer_combinatorial_grid_api(self):
+        """Combinatorial matrix composer creates Cartesian product of Experiments & BenchmarkRuns under Investigation."""
+        post_data = {
+            "investigation_id": "new",
+            "experiment_name": "Grid Investigation",
+            "model_ids": ["Qwen/Qwen2.5-7B-Instruct", "meta-llama/Llama-3.1-8B"],
+            "hosting_backends": ["vllm", "sglang"],
+            "scenario_group_id": self.group.id,
+            "rag_strategies": ["none", "default"],
+            "iterations": 1,
+            "chunk_size": 512,
+        }
+        response = self.client.post("/benchmarking/api/run/", data=post_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/event-stream")
+
+        content = response.content.decode("utf-8")
+        self.assertIn("event: datastar-merge-fragments", content)
+        self.assertIn("/benchmarking/stream/investigation/", content)
+
+        # 2 models * 2 backends * 2 rag strategies = 8 experiments
+        inv = Investigation.objects.get(name="Grid Investigation")
+        experiments = inv.experiments.all()
+        self.assertEqual(experiments.count(), 8)
+
+        # Verify all 8 experiments have a BenchmarkRun created
+        for exp in experiments:
+            self.assertEqual(BenchmarkRun.objects.filter(experiment=exp).count(), 1)
+
+    def test_stream_investigation_matrix_sse(self):
+        """Streaming whole-matrix investigation executes all experiments and renders comparative scorecard."""
+        inv = Investigation.objects.create(name="Matrix Test Inv")
+        exp1 = Experiment.objects.create(
+            investigation=inv,
+            corpus=self.corpus,
+            scenario_group=self.group,
+            name="Matrix Exp 1",
+            configuration={"target_model": "Qwen/7B", "hosting_backend": "vllm", "rag_strategy": "none"}
+        )
+        exp2 = Experiment.objects.create(
+            investigation=inv,
+            corpus=self.corpus,
+            scenario_group=self.group,
+            name="Matrix Exp 2",
+            configuration={"target_model": "Llama/8B", "hosting_backend": "sglang", "rag_strategy": "default"}
+        )
+        run1 = BenchmarkRun.objects.create(experiment=exp1, corpus=self.corpus, configuration_snapshot=exp1.configuration)
+        run2 = BenchmarkRun.objects.create(experiment=exp2, corpus=self.corpus, configuration_snapshot=exp2.configuration)
+
+        response = self.client.get(f"/benchmarking/stream/investigation/{inv.id}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/event-stream")
+
+        stream_chunks = list(response.streaming_content)
+        self.assertGreater(len(stream_chunks), 0)
+        full_stream = b"".join(stream_chunks).decode("utf-8")
+
+        self.assertIn("event: datastar-merge-fragments", full_stream)
+        self.assertIn("data: selector #run-monitor", full_stream)
+        self.assertIn("Comparative Experiment Scorecard", full_stream)
+        self.assertIn("Matrix Completed", full_stream)
+
+        # Verify results for both runs
+        self.assertEqual(BenchmarkResult.objects.filter(run=run1).count(), 2)
+        self.assertEqual(BenchmarkResult.objects.filter(run=run2).count(), 2)
+
+        run1.refresh_from_db()
+        run2.refresh_from_db()
+        self.assertIsNotNone(run1.average_rag_score)
+        self.assertIsNotNone(run1.average_semantic_score)
+        self.assertIsNotNone(run2.average_rag_score)
+        self.assertIsNotNone(run2.average_semantic_score)
+
 
 class HardwareAwareTrainingAndABEvalTests(TestCase):
     """

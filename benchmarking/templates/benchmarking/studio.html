@@ -76,51 +76,96 @@
                                value="Matrix Trial {{ current_time|date:'M j - H:i' }}" required>
                     </div>
 
+                    <!-- Variable 1: Target Models (Multi-Select) -->
                     <div class="form-group">
-                        <label class="form-label" for="id_model_id">Target Model</label>
-                        <select name="model_id" id="id_model_id" class="form-select">
-                            <option value="current" selected>Active System Model ({{ active_model_id|default:"Default" }})</option>
-                            <option value="Qwen/Qwen2.5-7B-Instruct">Qwen/Qwen2.5-7B-Instruct</option>
-                            <option value="meta-llama/Llama-3.1-8B-Instruct">meta-llama/Llama-3.1-8B-Instruct</option>
-                            <option value="mistralai/Mistral-7B-Instruct-v0.3">mistralai/Mistral-7B-Instruct-v0.3</option>
-                        </select>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                            <label class="form-label" style="margin-bottom: 0;">Target Models</label>
+                            <span style="font-size: 0.72rem; color: var(--accent-primary); cursor: pointer;" onclick="toggleAllInGroup('model-checkboxes')">Toggle All</span>
+                        </div>
+                        <div class="pill-checkbox-group" id="model-checkboxes">
+                            <label class="pill-checkbox">
+                                <input type="checkbox" name="model_ids" value="current" checked onchange="updateMatrixCalculations()">
+                                <span class="pill-content">Active Model ({{ active_model_id|default:"Default" }})</span>
+                            </label>
+                            <label class="pill-checkbox">
+                                <input type="checkbox" name="model_ids" value="Qwen/Qwen2.5-7B-Instruct" onchange="updateMatrixCalculations()">
+                                <span class="pill-content">Qwen 2.5 7B</span>
+                            </label>
+                            <label class="pill-checkbox">
+                                <input type="checkbox" name="model_ids" value="meta-llama/Llama-3.1-8B-Instruct" onchange="updateMatrixCalculations()">
+                                <span class="pill-content">Llama 3.1 8B</span>
+                            </label>
+                            <label class="pill-checkbox">
+                                <input type="checkbox" name="model_ids" value="mistralai/Mistral-7B-Instruct-v0.3" onchange="updateMatrixCalculations()">
+                                <span class="pill-content">Mistral 7B</span>
+                            </label>
+                        </div>
                     </div>
 
+                    <!-- Variable 2: Hosting Backends (Multi-Select) -->
                     <div class="form-group">
-                        <label class="form-label" for="id_hosting_backend">Hosting Backend</label>
-                        <select name="hosting_backend" id="id_hosting_backend" class="form-select">
-                            <option value="pytorch" selected>PyTorch (In-Process Transformers)</option>
-                            <option value="vllm">vLLM Engine (High-Throughput)</option>
-                            <option value="ollama">Ollama Server</option>
-                        </select>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                            <label class="form-label" style="margin-bottom: 0;">Hosting Backends</label>
+                            <span style="font-size: 0.72rem; color: var(--accent-primary); cursor: pointer;" onclick="toggleAllInGroup('backend-checkboxes')">Toggle All</span>
+                        </div>
+                        <div class="pill-checkbox-group" id="backend-checkboxes">
+                            <label class="pill-checkbox">
+                                <input type="checkbox" name="hosting_backends" value="pytorch" checked onchange="updateMatrixCalculations()">
+                                <span class="pill-content">PyTorch (In-Process)</span>
+                            </label>
+                            <label class="pill-checkbox">
+                                <input type="checkbox" name="hosting_backends" value="vllm" onchange="updateMatrixCalculations()">
+                                <span class="pill-content">vLLM Engine</span>
+                            </label>
+                            <label class="pill-checkbox">
+                                <input type="checkbox" name="hosting_backends" value="ollama" onchange="updateMatrixCalculations()">
+                                <span class="pill-content">Ollama Server</span>
+                            </label>
+                        </div>
                     </div>
 
+                    <!-- Variable 3: RAG Strategies (Multi-Select) -->
                     <div class="form-group">
-                        <label class="form-label" for="id_scenario_group">Scenario Group</label>
-                        <select name="scenario_group_id" id="id_scenario_group" class="form-select">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                            <label class="form-label" style="margin-bottom: 0;">RAG Strategies</label>
+                            <span style="font-size: 0.72rem; color: var(--accent-primary); cursor: pointer;" onclick="toggleAllInGroup('rag-checkboxes')">Toggle All</span>
+                        </div>
+                        <div class="pill-checkbox-group" id="rag-checkboxes">
+                            <label class="pill-checkbox">
+                                <input type="checkbox" name="rag_strategies" value="none" checked onchange="updateMatrixCalculations()">
+                                <span class="pill-content">None (Direct)</span>
+                            </label>
+                            <label class="pill-checkbox">
+                                <input type="checkbox" name="rag_strategies" value="chunk" onchange="updateMatrixCalculations()">
+                                <span class="pill-content">Chunk Search</span>
+                            </label>
+                            <label class="pill-checkbox">
+                                <input type="checkbox" name="rag_strategies" value="summary" onchange="updateMatrixCalculations()">
+                                <span class="pill-content">Summary-Guided</span>
+                            </label>
+                            <label class="pill-checkbox">
+                                <input type="checkbox" name="rag_strategies" value="agentic" onchange="updateMatrixCalculations()">
+                                <span class="pill-content">Agentic RAG</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Fixed Condition: Scenario Group -->
+                    <div class="form-group">
+                        <label class="form-label" for="id_scenario_group">Scenario Group (Benchmark Test Corpus)</label>
+                        <select name="scenario_group_id" id="id_scenario_group" class="form-select" onchange="updateMatrixCalculations()">
                             {% for sg in scenario_groups %}
-                            <option value="{{ sg.id }}">{{ sg.name }} ({{ sg.scenarios.count }} scenarios)</option>
+                            <option value="{{ sg.id }}" data-scenario-count="{{ sg.scenarios.count }}">{{ sg.name }} ({{ sg.scenarios.count }} scenarios)</option>
                             {% empty %}
-                            <option value="" disabled selected>No scenario groups available</option>
+                            <option value="" data-scenario-count="0" disabled selected>No scenario groups available</option>
                             {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label" for="id_rag_strategy">RAG Strategy</label>
-                        <select name="rag_strategy" id="id_rag_strategy" class="form-select">
-                            <option value="none" selected>None (Raw Model Direct)</option>
-                            <option value="chunk">Chunk Search (Dense Retrieval)</option>
-                            <option value="summary">Summary-Guided Retrieval</option>
-                            <option value="agentic">Agentic Multi-Step RAG</option>
-                            <option value="all">All Combined Strategies</option>
                         </select>
                     </div>
 
                     <div class="form-group" style="display: flex; gap: 0.75rem;">
                         <div style="flex: 1;">
-                            <label class="form-label" for="id_iterations">Iterations</label>
-                            <input type="number" name="iterations" id="id_iterations" class="form-control" value="1" min="1" max="5">
+                            <label class="form-label" for="id_iterations">Iterations / Trials</label>
+                            <input type="number" name="iterations" id="id_iterations" class="form-control" value="1" min="1" max="5" oninput="updateMatrixCalculations()">
                         </div>
                         <div style="flex: 1;">
                             <label class="form-label" for="id_chunk_size">Chunk Size</label>
@@ -128,8 +173,42 @@
                         </div>
                     </div>
 
-                    <button type="submit" class="btn btn-primary btn-block" style="margin-top: 0.5rem;">
-                        &#9654; Launch Benchmark Run
+                    <!-- Dynamic Matrix Dimension & Time Estimator Card -->
+                    <div class="matrix-calc-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <span style="font-size: 0.74rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.04em;">
+                                &#9881; Matrix Dimension & Time Estimator
+                            </span>
+                            <span class="badge badge-info" id="calc-exp-badge">1 Experiment</span>
+                        </div>
+                        
+                        <div class="matrix-calc-grid">
+                            <div class="matrix-calc-stat">
+                                <div class="matrix-calc-label">Experiments</div>
+                                <div class="matrix-calc-val" style="color: var(--accent-teal);" id="calc-experiments-count">1</div>
+                            </div>
+                            <div class="matrix-calc-stat">
+                                <div class="matrix-calc-label">Total Prompts</div>
+                                <div class="matrix-calc-val" style="color: var(--accent-blue);" id="calc-queries-count">0</div>
+                            </div>
+                            <div class="matrix-calc-stat">
+                                <div class="matrix-calc-label">Est. Duration</div>
+                                <div class="matrix-calc-val" style="color: var(--accent-emerald);" id="calc-time-estimate">0s</div>
+                            </div>
+                        </div>
+
+                        <!-- Collapsible matrix combination preview -->
+                        <details style="font-size: 0.75rem; color: var(--text-secondary); cursor: pointer;">
+                            <summary style="font-weight: 600; color: var(--text-primary); outline: none;">
+                                Preview Generated Matrix (<span id="calc-preview-count">1</span> experiments)
+                            </summary>
+                            <div id="calc-preview-list" style="margin-top: 0.45rem; max-height: 120px; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 0.3rem;">
+                            </div>
+                        </details>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block" style="margin-top: 0.25rem;" id="btn-launch-matrix">
+                        &#9654; Launch Investigation Matrix (<span id="calc-btn-count">1</span> Experiments)
                     </button>
                 </form>
             </div>
@@ -311,5 +390,96 @@
     <!-- HARDWARE-AWARE QLORA TRAINING MODAL -->
     {% include "benchmarking/partials/training_modal.html" %}
 
+    <!-- COMBINATORIAL MATRIX CALCULATOR SCRIPTS -->
+    <script>
+        function getCheckedValues(containerId) {
+            var container = document.getElementById(containerId);
+            if (!container) return [];
+            var checked = container.querySelectorAll('input[type="checkbox"]:checked');
+            return Array.from(checked).map(function(cb) { return cb.value; });
+        }
+
+        function toggleAllInGroup(containerId) {
+            var container = document.getElementById(containerId);
+            if (!container) return;
+            var cbs = container.querySelectorAll('input[type="checkbox"]');
+            var anyUnchecked = Array.from(cbs).some(function(cb) { return !cb.checked; });
+            cbs.forEach(function(cb) { cb.checked = anyUnchecked; });
+            updateMatrixCalculations();
+        }
+
+        function updateMatrixCalculations() {
+            var models = getCheckedValues('model-checkboxes');
+            var backends = getCheckedValues('backend-checkboxes');
+            var rags = getCheckedValues('rag-checkboxes');
+
+            var expCount = models.length * backends.length * rags.length;
+
+            var sgSelect = document.getElementById('id_scenario_group');
+            var scenarioCount = 0;
+            if (sgSelect && sgSelect.selectedOptions && sgSelect.selectedOptions[0]) {
+                scenarioCount = parseInt(sgSelect.selectedOptions[0].getAttribute('data-scenario-count') || '0', 10);
+            }
+
+            var iterInput = document.getElementById('id_iterations');
+            var iterations = iterInput ? Math.max(parseInt(iterInput.value || '1', 10), 1) : 1;
+
+            var totalQueries = expCount * scenarioCount * iterations;
+            
+            // Latency estimate: ~1.5s per scenario on local hardware
+            var estSeconds = Math.round(totalQueries * 1.5);
+            var estTimeStr = '~' + estSeconds + 's';
+            if (estSeconds >= 60) {
+                var mins = Math.floor(estSeconds / 60);
+                var remSecs = estSeconds % 60;
+                estTimeStr = '~' + mins + 'm ' + (remSecs > 0 ? remSecs + 's' : '');
+            }
+
+            // Update DOM counters
+            var badge = document.getElementById('calc-exp-badge');
+            if (badge) badge.textContent = expCount + (expCount === 1 ? ' Experiment' : ' Experiments');
+
+            var elExp = document.getElementById('calc-experiments-count');
+            if (elExp) elExp.textContent = expCount;
+
+            var elQueries = document.getElementById('calc-queries-count');
+            if (elQueries) elQueries.textContent = totalQueries;
+
+            var elTime = document.getElementById('calc-time-estimate');
+            if (elTime) elTime.textContent = (expCount > 0 && totalQueries > 0) ? estTimeStr : '0s';
+
+            var elBtn = document.getElementById('calc-btn-count');
+            if (elBtn) elBtn.textContent = expCount;
+
+            var elPreviewCount = document.getElementById('calc-preview-count');
+            if (elPreviewCount) elPreviewCount.textContent = expCount;
+
+            // Generate preview chips
+            var previewList = document.getElementById('calc-preview-list');
+            if (previewList) {
+                previewList.innerHTML = '';
+                var comboIdx = 1;
+                models.forEach(function(m) {
+                    var mShort = m.split('/').pop();
+                    backends.forEach(function(b) {
+                        rags.forEach(function(r) {
+                            var chip = document.createElement('span');
+                            chip.className = 'matrix-preview-chip';
+                            chip.textContent = comboIdx + '. ' + mShort + ' (' + b.toUpperCase() + ', ' + r + ')';
+                            previewList.appendChild(chip);
+                            comboIdx++;
+                        });
+                    });
+                });
+                if (expCount === 0) {
+                    previewList.innerHTML = '<span style="color: var(--accent-rose); font-size: 0.72rem;">Select at least one Model, Backend, and RAG strategy to form a valid matrix.</span>';
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            updateMatrixCalculations();
+        });
+    </script>
 </body>
 </html>

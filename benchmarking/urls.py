@@ -8,6 +8,7 @@ urlpatterns = [
     path("studio/", views.studio_view, name="studio_direct"),
     path("dashboard/<int:pk>/", views.investigation_dashboard, name="investigation_dashboard"),
     path("stream/<int:run_id>/", views.stream_benchmark_run, name="stream_benchmark_run"),
+    path("stream/investigation/<int:investigation_id>/", views.stream_investigation_matrix, name="stream_investigation_matrix"),
     path("api/run/", views.run_benchmark_api, name="run_benchmark_api"),
     path("api/scenario/<int:scenario_id>/", views.scenario_detail_api, name="scenario_detail"),
     path("api/diff/<int:result_id>/", views.inspect_result_diff, name="inspect_diff"),
