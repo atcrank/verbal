@@ -142,11 +142,26 @@ def run_blueprint(blueprint_id: int,
         return {"error": "Blueprint not found.", "status": 404}
 
     # 0. Handle Conversation Tracking
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
     if not user_id:
-        from django.contrib.auth import get_user_model
-        User = get_user_model()
         night_manager, _ = User.objects.get_or_create(username="NightManager")
         user_id = night_manager.id
+
+    # 0.1 Invariant Governance Check: Block locked blueprints from runtime execution
+    active_user = User.objects.filter(id=user_id).first()
+    from .governance import evaluate_blueprint_governance
+    gov_compat = evaluate_blueprint_governance(blueprint, active_user)
+    if gov_compat["is_locked"]:
+        err_msg = f"Blueprint execution blocked: {gov_compat['tooltip']}"
+        logger.warning(
+            "Governance policy blocked execution of blueprint '%s' for user %s: %s",
+            blueprint.name,
+            active_user,
+            gov_compat["tooltip"],
+        )
+        publish_blueprint_event(run_id, "error", {"error": err_msg})
+        return {"error": err_msg, "status": 403}
 
     if conversation_id:
         try:

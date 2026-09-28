@@ -167,3 +167,152 @@ def check_model_write_allowed(app_label: str, model_name: str) -> tuple[bool, st
         False,
         f"Security violation: Model '{canonical_name}' is not in the permitted domain write allowlist under {lockdown_level} policy.",
     )
+
+
+def get_governance_summary(user: Optional[User] = None) -> dict:
+    """
+    Returns a unified dictionary representing active system lockdown status,
+    environment ceiling clamps, and effective user clearance for UI/templates.
+    """
+    level = get_lockdown_level()
+    user_clearance = get_user_clearance(user)
+    allow_code = getattr(settings, "ALLOW_MODEL_CODE_EXECUTION", False)
+    allow_net = getattr(settings, "ALLOW_TOOL_NETWORK_ACCESS", False)
+    allow_self_mod = getattr(settings, "ALLOW_AGENT_SELF_MODIFICATION", False)
+
+    if level == LockdownLevel.AIR_GAPPED:
+        badge_label = "AIR-GAPPED"
+        badge_icon = "🛡️"
+        color_class = "gov-badge-airgapped"
+        bg_style = "background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.35);"
+    elif level == LockdownLevel.RESTRICTED:
+        badge_label = "RESTRICTED"
+        badge_icon = "🔒"
+        color_class = "gov-badge-restricted"
+        bg_style = "background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.35);"
+    elif level == LockdownLevel.CONTROLLED:
+        badge_label = "CONTROLLED"
+        badge_icon = "⚡"
+        color_class = "gov-badge-controlled"
+        bg_style = "background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.35);"
+    else:  # DEVELOPMENT / PERMISSIVE
+        badge_label = "DEVELOPMENT"
+        badge_icon = "🧪"
+        color_class = "gov-badge-dev"
+        bg_style = "background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35);"
+
+    return {
+        "lockdown_level": level,
+        "badge_label": badge_label,
+        "badge_icon": badge_icon,
+        "color_class": color_class,
+        "bg_style": bg_style,
+        "code_execution_allowed": allow_code,
+        "code_exec_display": "ALLOWED" if allow_code else "BLOCKED (Ceiling)",
+        "network_allowed": allow_net,
+        "network_display": "ALLOWED" if allow_net else "BLOCKED (Ceiling)",
+        "self_mod_allowed": allow_self_mod,
+        "self_mod_display": "ACTIVE" if allow_self_mod else "DISABLED (Immutable)",
+        "user_clearance": user_clearance,
+    }
+
+
+def evaluate_blueprint_governance(blueprint, user: Optional[User] = None) -> dict:
+    """
+    Evaluates whether a CognitiveBlueprint is compatible with the active lockdown
+    policy and the user's operational clearance.
+
+    Returns:
+        dict:
+            - status: "READY" | "DEGRADED" | "LOCKED"
+            - is_locked: bool
+            - is_degraded: bool
+            - badge_text: str (e.g. "🔒 Locked", "⚠️ Degraded", "✅ Ready")
+            - tooltip: str explaining why the blueprint is locked, degraded, or compatible
+            - blocked_tools: list[str] of tool names that are prohibited
+            - permitted_tools: list[str] of tool names that are permitted
+    """
+    lockdown_level = get_lockdown_level()
+    steps = list(blueprint.steps.filter(is_active=True))
+    if not steps:
+        steps = list(blueprint.steps.all())
+
+    all_tools = []
+    blocked_tools = []
+    permitted_tools = []
+    has_dead_step = False
+    dead_step_reasons = []
+
+    for step in steps:
+        step_tools = list(step.available_tools.all())
+        all_tools.extend(step_tools)
+        substantive = [
+            t for t in step_tools
+            if t.name not in ("TASK_COMPLETE", "PAUSE_FOR_INPUT", "NO_TOOL")
+        ]
+        step_blocked = []
+        step_permitted = []
+        for t in step_tools:
+            allowed, reason = is_tool_permitted(t, user)
+            if allowed:
+                permitted_tools.append(t)
+                step_permitted.append(t)
+            else:
+                blocked_tools.append((t, reason))
+                step_blocked.append((t, reason))
+
+        # Check if substantive tools for this step are all blocked
+        if substantive:
+            substantive_permitted = [t for t in substantive if is_tool_permitted(t, user)[0]]
+            if not substantive_permitted:
+                has_dead_step = True
+                reasons = [r for t, r in step_blocked if t in substantive]
+                dead_step_reasons.append(f"Step '{step.name}': {'; '.join(reasons)}")
+
+        # Check sub-blueprint recursively if attached
+        if getattr(step, "sub_blueprint_id", None) and step.sub_blueprint:
+            sub_eval = evaluate_blueprint_governance(step.sub_blueprint, user)
+            if sub_eval["is_locked"]:
+                has_dead_step = True
+                dead_step_reasons.append(f"Sub-blueprint '{step.sub_blueprint.name}': {sub_eval['tooltip']}")
+
+    if has_dead_step or (all_tools and len(permitted_tools) == 0):
+        status = "LOCKED"
+        is_locked = True
+        is_degraded = False
+        badge_text = "🔒 Locked"
+        if any("code execution" in r.lower() for r in dead_step_reasons) or any(
+            t.capability_category == ToolCapability.CODE_EXECUTION for t, _ in blocked_tools
+        ):
+            tooltip = f"Locked: Requires Code Execution clearance which is blocked by system policy ({lockdown_level})."
+        elif dead_step_reasons:
+            tooltip = f"Locked: {dead_step_reasons[0]}"
+        else:
+            tooltip = f"Locked: Required capabilities are blocked under {lockdown_level} policy."
+    elif blocked_tools:
+        status = "DEGRADED"
+        is_locked = False
+        is_degraded = True
+        badge_text = "⚠️ Degraded"
+        blocked_names = ", ".join(sorted(set(t.name for t, _ in blocked_tools)))
+        tooltip = f"Degraded: Tool(s) [{blocked_names}] unavailable under {lockdown_level}; falling back to available tools."
+    else:
+        status = "READY"
+        is_locked = False
+        is_degraded = False
+        badge_text = "✅ Ready"
+        if all_tools:
+            tooltip = f"Compatible: All required tools are active under {lockdown_level}."
+        else:
+            tooltip = f"Compatible: Pure reasoning blueprint (active under {lockdown_level})."
+
+    return {
+        "status": status,
+        "is_locked": is_locked,
+        "is_degraded": is_degraded,
+        "badge_text": badge_text,
+        "tooltip": tooltip,
+        "blocked_tools": [t.name for t, _ in blocked_tools],
+        "permitted_tools": [t.name for t in permitted_tools],
+    }
+

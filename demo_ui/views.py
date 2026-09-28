@@ -9,6 +9,7 @@ from django.contrib.auth.decorators import login_required
 from django.utils.safestring import mark_safe
 from llm_api.models import Conversation, PromptResponseLog
 from metacognition.models import CognitiveBlueprint
+from metacognition.governance import evaluate_blueprint_governance
 from llm_api.apps import service_registry
 from grips.models import ConceptNode, Domain, KnowledgeEdge
 from llm_api.tasks import task_generate_response
@@ -52,7 +53,14 @@ def _prepare_log_for_display(log):
 def index(request):
     """Renders the main Demo UI shell."""
     conversations = Conversation.objects.filter(user=request.user).exclude(user__username="NightManager")
-    blueprints = CognitiveBlueprint.objects.exclude(name__startswith="NightManager").exclude(name="The Architect")
+    blueprints = list(CognitiveBlueprint.objects.exclude(name__startswith="NightManager").exclude(name="The Architect"))
+    for bp in blueprints:
+        compat = evaluate_blueprint_governance(bp, request.user)
+        bp.governance_status = compat["status"]
+        bp.is_locked = compat["is_locked"]
+        bp.is_degraded = compat["is_degraded"]
+        bp.governance_badge = compat["badge_text"]
+        bp.governance_tooltip = compat["tooltip"]
     
     active_conversation = None
     initial_logs = []
@@ -168,6 +176,18 @@ def send_message(request):
     # 2. Execute Generation (Blueprint or Native)
     parent_log = conversation.logs.order_by('-created_at').first()
     if blueprint_id:
+        target_bp = CognitiveBlueprint.objects.filter(id=blueprint_id).first()
+        if target_bp:
+            compat = evaluate_blueprint_governance(target_bp, request.user)
+            if compat["is_locked"]:
+                err_html = (
+                    f'<div class="chat-bubble assistant-bubble error-bubble">'
+                    f'<strong>Execution Blocked by Governance Policy:</strong><br>'
+                    f'{compat["tooltip"]}'
+                    f'</div>'
+                )
+                return HttpResponse(err_html, status=403)
+
         if request.POST.get('sync') == 'true' or request.GET.get('sync') == 'true':
             from metacognition.tasks import run_blueprint
             result = run_blueprint(

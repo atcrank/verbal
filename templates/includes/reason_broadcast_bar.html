@@ -20,6 +20,14 @@
         </div>
 
         <div class="reason-nav-links">
+            <!-- Governance Policy Lockdown Badge & Modal Trigger -->
+            <div class="gov-lockdown-container" id="gov-lockdown-container">
+                <button type="button" class="gov-lockdown-pill {{ governance.color_class }}" id="gov-lockdown-pill" onclick="toggleGovernanceModal()" title="System Lockdown Policy: {{ governance.badge_label }} (Click for details)">
+                    <span class="gov-pill-icon">{{ governance.badge_icon }}</span>
+                    <span class="gov-pill-label">{{ governance.badge_label }}</span>
+                </button>
+            </div>
+
             <a href="/demo/" class="reason-nav-link" id="nav-demo-ui">Demo UI</a>
             {% if request.user.is_staff or request.user.is_superuser %}
             <a href="/admin/" class="reason-nav-link" id="nav-admin">Admin</a>
@@ -29,6 +37,61 @@
             {% if request.user.is_staff or request.user.is_superuser %}
             <button type="button" class="reason-broadcast-trigger-btn" onclick="openBroadcastModal()" title="Open broadcast transmitter">Broadcast</button>
             {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Governance Policy Modal / Popover -->
+<div id="governance-policy-modal" class="broadcast-modal-backdrop" style="display: none;" onclick="if(event.target===this) closeGovernanceModal()">
+    <div class="broadcast-modal-box" style="max-width: 480px;">
+        <div class="broadcast-modal-header" style="border-bottom: 1px solid #334155; padding-bottom: 12px;">
+            <div>
+                <div style="font-size: 0.72rem; text-transform: uppercase; color: #94a3b8; font-weight: 700; letter-spacing: 0.05em;">Security & Access Control</div>
+                <div style="font-size: 1.1rem; font-weight: 700; color: #f1f5f9; display: flex; align-items: center; gap: 8px; margin-top: 2px;">
+                    <span>Security Governance Policy</span>
+                    <span class="gov-lockdown-pill {{ governance.color_class }}" style="font-size: 0.72rem; padding: 2px 8px; cursor: default;">
+                        {{ governance.badge_icon }} {{ governance.badge_label }}
+                    </span>
+                </div>
+            </div>
+            <button type="button" class="broadcast-modal-close" onclick="closeGovernanceModal()">&times;</button>
+        </div>
+        <div class="broadcast-modal-body" style="padding: 16px 0; font-size: 0.86rem; color: #cbd5e1;">
+            <div style="margin-bottom: 14px; line-height: 1.45; color: #94a3b8; font-size: 0.82rem;">
+                All tool execution and model capabilities are strictly enforced at the compiler and execution gateways. Model system prompts are contextually grounded.
+            </div>
+
+            <div class="gov-matrix" style="display: flex; flex-direction: column; gap: 9px; background: rgba(15, 23, 42, 0.65); padding: 14px; border-radius: 8px; border: 1px solid #334155;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 500; color: #e2e8f0;">Active Lockdown Mode</span>
+                    <strong style="font-family: monospace; font-size: 0.88rem; color: #f8fafc;">{{ governance.lockdown_level }}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 500; color: #e2e8f0;">Model Code Execution</span>
+                    <span class="gov-status-tag {% if governance.code_execution_allowed %}gov-status-allowed{% else %}gov-status-blocked{% endif %}">
+                        {{ governance.code_exec_display }}
+                    </span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 500; color: #e2e8f0;">External Network Access</span>
+                    <span class="gov-status-tag {% if governance.network_allowed %}gov-status-allowed{% else %}gov-status-blocked{% endif %}">
+                        {{ governance.network_display }}
+                    </span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 500; color: #e2e8f0;">Agent Self-Modification</span>
+                    <span class="gov-status-tag {% if governance.self_mod_allowed %}gov-status-allowed{% else %}gov-status-muted{% endif %}">
+                        {{ governance.self_mod_display }}
+                    </span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #334155; padding-top: 9px; margin-top: 3px;">
+                    <span style="font-weight: 500; color: #e2e8f0;">Active Session Clearance</span>
+                    <span style="font-family: monospace; font-weight: 600; color: #38bdf8;">{{ governance.user_clearance }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="broadcast-modal-footer" style="border-top: 1px solid #334155; padding-top: 12px; display: flex; justify-content: flex-end;">
+            <button type="button" class="btn-cancel-broadcast" onclick="closeGovernanceModal()">Close</button>
         </div>
     </div>
 </div>
@@ -186,6 +249,71 @@
     .reason-broadcast-trigger-btn:hover {
         background: #475569;
         color: #ffffff;
+    }
+
+    /* Governance Lockdown Badge Styles */
+    .gov-lockdown-container {
+        display: flex;
+        align-items: center;
+    }
+    .gov-lockdown-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 2px 9px;
+        border-radius: 9999px;
+        font-size: 0.74rem;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: all 0.15s ease-in-out;
+        border-width: 1px;
+        border-style: solid;
+        line-height: 1.2;
+    }
+    .gov-lockdown-pill:hover {
+        transform: translateY(-1px);
+        filter: brightness(1.2);
+    }
+    .gov-badge-airgapped {
+        background: rgba(239, 68, 68, 0.15);
+        color: #f87171;
+        border-color: rgba(239, 68, 68, 0.4);
+    }
+    .gov-badge-restricted {
+        background: rgba(245, 158, 11, 0.15);
+        color: #fbbf24;
+        border-color: rgba(245, 158, 11, 0.4);
+    }
+    .gov-badge-controlled {
+        background: rgba(59, 130, 246, 0.15);
+        color: #60a5fa;
+        border-color: rgba(59, 130, 246, 0.4);
+    }
+    .gov-badge-dev {
+        background: rgba(16, 185, 129, 0.15);
+        color: #34d399;
+        border-color: rgba(16, 185, 129, 0.4);
+    }
+    .gov-status-tag {
+        font-family: monospace;
+        font-size: 0.78rem;
+        font-weight: 600;
+        padding: 2px 7px;
+        border-radius: 4px;
+    }
+    .gov-status-allowed {
+        background: rgba(16, 185, 129, 0.2);
+        color: #34d399;
+    }
+    .gov-status-blocked {
+        background: rgba(239, 68, 68, 0.2);
+        color: #f87171;
+    }
+    .gov-status-muted {
+        background: rgba(148, 163, 184, 0.2);
+        color: #cbd5e1;
     }
 
     /* Announcement Banner */
@@ -541,4 +669,16 @@
             }
         }
     })();
+
+    window.toggleGovernanceModal = function() {
+        var modal = document.getElementById('governance-policy-modal');
+        if (modal) {
+            modal.style.display = (modal.style.display === 'none' || modal.style.display === '') ? 'flex' : 'none';
+        }
+    };
+
+    window.closeGovernanceModal = function() {
+        var modal = document.getElementById('governance-policy-modal');
+        if (modal) modal.style.display = 'none';
+    };
 </script>

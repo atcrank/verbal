@@ -89,7 +89,9 @@
                             <select name="blueprint_id" style="font-size: 0.82rem; padding: 6px 10px;">
                                 <option value="">Standard Chat (No Blueprint)</option>
                                 {% for bp in blueprints %}
-                                <option value="{{ bp.id }}">{{ bp.name }}</option>
+                                <option value="{{ bp.id }}" {% if bp.is_locked %}disabled title="{{ bp.governance_tooltip }}" style="color: var(--text-muted); background: var(--bg-main);"{% else %}title="{{ bp.governance_tooltip }}"{% endif %}>
+                                    {% if bp.is_locked %}🔒 {{ bp.name }} (Locked){% elif bp.is_degraded %}⚠️ {{ bp.name }} (Degraded){% else %}{{ bp.name }}{% endif %}
+                                </option>
                                 {% endfor %}
                             </select>
                             <span id="total-context-tokens-badge" style="font-size: 0.76rem; color: var(--text-muted); font-weight: 500;"></span>

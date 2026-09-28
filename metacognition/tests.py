@@ -1983,3 +1983,193 @@ class ToolGovernancePolicyTests(TestCase):
                 tool_names = [t["function"]["name"] for t in passed_tools]
                 self.assertIn("test_gov_read", tool_names)
                 self.assertNotIn("test_gov_code", tool_names)
+
+    def test_evaluate_blueprint_governance_ready(self):
+        from metacognition.governance import evaluate_blueprint_governance
+        from metacognition.models import CognitiveBlueprint, ReasoningStep, ToolDefinition
+
+        bp = CognitiveBlueprint.objects.create(name="Ready BP", description="Testing ready status")
+        step = ReasoningStep.objects.create(
+            blueprint=bp,
+            name="Ready Step",
+            is_start_node=True,
+            system_prompt="Analyze problem."
+        )
+        read_tool, _ = ToolDefinition.objects.get_or_create(
+            name="test_ready_read",
+            defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.TASK_COMPLETE", "capability_category": "READ_ONLY"}
+        )
+        step.available_tools.add(read_tool)
+
+        with self.settings(VERBAL_LOCKDOWN_LEVEL="AIR_GAPPED", ALLOW_MODEL_CODE_EXECUTION=False):
+            compat = evaluate_blueprint_governance(bp, self.standard_user)
+            self.assertEqual(compat["status"], "READY")
+            self.assertFalse(compat["is_locked"])
+            self.assertFalse(compat["is_degraded"])
+            self.assertIn("Compatible", compat["tooltip"])
+
+    def test_evaluate_blueprint_governance_locked_code_exec(self):
+        from metacognition.governance import evaluate_blueprint_governance
+        from metacognition.models import CognitiveBlueprint, ReasoningStep, ToolDefinition
+
+        bp = CognitiveBlueprint.objects.create(name="Code BP", description="Testing code locked status")
+        step = ReasoningStep.objects.create(
+            blueprint=bp,
+            name="Sandbox Step",
+            is_start_node=True,
+            system_prompt="Run calculation in sandbox."
+        )
+        code_tool, _ = ToolDefinition.objects.get_or_create(
+            name="test_locked_code",
+            defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.TASK_COMPLETE", "capability_category": "CODE_EXECUTION"}
+        )
+        step.available_tools.add(code_tool)
+
+        with self.settings(VERBAL_LOCKDOWN_LEVEL="AIR_GAPPED", ALLOW_MODEL_CODE_EXECUTION=False):
+            compat = evaluate_blueprint_governance(bp, self.standard_user)
+            self.assertEqual(compat["status"], "LOCKED")
+            self.assertTrue(compat["is_locked"])
+            self.assertIn("Requires Code Execution", compat["tooltip"])
+            self.assertIn("AIR_GAPPED", compat["tooltip"])
+
+    def test_evaluate_blueprint_governance_degraded(self):
+        from metacognition.governance import evaluate_blueprint_governance
+        from metacognition.models import CognitiveBlueprint, ReasoningStep, ToolDefinition
+
+        bp = CognitiveBlueprint.objects.create(name="Degraded BP", description="Testing degraded status")
+        step = ReasoningStep.objects.create(
+            blueprint=bp,
+            name="Mixed Step",
+            is_start_node=True,
+            system_prompt="Research with optional sandbox."
+        )
+        read_tool, _ = ToolDefinition.objects.get_or_create(
+            name="test_deg_read",
+            defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.TASK_COMPLETE", "capability_category": "READ_ONLY"}
+        )
+        code_tool, _ = ToolDefinition.objects.get_or_create(
+            name="test_deg_code",
+            defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.TASK_COMPLETE", "capability_category": "CODE_EXECUTION"}
+        )
+        step.available_tools.add(read_tool, code_tool)
+
+        with self.settings(VERBAL_LOCKDOWN_LEVEL="AIR_GAPPED", ALLOW_MODEL_CODE_EXECUTION=False):
+            compat = evaluate_blueprint_governance(bp, self.standard_user)
+            self.assertEqual(compat["status"], "DEGRADED")
+            self.assertFalse(compat["is_locked"])
+            self.assertTrue(compat["is_degraded"])
+            self.assertIn("test_deg_code", compat["tooltip"])
+
+    def test_evaluate_blueprint_governance_user_clearance(self):
+        from metacognition.governance import evaluate_blueprint_governance
+        from metacognition.models import CognitiveBlueprint, ReasoningStep, ToolDefinition
+
+        bp = CognitiveBlueprint.objects.create(name="Admin BP", description="Testing admin clearance")
+        step = ReasoningStep.objects.create(
+            blueprint=bp,
+            name="Admin Step",
+            is_start_node=True,
+            system_prompt="Admin operation."
+        )
+        admin_tool, _ = ToolDefinition.objects.get_or_create(
+            name="test_admin_clearance_tool",
+            defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.TASK_COMPLETE", "capability_category": "READ_ONLY", "required_clearance": "ADMIN"}
+        )
+        step.available_tools.add(admin_tool)
+
+        # Standard user is locked out
+        compat_std = evaluate_blueprint_governance(bp, self.standard_user)
+        self.assertTrue(compat_std["is_locked"])
+        self.assertIn("clearance", compat_std["tooltip"].lower())
+
+        # Admin user is permitted
+        compat_admin = evaluate_blueprint_governance(bp, self.admin_user)
+        self.assertFalse(compat_admin["is_locked"])
+        self.assertEqual(compat_admin["status"], "READY")
+
+    def test_tool_governance_middleware_header(self):
+        from django.test import RequestFactory
+        from django.http import HttpResponse
+        from metacognition.middleware import ToolGovernanceMiddleware
+
+        factory = RequestFactory()
+        request = factory.get("/demo/")
+        middleware = ToolGovernanceMiddleware(lambda req: HttpResponse("OK"))
+
+        with self.settings(VERBAL_LOCKDOWN_LEVEL="RESTRICTED"):
+            response = middleware(request)
+            self.assertEqual(response.headers.get("X-Verbal-Lockdown-Level"), "RESTRICTED")
+
+        with self.settings(VERBAL_LOCKDOWN_LEVEL="AIR_GAPPED"):
+            response = middleware(request)
+            self.assertEqual(response.headers.get("X-Verbal-Lockdown-Level"), "AIR_GAPPED")
+
+    def test_governance_context_processor(self):
+        from django.test import RequestFactory
+        from metacognition.context_processors import governance_context
+
+        factory = RequestFactory()
+        request = factory.get("/demo/")
+        request.user = self.standard_user
+
+        with self.settings(VERBAL_LOCKDOWN_LEVEL="AIR_GAPPED", ALLOW_MODEL_CODE_EXECUTION=False):
+            ctx = governance_context(request)
+            self.assertIn("governance", ctx)
+            gov = ctx["governance"]
+            self.assertEqual(gov["lockdown_level"], "AIR_GAPPED")
+            self.assertEqual(gov["badge_label"], "AIR-GAPPED")
+            self.assertIn("BLOCKED", gov["code_exec_display"])
+            self.assertEqual(gov["user_clearance"], "STANDARD")
+
+    def test_demo_ui_send_message_blocks_locked_blueprint(self):
+        from django.test import RequestFactory
+        from demo_ui.views import send_message
+        from metacognition.models import CognitiveBlueprint, ReasoningStep, ToolDefinition
+
+        bp = CognitiveBlueprint.objects.create(name="Locked BP For Post", description="Test")
+        step = ReasoningStep.objects.create(
+            blueprint=bp,
+            name="Code Step",
+            is_start_node=True,
+            system_prompt="Run code."
+        )
+        code_tool, _ = ToolDefinition.objects.get_or_create(
+            name="test_post_locked_code",
+            defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.TASK_COMPLETE", "capability_category": "CODE_EXECUTION"}
+        )
+        step.available_tools.add(code_tool)
+
+        factory = RequestFactory()
+        request = factory.post("/demo/send_message/", {
+            "user_prompt": "Hello",
+            "blueprint_id": str(bp.id),
+        })
+        request.user = self.standard_user
+
+        with self.settings(VERBAL_LOCKDOWN_LEVEL="AIR_GAPPED", ALLOW_MODEL_CODE_EXECUTION=False):
+            response = send_message(request)
+            self.assertEqual(response.status_code, 403)
+            self.assertIn("Execution Blocked by Governance Policy", response.content.decode("utf-8"))
+
+    def test_run_blueprint_blocks_locked_blueprint(self):
+        from metacognition.tasks import run_blueprint
+        from metacognition.models import CognitiveBlueprint, ReasoningStep, ToolDefinition
+
+        bp = CognitiveBlueprint.objects.create(name="Locked BP For Task", description="Test")
+        step = ReasoningStep.objects.create(
+            blueprint=bp,
+            name="Code Step",
+            is_start_node=True,
+            system_prompt="Run code."
+        )
+        code_tool, _ = ToolDefinition.objects.get_or_create(
+            name="test_task_locked_code",
+            defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.TASK_COMPLETE", "capability_category": "CODE_EXECUTION"}
+        )
+        step.available_tools.add(code_tool)
+
+        with self.settings(VERBAL_LOCKDOWN_LEVEL="AIR_GAPPED", ALLOW_MODEL_CODE_EXECUTION=False):
+            result = run_blueprint(bp.id, "Hello", user_id=self.standard_user.id)
+            self.assertEqual(result.get("status"), 403)
+            self.assertIn("Blueprint execution blocked", result.get("error", ""))
+
