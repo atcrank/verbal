@@ -440,16 +440,23 @@
     <span class="k">except</span> <span class="ne">SyntaxError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">[CHECK_PARSING Error]</span><span class="se">\n</span><span class="s2">SyntaxError: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="se">\n</span><span class="s2">Line </span><span class="si">{</span><span class="n">e</span><span class="o">.</span><span class="n">lineno</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="o">.</span><span class="n">text</span><span class="si">}</span><span class="s2">&quot;</span>
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_get_workspace_dir</span><span class="p">(</span><span class="n">conversation_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_workspace_dir</span><span class="p">(</span><span class="n">conversation_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Ensures a Git-tracked workspace exists for the conversation.&quot;&quot;&quot;</span>
-    <span class="n">cid_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">conversation_id</span><span class="p">)</span> <span class="k">if</span> <span class="n">conversation_id</span> <span class="k">else</span> <span class="s2">&quot;temp_workspace&quot;</span>
-    <span class="n">workspace_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">BASE_DIR</span><span class="p">,</span> <span class="s1">&#39;workspaces&#39;</span><span class="p">,</span> <span class="n">cid_str</span><span class="p">)</span>
-    
+    <span class="k">if</span> <span class="n">conversation_id</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Conversation</span>
+            <span class="n">conv</span> <span class="o">=</span> <span class="n">Conversation</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">conversation_id</span><span class="p">)</span>
+            <span class="n">workspace_dir</span> <span class="o">=</span> <span class="n">conv</span><span class="o">.</span><span class="n">get_workspace_dir</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">workspace_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">BASE_DIR</span><span class="p">,</span> <span class="s1">&#39;workspaces&#39;</span><span class="p">,</span> <span class="s1">&#39;conversations&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">conversation_id</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">workspace_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">BASE_DIR</span><span class="p">,</span> <span class="s1">&#39;workspaces&#39;</span><span class="p">,</span> <span class="s1">&#39;temp_workspace&#39;</span><span class="p">)</span>
+
     <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">workspace_dir</span><span class="p">):</span>
         <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">workspace_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="c1"># Initialize git tracking</span>
         <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s2">&quot;git&quot;</span><span class="p">,</span> <span class="s2">&quot;init&quot;</span><span class="p">],</span> <span class="n">cwd</span><span class="o">=</span><span class="n">workspace_dir</span><span class="p">,</span> <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        
+
     <span class="k">return</span> <span class="n">workspace_dir</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_commit_workspace</span><span class="p">(</span><span class="n">workspace_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -555,11 +562,12 @@
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_tool_execute_script</span><span class="p">(</span><span class="n">params</span><span class="p">:</span> <span class="n">ExecuteScriptArgs</span><span class="p">,</span> <span class="n">workspace_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
-    
-    <span class="c1"># We pass only the relative path (conversation_id/script.py) to the sandbox</span>
+
+    <span class="c1"># Pass relative path from workspaces root to the sandbox</span>
     <span class="n">safe_filepath</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">filepath</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s2">&quot;/</span><span class="se">\\</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">cid_str</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">workspace_dir</span><span class="p">)</span>
-    <span class="n">sandbox_filepath</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">cid_str</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">safe_filepath</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">workspaces_root</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="s1">&#39;WORKSPACE_ROOT&#39;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">BASE_DIR</span><span class="p">,</span> <span class="s1">&#39;workspaces&#39;</span><span class="p">))</span>
+    <span class="n">rel_workspace</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">relpath</span><span class="p">(</span><span class="n">workspace_dir</span><span class="p">,</span> <span class="n">workspaces_root</span><span class="p">)</span>
+    <span class="n">sandbox_filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">rel_workspace</span><span class="p">,</span> <span class="n">safe_filepath</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;/&quot;</span><span class="p">)</span>
     
     <span class="n">sandbox_url</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="s2">&quot;SANDBOX_URL&quot;</span><span class="p">,</span> <span class="s2">&quot;http://sandbox:8000/execute&quot;</span><span class="p">)</span>
     
@@ -842,14 +850,50 @@
 <div class="viewcode-block" id="TaskItem">
 <a class="viewcode-back" href="../../metacognition_app.html#metacognition.actions.TaskItem">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">TaskItem</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">task_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Unique identifier for the task, e.g. &#39;models_list&#39;.&quot;</span><span class="p">)</span>
+    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Short title of the task.&quot;</span><span class="p">)</span>
     <span class="n">goal</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;The goal of this task item.&quot;</span><span class="p">)</span>
-    <span class="n">delegated_blueprint</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Optional blueprint name to delegate this task to.&quot;</span><span class="p">)</span></div>
+    <span class="n">delegated_blueprint</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;Escalation of Effort&quot;</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The blueprint name to delegate this task to, e.g. &#39;Escalation of Effort&#39; or &#39;Computational Logic&#39;.&quot;</span>
+    <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="TaskQueue">
 <a class="viewcode-back" href="../../metacognition_app.html#metacognition.actions.TaskQueue">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">TaskQueue</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">queue</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">TaskItem</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;A list of task items to process sequentially.&quot;</span><span class="p">)</span></div>
+    <span class="n">queue</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">TaskItem</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">min_length</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;A list of at least 3 task items to process sequentially.&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="handle_task_queue">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.actions.handle_task_queue">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">handle_task_queue</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">llm_output</span><span class="p">:</span> <span class="n">TaskQueue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Populates state_tree and scratch from TaskQueue decomposition.&quot;&quot;&quot;</span>
+    <span class="n">queue_data</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;model_dump&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="n">item</span><span class="o">.</span><span class="n">dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">llm_output</span><span class="o">.</span><span class="n">queue</span><span class="p">]</span>
+    <span class="n">state</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;scratch&quot;</span><span class="p">,</span> <span class="p">{})[</span><span class="s2">&quot;queue&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">queue_data</span>
+
+    <span class="n">st</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;state_tree&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{})</span>
+    <span class="n">tasks</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tasks&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{})</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">queue_data</span><span class="p">):</span>
+        <span class="n">tid</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;task_id&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="sa">f</span><span class="s2">&quot;task_</span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;title&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;goal&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="sa">f</span><span class="s2">&quot;Task </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">tasks</span><span class="p">[</span><span class="n">tid</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">title</span><span class="p">,</span>
+            <span class="s2">&quot;goal&quot;</span><span class="p">:</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;goal&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;PENDING&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;subtasks&quot;</span><span class="p">:</span> <span class="p">[]</span>
+        <span class="p">}</span>
+
+    <span class="k">if</span> <span class="n">tasks</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">st</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;active_task&quot;</span><span class="p">):</span>
+        <span class="n">first_tid</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">tasks</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">st</span><span class="p">[</span><span class="s2">&quot;active_task&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">first_tid</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tasks</span><span class="p">[</span><span class="n">first_tid</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">tasks</span><span class="p">[</span><span class="n">first_tid</span><span class="p">][</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;IN_PROGRESS&quot;</span>
+
+    <span class="n">st</span><span class="p">[</span><span class="s2">&quot;tasks&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tasks</span>
+    <span class="n">state</span><span class="p">[</span><span class="s2">&quot;state_tree&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">st</span>
+    <span class="k">return</span> <span class="n">state</span></div>
 
 
 <div class="viewcode-block" id="process_task_queue">
@@ -901,9 +945,10 @@
     
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">script_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
         <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
-        
-    <span class="n">cid_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">conversation_id</span><span class="p">)</span> <span class="k">if</span> <span class="n">conversation_id</span> <span class="k">else</span> <span class="s2">&quot;temp_workspace&quot;</span>
-    <span class="n">sandbox_filepath</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">cid_str</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">safe_filepath</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="n">workspaces_root</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="s1">&#39;WORKSPACE_ROOT&#39;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">BASE_DIR</span><span class="p">,</span> <span class="s1">&#39;workspaces&#39;</span><span class="p">))</span>
+    <span class="n">rel_workspace</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">relpath</span><span class="p">(</span><span class="n">workspace_dir</span><span class="p">,</span> <span class="n">workspaces_root</span><span class="p">)</span>
+    <span class="n">sandbox_filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">rel_workspace</span><span class="p">,</span> <span class="n">safe_filepath</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;/&quot;</span><span class="p">)</span>
     
     <span class="n">sandbox_url</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="s2">&quot;SANDBOX_URL&quot;</span><span class="p">,</span> <span class="s2">&quot;http://sandbox:8000/execute&quot;</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
@@ -1212,6 +1257,7 @@
     <span class="s2">&quot;PromptVariant&quot;</span><span class="p">:</span> <span class="n">create_prompt_variant</span><span class="p">,</span>
     <span class="s2">&quot;GripsExpansionProposal&quot;</span><span class="p">:</span> <span class="n">handle_grips_expansion</span><span class="p">,</span>
     <span class="s2">&quot;CognitiveBlueprintProposal&quot;</span><span class="p">:</span> <span class="n">handle_blueprint_proposal</span><span class="p">,</span>
+    <span class="s2">&quot;TaskQueue&quot;</span><span class="p">:</span> <span class="n">handle_task_queue</span><span class="p">,</span>
 <span class="p">}</span>
 
 

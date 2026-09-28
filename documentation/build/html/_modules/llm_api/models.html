@@ -304,9 +304,43 @@
 
 <div class="viewcode-block" id="Conversation.get_workspace_dir">
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.Conversation.get_workspace_dir">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_workspace_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the absolute path to this conversation&#39;s dedicated workspace.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">BASE_DIR</span><span class="p">,</span> <span class="s1">&#39;workspaces&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">))</span></div>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_workspace_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the absolute path to this conversation&#39;s dedicated workspace.</span>
+
+<span class="sd">        Resolution hierarchy:</span>
+<span class="sd">        1. In-memory override (_workspace_dir_override).</span>
+<span class="sd">        2. State tree metadata override (state_tree[&#39;_workspace_dir&#39;]).</span>
+<span class="sd">        3. Doctest / trial detection (test_user, rag_test_user, or trial titles).</span>
+<span class="sd">        4. Standard conversation workspace under workspaces/conversations/&lt;uuid&gt;.</span>
+<span class="sd">        5. Legacy fallback to workspaces/&lt;uuid&gt; if the folder already exists.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 1. In-memory override</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_workspace_dir_override&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_workspace_dir_override</span>
+
+        <span class="c1"># 2. State tree metadata override</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state_tree</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_tree</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;_workspace_dir&#39;</span><span class="p">):</span>
+            <span class="n">override</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_tree</span><span class="p">[</span><span class="s1">&#39;_workspace_dir&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isabs</span><span class="p">(</span><span class="n">override</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">override</span>
+            <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">BASE_DIR</span><span class="p">,</span> <span class="s1">&#39;workspaces&#39;</span><span class="p">,</span> <span class="n">override</span><span class="p">)</span>
+
+        <span class="c1"># 3. Doctest / trial detection</span>
+        <span class="n">username</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="p">,</span> <span class="s1">&#39;username&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">user</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">title</span> <span class="ow">or</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">username</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;test_user&#39;</span><span class="p">,</span> <span class="s1">&#39;rag_test_user&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">title</span><span class="o">.</span><span class="n">startswith</span><span class="p">((</span><span class="s1">&#39;Metacognition Trial:&#39;</span><span class="p">,</span> <span class="s1">&#39;Doctest:&#39;</span><span class="p">,</span> <span class="s1">&#39;Trial:&#39;</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">BASE_DIR</span><span class="p">,</span> <span class="s1">&#39;workspaces&#39;</span><span class="p">,</span> <span class="s1">&#39;doctests&#39;</span><span class="p">,</span> <span class="s1">&#39;metacognition&#39;</span><span class="p">)</span>
+
+        <span class="c1"># 4. Standard conversation workspace under workspaces/conversations/&lt;uuid&gt;</span>
+        <span class="n">conv_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">BASE_DIR</span><span class="p">,</span> <span class="s1">&#39;workspaces&#39;</span><span class="p">,</span> <span class="s1">&#39;conversations&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
+
+        <span class="c1"># 5. Backward compatibility with existing flat workspaces/&lt;uuid&gt;</span>
+        <span class="n">legacy_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">BASE_DIR</span><span class="p">,</span> <span class="s1">&#39;workspaces&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">legacy_dir</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">conv_dir</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">legacy_dir</span>
+
+        <span class="k">return</span> <span class="n">conv_dir</span></div>
 
 
 <div class="viewcode-block" id="Conversation.get_workspace_files">
@@ -377,18 +411,34 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Automatically wipes the physical Git workspace folder when a Conversation </span>
 <span class="sd">    is deleted from the database to prevent disk space leaks.</span>
+<span class="sd">    Protects shared namespaces (doctests, agent_scripts, grips_okf, etc.).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">instance</span><span class="o">.</span><span class="n">id</span><span class="p">:</span>
         <span class="k">return</span>
-        
-    <span class="n">workspace_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">BASE_DIR</span><span class="p">,</span> <span class="s1">&#39;workspaces&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">instance</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
-    
-    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">workspace_dir</span><span class="p">):</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">workspace_dir</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="n">get_workspace_dir</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="n">workspace_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">BASE_DIR</span><span class="p">,</span> <span class="s1">&#39;workspaces&#39;</span><span class="p">,</span> <span class="s1">&#39;conversations&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">instance</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
+
+    <span class="n">workspaces_root</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">BASE_DIR</span><span class="p">,</span> <span class="s1">&#39;workspaces&#39;</span><span class="p">))</span>
+    <span class="n">abs_workspace</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">workspace_dir</span><span class="p">)</span>
+    <span class="n">rel_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">relpath</span><span class="p">(</span><span class="n">abs_workspace</span><span class="p">,</span> <span class="n">workspaces_root</span><span class="p">)</span>
+
+    <span class="c1"># Safety guard: only delete if workspace is conversation-specific</span>
+    <span class="c1"># (i.e. under workspaces/conversations/ or legacy workspaces/&lt;uuid&gt;),</span>
+    <span class="c1"># NEVER delete shared directories like workspaces/doctests, agent_scripts, or grips_okf.</span>
+    <span class="n">is_safe_to_delete</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">rel_path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;conversations&#39;</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="p">)</span> <span class="ow">or</span> 
+        <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">rel_path</span> <span class="ow">and</span> <span class="n">rel_path</span> <span class="o">==</span> <span class="nb">str</span><span class="p">(</span><span class="n">instance</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">is_safe_to_delete</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">abs_workspace</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">workspace_dir</span><span class="p">)</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">abs_workspace</span><span class="p">)</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;🗑️ Cleaned up workspace folder for deleted conversation </span><span class="si">{</span><span class="n">instance</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;⚠️ Failed to delete workspace </span><span class="si">{</span><span class="n">workspace_dir</span><span class="si">}</span><span class="s1">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span></div>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;⚠️ Failed to delete workspace </span><span class="si">{</span><span class="n">abs_workspace</span><span class="si">}</span><span class="s1">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="PromptResponseLog">

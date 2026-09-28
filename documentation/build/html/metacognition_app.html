@@ -81,6 +81,15 @@
 <li class="toctree-l3"><a class="reference internal" href="#guidance-6-choosing-structured-output-vs-react-tool-calling">Guidance 6: Choosing Structured Output vs. ReAct Tool Calling</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="#layered-tool-governance-restricted-run-modes-ws17">6. Layered Tool Governance &amp; Restricted Run-Modes (WS17)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#the-four-system-lockdown-levels">The Four System Lockdown Levels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#how-to-apply-restricted-run-modes">How to Apply Restricted Run-Modes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-3-tier-security-evaluation-architecture">The 3-Tier Security Evaluation Architecture</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#system-directive-injection-in-llm-prompts">System Directive Injection in LLM Prompts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#observability-http-headers-ui-badges">Observability, HTTP Headers &amp; UI Badges</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#uniform-enforcement-across-model-hosting-solutions">Uniform Enforcement Across Model Hosting Solutions</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#module-metacognition.models">Module Reference</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#metacognition.models.AgentCheckpoint"><code class="docutils literal notranslate"><span class="pre">AgentCheckpoint</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#metacognition.models.AgentCheckpoint.DoesNotExist"><code class="docutils literal notranslate"><span class="pre">AgentCheckpoint.DoesNotExist</span></code></a></li>
@@ -205,18 +214,23 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#metacognition.models.ToolDefinition"><code class="docutils literal notranslate"><span class="pre">ToolDefinition</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.CAPABILITY_CATEGORIES"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.CAPABILITY_CATEGORIES</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.CLEARANCE_LEVELS"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.CLEARANCE_LEVELS</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.DoesNotExist"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.DoesNotExist</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.MultipleObjectsReturned"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.MultipleObjectsReturned</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.NotUpdated"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.NotUpdated</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.TOOL_TYPES"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.TOOL_TYPES</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.api_url"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.api_url</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.capability_category"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.capability_category</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.created_at"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.created_at</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.created_by"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.created_by</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.created_by_id"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.created_by_id</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.description"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.description</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.get_callable"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.get_callable()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.get_capability_category_display"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.get_capability_category_display()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.get_next_by_created_at"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.get_next_by_created_at()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.get_previous_by_created_at"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.get_previous_by_created_at()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.get_required_clearance_display"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.get_required_clearance_display()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.get_tool_type_display"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.get_tool_type_display()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.id"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.id</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.input_schema"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.input_schema</span></code></a></li>
@@ -227,6 +241,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.output_schema"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.output_schema</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.python_path"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.python_path</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.reasoning_steps"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.reasoning_steps</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.required_clearance"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.required_clearance</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.requires_approval"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.requires_approval</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.sub_blueprint"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.sub_blueprint</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#metacognition.models.ToolDefinition.sub_blueprint_id"><code class="docutils literal notranslate"><span class="pre">ToolDefinition.sub_blueprint_id</span></code></a></li>
@@ -236,8 +251,39 @@
 <li class="toctree-l3"><a class="reference internal" href="#metacognition.models.bypass_canonical_lock"><code class="docutils literal notranslate"><span class="pre">bypass_canonical_lock</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#metacognition.models.get_schema_choices"><code class="docutils literal notranslate"><span class="pre">get_schema_choices()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#metacognition.models.is_lock_bypassed"><code class="docutils literal notranslate"><span class="pre">is_lock_bypassed()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.governance.ClearanceLevel"><code class="docutils literal notranslate"><span class="pre">ClearanceLevel</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.governance.ClearanceLevel.ADMIN"><code class="docutils literal notranslate"><span class="pre">ClearanceLevel.ADMIN</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.governance.ClearanceLevel.STANDARD"><code class="docutils literal notranslate"><span class="pre">ClearanceLevel.STANDARD</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.governance.ClearanceLevel.TRUSTED"><code class="docutils literal notranslate"><span class="pre">ClearanceLevel.TRUSTED</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.governance.LockdownLevel"><code class="docutils literal notranslate"><span class="pre">LockdownLevel</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.governance.LockdownLevel.AIR_GAPPED"><code class="docutils literal notranslate"><span class="pre">LockdownLevel.AIR_GAPPED</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.governance.LockdownLevel.CONTROLLED"><code class="docutils literal notranslate"><span class="pre">LockdownLevel.CONTROLLED</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.governance.LockdownLevel.DEVELOPMENT"><code class="docutils literal notranslate"><span class="pre">LockdownLevel.DEVELOPMENT</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.governance.LockdownLevel.RESTRICTED"><code class="docutils literal notranslate"><span class="pre">LockdownLevel.RESTRICTED</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.governance.ToolCapability"><code class="docutils literal notranslate"><span class="pre">ToolCapability</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.governance.ToolCapability.CODE_EXECUTION"><code class="docutils literal notranslate"><span class="pre">ToolCapability.CODE_EXECUTION</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.governance.ToolCapability.META_GOVERNANCE"><code class="docutils literal notranslate"><span class="pre">ToolCapability.META_GOVERNANCE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.governance.ToolCapability.READ_ONLY"><code class="docutils literal notranslate"><span class="pre">ToolCapability.READ_ONLY</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.governance.ToolCapability.STATE_MUTATION"><code class="docutils literal notranslate"><span class="pre">ToolCapability.STATE_MUTATION</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.governance.check_model_write_allowed"><code class="docutils literal notranslate"><span class="pre">check_model_write_allowed()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.governance.evaluate_blueprint_governance"><code class="docutils literal notranslate"><span class="pre">evaluate_blueprint_governance()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.governance.get_allowed_write_models"><code class="docutils literal notranslate"><span class="pre">get_allowed_write_models()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.governance.get_governance_summary"><code class="docutils literal notranslate"><span class="pre">get_governance_summary()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.governance.get_lockdown_level"><code class="docutils literal notranslate"><span class="pre">get_lockdown_level()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.governance.get_user_clearance"><code class="docutils literal notranslate"><span class="pre">get_user_clearance()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.governance.is_tool_permitted"><code class="docutils literal notranslate"><span class="pre">is_tool_permitted()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#metacognition.compiler.compile_graph_from_blueprint"><code class="docutils literal notranslate"><span class="pre">compile_graph_from_blueprint()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#metacognition.compiler.resolve_active_steps"><code class="docutils literal notranslate"><span class="pre">resolve_active_steps()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.tool_executor.execute_tool"><code class="docutils literal notranslate"><span class="pre">execute_tool()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.tool_executor.resolve_tool"><code class="docutils literal notranslate"><span class="pre">resolve_tool()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.middleware.ToolGovernanceMiddleware"><code class="docutils literal notranslate"><span class="pre">ToolGovernanceMiddleware</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.context_processors.governance_context"><code class="docutils literal notranslate"><span class="pre">governance_context()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#metacognition.actions.CheckParsingAction"><code class="docutils literal notranslate"><span class="pre">CheckParsingAction</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#metacognition.actions.CheckParsingAction.expected_outcome"><code class="docutils literal notranslate"><span class="pre">CheckParsingAction.expected_outcome</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#metacognition.actions.CheckParsingAction.model_config"><code class="docutils literal notranslate"><span class="pre">CheckParsingAction.model_config</span></code></a></li>
@@ -417,6 +463,8 @@
 <li class="toctree-l4"><a class="reference internal" href="#metacognition.actions.TaskItem.delegated_blueprint"><code class="docutils literal notranslate"><span class="pre">TaskItem.delegated_blueprint</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#metacognition.actions.TaskItem.goal"><code class="docutils literal notranslate"><span class="pre">TaskItem.goal</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#metacognition.actions.TaskItem.model_config"><code class="docutils literal notranslate"><span class="pre">TaskItem.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.actions.TaskItem.task_id"><code class="docutils literal notranslate"><span class="pre">TaskItem.task_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metacognition.actions.TaskItem.title"><code class="docutils literal notranslate"><span class="pre">TaskItem.title</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#metacognition.actions.TaskQueue"><code class="docutils literal notranslate"><span class="pre">TaskQueue</span></code></a><ul>
@@ -449,6 +497,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#metacognition.actions.handle_node_lint_tool"><code class="docutils literal notranslate"><span class="pre">handle_node_lint_tool()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#metacognition.actions.handle_research"><code class="docutils literal notranslate"><span class="pre">handle_research()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#metacognition.actions.handle_result_critique"><code class="docutils literal notranslate"><span class="pre">handle_result_critique()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#metacognition.actions.handle_task_queue"><code class="docutils literal notranslate"><span class="pre">handle_task_queue()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#metacognition.actions.process_task_queue"><code class="docutils literal notranslate"><span class="pre">process_task_queue()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#metacognition.actions.python_sandbox"><code class="docutils literal notranslate"><span class="pre">python_sandbox()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#metacognition.api.ApproveToolIn"><code class="docutils literal notranslate"><span class="pre">ApproveToolIn</span></code></a><ul>
@@ -539,47 +588,57 @@
 <nav class="contents local" id="table-of-contents">
 <p class="topic-title">Table of Contents</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="#purpose-motivating-problem" id="id1">1. Purpose &amp; Motivating Problem</a></p>
+<li><p><a class="reference internal" href="#purpose-motivating-problem" id="id2">1. Purpose &amp; Motivating Problem</a></p>
 <ul>
-<li><p><a class="reference internal" href="#why-multi-step-agentic-decomposition-is-necessary" id="id2">Why Multi-Step Agentic Decomposition is Necessary</a></p></li>
+<li><p><a class="reference internal" href="#why-multi-step-agentic-decomposition-is-necessary" id="id3">Why Multi-Step Agentic Decomposition is Necessary</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#architecture-mechanism" id="id3">2. Architecture &amp; Mechanism</a></p>
+<li><p><a class="reference internal" href="#architecture-mechanism" id="id4">2. Architecture &amp; Mechanism</a></p>
 <ul>
-<li><p><a class="reference internal" href="#database-blueprint-architecture" id="id4">Database Blueprint Architecture</a></p></li>
-<li><p><a class="reference internal" href="#langgraph-compilation-engine-compiler-py" id="id5">LangGraph Compilation Engine (<code class="docutils literal notranslate"><span class="pre">compiler.py</span></code>)</a></p></li>
-<li><p><a class="reference internal" href="#working-memory-dynamic-focal-projections" id="id6">Working Memory &amp; Dynamic Focal Projections</a></p></li>
-<li><p><a class="reference internal" href="#reasoningstep-speciation-variant-tree-pruning" id="id7">ReasoningStep Speciation &amp; Variant Tree Pruning</a></p></li>
-<li><p><a class="reference internal" href="#api-endpoints-metacognition-api-py" id="id8">API Endpoints (<code class="docutils literal notranslate"><span class="pre">metacognition/api.py</span></code>)</a></p></li>
+<li><p><a class="reference internal" href="#database-blueprint-architecture" id="id5">Database Blueprint Architecture</a></p></li>
+<li><p><a class="reference internal" href="#langgraph-compilation-engine-compiler-py" id="id6">LangGraph Compilation Engine (<code class="docutils literal notranslate"><span class="pre">compiler.py</span></code>)</a></p></li>
+<li><p><a class="reference internal" href="#working-memory-dynamic-focal-projections" id="id7">Working Memory &amp; Dynamic Focal Projections</a></p></li>
+<li><p><a class="reference internal" href="#reasoningstep-speciation-variant-tree-pruning" id="id8">ReasoningStep Speciation &amp; Variant Tree Pruning</a></p></li>
+<li><p><a class="reference internal" href="#api-endpoints-metacognition-api-py" id="id9">API Endpoints (<code class="docutils literal notranslate"><span class="pre">metacognition/api.py</span></code>)</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#observability-health-signals" id="id9">3. Observability &amp; Health Signals</a></p>
+<li><p><a class="reference internal" href="#observability-health-signals" id="id10">3. Observability &amp; Health Signals</a></p>
 <ul>
-<li><p><a class="reference internal" href="#how-to-know-blueprints-are-working-well" id="id10">How to Know Blueprints are Working Well</a></p></li>
+<li><p><a class="reference internal" href="#how-to-know-blueprints-are-working-well" id="id11">How to Know Blueprints are Working Well</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#diagnostic-tips-failure-modes" id="id11">4. Diagnostic Tips &amp; Failure Modes</a></p>
+<li><p><a class="reference internal" href="#diagnostic-tips-failure-modes" id="id12">4. Diagnostic Tips &amp; Failure Modes</a></p>
 <ul>
-<li><p><a class="reference internal" href="#when-blueprints-miss-the-mark-how-to-tune" id="id12">When Blueprints Miss the Mark &amp; How to Tune</a></p></li>
+<li><p><a class="reference internal" href="#when-blueprints-miss-the-mark-how-to-tune" id="id13">When Blueprints Miss the Mark &amp; How to Tune</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#practical-guidance-for-prompt-authors-blueprint-designers" id="id13">5. Practical Guidance for Prompt Authors &amp; Blueprint Designers</a></p>
+<li><p><a class="reference internal" href="#practical-guidance-for-prompt-authors-blueprint-designers" id="id14">5. Practical Guidance for Prompt Authors &amp; Blueprint Designers</a></p>
 <ul>
-<li><p><a class="reference internal" href="#guidance-1-working-memory-vs-conversation-history" id="id14">Guidance 1: Working Memory vs. Conversation History</a></p></li>
-<li><p><a class="reference internal" href="#guidance-2-structuring-the-state-tree-for-model-clarity" id="id15">Guidance 2: Structuring the State Tree for Model Clarity</a></p></li>
-<li><p><a class="reference internal" href="#guidance-3-design-patterns-plans-vs-uncertainty-trees-the-grill-me-pattern" id="id16">Guidance 3: Design Patterns — Plans vs. Uncertainty Trees (The Grill-Me Pattern)</a></p></li>
-<li><p><a class="reference internal" href="#guidance-4-context-isolation-with-sub-blueprints" id="id17">Guidance 4: Context Isolation with Sub-Blueprints</a></p></li>
-<li><p><a class="reference internal" href="#guidance-5-workspace-file-hygiene" id="id18">Guidance 5: Workspace File Hygiene</a></p></li>
-<li><p><a class="reference internal" href="#guidance-6-choosing-structured-output-vs-react-tool-calling" id="id19">Guidance 6: Choosing Structured Output vs. ReAct Tool Calling</a></p></li>
+<li><p><a class="reference internal" href="#guidance-1-working-memory-vs-conversation-history" id="id15">Guidance 1: Working Memory vs. Conversation History</a></p></li>
+<li><p><a class="reference internal" href="#guidance-2-structuring-the-state-tree-for-model-clarity" id="id16">Guidance 2: Structuring the State Tree for Model Clarity</a></p></li>
+<li><p><a class="reference internal" href="#guidance-3-design-patterns-plans-vs-uncertainty-trees-the-grill-me-pattern" id="id17">Guidance 3: Design Patterns — Plans vs. Uncertainty Trees (The Grill-Me Pattern)</a></p></li>
+<li><p><a class="reference internal" href="#guidance-4-context-isolation-with-sub-blueprints" id="id18">Guidance 4: Context Isolation with Sub-Blueprints</a></p></li>
+<li><p><a class="reference internal" href="#guidance-5-workspace-file-hygiene" id="id19">Guidance 5: Workspace File Hygiene</a></p></li>
+<li><p><a class="reference internal" href="#guidance-6-choosing-structured-output-vs-react-tool-calling" id="id20">Guidance 6: Choosing Structured Output vs. ReAct Tool Calling</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#module-metacognition.models" id="id20">Module Reference</a></p></li>
+<li><p><a class="reference internal" href="#layered-tool-governance-restricted-run-modes-ws17" id="id21">6. Layered Tool Governance &amp; Restricted Run-Modes (WS17)</a></p>
+<ul>
+<li><p><a class="reference internal" href="#the-four-system-lockdown-levels" id="id22">The Four System Lockdown Levels</a></p></li>
+<li><p><a class="reference internal" href="#how-to-apply-restricted-run-modes" id="id23">How to Apply Restricted Run-Modes</a></p></li>
+<li><p><a class="reference internal" href="#the-3-tier-security-evaluation-architecture" id="id24">The 3-Tier Security Evaluation Architecture</a></p></li>
+<li><p><a class="reference internal" href="#system-directive-injection-in-llm-prompts" id="id25">System Directive Injection in LLM Prompts</a></p></li>
+<li><p><a class="reference internal" href="#observability-http-headers-ui-badges" id="id26">Observability, HTTP Headers &amp; UI Badges</a></p></li>
+<li><p><a class="reference internal" href="#uniform-enforcement-across-model-hosting-solutions" id="id27">Uniform Enforcement Across Model Hosting Solutions</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#module-metacognition.models" id="id28">Module Reference</a></p></li>
 </ul>
 </nav>
 <section id="purpose-motivating-problem">
-<h2><a class="toc-backref" href="#id1" role="doc-backlink">1. Purpose &amp; Motivating Problem</a><a class="headerlink" href="#purpose-motivating-problem" title="Link to this heading"></a></h2>
+<h2><a class="toc-backref" href="#id2" role="doc-backlink">1. Purpose &amp; Motivating Problem</a><a class="headerlink" href="#purpose-motivating-problem" title="Link to this heading"></a></h2>
 <section id="why-multi-step-agentic-decomposition-is-necessary">
-<h3><a class="toc-backref" href="#id2" role="doc-backlink">Why Multi-Step Agentic Decomposition is Necessary</a><a class="headerlink" href="#why-multi-step-agentic-decomposition-is-necessary" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id3" role="doc-backlink">Why Multi-Step Agentic Decomposition is Necessary</a><a class="headerlink" href="#why-multi-step-agentic-decomposition-is-necessary" title="Link to this heading"></a></h3>
 <p>Designing a rigorous scientific study is inherently multi-faceted: it requires clarifying the core hypothesis, identifying confounding variables, retrieving empirical baselines, writing simulation code, and critiquing the methodology.</p>
 <p>When presented with a complex study design prompt in a single zero-shot interaction, Large Language Models suffer characteristic cognitive breakdowns:</p>
 <ul class="simple">
@@ -591,9 +650,9 @@
 </section>
 </section>
 <section id="architecture-mechanism">
-<h2><a class="toc-backref" href="#id3" role="doc-backlink">2. Architecture &amp; Mechanism</a><a class="headerlink" href="#architecture-mechanism" title="Link to this heading"></a></h2>
+<h2><a class="toc-backref" href="#id4" role="doc-backlink">2. Architecture &amp; Mechanism</a><a class="headerlink" href="#architecture-mechanism" title="Link to this heading"></a></h2>
 <section id="database-blueprint-architecture">
-<h3><a class="toc-backref" href="#id4" role="doc-backlink">Database Blueprint Architecture</a><a class="headerlink" href="#database-blueprint-architecture" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id5" role="doc-backlink">Database Blueprint Architecture</a><a class="headerlink" href="#database-blueprint-architecture" title="Link to this heading"></a></h3>
 <p>Workflows are defined in PostgreSQL rather than hardcoded in Python files, allowing researchers to refine thinking strategies without restarting the application:</p>
 <ul class="simple">
 <li><p><strong>``CognitiveBlueprint``</strong>: An overarching agent workflow (e.g., <em>Study Design Planner</em>, <em>Deep Reader Ingestion</em>, <em>Empirical Code Simulating Agent</em>). Defines whether the workflow runs autonomously or requires human tool approval, its initial system prompt, and entry steps.</p></li>
@@ -606,7 +665,7 @@
 </ul>
 </section>
 <section id="langgraph-compilation-engine-compiler-py">
-<h3><a class="toc-backref" href="#id5" role="doc-backlink">LangGraph Compilation Engine (<code class="docutils literal notranslate"><span class="pre">compiler.py</span></code>)</a><a class="headerlink" href="#langgraph-compilation-engine-compiler-py" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id6" role="doc-backlink">LangGraph Compilation Engine (<code class="docutils literal notranslate"><span class="pre">compiler.py</span></code>)</a><a class="headerlink" href="#langgraph-compilation-engine-compiler-py" title="Link to this heading"></a></h3>
 <p>At runtime, <cite>compiler.py</cite> translates the relational <cite>CognitiveBlueprint</cite> and its <cite>ReasoningStep</cite> edges into an executable LangGraph <cite>StateGraph</cite>:</p>
 <ol class="arabic simple">
 <li><p><strong>State Contract (``AgentState``)</strong>: A typed dictionary (<cite>AgentState</cite>) flows across all graph nodes, containing:
@@ -621,7 +680,7 @@
 </ol>
 </section>
 <section id="working-memory-dynamic-focal-projections">
-<h3><a class="toc-backref" href="#id6" role="doc-backlink">Working Memory &amp; Dynamic Focal Projections</a><a class="headerlink" href="#working-memory-dynamic-focal-projections" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id7" role="doc-backlink">Working Memory &amp; Dynamic Focal Projections</a><a class="headerlink" href="#working-memory-dynamic-focal-projections" title="Link to this heading"></a></h3>
 <p>Rather than treating an agent conversation as a monolithic, unbounded list of chat messages, Metacognition employs a dual-layer working memory model:</p>
 <ol class="arabic simple">
 <li><p><strong>Ephemeral Dialogue Working Memory (``working_memory``)</strong>:
@@ -642,7 +701,7 @@
 </ol>
 </section>
 <section id="reasoningstep-speciation-variant-tree-pruning">
-<h3><a class="toc-backref" href="#id7" role="doc-backlink">ReasoningStep Speciation &amp; Variant Tree Pruning</a><a class="headerlink" href="#reasoningstep-speciation-variant-tree-pruning" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id8" role="doc-backlink">ReasoningStep Speciation &amp; Variant Tree Pruning</a><a class="headerlink" href="#reasoningstep-speciation-variant-tree-pruning" title="Link to this heading"></a></h3>
 <p>To support continuous self-improvement, Metacognition implements an evolutionary branching mechanism for prompts:</p>
 <ol class="arabic simple">
 <li><p><strong>Canonical Immutability</strong>:
@@ -661,7 +720,7 @@ Foundational blueprints and steps seeded by the codebase have <cite>is_canonical
 </ol>
 </section>
 <section id="api-endpoints-metacognition-api-py">
-<h3><a class="toc-backref" href="#id8" role="doc-backlink">API Endpoints (<code class="docutils literal notranslate"><span class="pre">metacognition/api.py</span></code>)</a><a class="headerlink" href="#api-endpoints-metacognition-api-py" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id9" role="doc-backlink">API Endpoints (<code class="docutils literal notranslate"><span class="pre">metacognition/api.py</span></code>)</a><a class="headerlink" href="#api-endpoints-metacognition-api-py" title="Link to this heading"></a></h3>
 <p>Exposes Django Ninja REST and Server-Sent Events (SSE) streaming endpoints:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/metacognition/dispatch/</span></code>: Enqueues a blueprint run asynchronously via <cite>verbal_tasks</cite>.</p></li>
@@ -672,9 +731,9 @@ Foundational blueprints and steps seeded by the codebase have <cite>is_canonical
 </section>
 </section>
 <section id="observability-health-signals">
-<h2><a class="toc-backref" href="#id9" role="doc-backlink">3. Observability &amp; Health Signals</a><a class="headerlink" href="#observability-health-signals" title="Link to this heading"></a></h2>
+<h2><a class="toc-backref" href="#id10" role="doc-backlink">3. Observability &amp; Health Signals</a><a class="headerlink" href="#observability-health-signals" title="Link to this heading"></a></h2>
 <section id="how-to-know-blueprints-are-working-well">
-<h3><a class="toc-backref" href="#id10" role="doc-backlink">How to Know Blueprints are Working Well</a><a class="headerlink" href="#how-to-know-blueprints-are-working-well" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id11" role="doc-backlink">How to Know Blueprints are Working Well</a><a class="headerlink" href="#how-to-know-blueprints-are-working-well" title="Link to this heading"></a></h3>
 <ol class="arabic simple">
 <li><p><strong>Streaming Reasoning Traces in the Demo UI</strong>:
 In the Demo UI chat interface, expanding the <strong>Reasoning Trace</strong> accordion displays real-time step progress (e.g. <em>Step 1: Extract Factors</em> $rightarrow$ <em>Step 2: Simulate in Sandbox</em> $rightarrow$ <em>Step 3: Self-Critique</em>).</p></li>
@@ -686,9 +745,9 @@ Tool executions log their exact JSON inputs and outputs, verifying that argument
 </section>
 </section>
 <section id="diagnostic-tips-failure-modes">
-<h2><a class="toc-backref" href="#id11" role="doc-backlink">4. Diagnostic Tips &amp; Failure Modes</a><a class="headerlink" href="#diagnostic-tips-failure-modes" title="Link to this heading"></a></h2>
+<h2><a class="toc-backref" href="#id12" role="doc-backlink">4. Diagnostic Tips &amp; Failure Modes</a><a class="headerlink" href="#diagnostic-tips-failure-modes" title="Link to this heading"></a></h2>
 <section id="when-blueprints-miss-the-mark-how-to-tune">
-<h3><a class="toc-backref" href="#id12" role="doc-backlink">When Blueprints Miss the Mark &amp; How to Tune</a><a class="headerlink" href="#when-blueprints-miss-the-mark-how-to-tune" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id13" role="doc-backlink">When Blueprints Miss the Mark &amp; How to Tune</a><a class="headerlink" href="#when-blueprints-miss-the-mark-how-to-tune" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p><strong>Infinite Refinement Loops (Step Bounces Back Continuously)</strong>:
 * <em>Hazard</em>: A critique step (e.g., <cite>ResultCritique</cite>) continuously rejects candidate outputs because validation criteria are overly stringent or ambiguous.
@@ -703,17 +762,17 @@ Tool executions log their exact JSON inputs and outputs, verifying that argument
 </section>
 </section>
 <section id="practical-guidance-for-prompt-authors-blueprint-designers">
-<h2><a class="toc-backref" href="#id13" role="doc-backlink">5. Practical Guidance for Prompt Authors &amp; Blueprint Designers</a><a class="headerlink" href="#practical-guidance-for-prompt-authors-blueprint-designers" title="Link to this heading"></a></h2>
+<h2><a class="toc-backref" href="#id14" role="doc-backlink">5. Practical Guidance for Prompt Authors &amp; Blueprint Designers</a><a class="headerlink" href="#practical-guidance-for-prompt-authors-blueprint-designers" title="Link to this heading"></a></h2>
 <p>Designing agent workflows that run reliably on local open-weight models requires deliberate architectural choices. The following best practices apply when drafting reasoning step prompts and assembling cognitive blueprints:</p>
 <section id="guidance-1-working-memory-vs-conversation-history">
-<h3><a class="toc-backref" href="#id14" role="doc-backlink">Guidance 1: Working Memory vs. Conversation History</a><a class="headerlink" href="#guidance-1-working-memory-vs-conversation-history" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id15" role="doc-backlink">Guidance 1: Working Memory vs. Conversation History</a><a class="headerlink" href="#guidance-1-working-memory-vs-conversation-history" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p><strong>Do Not Replicate State in Prompts</strong>: Do not attempt to manually format or summarize conversation history inside your system prompts. When <cite>ReasoningStep.include_state_tree</cite> is enabled (the default), the compiler automatically injects the focal state tree projection into the prompt context.</p></li>
 <li><p><strong>Rely on Continuous Dialogue</strong>: <cite>run_blueprint</cite> automatically restores previous turns from <cite>conversation.as_messages()</cite>. System prompts should be written assuming recent conversational dialogue is already visible in the message stream, while older context is condensed into the state tree.</p></li>
 </ul>
 </section>
 <section id="guidance-2-structuring-the-state-tree-for-model-clarity">
-<h3><a class="toc-backref" href="#id15" role="doc-backlink">Guidance 2: Structuring the State Tree for Model Clarity</a><a class="headerlink" href="#guidance-2-structuring-the-state-tree-for-model-clarity" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id16" role="doc-backlink">Guidance 2: Structuring the State Tree for Model Clarity</a><a class="headerlink" href="#guidance-2-structuring-the-state-tree-for-model-clarity" title="Link to this heading"></a></h3>
 <p>When prompts or schemas update <cite>state_tree</cite>, adhere to the standard key hierarchy to ensure the focal projection and compaction engines function optimally:</p>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
 <span class="w">  </span><span class="nt">&quot;milestones&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
@@ -748,7 +807,7 @@ Tool executions log their exact JSON inputs and outputs, verifying that argument
 </ul>
 </section>
 <section id="guidance-3-design-patterns-plans-vs-uncertainty-trees-the-grill-me-pattern">
-<h3><a class="toc-backref" href="#id16" role="doc-backlink">Guidance 3: Design Patterns — Plans vs. Uncertainty Trees (The Grill-Me Pattern)</a><a class="headerlink" href="#guidance-3-design-patterns-plans-vs-uncertainty-trees-the-grill-me-pattern" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id17" role="doc-backlink">Guidance 3: Design Patterns — Plans vs. Uncertainty Trees (The Grill-Me Pattern)</a><a class="headerlink" href="#guidance-3-design-patterns-plans-vs-uncertainty-trees-the-grill-me-pattern" title="Link to this heading"></a></h3>
 <p>Blueprint designers often instinctively reach for an <cite>ExecutionPlan</cite> or <cite>TaskQueue</cite> for every workflow. This is effective for deterministic workflows, but backfires in interactive clarification loops:</p>
 <ul>
 <li><p><strong>When to use Execution Plans / Task Queues</strong>:
@@ -775,7 +834,7 @@ In clarification and interview loops (such as the <em>Grill-Me</em> blueprint), 
 </ul>
 </section>
 <section id="guidance-4-context-isolation-with-sub-blueprints">
-<h3><a class="toc-backref" href="#id17" role="doc-backlink">Guidance 4: Context Isolation with Sub-Blueprints</a><a class="headerlink" href="#guidance-4-context-isolation-with-sub-blueprints" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id18" role="doc-backlink">Guidance 4: Context Isolation with Sub-Blueprints</a><a class="headerlink" href="#guidance-4-context-isolation-with-sub-blueprints" title="Link to this heading"></a></h3>
 <p>When a reasoning step requires extensive exploration, heavy tool usage, or sandbox code execution:</p>
 <ul class="simple">
 <li><p><strong>Bypass the LLM with a Sub-Blueprint</strong>: Assign <cite>step.sub_blueprint_id</cite>. The engine will invoke the sub-blueprint in its own dedicated conversation.</p></li>
@@ -784,22 +843,187 @@ In clarification and interview loops (such as the <em>Grill-Me</em> blueprint), 
 </ul>
 </section>
 <section id="guidance-5-workspace-file-hygiene">
-<h3><a class="toc-backref" href="#id18" role="doc-backlink">Guidance 5: Workspace File Hygiene</a><a class="headerlink" href="#guidance-5-workspace-file-hygiene" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id19" role="doc-backlink">Guidance 5: Workspace File Hygiene</a><a class="headerlink" href="#guidance-5-workspace-file-hygiene" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p><strong>Write Data to Files, Not to Messages</strong>: When tools generate large datasets, simulation tables, or multi-page reports, instruct the model to write the content directly to the conversation’s workspace using <cite>WRITE_FILE</cite>.</p></li>
 <li><p><strong>Store Handles in State Tree</strong>: In <cite>state_tree</cite> or scratchpad variables, store only the file path (e.g., <cite>results/simulation_run_1.csv</cite>) and brief statistical summaries—never the raw content. This keeps prompt tokens under 250 tokens per step.</p></li>
 </ul>
 </section>
 <section id="guidance-6-choosing-structured-output-vs-react-tool-calling">
-<h3><a class="toc-backref" href="#id19" role="doc-backlink">Guidance 6: Choosing Structured Output vs. ReAct Tool Calling</a><a class="headerlink" href="#guidance-6-choosing-structured-output-vs-react-tool-calling" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id20" role="doc-backlink">Guidance 6: Choosing Structured Output vs. ReAct Tool Calling</a><a class="headerlink" href="#guidance-6-choosing-structured-output-vs-react-tool-calling" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p><strong>Use Pydantic Schemas (Outlines Guided Generation)</strong>: Whenever a step requires an explicit, structured decision (e.g., <cite>ResultCritique</cite>, <cite>Factor</cite>, <cite>StrategicPlan</cite>, <cite>DifficultPromptEvaluation</cite>), configure <cite>ReasoningStep.output_schema</cite>. The Outlines FSM constraint guarantees 100% syntactically valid JSON on local models without retries.</p></li>
 <li><p><strong>Use ReAct Tool Calling</strong>: Reserve <cite>step.available_tools</cite> for open-ended exploration phases where the agent must freely decide which tools to invoke and with what arguments.</p></li>
 </ul>
 </section>
 </section>
+<section id="layered-tool-governance-restricted-run-modes-ws17">
+<h2><a class="toc-backref" href="#id21" role="doc-backlink">6. Layered Tool Governance &amp; Restricted Run-Modes (WS17)</a><a class="headerlink" href="#layered-tool-governance-restricted-run-modes-ws17" title="Link to this heading"></a></h2>
+<p>Organizations deploying local or containerized Large Language Models frequently require strict, immutable guarantees over what autonomous agents can execute. Specifically, security and governance stakeholders express three primary concerns:</p>
+<ol class="arabic simple">
+<li><p><strong>Model-Written Code Execution</strong>: LLM-generated code must not run uncontrolled on host infrastructure or escape container boundaries.</p></li>
+<li><p><strong>External Network Exfiltration</strong>: Models must not access external networks or exfiltrate private research data.</p></li>
+<li><p><strong>Privilege Escalation &amp; Self-Modification</strong>: LLMs must not be able to alter their own permissions, expand available tool definitions, or manipulate user authentication tables.</p></li>
+</ol>
+<p>To solve this without breaking agent usability, Metacognition implements a <strong>3-Tier Layered Tool Governance Engine</strong> (<a class="reference internal" href="#module-metacognition.governance" title="metacognition.governance"><code class="xref py py-mod docutils literal notranslate"><span class="pre">metacognition.governance</span></code></a>).</p>
+<section id="the-four-system-lockdown-levels">
+<h3><a class="toc-backref" href="#id22" role="doc-backlink">The Four System Lockdown Levels</a><a class="headerlink" href="#the-four-system-lockdown-levels" title="Link to this heading"></a></h3>
+<p>Verbal provides four distinct system-wide operational lockdown modes:</p>
+<table class="docutils align-default" id="id1">
+<caption><span class="caption-text">System Lockdown Levels</span><a class="headerlink" href="#id1" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 18.0%" />
+<col style="width: 16.0%" />
+<col style="width: 46.0%" />
+<col style="width: 20.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Lockdown Level</p></th>
+<th class="head"><p>Badge &amp; Icon</p></th>
+<th class="head"><p>Description &amp; Permitted Operations</p></th>
+<th class="head"><p>Code Execution</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">DEVELOPMENT</span></code></p></td>
+<td><p>🧪 DEVELOPMENT</p></td>
+<td><p><strong>Permissive / Research Mode</strong>. All tools are active. Agent self-modification (editing cognitive blueprints and reasoning steps via meta-tools) is enabled for active prompt engineering and AI research.</p></td>
+<td><p>Permitted</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">CONTROLLED</span></code></p></td>
+<td><p>⚡ CONTROLLED</p></td>
+<td><p><strong>Regulated Enterprise Mode</strong>. Self-modification meta-tools are permanently blocked host-wide. Code execution and sensitive operations require explicit user clearance (<code class="docutils literal notranslate"><span class="pre">TRUSTED</span></code> or <code class="docutils literal notranslate"><span class="pre">ADMIN</span></code>). Base domain model writes are restricted to strict allowlists.</p></td>
+<td><p>Clearance-Gated</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">RESTRICTED</span></code></p></td>
+<td><p>🔒 RESTRICTED</p></td>
+<td><p><strong>Safe Evaluation Mode</strong>. Model code execution and external network tools are completely disabled host-wide, regardless of user clearance. Safe deterministic domain tools (e.g., RAG semantic retrieval, knowledge graph traversal and updates) remain active.</p></td>
+<td><p>Completely Blocked</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">AIR_GAPPED</span></code></p></td>
+<td><p>🛡️ TEXT-ONLY</p></td>
+<td><p><strong>Forensic / Pure Reasoning Mode</strong> (Aliases: <code class="docutils literal notranslate"><span class="pre">TEXT_ONLY</span></code>, <code class="docutils literal notranslate"><span class="pre">LOCKED</span></code>). All runtime tool execution is blocked. The agent operates strictly via deterministic system prompts, multi-turn dialogue, and structured JSON schemas.</p></td>
+<td><p>Completely Blocked</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p><strong>Internal Platform Architecture vs. Model Tools</strong>:
+The <code class="docutils literal notranslate"><span class="pre">AIR_GAPPED</span></code> / <code class="docutils literal notranslate"><span class="pre">TEXT_ONLY</span></code> mode restricts <strong>model tool execution</strong> (code interpreters, web requests, shell tools). It does <strong>not</strong> sever internal container networking required for basic platform operation (such as the web server communicating with the GPU inference server on port 8001, GROBID on port 8070, or PostgreSQL on port 5433). The platform remains fully operational while guaranteeing the LLM cannot execute tools or make outbound calls.</p>
+</div>
+</section>
+<section id="how-to-apply-restricted-run-modes">
+<h3><a class="toc-backref" href="#id23" role="doc-backlink">How to Apply Restricted Run-Modes</a><a class="headerlink" href="#how-to-apply-restricted-run-modes" title="Link to this heading"></a></h3>
+<p>Lockdown modes are set at the host environment level in your <code class="docutils literal notranslate"><span class="pre">.env</span></code> file (or directly in <code class="docutils literal notranslate"><span class="pre">settings.py</span></code>):</p>
+<ol class="arabic">
+<li><p><strong>Setting the Overall Lockdown Ceiling</strong>:
+In <code class="docutils literal notranslate"><span class="pre">.env</span></code>, set <code class="docutils literal notranslate"><span class="pre">VERBAL_LOCKDOWN_LEVEL</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Options: DEVELOPMENT, CONTROLLED, RESTRICTED, AIR_GAPPED (or TEXT_ONLY / LOCKED)</span>
+<span class="nv">VERBAL_LOCKDOWN_LEVEL</span><span class="o">=</span>RESTRICTED
+</pre></div>
+</div>
+</li>
+<li><p><strong>Fine-Grained Environment Clamps</strong>:
+You can also independently clamp specific capabilities regardless of the mode:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Master switch for executing model-written python/shell code</span>
+<span class="nv">ALLOW_MODEL_CODE_EXECUTION</span><span class="o">=</span>False
+
+<span class="c1"># Master switch for model tools making external HTTP/API network calls</span>
+<span class="nv">ALLOW_TOOL_NETWORK_ACCESS</span><span class="o">=</span>False
+
+<span class="c1"># Master switch allowing meta-tools to modify blueprints/steps (dev research only)</span>
+<span class="nv">ALLOW_AGENT_SELF_MODIFICATION</span><span class="o">=</span>False
+</pre></div>
+</div>
+</li>
+<li><p><strong>Applying the Changes</strong>:
+Restart the web and background service processes for changes to take effect:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./start_web.sh
+./start_background_services.sh
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="the-3-tier-security-evaluation-architecture">
+<h3><a class="toc-backref" href="#id24" role="doc-backlink">The 3-Tier Security Evaluation Architecture</a><a class="headerlink" href="#the-3-tier-security-evaluation-architecture" title="Link to this heading"></a></h3>
+<p>Every tool exposure and execution passes through three defense-in-depth tiers:</p>
+<ol class="arabic">
+<li><p><strong>Tier 1: Host Environment Ceiling (Settings)</strong>:
+Defined in <code class="docutils literal notranslate"><span class="pre">settings.py</span></code> and <code class="docutils literal notranslate"><span class="pre">.env</span></code>. This is an immutable ceiling. If <code class="docutils literal notranslate"><span class="pre">ALLOW_MODEL_CODE_EXECUTION=False</span></code>, no user, admin, or model prompt can ever invoke a code execution tool.</p></li>
+<li><p><strong>Tier 2: Tool Capability Classification &amp; Strict Allowlist</strong>:
+Each <code class="docutils literal notranslate"><span class="pre">ToolDefinition</span></code> is categorized into an explicit capability:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">READ_ONLY</span></code>: Safe inspection tools (RAG search, Grips graph queries, task inspection).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">STATE_MUTATION</span></code>: Tools mutating permitted domain models.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">CODE_EXECUTION</span></code>: Dynamic execution of model-written scripts.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">META_GOVERNANCE</span></code>: Tools mutating <code class="docutils literal notranslate"><span class="pre">CognitiveBlueprint</span></code>, <code class="docutils literal notranslate"><span class="pre">ReasoningStep</span></code>, or system permissions.</p></li>
+</ul>
+<p>In addition, domain model write tools (<code class="docutils literal notranslate"><span class="pre">write_django_model</span></code>) enforce a strict model allowlist:</p>
+<ul class="simple">
+<li><p><strong>Allowed Base Models</strong>: <code class="docutils literal notranslate"><span class="pre">grips.conceptnode</span></code>, <code class="docutils literal notranslate"><span class="pre">grips.knowledgeedge</span></code>, <code class="docutils literal notranslate"><span class="pre">work_organisation.whiteboardcard</span></code>, <code class="docutils literal notranslate"><span class="pre">work_organisation.whiteboardcluster</span></code>, <code class="docutils literal notranslate"><span class="pre">notes.investigationnote</span></code>.</p></li>
+<li><p><strong>Self-Modification Models</strong>: <code class="docutils literal notranslate"><span class="pre">metacognition.cognitiveblueprint</span></code>, <code class="docutils literal notranslate"><span class="pre">metacognition.reasoningstep</span></code> (permitted <strong>only</strong> in <code class="docutils literal notranslate"><span class="pre">DEVELOPMENT</span></code> mode when <code class="docutils literal notranslate"><span class="pre">ALLOW_AGENT_SELF_MODIFICATION=True</span></code>).</p></li>
+<li><p><strong>Forbidden Models</strong>: <code class="docutils literal notranslate"><span class="pre">auth.user</span></code>, <code class="docutils literal notranslate"><span class="pre">auth.group</span></code>, <code class="docutils literal notranslate"><span class="pre">metacognition.tooldefinition</span></code>, and configuration singletons are permanently immutable from runtime tools.</p></li>
+</ul>
+</li>
+<li><p><strong>Tier 3: User Operational Clearance</strong>:
+Users are classified into operational clearance ranks:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">STANDARD</span></code> (Rank 1): Base authenticated and unprivileged users.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">TRUSTED</span></code> (Rank 2): Members of the <code class="docutils literal notranslate"><span class="pre">Trusted</span> <span class="pre">Operators</span></code> group or users with the <code class="docutils literal notranslate"><span class="pre">is_trusted</span></code> flag. Permitted to run clearance-gated tools in <code class="docutils literal notranslate"><span class="pre">CONTROLLED</span></code> mode.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ADMIN</span></code> (Rank 3): Superusers and staff.</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="system-directive-injection-in-llm-prompts">
+<h3><a class="toc-backref" href="#id25" role="doc-backlink">System Directive Injection in LLM Prompts</a><a class="headerlink" href="#system-directive-injection-in-llm-prompts" title="Link to this heading"></a></h3>
+<p>To ensure transparent operation without relying on prompt-based enforcement, <code class="docutils literal notranslate"><span class="pre">metacognition.compiler</span></code> automatically appends a canonical governance directive to the system prompt of every reasoning step:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>[SYSTEM GOVERNANCE DIRECTIVE]
+Active Lockdown Mode: RESTRICTED. Model-written code execution and external network tools are disabled by host policy. Answer requests using deterministic reasoning and available domain tools.
+</pre></div>
+</div>
+<p>This informs the model of active constraints upfront, enabling it to explain limitations politely to users rather than repeatedly attempting to invoke blocked capabilities.</p>
+</section>
+<section id="observability-http-headers-ui-badges">
+<h3><a class="toc-backref" href="#id26" role="doc-backlink">Observability, HTTP Headers &amp; UI Badges</a><a class="headerlink" href="#observability-http-headers-ui-badges" title="Link to this heading"></a></h3>
+<ul>
+<li><p><strong>HTTP Response Headers</strong>: <code class="docutils literal notranslate"><span class="pre">metacognition.middleware.ToolGovernanceMiddleware</span></code> injects the active lockdown state into every HTTP, REST API, and Datastar streaming response:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>X-Verbal-Lockdown-Level: RESTRICTED
+</pre></div>
+</div>
+</li>
+<li><p><strong>Navigation Bar Badges</strong>: The Demo UI displays an immediate, color-coded security indicator in the top navbar:
+* 🧪 <strong>DEVELOPMENT</strong> (Emerald green pill)
+* ⚡ <strong>CONTROLLED</strong> (Blue pill)
+* 🔒 <strong>RESTRICTED</strong> (Amber pill)
+* 🛡️ <strong>TEXT-ONLY</strong> / <strong>AIR-GAPPED</strong> (Red pill)</p></li>
+<li><p><strong>Cognitive Blueprint Compatibility Indicators</strong>:
+The Blueprint dropdown in the Demo UI actively validates all steps of a blueprint against the active lockdown policy and user clearance via <code class="docutils literal notranslate"><span class="pre">evaluate_blueprint_governance()</span></code>:
+* <strong>Ready (Green)</strong>: All required tools are active and permitted under current policy.
+* <strong>Degraded (Amber)</strong>: The blueprint can run, but certain non-critical tools are blocked (the hover tooltip lists exactly which tools are unavailable).
+* <strong>Locked (Red)</strong>: The blueprint requires tools (e.g., Code Execution) that are forbidden by policy or user clearance. Execution is disabled, and selecting it displays a warning dialog detailing the restriction.</p></li>
+</ul>
+</section>
+<section id="uniform-enforcement-across-model-hosting-solutions">
+<h3><a class="toc-backref" href="#id27" role="doc-backlink">Uniform Enforcement Across Model Hosting Solutions</a><a class="headerlink" href="#uniform-enforcement-across-model-hosting-solutions" title="Link to this heading"></a></h3>
+<p>Verbal supports three distinct model hosting backends via <code class="docutils literal notranslate"><span class="pre">llm_api.models.SystemConfiguration</span></code>:</p>
+<ol class="arabic simple">
+<li><p><strong>Local PyTorch</strong> (CPU / GPU proxy via port 8001)</p></li>
+<li><p><strong>Local vLLM Container</strong> (high-throughput OpenAI-compatible server on port 8003)</p></li>
+<li><p><strong>Local Ollama Container</strong> (local containerized models on port 11434)</p></li>
+</ol>
+<p>Governance enforcement is completely decoupled from the inference backend. Regardless of whether inference runs via PyTorch, vLLM, or Ollama:</p>
+<ul class="simple">
+<li><p><strong>Compilation Stripping</strong>: In <code class="docutils literal notranslate"><span class="pre">compiler.py</span></code>, blocked tools are stripped from both the OpenAI-compatible <code class="docutils literal notranslate"><span class="pre">tools</span></code> parameter and Outlines guided JSON schemas <em>before</em> the request payload is dispatched to the inference engine.</p></li>
+<li><p><strong>Execution Gateway Invariant</strong>: Even if an adversarial model running on any backend hallucinates or outputs a disallowed tool call, the tool execution gateway (<code class="docutils literal notranslate"><span class="pre">metacognition.tool_executor.execute_tool</span></code>) intercepts and aborts the execution with a security violation.</p></li>
+<li><p><strong>Automated Test Coverage</strong>: The <code class="docutils literal notranslate"><span class="pre">metacognition.tests.ToolGovernanceHostingBackendTests</span></code> test suite matrixes all three hosting solutions across all restricted modes to verify end-to-end payload hygiene and execution gating.</p></li>
+</ul>
+</section>
+</section>
 <section id="module-metacognition.models">
-<span id="module-reference"></span><h2><a class="toc-backref" href="#id20" role="doc-backlink">Module Reference</a><a class="headerlink" href="#module-metacognition.models" title="Link to this heading"></a></h2>
+<span id="module-reference"></span><h2><a class="toc-backref" href="#id28" role="doc-backlink">Module Reference</a><a class="headerlink" href="#module-metacognition.models" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="metacognition.models.AgentCheckpoint">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">metacognition.models.</span></span><span class="sig-name descname"><span class="pre">AgentCheckpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/models.html#AgentCheckpoint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.models.AgentCheckpoint" title="Link to this definition"></a></dt>
@@ -1696,6 +1920,16 @@ object the first time, the query is executed.</p>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">metacognition.models.</span></span><span class="sig-name descname"><span class="pre">ToolDefinition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/models.html#ToolDefinition"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.models.ToolDefinition" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
 <p>A tool that can be invoked by an agent node.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ToolDefinition.CAPABILITY_CATEGORIES">
+<span class="sig-name descname"><span class="pre">CAPABILITY_CATEGORIES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[('READ_ONLY',</span> <span class="pre">'Read-Only</span> <span class="pre">(Knowledge</span> <span class="pre">&amp;</span> <span class="pre">DB</span> <span class="pre">Inspection)'),</span> <span class="pre">('STATE_MUTATION',</span> <span class="pre">'State</span> <span class="pre">Mutation</span> <span class="pre">(Deterministic</span> <span class="pre">Writes)'),</span> <span class="pre">('CODE_EXECUTION',</span> <span class="pre">'Code</span> <span class="pre">Execution</span> <span class="pre">(Model-Written</span> <span class="pre">Scripts)'),</span> <span class="pre">('META_GOVERNANCE',</span> <span class="pre">'Meta-Governance</span> <span class="pre">(Self-Modification)')]</span></em><a class="headerlink" href="#metacognition.models.ToolDefinition.CAPABILITY_CATEGORIES" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ToolDefinition.CLEARANCE_LEVELS">
+<span class="sig-name descname"><span class="pre">CLEARANCE_LEVELS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[('STANDARD',</span> <span class="pre">'Standard</span> <span class="pre">User'),</span> <span class="pre">('TRUSTED',</span> <span class="pre">'Trusted</span> <span class="pre">Operator</span> <span class="pre">/</span> <span class="pre">Analyst'),</span> <span class="pre">('ADMIN',</span> <span class="pre">'System</span> <span class="pre">Administrator')]</span></em><a class="headerlink" href="#metacognition.models.ToolDefinition.CLEARANCE_LEVELS" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py exception">
 <dt class="sig sig-object py" id="metacognition.models.ToolDefinition.DoesNotExist">
 <em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DoesNotExist</span></span><a class="headerlink" href="#metacognition.models.ToolDefinition.DoesNotExist" title="Link to this definition"></a></dt>
@@ -1722,6 +1956,13 @@ object the first time, the query is executed.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="metacognition.models.ToolDefinition.api_url">
 <span class="sig-name descname"><span class="pre">api_url</span></span><a class="headerlink" href="#metacognition.models.ToolDefinition.api_url" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ToolDefinition.capability_category">
+<span class="sig-name descname"><span class="pre">capability_category</span></span><a class="headerlink" href="#metacognition.models.ToolDefinition.capability_category" title="Link to this definition"></a></dt>
 <dd><p>A wrapper for a deferred-loading field. When the value is read from this
 object the first time, the query is executed.</p>
 </dd></dl>
@@ -1765,6 +2006,11 @@ object the first time, the query is executed.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="metacognition.models.ToolDefinition.get_capability_category_display">
+<span class="sig-name descname"><span class="pre">get_capability_category_display</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field=&lt;django.db.models.fields.CharField:</span> <span class="pre">capability_category&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#metacognition.models.ToolDefinition.get_capability_category_display" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="metacognition.models.ToolDefinition.get_next_by_created_at">
 <span class="sig-name descname"><span class="pre">get_next_by_created_at</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field=&lt;django.db.models.fields.DateTimeField:</span> <span class="pre">created_at&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_next=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#metacognition.models.ToolDefinition.get_next_by_created_at" title="Link to this definition"></a></dt>
 <dd></dd></dl>
@@ -1772,6 +2018,11 @@ object the first time, the query is executed.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="metacognition.models.ToolDefinition.get_previous_by_created_at">
 <span class="sig-name descname"><span class="pre">get_previous_by_created_at</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field=&lt;django.db.models.fields.DateTimeField:</span> <span class="pre">created_at&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_next=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#metacognition.models.ToolDefinition.get_previous_by_created_at" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="metacognition.models.ToolDefinition.get_required_clearance_display">
+<span class="sig-name descname"><span class="pre">get_required_clearance_display</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field=&lt;django.db.models.fields.CharField:</span> <span class="pre">required_clearance&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#metacognition.models.ToolDefinition.get_required_clearance_display" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -1850,6 +2101,13 @@ class built by <code class="docutils literal notranslate"><span class="pre">crea
 </dd></dl>
 
 <dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.models.ToolDefinition.required_clearance">
+<span class="sig-name descname"><span class="pre">required_clearance</span></span><a class="headerlink" href="#metacognition.models.ToolDefinition.required_clearance" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
 <dt class="sig sig-object py" id="metacognition.models.ToolDefinition.requires_approval">
 <span class="sig-name descname"><span class="pre">requires_approval</span></span><a class="headerlink" href="#metacognition.models.ToolDefinition.requires_approval" title="Link to this definition"></a></dt>
 <dd><p>A wrapper for a deferred-loading field. When the value is read from this
@@ -1903,6 +2161,163 @@ every time a schema is added to OUTPUT_TYPES.</p>
 <span class="sig-prename descclassname"><span class="pre">metacognition.models.</span></span><span class="sig-name descname"><span class="pre">is_lock_bypassed</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/models.html#is_lock_bypassed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.models.is_lock_bypassed" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
+<p id="module-metacognition.governance">Tool Governance and Lockdown Policy Engine (WS17).</p>
+<p>Defines the 3-tier permission evaluation architecture:
+- Tier 1: Host environment ceiling in settings.py (.env)
+- Tier 2: ToolDefinition capability classifications and strict model write allowlists
+- Tier 3: User and session clearance resolution</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="metacognition.governance.ClearanceLevel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">metacognition.governance.</span></span><span class="sig-name descname"><span class="pre">ClearanceLevel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names=&lt;not</span> <span class="pre">given&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qualname=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start=1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary=None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/governance.html#ClearanceLevel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.governance.ClearanceLevel" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">StrEnum</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.governance.ClearanceLevel.ADMIN">
+<span class="sig-name descname"><span class="pre">ADMIN</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'ADMIN'</span></em><a class="headerlink" href="#metacognition.governance.ClearanceLevel.ADMIN" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.governance.ClearanceLevel.STANDARD">
+<span class="sig-name descname"><span class="pre">STANDARD</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'STANDARD'</span></em><a class="headerlink" href="#metacognition.governance.ClearanceLevel.STANDARD" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.governance.ClearanceLevel.TRUSTED">
+<span class="sig-name descname"><span class="pre">TRUSTED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'TRUSTED'</span></em><a class="headerlink" href="#metacognition.governance.ClearanceLevel.TRUSTED" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="metacognition.governance.LockdownLevel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">metacognition.governance.</span></span><span class="sig-name descname"><span class="pre">LockdownLevel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names=&lt;not</span> <span class="pre">given&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qualname=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start=1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary=None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/governance.html#LockdownLevel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.governance.LockdownLevel" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">StrEnum</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.governance.LockdownLevel.AIR_GAPPED">
+<span class="sig-name descname"><span class="pre">AIR_GAPPED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'AIR_GAPPED'</span></em><a class="headerlink" href="#metacognition.governance.LockdownLevel.AIR_GAPPED" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.governance.LockdownLevel.CONTROLLED">
+<span class="sig-name descname"><span class="pre">CONTROLLED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'CONTROLLED'</span></em><a class="headerlink" href="#metacognition.governance.LockdownLevel.CONTROLLED" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.governance.LockdownLevel.DEVELOPMENT">
+<span class="sig-name descname"><span class="pre">DEVELOPMENT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'DEVELOPMENT'</span></em><a class="headerlink" href="#metacognition.governance.LockdownLevel.DEVELOPMENT" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.governance.LockdownLevel.RESTRICTED">
+<span class="sig-name descname"><span class="pre">RESTRICTED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'RESTRICTED'</span></em><a class="headerlink" href="#metacognition.governance.LockdownLevel.RESTRICTED" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="metacognition.governance.ToolCapability">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">metacognition.governance.</span></span><span class="sig-name descname"><span class="pre">ToolCapability</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names=&lt;not</span> <span class="pre">given&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qualname=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start=1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary=None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/governance.html#ToolCapability"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.governance.ToolCapability" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">StrEnum</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.governance.ToolCapability.CODE_EXECUTION">
+<span class="sig-name descname"><span class="pre">CODE_EXECUTION</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'CODE_EXECUTION'</span></em><a class="headerlink" href="#metacognition.governance.ToolCapability.CODE_EXECUTION" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.governance.ToolCapability.META_GOVERNANCE">
+<span class="sig-name descname"><span class="pre">META_GOVERNANCE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'META_GOVERNANCE'</span></em><a class="headerlink" href="#metacognition.governance.ToolCapability.META_GOVERNANCE" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.governance.ToolCapability.READ_ONLY">
+<span class="sig-name descname"><span class="pre">READ_ONLY</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'READ_ONLY'</span></em><a class="headerlink" href="#metacognition.governance.ToolCapability.READ_ONLY" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.governance.ToolCapability.STATE_MUTATION">
+<span class="sig-name descname"><span class="pre">STATE_MUTATION</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'STATE_MUTATION'</span></em><a class="headerlink" href="#metacognition.governance.ToolCapability.STATE_MUTATION" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="metacognition.governance.check_model_write_allowed">
+<span class="sig-prename descclassname"><span class="pre">metacognition.governance.</span></span><span class="sig-name descname"><span class="pre">check_model_write_allowed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/metacognition/governance.html#check_model_write_allowed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.governance.check_model_write_allowed" title="Link to this definition"></a></dt>
+<dd><p>Validates whether a target Django model is permitted to be written or modified
+by runtime LLM tools.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="metacognition.governance.evaluate_blueprint_governance">
+<span class="sig-prename descclassname"><span class="pre">metacognition.governance.</span></span><span class="sig-name descname"><span class="pre">evaluate_blueprint_governance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">blueprint</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">User</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/metacognition/governance.html#evaluate_blueprint_governance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.governance.evaluate_blueprint_governance" title="Link to this definition"></a></dt>
+<dd><p>Evaluates whether a CognitiveBlueprint is compatible with the active lockdown
+policy and the user’s operational clearance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p>status: “READY” | “DEGRADED” | “LOCKED”</p></li>
+<li><p>is_locked: bool</p></li>
+<li><p>is_degraded: bool</p></li>
+<li><p>badge_text: str (e.g. “🔒 Locked”, “⚠️ Degraded”, “✅ Ready”)</p></li>
+<li><p>tooltip: str explaining why the blueprint is locked, degraded, or compatible</p></li>
+<li><p>blocked_tools: list[str] of tool names that are prohibited</p></li>
+<li><p>permitted_tools: list[str] of tool names that are permitted</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="metacognition.governance.get_allowed_write_models">
+<span class="sig-prename descclassname"><span class="pre">metacognition.governance.</span></span><span class="sig-name descname"><span class="pre">get_allowed_write_models</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">frozenset</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/metacognition/governance.html#get_allowed_write_models"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.governance.get_allowed_write_models" title="Link to this definition"></a></dt>
+<dd><p>Returns the dynamic set of allowed write models based on active governance settings.
+In DEVELOPMENT mode (or when ALLOW_AGENT_SELF_MODIFICATION is True), blueprint self-modification
+models are included for research. In all other modes, only base domain models are permitted.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="metacognition.governance.get_governance_summary">
+<span class="sig-prename descclassname"><span class="pre">metacognition.governance.</span></span><span class="sig-name descname"><span class="pre">get_governance_summary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">user</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">User</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/metacognition/governance.html#get_governance_summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.governance.get_governance_summary" title="Link to this definition"></a></dt>
+<dd><p>Returns a unified dictionary representing active system lockdown status,
+environment ceiling clamps, and effective user clearance for UI/templates.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="metacognition.governance.get_lockdown_level">
+<span class="sig-prename descclassname"><span class="pre">metacognition.governance.</span></span><span class="sig-name descname"><span class="pre">get_lockdown_level</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/metacognition/governance.html#get_lockdown_level"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.governance.get_lockdown_level" title="Link to this definition"></a></dt>
+<dd><p>Returns the active system lockdown level from Django settings.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="metacognition.governance.get_user_clearance">
+<span class="sig-prename descclassname"><span class="pre">metacognition.governance.</span></span><span class="sig-name descname"><span class="pre">get_user_clearance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">user</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">User</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/metacognition/governance.html#get_user_clearance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.governance.get_user_clearance" title="Link to this definition"></a></dt>
+<dd><p>Resolves the operational clearance level for a given Django User.
+- Superusers and staff get ADMIN clearance.
+- Members of ‘Trusted Operators’ group or users with is_trusted flag get TRUSTED clearance.
+- All other authenticated or anonymous users get STANDARD clearance.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="metacognition.governance.is_tool_permitted">
+<span class="sig-prename descclassname"><span class="pre">metacognition.governance.</span></span><span class="sig-name descname"><span class="pre">is_tool_permitted</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">User</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/metacognition/governance.html#is_tool_permitted"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.governance.is_tool_permitted" title="Link to this definition"></a></dt>
+<dd><p>Evaluates whether a ToolDefinition is permitted to be exposed or executed
+based on the 3-tier governance policy:
+1. Tier 1 Environment Clamps (settings ceiling)
+2. Tier 2 Tool Active State
+3. Tier 3 User Clearance Level</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>(is_allowed, reason_message)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple[bool, str]</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py function" id="module-metacognition.compiler">
 <dt class="sig sig-object py" id="metacognition.compiler.compile_graph_from_blueprint">
 <span class="sig-prename descclassname"><span class="pre">metacognition.compiler.</span></span><span class="sig-name descname"><span class="pre">compile_graph_from_blueprint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">blueprint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#metacognition.models.CognitiveBlueprint" title="metacognition.models.CognitiveBlueprint"><span class="pre">CognitiveBlueprint</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">CompiledStateGraph</span></span></span><a class="reference internal" href="_modules/metacognition/compiler.html#compile_graph_from_blueprint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.compiler.compile_graph_from_blueprint" title="Link to this definition"></a></dt>
@@ -1914,6 +2329,44 @@ every time a schema is added to OUTPUT_TYPES.</p>
 <span class="sig-prename descclassname"><span class="pre">metacognition.compiler.</span></span><span class="sig-name descname"><span class="pre">resolve_active_steps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">blueprint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#metacognition.models.CognitiveBlueprint" title="metacognition.models.CognitiveBlueprint"><span class="pre">CognitiveBlueprint</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#metacognition.models.ReasoningStep" title="metacognition.models.ReasoningStep"><span class="pre">ReasoningStep</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/metacognition/compiler.html#resolve_active_steps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.compiler.resolve_active_steps" title="Link to this definition"></a></dt>
 <dd><p>Selects the active variant for each step lineage in a blueprint.
 Returns (resolved_steps, root_mapping).</p>
+</dd></dl>
+
+<dl class="py function" id="module-metacognition.tool_executor">
+<dt class="sig sig-object py" id="metacognition.tool_executor.execute_tool">
+<span class="sig-prename descclassname"><span class="pre">metacognition.tool_executor.</span></span><span class="sig-name descname"><span class="pre">execute_tool</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tool_def</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dry_run</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/metacognition/tool_executor.html#execute_tool"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.tool_executor.execute_tool" title="Link to this definition"></a></dt>
+<dd><p>Executes a ToolDefinition. If dry_run is True, database mutations are rolled back.
+Enforces the WS17 3-tier governance policy invariant before execution.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="metacognition.tool_executor.resolve_tool">
+<span class="sig-prename descclassname"><span class="pre">metacognition.tool_executor.</span></span><span class="sig-name descname"><span class="pre">resolve_tool</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tool_definition</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">callable</span></span></span><a class="reference internal" href="_modules/metacognition/tool_executor.html#resolve_tool"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.tool_executor.resolve_tool" title="Link to this definition"></a></dt>
+<dd><p>Returns the callable associated with a ToolDefinition.</p>
+</dd></dl>
+
+<p id="module-metacognition.middleware">Tool Governance and Lockdown Middleware (WS17).</p>
+<dl class="simple">
+<dt>Injects the active system lockdown level into HTTP response headers:</dt><dd><p>X-Verbal-Lockdown-Level: &lt;LEVEL&gt;</p>
+</dd>
+</dl>
+<p>This applies across all standard views, API responses, and SSE streaming sessions.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="metacognition.middleware.ToolGovernanceMiddleware">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">metacognition.middleware.</span></span><span class="sig-name descname"><span class="pre">ToolGovernanceMiddleware</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">get_response</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/middleware.html#ToolGovernanceMiddleware"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.middleware.ToolGovernanceMiddleware" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>WS17 Layered Tool Governance Middleware.
+Injects the active governance lockdown level header into all HTTP, API,
+and streaming responses.</p>
+</dd></dl>
+
+<p id="module-metacognition.context_processors">Tool Governance Context Processors (WS17).</p>
+<p>Exposes active governance state, ceiling clamps, badge styles, and effective
+clearance to all Django templates.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="metacognition.context_processors.governance_context">
+<span class="sig-prename descclassname"><span class="pre">metacognition.context_processors.</span></span><span class="sig-name descname"><span class="pre">governance_context</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/context_processors.html#governance_context"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.context_processors.governance_context" title="Link to this definition"></a></dt>
+<dd><p>Exposes active tool governance state, lockdown level, and user clearance
+to all rendered templates as ‘governance’.</p>
 </dd></dl>
 
 <dl class="py class" id="module-metacognition.actions">
@@ -2631,11 +3084,11 @@ Following Nodes: ExecutionPlan</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="metacognition.actions.TaskItem">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">metacognition.actions.</span></span><span class="sig-name descname"><span class="pre">TaskItem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">goal</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delegated_blueprint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/actions.html#TaskItem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.actions.TaskItem" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">metacognition.actions.</span></span><span class="sig-name descname"><span class="pre">TaskItem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">task_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">goal</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delegated_blueprint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Escalation</span> <span class="pre">of</span> <span class="pre">Effort'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metacognition/actions.html#TaskItem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.actions.TaskItem" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="metacognition.actions.TaskItem.delegated_blueprint">
-<span class="sig-name descname"><span class="pre">delegated_blueprint</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#metacognition.actions.TaskItem.delegated_blueprint" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">delegated_blueprint</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#metacognition.actions.TaskItem.delegated_blueprint" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -2648,6 +3101,16 @@ Following Nodes: ExecutionPlan</p>
 <span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#metacognition.actions.TaskItem.model_config" title="Link to this definition"></a></dt>
 <dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
 </dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.actions.TaskItem.task_id">
+<span class="sig-name descname"><span class="pre">task_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#metacognition.actions.TaskItem.task_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="metacognition.actions.TaskItem.title">
+<span class="sig-name descname"><span class="pre">title</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#metacognition.actions.TaskItem.title" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 
@@ -2776,6 +3239,12 @@ Following Nodes: ExecutionPlan</p>
 <dt class="sig sig-object py" id="metacognition.actions.handle_result_critique">
 <span class="sig-prename descclassname"><span class="pre">metacognition.actions.</span></span><span class="sig-name descname"><span class="pre">handle_result_critique</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">llm_output</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#metacognition.actions.ResultCritique" title="metacognition.actions.ResultCritique"><span class="pre">ResultCritique</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/metacognition/actions.html#handle_result_critique"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.actions.handle_result_critique" title="Link to this definition"></a></dt>
 <dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="metacognition.actions.handle_task_queue">
+<span class="sig-prename descclassname"><span class="pre">metacognition.actions.</span></span><span class="sig-name descname"><span class="pre">handle_task_queue</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">llm_output</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#metacognition.actions.TaskQueue" title="metacognition.actions.TaskQueue"><span class="pre">TaskQueue</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/metacognition/actions.html#handle_task_queue"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metacognition.actions.handle_task_queue" title="Link to this definition"></a></dt>
+<dd><p>Populates state_tree and scratch from TaskQueue decomposition.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="metacognition.actions.process_task_queue">

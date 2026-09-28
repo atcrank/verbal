@@ -148,6 +148,7 @@
 <li class="toctree-l2"><a class="reference internal" href="metacognition_app.html#observability-health-signals">3. Observability &amp; Health Signals</a></li>
 <li class="toctree-l2"><a class="reference internal" href="metacognition_app.html#diagnostic-tips-failure-modes">4. Diagnostic Tips &amp; Failure Modes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="metacognition_app.html#practical-guidance-for-prompt-authors-blueprint-designers">5. Practical Guidance for Prompt Authors &amp; Blueprint Designers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="metacognition_app.html#layered-tool-governance-restricted-run-modes-ws17">6. Layered Tool Governance &amp; Restricted Run-Modes (WS17)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="metacognition_app.html#module-metacognition.models">Module Reference</a></li>
 </ul>
 </li>
@@ -260,6 +261,24 @@ python<span class="w"> </span>manage.py<span class="w"> </span>runserver<span cl
 <section id="external-models-openai-ollama">
 <h3>External Models (OpenAI, Ollama)<a class="headerlink" href="#external-models-openai-ollama" title="Link to this heading"></a></h3>
 <p><strong>reason</strong> natively supports standard OpenAI <code class="docutils literal notranslate"><span class="pre">/v1/chat/completions</span></code> endpoints. To route traffic to an external provider or a containerized Ollama instance, configure an <strong>External AI Model</strong> in the Django Admin and assign it via the <strong>User Active Models</strong> table. See the <a class="reference internal" href="using_ollama.html"><span class="doc">Ollama as Local AI</span></a> guide for a complete walkthrough.</p>
+</section>
+<section id="tool-governance-restricted-run-modes-verbal-lockdown-level">
+<h3>Tool Governance &amp; Restricted Run-Modes (<code class="docutils literal notranslate"><span class="pre">VERBAL_LOCKDOWN_LEVEL</span></code>)<a class="headerlink" href="#tool-governance-restricted-run-modes-verbal-lockdown-level" title="Link to this heading"></a></h3>
+<p><strong>reason</strong> enforces a 3-tier security governance architecture to restrict autonomous agent capabilities and prevent model code execution or data exfiltration:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">DEVELOPMENT</span></code>: Full tool access for AI research, including code execution and self-modification.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">CONTROLLED</span></code>: Regulated mode. Code execution requires user clearance (<code class="docutils literal notranslate"><span class="pre">TRUSTED</span></code> or <code class="docutils literal notranslate"><span class="pre">ADMIN</span></code>); self-modification is blocked.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">RESTRICTED</span></code>: Safe evaluation mode. Code execution and external network tools are completely disabled host-wide. Deterministic domain tools (RAG search, Grips graph updates) remain active.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AIR_GAPPED</span></code> (Aliases: <code class="docutils literal notranslate"><span class="pre">TEXT_ONLY</span></code>, <code class="docutils literal notranslate"><span class="pre">LOCKED</span></code>): Pure reasoning mode. All runtime model tools are blocked. The system operates strictly via multi-turn reasoning and structured output schemas. (Internal microservice plumbing between web, inference, and grobid remains intact).</p></li>
+</ul>
+<p>To apply a restricted mode in <code class="docutils literal notranslate"><span class="pre">.env</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">VERBAL_LOCKDOWN_LEVEL</span><span class="o">=</span>RESTRICTED
+<span class="nv">ALLOW_MODEL_CODE_EXECUTION</span><span class="o">=</span>False
+<span class="nv">ALLOW_TOOL_NETWORK_ACCESS</span><span class="o">=</span>False
+<span class="nv">ALLOW_AGENT_SELF_MODIFICATION</span><span class="o">=</span>False
+</pre></div>
+</div>
+<p>For complete architectural details, see the <a class="reference internal" href="metacognition_app.html"><span class="doc">Metacognition - Cognitive Blueprints, Agentic Workflows &amp; Self-Evaluation</span></a> documentation.</p>
 </section>
 </section>
 </section>

@@ -722,8 +722,14 @@ is enabled, the condensation note anchors the active focal state tree.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="llm_api.models.Conversation.get_workspace_dir">
-<span class="sig-name descname"><span class="pre">get_workspace_dir</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/llm_api/models.html#Conversation.get_workspace_dir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_api.models.Conversation.get_workspace_dir" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_workspace_dir</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/llm_api/models.html#Conversation.get_workspace_dir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_api.models.Conversation.get_workspace_dir" title="Link to this definition"></a></dt>
 <dd><p>Returns the absolute path to this conversation’s dedicated workspace.</p>
+<p>Resolution hierarchy:
+1. In-memory override (_workspace_dir_override).
+2. State tree metadata override (state_tree[‘_workspace_dir’]).
+3. Doctest / trial detection (test_user, rag_test_user, or trial titles).
+4. Standard conversation workspace under workspaces/conversations/&lt;uuid&gt;.
+5. Legacy fallback to workspaces/&lt;uuid&gt; if the folder already exists.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -1922,7 +1928,8 @@ relation.</p>
 <dt class="sig sig-object py" id="llm_api.models.delete_conversation_workspace">
 <span class="sig-prename descclassname"><span class="pre">llm_api.models.</span></span><span class="sig-name descname"><span class="pre">delete_conversation_workspace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sender</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instance</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/llm_api/models.html#delete_conversation_workspace"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_api.models.delete_conversation_workspace" title="Link to this definition"></a></dt>
 <dd><p>Automatically wipes the physical Git workspace folder when a Conversation
-is deleted from the database to prevent disk space leaks.</p>
+is deleted from the database to prevent disk space leaks.
+Protects shared namespaces (doctests, agent_scripts, grips_okf, etc.).</p>
 </dd></dl>
 
 <dl class="py function">

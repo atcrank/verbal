@@ -1,0 +1,477 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>metacognition.governance &mdash; reason 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=aaf24e6f" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            reason
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../llm_api_app.html">LLM API - Local Inference, Proxy Routing &amp; Hardware-Aware Serving</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../verbal_tasks_app.html">Verbal Tasks - Database-Backed Asynchronous Execution &amp; Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../sandbox_manager_app.html">Sandbox Manager - Isolated Python Execution Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grobid_client_app.html">Grobid Client - Deterministic Scientific PDF Parsing &amp; Citation Extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../background_resources_app.html">Background Resources - Retrieval-Augmented Generation &amp; Document Ingestion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grips_app.html">Grips - Structured Knowledge Graph &amp; Propositional Claims</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../metacognition_app.html">Metacognition - Cognitive Blueprints, Agentic Workflows &amp; Self-Evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmarking_app.html">Benchmarking - Automated Evaluation, Synthetic Generation &amp; LoRA Flywheels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_app.html">Demo UI - Empirical Research &amp; Cognitive Workbench</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../using_ollama.html">Ollama as Local AI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_trials.html">Demo UI Empirical Trials &amp; Verification Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tests.html">Testing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">reason</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">metacognition.governance</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for metacognition.governance</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Tool Governance and Lockdown Policy Engine (WS17).</span>
+
+<span class="sd">Defines the 3-tier permission evaluation architecture:</span>
+<span class="sd">- Tier 1: Host environment ceiling in settings.py (.env)</span>
+<span class="sd">- Tier 2: ToolDefinition capability classifications and strict model write allowlists</span>
+<span class="sd">- Tier 3: User and session clearance resolution</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">StrEnum</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.conf</span><span class="w"> </span><span class="kn">import</span> <span class="n">settings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.contrib.auth.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">User</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="LockdownLevel">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.governance.LockdownLevel">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">LockdownLevel</span><span class="p">(</span><span class="n">StrEnum</span><span class="p">):</span>
+    <span class="n">AIR_GAPPED</span> <span class="o">=</span> <span class="s2">&quot;AIR_GAPPED&quot;</span>
+    <span class="n">RESTRICTED</span> <span class="o">=</span> <span class="s2">&quot;RESTRICTED&quot;</span>
+    <span class="n">CONTROLLED</span> <span class="o">=</span> <span class="s2">&quot;CONTROLLED&quot;</span>
+    <span class="n">DEVELOPMENT</span> <span class="o">=</span> <span class="s2">&quot;DEVELOPMENT&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="ToolCapability">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.governance.ToolCapability">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ToolCapability</span><span class="p">(</span><span class="n">StrEnum</span><span class="p">):</span>
+    <span class="n">READ_ONLY</span> <span class="o">=</span> <span class="s2">&quot;READ_ONLY&quot;</span>
+    <span class="n">STATE_MUTATION</span> <span class="o">=</span> <span class="s2">&quot;STATE_MUTATION&quot;</span>
+    <span class="n">CODE_EXECUTION</span> <span class="o">=</span> <span class="s2">&quot;CODE_EXECUTION&quot;</span>
+    <span class="n">META_GOVERNANCE</span> <span class="o">=</span> <span class="s2">&quot;META_GOVERNANCE&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="ClearanceLevel">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.governance.ClearanceLevel">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ClearanceLevel</span><span class="p">(</span><span class="n">StrEnum</span><span class="p">):</span>
+    <span class="n">STANDARD</span> <span class="o">=</span> <span class="s2">&quot;STANDARD&quot;</span>
+    <span class="n">TRUSTED</span> <span class="o">=</span> <span class="s2">&quot;TRUSTED&quot;</span>
+    <span class="n">ADMIN</span> <span class="o">=</span> <span class="s2">&quot;ADMIN&quot;</span></div>
+
+
+
+<span class="n">CLEARANCE_RANKS</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">ClearanceLevel</span><span class="o">.</span><span class="n">STANDARD</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">ClearanceLevel</span><span class="o">.</span><span class="n">TRUSTED</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="n">ClearanceLevel</span><span class="o">.</span><span class="n">ADMIN</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="c1"># Strict allowlist of models that generic model write tools (e.g. write_django_model)</span>
+<span class="c1"># are permitted to create, update, or mutate at runtime.</span>
+<span class="n">BASE_ALLOWED_DOMAIN_MODELS</span><span class="p">:</span> <span class="nb">frozenset</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span>
+    <span class="s2">&quot;grips.conceptnode&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;grips.knowledgeedge&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;work_organisation.whiteboardcard&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;work_organisation.whiteboardcluster&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;notes.investigationnote&quot;</span><span class="p">,</span>
+<span class="p">})</span>
+
+<span class="c1"># Models only mutable when ALLOW_AGENT_SELF_MODIFICATION is explicitly enabled (e.g. DEVELOPMENT mode)</span>
+<span class="n">DEV_SELF_MOD_MODELS</span><span class="p">:</span> <span class="nb">frozenset</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span>
+    <span class="s2">&quot;metacognition.cognitiveblueprint&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;metacognition.reasoningstep&quot;</span><span class="p">,</span>
+<span class="p">})</span>
+
+
+<div class="viewcode-block" id="get_allowed_write_models">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.governance.get_allowed_write_models">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_allowed_write_models</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">frozenset</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the dynamic set of allowed write models based on active governance settings.</span>
+<span class="sd">    In DEVELOPMENT mode (or when ALLOW_AGENT_SELF_MODIFICATION is True), blueprint self-modification</span>
+<span class="sd">    models are included for research. In all other modes, only base domain models are permitted.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">allow_self_mod</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="s2">&quot;ALLOW_AGENT_SELF_MODIFICATION&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">allow_self_mod</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">BASE_ALLOWED_DOMAIN_MODELS</span> <span class="o">|</span> <span class="n">DEV_SELF_MOD_MODELS</span>
+    <span class="k">return</span> <span class="n">BASE_ALLOWED_DOMAIN_MODELS</span></div>
+
+
+
+<div class="viewcode-block" id="get_lockdown_level">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.governance.get_lockdown_level">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_lockdown_level</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the active system lockdown level from Django settings.&quot;&quot;&quot;</span>
+    <span class="n">raw_level</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="s2">&quot;VERBAL_LOCKDOWN_LEVEL&quot;</span><span class="p">,</span> <span class="n">LockdownLevel</span><span class="o">.</span><span class="n">DEVELOPMENT</span><span class="p">)</span>
+    <span class="n">normalized</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">raw_level</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">normalized</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;TEXT_ONLY&quot;</span><span class="p">,</span> <span class="s2">&quot;TEXT-ONLY&quot;</span><span class="p">,</span> <span class="s2">&quot;LOCKED&quot;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">LockdownLevel</span><span class="o">.</span><span class="n">AIR_GAPPED</span>
+    <span class="k">return</span> <span class="n">normalized</span></div>
+
+
+
+<div class="viewcode-block" id="get_user_clearance">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.governance.get_user_clearance">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_user_clearance</span><span class="p">(</span><span class="n">user</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">User</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Resolves the operational clearance level for a given Django User.</span>
+<span class="sd">    - Superusers and staff get ADMIN clearance.</span>
+<span class="sd">    - Members of &#39;Trusted Operators&#39; group or users with is_trusted flag get TRUSTED clearance.</span>
+<span class="sd">    - All other authenticated or anonymous users get STANDARD clearance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">user</span><span class="p">,</span> <span class="s2">&quot;is_authenticated&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">ClearanceLevel</span><span class="o">.</span><span class="n">STANDARD</span>
+
+    <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">user</span><span class="p">,</span> <span class="s2">&quot;is_superuser&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">user</span><span class="p">,</span> <span class="s2">&quot;is_staff&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">ClearanceLevel</span><span class="o">.</span><span class="n">ADMIN</span>
+
+    <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">user</span><span class="p">,</span> <span class="s2">&quot;is_trusted&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">ClearanceLevel</span><span class="o">.</span><span class="n">TRUSTED</span>
+
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">user</span><span class="p">,</span> <span class="s2">&quot;groups&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">user</span><span class="o">.</span><span class="n">groups</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Trusted Operators&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">ClearanceLevel</span><span class="o">.</span><span class="n">TRUSTED</span>
+
+    <span class="k">return</span> <span class="n">ClearanceLevel</span><span class="o">.</span><span class="n">STANDARD</span></div>
+
+
+
+<div class="viewcode-block" id="is_tool_permitted">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.governance.is_tool_permitted">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">is_tool_permitted</span><span class="p">(</span><span class="n">tool</span><span class="p">,</span> <span class="n">user</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">User</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Evaluates whether a ToolDefinition is permitted to be exposed or executed</span>
+<span class="sd">    based on the 3-tier governance policy:</span>
+<span class="sd">    1. Tier 1 Environment Clamps (settings ceiling)</span>
+<span class="sd">    2. Tier 2 Tool Active State</span>
+<span class="sd">    3. Tier 3 User Clearance Level</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple[bool, str]: (is_allowed, reason_message)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lockdown_level</span> <span class="o">=</span> <span class="n">get_lockdown_level</span><span class="p">()</span>
+    <span class="n">tool_name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">tool</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;unknown_tool&quot;</span><span class="p">)</span>
+    <span class="n">capability</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">tool</span><span class="p">,</span> <span class="s2">&quot;capability_category&quot;</span><span class="p">,</span> <span class="n">ToolCapability</span><span class="o">.</span><span class="n">READ_ONLY</span><span class="p">)</span>
+    <span class="n">required_clearance</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">tool</span><span class="p">,</span> <span class="s2">&quot;required_clearance&quot;</span><span class="p">,</span> <span class="n">ClearanceLevel</span><span class="o">.</span><span class="n">STANDARD</span><span class="p">)</span>
+    <span class="n">is_active</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">tool</span><span class="p">,</span> <span class="s2">&quot;is_active&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># 1. Tier 1 Environment Clamps (Immutable ceiling)</span>
+    <span class="k">if</span> <span class="n">capability</span> <span class="o">==</span> <span class="n">ToolCapability</span><span class="o">.</span><span class="n">CODE_EXECUTION</span><span class="p">:</span>
+        <span class="n">allow_code_exec</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="s2">&quot;ALLOW_MODEL_CODE_EXECUTION&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">allow_code_exec</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="kc">False</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;Tool &#39;</span><span class="si">{</span><span class="n">tool_name</span><span class="si">}</span><span class="s2">&#39; requires code execution, which is disabled by system policy (</span><span class="si">{</span><span class="n">lockdown_level</span><span class="si">}</span><span class="s2">).&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">capability</span> <span class="o">==</span> <span class="n">ToolCapability</span><span class="o">.</span><span class="n">META_GOVERNANCE</span><span class="p">:</span>
+        <span class="n">allow_self_mod</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="s2">&quot;ALLOW_AGENT_SELF_MODIFICATION&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">allow_self_mod</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="kc">False</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;Tool &#39;</span><span class="si">{</span><span class="n">tool_name</span><span class="si">}</span><span class="s2">&#39; is a meta-tool, which is blocked in </span><span class="si">{</span><span class="n">lockdown_level</span><span class="si">}</span><span class="s2"> mode.&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+
+    <span class="c1"># 2. Tier 2 Active State</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">is_active</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Tool &#39;</span><span class="si">{</span><span class="n">tool_name</span><span class="si">}</span><span class="s2">&#39; is currently inactive.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># 3. Tier 3 User Clearance</span>
+    <span class="n">user_clearance</span> <span class="o">=</span> <span class="n">get_user_clearance</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+    <span class="n">user_rank</span> <span class="o">=</span> <span class="n">CLEARANCE_RANKS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">user_clearance</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">tool_rank</span> <span class="o">=</span> <span class="n">CLEARANCE_RANKS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">required_clearance</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">user_rank</span> <span class="o">&lt;</span> <span class="n">tool_rank</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="kc">False</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;User clearance &#39;</span><span class="si">{</span><span class="n">user_clearance</span><span class="si">}</span><span class="s2">&#39; is insufficient for tool &#39;</span><span class="si">{</span><span class="n">tool_name</span><span class="si">}</span><span class="s2">&#39; (requires &#39;</span><span class="si">{</span><span class="n">required_clearance</span><span class="si">}</span><span class="s2">&#39;).&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;Permitted&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="check_model_write_allowed">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.governance.check_model_write_allowed">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_model_write_allowed</span><span class="p">(</span><span class="n">app_label</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Validates whether a target Django model is permitted to be written or modified</span>
+<span class="sd">    by runtime LLM tools.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">canonical_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">app_label</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">model_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">allowed_models</span> <span class="o">=</span> <span class="n">get_allowed_write_models</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">canonical_name</span> <span class="ow">in</span> <span class="n">allowed_models</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Model &#39;</span><span class="si">{</span><span class="n">canonical_name</span><span class="si">}</span><span class="s2">&#39; is permitted for runtime mutation.&quot;</span><span class="p">)</span>
+
+    <span class="n">lockdown_level</span> <span class="o">=</span> <span class="n">get_lockdown_level</span><span class="p">()</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="kc">False</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">&quot;Security violation: Model &#39;</span><span class="si">{</span><span class="n">canonical_name</span><span class="si">}</span><span class="s2">&#39; is not in the permitted domain write allowlist under </span><span class="si">{</span><span class="n">lockdown_level</span><span class="si">}</span><span class="s2"> policy.&quot;</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_governance_summary">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.governance.get_governance_summary">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_governance_summary</span><span class="p">(</span><span class="n">user</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">User</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns a unified dictionary representing active system lockdown status,</span>
+<span class="sd">    environment ceiling clamps, and effective user clearance for UI/templates.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">level</span> <span class="o">=</span> <span class="n">get_lockdown_level</span><span class="p">()</span>
+    <span class="n">user_clearance</span> <span class="o">=</span> <span class="n">get_user_clearance</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+    <span class="n">allow_code</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="s2">&quot;ALLOW_MODEL_CODE_EXECUTION&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">allow_net</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="s2">&quot;ALLOW_TOOL_NETWORK_ACCESS&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">allow_self_mod</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="s2">&quot;ALLOW_AGENT_SELF_MODIFICATION&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+    <span class="n">raw_setting</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="s2">&quot;VERBAL_LOCKDOWN_LEVEL&quot;</span><span class="p">,</span> <span class="n">LockdownLevel</span><span class="o">.</span><span class="n">DEVELOPMENT</span><span class="p">)</span>
+    <span class="n">raw_upper</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">raw_setting</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">level</span> <span class="o">==</span> <span class="n">LockdownLevel</span><span class="o">.</span><span class="n">AIR_GAPPED</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">raw_upper</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;TEXT_ONLY&quot;</span><span class="p">,</span> <span class="s2">&quot;TEXT-ONLY&quot;</span><span class="p">):</span>
+            <span class="n">badge_label</span> <span class="o">=</span> <span class="s2">&quot;TEXT-ONLY&quot;</span>
+        <span class="k">elif</span> <span class="n">raw_upper</span> <span class="o">==</span> <span class="s2">&quot;LOCKED&quot;</span><span class="p">:</span>
+            <span class="n">badge_label</span> <span class="o">=</span> <span class="s2">&quot;LOCKED&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">badge_label</span> <span class="o">=</span> <span class="s2">&quot;AIR-GAPPED&quot;</span>
+        <span class="n">badge_icon</span> <span class="o">=</span> <span class="s2">&quot;🛡️&quot;</span>
+        <span class="n">color_class</span> <span class="o">=</span> <span class="s2">&quot;gov-badge-airgapped&quot;</span>
+        <span class="n">bg_style</span> <span class="o">=</span> <span class="s2">&quot;background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.35);&quot;</span>
+    <span class="k">elif</span> <span class="n">level</span> <span class="o">==</span> <span class="n">LockdownLevel</span><span class="o">.</span><span class="n">RESTRICTED</span><span class="p">:</span>
+        <span class="n">badge_label</span> <span class="o">=</span> <span class="s2">&quot;RESTRICTED&quot;</span>
+        <span class="n">badge_icon</span> <span class="o">=</span> <span class="s2">&quot;🔒&quot;</span>
+        <span class="n">color_class</span> <span class="o">=</span> <span class="s2">&quot;gov-badge-restricted&quot;</span>
+        <span class="n">bg_style</span> <span class="o">=</span> <span class="s2">&quot;background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.35);&quot;</span>
+    <span class="k">elif</span> <span class="n">level</span> <span class="o">==</span> <span class="n">LockdownLevel</span><span class="o">.</span><span class="n">CONTROLLED</span><span class="p">:</span>
+        <span class="n">badge_label</span> <span class="o">=</span> <span class="s2">&quot;CONTROLLED&quot;</span>
+        <span class="n">badge_icon</span> <span class="o">=</span> <span class="s2">&quot;⚡&quot;</span>
+        <span class="n">color_class</span> <span class="o">=</span> <span class="s2">&quot;gov-badge-controlled&quot;</span>
+        <span class="n">bg_style</span> <span class="o">=</span> <span class="s2">&quot;background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.35);&quot;</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># DEVELOPMENT / PERMISSIVE</span>
+        <span class="n">badge_label</span> <span class="o">=</span> <span class="s2">&quot;DEVELOPMENT&quot;</span>
+        <span class="n">badge_icon</span> <span class="o">=</span> <span class="s2">&quot;🧪&quot;</span>
+        <span class="n">color_class</span> <span class="o">=</span> <span class="s2">&quot;gov-badge-dev&quot;</span>
+        <span class="n">bg_style</span> <span class="o">=</span> <span class="s2">&quot;background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35);&quot;</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;lockdown_level&quot;</span><span class="p">:</span> <span class="n">level</span><span class="p">,</span>
+        <span class="s2">&quot;badge_label&quot;</span><span class="p">:</span> <span class="n">badge_label</span><span class="p">,</span>
+        <span class="s2">&quot;badge_icon&quot;</span><span class="p">:</span> <span class="n">badge_icon</span><span class="p">,</span>
+        <span class="s2">&quot;color_class&quot;</span><span class="p">:</span> <span class="n">color_class</span><span class="p">,</span>
+        <span class="s2">&quot;bg_style&quot;</span><span class="p">:</span> <span class="n">bg_style</span><span class="p">,</span>
+        <span class="s2">&quot;code_execution_allowed&quot;</span><span class="p">:</span> <span class="n">allow_code</span><span class="p">,</span>
+        <span class="s2">&quot;code_exec_display&quot;</span><span class="p">:</span> <span class="s2">&quot;ALLOWED&quot;</span> <span class="k">if</span> <span class="n">allow_code</span> <span class="k">else</span> <span class="s2">&quot;BLOCKED (Ceiling)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;network_allowed&quot;</span><span class="p">:</span> <span class="n">allow_net</span><span class="p">,</span>
+        <span class="s2">&quot;network_display&quot;</span><span class="p">:</span> <span class="s2">&quot;ALLOWED&quot;</span> <span class="k">if</span> <span class="n">allow_net</span> <span class="k">else</span> <span class="s2">&quot;BLOCKED (Ceiling)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;self_mod_allowed&quot;</span><span class="p">:</span> <span class="n">allow_self_mod</span><span class="p">,</span>
+        <span class="s2">&quot;self_mod_display&quot;</span><span class="p">:</span> <span class="s2">&quot;ACTIVE&quot;</span> <span class="k">if</span> <span class="n">allow_self_mod</span> <span class="k">else</span> <span class="s2">&quot;DISABLED (Immutable)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;user_clearance&quot;</span><span class="p">:</span> <span class="n">user_clearance</span><span class="p">,</span>
+    <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="evaluate_blueprint_governance">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.governance.evaluate_blueprint_governance">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">evaluate_blueprint_governance</span><span class="p">(</span><span class="n">blueprint</span><span class="p">,</span> <span class="n">user</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">User</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Evaluates whether a CognitiveBlueprint is compatible with the active lockdown</span>
+<span class="sd">    policy and the user&#39;s operational clearance.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict:</span>
+<span class="sd">            - status: &quot;READY&quot; | &quot;DEGRADED&quot; | &quot;LOCKED&quot;</span>
+<span class="sd">            - is_locked: bool</span>
+<span class="sd">            - is_degraded: bool</span>
+<span class="sd">            - badge_text: str (e.g. &quot;🔒 Locked&quot;, &quot;⚠️ Degraded&quot;, &quot;✅ Ready&quot;)</span>
+<span class="sd">            - tooltip: str explaining why the blueprint is locked, degraded, or compatible</span>
+<span class="sd">            - blocked_tools: list[str] of tool names that are prohibited</span>
+<span class="sd">            - permitted_tools: list[str] of tool names that are permitted</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lockdown_level</span> <span class="o">=</span> <span class="n">get_lockdown_level</span><span class="p">()</span>
+    <span class="n">steps</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">blueprint</span><span class="o">.</span><span class="n">steps</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">is_active</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">steps</span><span class="p">:</span>
+        <span class="n">steps</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">blueprint</span><span class="o">.</span><span class="n">steps</span><span class="o">.</span><span class="n">all</span><span class="p">())</span>
+
+    <span class="n">all_tools</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">blocked_tools</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">permitted_tools</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">has_dead_step</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">dead_step_reasons</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="n">steps</span><span class="p">:</span>
+        <span class="n">step_tools</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">step</span><span class="o">.</span><span class="n">available_tools</span><span class="o">.</span><span class="n">all</span><span class="p">())</span>
+        <span class="n">all_tools</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">step_tools</span><span class="p">)</span>
+        <span class="n">substantive</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">step_tools</span>
+            <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;TASK_COMPLETE&quot;</span><span class="p">,</span> <span class="s2">&quot;PAUSE_FOR_INPUT&quot;</span><span class="p">,</span> <span class="s2">&quot;NO_TOOL&quot;</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="n">step_blocked</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">step_permitted</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">step_tools</span><span class="p">:</span>
+            <span class="n">allowed</span><span class="p">,</span> <span class="n">reason</span> <span class="o">=</span> <span class="n">is_tool_permitted</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">user</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">allowed</span><span class="p">:</span>
+                <span class="n">permitted_tools</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+                <span class="n">step_permitted</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">blocked_tools</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">t</span><span class="p">,</span> <span class="n">reason</span><span class="p">))</span>
+                <span class="n">step_blocked</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">t</span><span class="p">,</span> <span class="n">reason</span><span class="p">))</span>
+
+        <span class="c1"># Check if substantive tools for this step are all blocked</span>
+        <span class="k">if</span> <span class="n">substantive</span><span class="p">:</span>
+            <span class="n">substantive_permitted</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">substantive</span> <span class="k">if</span> <span class="n">is_tool_permitted</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">user</span><span class="p">)[</span><span class="mi">0</span><span class="p">]]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">substantive_permitted</span><span class="p">:</span>
+                <span class="n">has_dead_step</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">reasons</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span> <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">step_blocked</span> <span class="k">if</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">substantive</span><span class="p">]</span>
+                <span class="n">dead_step_reasons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Step &#39;</span><span class="si">{</span><span class="n">step</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="s1">&#39;; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">reasons</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Check sub-blueprint recursively if attached</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="s2">&quot;sub_blueprint_id&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="n">step</span><span class="o">.</span><span class="n">sub_blueprint</span><span class="p">:</span>
+            <span class="n">sub_eval</span> <span class="o">=</span> <span class="n">evaluate_blueprint_governance</span><span class="p">(</span><span class="n">step</span><span class="o">.</span><span class="n">sub_blueprint</span><span class="p">,</span> <span class="n">user</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">sub_eval</span><span class="p">[</span><span class="s2">&quot;is_locked&quot;</span><span class="p">]:</span>
+                <span class="n">has_dead_step</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">dead_step_reasons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sub-blueprint &#39;</span><span class="si">{</span><span class="n">step</span><span class="o">.</span><span class="n">sub_blueprint</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">sub_eval</span><span class="p">[</span><span class="s1">&#39;tooltip&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">has_dead_step</span> <span class="ow">or</span> <span class="p">(</span><span class="n">all_tools</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">permitted_tools</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="s2">&quot;LOCKED&quot;</span>
+        <span class="n">is_locked</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">is_degraded</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">badge_text</span> <span class="o">=</span> <span class="s2">&quot;🔒 Locked&quot;</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="s2">&quot;code execution&quot;</span> <span class="ow">in</span> <span class="n">r</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">dead_step_reasons</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">any</span><span class="p">(</span>
+            <span class="n">t</span><span class="o">.</span><span class="n">capability_category</span> <span class="o">==</span> <span class="n">ToolCapability</span><span class="o">.</span><span class="n">CODE_EXECUTION</span> <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">blocked_tools</span>
+        <span class="p">):</span>
+            <span class="n">tooltip</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Locked: Requires Code Execution clearance which is blocked by system policy (</span><span class="si">{</span><span class="n">lockdown_level</span><span class="si">}</span><span class="s2">).&quot;</span>
+        <span class="k">elif</span> <span class="n">dead_step_reasons</span><span class="p">:</span>
+            <span class="n">tooltip</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Locked: </span><span class="si">{</span><span class="n">dead_step_reasons</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tooltip</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Locked: Required capabilities are blocked under </span><span class="si">{</span><span class="n">lockdown_level</span><span class="si">}</span><span class="s2"> policy.&quot;</span>
+    <span class="k">elif</span> <span class="n">blocked_tools</span><span class="p">:</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="s2">&quot;DEGRADED&quot;</span>
+        <span class="n">is_locked</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">is_degraded</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">badge_text</span> <span class="o">=</span> <span class="s2">&quot;⚠️ Degraded&quot;</span>
+        <span class="n">blocked_names</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">blocked_tools</span><span class="p">)))</span>
+        <span class="n">tooltip</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Degraded: Tool(s) [</span><span class="si">{</span><span class="n">blocked_names</span><span class="si">}</span><span class="s2">] unavailable under </span><span class="si">{</span><span class="n">lockdown_level</span><span class="si">}</span><span class="s2">; falling back to available tools.&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="s2">&quot;READY&quot;</span>
+        <span class="n">is_locked</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">is_degraded</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">badge_text</span> <span class="o">=</span> <span class="s2">&quot;✅ Ready&quot;</span>
+        <span class="k">if</span> <span class="n">all_tools</span><span class="p">:</span>
+            <span class="n">tooltip</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Compatible: All required tools are active under </span><span class="si">{</span><span class="n">lockdown_level</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tooltip</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Compatible: Pure reasoning blueprint (active under </span><span class="si">{</span><span class="n">lockdown_level</span><span class="si">}</span><span class="s2">).&quot;</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="n">status</span><span class="p">,</span>
+        <span class="s2">&quot;is_locked&quot;</span><span class="p">:</span> <span class="n">is_locked</span><span class="p">,</span>
+        <span class="s2">&quot;is_degraded&quot;</span><span class="p">:</span> <span class="n">is_degraded</span><span class="p">,</span>
+        <span class="s2">&quot;badge_text&quot;</span><span class="p">:</span> <span class="n">badge_text</span><span class="p">,</span>
+        <span class="s2">&quot;tooltip&quot;</span><span class="p">:</span> <span class="n">tooltip</span><span class="p">,</span>
+        <span class="s2">&quot;blocked_tools&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">blocked_tools</span><span class="p">],</span>
+        <span class="s2">&quot;permitted_tools&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">permitted_tools</span><span class="p">],</span>
+    <span class="p">}</span></div>
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Andrew Cruickshank.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

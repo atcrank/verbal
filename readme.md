@@ -139,3 +139,32 @@ python manage.py test verbal_tasks metacognition background_resources benchmarki
 # Run metacognition empirical trials and doctests
 pytest
 ```
+
+---
+
+## 5. Security & Tool Governance (Lockdown Modes)
+
+Reason enforces a 3-tier security governance architecture to restrict autonomous agent capabilities and prevent unauthorized model-written code execution, external network calls, or self-modification:
+
+| Lockdown Level | Badge | Code Execution | Model Meta-Tools | Permitted Capabilities |
+|---|---|---|---|---|
+| `DEVELOPMENT` | 🧪 DEVELOPMENT | Allowed | Active | All tools active; self-modification allowed for AI development. |
+| `CONTROLLED` | ⚡ CONTROLLED | Clearance-Gated | Blocked | Meta-tools blocked. Code execution requires `TRUSTED` or `ADMIN` clearance. Base domain model writes allowlisted. |
+| `RESTRICTED` | 🔒 RESTRICTED | Blocked | Blocked | Model code execution and outbound network tools blocked host-wide. Deterministic domain tools (RAG search, Grips ontology) active. |
+| `AIR_GAPPED`<br>*(Aliases: `TEXT_ONLY`, `LOCKED`)* | 🛡️ TEXT-ONLY | Blocked | Blocked | All model tools blocked. Operates purely through structured reasoning and JSON schemas. Internal platform plumbing remains fully operational. |
+
+### Applying Restricted Run-Modes in `.env`
+
+To set the host-level lockdown mode, edit your `.env` file:
+
+```bash
+# Options: DEVELOPMENT | CONTROLLED | RESTRICTED | AIR_GAPPED (or TEXT_ONLY / LOCKED)
+VERBAL_LOCKDOWN_LEVEL=RESTRICTED
+
+# Fine-grained master clamps:
+ALLOW_MODEL_CODE_EXECUTION=False
+ALLOW_TOOL_NETWORK_ACCESS=False
+ALLOW_AGENT_SELF_MODIFICATION=False
+```
+
+Restart your services (`./start_web.sh` and `./start_background_services.sh`) for the changes to take effect. The active mode is visually indicated in the Demo UI navigation bar and broadcast via the `X-Verbal-Lockdown-Level` HTTP header.

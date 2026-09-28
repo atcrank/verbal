@@ -42,13 +42,16 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../llm_api_app.html">LLM API</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../background_resources_app.html">Background Resources - context documents</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../grips_app.html">Grips - wiki knowledge banks</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../llm_api_app.html">LLM API - Local Inference, Proxy Routing &amp; Hardware-Aware Serving</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../verbal_tasks_app.html">Verbal Tasks - Database-Backed Asynchronous Execution &amp; Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../sandbox_manager_app.html">Sandbox Manager - Isolated Python Execution Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grobid_client_app.html">Grobid Client - Deterministic Scientific PDF Parsing &amp; Citation Extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../background_resources_app.html">Background Resources - Retrieval-Augmented Generation &amp; Document Ingestion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grips_app.html">Grips - Structured Knowledge Graph &amp; Propositional Claims</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../metacognition_app.html">Metacognition - Cognitive Blueprints, Agentic Workflows &amp; Self-Evaluation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_app.html">Demo UI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmarking_app.html">Benchmarking - Automated Evaluation, Synthetic Generation &amp; LoRA Flywheels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_app.html">Demo UI - Empirical Research &amp; Cognitive Workbench</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
 <ul>
@@ -95,9 +98,12 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">bypass_canonical_lock</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Context manager to bypass the copy-on-write lock during seed.py operations.&quot;&quot;&quot;</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prev</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">_thread_locals</span><span class="p">,</span> <span class="s1">&#39;bypass&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
         <span class="n">_thread_locals</span><span class="o">.</span><span class="n">bypass</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">):</span>
-        <span class="n">_thread_locals</span><span class="o">.</span><span class="n">bypass</span> <span class="o">=</span> <span class="kc">False</span></div>
+        <span class="n">_thread_locals</span><span class="o">.</span><span class="n">bypass</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prev</span></div>
 
 
 <div class="viewcode-block" id="is_lock_bypassed">
@@ -431,7 +437,32 @@
     <span class="c1"># The Pydantic schema for the tool&#39;s output (stored as JSON Schema)</span>
     <span class="n">output_schema</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;JSON Schema for tool return value&quot;</span><span class="p">)</span>
     
-    <span class="c1"># Governance</span>
+    <span class="c1"># Governance &amp; Capability Classification (WS17)</span>
+    <span class="n">CAPABILITY_CATEGORIES</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="s1">&#39;READ_ONLY&#39;</span><span class="p">,</span> <span class="s1">&#39;Read-Only (Knowledge &amp; DB Inspection)&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;STATE_MUTATION&#39;</span><span class="p">,</span> <span class="s1">&#39;State Mutation (Deterministic Writes)&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;CODE_EXECUTION&#39;</span><span class="p">,</span> <span class="s1">&#39;Code Execution (Model-Written Scripts)&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;META_GOVERNANCE&#39;</span><span class="p">,</span> <span class="s1">&#39;Meta-Governance (Self-Modification)&#39;</span><span class="p">),</span>
+    <span class="p">]</span>
+    <span class="n">capability_category</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span>
+        <span class="n">max_length</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
+        <span class="n">choices</span><span class="o">=</span><span class="n">CAPABILITY_CATEGORIES</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;READ_ONLY&#39;</span><span class="p">,</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;WS17 capability classification&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">CLEARANCE_LEVELS</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="s1">&#39;STANDARD&#39;</span><span class="p">,</span> <span class="s1">&#39;Standard User&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;TRUSTED&#39;</span><span class="p">,</span> <span class="s1">&#39;Trusted Operator / Analyst&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;ADMIN&#39;</span><span class="p">,</span> <span class="s1">&#39;System Administrator&#39;</span><span class="p">),</span>
+    <span class="p">]</span>
+    <span class="n">required_clearance</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span>
+        <span class="n">max_length</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+        <span class="n">choices</span><span class="o">=</span><span class="n">CLEARANCE_LEVELS</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;STANDARD&#39;</span><span class="p">,</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Minimum user clearance required to execute this tool&quot;</span>
+    <span class="p">)</span>
+
     <span class="n">is_active</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">requires_approval</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;If true, triggers human-in-the-loop before execution&quot;</span><span class="p">)</span>
     <span class="n">is_promoted</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;If true, this tool has been promoted to production and is fully available.&quot;</span><span class="p">)</span>

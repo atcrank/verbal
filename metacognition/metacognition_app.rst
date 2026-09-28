@@ -228,6 +228,170 @@ Guidance 6: Choosing Structured Output vs. ReAct Tool Calling
 * **Use ReAct Tool Calling**: Reserve `step.available_tools` for open-ended exploration phases where the agent must freely decide which tools to invoke and with what arguments.
 
 
+6. Layered Tool Governance & Restricted Run-Modes (WS17)
+--------------------------------------------------------
+
+Organizations deploying local or containerized Large Language Models frequently require strict, immutable guarantees over what autonomous agents can execute. Specifically, security and governance stakeholders express three primary concerns:
+
+1. **Model-Written Code Execution**: LLM-generated code must not run uncontrolled on host infrastructure or escape container boundaries.
+2. **External Network Exfiltration**: Models must not access external networks or exfiltrate private research data.
+3. **Privilege Escalation & Self-Modification**: LLMs must not be able to alter their own permissions, expand available tool definitions, or manipulate user authentication tables.
+
+To solve this without breaking agent usability, Metacognition implements a **3-Tier Layered Tool Governance Engine** (:mod:`metacognition.governance`).
+
+
+The Four System Lockdown Levels
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Verbal provides four distinct system-wide operational lockdown modes:
+
+.. list-table:: System Lockdown Levels
+   :widths: 18 16 46 20
+   :header-rows: 1
+
+   * - Lockdown Level
+     - Badge & Icon
+     - Description & Permitted Operations
+     - Code Execution
+   * - ``DEVELOPMENT``
+     - 🧪 DEVELOPMENT
+     - **Permissive / Research Mode**. All tools are active. Agent self-modification (editing cognitive blueprints and reasoning steps via meta-tools) is enabled for active prompt engineering and AI research.
+     - Permitted
+   * - ``CONTROLLED``
+     - ⚡ CONTROLLED
+     - **Regulated Enterprise Mode**. Self-modification meta-tools are permanently blocked host-wide. Code execution and sensitive operations require explicit user clearance (``TRUSTED`` or ``ADMIN``). Base domain model writes are restricted to strict allowlists.
+     - Clearance-Gated
+   * - ``RESTRICTED``
+     - 🔒 RESTRICTED
+     - **Safe Evaluation Mode**. Model code execution and external network tools are completely disabled host-wide, regardless of user clearance. Safe deterministic domain tools (e.g., RAG semantic retrieval, knowledge graph traversal and updates) remain active.
+     - Completely Blocked
+   * - ``AIR_GAPPED``
+     - 🛡️ TEXT-ONLY
+     - **Forensic / Pure Reasoning Mode** (Aliases: ``TEXT_ONLY``, ``LOCKED``). All runtime tool execution is blocked. The agent operates strictly via deterministic system prompts, multi-turn dialogue, and structured JSON schemas.
+     - Completely Blocked
+
+.. important::
+   **Internal Platform Architecture vs. Model Tools**:
+   The ``AIR_GAPPED`` / ``TEXT_ONLY`` mode restricts **model tool execution** (code interpreters, web requests, shell tools). It does **not** sever internal container networking required for basic platform operation (such as the web server communicating with the GPU inference server on port 8001, GROBID on port 8070, or PostgreSQL on port 5433). The platform remains fully operational while guaranteeing the LLM cannot execute tools or make outbound calls.
+
+
+How to Apply Restricted Run-Modes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Lockdown modes are set at the host environment level in your ``.env`` file (or directly in ``settings.py``):
+
+1. **Setting the Overall Lockdown Ceiling**:
+   In ``.env``, set ``VERBAL_LOCKDOWN_LEVEL``:
+
+   .. code-block:: bash
+
+       # Options: DEVELOPMENT, CONTROLLED, RESTRICTED, AIR_GAPPED (or TEXT_ONLY / LOCKED)
+       VERBAL_LOCKDOWN_LEVEL=RESTRICTED
+
+2. **Fine-Grained Environment Clamps**:
+   You can also independently clamp specific capabilities regardless of the mode:
+
+   .. code-block:: bash
+
+       # Master switch for executing model-written python/shell code
+       ALLOW_MODEL_CODE_EXECUTION=False
+
+       # Master switch for model tools making external HTTP/API network calls
+       ALLOW_TOOL_NETWORK_ACCESS=False
+
+       # Master switch allowing meta-tools to modify blueprints/steps (dev research only)
+       ALLOW_AGENT_SELF_MODIFICATION=False
+
+3. **Applying the Changes**:
+   Restart the web and background service processes for changes to take effect:
+
+   .. code-block:: bash
+
+       ./start_web.sh
+       ./start_background_services.sh
+
+
+The 3-Tier Security Evaluation Architecture
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Every tool exposure and execution passes through three defense-in-depth tiers:
+
+1. **Tier 1: Host Environment Ceiling (Settings)**:
+   Defined in ``settings.py`` and ``.env``. This is an immutable ceiling. If ``ALLOW_MODEL_CODE_EXECUTION=False``, no user, admin, or model prompt can ever invoke a code execution tool.
+
+2. **Tier 2: Tool Capability Classification & Strict Allowlist**:
+   Each ``ToolDefinition`` is categorized into an explicit capability:
+
+   * ``READ_ONLY``: Safe inspection tools (RAG search, Grips graph queries, task inspection).
+   * ``STATE_MUTATION``: Tools mutating permitted domain models.
+   * ``CODE_EXECUTION``: Dynamic execution of model-written scripts.
+   * ``META_GOVERNANCE``: Tools mutating ``CognitiveBlueprint``, ``ReasoningStep``, or system permissions.
+
+   In addition, domain model write tools (``write_django_model``) enforce a strict model allowlist:
+
+   * **Allowed Base Models**: ``grips.conceptnode``, ``grips.knowledgeedge``, ``work_organisation.whiteboardcard``, ``work_organisation.whiteboardcluster``, ``notes.investigationnote``.
+   * **Self-Modification Models**: ``metacognition.cognitiveblueprint``, ``metacognition.reasoningstep`` (permitted **only** in ``DEVELOPMENT`` mode when ``ALLOW_AGENT_SELF_MODIFICATION=True``).
+   * **Forbidden Models**: ``auth.user``, ``auth.group``, ``metacognition.tooldefinition``, and configuration singletons are permanently immutable from runtime tools.
+
+3. **Tier 3: User Operational Clearance**:
+   Users are classified into operational clearance ranks:
+
+   * ``STANDARD`` (Rank 1): Base authenticated and unprivileged users.
+   * ``TRUSTED`` (Rank 2): Members of the ``Trusted Operators`` group or users with the ``is_trusted`` flag. Permitted to run clearance-gated tools in ``CONTROLLED`` mode.
+   * ``ADMIN`` (Rank 3): Superusers and staff.
+
+
+System Directive Injection in LLM Prompts
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To ensure transparent operation without relying on prompt-based enforcement, ``metacognition.compiler`` automatically appends a canonical governance directive to the system prompt of every reasoning step:
+
+.. code-block:: text
+
+   [SYSTEM GOVERNANCE DIRECTIVE]
+   Active Lockdown Mode: RESTRICTED. Model-written code execution and external network tools are disabled by host policy. Answer requests using deterministic reasoning and available domain tools.
+
+This informs the model of active constraints upfront, enabling it to explain limitations politely to users rather than repeatedly attempting to invoke blocked capabilities.
+
+
+Observability, HTTP Headers & UI Badges
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* **HTTP Response Headers**: ``metacognition.middleware.ToolGovernanceMiddleware`` injects the active lockdown state into every HTTP, REST API, and Datastar streaming response:
+
+  .. code-block:: text
+
+     X-Verbal-Lockdown-Level: RESTRICTED
+
+* **Navigation Bar Badges**: The Demo UI displays an immediate, color-coded security indicator in the top navbar:
+  * 🧪 **DEVELOPMENT** (Emerald green pill)
+  * ⚡ **CONTROLLED** (Blue pill)
+  * 🔒 **RESTRICTED** (Amber pill)
+  * 🛡️ **TEXT-ONLY** / **AIR-GAPPED** (Red pill)
+
+* **Cognitive Blueprint Compatibility Indicators**:
+  The Blueprint dropdown in the Demo UI actively validates all steps of a blueprint against the active lockdown policy and user clearance via ``evaluate_blueprint_governance()``:
+  * **Ready (Green)**: All required tools are active and permitted under current policy.
+  * **Degraded (Amber)**: The blueprint can run, but certain non-critical tools are blocked (the hover tooltip lists exactly which tools are unavailable).
+  * **Locked (Red)**: The blueprint requires tools (e.g., Code Execution) that are forbidden by policy or user clearance. Execution is disabled, and selecting it displays a warning dialog detailing the restriction.
+
+
+Uniform Enforcement Across Model Hosting Solutions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Verbal supports three distinct model hosting backends via ``llm_api.models.SystemConfiguration``:
+
+1. **Local PyTorch** (CPU / GPU proxy via port 8001)
+2. **Local vLLM Container** (high-throughput OpenAI-compatible server on port 8003)
+3. **Local Ollama Container** (local containerized models on port 11434)
+
+Governance enforcement is completely decoupled from the inference backend. Regardless of whether inference runs via PyTorch, vLLM, or Ollama:
+
+* **Compilation Stripping**: In ``compiler.py``, blocked tools are stripped from both the OpenAI-compatible ``tools`` parameter and Outlines guided JSON schemas *before* the request payload is dispatched to the inference engine.
+* **Execution Gateway Invariant**: Even if an adversarial model running on any backend hallucinates or outputs a disallowed tool call, the tool execution gateway (``metacognition.tool_executor.execute_tool``) intercepts and aborts the execution with a security violation.
+* **Automated Test Coverage**: The ``metacognition.tests.ToolGovernanceHostingBackendTests`` test suite matrixes all three hosting solutions across all restricted modes to verify end-to-end payload hygiene and execution gating.
+
+
 Module Reference
 ----------------
 
@@ -236,7 +400,27 @@ Module Reference
    :undoc-members:
    :show-inheritance:
 
+.. automodule:: metacognition.governance
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 .. automodule:: metacognition.compiler
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: metacognition.tool_executor
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: metacognition.middleware
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: metacognition.context_processors
    :members:
    :undoc-members:
    :show-inheritance:
@@ -255,3 +439,4 @@ Module Reference
    :members:
    :undoc-members:
    :show-inheritance:
+

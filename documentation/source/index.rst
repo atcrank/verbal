@@ -90,6 +90,28 @@ External Models (OpenAI, Ollama)
 
 **reason** natively supports standard OpenAI ``/v1/chat/completions`` endpoints. To route traffic to an external provider or a containerized Ollama instance, configure an **External AI Model** in the Django Admin and assign it via the **User Active Models** table. See the :doc:`using_ollama` guide for a complete walkthrough.
 
+Tool Governance & Restricted Run-Modes (``VERBAL_LOCKDOWN_LEVEL``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**reason** enforces a 3-tier security governance architecture to restrict autonomous agent capabilities and prevent model code execution or data exfiltration:
+
+* ``DEVELOPMENT``: Full tool access for AI research, including code execution and self-modification.
+* ``CONTROLLED``: Regulated mode. Code execution requires user clearance (``TRUSTED`` or ``ADMIN``); self-modification is blocked.
+* ``RESTRICTED``: Safe evaluation mode. Code execution and external network tools are completely disabled host-wide. Deterministic domain tools (RAG search, Grips graph updates) remain active.
+* ``AIR_GAPPED`` (Aliases: ``TEXT_ONLY``, ``LOCKED``): Pure reasoning mode. All runtime model tools are blocked. The system operates strictly via multi-turn reasoning and structured output schemas. (Internal microservice plumbing between web, inference, and grobid remains intact).
+
+To apply a restricted mode in ``.env``:
+
+.. code-block:: bash
+
+    VERBAL_LOCKDOWN_LEVEL=RESTRICTED
+    ALLOW_MODEL_CODE_EXECUTION=False
+    ALLOW_TOOL_NETWORK_ACCESS=False
+    ALLOW_AGENT_SELF_MODIFICATION=False
+
+For complete architectural details, see the :doc:`metacognition_app` documentation.
+
+
 
 
 Indices and tables
