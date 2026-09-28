@@ -2173,3 +2173,516 @@ class ToolGovernancePolicyTests(TestCase):
             self.assertEqual(result.get("status"), 403)
             self.assertIn("Blueprint execution blocked", result.get("error", ""))
 
+
+class ToolGovernanceHostingBackendTests(TestCase):
+    """
+    Verifies that Layered Tool Governance (WS17) is enforced across
+    all three model hosting solutions:
+    1. PyTorch (Local in-process / proxy)
+    2. vLLM (Containerized high-throughput)
+    3. Ollama (Containerized local models)
+
+    Verifies:
+    - Host-level lockdown policies (AIR_GAPPED, TEXT_ONLY, RESTRICTED)
+    - Dynamic injection of [SYSTEM GOVERNANCE DIRECTIVE]
+    - Dynamic payload tool stripping (prohibited tools stripped before request dispatch)
+    - Tool execution gateway invariant checks blocking unauthorized execution
+    - Permissive tool pass-through in DEVELOPMENT mode
+    """
+
+    def setUp(self):
+        import json
+        from django.contrib.auth.models import User
+        from llm_api.models import SystemConfiguration, LocalAIModel, Conversation
+        from metacognition.models import ToolDefinition
+
+        self.standard_user = User.objects.create_user(username="backend_std_user", password="password123")
+        self.trusted_user = User.objects.create_user(username="backend_trusted_user", password="password123")
+        self.trusted_user.is_trusted = True
+        self.trusted_user.save()
+        from django.contrib.auth.models import Group
+        trusted_group, _ = Group.objects.get_or_create(name="Trusted Operators")
+        self.trusted_user.groups.add(trusted_group)
+
+        self.admin_user = User.objects.create_superuser(username="backend_admin_user", password="password123")
+
+        self.conv = Conversation.objects.create(user=self.standard_user, title="Backend Gov Test Conv")
+
+        self.config = SystemConfiguration.get_solo()
+
+        from llm_api.apps import service_registry
+        self.original_ai_role = service_registry.ai_service.role
+        service_registry.ai_service.role = "web"
+
+        self.pytorch_model, _ = LocalAIModel.objects.get_or_create(
+            hf_model_id="google/gemma-2-2b-it",
+            defaults={"name": "Gemma 2 2B (PyTorch)"}
+        )
+        self.vllm_model, _ = LocalAIModel.objects.get_or_create(
+            hf_model_id="mistralai/Mistral-7B-Instruct-v0.2",
+            defaults={"name": "Mistral 7B (vLLM)"}
+        )
+        self.ollama_model, _ = LocalAIModel.objects.get_or_create(
+            hf_model_id="llama3.2:3b",
+            defaults={"name": "Llama 3.2 3B (Ollama)"}
+        )
+
+        self.config.active_local_model = self.pytorch_model
+        self.config.active_vllm_model = self.vllm_model
+        self.config.active_ollama_model = self.ollama_model
+        self.config.save()
+
+        self.read_tool, _ = ToolDefinition.objects.get_or_create(
+            name="test_backend_read_tool",
+            defaults={
+                "tool_type": "builtin",
+                "python_path": "metacognition.meta_tools.TASK_COMPLETE",
+                "capability_category": "READ_ONLY",
+                "required_clearance": "STANDARD",
+                "input_schema": json.dumps({
+                    "type": "object",
+                    "properties": {"query": {"type": "string"}},
+                    "required": ["query"]
+                })
+            }
+        )
+        self.code_tool, _ = ToolDefinition.objects.get_or_create(
+            name="test_backend_code_tool",
+            defaults={
+                "tool_type": "builtin",
+                "python_path": "metacognition.meta_tools.TASK_COMPLETE",
+                "capability_category": "CODE_EXECUTION",
+                "required_clearance": "TRUSTED",
+                "input_schema": json.dumps({
+                    "type": "object",
+                    "properties": {"code": {"type": "string"}},
+                    "required": ["code"]
+                })
+            }
+        )
+
+    def tearDown(self):
+        try:
+            from llm_api.apps import service_registry
+            service_registry.ai_service.role = getattr(self, "original_ai_role", "web")
+            from llm_api.models import SystemConfiguration
+            config = SystemConfiguration.get_solo()
+            if config:
+                config.hosting_backend = "pytorch"
+                config.active_local_model = None
+                config.save()
+        except Exception:
+            pass
+
+    def test_pytorch_backend_restricted_modes(self):
+        from unittest.mock import patch, MagicMock
+        from metacognition.models import CognitiveBlueprint, ReasoningStep
+        from metacognition.compiler import compile_graph_from_blueprint
+        from metacognition.tool_executor import execute_tool
+
+        self.config.hosting_backend = "pytorch"
+        self.config.save()
+
+        bp = CognitiveBlueprint.objects.create(name="PyTorch Gov BP", description="Test PyTorch governance")
+        step = ReasoningStep.objects.create(
+            blueprint=bp,
+            name="PyTorch Step",
+            is_start_node=True,
+            system_prompt="Base reasoning instructions."
+        )
+        step.available_tools.add(self.read_tool, self.code_tool)
+
+        mock_post_resp = MagicMock()
+        mock_post_resp.status_code = 200
+        mock_post_resp.json.return_value = {
+            "choices": [{"message": {"role": "assistant", "content": "PyTorch analysis complete."}}],
+            "usage": {"prompt_tokens": 15, "completion_tokens": 10}
+        }
+
+        # 1. Test AIR_GAPPED Mode
+        with self.settings(
+            VERBAL_LOCKDOWN_LEVEL="AIR_GAPPED",
+            ALLOW_MODEL_CODE_EXECUTION=False,
+            ALLOW_AGENT_SELF_MODIFICATION=False
+        ):
+            with patch("requests.post", return_value=mock_post_resp) as mock_post, \
+                 patch("llm_api.ai_service.AIService.supports_native_tools", return_value=True):
+                graph = compile_graph_from_blueprint(bp)
+                state = {
+                    "working_memory": [],
+                    "rag_context": "",
+                    "route_to": None,
+                    "conversation_id": str(self.conv.id),
+                    "user_id": self.standard_user.id,
+                    "step_count": 0,
+                    "max_steps": 3,
+                    "retries_remaining": {},
+                    "internal_monologue": [],
+                    "scratch": {},
+                    "token_budget_remaining": 8000
+                }
+                graph.invoke(state, {"configurable": {"thread_id": f"{self.conv.id}_1"}})
+
+                self.assertTrue(mock_post.called)
+                post_call = mock_post.call_args
+                url = post_call.args[0] if post_call.args else post_call.kwargs.get("url", "")
+                payload = post_call.kwargs.get("json", {})
+
+                # Target endpoint is /chat/completions
+                self.assertIn("/chat/completions", url)
+
+                # Verify system prompt has governance directive injected
+                messages = payload.get("messages", [])
+                sys_content = messages[0].get("content", "") if messages else ""
+                self.assertIn("[SYSTEM GOVERNANCE DIRECTIVE]", sys_content)
+                self.assertIn("Active Lockdown Mode: AIR_GAPPED", sys_content)
+
+                # Verify payload tools: code_tool is stripped out, only read_tool remains
+                payload_tools = payload.get("tools", [])
+                tool_names = [t.get("function", {}).get("name") for t in payload_tools]
+                self.assertIn("test_backend_read_tool", tool_names)
+                self.assertNotIn("test_backend_code_tool", tool_names)
+
+            # Gateway Invariant: Even if PyTorch model hallucinates a code_tool execution, execute_tool blocks it
+            exec_res = execute_tool(self.code_tool, {"user": self.standard_user}, {"code": "print('attack')"})
+            self.assertIn("Error: Governance violation", exec_res)
+            self.assertIn("requires code execution", exec_res)
+
+        # 2. Test RESTRICTED Mode
+        with self.settings(
+            VERBAL_LOCKDOWN_LEVEL="RESTRICTED",
+            ALLOW_MODEL_CODE_EXECUTION=False
+        ):
+            with patch("requests.post", return_value=mock_post_resp) as mock_post, \
+                 patch("llm_api.ai_service.AIService.supports_native_tools", return_value=True):
+                graph = compile_graph_from_blueprint(bp)
+                state["user_id"] = self.standard_user.id
+                graph.invoke(state, {"configurable": {"thread_id": f"{self.conv.id}_2"}})
+
+                post_call = mock_post.call_args
+                payload = post_call.kwargs.get("json", {})
+                sys_content = payload.get("messages", [])[0].get("content", "")
+                self.assertIn("Active Lockdown Mode: RESTRICTED", sys_content)
+
+                payload_tools = payload.get("tools", [])
+                tool_names = [t.get("function", {}).get("name") for t in payload_tools]
+                self.assertIn("test_backend_read_tool", tool_names)
+                self.assertNotIn("test_backend_code_tool", tool_names)
+
+    def test_vllm_backend_restricted_modes(self):
+        from unittest.mock import patch, MagicMock
+        from metacognition.models import CognitiveBlueprint, ReasoningStep
+        from metacognition.compiler import compile_graph_from_blueprint
+        from metacognition.tool_executor import execute_tool
+
+        self.config.hosting_backend = "vllm"
+        self.config.save()
+
+        bp = CognitiveBlueprint.objects.create(name="vLLM Gov BP", description="Test vLLM governance")
+        step = ReasoningStep.objects.create(
+            blueprint=bp,
+            name="vLLM Step",
+            is_start_node=True,
+            system_prompt="vLLM instructions."
+        )
+        step.available_tools.add(self.read_tool, self.code_tool)
+
+        mock_post_resp = MagicMock()
+        mock_post_resp.status_code = 200
+        mock_post_resp.json.return_value = {
+            "choices": [{"message": {"role": "assistant", "content": "vLLM output complete."}}],
+            "usage": {"prompt_tokens": 20, "completion_tokens": 12}
+        }
+
+        # 1. Test AIR_GAPPED Mode with vLLM
+        with self.settings(
+            VERBAL_LOCKDOWN_LEVEL="AIR_GAPPED",
+            ALLOW_MODEL_CODE_EXECUTION=False,
+            VLLM_BASE_URL="http://vllm-test:8000"
+        ):
+            with patch("requests.post", return_value=mock_post_resp) as mock_post, \
+                 patch("llm_api.ai_service.AIService.supports_native_tools", return_value=True):
+                graph = compile_graph_from_blueprint(bp)
+                state = {
+                    "working_memory": [],
+                    "rag_context": "",
+                    "route_to": None,
+                    "conversation_id": str(self.conv.id),
+                    "user_id": self.standard_user.id,
+                    "step_count": 0,
+                    "max_steps": 3,
+                    "retries_remaining": {},
+                    "internal_monologue": [],
+                    "scratch": {},
+                    "token_budget_remaining": 8000
+                }
+                graph.invoke(state, {"configurable": {"thread_id": f"{self.conv.id}_vllm1"}})
+
+                self.assertTrue(mock_post.called)
+                post_call = mock_post.call_args
+                url = post_call.args[0] if post_call.args else post_call.kwargs.get("url", "")
+                payload = post_call.kwargs.get("json", {})
+
+                # Verify request routed to vLLM endpoint
+                self.assertIn("vllm-test:8000", url)
+                self.assertEqual(payload.get("model"), self.vllm_model.hf_model_id)
+
+                # Verify directive injection in vLLM system prompt
+                sys_content = payload.get("messages", [])[0].get("content", "")
+                self.assertIn("[SYSTEM GOVERNANCE DIRECTIVE]", sys_content)
+                self.assertIn("Active Lockdown Mode: AIR_GAPPED", sys_content)
+
+                # Verify tools payload to vLLM strips prohibited code execution tool
+                payload_tools = payload.get("tools", [])
+                tool_names = [t.get("function", {}).get("name") for t in payload_tools]
+                self.assertIn("test_backend_read_tool", tool_names)
+                self.assertNotIn("test_backend_code_tool", tool_names)
+
+            # Gateway check: execution blocked
+            exec_res = execute_tool(self.code_tool, {"user": self.standard_user}, {"code": "print('attack')"})
+            self.assertIn("Error: Governance violation", exec_res)
+
+        # 2. Test RESTRICTED Mode with vLLM
+        with self.settings(
+            VERBAL_LOCKDOWN_LEVEL="RESTRICTED",
+            ALLOW_MODEL_CODE_EXECUTION=False,
+            VLLM_BASE_URL="http://vllm-test:8000"
+        ):
+            with patch("requests.post", return_value=mock_post_resp) as mock_post, \
+                 patch("llm_api.ai_service.AIService.supports_native_tools", return_value=True):
+                graph = compile_graph_from_blueprint(bp)
+                state["user_id"] = self.standard_user.id
+                graph.invoke(state, {"configurable": {"thread_id": f"{self.conv.id}_vllm2"}})
+
+                post_call = mock_post.call_args
+                payload = post_call.kwargs.get("json", {})
+                sys_content = payload.get("messages", [])[0].get("content", "")
+                self.assertIn("Active Lockdown Mode: RESTRICTED", sys_content)
+
+                payload_tools = payload.get("tools", [])
+                tool_names = [t.get("function", {}).get("name") for t in payload_tools]
+                self.assertIn("test_backend_read_tool", tool_names)
+                self.assertNotIn("test_backend_code_tool", tool_names)
+
+    def test_ollama_backend_restricted_modes(self):
+        from unittest.mock import patch, MagicMock
+        from metacognition.models import CognitiveBlueprint, ReasoningStep
+        from metacognition.compiler import compile_graph_from_blueprint
+        from metacognition.tool_executor import execute_tool
+
+        self.config.hosting_backend = "ollama"
+        self.config.save()
+
+        bp = CognitiveBlueprint.objects.create(name="Ollama Gov BP", description="Test Ollama governance")
+        step = ReasoningStep.objects.create(
+            blueprint=bp,
+            name="Ollama Step",
+            is_start_node=True,
+            system_prompt="Ollama instructions."
+        )
+        step.available_tools.add(self.read_tool, self.code_tool)
+
+        mock_post_resp = MagicMock()
+        mock_post_resp.status_code = 200
+        mock_post_resp.json.return_value = {
+            "choices": [{"message": {"role": "assistant", "content": "Ollama output complete."}}],
+            "usage": {"prompt_tokens": 18, "completion_tokens": 8}
+        }
+
+        # Test TEXT_ONLY (alias for AIR_GAPPED) with Ollama
+        with self.settings(
+            VERBAL_LOCKDOWN_LEVEL="TEXT_ONLY",
+            ALLOW_MODEL_CODE_EXECUTION=False,
+            OLLAMA_BASE_URL="http://ollama-test:11434"
+        ):
+            with patch("requests.post", return_value=mock_post_resp) as mock_post, \
+                 patch("llm_api.ai_service.AIService.supports_native_tools", return_value=True):
+                graph = compile_graph_from_blueprint(bp)
+                state = {
+                    "working_memory": [],
+                    "rag_context": "",
+                    "route_to": None,
+                    "conversation_id": str(self.conv.id),
+                    "user_id": self.standard_user.id,
+                    "step_count": 0,
+                    "max_steps": 3,
+                    "retries_remaining": {},
+                    "internal_monologue": [],
+                    "scratch": {},
+                    "token_budget_remaining": 8000
+                }
+                graph.invoke(state, {"configurable": {"thread_id": f"{self.conv.id}_ollama1"}})
+
+                self.assertTrue(mock_post.called)
+                post_call = mock_post.call_args
+                url = post_call.args[0] if post_call.args else post_call.kwargs.get("url", "")
+                payload = post_call.kwargs.get("json", {})
+
+                # Verify request routed to Ollama endpoint
+                self.assertIn("ollama-test:11434", url)
+                self.assertEqual(payload.get("model"), self.ollama_model.hf_model_id)
+
+                # Verify directive injection in Ollama system prompt (normalized to AIR_GAPPED)
+                sys_content = payload.get("messages", [])[0].get("content", "")
+                self.assertIn("[SYSTEM GOVERNANCE DIRECTIVE]", sys_content)
+                self.assertIn("Active Lockdown Mode: AIR_GAPPED", sys_content)
+
+                # Verify payload tools to Ollama excludes code tool
+                payload_tools = payload.get("tools", [])
+                tool_names = [t.get("function", {}).get("name") for t in payload_tools]
+                self.assertIn("test_backend_read_tool", tool_names)
+                self.assertNotIn("test_backend_code_tool", tool_names)
+
+            # Gateway check: execution blocked
+            exec_res = execute_tool(self.code_tool, {"user": self.standard_user}, {"code": "print('attack')"})
+            self.assertIn("Error: Governance violation", exec_res)
+
+        # Test RESTRICTED Mode with Ollama
+        with self.settings(
+            VERBAL_LOCKDOWN_LEVEL="RESTRICTED",
+            ALLOW_MODEL_CODE_EXECUTION=False,
+            OLLAMA_BASE_URL="http://ollama-test:11434"
+        ):
+            with patch("requests.post", return_value=mock_post_resp) as mock_post, \
+                 patch("llm_api.ai_service.AIService.supports_native_tools", return_value=True):
+                graph = compile_graph_from_blueprint(bp)
+                state["user_id"] = self.standard_user.id
+                graph.invoke(state, {"configurable": {"thread_id": f"{self.conv.id}_ollama2"}})
+
+                post_call = mock_post.call_args
+                payload = post_call.kwargs.get("json", {})
+                sys_content = payload.get("messages", [])[0].get("content", "")
+                self.assertIn("Active Lockdown Mode: RESTRICTED", sys_content)
+
+                payload_tools = payload.get("tools", [])
+                tool_names = [t.get("function", {}).get("name") for t in payload_tools]
+                self.assertIn("test_backend_read_tool", tool_names)
+                self.assertNotIn("test_backend_code_tool", tool_names)
+
+    def test_development_permissive_mode_all_backends(self):
+        from unittest.mock import patch, MagicMock
+        from metacognition.models import CognitiveBlueprint, ReasoningStep
+        from metacognition.compiler import compile_graph_from_blueprint
+
+        bp = CognitiveBlueprint.objects.create(name="Dev Mode BP", description="Test dev mode across backends")
+        step = ReasoningStep.objects.create(
+            blueprint=bp,
+            name="Dev Step",
+            is_start_node=True,
+            system_prompt="Dev instructions."
+        )
+        step.available_tools.add(self.read_tool, self.code_tool)
+
+        mock_post_resp = MagicMock()
+        mock_post_resp.status_code = 200
+        mock_post_resp.json.return_value = {
+            "choices": [{"message": {"role": "assistant", "content": "Dev generation complete."}}],
+            "usage": {"prompt_tokens": 25, "completion_tokens": 15}
+        }
+
+        backends = [
+            ("pytorch", "local-model"),
+            ("vllm", self.vllm_model.hf_model_id),
+            ("ollama", self.ollama_model.hf_model_id),
+        ]
+
+        for backend_name, expected_model in backends:
+            self.config.hosting_backend = backend_name
+            self.config.save()
+
+            with self.settings(
+                VERBAL_LOCKDOWN_LEVEL="DEVELOPMENT",
+                ALLOW_MODEL_CODE_EXECUTION=True,
+                ALLOW_TOOL_NETWORK_ACCESS=True
+            ):
+                with patch("requests.post", return_value=mock_post_resp) as mock_post, \
+                     patch("llm_api.ai_service.AIService.supports_native_tools", return_value=True):
+                    graph = compile_graph_from_blueprint(bp)
+                    state = {
+                        "working_memory": [],
+                        "rag_context": "",
+                        "route_to": None,
+                        "conversation_id": str(self.conv.id),
+                        "user_id": self.admin_user.id,
+                        "step_count": 0,
+                        "max_steps": 3,
+                        "retries_remaining": {},
+                        "internal_monologue": [],
+                        "scratch": {},
+                        "token_budget_remaining": 8000
+                    }
+                    graph.invoke(state, {"configurable": {"thread_id": f"{self.conv.id}_{backend_name}"}})
+
+                    self.assertTrue(mock_post.called, f"requests.post was not called for backend {backend_name}")
+                    post_call = mock_post.call_args
+                    payload = post_call.kwargs.get("json", {})
+
+                    # Verify system prompt has DEVELOPMENT directive
+                    sys_content = payload.get("messages", [])[0].get("content", "")
+                    self.assertIn("Active Lockdown Mode: DEVELOPMENT", sys_content)
+
+                    # In DEVELOPMENT mode for an authorized operator, BOTH read and code tools pass through
+                    payload_tools = payload.get("tools", [])
+                    tool_names = [t.get("function", {}).get("name") for t in payload_tools]
+                    self.assertIn("test_backend_read_tool", tool_names, f"Read tool missing for backend {backend_name}")
+                    self.assertIn("test_backend_code_tool", tool_names, f"Code tool missing for backend {backend_name}")
+
+    def test_guided_json_schema_tool_governance_all_backends(self):
+        """
+        Tests the Outlines / dynamic JSON-schema fallback pathway (when supports_native_tools is False)
+        across all three backends to ensure restricted tools are never included in the schema.
+        """
+        import json
+        from unittest.mock import patch, MagicMock
+        from metacognition.models import CognitiveBlueprint, ReasoningStep
+        from metacognition.compiler import compile_graph_from_blueprint
+
+        bp = CognitiveBlueprint.objects.create(name="Schema Gov BP", description="Test schema governance")
+        step = ReasoningStep.objects.create(
+            blueprint=bp,
+            name="Schema Step",
+            is_start_node=True,
+            system_prompt="Schema instructions."
+        )
+        step.available_tools.add(self.read_tool, self.code_tool)
+
+        mock_outline_response = json.dumps({"tool_calls": [{"name": "test_backend_read_tool", "args": {"query": "safe"}}]})
+
+        for backend_name in ["pytorch", "vllm", "ollama"]:
+            self.config.hosting_backend = backend_name
+            self.config.save()
+
+            with self.settings(
+                VERBAL_LOCKDOWN_LEVEL="AIR_GAPPED",
+                ALLOW_MODEL_CODE_EXECUTION=False
+            ):
+                with patch("llm_api.ai_service.AIService.generate_outline", return_value=mock_outline_response) as mock_outline, \
+                     patch("llm_api.ai_service.AIService.supports_native_tools", return_value=False):
+                    graph = compile_graph_from_blueprint(bp)
+                    state = {
+                        "working_memory": [],
+                        "rag_context": "",
+                        "route_to": None,
+                        "conversation_id": str(self.conv.id),
+                        "user_id": self.standard_user.id,
+                        "step_count": 0,
+                        "max_steps": 3,
+                        "retries_remaining": {},
+                        "internal_monologue": [],
+                        "scratch": {},
+                        "token_budget_remaining": 8000
+                    }
+                    graph.invoke(state, {"configurable": {"thread_id": f"{self.conv.id}_schema_{backend_name}"}})
+
+                    self.assertTrue(mock_outline.called, f"generate_outline was not called for backend {backend_name}")
+                    call_kwargs = mock_outline.call_args.kwargs
+                    schema = call_kwargs.get("response_schema") or call_kwargs.get("schema", {})
+
+                    # Extract allowed tool names in the dynamic schema
+                    items = schema.get("properties", {}).get("tool_calls", {}).get("items", {}).get("anyOf", [])
+                    allowed_names_in_schema = [item["properties"]["name"]["const"] for item in items if "properties" in item]
+
+                    self.assertIn("test_backend_read_tool", allowed_names_in_schema)
+                    self.assertNotIn("test_backend_code_tool", allowed_names_in_schema)
+
+
