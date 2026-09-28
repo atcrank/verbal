@@ -218,6 +218,50 @@ TOOL_SCHEMAS = {
 
 
 def seed_tools(ToolDefinition):
+    TOOL_CLASSIFICATIONS = {
+        # Action Hooks
+        "handle_research": ("READ_ONLY", "STANDARD"),
+        "handle_execution_plan": ("READ_ONLY", "STANDARD"),
+        "handle_difficult_prompt": ("READ_ONLY", "STANDARD"),
+        "handle_result_critique": ("READ_ONLY", "STANDARD"),
+        "python_sandbox": ("CODE_EXECUTION", "TRUSTED"),
+        # Meta Tools
+        "list_available_tools": ("READ_ONLY", "STANDARD"),
+        "create_tool": ("META_GOVERNANCE", "ADMIN"),
+        "list_blueprints": ("READ_ONLY", "STANDARD"),
+        "create_blueprint": ("META_GOVERNANCE", "ADMIN"),
+        "get_benchmark_stats": ("READ_ONLY", "STANDARD"),
+        "read_benchmark_topic": ("READ_ONLY", "STANDARD"),
+        "review_benchmark_results": ("READ_ONLY", "STANDARD"),
+        "get_conversation_metrics": ("READ_ONLY", "STANDARD"),
+        "fetch_log_details": ("READ_ONLY", "STANDARD"),
+        "get_rag_efficiency_metrics": ("READ_ONLY", "STANDARD"),
+        "get_grips_metrics": ("READ_ONLY", "STANDARD"),
+        "create_benchmark_scenario": ("STATE_MUTATION", "STANDARD"),
+        "document_reader": ("READ_ONLY", "STANDARD"),
+        "delegate_task": ("STATE_MUTATION", "STANDARD"),
+        "run_benchmark": ("STATE_MUTATION", "STANDARD"),
+        "django_shell_script": ("CODE_EXECUTION", "TRUSTED"),
+        "system_janitor": ("STATE_MUTATION", "TRUSTED"),
+        "get_empty_grips_stubs": ("READ_ONLY", "STANDARD"),
+        "database_backup": ("STATE_MUTATION", "ADMIN"),
+        "read_django_models": ("READ_ONLY", "STANDARD"),
+        "update_conversation_state": ("STATE_MUTATION", "STANDARD"),
+        "run_sub_blueprint": ("STATE_MUTATION", "STANDARD"),
+        "discover_django_models": ("READ_ONLY", "STANDARD"),
+        "write_django_model": ("STATE_MUTATION", "STANDARD"),
+        "inspect_nightmanager_performance": ("READ_ONLY", "STANDARD"),
+        "TASK_COMPLETE": ("STATE_MUTATION", "STANDARD"),
+        "search_rag_chunks": ("READ_ONLY", "STANDARD"),
+        "search_grips_nodes": ("READ_ONLY", "STANDARD"),
+        "search_past_conversations": ("READ_ONLY", "STANDARD"),
+        "record_signal": ("STATE_MUTATION", "STANDARD"),
+        "manage_dynamic_tools": ("META_GOVERNANCE", "ADMIN"),
+        "promote_artifact": ("META_GOVERNANCE", "ADMIN"),
+        "deprecate_tool": ("META_GOVERNANCE", "ADMIN"),
+        "clone_and_modify_blueprint": ("META_GOVERNANCE", "ADMIN"),
+    }
+
     ACTION_REGISTRY = {
         "handle_research": "metacognition.actions.handle_research",
         "handle_execution_plan": "metacognition.actions.handle_execution_plan",
@@ -231,6 +275,7 @@ def seed_tools(ToolDefinition):
         if name == "python_sandbox":
             schema = '{"type": "object", "properties": {"code": {"type": "string", "description": "Python code string to execute"}}, "required": ["code"]}'
             
+        cap, clear = TOOL_CLASSIFICATIONS.get(name, ("READ_ONLY", "STANDARD"))
         ToolDefinition.objects.update_or_create(
             name=name,
             defaults={
@@ -240,6 +285,8 @@ def seed_tools(ToolDefinition):
                 'is_active': True,
                 'is_promoted': True,
                 'input_schema': schema,
+                'capability_category': cap,
+                'required_clearance': clear,
             }
         )
 
@@ -271,11 +318,19 @@ def seed_tools(ToolDefinition):
         ("inspect_nightmanager_performance", "Fetches aggregated diagnostic and quantitative health metrics for the NightManager.", "builtin", "metacognition.meta_tools.inspect_nightmanager_performance"),
         # Finding 2.2: TASK_COMPLETE must be a real registered tool with python_path
         ("TASK_COMPLETE", "Signals that the agent has finished all planned work. Use this when done.", "builtin", "metacognition.meta_tools.TASK_COMPLETE"),
+        ("search_rag_chunks", "Searches knowledge base chunks for relevant context.", "builtin", "metacognition.meta_tools.search_rag_chunks"),
+        ("search_grips_nodes", "Searches GRIPS knowledge graph for concept nodes.", "builtin", "metacognition.meta_tools.search_grips_nodes"),
+        ("search_past_conversations", "Searches previous conversation logs for context.", "builtin", "metacognition.meta_tools.search_past_conversations"),
+        ("record_signal", "Records telemetry/signals in working memory.", "builtin", "metacognition.meta_tools.record_signal"),
+        ("manage_dynamic_tools", "Creates or updates dynamic Python tools (dev research mode).", "builtin", "metacognition.meta_tools.manage_dynamic_tools"),
+        ("promote_artifact", "Promotes an artifact to production (dev research mode).", "builtin", "metacognition.meta_tools.promote_artifact"),
+        ("deprecate_tool", "Marks a tool as inactive (dev research mode).", "builtin", "metacognition.meta_tools.deprecate_tool"),
+        ("clone_and_modify_blueprint", "Clones and mutates an existing blueprint (dev research mode).", "builtin", "metacognition.meta_tools.clone_and_modify_blueprint"),
     ]
-
 
     for name, desc, ttype, path in meta_tools:
         schema = TOOL_SCHEMAS.get(name)
+        cap, clear = TOOL_CLASSIFICATIONS.get(name, ("READ_ONLY", "STANDARD"))
         ToolDefinition.objects.update_or_create(
             name=name,
             defaults={
@@ -285,6 +340,8 @@ def seed_tools(ToolDefinition):
                 'input_schema': json.dumps(schema) if schema else '',
                 'is_active': True,
                 'is_promoted': True,
+                'capability_category': cap,
+                'required_clearance': clear,
             }
         )
 

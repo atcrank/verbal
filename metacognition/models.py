@@ -302,7 +302,32 @@ class ToolDefinition(models.Model):
     # The Pydantic schema for the tool's output (stored as JSON Schema)
     output_schema = models.TextField(blank=True, help_text="JSON Schema for tool return value")
     
-    # Governance
+    # Governance & Capability Classification (WS17)
+    CAPABILITY_CATEGORIES = [
+        ('READ_ONLY', 'Read-Only (Knowledge & DB Inspection)'),
+        ('STATE_MUTATION', 'State Mutation (Deterministic Writes)'),
+        ('CODE_EXECUTION', 'Code Execution (Model-Written Scripts)'),
+        ('META_GOVERNANCE', 'Meta-Governance (Self-Modification)'),
+    ]
+    capability_category = models.CharField(
+        max_length=30,
+        choices=CAPABILITY_CATEGORIES,
+        default='READ_ONLY',
+        help_text="WS17 capability classification"
+    )
+
+    CLEARANCE_LEVELS = [
+        ('STANDARD', 'Standard User'),
+        ('TRUSTED', 'Trusted Operator / Analyst'),
+        ('ADMIN', 'System Administrator'),
+    ]
+    required_clearance = models.CharField(
+        max_length=20,
+        choices=CLEARANCE_LEVELS,
+        default='STANDARD',
+        help_text="Minimum user clearance required to execute this tool"
+    )
+
     is_active = models.BooleanField(default=True)
     requires_approval = models.BooleanField(default=False, help_text="If true, triggers human-in-the-loop before execution")
     is_promoted = models.BooleanField(default=False, help_text="If true, this tool has been promoted to production and is fully available.")
