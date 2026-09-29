@@ -12,6 +12,7 @@ specifics of a single development machine, scaling effortlessly from consumer GP
 import logging
 import os
 from dataclasses import dataclass, field
+from functools import lru_cache
 from typing import Any, Dict, List, Literal, Optional, Tuple
 
 import torch
@@ -113,6 +114,7 @@ class TrainingConfig:
 
 
 
+@lru_cache(maxsize=1)
 def detect_hardware_profile() -> HardwareProfile:
     """
     Dynamically interrogates PyTorch and CUDA runtime to detect device capabilities.
@@ -319,9 +321,12 @@ def estimate_scenario_latency(
     if tier == "consumer":
         try:
             from llm_api.models import PromptResponseLog
-            recent_logs = PromptResponseLog.objects.filter(generation_duration_ms__gt=0).order_by("-created_at")[:100]
-            if recent_logs:
-                durations = [l.generation_duration_ms for l in recent_logs]
+            durations = list(
+                PromptResponseLog.objects.filter(generation_duration_ms__gt=0)
+                .order_by("-created_at")
+                .values_list("generation_duration_ms", flat=True)[:100]
+            )
+            if durations:
                 empirical_s = (sum(durations) / len(durations)) / 1000.0
                 if 10.0 <= empirical_s <= 60.0:
                     base_sec = round(empirical_s, 1)

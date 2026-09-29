@@ -17,4 +17,5 @@
 * [2026-09-08] [Architecture/Enduring] RAG Design History, Hazards & Lessons Learned for Small Local Models (Status: enduring) -> [20260908_rag_design_hazards_and_lessons_learned.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260908_rag_design_hazards_and_lessons_learned.md)
 * [2026-09-21] [Review/Protocol] Master Guidelines for Multi-Model Project Review (Status: in progress) -> [20260921_multi_model_review_guidelines.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260921_multi_model_review_guidelines.md)
 * [2026-09-26] [Architecture/Enduring] State Tree Working Memory Lifecycle & Trials Philosophy (Status: enduring) -> [20260926_state_tree_lifecycle_and_trials_philosophy.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260926_state_tree_lifecycle_and_trials_philosophy.md)
+* [2026-09-29] [Bug/Improvement] Prevent Uncommanded Hugging Face Polling & Lazy Service Reloads in Views (Status: pending) -> [20260929_uncommanded_reloads_and_hf_polling.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260929_uncommanded_reloads_and_hf_polling.md)
 

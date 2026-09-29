@@ -44,3 +44,6 @@
 
 - [ ] [Security/Architecture] Layered Tool Governance & Lockdown Levels (Status: pending) -> [ws17_layered_tool_governance.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/ws17_layered_tool_governance.md)
   *Summary*: Implement a 3-tier defense-in-depth governance model for model tools (Tier 1 .env/settings ceiling, Tier 2 database registry & RBAC, Tier 3 user clearance) with zero-trust compiler/executor enforcement, write_django_model allowlisting, UI lockdown header badge, and visual blueprint compatibility indicators.
+
+- [ ] [Bug/Performance] Prevent Uncommanded Hugging Face Polling & Unintended Lazy Service Reloads in Views (Status: pending) -> [Link to note](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260929_uncommanded_reloads_and_hf_polling.md)
+  *Summary*: Audit all views and API endpoints to ensure informational UI routes query relational state rather than triggering `service_registry.ai_service` lazy container reloads. Enforce `local_files_only=True` / offline Hugging Face resolution so external network polling never occurs without explicit user command in Model Admin.

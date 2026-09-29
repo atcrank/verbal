@@ -48,7 +48,7 @@ def studio_view(request):
     Live Telemetry Streamer, Scenario Browser, Gold Standard Inspector, and QLoRA Training Drawer.
     """
     investigations = Investigation.objects.all().order_by("-id")
-    scenario_groups = ScenarioGroup.objects.all().prefetch_related("scenarios").order_by("-id")
+    scenario_groups = list(ScenarioGroup.objects.all().prefetch_related("scenarios").order_by("-id"))
     try:
         datasets = list(FineTuningDataset.objects.all().order_by("-id"))
     except Exception as e:
@@ -61,26 +61,36 @@ def studio_view(request):
         logger.warning(f"Could not load adapters: {e}")
         adapters = []
     
-    first_group = scenario_groups.first()
+    first_group = scenario_groups[0] if scenario_groups else None
     if first_group:
         active_scenarios = first_group.scenarios.all()
     else:
         active_scenarios = BenchmarkScenario.objects.all()[:20]
 
-    recent_runs = (
+    recent_runs = list(
         BenchmarkRun.objects.select_related("experiment", "experiment__investigation")
         .prefetch_related("results")
         .order_by("-timestamp")[:10]
     )
-    latest_run = recent_runs.first()
+    latest_run = recent_runs[0] if recent_runs else None
 
-    # Active model & backend discovery
+    # Active model & backend discovery (fast query via SystemConfiguration singleton; avoids lazy-loading AI service)
     active_model_id = "Default"
+    active_backend = "PyTorch / Local"
     try:
-        if hasattr(service_registry, "ai_service") and service_registry.ai_service:
-            active_model_id = getattr(service_registry.ai_service, "model_id", "Default")
-    except Exception:
-        pass
+        from llm_api.models import SystemConfiguration
+        sys_config = SystemConfiguration.get_solo()
+        active_backend = sys_config.get_hosting_backend_display()
+        if sys_config.hosting_backend == "ollama" and sys_config.active_ollama_model:
+            active_model_id = sys_config.active_ollama_model.name or sys_config.active_ollama_model.hf_model_id
+        elif sys_config.hosting_backend == "vllm" and sys_config.active_vllm_model:
+            active_model_id = sys_config.active_vllm_model.name or sys_config.active_vllm_model.hf_model_id
+        elif sys_config.active_local_model:
+            active_model_id = sys_config.active_local_model.name or sys_config.active_local_model.hf_model_id
+        elif getattr(service_registry, "_ai_service", None) is not None:
+            active_model_id = getattr(service_registry._ai_service, "model_id", "Default")
+    except Exception as e:
+        logger.debug(f"Could not load active system model configuration: {e}")
 
     # Hardware detection and adaptive config
     hardware = detect_hardware_profile()
@@ -93,9 +103,9 @@ def studio_view(request):
         "active_scenarios": active_scenarios,
         "recent_runs": recent_runs,
         "latest_run": latest_run,
-        "active_run_view": bool(latest_run and latest_run.results.exists()),
+        "active_run_view": bool(latest_run and latest_run.results.all()),
         "active_model_id": active_model_id,
-        "active_backend": "PyTorch / Local",
+        "active_backend": active_backend,
         "datasets": datasets,
         "adapters": adapters,
         "hardware": hardware,
