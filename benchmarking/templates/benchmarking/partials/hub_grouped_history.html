@@ -36,9 +36,10 @@
     <!-- History Sections List -->
     <div style="max-height: 480px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.65rem;">
         {% for section in grouped_history %}
-        <details class="history-section-card" open style="border: 1px solid var(--border-color); border-radius: 6px; background: rgba(19, 29, 51, 0.6); overflow: hidden;">
-            <summary style="padding: 0.6rem 0.85rem; background: rgba(15, 23, 42, 0.7); cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; outline: none;">
-                <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1;">
+        <div class="history-section-card" style="border: 1px solid var(--border-color); border-radius: 6px; background: rgba(19, 29, 51, 0.6); overflow: hidden;">
+            <div style="padding: 0.6rem 0.85rem; background: rgba(15, 23, 42, 0.7); display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1; cursor: pointer;" onclick="toggleHistoryCard('history-card-{{ forloop.counter }}')">
+                    <span id="icon-history-card-{{ forloop.counter }}" style="font-size: 0.75rem; color: var(--text-muted); transition: transform 0.15s ease;">&#9660;</span>
                     <span style="font-weight: 700; color: var(--text-primary); font-size: 0.86rem;">
                         {{ section.group_key }}
                     </span>
@@ -76,15 +77,14 @@
                     <a href="{% url 'benchmarking:investigation_dashboard' section.investigation_id %}" 
                        target="_blank" class="btn btn-secondary btn-sm" 
                        style="font-size: 0.68rem; padding: 0.15rem 0.45rem; margin-left: 0.4rem;" 
-                       title="Open dedicated Investigation comparison dashboard"
-                       onclick="event.stopPropagation();">
+                       title="Open dedicated Investigation comparison dashboard">
                         &#128279; Investigation #{{ section.investigation_id }} &rarr;
                     </a>
                     {% endif %}
                 </div>
-            </summary>
+            </div>
 
-            <div style="padding: 0.5rem; overflow-x: auto;">
+            <div id="history-card-{{ forloop.counter }}" style="padding: 0.5rem; overflow-x: auto;">
                 <table class="studio-table" style="font-size: 0.78rem; margin-bottom: 0;">
                     <thead>
                         <tr>
@@ -199,7 +199,7 @@
                     </tbody>
                 </table>
             </div>
-        </details>
+        </div>
         {% empty %}
         <div style="text-align: center; color: var(--text-muted); padding: 2rem;">
             No completed benchmark runs in history yet.

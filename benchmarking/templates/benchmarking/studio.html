@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="{% static 'benchmarking/css/studio.css' %}">
 
     <!-- Datastar for reactive SSE streaming -->
-    <script type="module" src="{% static 'vendor/datastar.js' %}"></script>
+    <script type="module" src="{% static 'vendor/datastar.js' %}?v=1.0.1"></script>
 </head>
 <body class="benchmarking-body">
 
@@ -549,6 +549,18 @@
                     pane.style.display = (t === tabName) ? 'block' : 'none';
                 }
             });
+        }
+
+        function toggleHistoryCard(cardId) {
+            var body = document.getElementById(cardId);
+            var icon = document.getElementById('icon-' + cardId);
+            if (body) {
+                var isHidden = (body.style.display === 'none');
+                body.style.display = isHidden ? 'block' : 'none';
+                if (icon) {
+                    icon.innerHTML = isHidden ? '&#9660;' : '&#9654;';
+                }
+            }
         }
 
         function applyOpportunity(modelHfId, sgId) {
