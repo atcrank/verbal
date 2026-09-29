@@ -1282,4 +1282,118 @@ class AdaptiveBenchmarkHubAndLeaderboardTests(TestCase):
         self.assertIn("Investigation Project", resp_gh.content.decode("utf-8"))
 
 
+class TestGoldStandardsAndSuiteInspection(TestCase):
+    """
+    Tests for Scenario Group Suite Browser, detailed suite review modal,
+    in-place gold standard editing, and 11/10 candidate promotion.
+    """
+    def setUp(self):
+        self.corpus = BenchmarkCorpus.objects.create(name="Suite Test Corpus")
+        self.scenario_group = ScenarioGroup.objects.create(
+            name="Robotics Causal Reasoning",
+            description="Testing physical mechanics and causal reasoning under fault conditions."
+        )
+        self.scenario_1 = BenchmarkScenario.objects.create(
+            question="What causes pressure relief valves to chatter under fluctuating backpressure?",
+            ideal_answer="Chatter is caused by rapid cycling when backpressure exceeds the seat re-seating force.",
+            expected_keywords=["chatter", "backpressure", "re-seating force"]
+        )
+        self.scenario_2 = BenchmarkScenario.objects.create(
+            question="How should hydraulic actuator drift be compensated during payload transition?",
+            ideal_answer="Using proportional counterbalance valves with pilot-operated check valves.",
+            expected_keywords=["counterbalance", "pilot-operated", "drift"]
+        )
+        self.scenario_group.scenarios.add(self.scenario_1, self.scenario_2)
+
+        self.inv = Investigation.objects.create(name="Suite Investigation")
+        self.exp = Experiment.objects.create(
+            investigation=self.inv,
+            name="Robotics Test Exp",
+            scenario_group=self.scenario_group,
+            corpus=self.corpus
+        )
+        self.run = BenchmarkRun.objects.create(
+            experiment=self.exp,
+            corpus=self.corpus,
+            configuration_snapshot={"ai_model_id": "google/gemma-2-9b-it", "hosting_backend": "vllm"}
+        )
+        self.candidate_result = BenchmarkResult.objects.create(
+            run=self.run,
+            scenario=self.scenario_1,
+            prompt_text=self.scenario_1.question,
+            raw_retrieved_text="Documentation on hydraulic pressure valve harmonics and fluid dynamics.",
+            generated_response="Chatter occurs due to acoustic resonance and impedance mismatches between the valve spring stiffness and the rapid backpressure gradient.",
+            duration_seconds=0.45,
+            rag_recall_score=0.95,
+            semantic_score=0.98,
+            faithfulness_score=0.95,
+            relevance_score=0.96,
+        )
+
+    def test_switch_scenario_group_api(self):
+        """GET /benchmarking/api/scenario-group/<id>/scenarios/ returns filtered scenario catalog partial."""
+        res = self.client.get(f"/benchmarking/api/scenario-group/{self.scenario_group.id}/scenarios/")
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res["Content-Type"], "text/event-stream")
+        content = res.content.decode("utf-8")
+        self.assertIn("event: datastar-patch-elements", content)
+        self.assertIn("scenario-catalog-container", content)
+        self.assertIn("Robotics Causal Reasoning", content)
+        self.assertIn("pressure relief valves", content)
+
+    def test_suite_review_modal_api(self):
+        """GET /benchmarking/api/scenario-group/<id>/review/ returns suite editor modal with top candidates."""
+        res = self.client.get(f"/benchmarking/api/scenario-group/{self.scenario_group.id}/review/")
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res["Content-Type"], "text/event-stream")
+        content = res.content.decode("utf-8")
+        self.assertIn("suite-editor-modal", content)
+        self.assertIn("Robotics Causal Reasoning", content)
+        self.assertIn("Top Model Candidates", content)
+        self.assertIn("acoustic resonance", content)
+        self.assertIn("Promote to Gold Standard", content)
+
+    def test_update_scenario_api(self):
+        """POST /benchmarking/api/scenario/<id>/update/ updates question, ideal_answer, keywords in-place."""
+        new_gold = "Updated gold standard answer for valve dynamics."
+        new_kws = "chatter, harmonics, resonance"
+        res = self.client.post(
+            f"/benchmarking/api/scenario/{self.scenario_1.id}/update/",
+            data={
+                "question": "Updated Question text?",
+                "ideal_answer": new_gold,
+                "expected_keywords": new_kws,
+            }
+        )
+        self.assertEqual(res.status_code, 200)
+        self.scenario_1.refresh_from_db()
+        self.assertEqual(self.scenario_1.ideal_answer, new_gold)
+        self.assertEqual(self.scenario_1.question, "Updated Question text?")
+        self.assertIn("harmonics", self.scenario_1.expected_keywords)
+
+    def test_add_scenario_to_group_api(self):
+        """POST /benchmarking/api/scenario-group/<id>/add-scenario/ creates scenario and links to group."""
+        res = self.client.post(
+            f"/benchmarking/api/scenario-group/{self.scenario_group.id}/add-scenario/",
+            data={
+                "question": "What is cavitation in axial piston pumps?",
+                "ideal_answer": "Formation of vapor bubbles caused by local static pressure falling below vapor pressure.",
+                "expected_keywords": "cavitation, vapor pressure, piston",
+            }
+        )
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(self.scenario_group.scenarios.count(), 3)
+        created = self.scenario_group.scenarios.get(question__contains="cavitation")
+        self.assertIn("vapor pressure", created.ideal_answer)
+
+    def test_promote_candidate_in_suite(self):
+        """POST /benchmarking/api/promote/<result_id>/ sets ideal_answer to candidate completion."""
+        res = self.client.post(f"/benchmarking/api/promote/{self.candidate_result.id}/")
+        self.assertEqual(res.status_code, 200)
+        self.scenario_1.refresh_from_db()
+        self.assertEqual(self.scenario_1.ideal_answer, self.candidate_result.response)
+        self.assertIn("acoustic resonance", self.scenario_1.ideal_answer)
+
+
+
 

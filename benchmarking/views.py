@@ -113,6 +113,7 @@ def studio_view(request):
     context = {
         "investigations": investigations,
         "scenario_groups": scenario_groups,
+        "active_group": first_group,
         "active_scenarios": active_scenarios,
         "recent_runs": recent_runs,
         "latest_run": latest_run,
@@ -706,14 +707,156 @@ def promote_to_gold_api(request, result_id: int):
     scenario.ideal_answer = result.response
     scenario.save(update_fields=["ideal_answer"])
 
-    # Return Datastar fragment updating the status badge
+    # Return Datastar fragment updating the status badge & active gold standard indicator
     badge_html = f"""
     <div id="promote-status-{result.id}">
         <span class="badge badge-success">&#10003; Promoted to Gold Standard!</span>
     </div>
     """
-    sse = DatastarSSE.merge_fragments(badge_html, selector=f"#promote-status-{result.id}", merge_mode="morph")
-    return HttpResponse(sse, content_type="text/event-stream")
+    sse_parts = [
+        DatastarSSE.patch_elements(badge_html, selector=f"#promote-status-{result.id}", mode="morph"),
+    ]
+
+    status_badge_html = f"""
+    <div id="scenario-status-{scenario.id}" style="display: flex; align-items: center; gap: 0.5rem;">
+        <span class="badge badge-success">&#10003; Gold Standard Active</span>
+        <button type="submit" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 2px 8px;">💾 Save Edits</button>
+    </div>
+    """
+    sse_parts.append(DatastarSSE.patch_elements(status_badge_html, selector=f"#scenario-status-{scenario.id}", mode="morph"))
+
+    response = HttpResponse("".join(sse_parts), content_type="text/event-stream")
+    response["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return response
+
+
+@require_GET
+def switch_scenario_group_api(request, group_id: int):
+    """
+    Switches active ScenarioGroup in the Studio Inspection column,
+    morphing #scenario-catalog-container with the new suite's scenarios.
+    """
+    group = get_object_or_404(ScenarioGroup.objects.prefetch_related("scenarios"), pk=group_id)
+    scenario_groups = ScenarioGroup.objects.prefetch_related("scenarios").all()
+    scenarios = group.scenarios.all()
+
+    context = {
+        "scenario_groups": scenario_groups,
+        "active_group": group,
+        "scenarios": scenarios,
+    }
+    html = render(request, "benchmarking/partials/hub_scenario_catalog.html", context).content.decode("utf-8")
+    sse_parts = [
+        DatastarSSE.patch_elements(html, selector="#scenario-catalog-container", mode="morph"),
+        DatastarSSE.patch_elements(
+            f'<span class="badge badge-info" id="scenario-count-badge">{scenarios.count()} Scenarios</span>',
+            selector="#scenario-count-badge",
+            mode="morph",
+        ),
+    ]
+    response = HttpResponse("".join(sse_parts), content_type="text/event-stream")
+    response["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return response
+
+
+def _render_suite_review_modal(request, group_id: int):
+    group = get_object_or_404(ScenarioGroup.objects.prefetch_related("scenarios"), pk=group_id)
+    scenarios = list(group.scenarios.all())
+
+    scenarios_with_candidates = []
+    for sc in scenarios:
+        candidates = list(
+            BenchmarkResult.objects.filter(scenario=sc)
+            .select_related("run", "run__experiment")
+            .order_by("-semantic_score")[:3]
+        )
+        keywords_str = ", ".join(sc.expected_keywords) if isinstance(sc.expected_keywords, list) else str(sc.expected_keywords or "")
+        scenarios_with_candidates.append({
+            "scenario": sc,
+            "candidates": candidates,
+            "keywords_str": keywords_str,
+        })
+
+    context = {
+        "group": group,
+        "scenarios_with_candidates": scenarios_with_candidates,
+    }
+    html = render(request, "benchmarking/partials/suite_editor_modal.html", context).content.decode("utf-8")
+    sse = DatastarSSE.patch_elements(html, selector="#suite-editor-container", mode="morph")
+    response = HttpResponse(sse, content_type="text/event-stream")
+    response["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return response
+
+
+@require_GET
+def suite_review_modal_api(request, group_id: int):
+    """
+    Opens the Suite Review & Gold Standard Editor modal for a ScenarioGroup.
+    Gathers each scenario and queries its top-performing model candidate completions.
+    """
+    return _render_suite_review_modal(request, group_id)
+
+
+@require_POST
+def update_scenario_api(request, scenario_id: int):
+    """
+    In-place update of a BenchmarkScenario's Question, Ideal Gold Standard Answer,
+    and Expected Grounding Keywords.
+    """
+    scenario = get_object_or_404(BenchmarkScenario, pk=scenario_id)
+
+    new_q = request.POST.get("question", "").strip()
+    if new_q:
+        scenario.question = new_q
+
+    new_gold = request.POST.get("ideal_answer", "").strip()
+    scenario.ideal_answer = new_gold
+
+    raw_kws = request.POST.get("expected_keywords", "")
+    if raw_kws:
+        scenario.expected_keywords = [k.strip() for k in raw_kws.split(",") if k.strip()]
+    else:
+        scenario.expected_keywords = []
+
+    scenario.save(update_fields=["question", "ideal_answer", "expected_keywords"])
+
+    badge_html = f"""
+    <div id="scenario-status-{scenario.id}" style="display: flex; align-items: center; gap: 0.5rem;">
+        <span class="badge badge-success">&#10003; Saved!</span>
+        <button type="submit" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 2px 8px;">💾 Save Edits</button>
+    </div>
+    """
+    sse = DatastarSSE.patch_elements(badge_html, selector=f"#scenario-status-{scenario.id}", mode="morph")
+    response = HttpResponse(sse, content_type="text/event-stream")
+    response["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return response
+
+
+@require_POST
+def add_scenario_to_group_api(request, group_id: int):
+    """
+    Creates a new BenchmarkScenario and associates it with the specified ScenarioGroup.
+    Refreshes the suite editor modal.
+    """
+    group = get_object_or_404(ScenarioGroup, pk=group_id)
+
+    question = request.POST.get("question", "").strip()
+    ideal_answer = request.POST.get("ideal_answer", "").strip()
+    raw_kws = request.POST.get("expected_keywords", "")
+    expected_keywords = [k.strip() for k in raw_kws.split(",") if k.strip()] if raw_kws else []
+
+    if not question:
+        return HttpResponseBadRequest("Question is required.")
+
+    scenario = BenchmarkScenario.objects.create(
+        question=question,
+        ideal_answer=ideal_answer,
+        expected_keywords=expected_keywords,
+    )
+    group.scenarios.add(scenario)
+    group.save()
+
+    return _render_suite_review_modal(request, group_id=group.id)
 
 
 @require_POST

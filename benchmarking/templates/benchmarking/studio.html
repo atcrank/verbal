@@ -305,31 +305,9 @@
                     </div>
                 </div>
 
-                <!-- Scenario List Browser -->
-                <div style="margin-top: 1.25rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
-                    <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.65rem; color: var(--text-primary); display: flex; justify-content: space-between; align-items: center;">
-                        <span>Scenario Catalog</span>
-                        <small style="color: var(--text-muted);">Click to inspect</small>
-                    </div>
-                    <div class="scenario-list" style="max-height: 380px; overflow-y: auto;">
-                        {% for sc in active_scenarios %}
-                        <div class="scenario-card" data-on-click="@get('/benchmarking/api/scenario/{{ sc.id }}/')">
-                            <div class="scenario-question">{{ sc.question }}</div>
-                            <div class="keyword-pills">
-                                {% for kw in sc.expected_keywords|slice:":4" %}
-                                <span class="pill-keyword">{{ kw }}</span>
-                                {% endfor %}
-                                {% if sc.expected_keywords|length > 4 %}
-                                <span class="pill-keyword">+{{ sc.expected_keywords|length|add:"-4" }}</span>
-                                {% endif %}
-                            </div>
-                        </div>
-                        {% empty %}
-                        <div style="color: var(--text-muted); font-size: 0.8rem; text-align: center; padding: 1rem;">
-                            No scenarios found in active group.
-                        </div>
-                        {% endfor %}
-                    </div>
+                <!-- Scenario Catalog & Group Selector Container -->
+                <div id="scenario-catalog-container" style="margin-top: 1.25rem;">
+                    {% include "benchmarking/partials/hub_scenario_catalog.html" with scenarios=active_scenarios active_group=active_group scenario_groups=scenario_groups %}
                 </div>
             </div>
         </section>
@@ -395,6 +373,9 @@
 
     <!-- HARDWARE-AWARE QLORA TRAINING MODAL -->
     {% include "benchmarking/partials/training_modal.html" %}
+
+    <!-- SUITE REVIEW & GOLD STANDARDS EDITOR MODAL CONTAINER -->
+    <div id="suite-editor-container"></div>
 
     <!-- COMBINATORIAL MATRIX CALCULATOR SCRIPTS -->
     <script>
