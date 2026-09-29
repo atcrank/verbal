@@ -124,28 +124,44 @@
                         </div>
                     </div>
 
-                    <!-- Variable 3: RAG Strategies (Multi-Select) -->
+                    <!-- Variable 3: RAG / Knowledge Retrieval Strategies (Multi-Select) -->
                     <div class="form-group">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
-                            <label class="form-label" style="margin-bottom: 0;">RAG Strategies</label>
+                            <label class="form-label" style="margin-bottom: 0;">Knowledge Retrieval Strategies</label>
                             <span style="font-size: 0.72rem; color: var(--accent-primary); cursor: pointer;" onclick="toggleAllInGroup('rag-checkboxes')">Toggle All</span>
                         </div>
                         <div class="pill-checkbox-group" id="rag-checkboxes">
-                            <label class="pill-checkbox">
+                            <label class="pill-checkbox" title="Pure LLM baseline without retrieval context">
                                 <input type="checkbox" name="rag_strategies" value="none" checked onchange="updateMatrixCalculations()">
-                                <span class="pill-content">None (Direct)</span>
+                                <span class="pill-content">None (Zero-Shot)</span>
                             </label>
-                            <label class="pill-checkbox">
-                                <input type="checkbox" name="rag_strategies" value="chunk" onchange="updateMatrixCalculations()">
-                                <span class="pill-content">Chunk Search</span>
+                            <label class="pill-checkbox" title="Standard dense vector chunk retrieval (PGVector)">
+                                <input type="checkbox" name="rag_strategies" value="default" onchange="updateMatrixCalculations()">
+                                <span class="pill-content">Dense Chunks</span>
                             </label>
-                            <label class="pill-checkbox">
-                                <input type="checkbox" name="rag_strategies" value="summary" onchange="updateMatrixCalculations()">
-                                <span class="pill-content">Summary-Guided</span>
+                            <label class="pill-checkbox" title="Hierarchical document section chunks (GROBID)">
+                                <input type="checkbox" name="rag_strategies" value="grobid" onchange="updateMatrixCalculations()">
+                                <span class="pill-content">GROBID Sections</span>
                             </label>
-                            <label class="pill-checkbox">
-                                <input type="checkbox" name="rag_strategies" value="agentic" onchange="updateMatrixCalculations()">
-                                <span class="pill-content">Agentic RAG</span>
+                            <label class="pill-checkbox" title="Domain acronym & glossary dictionary expansion">
+                                <input type="checkbox" name="rag_strategies" value="abbreviations" onchange="updateMatrixCalculations()">
+                                <span class="pill-content">Abbreviations Dict</span>
+                            </label>
+                            <label class="pill-checkbox" title="Deterministic entity masking & regex chunks">
+                                <input type="checkbox" name="rag_strategies" value="regex" onchange="updateMatrixCalculations()">
+                                <span class="pill-content">Regex Patterns</span>
+                            </label>
+                            <label class="pill-checkbox" title="Structured ontology concepts & physical relational claims from Grips">
+                                <input type="checkbox" name="rag_strategies" value="grips_wiki" onchange="updateMatrixCalculations()">
+                                <span class="pill-content" style="border-color: rgba(20, 184, 166, 0.4);">&#128218; GRIPS Wiki</span>
+                            </label>
+                            <label class="pill-checkbox" title="Unified RAG + Grips with lineage-aware deduplication (Production default)">
+                                <input type="checkbox" name="rag_strategies" value="unified_dedup" onchange="updateMatrixCalculations()">
+                                <span class="pill-content" style="border-color: rgba(99, 102, 241, 0.5);">&#9889; Unified (Dedup)</span>
+                            </label>
+                            <label class="pill-checkbox" title="Unified RAG + Grips without deduplication (multi-level verbatim context)">
+                                <input type="checkbox" name="rag_strategies" value="unified_raw" onchange="updateMatrixCalculations()">
+                                <span class="pill-content" style="border-color: rgba(245, 158, 11, 0.4);">&#128203; Unified (Raw)</span>
                             </label>
                         </div>
                     </div>

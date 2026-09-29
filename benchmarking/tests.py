@@ -722,6 +722,78 @@ class BenchmarkingStudioUITests(TestCase):
         self.assertIsNotNone(run2.average_rag_score)
         self.assertIsNotNone(run2.average_semantic_score)
 
+    def test_retrieve_benchmark_context_adapter(self):
+        """Retrieval adapter handles none, grips_wiki, and unified strategies cleanly."""
+        from benchmarking.retrieval_adapter import retrieve_benchmark_context
+        from langchain_core.documents import Document as LangchainDocument
+        from unittest.mock import MagicMock
+
+        # 1. 'none'
+        text, meta = retrieve_benchmark_context("Test query", "none")
+        self.assertEqual(text, "")
+        self.assertEqual(meta, [])
+
+        # 2. 'grips_wiki'
+        mock_grips = MagicMock()
+        mock_grips.get_grips_context.return_value = [
+            LangchainDocument(page_content="Breadcrumb relay operates at 3.5-6.5 GHz UWB.", metadata={"title": "Relay Node"})
+        ]
+        text, meta = retrieve_benchmark_context("UWB query", "grips_wiki", grips_service=mock_grips)
+        self.assertIn("Concept [Relay Node]:", text)
+        self.assertIn("Breadcrumb relay", text)
+        self.assertEqual(len(meta), 1)
+        self.assertEqual(meta[0]["source"], "grips")
+
+        # 3. 'unified_dedup' (mocked services)
+        mock_rag = MagicMock()
+        mock_rag.get_context.return_value = []
+        text_uni, meta_uni = retrieve_benchmark_context("Any query", "unified_dedup", rag_service=mock_rag, grips_service=mock_grips)
+        self.assertIsInstance(text_uni, str)
+
+    def test_grips_and_unified_matrix_composer_and_diff(self):
+        """Combinatorial matrix supports grips_wiki & unified_dedup, and diff viewer displays retrieved grounding context."""
+        post_data = {
+            "investigation_id": "new",
+            "experiment_name": "Grips & Unified Matrix",
+            "model_ids": ["Qwen/Qwen2.5-7B-Instruct"],
+            "hosting_backends": ["pytorch"],
+            "scenario_group_id": self.group.id,
+            "rag_strategies": ["grips_wiki", "unified_dedup"],
+            "iterations": 1,
+            "chunk_size": 512,
+        }
+        response = self.client.post("/benchmarking/api/run/", data=post_data)
+        self.assertEqual(response.status_code, 200)
+
+        inv = Investigation.objects.get(name="Grips & Unified Matrix")
+        exps = list(inv.experiments.all().order_by("id"))
+        self.assertEqual(len(exps), 2)
+        strategies = [e.configuration["rag_strategy"] for e in exps]
+        self.assertIn("grips_wiki", strategies)
+        self.assertIn("unified_dedup", strategies)
+
+        # Verify Diff Inspector surfaces the retrieved grounding context
+        run = BenchmarkRun.objects.create(experiment=exps[0], corpus=self.corpus, configuration_snapshot=exps[0].configuration)
+        res = BenchmarkResult.objects.create(
+            run=run,
+            scenario=self.scenario_1,
+            prompt_text=self.scenario_1.question,
+            raw_retrieved_text="Concept [S-Learner]: S-Learner fits a single base learner with treatment indicator W.",
+            generated_response="S-Learner uses a single base learner.",
+            duration_seconds=0.4,
+            rag_recall_score=1.0,
+            semantic_score=0.9,
+            faithfulness_score=0.95,
+            relevance_score=0.95,
+        )
+
+        diff_res = self.client.get(f"/benchmarking/api/diff/{res.id}/")
+        self.assertEqual(diff_res.status_code, 200)
+        diff_html = diff_res.content.decode("utf-8")
+        self.assertIn("Retrieved Grounding Context", diff_html)
+        self.assertIn("Concept [S-Learner]", diff_html)
+        self.assertIn("GRIPS_WIKI", diff_html)
+
 
 class HardwareAwareTrainingAndABEvalTests(TestCase):
     """

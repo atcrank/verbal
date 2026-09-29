@@ -68,6 +68,21 @@
         </div>
     </div>
 
+    <!-- Retrieved Grounding Context (if present) -->
+    {% if result.raw_retrieved_text %}
+    <div style="margin-top: 0.85rem; background-color: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.6rem 0.75rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+            <span style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary); font-weight: 600;">
+                Retrieved Grounding Context
+            </span>
+            <span class="badge badge-slate" style="font-size: 0.68rem;">
+                {{ result.run.configuration_snapshot.rag_strategy|default:"RAG"|upper }}
+            </span>
+        </div>
+        <div style="font-size: 0.78rem; color: var(--text-secondary); max-height: 160px; overflow-y: auto; white-space: pre-wrap; font-family: monospace; line-height: 1.4; background: var(--bg-card); padding: 0.5rem; border-radius: var(--radius-xs);">{{ result.raw_retrieved_text }}</div>
+    </div>
+    {% endif %}
+
     <!-- Score Breakdown Card -->
     <div style="margin-top: 1rem; background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.75rem 1rem;">
         <div style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.5rem; text-transform: uppercase;">

@@ -205,7 +205,10 @@ class Experiment(models.Model):
         base_config.pop("chunk_size", None)
         
         param_grid = {
-            "rag_strategy": ["none", "default", "grobid", "regex", "abbreviations", "prompt", "all"],
+            "rag_strategy": [
+                "none", "default", "grobid", "regex", "abbreviations",
+                "grips_wiki", "unified_dedup", "unified_raw"
+            ],
             "chunk_size": [500, 1000, 2000]
         }
         

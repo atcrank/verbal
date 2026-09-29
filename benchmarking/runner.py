@@ -119,8 +119,8 @@ def _switch_active_model(experiment, log_callback):
 
 def _ingest_test_corpus(corpus, rag_service, rag_strategy, chunk_size_override, chunk_overlap_override, log_callback):
     """Handles the temporary RAG ingestion isolated by strategy."""
-    if rag_strategy == 'none':
-        log_callback("Skipping RAG ingestion because rag_strategy is set to 'none'.")
+    if rag_strategy in ['none', 'grips', 'grips_wiki']:
+        log_callback(f"Skipping RAG chunk ingestion because rag_strategy is set to '{rag_strategy}'.")
         return
 
     log_callback(f"Ingesting {corpus.documents.count()} documents from corpus '{corpus.name}'...")
@@ -403,15 +403,17 @@ def run_benchmark_suite(experiment, corpus, log_callback=None):
             clean_question = _clean_synthetic_question(scenario.question)
 
             if rag_strategy != 'none':
-                rag_docs = rag_service.get_context(clean_question)
-                rag_text_block = "\n\n".join([d.page_content for d in rag_docs])
-
-                # Metrics: Which strategy found these docs?
-                for d in rag_docs:
-                    stype = d.metadata.get('strat_type', 'Raw/Base')
+                from .retrieval_adapter import retrieve_benchmark_context
+                rag_text_block, ret_meta = retrieve_benchmark_context(
+                    clean_question,
+                    rag_strategy,
+                    rag_service=rag_service,
+                    grips_service=getattr(service_registry, 'grips_service', None),
+                )
+                for item in ret_meta:
+                    stype = item.get('source', item.get('strat_type', 'Raw/Base'))
                     strategy_hits[stype] = strategy_hits.get(stype, 0) + 1
             else:
-                rag_docs = []
                 rag_text_block = ""
 
             # 2. Generation
