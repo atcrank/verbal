@@ -19,4 +19,6 @@
 * [2026-09-26] [Architecture/Enduring] State Tree Working Memory Lifecycle & Trials Philosophy (Status: enduring) -> [20260926_state_tree_lifecycle_and_trials_philosophy.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260926_state_tree_lifecycle_and_trials_philosophy.md)
 * [2026-09-29] [Bug/Improvement] Prevent Uncommanded Hugging Face Polling & Lazy Service Reloads in Views (Status: pending) -> [20260929_uncommanded_reloads_and_hf_polling.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260929_uncommanded_reloads_and_hf_polling.md)
 * [2026-09-29] [Architecture/Enduring] Datastar Architecture, SSE Protocols & Morphing Best Practices (Status: enduring) -> [20260929_datastar_architecture_and_morphing_practices.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260929_datastar_architecture_and_morphing_practices.md)
+* [2026-09-29] [Feature/UI] Gold Standards, Scenario Group Suites & 11/10 Candidate Promotion (Status: completed) -> [20260929_gold_standards_suite_inspection_and_promotion.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260929_gold_standards_suite_inspection_and_promotion.md)
+
 
