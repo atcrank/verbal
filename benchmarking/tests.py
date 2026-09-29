@@ -794,6 +794,42 @@ class BenchmarkingStudioUITests(TestCase):
         self.assertIn("Concept [S-Learner]", diff_html)
         self.assertIn("GRIPS_WIKI", diff_html)
 
+    def test_estimate_scenario_latency_calibration(self):
+        """Hardware latency estimator calculates realistic durations for consumer vs datacenter compute."""
+        from benchmarking.hardware import HardwareProfile, estimate_scenario_latency
+
+        # 1. Consumer tier (e.g. GTX 1660 Ti, 6GB) -> realistic ~20-40s per prompt
+        consumer_profile = HardwareProfile(
+            device_type="cuda",
+            total_vram_gb=6.0,
+            compute_capability=(7, 5),
+            device_name="NVIDIA GeForce GTX 1660 Ti",
+        )
+        lat_consumer = estimate_scenario_latency(consumer_profile, backend="pytorch", rag_strategy="none")
+        self.assertGreaterEqual(lat_consumer, 15.0)
+        self.assertLessEqual(lat_consumer, 45.0)
+
+        # 2. Datacenter tier (e.g. A100 / A40, 80GB) -> sub-6s per prompt
+        datacenter_profile = HardwareProfile(
+            device_type="cuda",
+            total_vram_gb=80.0,
+            compute_capability=(8, 0),
+            device_name="NVIDIA A100-SXM4-80GB",
+        )
+        lat_datacenter = estimate_scenario_latency(datacenter_profile, backend="pytorch", rag_strategy="none")
+        self.assertGreaterEqual(lat_datacenter, 1.0)
+        self.assertLessEqual(lat_datacenter, 6.0)
+
+        # 3. Strategy overhead
+        lat_with_rag = estimate_scenario_latency(consumer_profile, backend="pytorch", rag_strategy="unified_dedup")
+        self.assertGreater(lat_with_rag, lat_consumer)
+
+        # 4. Studio view context check
+        response = self.client.get("/benchmarking/")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("estimated_latency_per_query", response.context)
+        self.assertGreater(response.context["estimated_latency_per_query"], 0)
+
 
 class HardwareAwareTrainingAndABEvalTests(TestCase):
     """

@@ -18,7 +18,12 @@ from llm_api.apps import service_registry
 from llm_api.models import LoRAAdapter
 from metacognition.datastar import DatastarSSE
 from .curation import curate_and_export_dataset, HarvestConfig
-from .hardware import detect_hardware_profile, recommend_training_config, TrainingConfig
+from .hardware import (
+    detect_hardware_profile,
+    recommend_training_config,
+    TrainingConfig,
+    estimate_scenario_latency,
+)
 from .training import train_lora_adapter
 from .closed_loop import run_closed_loop_ab_evaluation
 from .retrieval_adapter import retrieve_benchmark_context
@@ -80,6 +85,7 @@ def studio_view(request):
     # Hardware detection and adaptive config
     hardware = detect_hardware_profile()
     rec_config = recommend_training_config(hardware)
+    estimated_latency_per_query = estimate_scenario_latency(hardware)
 
     context = {
         "investigations": investigations,
@@ -94,6 +100,7 @@ def studio_view(request):
         "adapters": adapters,
         "hardware": hardware,
         "rec_config": rec_config,
+        "estimated_latency_per_query": estimated_latency_per_query,
         "current_time": timezone.now(),
     }
     return render(request, "benchmarking/studio.html", context)

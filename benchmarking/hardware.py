@@ -283,3 +283,74 @@ def recommend_training_config(
     )
 
     return config
+
+
+def estimate_scenario_latency(
+    hardware: Optional[HardwareProfile] = None,
+    backend: str = "pytorch",
+    rag_strategy: str = "none",
+) -> float:
+    """
+    Computes an empirical, hardware-calibrated scenario execution latency estimate (in seconds).
+    
+    Dynamically checks historical generation logs (PromptResponseLog) as the empirical anchor
+    when running on the matching hardware tier, blending with compute-tier profiles (Datacenter /
+    Workstation / Consumer / CPU) and backend/strategy modifiers.
+
+    >>> profile = HardwareProfile(device_type="cuda", total_vram_gb=6.0, compute_capability=(7, 5), device_name="GTX 1660 Ti")
+    >>> lat = estimate_scenario_latency(profile, backend="pytorch", rag_strategy="none")
+    >>> 20.0 <= lat <= 40.0
+    True
+    """
+    profile = hardware or detect_hardware_profile()
+    tier = profile.tier
+
+    # 1. Tier-based baseline (seconds per generation turn)
+    if tier == "datacenter":
+        base_sec = 2.5
+    elif tier == "workstation":
+        base_sec = 8.0
+    elif tier == "consumer":
+        base_sec = 28.0
+    else:  # cpu
+        base_sec = 55.0
+
+    # 2. Check empirical database records if matching the local host tier
+    if tier == "consumer":
+        try:
+            from llm_api.models import PromptResponseLog
+            recent_logs = PromptResponseLog.objects.filter(generation_duration_ms__gt=0).order_by("-created_at")[:100]
+            if recent_logs:
+                durations = [l.generation_duration_ms for l in recent_logs]
+                empirical_s = (sum(durations) / len(durations)) / 1000.0
+                if 10.0 <= empirical_s <= 60.0:
+                    base_sec = round(empirical_s, 1)
+        except Exception:
+            pass
+
+    # 3. Backend modifier
+    backend_norm = (backend or "pytorch").lower()
+    if "external" in backend_norm or "api" in backend_norm:
+        base_sec = 3.0
+    elif "vllm" in backend_norm:
+        base_sec *= 0.65
+    elif "sglang" in backend_norm:
+        base_sec *= 0.60
+    elif "ollama" in backend_norm:
+        base_sec *= 0.95
+
+    # 4. Retrieval strategy overhead
+    strat_norm = (rag_strategy or "none").lower()
+    if strat_norm in ("none", "direct"):
+        rag_overhead = 0.0
+    elif "unified_dedup" in strat_norm:
+        rag_overhead = 3.0
+    elif "unified" in strat_norm:
+        rag_overhead = 2.2
+    elif "grips" in strat_norm:
+        rag_overhead = 1.8
+    else:
+        rag_overhead = 1.2
+
+    return round(base_sec + rag_overhead, 1)
+

@@ -213,6 +213,11 @@
                             </div>
                         </div>
 
+                        <div style="display: flex; justify-content: space-between; font-size: 0.68rem; color: var(--text-muted); margin-top: 0.35rem; margin-bottom: 0.55rem; padding: 0 0.2rem;">
+                            <span>⚡ Calibrated Host: <strong style="color: var(--text-secondary);">{{ hardware.device_name }}</strong></span>
+                            <span>{{ hardware.tier|title }} Tier: ~<strong style="color: var(--text-secondary);"><span id="calc-rate-display">{{ estimated_latency_per_query|default:28.0|floatformat:1 }}</span>s</strong> / prompt</span>
+                        </div>
+
                         <!-- Collapsible matrix combination preview -->
                         <details style="font-size: 0.75rem; color: var(--text-secondary); cursor: pointer;">
                             <summary style="font-weight: 600; color: var(--text-primary); outline: none;">
@@ -442,13 +447,63 @@
 
             var totalQueries = expCount * scenarioCount * iterations;
             
-            // Latency estimate: ~1.5s per scenario on local hardware
-            var estSeconds = Math.round(totalQueries * 1.5);
-            var estTimeStr = '~' + estSeconds + 's';
-            if (estSeconds >= 60) {
+            // Hardware-calibrated latency calculation
+            var baseLatency = parseFloat('{{ estimated_latency_per_query|default:28.0 }}') || 28.0;
+
+            // Backend throughput multiplier
+            var backendMultipliers = {
+                'pytorch': 1.0,
+                'ollama': 0.95,
+                'vllm': 0.65,
+                'sglang': 0.60,
+                'external': 0.15
+            };
+            var avgBackendMult = 1.0;
+            if (backends.length > 0) {
+                var bSum = backends.reduce(function(acc, b) {
+                    return acc + (backendMultipliers[b] || 1.0);
+                }, 0);
+                avgBackendMult = bSum / backends.length;
+            }
+
+            // Retrieval strategy overhead
+            var ragOverheads = {
+                'none': 0.0,
+                'default': 1.2,
+                'grobid': 1.5,
+                'abbreviations': 1.2,
+                'regex': 1.0,
+                'grips_wiki': 1.8,
+                'unified_dedup': 3.0,
+                'unified_raw': 2.2
+            };
+            var avgRagOverhead = 1.0;
+            if (rags.length > 0) {
+                var rSum = rags.reduce(function(acc, r) {
+                    return acc + (ragOverheads[r] !== undefined ? ragOverheads[r] : 1.2);
+                }, 0);
+                avgRagOverhead = rSum / rags.length;
+            }
+
+            var perQuerySec = Math.max(1.0, (baseLatency * avgBackendMult) + avgRagOverhead);
+            var estSeconds = Math.round(totalQueries * perQuerySec);
+
+            // Update rate display in subtext
+            var elRate = document.getElementById('calc-rate-display');
+            if (elRate) elRate.textContent = perQuerySec.toFixed(1);
+
+            // Format estimated duration string
+            var estTimeStr = '0s';
+            if (estSeconds < 60) {
+                estTimeStr = '~' + estSeconds + 's';
+            } else if (estSeconds < 3600) {
                 var mins = Math.floor(estSeconds / 60);
                 var remSecs = estSeconds % 60;
-                estTimeStr = '~' + mins + 'm ' + (remSecs > 0 ? remSecs + 's' : '');
+                estTimeStr = '~' + mins + 'm' + (remSecs > 0 ? ' ' + remSecs + 's' : '');
+            } else {
+                var hours = Math.floor(estSeconds / 3600);
+                var remMins = Math.floor((estSeconds % 3600) / 60);
+                estTimeStr = '~' + hours + 'h' + (remMins > 0 ? ' ' + remMins + 'm' : '');
             }
 
             // Update DOM counters
