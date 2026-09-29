@@ -588,14 +588,14 @@ class BenchmarkingStudioUITests(TestCase):
         self.assertEqual(diff_res.status_code, 200)
         diff_content = diff_res.content.decode("utf-8")
         self.assertIn("Model Output Candidate", diff_content)
-        self.assertIn("Gold Standard Reference", diff_content)
-        self.assertIn("Promote to Gold Standard", diff_content)
+        self.assertIn("A-Standard Reference", diff_content)
+        self.assertIn("Promote to A-Standard", diff_content)
 
-        # 2. Promote to Gold
+        # 2. Promote to A-Standard
         promote_res = self.client.post(f"/benchmarking/api/promote/{result.id}/")
         self.assertEqual(promote_res.status_code, 200)
         promote_content = promote_res.content.decode("utf-8")
-        self.assertIn("Promoted to Gold Standard", promote_content)
+        self.assertIn("Promoted to A-Standard", promote_content)
 
         self.scenario_2.refresh_from_db()
         self.assertEqual(self.scenario_2.ideal_response, result.response)
@@ -1351,7 +1351,7 @@ class TestGoldStandardsAndSuiteInspection(TestCase):
         self.assertIn("Robotics Causal Reasoning", content)
         self.assertIn("Top Model Candidates", content)
         self.assertIn("acoustic resonance", content)
-        self.assertIn("Promote to Gold Standard", content)
+        self.assertIn("Promote to A-Standard", content)
 
     def test_update_scenario_api(self):
         """POST /benchmarking/api/scenario/<id>/update/ updates question, ideal_answer, keywords in-place."""

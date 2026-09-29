@@ -293,7 +293,7 @@
         <!-- COLUMN 3: Scenario Browser & Candidate Inspector -->
         <section class="studio-panel col-inspector">
             <div class="panel-header">
-                <span class="panel-title">&#128065; Inspection & Gold Standards</span>
+                <span class="panel-title">&#128065; Inspection & A-Standards</span>
                 <span class="badge badge-info" id="scenario-count-badge">{{ active_scenarios.count }} Scenarios</span>
             </div>
             <div class="panel-body">
@@ -315,7 +315,7 @@
             </div>
             <div class="panel-body" style="padding: 1.25rem;">
                 <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
-                    Harvest training candidate pairs from gold benchmark scenarios, thumbs-up chat logs, and GRIPS claims. Automatically splits into a train JSONL file and registers the held-out validation split as a first-class ScenarioGroup.
+                    Harvest training candidate pairs from A-standard benchmark scenarios, thumbs-up chat logs, and GRIPS claims. Automatically splits into a train JSONL file and registers the held-out validation split as a first-class ScenarioGroup.
                 </p>
 
                 <form id="curation-form" data-on-submit="@post('/benchmarking/api/curate/', {contentType: 'form'})">
@@ -366,7 +366,7 @@
     <!-- HARDWARE-AWARE QLORA TRAINING MODAL -->
     {% include "benchmarking/partials/training_modal.html" %}
 
-    <!-- SUITE REVIEW & GOLD STANDARDS EDITOR MODAL CONTAINER -->
+    <!-- SUITE REVIEW & A-STANDARDS EDITOR MODAL CONTAINER -->
     <div id="suite-editor-container"></div>
 
     <!-- COMBINATORIAL MATRIX CALCULATOR SCRIPTS -->

@@ -51,7 +51,7 @@ def studio_view(request):
     """
     Main Benchmarking Studio view.
     Renders the consolidated dark-slate reactive interface with the Matrix Composer,
-    Live Telemetry Streamer, Scenario Browser, Gold Standard Inspector, and QLoRA Training Drawer.
+    Live Telemetry Streamer, Scenario Browser, A-Standard Inspector, and QLoRA Training Drawer.
     """
     investigations = Investigation.objects.all().order_by("-id")
     scenario_groups = list(ScenarioGroup.objects.all().prefetch_related("scenarios").order_by("-id"))
@@ -682,8 +682,8 @@ def close_inspector_api(request):
 @require_GET
 def inspect_result_diff(request, result_id: int):
     """
-    Renders the side-by-side Candidate vs. Gold Standard Diff viewer with keyword coverage
-    and one-click gold standard promotion into #inspector-content.
+    Renders the side-by-side Candidate vs. A-Standard Diff viewer with keyword coverage
+    and one-click A-standard promotion into #inspector-content.
     """
     result = get_object_or_404(
         BenchmarkResult.objects.select_related("scenario", "run", "run__experiment"),
@@ -713,7 +713,7 @@ def inspect_result_diff(request, result_id: int):
 @require_POST
 def promote_to_gold_api(request, result_id: int):
     """
-    One-Click Gold Standard Promotion: Promotes a model candidate completion
+    One-Click A-Standard Promotion: Promotes a model candidate completion
     to become the scenario's official ideal_response.
     """
     result = get_object_or_404(BenchmarkResult.objects.select_related("scenario"), pk=result_id)
@@ -721,10 +721,10 @@ def promote_to_gold_api(request, result_id: int):
     scenario.ideal_answer = result.response
     scenario.save(update_fields=["ideal_answer"])
 
-    # Return Datastar fragment updating the status badge & active gold standard indicator
+    # Return Datastar fragment updating the status badge & active A-standard indicator
     badge_html = f"""
     <div id="promote-status-{result.id}">
-        <span class="badge badge-success">&#10003; Promoted to Gold Standard!</span>
+        <span class="badge badge-success">&#10003; Promoted to A-Standard!</span>
     </div>
     """
     sse_parts = [
@@ -733,7 +733,7 @@ def promote_to_gold_api(request, result_id: int):
 
     status_badge_html = f"""
     <div id="scenario-status-{scenario.id}" style="display: flex; align-items: center; gap: 0.5rem;">
-        <span class="badge badge-success">&#10003; Gold Standard Active</span>
+        <span class="badge badge-success">&#10003; A-Standard Active</span>
         <button type="submit" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 2px 8px;">💾 Save Edits</button>
     </div>
     """
@@ -805,7 +805,7 @@ def _render_suite_review_modal(request, group_id: int):
 @require_GET
 def suite_review_modal_api(request, group_id: int):
     """
-    Opens the Suite Review & Gold Standard Editor modal for a ScenarioGroup.
+    Opens the Suite Review & A-Standard Editor modal for a ScenarioGroup.
     Gathers each scenario and queries its top-performing model candidate completions.
     """
     return _render_suite_review_modal(request, group_id)
@@ -814,7 +814,7 @@ def suite_review_modal_api(request, group_id: int):
 @require_POST
 def update_scenario_api(request, scenario_id: int):
     """
-    In-place update of a BenchmarkScenario's Question, Ideal Gold Standard Answer,
+    In-place update of a BenchmarkScenario's Question, Ideal A-Standard Answer,
     and Expected Grounding Keywords.
     """
     scenario = get_object_or_404(BenchmarkScenario, pk=scenario_id)

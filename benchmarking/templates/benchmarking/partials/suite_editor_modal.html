@@ -47,7 +47,7 @@
                             <textarea name="question" class="form-control" rows="2" placeholder="e.g. What safety interlock prevents uncommanded arm motion during emergency stop?" required style="font-size: 0.82rem;"></textarea>
                         </div>
                         <div class="form-group" style="margin-bottom: 0.75rem;">
-                            <label class="form-label" style="font-size: 0.75rem; font-weight: 600;">Initial Gold Standard Response (Ground Truth)</label>
+                            <label class="form-label" style="font-size: 0.75rem; font-weight: 600;">Initial A-Standard Response (Ground Truth)</label>
                             <textarea name="ideal_answer" class="form-control" rows="3" placeholder="Authoritative expected answer..." required style="font-size: 0.82rem;"></textarea>
                         </div>
                         <div class="form-group" style="margin-bottom: 0.75rem;">
@@ -62,7 +62,7 @@
 
                 <!-- Scenarios & Candidates List -->
                 <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.75rem;">
-                    Scenarios & Verified Gold Standards
+                    Scenarios & Verified A-Standards
                 </div>
 
                 <div class="suite-scenarios-container">
@@ -80,9 +80,9 @@
                                 </div>
                                 <div id="scenario-status-{{ sc.id }}" style="display: flex; align-items: center; gap: 0.5rem;">
                                     {% if sc.ideal_answer %}
-                                    <span class="badge badge-success">✓ Gold Standard Active</span>
+                                    <span class="badge badge-success">✓ A-Standard Active</span>
                                     {% else %}
-                                    <span class="badge badge-warning">⚠️ Needs Gold Standard</span>
+                                    <span class="badge badge-warning">⚠️ Needs A-Standard</span>
                                     {% endif %}
                                     <button type="submit" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 2px 8px;">💾 Save Edits</button>
                                 </div>
@@ -95,7 +95,7 @@
 
                             <div class="form-group" style="margin-bottom: 0.65rem;">
                                 <label class="form-label" style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">
-                                    Official Gold Standard Response
+                                    Official A-Standard Response
                                 </label>
                                 <textarea id="gold-standard-text-{{ sc.id }}" name="ideal_answer" class="form-control" rows="3" style="font-size: 0.82rem; font-family: monospace; background: var(--bg-input);">{{ sc.ideal_answer }}</textarea>
                             </div>
@@ -128,13 +128,13 @@
                                         </div>
                                         <div id="promote-status-{{ cand.id }}">
                                             {% if cand.response.strip == sc.ideal_answer.strip %}
-                                            <span class="badge badge-success" style="font-size: 0.7rem;">✓ Active Gold Standard</span>
+                                            <span class="badge badge-success" style="font-size: 0.7rem;">✓ Active A-Standard</span>
                                             {% else %}
                                             <button type="button" class="btn btn-sm btn-outline-success"
                                                     style="font-size: 0.72rem; padding: 2px 7px;"
                                                     data-on-click="@post('/benchmarking/api/promote/{{ cand.id }}/')"
-                                                    title="Promote this completion to become the scenario's official Gold Standard">
-                                                ★ Promote to Gold Standard
+                                                    title="Promote this completion to become the scenario's official A-Standard">
+                                                ★ Promote to A-Standard
                                             </button>
                                             {% endif %}
                                         </div>

@@ -26,7 +26,7 @@
                         class="btn btn-sm btn-outline-primary"
                         style="font-size: 0.72rem; padding: 2px 7px; white-space: nowrap;"
                         data-on-click="@get('/benchmarking/api/scenario-group/{{ active_group.id }}/review/')"
-                        title="Open detailed suite review, gold standards editor, and 11/10 candidate promotion">
+                        title="Open detailed suite review, A-standards editor, and 11/10 candidate promotion">
                     🔍 Review & Edit Suite
                 </button>
             </div>
@@ -53,7 +53,7 @@
     <div style="border-top: 1px solid var(--border-color); padding-top: 0.65rem;">
         <div style="font-size: 0.78rem; font-weight: 600; margin-bottom: 0.45rem; color: var(--text-primary); display: flex; justify-content: space-between; align-items: center;">
             <span>Scenarios in {{ active_group.name|default:"Suite" }}</span>
-            <small style="color: var(--text-muted); font-size: 0.7rem;">Click to inspect diff / gold</small>
+            <small style="color: var(--text-muted); font-size: 0.7rem;">Click to inspect diff / A-standard</small>
         </div>
         <div class="scenario-list" style="max-height: 380px; overflow-y: auto;">
             {% for sc in scenarios %}
@@ -71,9 +71,9 @@
                     <span class="pill-keyword" style="font-size: 0.68rem; padding: 1px 5px;">+{{ sc.expected_keywords|length|add:"-4" }}</span>
                     {% endif %}
                     {% if sc.ideal_answer %}
-                    <span class="badge badge-success" style="font-size: 0.65rem; margin-left: auto;">✓ Gold</span>
+                    <span class="badge badge-success" style="font-size: 0.65rem; margin-left: auto;">✓ A-Standard</span>
                     {% else %}
-                    <span class="badge badge-warning" style="font-size: 0.65rem; margin-left: auto;">Missing Gold</span>
+                    <span class="badge badge-warning" style="font-size: 0.65rem; margin-left: auto;">Missing A-Standard</span>
                     {% endif %}
                 </div>
             </div>

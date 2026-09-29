@@ -10,12 +10,12 @@
             <div style="display: flex; align-items: center; gap: 0.5rem;">
                 <div id="promote-status-{{ result.id }}">
                     {% if is_gold %}
-                        <span class="badge badge-success">&#10003; Active Gold Standard</span>
+                        <span class="badge badge-success">&#10003; Active A-Standard</span>
                     {% else %}
                         <button type="button" class="btn btn-success btn-sm" 
                                 style="font-size: 0.74rem; padding: 2px 8px;"
                                 data-on-click="@post('/benchmarking/api/promote/{{ result.id }}/')">
-                            &#9733; Promote to Gold Standard
+                            &#9733; Promote to A-Standard
                         </button>
                     {% endif %}
                 </div>
@@ -53,10 +53,10 @@
 
         <!-- Side-by-Side Diff Viewer -->
         <div class="diff-viewer" style="margin-top: 0.5rem; gap: 0.75rem;">
-            <!-- Gold Standard Reference Column -->
+            <!-- A-Standard Reference Column -->
             <div class="diff-col" style="padding: 0.65rem;">
                 <div class="diff-col-header" style="font-size: 0.75rem; margin-bottom: 0.4rem; padding-bottom: 0.35rem;">
-                    <span>Gold Standard Reference</span>
+                    <span>A-Standard Reference</span>
                     <span class="badge badge-slate" style="font-size: 0.68rem;">Ground Truth</span>
                 </div>
                 <div class="diff-content" style="font-size: 0.8rem; max-height: 220px; line-height: 1.45;">
