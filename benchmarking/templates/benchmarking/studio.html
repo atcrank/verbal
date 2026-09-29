@@ -47,7 +47,7 @@
                 </div>
             </div>
             <div class="panel-body">
-                <form id="matrix-form" data-on-submit="$$post('/benchmarking/api/run/')" onsubmit="switchHubTab('monitor')">
+                <form id="matrix-form" data-on-submit="@post('/benchmarking/api/run/', {contentType: 'form'})" onsubmit="switchHubTab('monitor')">
                     {% csrf_token %}
                     
                     <div class="form-group">
@@ -313,7 +313,7 @@
                     </div>
                     <div class="scenario-list" style="max-height: 380px; overflow-y: auto;">
                         {% for sc in active_scenarios %}
-                        <div class="scenario-card" data-on-click="$$get('/benchmarking/api/scenario/{{ sc.id }}/')">
+                        <div class="scenario-card" data-on-click="@get('/benchmarking/api/scenario/{{ sc.id }}/')">
                             <div class="scenario-question">{{ sc.question }}</div>
                             <div class="keyword-pills">
                                 {% for kw in sc.expected_keywords|slice:":4" %}
@@ -348,7 +348,7 @@
                     Harvest training candidate pairs from gold benchmark scenarios, thumbs-up chat logs, and GRIPS claims. Automatically splits into a train JSONL file and registers the held-out validation split as a first-class ScenarioGroup.
                 </p>
 
-                <form id="curation-form" data-on-submit="$$post('/benchmarking/api/curate/')">
+                <form id="curation-form" data-on-submit="@post('/benchmarking/api/curate/', {contentType: 'form'})">
                     {% csrf_token %}
                     <div class="form-group">
                         <label class="form-label" for="curate_name">Dataset Name</label>

@@ -6,19 +6,19 @@
                 Group by:
             </span>
             <button type="button" id="btn-group-scenario" class="filter-chip {% if group_by == 'scenario_group' or not group_by %}active{% endif %}"
-                    data-on-click="$$get('/benchmarking/api/grouped-history/?group_by=scenario_group')">
+                    data-on-click="@get('/benchmarking/api/grouped-history/?group_by=scenario_group')">
                 &#128218; Scenario Group
             </button>
             <button type="button" id="btn-group-backend" class="filter-chip {% if group_by == 'hosting_backend' %}active{% endif %}"
-                    data-on-click="$$get('/benchmarking/api/grouped-history/?group_by=hosting_backend')">
+                    data-on-click="@get('/benchmarking/api/grouped-history/?group_by=hosting_backend')">
                 &#9881; Hosting Backend
             </button>
             <button type="button" id="btn-group-investigation" class="filter-chip {% if group_by == 'investigation' %}active{% endif %}"
-                    data-on-click="$$get('/benchmarking/api/grouped-history/?group_by=investigation')">
+                    data-on-click="@get('/benchmarking/api/grouped-history/?group_by=investigation')">
                 &#128193; Investigation
             </button>
             <button type="button" id="btn-group-model" class="filter-chip {% if group_by == 'model' %}active{% endif %}"
-                    data-on-click="$$get('/benchmarking/api/grouped-history/?group_by=model')">
+                    data-on-click="@get('/benchmarking/api/grouped-history/?group_by=model')">
                 &#129302; Model
             </button>
         </div>
@@ -131,7 +131,7 @@
                                     <div style="display: flex; gap: 0.3rem;">
                                         <button type="button" class="btn btn-secondary btn-sm" 
                                                 style="font-size: 0.65rem; padding: 0.15rem 0.35rem;"
-                                                data-on-click="$$get('/benchmarking/stream/{{ r.id }}/')"
+                                                data-on-click="@get('/benchmarking/stream/{{ r.id }}/')"
                                                 onclick="switchHubTab('monitor')"
                                                 title="Inspect defect diagnostics in Telemetry">
                                             Diagnostics
@@ -181,7 +181,7 @@
                                     <div style="display: flex; gap: 0.3rem;">
                                         <button type="button" class="btn btn-secondary btn-sm" 
                                                 style="font-size: 0.65rem; padding: 0.15rem 0.35rem;"
-                                                data-on-click="$$get('/benchmarking/stream/{{ r.id }}/')"
+                                                data-on-click="@get('/benchmarking/stream/{{ r.id }}/')"
                                                 onclick="switchHubTab('monitor')">
                                             View
                                         </button>

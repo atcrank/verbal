@@ -39,7 +39,7 @@
             Run automated A/B benchmark comparing Base Model vs. Base + {{ result.adapter.name }} on the held-out validation ScenarioGroup.
         </p>
         <button class="btn btn-primary btn-sm" 
-                data-on-click="$$post('/benchmarking/api/ab-eval/{{ result.adapter.id }}/')">
+                data-on-click="@post('/benchmarking/api/ab-eval/{{ result.adapter.id }}/')">
             &#9878; Run Closed-Loop A/B Evaluation &rarr;
         </button>
     </div>

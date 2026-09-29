@@ -10,7 +10,7 @@
                     <span class="badge badge-success">&#10003; Active Gold Standard</span>
                 {% else %}
                     <button class="btn btn-success btn-sm" 
-                            data-on-click="$$post('/benchmarking/api/promote/{{ result.id }}/')">
+                            data-on-click="@post('/benchmarking/api/promote/{{ result.id }}/')">
                         &#9733; Promote to Gold Standard
                     </button>
                 {% endif %}

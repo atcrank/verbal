@@ -6,12 +6,12 @@
                 Filter Corpus:
             </span>
             <button type="button" id="filter-sg-all" class="filter-chip {% if not selected_sg_id %}active{% endif %}"
-                    data-on-click="$$get('/benchmarking/api/leaderboard/')">
+                    data-on-click="@get('/benchmarking/api/leaderboard/')">
                 All Scenarios
             </button>
             {% for sg in scenario_groups %}
             <button type="button" id="filter-sg-{{ sg.id }}" class="filter-chip {% if selected_sg_id == sg.id|stringformat:'s' or selected_sg_id == sg.id %}active{% endif %}"
-                    data-on-click="$$get('/benchmarking/api/leaderboard/?scenario_group_id={{ sg.id }}')">
+                    data-on-click="@get('/benchmarking/api/leaderboard/?scenario_group_id={{ sg.id }}')">
                 {{ sg.name|truncatechars:24 }}
             </button>
             {% endfor %}
@@ -113,7 +113,7 @@
                         <div style="display: flex; gap: 0.3rem;">
                             {% if entry.latest_run_id %}
                             <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.7rem; padding: 0.2rem 0.45rem;"
-                                    data-on-click="$$get('/benchmarking/stream/{{ entry.latest_run_id }}/')"
+                                    data-on-click="@get('/benchmarking/stream/{{ entry.latest_run_id }}/')"
                                     onclick="switchHubTab('monitor')"
                                     title="View run stream & diffs in Telemetry">
                                 View
@@ -194,7 +194,7 @@
                         <td>
                             <div style="display: flex; gap: 0.3rem;">
                                 <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 0.15rem 0.4rem;"
-                                        data-on-click="$$get('/benchmarking/stream/{{ d.run_id }}/')"
+                                        data-on-click="@get('/benchmarking/stream/{{ d.run_id }}/')"
                                         onclick="switchHubTab('monitor')"
                                         title="Inspect raw defect trace in Telemetry">
                                     Diagnostics

@@ -23,7 +23,7 @@
             </div>
 
             <!-- Training Form -->
-            <form id="training-form" data-on-submit="$$post('/benchmarking/api/train/')">
+            <form id="training-form" data-on-submit="@post('/benchmarking/api/train/', {contentType: 'form'})">
                 {% csrf_token %}
                 <div class="form-group">
                     <label class="form-label" for="train_dataset_id">Fine-Tuning Dataset</label>

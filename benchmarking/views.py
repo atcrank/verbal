@@ -294,7 +294,7 @@ def run_benchmark_api(request):
         header = f"Launching Investigation #{investigation.id}: {investigation.name}"
 
     initial_frag = f"""
-    <div id="run-monitor" data-on-load="$$get('{stream_url}')">
+    <div id="run-monitor" data-on-load="@get('{stream_url}')">
         <div style="padding: 2.5rem 1.5rem; text-align: center; color: var(--text-secondary);">
             <div class="badge badge-warning" style="margin-bottom: 0.6rem;">Connecting Matrix Telemetry Stream...</div>
             <div style="font-weight: 700; color: var(--text-primary); font-size: 1.05rem;">{header}</div>
@@ -304,7 +304,7 @@ def run_benchmark_api(request):
         </div>
     </div>
     """
-    sse_response = DatastarSSE.merge_fragments(initial_frag, selector="#run-monitor", merge_mode="morph")
+    sse_response = DatastarSSE.merge_fragments(initial_frag, selector="#run-monitor", merge_mode="outer")
     return HttpResponse(sse_response, content_type="text/event-stream")
 
 

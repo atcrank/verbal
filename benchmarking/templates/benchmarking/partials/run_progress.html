@@ -64,7 +64,7 @@
     </div>
     <div class="stream-logs" id="telemetry-log-container">
         {% for res in results %}
-        <div class="stream-log-entry" style="cursor: pointer;" data-on-click="$$get('/benchmarking/api/diff/{{ res.id }}/')">
+        <div class="stream-log-entry" style="cursor: pointer;" data-on-click="@get('/benchmarking/api/diff/{{ res.id }}/')">
             <span class="stream-log-time">#{{ forloop.counter }}</span>
             <div style="flex: 1;">
                 <div style="font-weight: 600; color: var(--text-primary);">{{ res.scenario.question|truncatechars:65 }}</div>
