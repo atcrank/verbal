@@ -1394,6 +1394,15 @@ class TestGoldStandardsAndSuiteInspection(TestCase):
         self.assertEqual(self.scenario_1.ideal_answer, self.candidate_result.response)
         self.assertIn("acoustic resonance", self.scenario_1.ideal_answer)
 
+    def test_close_inspector_api(self):
+        """GET /benchmarking/api/scenario/close/ resets #inspector-content to placeholder."""
+        res = self.client.get("/benchmarking/api/scenario/close/")
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res["Content-Type"], "text/event-stream")
+        content = res.content.decode("utf-8")
+        self.assertIn("inspector-placeholder", content)
+        self.assertIn("inspector-content", content)
+
 
 
 

@@ -12,6 +12,7 @@ urlpatterns = [
     path("api/run/", views.run_benchmark_api, name="run_benchmark_api"),
     path("api/scenario/<int:scenario_id>/", views.scenario_detail_api, name="scenario_detail"),
     path("api/scenario/<int:scenario_id>/update/", views.update_scenario_api, name="update_scenario"),
+    path("api/scenario/close/", views.close_inspector_api, name="close_inspector"),
     path("api/scenario-group/<int:group_id>/scenarios/", views.switch_scenario_group_api, name="switch_scenario_group"),
     path("api/scenario-group/<int:group_id>/review/", views.suite_review_modal_api, name="suite_review_modal"),
     path("api/scenario-group/<int:group_id>/add-scenario/", views.add_scenario_to_group_api, name="add_scenario_to_group"),

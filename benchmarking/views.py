@@ -663,8 +663,20 @@ def scenario_detail_api(request, scenario_id: int):
     """Returns scenario details fragment for the inspector drawer."""
     scenario = get_object_or_404(BenchmarkScenario, pk=scenario_id)
     html = render(request, "benchmarking/partials/scenario_detail.html", {"scenario": scenario}).content.decode("utf-8")
-    sse = DatastarSSE.merge_fragments(html, selector="#inspector-content", merge_mode="morph")
-    return HttpResponse(sse, content_type="text/event-stream")
+    sse = DatastarSSE.patch_elements(html, selector="#inspector-content", mode="morph")
+    response = HttpResponse(sse, content_type="text/event-stream")
+    response["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return response
+
+
+@require_GET
+def close_inspector_api(request):
+    """Resets the inspector drawer to its empty/collapsed placeholder state."""
+    html = render(request, "benchmarking/partials/inspector_placeholder.html").content.decode("utf-8")
+    sse = DatastarSSE.patch_elements(html, selector="#inspector-content", mode="morph")
+    response = HttpResponse(sse, content_type="text/event-stream")
+    response["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return response
 
 
 @require_GET
@@ -692,8 +704,10 @@ def inspect_result_diff(request, result_id: int):
         "is_gold": is_gold,
     }
     html = render(request, "benchmarking/partials/candidate_diff.html", context).content.decode("utf-8")
-    sse = DatastarSSE.merge_fragments(html, selector="#inspector-content", merge_mode="morph")
-    return HttpResponse(sse, content_type="text/event-stream")
+    sse = DatastarSSE.patch_elements(html, selector="#inspector-content", mode="morph")
+    response = HttpResponse(sse, content_type="text/event-stream")
+    response["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return response
 
 
 @require_POST

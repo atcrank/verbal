@@ -297,16 +297,8 @@
                 <span class="badge badge-info" id="scenario-count-badge">{{ active_scenarios.count }} Scenarios</span>
             </div>
             <div class="panel-body">
-                
-                <!-- Inspector Content Container -->
-                <div id="inspector-content">
-                    <div style="padding: 1.5rem 0.5rem; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
-                        Select a scenario from the list below or click <strong>Inspect Diff</strong> on any turn in the Live Telemetry log to view side-by-side ground truth comparisons.
-                    </div>
-                </div>
-
                 <!-- Scenario Catalog & Group Selector Container -->
-                <div id="scenario-catalog-container" style="margin-top: 1.25rem;">
+                <div id="scenario-catalog-container">
                     {% include "benchmarking/partials/hub_scenario_catalog.html" with scenarios=active_scenarios active_group=active_group scenario_groups=scenario_groups %}
                 </div>
             </div>

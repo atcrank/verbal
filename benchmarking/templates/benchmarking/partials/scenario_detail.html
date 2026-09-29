@@ -1,8 +1,10 @@
 <div id="inspector-content">
-    <div style="margin-bottom: 0.85rem;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem;">
-            <div>
-                <span class="badge badge-info">Scenario #{{ scenario.id }}</span>
+    <div class="inspector-active-card" style="background: var(--bg-surface); border: 1px solid var(--accent-primary); border-radius: var(--radius-md); padding: 0.85rem 1rem; margin-bottom: 1rem; box-shadow: var(--shadow-md);">
+        
+        <!-- Header Bar with Scenario Badges and Close Button -->
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.65rem;">
+            <div style="display: flex; align-items: center; gap: 0.4rem;">
+                <span class="badge badge-info" style="font-weight: 700;">Scenario #{{ scenario.id }}</span>
                 {% if scenario.category %}
                 <span class="badge badge-slate">{{ scenario.category }}</span>
                 {% endif %}
@@ -10,48 +12,61 @@
                 <span class="badge badge-warning">Level {{ scenario.difficulty }}</span>
                 {% endif %}
             </div>
+            <button type="button" class="btn btn-sm btn-secondary"
+                    data-on-click="@get('/benchmarking/api/scenario/close/')"
+                    style="padding: 2px 8px; font-size: 0.74rem; font-weight: 600; display: flex; align-items: center; gap: 0.25rem;"
+                    title="Close Inspector and return to overview">
+                <span>✕</span>
+                <span>Close</span>
+            </button>
         </div>
-        <div style="font-size: 0.95rem; font-weight: 600; margin-top: 0.5rem; color: var(--text-primary);">
+
+        <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary); line-height: 1.4; margin-bottom: 0.75rem;">
             {{ scenario.question }}
         </div>
-    </div>
 
-    <!-- Expected Keywords -->
-    <div style="background-color: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.6rem 0.75rem; margin-bottom: 0.85rem;">
-        <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary); margin-bottom: 0.35rem;">
-            Expected Ground-Truth Keywords
+        <!-- Expected Keywords -->
+        <div style="background-color: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.5rem 0.65rem; margin-bottom: 0.75rem;">
+            <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary); margin-bottom: 0.25rem;">
+                Expected Ground-Truth Keywords
+            </div>
+            <div class="keyword-pills">
+                {% for kw in scenario.expected_keywords %}
+                    <span class="pill-keyword" style="font-size: 0.7rem; padding: 1px 6px;">{{ kw }}</span>
+                {% empty %}
+                    <span style="font-size: 0.74rem; color: var(--text-muted);">None specified</span>
+                {% endfor %}
+            </div>
         </div>
-        <div class="keyword-pills">
-            {% for kw in scenario.expected_keywords %}
-                <span class="pill-keyword">{{ kw }}</span>
-            {% empty %}
-                <span style="font-size: 0.75rem; color: var(--text-muted);">None specified</span>
+
+        <!-- Ideal Response -->
+        <div class="diff-col" style="margin-bottom: 0.75rem;">
+            <div class="diff-col-header" style="font-size: 0.75rem; margin-bottom: 0.4rem; padding-bottom: 0.35rem;">
+                <span>Verified Gold Standard Response</span>
+                {% if scenario.ideal_response %}
+                <span class="badge badge-success">&#10003; Ideal</span>
+                {% else %}
+                <span class="badge badge-warning">Missing Gold</span>
+                {% endif %}
+            </div>
+            <div class="diff-content" style="font-size: 0.8rem; max-height: 220px; line-height: 1.45;">
+                {% if scenario.ideal_response %}
+                    {{ scenario.ideal_response }}
+                {% else %}
+                    <em style="color: var(--text-muted);">No ideal response provided. Run a benchmark and promote candidate output.</em>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Scenario Groups membership -->
+        {% if scenario.groups.all %}
+        <div style="font-size: 0.72rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;">
+            <span>Member of suites:</span>
+            {% for g in scenario.groups.all %}
+                <span class="badge badge-slate" style="font-size: 0.68rem;">{{ g.name }}</span>
             {% endfor %}
         </div>
-    </div>
+        {% endif %}
 
-    <!-- Ideal Response -->
-    <div class="diff-col" style="margin-bottom: 0.85rem;">
-        <div class="diff-col-header">
-            <span>Verified Gold Standard Response</span>
-            <span class="badge badge-success">&#10003; Ideal</span>
-        </div>
-        <div class="diff-content">
-            {% if scenario.ideal_response %}
-                {{ scenario.ideal_response }}
-            {% else %}
-                <em style="color: var(--text-muted);">No ideal response provided. Run a benchmark and promote candidate output.</em>
-            {% endif %}
-        </div>
     </div>
-
-    <!-- Scenario Groups membership -->
-    {% if scenario.groups.all %}
-    <div style="font-size: 0.75rem; color: var(--text-secondary);">
-        Member of groups:
-        {% for g in scenario.groups.all %}
-            <span class="badge badge-slate" style="margin-left: 0.25rem;">{{ g.name }}</span>
-        {% endfor %}
-    </div>
-    {% endif %}
 </div>
