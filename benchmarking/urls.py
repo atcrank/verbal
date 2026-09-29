@@ -17,5 +17,7 @@ urlpatterns = [
     path("api/train/", views.train_adapter_api, name="train_adapter"),
     path("api/ab-eval/<int:adapter_id>/", views.ab_evaluation_api, name="ab_evaluation"),
     path("api/hardware/", views.hardware_profile_api, name="hardware_profile"),
+    path("api/leaderboard/", views.leaderboard_api, name="leaderboard_api"),
+    path("api/grouped-history/", views.grouped_history_api, name="grouped_history_api"),
     path("export/csv/<int:run_id>/", views.export_run_csv, name="export_run_csv"),
 ]

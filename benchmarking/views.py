@@ -24,6 +24,12 @@ from .hardware import (
     TrainingConfig,
     estimate_scenario_latency,
 )
+from .hub import (
+    get_operational_status,
+    get_smart_opportunities,
+    get_nuanced_leaderboard,
+    get_grouped_history,
+)
 from .training import train_lora_adapter
 from .closed_loop import run_closed_loop_ab_evaluation
 from .retrieval_adapter import retrieve_benchmark_context
@@ -97,6 +103,13 @@ def studio_view(request):
     rec_config = recommend_training_config(hardware)
     estimated_latency_per_query = estimate_scenario_latency(hardware)
 
+    # Operational Hub, Nuanced Leaderboard, and Grouped History
+    operational_status = get_operational_status()
+    smart_opportunities = get_smart_opportunities(limit=3)
+    leaderboard = get_nuanced_leaderboard()
+    grouped_history = get_grouped_history(group_by="scenario_group")
+    total_runs_count = BenchmarkRun.objects.count()
+
     context = {
         "investigations": investigations,
         "scenario_groups": scenario_groups,
@@ -111,9 +124,50 @@ def studio_view(request):
         "hardware": hardware,
         "rec_config": rec_config,
         "estimated_latency_per_query": estimated_latency_per_query,
+        "operational_status": operational_status,
+        "smart_opportunities": smart_opportunities,
+        "leaderboard": leaderboard,
+        "grouped_history": grouped_history,
+        "group_by": "scenario_group",
+        "selected_sg_id": None,
+        "total_runs_count": total_runs_count,
         "current_time": timezone.now(),
     }
     return render(request, "benchmarking/studio.html", context)
+
+
+@require_GET
+def leaderboard_api(request):
+    """
+    Reactive Datastar SSE endpoint for filtering the Nuanced Leaderboard by ScenarioGroup.
+    """
+    scenario_group_id = request.GET.get("scenario_group_id")
+    scenario_groups = ScenarioGroup.objects.all().prefetch_related("scenarios").order_by("-id")
+    leaderboard = get_nuanced_leaderboard(scenario_group_id=int(scenario_group_id) if scenario_group_id else None)
+    context = {
+        "leaderboard": leaderboard,
+        "scenario_groups": scenario_groups,
+        "selected_sg_id": scenario_group_id,
+    }
+    html = render(request, "benchmarking/partials/hub_leaderboard.html", context).content.decode("utf-8")
+    sse = DatastarSSE.merge_fragments(html, selector="#hub-leaderboard-container", merge_mode="morph")
+    return HttpResponse(sse, content_type="text/event-stream")
+
+
+@require_GET
+def grouped_history_api(request):
+    """
+    Reactive Datastar SSE endpoint for reorganizing benchmark history along 4 grouping axes.
+    """
+    group_by = request.GET.get("group_by", "scenario_group")
+    grouped_history = get_grouped_history(group_by=group_by)
+    context = {
+        "grouped_history": grouped_history,
+        "group_by": group_by,
+    }
+    html = render(request, "benchmarking/partials/hub_grouped_history.html", context).content.decode("utf-8")
+    sse = DatastarSSE.merge_fragments(html, selector="#hub-history-container", merge_mode="morph")
+    return HttpResponse(sse, content_type="text/event-stream")
 
 
 @require_POST

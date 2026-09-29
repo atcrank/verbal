@@ -47,7 +47,7 @@
                 </div>
             </div>
             <div class="panel-body">
-                <form id="matrix-form" data-on-submit="$$post('/benchmarking/api/run/')">
+                <form id="matrix-form" data-on-submit="$$post('/benchmarking/api/run/')" onsubmit="switchHubTab('monitor')">
                     {% csrf_token %}
                     
                     <div class="form-group">
@@ -235,72 +235,57 @@
             </div>
         </section>
 
-        <!-- COLUMN 2: Live Telemetry, Progress Stream & Comparison -->
+        <!-- COLUMN 2: Adaptive Benchmark Hub, Nuanced Leaderboard & Live Monitor -->
         <section class="studio-panel col-telemetry">
-            <div class="panel-header">
-                <span class="panel-title">&#9783; Live Telemetry & Execution Monitor</span>
-                {% if latest_run %}
-                <span class="badge badge-slate">Latest Run #{{ latest_run.id }}</span>
-                {% endif %}
-            </div>
-            
-            <!-- Target for Datastar SSE real-time streaming -->
-            <div id="run-monitor">
-                {% if active_run_view %}
-                    {% include "benchmarking/partials/run_progress.html" with run=latest_run status="READY" percent=100 total_steps=latest_run.results.count current_step=latest_run.results.count results=latest_run.results.all avg_rag=latest_run.average_rag_score avg_sem=latest_run.average_semantic_score avg_faith=latest_run.average_faithfulness avg_rel=latest_run.average_relevance %}
-                {% else %}
-                <div style="padding: 2.5rem 1.5rem; text-align: center; color: var(--text-secondary);">
-                    <div style="font-size: 2rem; margin-bottom: 0.5rem; color: var(--accent-primary);">&#9874;</div>
-                    <div style="font-weight: 600; font-size: 1rem; color: var(--text-primary);">Execution Ready</div>
-                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">
-                        Select parameters in the Matrix Composer and click <strong>Launch Benchmark Run</strong> to stream live metrics, TTFT latency, and turn-by-turn evaluations.
-                    </p>
+            <div class="panel-header" style="justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span class="panel-title">&#127942; Benchmark Hub</span>
                 </div>
-                {% endif %}
+                <!-- Hub Navigation Tabs -->
+                <div class="hub-tab-bar">
+                    <button type="button" class="hub-tab-btn active" id="hub-tab-btn-leaderboard" onclick="switchHubTab('leaderboard')">
+                        🏆 Leaderboard
+                    </button>
+                    <button type="button" class="hub-tab-btn" id="hub-tab-btn-history" onclick="switchHubTab('history')">
+                        🗂️ Grouped History
+                    </button>
+                    <button type="button" class="hub-tab-btn" id="hub-tab-btn-monitor" onclick="switchHubTab('monitor')">
+                        📡 Live Telemetry
+                    </button>
+                </div>
             </div>
 
-            <!-- Recent Runs & Investigation Comparative Matrix -->
-            <div style="padding: 1rem 1.15rem; border-top: 1px solid var(--border-color);">
-                <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">
-                    Recent Runs in Active Investigation
+            <!-- Operational Status & Smart Opportunities Bar -->
+            <div style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); background: rgba(15, 23, 42, 0.4);">
+                {% include "benchmarking/partials/hub_operational_bar.html" %}
+            </div>
+
+            <div class="panel-body" style="padding: 0.85rem 1rem;">
+                <!-- Tab Pane 1: Nuanced Leaderboard (Default) -->
+                <div id="hub-pane-leaderboard" class="hub-pane active">
+                    {% include "benchmarking/partials/hub_leaderboard.html" %}
                 </div>
-                <div style="overflow-x: auto;">
-                    <table class="studio-table">
-                        <thead>
-                            <tr>
-                                <th>Run</th>
-                                <th>Experiment</th>
-                                <th>Backend</th>
-                                <th>Sem Sim</th>
-                                <th>Faith</th>
-                                <th>Rel</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for r in recent_runs %}
-                            <tr>
-                                <td><span class="badge badge-slate">#{{ r.id }}</span></td>
-                                <td style="font-weight: 600;">{{ r.experiment.name }}</td>
-                                <td>{{ r.configuration_snapshot.hosting_backend|default:"default" }}</td>
-                                <td style="color: var(--accent-teal);">{{ r.average_semantic_score|floatformat:2|default:"-" }}</td>
-                                <td style="color: var(--accent-emerald);">{{ r.average_faithfulness|floatformat:2|default:"-" }}</td>
-                                <td style="color: var(--accent-primary);">{{ r.average_relevance|floatformat:2|default:"-" }}</td>
-                                <td>
-                                    <button class="btn btn-secondary btn-sm" data-on-click="$$get('/benchmarking/stream/{{ r.id }}/')">
-                                        View
-                                    </button>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
-                                    No completed benchmark runs yet.
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+
+                <!-- Tab Pane 2: Grouped History Browser -->
+                <div id="hub-pane-history" class="hub-pane" style="display: none;">
+                    {% include "benchmarking/partials/hub_grouped_history.html" %}
+                </div>
+
+                <!-- Tab Pane 3: Live Telemetry & Progress Stream -->
+                <div id="hub-pane-monitor" class="hub-pane" style="display: none;">
+                    <div id="run-monitor">
+                        {% if active_run_view %}
+                            {% include "benchmarking/partials/run_progress.html" with run=latest_run status="READY" percent=100 total_steps=latest_run.results.count current_step=latest_run.results.count results=latest_run.results.all avg_rag=latest_run.average_rag_score avg_sem=latest_run.average_semantic_score avg_faith=latest_run.average_faithfulness avg_rel=latest_run.average_relevance %}
+                        {% else %}
+                        <div style="padding: 2.5rem 1.5rem; text-align: center; color: var(--text-secondary);">
+                            <div style="font-size: 2rem; margin-bottom: 0.5rem; color: var(--accent-primary);">&#9874;</div>
+                            <div style="font-weight: 600; font-size: 1rem; color: var(--text-primary);">Execution Ready</div>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">
+                                Select parameters in the Matrix Composer and click <strong>Launch Investigation Matrix</strong> to stream live metrics, TTFT latency, and turn-by-turn evaluations.
+                            </p>
+                        </div>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </section>
@@ -545,6 +530,64 @@
                 if (expCount === 0) {
                     previewList.innerHTML = '<span style="color: var(--accent-rose); font-size: 0.72rem;">Select at least one Model, Backend, and RAG strategy to form a valid matrix.</span>';
                 }
+            }
+        }
+
+        function switchHubTab(tabName) {
+            var tabs = ['leaderboard', 'history', 'monitor'];
+            tabs.forEach(function(t) {
+                var btn = document.getElementById('hub-tab-btn-' + t);
+                var pane = document.getElementById('hub-pane-' + t);
+                if (btn) {
+                    if (t === tabName) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                }
+                if (pane) {
+                    pane.style.display = (t === tabName) ? 'block' : 'none';
+                }
+            });
+        }
+
+        function applyOpportunity(modelHfId, sgId) {
+            // Select scenario group in dropdown
+            var sgSelect = document.getElementById('id_scenario_group');
+            if (sgSelect) {
+                for (var i = 0; i < sgSelect.options.length; i++) {
+                    if (sgSelect.options[i].value == sgId) {
+                        sgSelect.selectedIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            // Check matching model checkbox and uncheck others
+            var modelContainer = document.getElementById('model-checkboxes');
+            if (modelContainer) {
+                var cbs = modelContainer.querySelectorAll('input[type="checkbox"]');
+                var matched = false;
+                cbs.forEach(function(cb) {
+                    if (cb.value === modelHfId || cb.value === modelHfId.split('/').pop()) {
+                        cb.checked = true;
+                        matched = true;
+                    } else {
+                        cb.checked = false;
+                    }
+                });
+                if (!matched && cbs.length > 0) {
+                    cbs[0].checked = true;
+                }
+            }
+
+            // Trigger matrix calculation update
+            updateMatrixCalculations();
+
+            // Scroll matrix launch button into view
+            var matrixBtn = document.getElementById('btn-launch-matrix');
+            if (matrixBtn) {
+                matrixBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
         }
 

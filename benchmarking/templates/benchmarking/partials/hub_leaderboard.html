@@ -1,0 +1,150 @@
+<!-- Nuanced Multi-Objective Leaderboard -->
+<div id="hub-leaderboard-container">
+    <!-- Filter Pills for Scenario Groups -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+        <div style="display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;">
+            <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); margin-right: 0.25rem;">
+                Filter Corpus:
+            </span>
+            <button type="button" class="filter-chip {% if not selected_sg_id %}active{% endif %}"
+                    data-on-click="$$get('/benchmarking/api/leaderboard/')">
+                All Scenarios
+            </button>
+            {% for sg in scenario_groups %}
+            <button type="button" class="filter-chip {% if selected_sg_id == sg.id|stringformat:'s' or selected_sg_id == sg.id %}active{% endif %}"
+                    data-on-click="$$get('/benchmarking/api/leaderboard/?scenario_group_id={{ sg.id }}')">
+                {{ sg.name|truncatechars:24 }}
+            </button>
+            {% endfor %}
+        </div>
+        <div style="font-size: 0.72rem; color: var(--text-muted);">
+            Ranked across <strong>{{ leaderboard|length }}</strong> configurations
+        </div>
+    </div>
+
+    <!-- Leaderboard Table -->
+    <div style="overflow-x: auto; max-height: 480px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 6px;">
+        <table class="studio-table" style="margin-bottom: 0;">
+            <thead style="position: sticky; top: 0; background: var(--bg-surface); z-index: 2;">
+                <tr>
+                    <th style="min-width: 140px;">Model & Strategy</th>
+                    <th style="min-width: 110px;">Backend</th>
+                    <th style="min-width: 120px;">Corpus</th>
+                    <th>Quality</th>
+                    <th>Speed</th>
+                    <th>Reliability</th>
+                    <th style="min-width: 140px;">Distinction</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in leaderboard %}
+                <tr class="{% if entry.is_unstable %}row-unstable{% endif %}">
+                    <td>
+                        <div style="font-weight: 600; color: var(--text-primary); font-size: 0.84rem;">
+                            {{ entry.model_name }}
+                        </div>
+                        <div style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 0.1rem;">
+                            <span class="badge badge-slate" style="font-size: 0.65rem; padding: 0.15rem 0.35rem;">
+                                {{ entry.rag_strategy }}
+                            </span>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge {% if entry.backend == 'ollama' %}badge-info{% elif entry.backend == 'vllm' %}badge-warning{% else %}badge-slate{% endif %}" style="font-size: 0.72rem;">
+                            {{ entry.backend|title }}
+                        </span>
+                    </td>
+                    <td style="font-size: 0.75rem; color: var(--text-secondary);">
+                        {{ entry.scenario_group_name|truncatechars:22 }}
+                        <div style="font-size: 0.68rem; color: var(--text-muted);">
+                            {{ entry.total_scenarios }} scenarios ({{ entry.total_runs }} runs)
+                        </div>
+                    </td>
+                    <td>
+                        {% if entry.avg_semantic is not None %}
+                            <div style="font-size: 0.85rem; font-weight: 700; color: var(--accent-teal);">
+                                {{ entry.avg_semantic|floatformat:3 }}
+                            </div>
+                            <div style="font-size: 0.68rem; color: var(--text-muted); display: flex; gap: 0.3rem;">
+                                <span>F: {{ entry.avg_faithfulness|floatformat:2|default:"-" }}</span>
+                                <span>R: {{ entry.avg_relevance|floatformat:2|default:"-" }}</span>
+                            </div>
+                        {% else %}
+                            <span style="color: var(--text-muted); font-size: 0.75rem;">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if entry.avg_tokens_per_second %}
+                            <div style="font-size: 0.82rem; font-weight: 600; color: var(--accent-emerald);">
+                                {{ entry.avg_tokens_per_second|floatformat:1 }} tok/s
+                            </div>
+                        {% endif %}
+                        {% if entry.avg_duration_seconds %}
+                            <div style="font-size: 0.68rem; color: var(--text-muted);">
+                                ~{{ entry.avg_duration_seconds|floatformat:1 }}s / prompt
+                            </div>
+                        {% else %}
+                            <span style="color: var(--text-muted); font-size: 0.75rem;">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.35rem;">
+                            <div style="flex: 1; min-width: 40px; background: rgba(255,255,255,0.1); border-radius: 3px; height: 6px; overflow: hidden;">
+                                <div class="rate-bar {% if entry.success_rate >= 80 %}rate-high{% elif entry.success_rate >= 40 %}rate-med{% else %}rate-low{% endif %}" style="height: 100%; width: {{ entry.success_rate }}%;"></div>
+                            </div>
+                            <span class="rate-text {% if entry.success_rate >= 80 %}rate-high{% elif entry.success_rate >= 40 %}rate-med{% else %}rate-low{% endif %}" style="font-size: 0.72rem; font-weight: 600;">
+                                {{ entry.success_rate }}%
+                            </span>
+                        </div>
+                    </td>
+                    <td>
+                        <div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
+                            {% for badge in entry.badges %}
+                                {% if "Quality" in badge %}
+                                    <span class="pareto-badge quality" title="Highest composite semantic and faithfulness score">{{ badge }}</span>
+                                {% elif "Speed" in badge %}
+                                    <span class="pareto-badge speed" title="Fastest token throughput or lowest turn duration">{{ badge }}</span>
+                                {% elif "Reliable" in badge %}
+                                    <span class="pareto-badge reliable" title="100% successful completions across prompts">{{ badge }}</span>
+                                {% elif "Unstable" in badge %}
+                                    <span class="pareto-badge unstable" title="Encountered timeouts or generation crashes">{{ badge }}</span>
+                                {% else %}
+                                    <span class="badge badge-slate" style="font-size: 0.65rem;">{{ badge }}</span>
+                                {% endif %}
+                            {% empty %}
+                                <span style="color: var(--text-muted); font-size: 0.72rem;">Baseline</span>
+                            {% endfor %}
+                        </div>
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 0.3rem;">
+                            {% if entry.latest_run_id %}
+                            <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.7rem; padding: 0.2rem 0.45rem;"
+                                    data-on-click="$$get('/benchmarking/stream/{{ entry.latest_run_id }}/')"
+                                    onclick="switchHubTab('monitor')"
+                                    title="View run stream & diffs">
+                                View
+                            </button>
+                            {% endif %}
+                            {% if entry.investigation_id %}
+                            <a href="{% url 'benchmarking:investigation_dashboard' entry.investigation_id %}" 
+                               class="btn btn-secondary btn-sm" style="font-size: 0.7rem; padding: 0.2rem 0.45rem;" 
+                               target="_blank" title="Open full investigation dashboard">
+                                &#8599;
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                        No benchmark evaluations recorded for this corpus filter yet. Select parameters on the left to launch a matrix!
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

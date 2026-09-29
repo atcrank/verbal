@@ -1,0 +1,148 @@
+<!-- Grouped History Browser -->
+<div id="hub-history-container">
+    <!-- Grouping Axis Selector -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+        <div style="display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;">
+            <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); margin-right: 0.25rem;">
+                Group by:
+            </span>
+            <button type="button" class="filter-chip {% if group_by == 'scenario_group' or not group_by %}active{% endif %}"
+                    data-on-click="$$get('/benchmarking/api/grouped-history/?group_by=scenario_group')">
+                &#128218; Scenario Group
+            </button>
+            <button type="button" class="filter-chip {% if group_by == 'hosting_backend' %}active{% endif %}"
+                    data-on-click="$$get('/benchmarking/api/grouped-history/?group_by=hosting_backend')">
+                &#9881; Hosting Backend
+            </button>
+            <button type="button" class="filter-chip {% if group_by == 'investigation' %}active{% endif %}"
+                    data-on-click="$$get('/benchmarking/api/grouped-history/?group_by=investigation')">
+                &#128193; Investigation
+            </button>
+            <button type="button" class="filter-chip {% if group_by == 'model' %}active{% endif %}"
+                    data-on-click="$$get('/benchmarking/api/grouped-history/?group_by=model')">
+                &#129302; Model
+            </button>
+        </div>
+        <div style="font-size: 0.72rem; color: var(--text-muted);">
+            <strong>{{ grouped_history|length }}</strong> sections aggregated
+        </div>
+    </div>
+
+    <!-- History Sections List -->
+    <div style="max-height: 480px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.65rem;">
+        {% for section in grouped_history %}
+        <details class="history-section-card" open style="border: 1px solid var(--border-color); border-radius: 6px; background: rgba(19, 29, 51, 0.6); overflow: hidden;">
+            <summary style="padding: 0.6rem 0.85rem; background: rgba(15, 23, 42, 0.7); cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; outline: none;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1;">
+                    <span style="font-weight: 700; color: var(--text-primary); font-size: 0.86rem;">
+                        {{ section.group_key }}
+                    </span>
+                    <span class="badge badge-slate" style="font-size: 0.68rem;">{{ section.total_runs }} Run{{ section.total_runs|pluralize }}</span>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 0.6rem;">
+                    {% if section.avg_semantic is not None %}
+                    <span style="font-size: 0.74rem; color: var(--text-secondary);">
+                        Sem: <strong style="color: var(--accent-teal);">{{ section.avg_semantic|floatformat:2 }}</strong>
+                    </span>
+                    {% endif %}
+
+                    {% if section.avg_latency %}
+                    <span style="font-size: 0.74rem; color: var(--text-secondary);">
+                        Lat: <strong style="color: var(--accent-emerald);">{{ section.avg_latency|floatformat:1 }}s</strong>
+                    </span>
+                    {% endif %}
+
+                    <span class="badge {% if section.success_rate >= 80 %}badge-success{% elif section.success_rate >= 40 %}badge-warning{% else %}badge-error{% endif %}" style="font-size: 0.68rem;">
+                        {{ section.success_rate }}% Success
+                    </span>
+
+                    {% if section.investigation_id %}
+                    <a href="{% url 'benchmarking:investigation_dashboard' section.investigation_id %}" 
+                       target="_blank" class="btn btn-secondary btn-sm" 
+                       style="font-size: 0.68rem; padding: 0.15rem 0.45rem; margin-left: 0.4rem;" 
+                       title="Open dedicated Investigation comparison dashboard"
+                       onclick="event.stopPropagation();">
+                        &#128279; Investigation #{{ section.investigation_id }} &rarr;
+                    </a>
+                    {% endif %}
+                </div>
+            </summary>
+
+            <div style="padding: 0.5rem; overflow-x: auto;">
+                <table class="studio-table" style="font-size: 0.78rem; margin-bottom: 0;">
+                    <thead>
+                        <tr>
+                            <th>Run</th>
+                            <th>Experiment</th>
+                            <th>Model</th>
+                            <th>Backend</th>
+                            <th>RAG</th>
+                            <th>Sem</th>
+                            <th>Faith</th>
+                            <th>Rel</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in section.runs %}
+                        <tr>
+                            <td><span class="badge badge-slate" style="font-size: 0.65rem;">#{{ r.id }}</span></td>
+                            <td style="font-weight: 600; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                {{ r.experiment.name|default:"Standalone Run" }}
+                            </td>
+                            <td>
+                                {% if r.configuration_snapshot.ai_model_id %}
+                                    {{ r.configuration_snapshot.ai_model_id|slice:":18" }}
+                                {% elif r.experiment.selected_model %}
+                                    {{ r.experiment.selected_model.name|slice:":18" }}
+                                {% else %}
+                                    Standard
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge badge-slate" style="font-size: 0.65rem;">
+                                    {{ r.configuration_snapshot.hosting_backend|default:"default" }}
+                                </span>
+                            </td>
+                            <td style="color: var(--text-secondary);">
+                                {{ r.configuration_snapshot.rag_strategy|default:"none" }}
+                            </td>
+                            <td style="color: var(--accent-teal); font-weight: 600;">
+                                {{ r.average_semantic_score|floatformat:2|default:"-" }}
+                            </td>
+                            <td style="color: var(--accent-emerald);">
+                                {{ r.average_faithfulness|floatformat:2|default:"-" }}
+                            </td>
+                            <td style="color: var(--accent-primary);">
+                                {{ r.average_relevance|floatformat:2|default:"-" }}
+                            </td>
+                            <td>
+                                <div style="display: flex; gap: 0.3rem;">
+                                    <button type="button" class="btn btn-secondary btn-sm" 
+                                            style="font-size: 0.65rem; padding: 0.15rem 0.35rem;"
+                                            data-on-click="$$get('/benchmarking/stream/{{ r.id }}/')"
+                                            onclick="switchHubTab('monitor')">
+                                        View
+                                    </button>
+                                    <a href="{% url 'benchmarking:export_run_csv' r.id %}" 
+                                       class="btn btn-secondary btn-sm" 
+                                       style="font-size: 0.65rem; padding: 0.15rem 0.35rem;" 
+                                       download title="Download CSV">
+                                        &darr;
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </details>
+        {% empty %}
+        <div style="text-align: center; color: var(--text-muted); padding: 2rem;">
+            No completed benchmark runs in history yet.
+        </div>
+        {% endfor %}
+    </div>
+</div>

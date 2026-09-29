@@ -1,0 +1,48 @@
+<!-- Operational Status & Smart Opportunities Bar -->
+<div class="operational-hub-bar" id="operational-hub-bar">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.6rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span class="status-indicator-dot {% if operational_status.is_running %}running{% else %}idle{% endif %}"></span>
+            <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-primary); letter-spacing: 0.02em;">
+                {{ operational_status.status_label|default:"Engine Ready • Idle" }}
+            </span>
+            <span class="badge badge-slate" style="font-size: 0.68rem;">{{ total_runs_count|default:recent_runs|length }} Runs Logged</span>
+        </div>
+
+        <div>
+            {% if operational_status.has_runs %}
+                {% if operational_status.is_failed %}
+                    <span class="badge badge-error" style="cursor: pointer;" title="{{ operational_status.error_message }}"
+                          data-on-click="$$get('/benchmarking/stream/{{ operational_status.latest_run.id }}/')"
+                          onclick="switchHubTab('monitor')">
+                        ⚠️ Run #{{ operational_status.latest_run.id }} Failed ({{ operational_status.backend|title }})
+                    </span>
+                {% else %}
+                    <span class="badge badge-success" style="cursor: pointer;" 
+                          data-on-click="$$get('/benchmarking/stream/{{ operational_status.latest_run.id }}/')"
+                          onclick="switchHubTab('monitor')">
+                        ✅ Last Run #{{ operational_status.latest_run.id }}: {{ operational_status.model_short }} ({{ operational_status.backend|title }})
+                    </span>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Natural Extensions / Untested Model x ScenarioGroup Opportunities -->
+    {% if smart_opportunities %}
+    <div class="opportunities-container" style="background: rgba(15, 23, 42, 0.6); border: 1px dashed rgba(99, 102, 241, 0.3); border-radius: 6px; padding: 0.45rem 0.65rem; display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+        <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--accent-primary); letter-spacing: 0.04em; white-space: nowrap;">
+            &#128161; Untested Extensions:
+        </span>
+        <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; flex: 1;">
+            {% for opp in smart_opportunities %}
+            <button type="button" class="opportunity-chip" 
+                    onclick="applyOpportunity('{{ opp.model_hf_id }}', '{{ opp.scenario_group_id }}')"
+                    title="Load {{ opp.model_short }} on {{ opp.scenario_group_name }} ({{ opp.scenario_count }} scenarios) into Matrix Composer">
+                + {{ opp.model_short }} &times; {{ opp.scenario_group_name|truncatechars:26 }}
+            </button>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>

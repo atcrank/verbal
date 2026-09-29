@@ -1054,3 +1054,207 @@ class HardwareAwareTrainingAndABEvalTests(TestCase):
         self.assertIn("verdict", json_response.json())
 
 
+class AdaptiveBenchmarkHubAndLeaderboardTests(TestCase):
+    """
+    Tests for the Adaptive Benchmark Hub, Nuanced Leaderboard, and Grouped History.
+    """
+
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_superuser(username="hub_admin", password="password", email="admin@test.com")
+        self.client.force_login(self.user)
+
+        self.model_a = LocalAIModel.objects.create(name="Gemma 2B", hf_model_id="google/gemma-2-2b-it")
+        self.model_b = LocalAIModel.objects.create(name="Qwen 4B", hf_model_id="Qwen/Qwen-4B")
+
+        self.corpus = BenchmarkCorpus.objects.create(name="Hub Test Corpus")
+        self.sg1 = ScenarioGroup.objects.create(name="Robotics Core")
+        self.scen1 = BenchmarkScenario.objects.create(
+            question="What is step 1?", ideal_answer="Turn on power."
+        )
+        self.sg1.scenarios.add(self.scen1)
+
+        self.sg2 = ScenarioGroup.objects.create(name="Medical Diagnosis")
+        self.scen2 = BenchmarkScenario.objects.create(
+            question="Diagnosis for fever?", ideal_answer="Viral infection."
+        )
+        self.sg2.scenarios.add(self.scen2)
+
+        self.inv = Investigation.objects.create(name="Hub Architecture Investigation")
+
+    def test_operational_status_healthy_and_crashed(self):
+        from benchmarking.hub import get_operational_status
+
+        # Create healthy experiment and run
+        exp_healthy = Experiment.objects.create(
+            investigation=self.inv,
+            name="Healthy Run Exp",
+            scenario_group=self.sg1,
+            selected_model=self.model_a,
+            configuration={"hosting_backend": "ollama", "ai_model_id": self.model_a.hf_model_id}
+        )
+        run_healthy = BenchmarkRun.objects.create(
+            experiment=exp_healthy,
+            corpus=self.corpus,
+            average_semantic_score=0.85,
+            configuration_snapshot={"hosting_backend": "ollama", "ai_model_id": self.model_a.hf_model_id}
+        )
+        BenchmarkResult.objects.create(
+            run=run_healthy,
+            scenario=self.scen1,
+            prompt_text="Q1",
+            raw_retrieved_text="Context",
+            generated_response="Valid completion response here.",
+            duration_seconds=12.0,
+            rag_recall_score=0.8,
+            semantic_score=0.85,
+            extra_metrics={"tokens_per_second": 4.5}
+        )
+
+        status_healthy = get_operational_status()
+        self.assertTrue(status_healthy["has_runs"])
+        self.assertFalse(status_healthy["is_failed"])
+        self.assertEqual(status_healthy["latest_run"].id, run_healthy.id)
+
+        # Create failed/crashed run
+        exp_crashed = Experiment.objects.create(
+            investigation=self.inv,
+            name="Crashed Run Exp",
+            scenario_group=self.sg2,
+            selected_model=self.model_b,
+            configuration={"hosting_backend": "vllm", "ai_model_id": self.model_b.hf_model_id}
+        )
+        run_crashed = BenchmarkRun.objects.create(
+            experiment=exp_crashed,
+            corpus=self.corpus,
+            average_semantic_score=None,
+            configuration_snapshot={"hosting_backend": "vllm", "ai_model_id": self.model_b.hf_model_id}
+        )
+        BenchmarkResult.objects.create(
+            run=run_crashed,
+            scenario=self.scen2,
+            prompt_text="Q2",
+            raw_retrieved_text="",
+            generated_response="GenerationFailed: Generation failed after 2 attempts. Container timed out.",
+            duration_seconds=0.0,
+            rag_recall_score=0.0,
+            semantic_score=-0.05,
+            extra_metrics={"error": "Connection refused"}
+        )
+
+        status_crashed = get_operational_status()
+        self.assertTrue(status_crashed["has_runs"])
+        self.assertTrue(status_crashed["is_failed"])
+        self.assertIn("Generation failed", status_crashed["error_message"])
+
+    def test_smart_opportunities_discovery(self):
+        from benchmarking.hub import get_smart_opportunities
+
+        # In setUp, model_a and model_b have no runs on sg1 or sg2
+        opps = get_smart_opportunities(limit=5)
+        self.assertGreaterEqual(len(opps), 2)
+        pairs = [(o.model_hf_id, o.scenario_group_id) for o in opps]
+        self.assertIn((self.model_a.hf_model_id, self.sg1.id), pairs)
+
+        # Now register a completed run for model_a on sg1
+        exp = Experiment.objects.create(
+            investigation=self.inv,
+            name="Model A on SG1",
+            scenario_group=self.sg1,
+            selected_model=self.model_a,
+            configuration={"ai_model_id": self.model_a.hf_model_id}
+        )
+        run = BenchmarkRun.objects.create(
+            experiment=exp,
+            corpus=self.corpus,
+            average_semantic_score=0.75,
+            configuration_snapshot={"ai_model_id": self.model_a.hf_model_id}
+        )
+
+        opps_after = get_smart_opportunities(limit=5)
+        pairs_after = [(o.model_hf_id, o.scenario_group_id) for o in opps_after]
+        self.assertNotIn((self.model_a.hf_model_id, self.sg1.id), pairs_after)
+
+    def test_nuanced_leaderboard_pareto_badges(self):
+        from benchmarking.hub import get_nuanced_leaderboard
+
+        # 1. Quality leader
+        exp_q = Experiment.objects.create(
+            investigation=self.inv, name="High Quality", scenario_group=self.sg1, selected_model=self.model_a
+        )
+        run_q = BenchmarkRun.objects.create(
+            experiment=exp_q,
+            corpus=self.corpus,
+            average_semantic_score=0.92,
+            average_faithfulness=0.88,
+            configuration_snapshot={"hosting_backend": "pytorch", "ai_model_id": self.model_a.hf_model_id, "rag_strategy": "unified_dedup"}
+        )
+        BenchmarkResult.objects.create(
+            run=run_q, scenario=self.scen1, generated_response="High precision causal deduction.",
+            duration_seconds=40.0, rag_recall_score=0.9, semantic_score=0.92, faithfulness_score=0.88,
+            extra_metrics={"tokens_per_second": 3.0}
+        )
+
+        # 2. Speed leader
+        exp_s = Experiment.objects.create(
+            investigation=self.inv, name="High Speed", scenario_group=self.sg1, selected_model=self.model_b
+        )
+        run_s = BenchmarkRun.objects.create(
+            experiment=exp_s,
+            corpus=self.corpus,
+            average_semantic_score=0.70,
+            average_faithfulness=0.65,
+            configuration_snapshot={"hosting_backend": "ollama", "ai_model_id": self.model_b.hf_model_id, "rag_strategy": "none"}
+        )
+        BenchmarkResult.objects.create(
+            run=run_s, scenario=self.scen1, generated_response="Fast concise reply.",
+            duration_seconds=10.0, rag_recall_score=0.5, semantic_score=0.70, faithfulness_score=0.65,
+            extra_metrics={"tokens_per_second": 12.0}
+        )
+
+        leaderboard = get_nuanced_leaderboard()
+        self.assertGreaterEqual(len(leaderboard), 2)
+        quality_leader = next((e for e in leaderboard if "🥇 Quality Leader" in e.badges), None)
+        self.assertIsNotNone(quality_leader)
+        self.assertEqual(quality_leader.model_name, self.model_a.hf_model_id.split("/")[-1])
+
+        speed_leader = next((e for e in leaderboard if "⚡ Speed Leader" in e.badges), None)
+        self.assertIsNotNone(speed_leader)
+        self.assertEqual(speed_leader.model_name, self.model_b.hf_model_id.split("/")[-1])
+
+    def test_grouped_history_and_api_endpoints(self):
+        from benchmarking.hub import get_grouped_history
+
+        exp = Experiment.objects.create(
+            investigation=self.inv, name="Test History", scenario_group=self.sg1, selected_model=self.model_a
+        )
+        run = BenchmarkRun.objects.create(
+            experiment=exp, corpus=self.corpus, average_semantic_score=0.80,
+            configuration_snapshot={"hosting_backend": "ollama", "ai_model_id": self.model_a.hf_model_id}
+        )
+        BenchmarkResult.objects.create(
+            run=run, scenario=self.scen1, generated_response="Good output", duration_seconds=15.0,
+            rag_recall_score=0.8, semantic_score=0.80, extra_metrics={}
+        )
+
+        # Test grouping axes
+        history_sg = get_grouped_history(group_by="scenario_group")
+        self.assertTrue(any(h.group_key == self.sg1.name for h in history_sg))
+
+        history_backend = get_grouped_history(group_by="hosting_backend")
+        self.assertTrue(any("Ollama" in h.group_key for h in history_backend))
+
+        # Test API endpoints
+        resp_lb = self.client.get("/benchmarking/api/leaderboard/")
+        self.assertEqual(resp_lb.status_code, 200)
+        self.assertEqual(resp_lb["Content-Type"], "text/event-stream")
+        self.assertIn("hub-leaderboard-container", resp_lb.content.decode("utf-8"))
+
+        resp_gh = self.client.get(f"/benchmarking/api/grouped-history/?group_by=investigation")
+        self.assertEqual(resp_gh.status_code, 200)
+        self.assertEqual(resp_gh["Content-Type"], "text/event-stream")
+        self.assertIn("hub-history-container", resp_gh.content.decode("utf-8"))
+        self.assertIn("Investigation #", resp_gh.content.decode("utf-8"))
+
+
+
