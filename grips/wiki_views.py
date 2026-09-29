@@ -153,6 +153,30 @@ def wiki_query_links(request):
     return JsonResponse({'results': results})
 
 
+def wiki_live_search(request):
+    """
+    Modern Datastar SSE endpoint for reactive wiki search autocomplete.
+    Uses DatastarSSE.patch_elements to morph the search dropdown in place.
+    """
+    from metacognition.datastar import DatastarSSE
+    from django.template.loader import render_to_string
+    from django.http import StreamingHttpResponse
+
+    q = request.GET.get('q', '').strip()
+    results = search_wiki_links(q, limit=12) if q else []
+
+    html = render_to_string(
+        'grips/wiki/partials/search_dropdown.html',
+        {'query': q, 'results': results},
+        request=request
+    )
+    sse_data = DatastarSSE.patch_elements(html, selector="#search-dropdown", mode="morph")
+    response = StreamingHttpResponse(iter([sse_data]), content_type="text/event-stream")
+    response["Cache-Control"] = "no-cache"
+    response["X-Accel-Buffering"] = "no"
+    return response
+
+
 @ensure_csrf_cookie
 def wiki_history(request, path=""):
     """

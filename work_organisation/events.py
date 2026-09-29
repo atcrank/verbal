@@ -30,17 +30,16 @@ def publish_whiteboard_event(session_id: str | int, event_type: str, payload: di
 def format_datastar_sse(event_type: str, data: dict, fragment_html: Optional[str] = None) -> str:
     """
     Formats an event for Datastar SSE consumption.
-    Supports both signal merges and fragment merges.
+    Supports both signal merges and fragment merges via DatastarSSE.
     """
-    lines = []
-    if fragment_html:
-        lines.append("event: datastar-merge-fragments")
-        for line in fragment_html.split("\n"):
-            lines.append(f"data: fragments {line}")
-    else:
-        lines.append(f"event: {event_type}")
-        lines.append(f"data: {json.dumps(data)}")
+    from metacognition.datastar import DatastarSSE
 
+    if fragment_html:
+        return DatastarSSE.patch_elements(fragment_html)
+
+    lines = []
+    lines.append(f"event: {event_type}")
+    lines.append(f"data: {json.dumps(data)}")
     lines.append("\n")
     return "\n".join(lines)
 

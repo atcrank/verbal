@@ -805,7 +805,9 @@
         }
     </style>
 </head>
-<body data-session-id="{{ session.id }}">
+<body data-session-id="{{ session.id }}"
+      data-on-load="@get('/api/work/stream_session/{{ session.id }}/')"
+      data-init="@get('/api/work/stream_session/{{ session.id }}/')">
 
     <!-- 1. TOP BREADCRUMB HEADER -->
     <header class="mindmap-header">
@@ -1972,6 +1974,13 @@
         window.addEventListener('load', () => {
             setTimeout(drawConnectors, 100);
             updateBreadcrumbs();
+
+            // Observe canvas DOM mutations so Datastar element patches automatically refresh connector lines
+            const canvasContainer = document.getElementById('canvasZoomContainer') || document.body;
+            const domObserver = new MutationObserver(() => {
+                requestAnimationFrame(drawConnectors);
+            });
+            domObserver.observe(canvasContainer, { childList: true, subtree: true });
         });
         window.addEventListener('resize', drawConnectors);
     </script>

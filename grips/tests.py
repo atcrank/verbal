@@ -489,6 +489,25 @@ class TestWikiServiceAndEndpoints(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertContains(res, "Comparative Literature Synthesis Matrix")
 
+    def test_wiki_live_search_datastar(self):
+        from django.test import Client
+        client = Client()
+
+        # Query live search with empty string
+        res = client.get('/wiki/api/live-search/?q=')
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res['Content-Type'], 'text/event-stream')
+        content = b"".join(res.streaming_content).decode('utf-8')
+        self.assertIn("event: datastar-patch-elements", content)
+        self.assertIn('id="search-dropdown"', content)
+
+        # Query live search with term
+        res = client.get('/wiki/api/live-search/?q=test')
+        self.assertEqual(res.status_code, 200)
+        content = b"".join(res.streaming_content).decode('utf-8')
+        self.assertIn("event: datastar-patch-elements", content)
+        self.assertIn('class="search-dropdown open"', content)
+
     def test_milkdown_bundle_no_external_node_process(self):
         from django.conf import settings
         bundle_path = settings.BASE_DIR / 'static' / 'vendor' / 'milkdown' / 'crepe.bundle.mjs'

@@ -165,6 +165,8 @@ class WhiteboardSSEEventTests(TestCase):
     def test_format_datastar_sse_fragment(self):
         html = '<div id="card-42" class="card">Hello</div>'
         res = format_datastar_sse("merge", {}, fragment_html=html)
+        self.assertIn("event: datastar-patch-elements", res)
+        self.assertIn("data: elements <div id=\"card-42\"", res)
         self.assertIn("event: datastar-merge-fragments", res)
         self.assertIn("data: fragments <div id=\"card-42\"", res)
 

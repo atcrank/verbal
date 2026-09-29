@@ -184,8 +184,8 @@ def stream_blueprint(request, run_id: str):
                     <span class="badge">Step {step_count}</span>
                     <strong>Executing: {step_name}</strong>
                 </div>"""
-                yield DatastarSSE.merge_fragments(frag, selector="#blueprint-status", merge_mode="morph")
-                yield DatastarSSE.merge_signals({"currentStep": step_name, "stepCount": step_count})
+                yield DatastarSSE.patch_elements(frag, selector="#blueprint-status", mode="morph")
+                yield DatastarSSE.patch_signals({"currentStep": step_name, "stepCount": step_count})
 
             elif event_type == "approval_required":
                 tool_name = payload.get("tool_name", "")
@@ -202,8 +202,8 @@ def stream_blueprint(request, run_id: str):
                         <button data-on-click="@post('/api/meta/cancel_blueprint/', {{run_id: '{run_id}'}})" class="btn-cancel">Cancel Run</button>
                     </div>
                 </div>"""
-                yield DatastarSSE.merge_fragments(card_html, selector="#tool-approval-container", merge_mode="morph")
-                yield DatastarSSE.merge_signals({"requiresApproval": True, "pendingTool": tool_name})
+                yield DatastarSSE.patch_elements(card_html, selector="#tool-approval-container", mode="morph")
+                yield DatastarSSE.patch_signals({"requiresApproval": True, "pendingTool": tool_name})
 
             elif event_type == "step_completed":
                 step_name = payload.get("step_name", "")
@@ -212,15 +212,15 @@ def stream_blueprint(request, run_id: str):
                     <h5>✅ {step_name}</h5>
                     <p>{output}</p>
                 </div>"""
-                yield DatastarSSE.merge_fragments(frag, selector="#monologue-stream", merge_mode="append")
+                yield DatastarSSE.patch_elements(frag, selector="#monologue-stream", mode="append")
 
             elif event_type == "completed":
                 final_resp = payload.get("final_response", "")
                 frag = f"""<div id="blueprint-final-response" class="response-content">
                     <div class="markdown-body">{final_resp}</div>
                 </div>"""
-                yield DatastarSSE.merge_fragments(frag, selector="#blueprint-final-response", merge_mode="morph")
-                yield DatastarSSE.merge_signals({"isStreaming": False, "status": "completed"})
+                yield DatastarSSE.patch_elements(frag, selector="#blueprint-final-response", mode="morph")
+                yield DatastarSSE.patch_signals({"isStreaming": False, "status": "completed"})
                 break
 
             elif event_type == "cancelled":
@@ -228,8 +228,8 @@ def stream_blueprint(request, run_id: str):
                     <span class="badge badge-cancelled">Cancelled</span>
                     <strong>Execution halted by user.</strong>
                 </div>"""
-                yield DatastarSSE.merge_fragments(frag, selector="#blueprint-status", merge_mode="morph")
-                yield DatastarSSE.merge_signals({"isStreaming": False, "status": "cancelled"})
+                yield DatastarSSE.patch_elements(frag, selector="#blueprint-status", mode="morph")
+                yield DatastarSSE.patch_signals({"isStreaming": False, "status": "cancelled"})
                 break
 
             elif event_type == "error":
@@ -238,8 +238,8 @@ def stream_blueprint(request, run_id: str):
                     <span class="badge badge-error">Error</span>
                     <strong>{err_msg}</strong>
                 </div>"""
-                yield DatastarSSE.merge_fragments(frag, selector="#blueprint-status", merge_mode="morph")
-                yield DatastarSSE.merge_signals({"isStreaming": False, "status": "error"})
+                yield DatastarSSE.patch_elements(frag, selector="#blueprint-status", mode="morph")
+                yield DatastarSSE.patch_signals({"isStreaming": False, "status": "error"})
                 break
 
     return StreamingHttpResponse(event_generator(), content_type="text/event-stream")

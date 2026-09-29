@@ -10,6 +10,9 @@
     <!-- Milkdown Crepe CSS -->
     <link rel="stylesheet" href="{% static 'vendor/milkdown/crepe.css' %}">
 
+    <!-- Datastar for reactive hypermedia interactions -->
+    <script type="module" src="{% static 'vendor/datastar.js' %}"></script>
+
     <style>
         :root {
             --bg-canvas: #0b1120;
@@ -117,6 +120,10 @@
             overflow-y: auto;
             z-index: 100;
             display: none;
+        }
+
+        .search-dropdown.open {
+            display: block;
         }
 
         .search-item {
@@ -290,7 +297,13 @@
         <!-- Global Header Autocomplete Search -->
         <div class="search-container">
             <span class="search-icon">🔍</span>
-            <input type="text" id="global-wiki-search" class="search-input" placeholder="Search concepts, documents, references... (Ctrl+K)" autocomplete="off">
+            <input type="text"
+                   id="global-wiki-search"
+                   class="search-input"
+                   placeholder="Search concepts, documents, references... (Ctrl+K)"
+                   autocomplete="off"
+                   data-on-input__debounce.180ms="@get('/wiki/api/live-search/?q=' + el.value)"
+                   data-on:input__debounce.180ms="@get('/wiki/api/live-search/?q=' + el.value)">
             <div id="search-dropdown" class="search-dropdown"></div>
         </div>
 
@@ -323,58 +336,24 @@
         Grips Knowledge Base &bull; Target: <code>workspaces/grips_okf</code>
     </footer>
 
-    <!-- Global Search JavaScript -->
+    <!-- Global Search Keyboard Shortcuts & Dismissal -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const input = document.getElementById('global-wiki-search');
             const dropdown = document.getElementById('search-dropdown');
-            let debounceTimer = null;
 
             document.addEventListener('keydown', (e) => {
                 if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
                     e.preventDefault();
                     input.focus();
+                } else if (e.key === 'Escape') {
+                    if (dropdown) dropdown.classList.remove('open');
                 }
-            });
-
-            input.addEventListener('input', (e) => {
-                const query = e.target.value.trim();
-                clearTimeout(debounceTimer);
-                if (query.length === 0) {
-                    dropdown.style.display = 'none';
-                    return;
-                }
-                debounceTimer = setTimeout(() => {
-                    fetch(`/wiki/api/query-links/?q=${encodeURIComponent(query)}`)
-                        .then(r => r.json())
-                        .then(data => {
-                            dropdown.innerHTML = '';
-                            if (!data.results || data.results.length === 0) {
-                                dropdown.innerHTML = '<div class="search-item" style="color:var(--text-muted)">No matching documents found</div>';
-                                dropdown.style.display = 'block';
-                                return;
-                            }
-                            data.results.forEach(item => {
-                                const el = document.createElement('a');
-                                el.href = `/wiki/${item.slug}/`;
-                                el.className = 'search-item';
-                                el.innerHTML = `
-                                    <div>
-                                        <div class="search-item-title">${item.title}</div>
-                                        <div class="search-item-meta">${item.rel_path}</div>
-                                    </div>
-                                    <span style="font-size:0.75rem; background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px;">${item.type}</span>
-                                `;
-                                dropdown.appendChild(el);
-                            });
-                            dropdown.style.display = 'block';
-                        });
-                }, 180);
             });
 
             document.addEventListener('click', (e) => {
-                if (!input.contains(e.target) && !dropdown.contains(e.target)) {
-                    dropdown.style.display = 'none';
+                if (dropdown && !input.contains(e.target) && !dropdown.contains(e.target)) {
+                    dropdown.classList.remove('open');
                 }
             });
         });

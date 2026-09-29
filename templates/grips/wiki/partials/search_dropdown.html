@@ -1,0 +1,15 @@
+<div id="search-dropdown" class="search-dropdown{% if query %} open{% endif %}">
+    {% if query and not results %}
+        <div class="search-item" style="color:var(--text-muted); cursor:default;">No matching documents found</div>
+    {% elif results %}
+        {% for item in results %}
+            <a href="/wiki/{{ item.slug }}/" class="search-item">
+                <div>
+                    <div class="search-item-title">{{ item.title }}</div>
+                    <div class="search-item-meta">{{ item.rel_path }}</div>
+                </div>
+                <span style="font-size:0.75rem; background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px;">{{ item.type }}</span>
+            </a>
+        {% endfor %}
+    {% endif %}
+</div>

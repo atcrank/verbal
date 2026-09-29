@@ -382,7 +382,7 @@ def stream_generation(request):
     log_id = request.GET.get("log_id", "")
 
     def event_generator():
-        yield DatastarSSE.merge_signals({
+        yield DatastarSSE.patch_signals({
             "isStreaming": True,
             "runId": run_id,
             "status": "generating"
@@ -394,8 +394,8 @@ def stream_generation(request):
             if log and log.generated_response and not log.generated_response.startswith('<div id="gen-stream-'):
                 html = markdown.markdown(log.generated_response, extensions=['fenced_code', 'tables', 'nl2br', 'sane_lists']) if markdown else log.generated_response
                 frag = f'<div id="gen-stream-{run_id}" class="markdown-body">{html}</div>'
-                yield DatastarSSE.merge_fragments(frag, selector=f"#gen-stream-{run_id}", merge_mode="morph")
-                yield DatastarSSE.merge_signals({"isStreaming": False, "status": "completed"})
+                yield DatastarSSE.patch_elements(frag, selector=f"#gen-stream-{run_id}", mode="morph")
+                yield DatastarSSE.patch_signals({"isStreaming": False, "status": "completed"})
                 return
 
         channel_name = f"verbal_events_{run_id}"
@@ -407,14 +407,14 @@ def stream_generation(request):
                 final_text = data.get("final_response", "")
                 html = markdown.markdown(final_text, extensions=['fenced_code', 'tables', 'nl2br', 'sane_lists']) if markdown else final_text
                 frag = f'<div id="gen-stream-{run_id}" class="markdown-body">{html}</div>'
-                yield DatastarSSE.merge_fragments(frag, selector=f"#gen-stream-{run_id}", merge_mode="morph")
-                yield DatastarSSE.merge_signals({"isStreaming": False, "status": "completed"})
+                yield DatastarSSE.patch_elements(frag, selector=f"#gen-stream-{run_id}", mode="morph")
+                yield DatastarSSE.patch_signals({"isStreaming": False, "status": "completed"})
                 break
             elif event_type == "error":
                 err_msg = data.get("error", "Generation error")
                 frag = f'<div id="gen-stream-{run_id}" class="agent-step error"><span class="badge badge-error">Error</span><strong>{err_msg}</strong></div>'
-                yield DatastarSSE.merge_fragments(frag, selector=f"#gen-stream-{run_id}", merge_mode="morph")
-                yield DatastarSSE.merge_signals({"isStreaming": False, "status": "error"})
+                yield DatastarSSE.patch_elements(frag, selector=f"#gen-stream-{run_id}", mode="morph")
+                yield DatastarSSE.patch_signals({"isStreaming": False, "status": "error"})
                 break
 
     return StreamingHttpResponse(event_generator(), content_type="text/event-stream")

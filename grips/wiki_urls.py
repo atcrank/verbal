@@ -11,6 +11,7 @@ urlpatterns = [
     path("research/matrix/", wiki_views.wiki_synthesis_matrix, name="synthesis_matrix"),
     path("api/graph-data/", wiki_views.wiki_graph_data, name="graph_data"),
     path("api/query-links/", wiki_views.wiki_query_links, name="query_links"),
+    path("api/live-search/", wiki_views.wiki_live_search, name="live_search"),
     re_path(r"^api/save/(?P<path>.*)$", wiki_views.wiki_save, name="save"),
     re_path(r"^history/(?P<path>.*)$", wiki_views.wiki_history, name="history"),
     re_path(r"^(?P<path>.*)/$", wiki_views.wiki_page, name="page"),
