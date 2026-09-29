@@ -12,10 +12,11 @@
         <div>
             {% if operational_status.has_runs %}
                 {% if operational_status.is_failed %}
-                    <span class="badge badge-error" style="cursor: pointer;" title="{{ operational_status.error_message }}"
+                    <span class="badge badge-warning" style="cursor: pointer; border: 1px solid var(--accent-warning);" 
+                          title="{{ operational_status.error_message }}"
                           data-on-click="$$get('/benchmarking/stream/{{ operational_status.latest_run.id }}/')"
                           onclick="switchHubTab('monitor')">
-                        ⚠️ Run #{{ operational_status.latest_run.id }} Failed ({{ operational_status.backend|title }})
+                        ⚠️ Run #{{ operational_status.latest_run.id }} Not Assessed &bull; {{ operational_status.defect_record.defect_category|default:"System Defect" }}
                     </span>
                 {% else %}
                     <span class="badge badge-success" style="cursor: pointer;" 

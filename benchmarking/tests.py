@@ -1145,7 +1145,9 @@ class AdaptiveBenchmarkHubAndLeaderboardTests(TestCase):
         status_crashed = get_operational_status()
         self.assertTrue(status_crashed["has_runs"])
         self.assertTrue(status_crashed["is_failed"])
-        self.assertIn("Generation failed", status_crashed["error_message"])
+        self.assertIsNotNone(status_crashed["defect_record"])
+        self.assertEqual(status_crashed["defect_record"].defect_category, "Hosting Backend Defect")
+        self.assertIn("vllm", status_crashed["error_message"].lower())
 
     def test_smart_opportunities_discovery(self):
         from benchmarking.hub import get_smart_opportunities
@@ -1212,13 +1214,34 @@ class AdaptiveBenchmarkHubAndLeaderboardTests(TestCase):
             extra_metrics={"tokens_per_second": 12.0}
         )
 
-        leaderboard = get_nuanced_leaderboard()
-        self.assertGreaterEqual(len(leaderboard), 2)
-        quality_leader = next((e for e in leaderboard if "🥇 Quality Leader" in e.badges), None)
+        # 3. Defective / Crashed run (must be separated into defect_entries, not scored_entries)
+        exp_crashed = Experiment.objects.create(
+            investigation=self.inv, name="Crashed Run", scenario_group=self.sg1, selected_model=self.model_b
+        )
+        run_crashed = BenchmarkRun.objects.create(
+            experiment=exp_crashed,
+            corpus=self.corpus,
+            average_semantic_score=None,
+            configuration_snapshot={"hosting_backend": "vllm", "ai_model_id": self.model_b.hf_model_id, "rag_strategy": "none"}
+        )
+        BenchmarkResult.objects.create(
+            run=run_crashed, scenario=self.scen1, generated_response="GenerationFailed: vLLM timeout",
+            duration_seconds=0.0, rag_recall_score=0.0, semantic_score=-0.05,
+            extra_metrics={"error": "Connection reset"}
+        )
+
+        lb_data = get_nuanced_leaderboard()
+        self.assertGreaterEqual(len(lb_data.scored_entries), 2)
+        # Verify defective run is NOT in scored entries
+        self.assertFalse(any(e.backend == "vllm" for e in lb_data.scored_entries))
+        # Verify defective run IS in defect entries
+        self.assertTrue(any(d.defect_category == "Hosting Backend Defect" for d in lb_data.defect_entries))
+
+        quality_leader = next((e for e in lb_data.scored_entries if "🥇 Quality Leader" in e.badges), None)
         self.assertIsNotNone(quality_leader)
         self.assertEqual(quality_leader.model_name, self.model_a.hf_model_id.split("/")[-1])
 
-        speed_leader = next((e for e in leaderboard if "⚡ Speed Leader" in e.badges), None)
+        speed_leader = next((e for e in lb_data.scored_entries if "⚡ Speed Leader" in e.badges), None)
         self.assertIsNotNone(speed_leader)
         self.assertEqual(speed_leader.model_name, self.model_b.hf_model_id.split("/")[-1])
 
@@ -1248,13 +1271,15 @@ class AdaptiveBenchmarkHubAndLeaderboardTests(TestCase):
         resp_lb = self.client.get("/benchmarking/api/leaderboard/")
         self.assertEqual(resp_lb.status_code, 200)
         self.assertEqual(resp_lb["Content-Type"], "text/event-stream")
+        self.assertEqual(resp_lb["Cache-Control"], "no-cache, no-store, must-revalidate")
         self.assertIn("hub-leaderboard-container", resp_lb.content.decode("utf-8"))
 
         resp_gh = self.client.get(f"/benchmarking/api/grouped-history/?group_by=investigation")
         self.assertEqual(resp_gh.status_code, 200)
         self.assertEqual(resp_gh["Content-Type"], "text/event-stream")
+        self.assertEqual(resp_gh["Cache-Control"], "no-cache, no-store, must-revalidate")
         self.assertIn("hub-history-container", resp_gh.content.decode("utf-8"))
-        self.assertIn("Investigation #", resp_gh.content.decode("utf-8"))
+        self.assertIn("Investigation Project", resp_gh.content.decode("utf-8"))
 
 
 

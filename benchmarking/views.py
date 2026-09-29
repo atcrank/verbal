@@ -106,7 +106,7 @@ def studio_view(request):
     # Operational Hub, Nuanced Leaderboard, and Grouped History
     operational_status = get_operational_status()
     smart_opportunities = get_smart_opportunities(limit=3)
-    leaderboard = get_nuanced_leaderboard()
+    leaderboard_data = get_nuanced_leaderboard()
     grouped_history = get_grouped_history(group_by="scenario_group")
     total_runs_count = BenchmarkRun.objects.count()
 
@@ -126,9 +126,11 @@ def studio_view(request):
         "estimated_latency_per_query": estimated_latency_per_query,
         "operational_status": operational_status,
         "smart_opportunities": smart_opportunities,
-        "leaderboard": leaderboard,
+        "leaderboard": leaderboard_data.scored_entries,
+        "defect_entries": leaderboard_data.defect_entries,
         "grouped_history": grouped_history,
         "group_by": "scenario_group",
+        "group_by_label": "Scenario Group (Corpus)",
         "selected_sg_id": None,
         "total_runs_count": total_runs_count,
         "current_time": timezone.now(),
@@ -140,18 +142,24 @@ def studio_view(request):
 def leaderboard_api(request):
     """
     Reactive Datastar SSE endpoint for filtering the Nuanced Leaderboard by ScenarioGroup.
+    Separates assessed performance rankings from environmental/system defects.
     """
     scenario_group_id = request.GET.get("scenario_group_id")
     scenario_groups = ScenarioGroup.objects.all().prefetch_related("scenarios").order_by("-id")
-    leaderboard = get_nuanced_leaderboard(scenario_group_id=int(scenario_group_id) if scenario_group_id else None)
+    leaderboard_data = get_nuanced_leaderboard(scenario_group_id=int(scenario_group_id) if scenario_group_id else None)
     context = {
-        "leaderboard": leaderboard,
+        "leaderboard": leaderboard_data.scored_entries,
+        "defect_entries": leaderboard_data.defect_entries,
         "scenario_groups": scenario_groups,
         "selected_sg_id": scenario_group_id,
     }
     html = render(request, "benchmarking/partials/hub_leaderboard.html", context).content.decode("utf-8")
-    sse = DatastarSSE.merge_fragments(html, selector="#hub-leaderboard-container", merge_mode="morph")
-    return HttpResponse(sse, content_type="text/event-stream")
+    sse = DatastarSSE.merge_fragments(html, selector="#hub-leaderboard-container", merge_mode="outer")
+    response = HttpResponse(sse, content_type="text/event-stream")
+    response["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response["Pragma"] = "no-cache"
+    response["Expires"] = "0"
+    return response
 
 
 @require_GET
@@ -161,13 +169,24 @@ def grouped_history_api(request):
     """
     group_by = request.GET.get("group_by", "scenario_group")
     grouped_history = get_grouped_history(group_by=group_by)
+    group_by_labels = {
+        "scenario_group": "Scenario Group (Corpus)",
+        "hosting_backend": "Hosting Backend (Runtime)",
+        "investigation": "Investigation Project",
+        "model": "Target AI Model",
+    }
     context = {
         "grouped_history": grouped_history,
         "group_by": group_by,
+        "group_by_label": group_by_labels.get(group_by, group_by.title()),
     }
     html = render(request, "benchmarking/partials/hub_grouped_history.html", context).content.decode("utf-8")
-    sse = DatastarSSE.merge_fragments(html, selector="#hub-history-container", merge_mode="morph")
-    return HttpResponse(sse, content_type="text/event-stream")
+    sse = DatastarSSE.merge_fragments(html, selector="#hub-history-container", merge_mode="outer")
+    response = HttpResponse(sse, content_type="text/event-stream")
+    response["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response["Pragma"] = "no-cache"
+    response["Expires"] = "0"
+    return response
 
 
 @require_POST

@@ -2,10 +2,10 @@
 Operational Hub, Nuanced Leaderboard, and Grouped History Aggregator for Benchmarking Studio.
 
 Provides robust, hardware-aware aggregation across multi-factor benchmark runs:
-1. get_operational_status: Current execution status, queue count, and structured last-run digest.
+1. get_operational_status: Real-time execution status and defect diagnosis.
 2. get_smart_opportunities: Identifies un-benchmarked (Model x ScenarioGroup) pairs.
-3. get_nuanced_leaderboard: Multi-objective Pareto rankings (Quality, Speed, Reliability, VRAM).
-4. get_grouped_history: Multi-axis historical aggregation with 1-click investigation deep links.
+3. get_nuanced_leaderboard: Separates assessed performance rankings from system/infrastructure defects.
+4. get_grouped_history: Multi-axis historical aggregation with explicit defect tracking and deep links.
 """
 
 import logging
@@ -39,8 +39,26 @@ class SmartOpportunity:
 
 
 @dataclass
+class DefectRecord:
+    """
+    Diagnostic record of an unassessed benchmark run that failed due to an environmental or system defect.
+    Crucially: benchmark failure is not treated as a poor model evaluation score. It is an unassessed defect.
+    """
+    run_id: int
+    investigation_id: Optional[int]
+    model_name: str
+    backend: str
+    rag_strategy: str
+    scenario_group_name: str
+    defect_category: str       # e.g., 'Hosting Backend', 'Hardware / VRAM', 'RAG Retrieval', 'Scenario / Corpus'
+    summary: str               # Human-readable defect explanation
+    raw_error: str             # Error snippet or trace
+    timestamp: Any
+
+
+@dataclass
 class LeaderboardEntry:
-    """Multi-objective evaluation entry for a Model + Backend + RAG Strategy configuration."""
+    """Multi-objective evaluation entry for an assessed Model + Backend + RAG Strategy configuration."""
     model_name: str
     backend: str
     rag_strategy: str
@@ -54,11 +72,16 @@ class LeaderboardEntry:
     avg_relevance: Optional[float]
     avg_tokens_per_second: Optional[float]
     avg_duration_seconds: Optional[float]
-    is_unstable: bool
-    error_summary: Optional[str] = None
     badges: List[str] = field(default_factory=list)
     latest_run_id: Optional[int] = None
     investigation_id: Optional[int] = None
+
+
+@dataclass
+class LeaderboardData:
+    """Container separating genuine assessed rankings from unassessed system defects."""
+    scored_entries: List[LeaderboardEntry]
+    defect_entries: List[DefectRecord]
 
 
 @dataclass
@@ -67,7 +90,9 @@ class GroupedHistorySection:
     group_key: str
     group_type: str
     total_runs: int
-    success_rate: float
+    assessed_runs: int
+    defect_runs: int
+    all_defects: bool
     avg_semantic: Optional[float]
     avg_latency: Optional[float]
     runs: List[BenchmarkRun] = field(default_factory=list)
@@ -85,14 +110,74 @@ def _is_result_successful(res: BenchmarkResult) -> bool:
     return True
 
 
+def diagnose_run_defect(run: BenchmarkRun) -> Optional[DefectRecord]:
+    """
+    Diagnoses whether a run failed due to a system defect rather than model performance.
+    Identifies the defect category: Hosting Backend, Hardware Resource, RAG, or Scenario.
+    """
+    results = list(run.results.all())
+    total_results = len(results)
+
+    if total_results > 0:
+        successful_count = sum(1 for res in results if _is_result_successful(res))
+        if successful_count > 0:
+            return None
+    elif run.average_semantic_score is not None and run.average_semantic_score >= 0:
+        return None
+
+    # Run produced zero successful completions: classify system defect
+    snap = run.configuration_snapshot or {}
+    model_name = snap.get("ai_model_id") or (
+        run.experiment.selected_model.hf_model_id if (run.experiment and run.experiment.selected_model) else "Default Model"
+    )
+    backend = (snap.get("hosting_backend") or "pytorch").lower()
+    rag_strategy = snap.get("rag_strategy") or "none"
+    sg_name = run.experiment.scenario_group.name if (run.experiment and run.experiment.scenario_group) else "General"
+
+    first_res = results[0] if results else None
+    resp = (first_res.generated_response or "") if first_res else ""
+    err_metric = str(first_res.extra_metrics.get("error", "")) if first_res else ""
+    combined_err = f"{resp} {err_metric}".strip()
+
+    # Determine defect category and actionable diagnosis
+    combined_lower = combined_err.lower()
+    if "connection" in combined_lower or "timed out" in combined_lower or "refused" in combined_lower or "generationfailed" in combined_lower or backend in ("vllm", "ollama"):
+        category = "Hosting Backend Defect"
+        summary = f"{backend.upper()} engine communication defect (connection refused, timed out, or container aborted)."
+    elif "cuda" in combined_lower or "memory" in combined_lower or "oom" in combined_lower or "allocate" in combined_lower:
+        category = "Hardware Resource Defect"
+        summary = "GPU Out of Memory (OOM) or tensor allocation failure."
+    elif "rag" in combined_lower or "vector" in combined_lower or "embedding" in combined_lower or "pgvector" in combined_lower:
+        category = "RAG Retrieval Defect"
+        summary = "Vector retrieval or semantic embedding pipeline error."
+    elif total_results == 0:
+        category = "Scenario Configuration Defect"
+        summary = "Run recorded zero scenario executions (aborted or empty prompt list)."
+    else:
+        category = "Runtime System Defect"
+        summary = "Unclassified runtime exception during generation."
+
+    return DefectRecord(
+        run_id=run.id,
+        investigation_id=run.experiment.investigation_id if run.experiment else None,
+        model_name=model_name.split("/")[-1],
+        backend=backend.title(),
+        rag_strategy=rag_strategy,
+        scenario_group_name=sg_name,
+        defect_category=category,
+        summary=summary,
+        raw_error=combined_err[:220] if combined_err else "No output captured",
+        timestamp=run.timestamp,
+    )
+
+
 def get_operational_status() -> Dict[str, Any]:
     """
     Returns the real-time operational status of the benchmarking subsystem.
-    Differentiates healthy completed runs from crashed runs so users are never
-    greeted with an uninformative screen of zeros.
+    Differentiates healthy completed runs from crashed runs with accurate defect diagnosis.
     """
     latest_run = (
-        BenchmarkRun.objects.select_related("experiment", "experiment__investigation", "experiment__selected_model")
+        BenchmarkRun.objects.select_related("experiment", "experiment__investigation", "experiment__selected_model", "experiment__scenario_group")
         .prefetch_related("results")
         .order_by("-timestamp")
         .first()
@@ -105,34 +190,17 @@ def get_operational_status() -> Dict[str, Any]:
             "latest_run": None,
             "status_label": "Engine Ready • Idle",
             "is_failed": False,
+            "defect_record": None,
             "error_message": "",
         }
 
-    # Evaluate results to determine health
-    results = list(latest_run.results.all())
-    total_results = len(results)
-
-    is_failed = False
-    error_message = ""
-
-    if total_results > 0:
-        successful_count = sum(1 for res in results if _is_result_successful(res))
-        if successful_count == 0:
-            is_failed = True
-            first_res = results[0]
-            if "GenerationFailed" in (first_res.generated_response or ""):
-                error_message = "Generation failed (engine unresponsive or container timed out)"
-            elif first_res.extra_metrics.get("error"):
-                error_message = str(first_res.extra_metrics["error"])[:80]
-            else:
-                error_message = "All scenario executions failed or produced null responses"
-    elif latest_run.average_semantic_score is None:
-        is_failed = True
-        error_message = "Run recorded zero scenario completions"
+    defect = diagnose_run_defect(latest_run)
+    is_failed = defect is not None
+    error_message = defect.summary if defect else ""
 
     backend = latest_run.configuration_snapshot.get("hosting_backend", "default")
     model_hf = latest_run.configuration_snapshot.get("ai_model_id") or (
-        latest_run.experiment.selected_model.hf_model_id if latest_run.experiment.selected_model else "Standard LLM"
+        latest_run.experiment.selected_model.hf_model_id if (latest_run.experiment and latest_run.experiment.selected_model) else "Standard LLM"
     )
     model_short = model_hf.split("/")[-1]
 
@@ -141,6 +209,7 @@ def get_operational_status() -> Dict[str, Any]:
         "has_runs": True,
         "latest_run": latest_run,
         "is_failed": is_failed,
+        "defect_record": defect,
         "error_message": error_message,
         "backend": backend,
         "model_short": model_short,
@@ -159,10 +228,11 @@ def get_smart_opportunities(limit: int = 3) -> List[SmartOpportunity]:
     if not models or not scenario_groups:
         return []
 
-    # Map of (model_hf_id, scenario_group_id) that have at least 1 completed run
     tested_pairs = set()
     runs = BenchmarkRun.objects.select_related("experiment", "experiment__selected_model").all()
     for r in runs:
+        if not r.experiment:
+            continue
         sg_id = r.experiment.scenario_group_id
         if not sg_id:
             continue
@@ -178,7 +248,6 @@ def get_smart_opportunities(limit: int = 3) -> List[SmartOpportunity]:
         m_hf = m.hf_model_id
         m_short = m.name or m_hf.split("/")[-1]
         for sg in scenario_groups:
-            # Skip empty scenario groups
             scen_count = len(sg.scenarios.all())
             if scen_count == 0:
                 continue
@@ -201,14 +270,13 @@ def get_smart_opportunities(limit: int = 3) -> List[SmartOpportunity]:
     return opportunities
 
 
-def get_nuanced_leaderboard(scenario_group_id: Optional[int] = None) -> List[LeaderboardEntry]:
+def get_nuanced_leaderboard(scenario_group_id: Optional[int] = None) -> LeaderboardData:
     """
     Builds a multi-objective Pareto leaderboard across configurations.
-    Evaluates:
-    - Quality (Semantic similarity, Faithfulness, Relevance)
-    - Throughput (Tokens per second)
-    - Latency (Mean generation duration)
-    - Stability (Evaluation completion and error-free rate)
+    IMPORTANT ARCHITECTURAL RULE:
+    Benchmark failures (vLLM timeouts, OOM, container death) are NOT treated as model evaluation scores.
+    They are classified as unassessed system defects and separated into defect_entries.
+    scored_entries contains ONLY assessed configurations that produced valid completions.
     """
     query = BenchmarkRun.objects.select_related(
         "experiment", "experiment__investigation", "experiment__selected_model", "experiment__scenario_group"
@@ -219,23 +287,25 @@ def get_nuanced_leaderboard(scenario_group_id: Optional[int] = None) -> List[Lea
 
     runs = list(query.order_by("-timestamp"))
     if not runs:
-        return []
+        return LeaderboardData(scored_entries=[], defect_entries=[])
 
     # Group runs by composite configuration key
     grouped_configs: Dict[Tuple[str, str, str, str], List[BenchmarkRun]] = {}
+    defect_records: List[DefectRecord] = []
+
     for r in runs:
         snap = r.configuration_snapshot or {}
         model_name = snap.get("ai_model_id") or (
-            r.experiment.selected_model.hf_model_id if r.experiment.selected_model else "Default LLM"
+            r.experiment.selected_model.hf_model_id if (r.experiment and r.experiment.selected_model) else "Default LLM"
         )
         backend = snap.get("hosting_backend") or "pytorch"
         rag_strategy = snap.get("rag_strategy") or "none"
-        sg_name = r.experiment.scenario_group.name if r.experiment.scenario_group else "General"
+        sg_name = r.experiment.scenario_group.name if (r.experiment and r.experiment.scenario_group) else "General"
 
         key = (model_name, backend, rag_strategy, sg_name)
         grouped_configs.setdefault(key, []).append(r)
 
-    entries: List[LeaderboardEntry] = []
+    scored_entries: List[LeaderboardEntry] = []
 
     for (model_name, backend, rag_strategy, sg_name), cfg_runs in grouped_configs.items():
         total_runs = len(cfg_runs)
@@ -244,12 +314,16 @@ def get_nuanced_leaderboard(scenario_group_id: Optional[int] = None) -> List[Lea
 
         successful_results = [res for res in all_results if _is_result_successful(res)]
         success_count = len(successful_results)
-        success_rate = round((success_count / total_scenarios * 100.0), 1) if total_scenarios > 0 else 0.0
 
-        is_unstable = success_rate < 50.0 or (total_scenarios > 0 and success_count == 0)
-        error_summary = None
-        if is_unstable and total_scenarios > 0:
-            error_summary = "Crashed or failed generation"
+        # If 0 successful results across all runs in this configuration, it is an Unassessed System Defect
+        if total_scenarios > 0 and success_count == 0:
+            for r in cfg_runs:
+                defect = diagnose_run_defect(r)
+                if defect:
+                    defect_records.append(defect)
+            continue
+
+        success_rate = round((success_count / total_scenarios * 100.0), 1) if total_scenarios > 0 else 0.0
 
         # Compute metric averages with fallback to results
         valid_sems = []
@@ -261,6 +335,14 @@ def get_nuanced_leaderboard(scenario_group_id: Optional[int] = None) -> List[Lea
                 if res_sems:
                     valid_sems.append(sum(res_sems) / len(res_sems))
         avg_semantic = round(sum(valid_sems) / len(valid_sems), 3) if valid_sems else None
+
+        # Exclude configurations that have no valid semantic score from scored leaderboard
+        if avg_semantic is None:
+            for r in cfg_runs:
+                defect = diagnose_run_defect(r)
+                if defect:
+                    defect_records.append(defect)
+            continue
 
         valid_faith = []
         for r in cfg_runs:
@@ -293,10 +375,10 @@ def get_nuanced_leaderboard(scenario_group_id: Optional[int] = None) -> List[Lea
         avg_duration = round(sum(valid_durations) / len(valid_durations), 1) if valid_durations else None
 
         latest_run = cfg_runs[0]
-        sg_id = latest_run.experiment.scenario_group_id
-        inv_id = latest_run.experiment.investigation_id
+        sg_id = latest_run.experiment.scenario_group_id if latest_run.experiment else None
+        inv_id = latest_run.experiment.investigation_id if latest_run.experiment else None
 
-        entries.append(
+        scored_entries.append(
             LeaderboardEntry(
                 model_name=model_name.split("/")[-1],
                 backend=backend,
@@ -311,47 +393,37 @@ def get_nuanced_leaderboard(scenario_group_id: Optional[int] = None) -> List[Lea
                 avg_relevance=avg_relevance,
                 avg_tokens_per_second=avg_tps,
                 avg_duration_seconds=avg_duration,
-                is_unstable=is_unstable,
-                error_summary=error_summary,
                 latest_run_id=latest_run.id,
                 investigation_id=inv_id,
             )
         )
 
-    # Award Pareto Distinction Badges
-    stable_entries = [e for e in entries if not e.is_unstable and e.avg_semantic is not None]
-
-    if stable_entries:
+    # Award Pareto Distinction Badges strictly among assessed configurations
+    if scored_entries:
         # 1. Quality Leader (Highest semantic score)
-        best_quality = max(stable_entries, key=lambda e: e.avg_semantic or 0.0)
+        best_quality = max(scored_entries, key=lambda e: e.avg_semantic or 0.0)
         best_quality.badges.append("🥇 Quality Leader")
 
         # 2. Speed Leader (Highest tokens/sec or lowest duration)
-        entries_with_tps = [e for e in stable_entries if e.avg_tokens_per_second]
+        entries_with_tps = [e for e in scored_entries if e.avg_tokens_per_second]
         if entries_with_tps:
             best_speed = max(entries_with_tps, key=lambda e: e.avg_tokens_per_second or 0.0)
             if "🥇 Quality Leader" not in best_speed.badges:
                 best_speed.badges.append("⚡ Speed Leader")
-        elif stable_entries:
-            entries_with_dur = [e for e in stable_entries if e.avg_duration_seconds]
+        elif scored_entries:
+            entries_with_dur = [e for e in scored_entries if e.avg_duration_seconds]
             if entries_with_dur:
                 best_lat = min(entries_with_dur, key=lambda e: e.avg_duration_seconds or 999.0)
                 if "🥇 Quality Leader" not in best_lat.badges:
                     best_lat.badges.append("⚡ Speed Leader")
 
         # 3. Reliability Leader (100% success rate with >= 3 scenarios)
-        for e in stable_entries:
+        for e in scored_entries:
             if e.success_rate >= 100.0 and e.total_scenarios >= 3 and not e.badges:
                 e.badges.append("🛡️ Reliable")
 
-    # Mark unstable entries
-    for e in entries:
-        if e.is_unstable:
-            e.badges.append("⚠️ Unstable")
-
-    # Sort leaderboard: Stable entries first by semantic score, unstable at bottom
-    entries.sort(key=lambda e: (0 if e.is_unstable else 1, e.avg_semantic or 0.0), reverse=True)
-    return entries
+    scored_entries.sort(key=lambda e: e.avg_semantic or 0.0, reverse=True)
+    return LeaderboardData(scored_entries=scored_entries, defect_entries=defect_records)
 
 
 def get_grouped_history(group_by: str = "scenario_group") -> List[GroupedHistorySection]:
@@ -361,6 +433,7 @@ def get_grouped_history(group_by: str = "scenario_group") -> List[GroupedHistory
     - 'hosting_backend': Grouped by Ollama / vLLM / PyTorch
     - 'investigation': Grouped by high-level Investigation project
     - 'model': Grouped by Target AI Model
+    Attaches diagnostic defect annotations to unassessed runs.
     """
     runs = list(
         BenchmarkRun.objects.select_related(
@@ -376,6 +449,9 @@ def get_grouped_history(group_by: str = "scenario_group") -> List[GroupedHistory
     sections_dict: Dict[str, List[BenchmarkRun]] = {}
 
     for r in runs:
+        # Pre-attach defect record to each run for template usage
+        r.defect_record = diagnose_run_defect(r)
+
         snap = r.configuration_snapshot or {}
         if group_by == "hosting_backend":
             key = snap.get("hosting_backend") or "PyTorch (In-Process)"
@@ -387,7 +463,7 @@ def get_grouped_history(group_by: str = "scenario_group") -> List[GroupedHistory
                 key = "Standalone Experiments"
         elif group_by == "model":
             model_id = snap.get("ai_model_id") or (
-                r.experiment.selected_model.hf_model_id if r.experiment.selected_model else "Default LLM"
+                r.experiment.selected_model.hf_model_id if (r.experiment and r.experiment.selected_model) else "Default LLM"
             )
             key = model_id.split("/")[-1]
         else:  # default: scenario_group
@@ -399,23 +475,27 @@ def get_grouped_history(group_by: str = "scenario_group") -> List[GroupedHistory
 
     for group_key, group_runs in sections_dict.items():
         total_runs = len(group_runs)
-        all_results = [res for r in group_runs for res in r.results.all()]
-        total_scenarios = len(all_results)
+        defect_runs = sum(1 for r in group_runs if r.defect_record is not None)
+        assessed_runs = total_runs - defect_runs
+        all_defects = (total_runs > 0 and assessed_runs == 0)
 
-        successful_results = [res for res in all_results if _is_result_successful(res)]
-        success_rate = round((len(successful_results) / total_scenarios * 100.0), 1) if total_scenarios > 0 else 0.0
-
+        # Average semantic and duration across assessed runs only
         valid_sems = []
+        valid_durs = []
         for r in group_runs:
-            if r.average_semantic_score is not None and r.average_semantic_score >= 0:
-                valid_sems.append(r.average_semantic_score)
-            else:
-                res_sems = [res.semantic_score for res in r.results.all() if res.semantic_score is not None and res.semantic_score >= 0]
-                if res_sems:
-                    valid_sems.append(sum(res_sems) / len(res_sems))
-        avg_sem = round(sum(valid_sems) / len(valid_sems), 2) if valid_sems else None
+            if r.defect_record is None:
+                if r.average_semantic_score is not None and r.average_semantic_score >= 0:
+                    valid_sems.append(r.average_semantic_score)
+                else:
+                    res_sems = [res.semantic_score for res in r.results.all() if res.semantic_score is not None and res.semantic_score >= 0]
+                    if res_sems:
+                        valid_sems.append(sum(res_sems) / len(res_sems))
 
-        valid_durs = [res.duration_seconds for res in successful_results if res.duration_seconds > 0]
+                successful_res = [res for res in r.results.all() if _is_result_successful(res) and res.duration_seconds > 0]
+                if successful_res:
+                    valid_durs.extend(res.duration_seconds for res in successful_res)
+
+        avg_sem = round(sum(valid_sems) / len(valid_sems), 2) if valid_sems else None
         avg_lat = round(sum(valid_durs) / len(valid_durs), 1) if valid_durs else None
 
         inv_id = None
@@ -429,7 +509,9 @@ def get_grouped_history(group_by: str = "scenario_group") -> List[GroupedHistory
                 group_key=group_key,
                 group_type=group_by,
                 total_runs=total_runs,
-                success_rate=success_rate,
+                assessed_runs=assessed_runs,
+                defect_runs=defect_runs,
+                all_defects=all_defects,
                 avg_semantic=avg_sem,
                 avg_latency=avg_lat,
                 runs=group_runs,
