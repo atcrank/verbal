@@ -937,14 +937,21 @@ class AsyncStreamingAndGovernanceTests(TestCase):
         """Task 5: Verifies that DatastarSSE formats SSE events strictly according to protocol."""
         from metacognition.datastar import DatastarSSE
 
-        # 1. Merge fragments
+        # 1. Patch elements (Datastar 1.0 idiom) & Merge fragments backwards compatibility
+        patch_sse = DatastarSSE.patch_elements("<div id='test'>Hello</div>", selector="#test", mode="morph")
+        self.assertIn("event: datastar-patch-elements", patch_sse)
+        self.assertIn("data: selector #test", patch_sse)
+        self.assertIn("data: elements <div id='test'>Hello</div>", patch_sse)
+        self.assertIn("event: datastar-merge-fragments", patch_sse)
+        self.assertIn("data: fragments <div id='test'>Hello</div>", patch_sse)
+
         frag_sse = DatastarSSE.merge_fragments("<div id='test'>Hello</div>", selector="#test", merge_mode="morph")
         self.assertIn("event: datastar-merge-fragments", frag_sse)
         self.assertIn("data: selector #test", frag_sse)
-        self.assertIn("data: fragments <div id='test'>Hello</div>", frag_sse)
 
-        # 2. Merge signals
-        sig_sse = DatastarSSE.merge_signals({"isRunning": True, "step": 2})
+        # 2. Patch signals & Merge signals
+        sig_sse = DatastarSSE.patch_signals({"isRunning": True, "step": 2})
+        self.assertIn("event: datastar-patch-signals", sig_sse)
         self.assertIn("event: datastar-merge-signals", sig_sse)
         self.assertIn('"isRunning": true', sig_sse)
 

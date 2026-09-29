@@ -154,7 +154,7 @@ def leaderboard_api(request):
         "selected_sg_id": scenario_group_id,
     }
     html = render(request, "benchmarking/partials/hub_leaderboard.html", context).content.decode("utf-8")
-    sse = DatastarSSE.merge_fragments(html, selector="#hub-leaderboard-container", merge_mode="outer")
+    sse = DatastarSSE.patch_elements(html) + "\n" + DatastarSSE.patch_signals({"leaderboardScenarioGroup": scenario_group_id or ""})
     response = HttpResponse(sse, content_type="text/event-stream")
     response["Cache-Control"] = "no-cache, no-store, must-revalidate"
     response["Pragma"] = "no-cache"
@@ -181,7 +181,7 @@ def grouped_history_api(request):
         "group_by_label": group_by_labels.get(group_by, group_by.title()),
     }
     html = render(request, "benchmarking/partials/hub_grouped_history.html", context).content.decode("utf-8")
-    sse = DatastarSSE.merge_fragments(html, selector="#hub-history-container", merge_mode="outer")
+    sse = DatastarSSE.patch_elements(html) + "\n" + DatastarSSE.patch_signals({"activeHistoryGroup": group_by})
     response = HttpResponse(sse, content_type="text/event-stream")
     response["Cache-Control"] = "no-cache, no-store, must-revalidate"
     response["Pragma"] = "no-cache"
@@ -304,7 +304,7 @@ def run_benchmark_api(request):
         </div>
     </div>
     """
-    sse_response = DatastarSSE.merge_fragments(initial_frag, selector="#run-monitor", merge_mode="outer")
+    sse_response = DatastarSSE.patch_elements(initial_frag, selector="#run-monitor", mode="morph")
     return HttpResponse(sse_response, content_type="text/event-stream")
 
 

@@ -6,12 +6,14 @@
                 Filter Corpus:
             </span>
             <button type="button" id="filter-sg-all" class="filter-chip {% if not selected_sg_id %}active{% endif %}"
-                    data-on-click="@get('/benchmarking/api/leaderboard/')">
+                    data-on-click="@get('/benchmarking/api/leaderboard/')"
+                    data-on:click="@get('/benchmarking/api/leaderboard/')">
                 All Scenarios
             </button>
             {% for sg in scenario_groups %}
             <button type="button" id="filter-sg-{{ sg.id }}" class="filter-chip {% if selected_sg_id == sg.id|stringformat:'s' or selected_sg_id == sg.id %}active{% endif %}"
-                    data-on-click="@get('/benchmarking/api/leaderboard/?scenario_group_id={{ sg.id }}')">
+                    data-on-click="@get('/benchmarking/api/leaderboard/?scenario_group_id={{ sg.id }}')"
+                    data-on:click="@get('/benchmarking/api/leaderboard/?scenario_group_id={{ sg.id }}')">
                 {{ sg.name|truncatechars:24 }}
             </button>
             {% endfor %}
