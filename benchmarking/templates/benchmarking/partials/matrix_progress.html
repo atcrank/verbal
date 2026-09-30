@@ -1,4 +1,4 @@
-<div id="run-progress-stream" class="panel-body" style="padding-top: 0.5rem;">
+<div id="run-monitor" class="panel-body" style="padding-top: 0.5rem;">
     <!-- Investigation Header & Matrix Badges -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
         <div>
@@ -21,14 +21,8 @@
             <span>{{ matrix_percent|default:0 }}%</span>
         </div>
         <div class="progress-container">
-            <div class="progress-bar-fill" id="matrix-progress-fill"></div>
+            <div class="progress-bar-fill" id="matrix-progress-fill" style="width: {{ matrix_percent|default:0 }}%;"></div>
         </div>
-        <script>
-            (function() {
-                var el = document.getElementById('matrix-progress-fill');
-                if (el) el.style.width = '{{ matrix_percent|default:0 }}%';
-            })();
-        </script>
     </div>
 
     <!-- Active Experiment Card (if running) -->
@@ -49,14 +43,8 @@
             <span>{{ scenario_percent|default:0 }}%</span>
         </div>
         <div class="progress-container" style="height: 4px;">
-            <div class="progress-bar-fill" id="matrix-scenario-fill" style="background: linear-gradient(90deg, var(--accent-teal), var(--accent-emerald));"></div>
+            <div class="progress-bar-fill" id="matrix-scenario-fill" style="width: {{ scenario_percent|default:0 }}%; background: linear-gradient(90deg, var(--accent-teal), var(--accent-emerald));"></div>
         </div>
-        <script>
-            (function() {
-                var el = document.getElementById('matrix-scenario-fill');
-                if (el) el.style.width = '{{ scenario_percent|default:0 }}%';
-            })();
-        </script>
     </div>
     {% endif %}
 

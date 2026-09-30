@@ -273,10 +273,10 @@
 
                 <!-- Tab Pane 3: Live Telemetry & Progress Stream -->
                 <div id="hub-pane-monitor" class="hub-pane" style="display: none;">
+                    {% if active_run_view %}
+                        {% include "benchmarking/partials/run_progress.html" with run=latest_run status="READY" percent=100 total_steps=latest_run.results.count current_step=latest_run.results.count results=latest_run.results.all avg_rag=latest_run.average_rag_score avg_sem=latest_run.average_semantic_score avg_faith=latest_run.average_faithfulness avg_rel=latest_run.average_relevance %}
+                    {% else %}
                     <div id="run-monitor">
-                        {% if active_run_view %}
-                            {% include "benchmarking/partials/run_progress.html" with run=latest_run status="READY" percent=100 total_steps=latest_run.results.count current_step=latest_run.results.count results=latest_run.results.all avg_rag=latest_run.average_rag_score avg_sem=latest_run.average_semantic_score avg_faith=latest_run.average_faithfulness avg_rel=latest_run.average_relevance %}
-                        {% else %}
                         <div style="padding: 2.5rem 1.5rem; text-align: center; color: var(--text-secondary);">
                             <div style="font-size: 2rem; margin-bottom: 0.5rem; color: var(--accent-primary);">&#9874;</div>
                             <div style="font-weight: 600; font-size: 1rem; color: var(--text-primary);">Execution Ready</div>
@@ -284,8 +284,8 @@
                                 Select parameters in the Matrix Composer and click <strong>Launch Investigation Matrix</strong> to stream live metrics, TTFT latency, and turn-by-turn evaluations.
                             </p>
                         </div>
-                        {% endif %}
                     </div>
+                    {% endif %}
                 </div>
             </div>
         </section>

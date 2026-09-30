@@ -1,4 +1,4 @@
-<div id="run-progress-stream" class="panel-body" style="padding-top: 0.5rem;">
+<div id="run-monitor" class="panel-body" style="padding-top: 0.5rem;">
     <!-- Run Header & Badges -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem;">
         <div>
@@ -24,14 +24,8 @@
         <span>{{ percent|default:0 }}%</span>
     </div>
     <div class="progress-container">
-        <div class="progress-bar-fill" id="run-progress-fill"></div>
+        <div class="progress-bar-fill" id="run-progress-fill" style="width: {{ percent|default:0 }}%;"></div>
     </div>
-    <script>
-        (function() {
-            var el = document.getElementById('run-progress-fill');
-            if (el) el.style.width = '{{ percent|default:0 }}%';
-        })();
-    </script>
 
     <!-- Live Metrics Grid -->
     <div class="metrics-grid">

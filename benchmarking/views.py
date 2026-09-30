@@ -386,7 +386,19 @@ def stream_benchmark_run(request, run_id: int):
                         f"Question: {scenario.question}"
                     )
 
-                if ai_service and hasattr(ai_service, "generate"):
+                if ai_service and hasattr(ai_service, "generate_response2"):
+                    try:
+                        raw_resps = ai_service.generate_response2(
+                            messages=[{"role": "user", "content": candidate_prompt}],
+                            max_new_tokens=300,
+                            num_return_sequences=1,
+                        )
+                        if raw_resps:
+                            resp_str = raw_resps[0] if isinstance(raw_resps, list) else raw_resps
+                            candidate_response = ai_service.clean_response(resp_str) if hasattr(ai_service, "clean_response") else resp_str
+                    except Exception as err:
+                        logger.warning(f"Error querying AI service in benchmark run {run.id}: {err}")
+                elif ai_service and hasattr(ai_service, "generate"):
                     try:
                         resp = ai_service.generate([{"role": "user", "content": candidate_prompt}])
                         if resp:
@@ -562,7 +574,19 @@ def stream_investigation_matrix(request, investigation_id: int):
                             f"Question: {scenario.question}"
                         )
 
-                    if ai_service and hasattr(ai_service, "generate"):
+                    if ai_service and hasattr(ai_service, "generate_response2"):
+                        try:
+                            raw_resps = ai_service.generate_response2(
+                                messages=[{"role": "user", "content": candidate_prompt}],
+                                max_new_tokens=300,
+                                num_return_sequences=1,
+                            )
+                            if raw_resps:
+                                resp_str = raw_resps[0] if isinstance(raw_resps, list) else raw_resps
+                                candidate_response = ai_service.clean_response(resp_str) if hasattr(ai_service, "clean_response") else resp_str
+                        except Exception as err:
+                            logger.warning(f"Error querying AI service in matrix run {run.id}: {err}")
+                    elif ai_service and hasattr(ai_service, "generate"):
                         try:
                             resp = ai_service.generate([{"role": "user", "content": candidate_prompt}])
                             if resp:
