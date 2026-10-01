@@ -1,101 +1,296 @@
-{% extends "admin/base_site.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investigation Analytics: {{ investigation.name }}</title>
+    <link rel="stylesheet" href="/static/css/theme.css">
+    <style>
+        :root {
+            --bg-base: #0a0f1d;
+            --bg-card: rgba(19, 29, 51, 0.7);
+            --bg-surface: #111a2e;
+            --bg-input: #0d1527;
+            --border-color: rgba(99, 102, 241, 0.2);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-primary: #6366f1;
+            --accent-teal: #14b8a6;
+            --accent-emerald: #10b981;
+            --accent-warning: #f59e0b;
+        }
 
-{% block content %}
-<div style="padding: 20px;">
-    <h1>Investigation: {{ investigation.name }}</h1>
-    <p>{{ investigation.description }}</p>
-    
-    <div style="margin-bottom: 20px;">
-        <a href="?download=csv" class="button" style="background: #417690; color: white; padding: 10px 15px; text-decoration: none; border-radius: 4px;">Download Full Results (CSV)</a>
-    </div>
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            line-height: 1.5;
+        }
 
-    <!-- Summary Card -->
-    <div class="module" style="overflow-x: auto;">
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
-            <thead>
-                <tr style="background: #f8f9fa; text-align: left;">
-                    <th style="padding: 10px;">Experiment</th>
-                    <th style="padding: 10px;">RAG Recall</th>
-                    <th style="padding: 10px;">Semantic Sim</th>
-                    <th style="padding: 10px;">Faithfulness</th>
-                    <th style="padding: 10px;">Relevance</th>
-                    <th style="padding: 10px;">Config</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for run in runs %}
-                <tr style="border-bottom: 1px solid #eee;">
-                    <td style="padding: 10px;"><strong>{{ run.experiment.name }}</strong><br><small>{{ run.timestamp|date:"Y-m-d H:i" }}</small></td>
-                    <td style="padding: 10px;">{{ run.average_rag_score|floatformat:2 }}</td>
-                    <td style="padding: 10px;">{{ run.average_semantic_score|floatformat:2 }}</td>
-                    <td style="padding: 10px;">{{ run.average_faithfulness|floatformat:2 }}</td>
-                    <td style="padding: 10px;">{{ run.average_relevance|floatformat:2 }}</td>
-                    <td style="padding: 10px; font-family: monospace; font-size: 0.8em;">
-                        {% for key, val in run.filtered_config.items %}
-                             <strong>{{ key }}</strong>: {{ val }}<br>
-                         {% empty %}
-                             <em style="color: #999;">Common Config</em>
-                         {% endfor %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+        .analytics-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
 
-    <h2>Detailed Comparison</h2>
-    <div class="module" style="overflow-x: auto;">
-        <table style="width: 100%; border-collapse: collapse;">
-            <thead>
-                <tr style="background: #79aec8; color: white; text-align: left;">
-                    <th style="padding: 10px; width: 20%;">Scenario</th>
-                    {% for run in runs %}
-                    <th style="padding: 10px;">{{ run.experiment.name }}</th>
-                    {% endfor %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in table_rows %}
-                <tr style="border-bottom: 1px solid #ddd;">
-                    <td style="padding: 10px; vertical-align: top; background: #f9f9f9;">
-                        <strong>Q: {{ row.scenario.question }}</strong><br>
-                        <small style="color: #666;">Ideal: {{ row.scenario.ideal_answer }}</small>
-                    </td>
-                    {% for cell in row.cells %}
-                    <td style="padding: 10px; vertical-align: top; border-left: 1px solid #eee;">
-                        {% if cell %}
-                            <div style="margin-bottom: 5px;">
-                                <span title="RAG Recall" style="background: #e0f7fa; padding: 2px 5px; border-radius: 3px; font-size: 0.8em;">R: {{ cell.rag_recall_score|floatformat:2 }}</span>
-                                <span title="Semantic" style="background: #fff3e0; padding: 2px 5px; border-radius: 3px; font-size: 0.8em;">S: {{ cell.semantic_score|floatformat:2 }}</span>
-                                <span title="Faithfulness" style="background: #e8f5e9; padding: 2px 5px; border-radius: 3px; font-size: 0.8em;">F: {{ cell.faithfulness_score|floatformat:2 }}</span>
-                            </div>
-                            <div style="font-size: 0.9em;">{{ cell.generated_response }}</div>
-                            <details style="margin-top: 5px;">
-                                <summary style="font-size: 0.8em; color: #999; cursor: pointer;">Context</summary>
-                                <div style="font-size: 0.8em; color: #666; white-space: pre-wrap;">{{ cell.raw_retrieved_text|truncatechars:300 }}</div>
-                            </details>
-                        {% else %}
-                            <span style="color: #ccc;">N/A</span>
-                        {% endif %}
-                    </td>
-                    {% endfor %}
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
 
-    {% if df_describe_html %}
-    <h2>Statistical Summary (Pandas DataFrame)</h2>
-    <p>Descriptive statistics computed directly from the nested basis data.</p>
-    <div class="module" style="overflow-x: auto; background: #fff; padding: 15px;">
-        <style>
-            .dataframe { width: 100%; border-collapse: collapse; }
-            .dataframe th, .dataframe td { padding: 8px; border: 1px solid #ddd; text-align: right; }
-            .dataframe th { background-color: #f4f4f4; }
-        </style>
-        {{ df_describe_html|safe }}
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.4rem 0.85rem;
+            font-size: 0.82rem;
+            font-weight: 600;
+            border-radius: 6px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-primary { background: var(--accent-primary); color: #fff; border: 1px solid transparent; }
+        .btn-primary:hover { background: #4f46e5; }
+        .btn-secondary { background: rgba(30, 41, 59, 0.8); color: var(--text-primary); border: 1px solid var(--border-color); }
+        .btn-secondary:hover { background: rgba(51, 65, 85, 0.9); }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-top: 0;
+            margin-bottom: 0.75rem;
+            color: var(--text-primary);
+        }
+
+        table.analytics-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+
+        table.analytics-table th {
+            background: rgba(15, 23, 42, 0.8);
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            font-weight: 700;
+            font-size: 0.72rem;
+            padding: 0.65rem 0.85rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        table.analytics-table td {
+            padding: 0.65rem 0.85rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            vertical-align: top;
+        }
+
+        table.analytics-table tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 7px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            border-radius: 4px;
+        }
+        .badge-slate { background: rgba(100, 116, 139, 0.2); color: #cbd5e1; }
+        .badge-info { background: rgba(99, 102, 241, 0.2); color: #818cf8; }
+        .badge-success { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+        .badge-teal { background: rgba(20, 184, 166, 0.2); color: #2dd4bf; }
+
+        /* Pandas describe table styling */
+        .dataframe {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.78rem;
+            font-family: monospace;
+        }
+        .dataframe th, .dataframe td {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border-color);
+            text-align: right;
+        }
+        .dataframe th {
+            background: rgba(15, 23, 42, 0.9);
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <div class="analytics-container">
+        
+        <!-- Navigation & Action Header -->
+        <div class="header-bar">
+            <div>
+                <a href="/benchmarking/studio/" class="btn btn-secondary" style="margin-bottom: 0.5rem;">
+                    &larr; Back to Studio
+                </a>
+                <h1 style="font-size: 1.45rem; font-weight: 800; margin: 0.25rem 0; color: #fff;">
+                    Investigation #{{ investigation.id }}: {{ investigation.name }}
+                </h1>
+                {% if investigation.description %}
+                <p style="font-size: 0.84rem; color: var(--text-secondary); margin: 0.2rem 0 0 0;">
+                    {{ investigation.description }}
+                </p>
+                {% endif %}
+            </div>
+
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <a href="/benchmarking/export/dataframe/{{ investigation.id }}/?format=csv" class="btn btn-primary" download>
+                    &darr; High-Res DataFrame (CSV)
+                </a>
+                <a href="/benchmarking/export/dataframe/{{ investigation.id }}/?format=json" class="btn btn-secondary" download>
+                    &darr; JSON Export
+                </a>
+            </div>
+        </div>
+
+        <!-- Summary Table of Runs in Investigation -->
+        <div class="card">
+            <h2 class="card-title">Run Performance Summary ({{ runs|length }} Experiments)</h2>
+            <div style="overflow-x: auto;">
+                <table class="analytics-table">
+                    <thead>
+                        <tr>
+                            <th>Run ID</th>
+                            <th>Experiment</th>
+                            <th>RAG Strategy</th>
+                            <th>Semantic Sim</th>
+                            <th>Faithfulness</th>
+                            <th>Relevance</th>
+                            <th>RAG Recall</th>
+                            <th>Configuration</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for run in runs %}
+                        <tr>
+                            <td><span class="badge badge-slate">Run #{{ run.id }}</span></td>
+                            <td>
+                                <strong>{{ run.experiment.name }}</strong><br>
+                                <small style="color: var(--text-muted);">{{ run.timestamp|date:"Y-m-d H:i" }}</small>
+                            </td>
+                            <td>
+                                <span class="badge badge-info">{{ run.configuration_snapshot.rag_strategy|default:"NONE"|upper }}</span>
+                            </td>
+                            <td style="color: var(--accent-teal); font-weight: 600;">
+                                {{ run.average_semantic_score|floatformat:2|default:"-" }}
+                            </td>
+                            <td style="color: var(--accent-emerald); font-weight: 600;">
+                                {{ run.average_faithfulness|floatformat:2|default:"-" }}
+                            </td>
+                            <td style="color: var(--accent-primary); font-weight: 600;">
+                                {{ run.average_relevance|floatformat:2|default:"-" }}
+                            </td>
+                            <td>
+                                {{ run.average_rag_score|floatformat:2|default:"-" }}
+                            </td>
+                            <td style="font-family: monospace; font-size: 0.72rem; color: var(--text-muted);">
+                                {% for key, val in run.filtered_config.items %}
+                                    <span><strong>{{ key }}</strong>: {{ val }}</span><br>
+                                {% empty %}
+                                    <em>Base Parameters</em>
+                                {% endfor %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" style="text-align: center; color: var(--text-muted);">No runs recorded in this investigation.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Detailed Scenario Comparison Matrix -->
+        <div class="card">
+            <h2 class="card-title">Detailed Scenario Comparison</h2>
+            <div style="overflow-x: auto;">
+                <table class="analytics-table">
+                    <thead>
+                        <tr>
+                            <th style="min-width: 260px; width: 25%;">Scenario & Standard Answer</th>
+                            {% for run in runs %}
+                            <th style="min-width: 240px;">
+                                Run #{{ run.id }}: {{ run.experiment.name }}<br>
+                                <span class="badge badge-slate" style="font-size: 0.65rem;">{{ run.configuration_snapshot.hosting_backend|upper }} &bull; {{ run.configuration_snapshot.rag_strategy|upper }}</span>
+                            </th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in table_rows %}
+                        <tr>
+                            <td style="background: rgba(15, 23, 42, 0.4); border-right: 1px solid var(--border-color);">
+                                <div style="font-weight: 600; color: #fff; margin-bottom: 0.35rem;">{{ row.scenario.question }}</div>
+                                <div style="font-size: 0.75rem; color: var(--accent-teal); background: rgba(20, 184, 166, 0.08); padding: 0.35rem 0.5rem; border-radius: 4px;">
+                                    <strong>Standard Answer:</strong> {{ row.scenario.ideal_answer|default:"None provided" }}
+                                </div>
+                            </td>
+                            {% for cell in row.cells %}
+                            <td style="border-right: 1px solid rgba(255, 255, 255, 0.05);">
+                                {% if cell %}
+                                    <div style="display: flex; gap: 0.3rem; margin-bottom: 0.35rem;">
+                                        <span class="badge badge-teal" title="Semantic Similarity">S: {{ cell.semantic_score|floatformat:2 }}</span>
+                                        <span class="badge badge-slate" title="Duration">{{ cell.duration_seconds|floatformat:1 }}s</span>
+                                    </div>
+                                    <div style="font-size: 0.8rem; line-height: 1.4; color: var(--text-secondary); max-height: 140px; overflow-y: auto; white-space: pre-wrap; font-family: monospace; background: var(--bg-input); padding: 0.4rem 0.5rem; border-radius: 4px;">{{ cell.generated_response }}</div>
+                                    {% if cell.raw_retrieved_text %}
+                                    <details style="margin-top: 0.35rem;">
+                                        <summary style="font-size: 0.72rem; color: var(--text-muted); cursor: pointer;">View RAG Context</summary>
+                                        <div style="font-size: 0.72rem; color: var(--text-muted); white-space: pre-wrap; margin-top: 0.25rem; max-height: 100px; overflow-y: auto;">{{ cell.raw_retrieved_text|truncatechars:350 }}</div>
+                                    </details>
+                                    {% endif %}
+                                {% else %}
+                                    <span style="color: var(--text-muted); font-style: italic;">No result recorded</span>
+                                {% endif %}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Statistical Summary (Pandas DataFrame) -->
+        {% if df_describe_html %}
+        <div class="card">
+            <h2 class="card-title">Descriptive Statistical Summary (Pandas)</h2>
+            <p style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 0; margin-bottom: 0.75rem;">
+                Statistical distribution computed across all scenario completions, latencies, and evaluation scores.
+            </p>
+            <div style="overflow-x: auto;">
+                {{ df_describe_html|safe }}
+            </div>
+        </div>
+        {% endif %}
+
     </div>
-    {% endif %}
-</div>
-{% endblock %}
+</body>
+</html>

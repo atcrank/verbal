@@ -42,18 +42,18 @@
         <!-- Ideal Response -->
         <div class="diff-col" style="margin-bottom: 0.75rem;">
             <div class="diff-col-header" style="font-size: 0.75rem; margin-bottom: 0.4rem; padding-bottom: 0.35rem;">
-                <span>Verified A-Standard Response</span>
+                <span>Standard Yardstick Answer</span>
                 {% if scenario.ideal_response %}
-                <span class="badge badge-success">&#10003; Ideal</span>
+                <span class="badge badge-success">&#10003; Standard Answer</span>
                 {% else %}
-                <span class="badge badge-warning">Missing A-Standard</span>
+                <span class="badge badge-warning">Needs Standard Answer</span>
                 {% endif %}
             </div>
             <div class="diff-content" style="font-size: 0.8rem; max-height: 220px; line-height: 1.45;">
                 {% if scenario.ideal_response %}
                     {{ scenario.ideal_response }}
                 {% else %}
-                    <em style="color: var(--text-muted);">No ideal response provided. Run a benchmark and promote candidate output.</em>
+                    <em style="color: var(--text-muted);">No standard answer provided. Run a benchmark and set one from candidate completions.</em>
                 {% endif %}
             </div>
         </div>

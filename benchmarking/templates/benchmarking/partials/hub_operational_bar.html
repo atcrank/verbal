@@ -20,8 +20,9 @@
                 {% else %}
                     <span class="badge badge-success" style="cursor: pointer;" 
                           data-on-click="@get('/benchmarking/stream/{{ operational_status.latest_run.id }}/')"
-                          onclick="switchHubTab('monitor')">
-                        ✅ Last Run #{{ operational_status.latest_run.id }}: {{ operational_status.model_short }} ({{ operational_status.backend|title }})
+                          onclick="switchHubTab('monitor')"
+                          title="System-wide latest completed benchmark run #{{ operational_status.latest_run.id }}">
+                        ✅ Latest Engine Run #{{ operational_status.latest_run.id }}: {{ operational_status.model_short }} ({{ operational_status.backend|title }})
                     </span>
                 {% endif %}
             {% endif %}

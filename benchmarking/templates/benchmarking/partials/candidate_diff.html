@@ -10,12 +10,12 @@
             <div style="display: flex; align-items: center; gap: 0.5rem;">
                 <div id="promote-status-{{ result.id }}">
                     {% if is_gold %}
-                        <span class="badge badge-success">&#10003; Active A-Standard</span>
+                        <span class="badge badge-success">&#10003; Current Standard Answer</span>
                     {% else %}
                         <button type="button" class="btn btn-success btn-sm" 
                                 style="font-size: 0.74rem; padding: 2px 8px;"
                                 data-on-click="@post('/benchmarking/api/promote/{{ result.id }}/')">
-                            &#9733; Promote to A-Standard
+                            &#9733; Set as Standard Answer
                         </button>
                     {% endif %}
                 </div>
@@ -53,17 +53,17 @@
 
         <!-- Side-by-Side Diff Viewer -->
         <div class="diff-viewer" style="margin-top: 0.5rem; gap: 0.75rem;">
-            <!-- A-Standard Reference Column -->
+            <!-- Standard Answer Reference Column -->
             <div class="diff-col" style="padding: 0.65rem;">
                 <div class="diff-col-header" style="font-size: 0.75rem; margin-bottom: 0.4rem; padding-bottom: 0.35rem;">
-                    <span>A-Standard Reference</span>
+                    <span>Standard Yardstick Reference</span>
                     <span class="badge badge-slate" style="font-size: 0.68rem;">Ground Truth</span>
                 </div>
                 <div class="diff-content" style="font-size: 0.8rem; max-height: 220px; line-height: 1.45;">
                     {% if result.scenario.ideal_response %}
                         {{ result.scenario.ideal_response }}
                     {% else %}
-                        <em style="color: var(--text-muted);">No prior ideal response recorded. Promote candidate on the right to set one!</em>
+                        <em style="color: var(--text-muted);">No prior standard answer recorded. Set candidate on the right as standard answer!</em>
                     {% endif %}
                 </div>
             </div>

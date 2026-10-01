@@ -52,7 +52,7 @@
     <div style="margin-bottom: 0.85rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
             <span style="font-size: 0.78rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.04em;">
-                Comparative Experiment Scorecard
+                Comparative Experiment Scorecard &bull; Investigation #{{ investigation.id }}: {{ investigation.name }}
             </span>
             {% if is_complete %}
             <div style="display: flex; gap: 0.35rem;">
@@ -74,6 +74,7 @@
                 <thead>
                     <tr>
                         <th style="width: 25px;">#</th>
+                        <th>Run ID</th>
                         <th>Model</th>
                         <th>Backend</th>
                         <th>RAG Strategy</th>
@@ -88,6 +89,7 @@
                     {% for row in scorecard_rows %}
                     <tr {% if row.is_active %}style="background-color: rgba(99, 102, 241, 0.08); font-weight: 600;"{% endif %}>
                         <td style="color: var(--text-muted);">{{ forloop.counter }}</td>
+                        <td><span class="badge badge-slate" style="font-size: 0.68rem;">Run #{{ row.run_id }}</span></td>
                         <td>{{ row.model_short }}</td>
                         <td><span class="badge badge-slate">{{ row.backend|upper }}</span></td>
                         <td>{{ row.rag }}</td>

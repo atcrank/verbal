@@ -107,7 +107,7 @@ def studio_view(request):
     operational_status = get_operational_status()
     smart_opportunities = get_smart_opportunities(limit=3)
     leaderboard_data = get_nuanced_leaderboard()
-    grouped_history = get_grouped_history(group_by="scenario_group")
+    grouped_history = get_grouped_history(group_by="investigation")
     total_runs_count = BenchmarkRun.objects.count()
 
     try:
@@ -140,8 +140,8 @@ def studio_view(request):
         "leaderboard": leaderboard_data.scored_entries,
         "defect_entries": leaderboard_data.defect_entries,
         "grouped_history": grouped_history,
-        "group_by": "scenario_group",
-        "group_by_label": "Scenario Group (Corpus)",
+        "group_by": "investigation",
+        "group_by_label": "Investigation Project",
         "selected_sg_id": None,
         "total_runs_count": total_runs_count,
         "current_time": timezone.now(),
@@ -178,7 +178,7 @@ def grouped_history_api(request):
     """
     Reactive Datastar SSE endpoint for reorganizing benchmark history along 4 grouping axes.
     """
-    group_by = request.GET.get("group_by", "scenario_group")
+    group_by = request.GET.get("group_by", "investigation")
     grouped_history = get_grouped_history(group_by=group_by)
     group_by_labels = {
         "scenario_group": "Scenario Group (Corpus)",
@@ -204,11 +204,31 @@ def grouped_history_api(request):
 def run_benchmark_api(request):
     """
     Handles submission from the Combinatorial Matrix Experiment Composer.
-    Creates the Investigation, generates the full Cartesian product of Experiments across
+    Requires user authentication to dispatch high-demand GPU benchmarking jobs.
+    Creates the Investigation (or appends to existing), generates the full Cartesian product of Experiments across
     (models × hosting backends × RAG strategies), registers the Runs, and yields a Datastar SSE
     fragment that initiates real-time telemetry streaming in #run-monitor.
     """
+    if not request.user.is_authenticated:
+        frag = """
+        <div id="run-monitor" class="panel-body">
+            <div style="padding: 2.5rem 1.5rem; text-align: center; color: var(--text-secondary);">
+                <div class="badge badge-warning" style="margin-bottom: 0.6rem;">🔒 Authentication Required</div>
+                <div style="font-weight: 700; color: var(--text-primary); font-size: 1.05rem;">Sign In Required to Dispatch Benchmarks</div>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.35rem; max-width: 440px; margin-left: auto; margin-right: auto;">
+                    Anonymous visitors have read-only access to leaderboard rankings, history, and scenario catalogs. Please log in to launch GPU inference benchmark runs.
+                </p>
+                <a href="/admin/login/?next=/benchmarking/studio/" class="btn btn-primary btn-sm" style="margin-top: 1rem; display: inline-block;">
+                    Sign In &rarr;
+                </a>
+            </div>
+        </div>
+        """
+        sse_response = DatastarSSE.patch_elements(frag, selector="#run-monitor", mode="morph")
+        return HttpResponse(sse_response, content_type="text/event-stream")
+
     investigation_id = request.POST.get("investigation_id")
+    investigation_mode = request.POST.get("investigation_mode", "new")
     experiment_name = request.POST.get("experiment_name", "Matrix Trial")
 
     # Read multi-select variable lists with single-select fallbacks
@@ -235,7 +255,9 @@ def run_benchmark_api(request):
     chunk_size = int(request.POST.get("chunk_size", 512))
 
     # Resolve or create Investigation
-    if not investigation_id or investigation_id == "new":
+    if investigation_mode == "append" and investigation_id and investigation_id != "new":
+        investigation = get_object_or_404(Investigation, pk=investigation_id)
+    else:
         new_name = request.POST.get("new_investigation_name", "").strip()
         if new_name:
             inv_title = new_name
@@ -247,8 +269,6 @@ def run_benchmark_api(request):
             name=inv_title,
             description=f"Combinatorial Matrix: {len(model_ids)} models × {len(hosting_backends)} backends × {len(rag_strategies)} RAG strategies.",
         )
-    else:
-        investigation = get_object_or_404(Investigation, pk=investigation_id)
 
     # Resolve ScenarioGroup
     scenario_group = None
@@ -450,7 +470,8 @@ def _execute_single_scenario(run, scenario, ai_service, conversation_ref=None):
                 f"Question: {scenario.question}"
             )
 
-        candidate_response = scenario.ideal_response or f"Candidate response for scenario #{scenario.id}."
+        generation_error = None
+        candidate_response = ""
         if ai_service and hasattr(ai_service, "generate_response2"):
             try:
                 raw_resps = ai_service.generate_response2(
@@ -463,6 +484,7 @@ def _execute_single_scenario(run, scenario, ai_service, conversation_ref=None):
                     candidate_response = ai_service.clean_response(resp_str) if hasattr(ai_service, "clean_response") else resp_str
             except Exception as err:
                 logger.warning(f"Error querying AI service in run {run.id}: {err}")
+                generation_error = str(err)
         elif ai_service and hasattr(ai_service, "generate"):
             try:
                 resp = ai_service.generate([{"role": "user", "content": candidate_prompt}])
@@ -470,18 +492,32 @@ def _execute_single_scenario(run, scenario, ai_service, conversation_ref=None):
                     candidate_response = resp
             except Exception as err:
                 logger.warning(f"Error querying AI service in run {run.id}: {err}")
+                generation_error = str(err)
+        else:
+            generation_error = "No active AI service configured in SystemConfiguration"
+
+        if not candidate_response:
+            candidate_response = f"[Defect: Generation failed - {generation_error or 'Empty response'}]"
+            traj_metrics["defect"] = "generation_failed"
+            traj_metrics["defect_reason"] = generation_error or "empty_response"
 
     elapsed = time.perf_counter() - start_t
 
-    # Keyword recall
-    check_text = raw_retrieved_text if raw_retrieved_text else candidate_response
-    hits = [k for k in scenario.expected_keywords if k.lower() in check_text.lower()]
-    rag_score = len(hits) / len(scenario.expected_keywords) if scenario.expected_keywords else 1.0
+    if "defect" in traj_metrics:
+        rag_score = 0.0
+        sem_score = 0.0
+        faith_score = 0.0
+        rel_score = 0.0
+    else:
+        # Keyword recall
+        check_text = raw_retrieved_text if raw_retrieved_text else candidate_response
+        hits = [k for k in scenario.expected_keywords if k.lower() in check_text.lower()]
+        rag_score = len(hits) / len(scenario.expected_keywords) if scenario.expected_keywords else 1.0
 
-    # Scores
-    sem_score = 0.90 if scenario.ideal_response else 0.50
-    faith_score = 0.90 if raw_retrieved_text else 0.70
-    rel_score = 0.95
+        # Scores
+        sem_score = 0.90 if scenario.ideal_response else 0.50
+        faith_score = 0.90 if raw_retrieved_text else 0.70
+        rel_score = 0.95
 
     extra_metrics = {
         "latency": elapsed,
@@ -656,6 +692,7 @@ def stream_investigation_matrix(request, investigation_id: int):
             else:
                 rag = exp.configuration.get("rag_strategy", "none").upper()
             scorecard_rows.append({
+                "run_id": run.id,
                 "model_short": m_short,
                 "backend": backend,
                 "rag": rag,
@@ -855,7 +892,7 @@ def promote_to_gold_api(request, result_id: int):
     # Return Datastar fragment updating the status badge & active A-standard indicator
     badge_html = f"""
     <div id="promote-status-{result.id}">
-        <span class="badge badge-success">&#10003; Promoted to A-Standard!</span>
+        <span class="badge badge-success">&#10003; Set as Standard Answer!</span>
     </div>
     """
     sse_parts = [
@@ -864,7 +901,7 @@ def promote_to_gold_api(request, result_id: int):
 
     status_badge_html = f"""
     <div id="scenario-status-{scenario.id}" style="display: flex; align-items: center; gap: 0.5rem;">
-        <span class="badge badge-success">&#10003; A-Standard Active</span>
+        <span class="badge badge-success">&#10003; Standard Answer Active</span>
         <button type="submit" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 2px 8px;">💾 Save Edits</button>
     </div>
     """
@@ -910,15 +947,41 @@ def _render_suite_review_modal(request, group_id: int):
 
     scenarios_with_candidates = []
     for sc in scenarios:
-        candidates = list(
+        all_candidates = list(
             BenchmarkResult.objects.filter(scenario=sc)
-            .select_related("run", "run__experiment")
-            .order_by("-semantic_score")[:3]
+            .select_related("run", "run__experiment", "run__experiment__selected_model")
+            .order_by("-run__timestamp", "-semantic_score")
         )
+        ideal_norm = (sc.ideal_answer or "").strip()
+        seen_responses = set()
+        deduped_candidates = []
+
+        for cand in all_candidates:
+            resp_clean = (cand.generated_response or "").strip()
+            # Ignore empty or failed generation defects
+            if not resp_clean or resp_clean.startswith("[Defect:"):
+                continue
+            # Deduplicate identical answers or verbatim matches of the current yardstick
+            if resp_clean == ideal_norm or resp_clean in seen_responses:
+                continue
+            seen_responses.add(resp_clean)
+
+            cfg = cand.run.configuration_snapshot or (cand.run.experiment.configuration if cand.run.experiment else {})
+            m_display = cfg.get("ai_model_id") or (cand.run.experiment.selected_model.hf_model_id if (cand.run.experiment and cand.run.experiment.selected_model) else "Standard LLM")
+            if "/" in m_display:
+                m_display = m_display.split("/")[-1]
+            cand.model_display = m_display
+            cand.backend_display = cfg.get("hosting_backend", "pytorch").upper()
+            cand.rag_display = cfg.get("rag_strategy", "none").upper()
+
+            deduped_candidates.append(cand)
+            if len(deduped_candidates) >= 3:
+                break
+
         keywords_str = ", ".join(sc.expected_keywords) if isinstance(sc.expected_keywords, list) else str(sc.expected_keywords or "")
         scenarios_with_candidates.append({
             "scenario": sc,
-            "candidates": candidates,
+            "candidates": deduped_candidates,
             "keywords_str": keywords_str,
         })
 

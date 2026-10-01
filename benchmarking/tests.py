@@ -483,6 +483,11 @@ class BenchmarkingStudioUITests(TestCase):
             configuration={"hosting_backend": "pytorch", "rag_strategy": "none"}
         )
 
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        self.user = User.objects.create_user(username="studio_tester", password="pw")
+        self.client.force_login(self.user)
+
     def tearDown(self):
         if hasattr(self, "test_dir") and os.path.exists(self.test_dir):
             shutil.rmtree(self.test_dir, ignore_errors=True)
@@ -526,6 +531,14 @@ class BenchmarkingStudioUITests(TestCase):
         self.assertEqual(exp.configuration["hosting_backend"], "vllm")
         self.assertEqual(exp.configuration["rag_strategy"], "chunk")
         self.assertEqual(BenchmarkRun.objects.filter(experiment=exp).count(), 1)
+
+    def test_run_benchmark_api_unauthenticated_blocked(self):
+        """Anonymous requests to /benchmarking/api/run/ receive an authentication required message."""
+        self.client.logout()
+        res = self.client.post("/benchmarking/api/run/", data={"scenario_group_id": self.group.id})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res["Content-Type"], "text/event-stream")
+        self.assertIn("Authentication Required", res.content.decode("utf-8"))
 
     def test_stream_benchmark_run_sse(self):
         """Live SSE streaming generator executes scenarios and yields Datastar fragment merges."""
@@ -588,14 +601,14 @@ class BenchmarkingStudioUITests(TestCase):
         self.assertEqual(diff_res.status_code, 200)
         diff_content = diff_res.content.decode("utf-8")
         self.assertIn("Model Output Candidate", diff_content)
-        self.assertIn("A-Standard Reference", diff_content)
-        self.assertIn("Promote to A-Standard", diff_content)
+        self.assertIn("Standard Yardstick Reference", diff_content)
+        self.assertIn("Set as Standard Answer", diff_content)
 
-        # 2. Promote to A-Standard
+        # 2. Promote to Standard Answer
         promote_res = self.client.post(f"/benchmarking/api/promote/{result.id}/")
         self.assertEqual(promote_res.status_code, 200)
         promote_content = promote_res.content.decode("utf-8")
-        self.assertIn("Promoted to A-Standard", promote_content)
+        self.assertIn("Set as Standard Answer!", promote_content)
 
         self.scenario_2.refresh_from_db()
         self.assertEqual(self.scenario_2.ideal_response, result.response)
@@ -1349,9 +1362,9 @@ class TestGoldStandardsAndSuiteInspection(TestCase):
         content = res.content.decode("utf-8")
         self.assertIn("suite-editor-modal", content)
         self.assertIn("Robotics Causal Reasoning", content)
-        self.assertIn("Top Model Candidates", content)
+        self.assertIn("Distinct Alternative Candidates", content)
         self.assertIn("acoustic resonance", content)
-        self.assertIn("Promote to A-Standard", content)
+        self.assertIn("Set as Standard Answer", content)
 
     def test_update_scenario_api(self):
         """POST /benchmarking/api/scenario/<id>/update/ updates question, ideal_answer, keywords in-place."""
@@ -1412,6 +1425,11 @@ class CognitiveBlueprintBenchmarkingTests(TestCase):
 
     def setUp(self):
         self.client = Client()
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        self.user = User.objects.create_user(username="bp_tester", password="pw")
+        self.client.force_login(self.user)
+
         from metacognition.models import CognitiveBlueprint, ReasoningStep
         self.auto_bp = CognitiveBlueprint.objects.create(
             name="Autonomous Research Agent",
@@ -1601,6 +1619,73 @@ class CognitiveBlueprintBenchmarkingTests(TestCase):
         self.assertIsInstance(data, list)
         self.assertEqual(len(data), 1)
         self.assertEqual(data[0]["extra_metrics.step_count"], 3)
+
+    def test_suite_review_modal_candidate_deduplication(self):
+        """Suite review modal deduplicates candidate outputs and avoids duplicates of standard answer."""
+        inv = Investigation.objects.create(name="Dedup Inv")
+        corpus = BenchmarkCorpus.objects.create(name="Dedup Corpus")
+        exp = Experiment.objects.create(investigation=inv, corpus=corpus, name="Dedup Exp")
+        run1 = BenchmarkRun.objects.create(experiment=exp, corpus=corpus, configuration_snapshot={"hosting_backend": "pytorch"})
+        run2 = BenchmarkRun.objects.create(experiment=exp, corpus=corpus, configuration_snapshot={"hosting_backend": "vllm"})
+        run3 = BenchmarkRun.objects.create(experiment=exp, corpus=corpus, configuration_snapshot={"hosting_backend": "ollama"})
+
+        # Candidate identical to scenario.ideal_answer
+        BenchmarkResult.objects.create(
+            run=run1, scenario=self.scenario, generated_response=self.scenario.ideal_answer,
+            duration_seconds=1.0, rag_recall_score=1.0, semantic_score=1.0
+        )
+        # Duplicate novel candidate across two runs
+        novel_ans = "Alternative distinct causal formulation."
+        BenchmarkResult.objects.create(
+            run=run2, scenario=self.scenario, generated_response=novel_ans,
+            duration_seconds=2.0, rag_recall_score=0.9, semantic_score=0.88
+        )
+        BenchmarkResult.objects.create(
+            run=run3, scenario=self.scenario, generated_response=novel_ans,
+            duration_seconds=1.8, rag_recall_score=0.9, semantic_score=0.88
+        )
+
+        res = self.client.get(f"/benchmarking/api/scenario-group/{self.scenario_group.id}/review/")
+        self.assertEqual(res.status_code, 200)
+        content = res.content.decode("utf-8")
+        # Novel answer should appear only once in the HTML (and thus twice across the two Datastar SSE frames: patch-elements & merge-fragments)
+        self.assertEqual(content.count("Alternative distinct causal formulation."), 2)
+
+    def test_run_benchmark_api_investigation_mode(self):
+        """Matrix composer supports both creating a new investigation and appending to existing."""
+        # 1. New investigation with custom title
+        res_new = self.client.post(
+            "/benchmarking/api/run/",
+            data={
+                "investigation_mode": "new",
+                "new_investigation_name": "Novel Custom Project Trial",
+                "model_ids": ["current"],
+                "hosting_backends": ["pytorch"],
+                "scenario_group_id": str(self.scenario_group.id),
+                "rag_strategies": ["none"],
+            }
+        )
+        self.assertEqual(res_new.status_code, 200)
+        new_inv = Investigation.objects.filter(name="Novel Custom Project Trial").first()
+        self.assertIsNotNone(new_inv)
+
+        # 2. Append to existing investigation
+        res_append = self.client.post(
+            "/benchmarking/api/run/",
+            data={
+                "investigation_mode": "append",
+                "investigation_id": str(new_inv.id),
+                "model_ids": ["current"],
+                "hosting_backends": ["pytorch"],
+                "scenario_group_id": str(self.scenario_group.id),
+                "rag_strategies": ["grobid"],
+                "experiment_name": "Appended Grobid Run",
+            }
+        )
+        self.assertEqual(res_append.status_code, 200)
+        appended_exp = Experiment.objects.filter(investigation=new_inv, name__contains="Appended Grobid Run").first()
+        self.assertIsNotNone(appended_exp)
+
 
 
 

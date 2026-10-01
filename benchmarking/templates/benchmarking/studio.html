@@ -24,9 +24,16 @@
         <div class="studio-badges">
             <span class="badge badge-info">Active Engine: {{ active_backend|default:"PyTorch (Local)" }}</span>
             <span class="badge badge-slate">Model: {{ active_model_id|default:"Standard LLM" }}</span>
-            <a href="{% url 'admin:app_list' 'benchmarking' %}" class="btn btn-secondary btn-sm" target="_blank" style="margin-left: 0.5rem;">
+            {% if request.user.is_authenticated %}
+            <span class="badge badge-success" style="font-weight: 600;">&#128100; {{ request.user.username }}</span>
+            <a href="{% url 'admin:app_list' 'benchmarking' %}" class="btn btn-secondary btn-sm" target="_blank" style="margin-left: 0.35rem;">
                 Django Admin &rarr;
             </a>
+            {% else %}
+            <a href="{% url 'admin:login' %}?next={% url 'benchmarking:studio' %}" class="btn btn-primary btn-sm" style="margin-left: 0.5rem;">
+                &#128274; Sign In
+            </a>
+            {% endif %}
         </div>
     </header>
 
@@ -50,24 +57,38 @@
                 <form id="matrix-form" data-on-submit="@post('/benchmarking/api/run/', {contentType: 'form'})" onsubmit="switchHubTab('monitor')">
                     {% csrf_token %}
                     
-                    <div class="form-group">
-                        <label class="form-label" for="id_investigation">Investigation</label>
-                        <select name="investigation_id" id="id_investigation" class="form-select" onchange="document.getElementById('new-inv-name-group').style.display = (this.value === 'new') ? 'block' : 'none';">
-                            <option value="new">+ Create New Investigation</option>
-                            {% for inv in investigations %}
-                            <option value="{{ inv.id }}" {% if forloop.first %}selected{% endif %}>{{ inv.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
+                    <!-- Investigation Mode Selector -->
+                    <div class="form-group" style="margin-bottom: 0.75rem;">
+                        <label class="form-label" style="font-weight: 700;">Investigation Project</label>
+                        <div class="pill-checkbox-group" style="grid-template-columns: 1fr 1fr; margin-bottom: 0.45rem;">
+                            <label class="pill-checkbox">
+                                <input type="radio" name="investigation_mode" value="new" checked onchange="toggleInvestigationMode('new')">
+                                <span class="pill-content">&#10024; Start New Project</span>
+                            </label>
+                            <label class="pill-checkbox">
+                                <input type="radio" name="investigation_mode" value="append" onchange="toggleInvestigationMode('append')">
+                                <span class="pill-content">&#128194; Append to Existing</span>
+                            </label>
+                        </div>
 
-                    {% if investigations %}
-                    <div class="form-group" id="new-inv-name-group" style="display: none;">
-                    {% else %}
-                    <div class="form-group" id="new-inv-name-group">
-                    {% endif %}
-                        <label class="form-label" for="id_new_investigation_name">New Investigation Title</label>
-                        <input type="text" name="new_investigation_name" id="id_new_investigation_name" class="form-control" 
-                               placeholder="e.g. Gemma vs Qwen Architecture Trial">
+                        <!-- Mode New: New Title Input -->
+                        <div id="new-inv-name-group">
+                            <label class="form-label" for="id_new_investigation_name" style="font-size: 0.74rem; color: var(--text-secondary); margin-bottom: 0.2rem;">New Investigation Title</label>
+                            <input type="text" name="new_investigation_name" id="id_new_investigation_name" class="form-control" 
+                                   placeholder="e.g. Investigation {{ current_time|date:'M j - H:i' }}: Architecture Matrix">
+                        </div>
+
+                        <!-- Mode Append: Dropdown of existing investigations -->
+                        <div id="append-inv-name-group" style="display: none;">
+                            <label class="form-label" for="id_investigation" style="font-size: 0.74rem; color: var(--text-secondary); margin-bottom: 0.2rem;">Select Target Investigation</label>
+                            <select name="investigation_id" id="id_investigation" class="form-select">
+                                {% for inv in investigations %}
+                                <option value="{{ inv.id }}">{{ inv.name }} (ID #{{ inv.id }})</option>
+                                {% empty %}
+                                <option value="new" disabled>No existing investigations</option>
+                                {% endfor %}
+                            </select>
+                        </div>
                     </div>
 
                     <div class="form-group">
@@ -295,9 +316,23 @@
                         </details>
                     </div>
 
+                    {% if request.user.is_authenticated %}
                     <button type="submit" class="btn btn-primary btn-block" style="margin-top: 0.25rem;" id="btn-launch-matrix">
                         &#9654; Launch Investigation Matrix (<span id="calc-btn-count">1</span> Experiments)
                     </button>
+                    {% else %}
+                    <div style="margin-top: 0.5rem; padding: 0.65rem 0.85rem; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: var(--radius-sm); text-align: center;">
+                        <div style="font-size: 0.78rem; font-weight: 600; color: #fbbf24; margin-bottom: 0.2rem;">
+                            🔒 Sign In to Run Benchmarks
+                        </div>
+                        <div style="font-size: 0.71rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                            Leaderboards and scenario inspection are public. Benchmarking requires authentication.
+                        </div>
+                        <a href="{% url 'admin:login' %}?next={% url 'benchmarking:studio' %}" class="btn btn-primary btn-sm btn-block" style="font-size: 0.76rem;">
+                            Sign In to Launch Experiments &rarr;
+                        </a>
+                    </div>
+                    {% endif %}
                 </form>
             </div>
         </section>
@@ -360,7 +395,7 @@
         <!-- COLUMN 3: Scenario Browser & Candidate Inspector -->
         <section class="studio-panel col-inspector">
             <div class="panel-header">
-                <span class="panel-title">&#128065; Inspection & A-Standards</span>
+                <span class="panel-title">&#128065; Scenario Inspection & Standard Answers</span>
                 <span class="badge badge-info" id="scenario-count-badge">{{ active_scenarios.count }} Scenarios</span>
             </div>
             <div class="panel-body">
@@ -721,6 +756,18 @@
             var matrixBtn = document.getElementById('btn-launch-matrix');
             if (matrixBtn) {
                 matrixBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        function toggleInvestigationMode(mode) {
+            var newGroup = document.getElementById('new-inv-name-group');
+            var appendGroup = document.getElementById('append-inv-name-group');
+            if (mode === 'new') {
+                if (newGroup) newGroup.style.display = 'block';
+                if (appendGroup) appendGroup.style.display = 'none';
+            } else {
+                if (newGroup) newGroup.style.display = 'none';
+                if (appendGroup) appendGroup.style.display = 'block';
             }
         }
 
