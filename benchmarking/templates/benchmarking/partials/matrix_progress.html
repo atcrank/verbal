@@ -55,9 +55,17 @@
                 Comparative Experiment Scorecard
             </span>
             {% if is_complete %}
-            <a href="{% url 'benchmarking:investigation_dashboard' investigation.id %}" target="_blank" class="btn btn-secondary btn-sm" style="font-size: 0.72rem; padding: 0.25rem 0.5rem;">
-                Open Full Analytics Report &rarr;
-            </a>
+            <div style="display: flex; gap: 0.35rem;">
+                <a href="/benchmarking/export/dataframe/{{ investigation.id }}/?format=csv" class="btn btn-secondary btn-sm" download style="font-size: 0.72rem; padding: 0.25rem 0.5rem;" title="Download comprehensive flattened DataFrame with step counts and monologue trajectories">
+                    &darr; High-Res CSV
+                </a>
+                <a href="/benchmarking/export/dataframe/{{ investigation.id }}/?format=json" class="btn btn-secondary btn-sm" download style="font-size: 0.72rem; padding: 0.25rem 0.5rem;" title="Download JSON DataFrame">
+                    &darr; High-Res JSON
+                </a>
+                <a href="{% url 'benchmarking:investigation_dashboard' investigation.id %}" target="_blank" class="btn btn-secondary btn-sm" style="font-size: 0.72rem; padding: 0.25rem 0.5rem;">
+                    Full Analytics &rarr;
+                </a>
+            </div>
             {% endif %}
         </div>
         

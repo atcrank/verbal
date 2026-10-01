@@ -25,4 +25,5 @@ urlpatterns = [
     path("api/leaderboard/", views.leaderboard_api, name="leaderboard_api"),
     path("api/grouped-history/", views.grouped_history_api, name="grouped_history_api"),
     path("export/csv/<int:run_id>/", views.export_run_csv, name="export_run_csv"),
+    path("export/dataframe/<int:investigation_id>/", views.export_investigation_dataframe, name="export_investigation_dataframe"),
 ]

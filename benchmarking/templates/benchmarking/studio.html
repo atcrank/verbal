@@ -76,6 +76,73 @@
                                value="Matrix Trial {{ current_time|date:'M j - H:i' }}" required>
                     </div>
 
+                    <!-- Architecture Target: Direct LLM vs Cognitive Blueprint -->
+                    <div class="form-group">
+                        <label class="form-label" style="font-weight: 700;">Generation Target</label>
+                        <div class="pill-checkbox-group" style="grid-template-columns: 1fr 1fr;">
+                            <label class="pill-checkbox">
+                                <input type="radio" name="generation_target" value="direct" checked onchange="toggleGenerationTarget('direct')">
+                                <span class="pill-content">&#129302; Direct Model Completion</span>
+                            </label>
+                            <label class="pill-checkbox">
+                                <input type="radio" name="generation_target" value="blueprint" onchange="toggleGenerationTarget('blueprint')">
+                                <span class="pill-content">&#129504; Cognitive Blueprint</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Variable: Cognitive Blueprint Selection -->
+                    <div class="form-group" id="blueprint-config-group" style="display: none; background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 8px; padding: 0.85rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                            <label class="form-label" for="id_blueprint_select" style="margin-bottom: 0; font-weight: 600;">Target Cognitive Blueprint</label>
+                            <span class="badge badge-success" id="bp-autonomy-badge">🟢 Autonomous</span>
+                        </div>
+                        <select name="blueprint_id" id="id_blueprint_select" class="form-select" onchange="onBlueprintSelected(this); updateMatrixCalculations();">
+                            {% for bp in blueprints %}
+                            <option value="{{ bp.id }}" 
+                                    data-autonomy="{{ bp.autonomy_tier }}"
+                                    data-has-sub="{{ bp.sub_blueprints_summary.has_sub_blueprints|yesno:'true,false' }}"
+                                    data-sub-names="{{ bp.sub_blueprints_summary.sub_blueprint_names|join:', ' }}"
+                                    data-desc="{{ bp.description }}"
+                                    {% if bp.autonomy_tier == 'AUTONOMOUS' and forloop.first %}selected{% endif %}>
+                                {% if bp.autonomy_tier == 'AUTONOMOUS' %}🟢 [Autonomous]{% elif bp.autonomy_tier == 'INTERACTIVE_ON_BLOCKED' %}🟡 [Interactive on Block]{% else %}🔵 [Interactive by Design]{% endif %}
+                                {{ bp.name }}
+                            </option>
+                            {% empty %}
+                            <option value="" disabled selected>No Cognitive Blueprints registered</option>
+                            {% endfor %}
+                        </select>
+                        <div id="bp-desc-display" style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.35rem; line-height: 1.35;"></div>
+
+                        <!-- Sub-Blueprint Complexity Warning Card -->
+                        <div id="sub-blueprint-warning" style="display: none; margin-top: 0.6rem; padding: 0.5rem 0.65rem; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 6px; font-size: 0.74rem; color: #fbbf24;">
+                            &#9888; <strong>Compound Blueprint with Sub-Blueprints:</strong>
+                            <div style="margin-top: 0.2rem; font-size: 0.7rem; color: var(--text-secondary);">
+                                Executes nested child blueprints (<span id="sub-blueprint-names-span" style="font-weight: 600;"></span>). Higher step budget and execution timeouts recommended.
+                            </div>
+                        </div>
+
+                        <!-- Max Step Budget & Multi-Turn Mode -->
+                        <div style="display: flex; gap: 0.6rem; margin-top: 0.75rem;">
+                            <div style="flex: 1;">
+                                <label class="form-label" for="id_max_steps" style="font-size: 0.74rem; margin-bottom: 0.2rem;">Max Step Budget</label>
+                                <select name="max_steps" id="id_max_steps" class="form-select" style="font-size: 0.78rem;" onchange="updateMatrixCalculations()">
+                                    <option value="5">5 steps (Fast / Shallow)</option>
+                                    <option value="10" selected>10 steps (Standard / Default)</option>
+                                    <option value="15">15 steps (Deep Reflection)</option>
+                                    <option value="20">20 steps (Complex Decomposition)</option>
+                                </select>
+                            </div>
+                            <div style="flex: 1;">
+                                <label class="form-label" for="id_multi_turn_mode" style="font-size: 0.74rem; margin-bottom: 0.2rem;">Multi-Turn Ladder Mode</label>
+                                <select name="multi_turn_mode" id="id_multi_turn_mode" class="form-select" style="font-size: 0.78rem;">
+                                    <option value="isolated" selected>Isolated Turn Conversations (Default)</option>
+                                    <option value="chained">Chained Multi-Turn Thread (Stress-Test)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Variable 1: Target Models (Multi-Select) -->
                     <div class="form-group">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
@@ -125,7 +192,7 @@
                     </div>
 
                     <!-- Variable 3: RAG / Knowledge Retrieval Strategies (Multi-Select) -->
-                    <div class="form-group">
+                    <div class="form-group" id="rag-strategies-group">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
                             <label class="form-label" style="margin-bottom: 0;">Knowledge Retrieval Strategies</label>
                             <span style="font-size: 0.72rem; color: var(--accent-primary); cursor: pointer;" onclick="toggleAllInGroup('rag-checkboxes')">Toggle All</span>
@@ -387,12 +454,72 @@
             updateMatrixCalculations();
         }
 
+        function toggleGenerationTarget(target) {
+            var bpGroup = document.getElementById('blueprint-config-group');
+            var ragGroup = document.getElementById('rag-strategies-group');
+            if (target === 'blueprint') {
+                if (bpGroup) bpGroup.style.display = 'block';
+                if (ragGroup) ragGroup.style.display = 'none';
+                var bpSelect = document.getElementById('id_blueprint_select');
+                if (bpSelect) onBlueprintSelected(bpSelect);
+            } else {
+                if (bpGroup) bpGroup.style.display = 'none';
+                if (ragGroup) ragGroup.style.display = 'block';
+            }
+            updateMatrixCalculations();
+        }
+
+        function onBlueprintSelected(selectEl) {
+            if (!selectEl || !selectEl.selectedOptions || !selectEl.selectedOptions[0]) return;
+            var opt = selectEl.selectedOptions[0];
+            var autonomy = opt.getAttribute('data-autonomy') || 'AUTONOMOUS';
+            var hasSub = opt.getAttribute('data-has-sub') === 'true';
+            var subNames = opt.getAttribute('data-sub-names') || '';
+            var desc = opt.getAttribute('data-desc') || '';
+
+            var badgeEl = document.getElementById('bp-autonomy-badge');
+            if (badgeEl) {
+                if (autonomy === 'AUTONOMOUS') {
+                    badgeEl.className = 'badge badge-success';
+                    badgeEl.textContent = '🟢 Autonomous';
+                } else if (autonomy === 'INTERACTIVE_ON_BLOCKED') {
+                    badgeEl.className = 'badge badge-warning';
+                    badgeEl.textContent = '🟡 Interactive on Block';
+                } else {
+                    badgeEl.className = 'badge badge-info';
+                    badgeEl.textContent = '🔵 Interactive by Design';
+                }
+            }
+
+            var descEl = document.getElementById('bp-desc-display');
+            if (descEl) descEl.textContent = desc;
+
+            var warnEl = document.getElementById('sub-blueprint-warning');
+            var warnNames = document.getElementById('sub-blueprint-names-span');
+            if (warnEl) {
+                if (hasSub) {
+                    warnEl.style.display = 'block';
+                    if (warnNames) warnNames.textContent = subNames;
+                } else {
+                    warnEl.style.display = 'none';
+                }
+            }
+        }
+
         function updateMatrixCalculations() {
             var models = getCheckedValues('model-checkboxes');
             var backends = getCheckedValues('backend-checkboxes');
             var rags = getCheckedValues('rag-checkboxes');
 
-            var expCount = models.length * backends.length * rags.length;
+            var targetRadio = document.querySelector('input[name="generation_target"]:checked');
+            var isBlueprint = targetRadio && targetRadio.value === 'blueprint';
+
+            var expCount = 0;
+            if (isBlueprint) {
+                expCount = models.length * backends.length;
+            } else {
+                expCount = models.length * backends.length * rags.length;
+            }
 
             var sgSelect = document.getElementById('id_scenario_group');
             var scenarioCount = 0;
@@ -443,7 +570,13 @@
                 avgRagOverhead = rSum / rags.length;
             }
 
-            var perQuerySec = Math.max(1.0, (baseLatency * avgBackendMult) + avgRagOverhead);
+            var perQuerySec = 1.0;
+            if (isBlueprint) {
+                var stepBudget = parseInt(document.getElementById('id_max_steps') ? document.getElementById('id_max_steps').value : '10', 10);
+                perQuerySec = Math.max(1.0, (baseLatency * avgBackendMult) * Math.min(stepBudget * 0.35, 3.5));
+            } else {
+                perQuerySec = Math.max(1.0, (baseLatency * avgBackendMult) + avgRagOverhead);
+            }
             var estSeconds = Math.round(totalQueries * perQuerySec);
 
             // Update rate display in subtext
@@ -488,20 +621,35 @@
             if (previewList) {
                 previewList.innerHTML = '';
                 var comboIdx = 1;
-                models.forEach(function(m) {
-                    var mShort = m.split('/').pop();
-                    backends.forEach(function(b) {
-                        rags.forEach(function(r) {
+                if (isBlueprint) {
+                    var bpSelect = document.getElementById('id_blueprint_select');
+                    var bpName = (bpSelect && bpSelect.selectedOptions && bpSelect.selectedOptions[0]) ? bpSelect.selectedOptions[0].text.replace(/^[🟢🟡🔵\s\[\w+\]]+/, '').trim() : 'Blueprint';
+                    models.forEach(function(m) {
+                        var mShort = m.split('/').pop();
+                        backends.forEach(function(b) {
                             var chip = document.createElement('span');
                             chip.className = 'matrix-preview-chip';
-                            chip.textContent = comboIdx + '. ' + mShort + ' (' + b.toUpperCase() + ', ' + r + ')';
+                            chip.textContent = comboIdx + '. ' + mShort + ' (' + b.toUpperCase() + ') \u2192 ' + bpName;
                             previewList.appendChild(chip);
                             comboIdx++;
                         });
                     });
-                });
+                } else {
+                    models.forEach(function(m) {
+                        var mShort = m.split('/').pop();
+                        backends.forEach(function(b) {
+                            rags.forEach(function(r) {
+                                var chip = document.createElement('span');
+                                chip.className = 'matrix-preview-chip';
+                                chip.textContent = comboIdx + '. ' + mShort + ' (' + b.toUpperCase() + ', ' + r + ')';
+                                previewList.appendChild(chip);
+                                comboIdx++;
+                            });
+                        });
+                    });
+                }
                 if (expCount === 0) {
-                    previewList.innerHTML = '<span style="color: var(--accent-rose); font-size: 0.72rem;">Select at least one Model, Backend, and RAG strategy to form a valid matrix.</span>';
+                    previewList.innerHTML = '<span style="color: var(--accent-rose); font-size: 0.72rem;">Select at least one Model and Backend to form a valid matrix.</span>';
                 }
             }
         }

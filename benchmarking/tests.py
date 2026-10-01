@@ -1404,5 +1404,205 @@ class TestGoldStandardsAndSuiteInspection(TestCase):
         self.assertIn("inspector-content", content)
 
 
+class CognitiveBlueprintBenchmarkingTests(TestCase):
+    """
+    Tests for Cognitive Blueprint Benchmarking on the multi-turn ladder,
+    autonomy classification, step budget ceilings, and high-detail DataFrame exports.
+    """
+
+    def setUp(self):
+        self.client = Client()
+        from metacognition.models import CognitiveBlueprint, ReasoningStep
+        self.auto_bp = CognitiveBlueprint.objects.create(
+            name="Autonomous Research Agent",
+            is_autonomous=True,
+            description="Performs autonomous search and critique."
+        )
+        self.blocked_bp = CognitiveBlueprint.objects.create(
+            name="Semi-Autonomous Solver",
+            is_autonomous=False,
+            description="Solves logic problems but pauses on failure."
+        )
+        self.grill_bp = CognitiveBlueprint.objects.create(
+            name="Grill me!",
+            is_autonomous=False,
+            description="Interrogates the user until satisfied."
+        )
+        self.sub_child_bp = CognitiveBlueprint.objects.create(
+            name="Child Cleaner",
+            is_autonomous=True,
+            description="Performs leaf cleaning."
+        )
+        # Add a step invoking sub-blueprint
+        ReasoningStep.objects.create(
+            blueprint=self.auto_bp,
+            name="Invoke Cleaner Subroutine",
+            system_prompt="Delegate to cleaner",
+            sub_blueprint=self.sub_child_bp,
+            is_start_node=True
+        )
+
+        self.scenario_group = ScenarioGroup.objects.create(
+            name="Multi-Turn Test Ladder",
+            description="Test ladder rungs"
+        )
+        self.scenario = BenchmarkScenario.objects.create(
+            question="Turn 1: Introduce causal inference fundamentals.",
+            ideal_answer="Causal inference determines whether an intervention produces an effect.",
+            expected_keywords=["causal", "inference", "effect"]
+        )
+        self.scenario_group.scenarios.add(self.scenario)
+
+    def test_blueprint_autonomy_tier_classification(self):
+        """Tests that autonomy_tier dynamically classifies operational tiers."""
+        self.assertEqual(self.auto_bp.autonomy_tier, "AUTONOMOUS")
+        self.assertEqual(self.blocked_bp.autonomy_tier, "INTERACTIVE_ON_BLOCKED")
+        self.assertEqual(self.grill_bp.autonomy_tier, "INTERACTIVE_BY_DESIGN")
+
+    def test_blueprint_sub_blueprint_summary(self):
+        """Tests that sub_blueprints_summary correctly identifies nested child blueprints."""
+        summary = self.auto_bp.sub_blueprints_summary
+        self.assertTrue(summary["has_sub_blueprints"])
+        self.assertEqual(summary["sub_blueprint_count"], 1)
+        self.assertIn("Child Cleaner", summary["sub_blueprint_names"])
+
+        blocked_summary = self.blocked_bp.sub_blueprints_summary
+        self.assertFalse(blocked_summary["has_sub_blueprints"])
+
+    def test_run_benchmark_api_blueprint_target(self):
+        """POST /benchmarking/api/run/ registers Blueprint experiments with snapshot parameters."""
+        res = self.client.post(
+            "/benchmarking/api/run/",
+            data={
+                "generation_target": "blueprint",
+                "blueprint_id": str(self.auto_bp.id),
+                "model_ids": ["current"],
+                "hosting_backends": ["pytorch"],
+                "scenario_group_id": str(self.scenario_group.id),
+                "max_steps": "15",
+                "multi_turn_mode": "chained",
+                "experiment_name": "Blueprint Evaluation Trial",
+            }
+        )
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res["Content-Type"], "text/event-stream")
+
+        exp = Experiment.objects.filter(name__contains="Autonomous Research Agent").first()
+        self.assertIsNotNone(exp)
+        self.assertEqual(exp.configuration.get("generation_target"), "blueprint")
+        self.assertEqual(exp.configuration.get("blueprint_id"), self.auto_bp.id)
+        self.assertEqual(exp.configuration.get("max_steps"), 15)
+        self.assertEqual(exp.configuration.get("multi_turn_mode"), "chained")
+
+    def test_execute_single_scenario_blueprint_success(self):
+        """_execute_single_scenario invokes run_blueprint and captures trajectory metrics."""
+        from unittest.mock import patch
+        from benchmarking.views import _execute_single_scenario
+
+        inv = Investigation.objects.create(name="BP Single Test Inv")
+        corpus = BenchmarkCorpus.objects.create(name="Corpus Test")
+        exp = Experiment.objects.create(
+            investigation=inv,
+            corpus=corpus,
+            name="BP Run Test",
+            configuration={
+                "generation_target": "blueprint",
+                "blueprint_id": self.auto_bp.id,
+                "max_steps": 10,
+                "multi_turn_mode": "isolated"
+            }
+        )
+        run = BenchmarkRun.objects.create(experiment=exp, corpus=corpus, configuration_snapshot=exp.configuration)
+
+        mock_result = {
+            "final_response": "Causal inference isolates counterfactual treatment effects.",
+            "internal_monologue": [
+                {"step_name": "Hypothesis", "output": "Formulating DAG"},
+                {"step_name": "Evaluate", "output": "Verified unconfoundedness"}
+            ],
+            "route_to": "SUCCESS",
+            "state_tree": {"macro_objective": "Explain causal inference"}
+        }
+
+        with patch("metacognition.tasks.run_blueprint", return_value=mock_result) as mock_run:
+            res = _execute_single_scenario(run, self.scenario, ai_service=None)
+            self.assertEqual(res.generated_response, mock_result["final_response"])
+            self.assertEqual(res.extra_metrics.get("step_count"), 2)
+            self.assertEqual(res.extra_metrics.get("route_to"), "SUCCESS")
+            self.assertEqual(len(res.extra_metrics.get("internal_monologue")), 2)
+            mock_run.assert_called_once()
+
+    def test_execute_single_scenario_blueprint_user_input_required(self):
+        """_execute_single_scenario handles USER_INPUT_REQUIRED gracefully without crashing."""
+        from unittest.mock import patch
+        from benchmarking.views import _execute_single_scenario
+
+        inv = Investigation.objects.create(name="BP Halt Test Inv")
+        corpus = BenchmarkCorpus.objects.create(name="Corpus Test 2")
+        exp = Experiment.objects.create(
+            investigation=inv,
+            corpus=corpus,
+            name="BP Halt Test",
+            configuration={
+                "generation_target": "blueprint",
+                "blueprint_id": self.grill_bp.id,
+                "max_steps": 10,
+                "multi_turn_mode": "isolated"
+            }
+        )
+        run = BenchmarkRun.objects.create(experiment=exp, corpus=corpus, configuration_snapshot=exp.configuration)
+
+        mock_halt_result = {
+            "final_response": "What specific causal identification assumptions are you relying on?",
+            "internal_monologue": [{"step_name": "Grill User", "output": "Asking clarifying question"}],
+            "route_to": "USER_INPUT_REQUIRED",
+            "pending_approval": None,
+        }
+
+        with patch("metacognition.tasks.run_blueprint", return_value=mock_halt_result):
+            res = _execute_single_scenario(run, self.scenario, ai_service=None)
+            self.assertEqual(res.extra_metrics.get("status_flag"), "halted_waiting_for_user")
+            self.assertEqual(res.extra_metrics.get("route_to"), "USER_INPUT_REQUIRED")
+
+    def test_export_investigation_dataframe_csv_and_json(self):
+        """Tests high-resolution DataFrame export in both CSV and JSON formats."""
+        inv = Investigation.objects.create(name="DataFrame Export Investigation")
+        corpus = BenchmarkCorpus.objects.create(name="DF Corpus")
+        exp = Experiment.objects.create(investigation=inv, corpus=corpus, name="DF Exp")
+        run = BenchmarkRun.objects.create(experiment=exp, corpus=corpus)
+        BenchmarkResult.objects.create(
+            run=run,
+            scenario=self.scenario,
+            prompt_text=self.scenario.question,
+            generated_response="Candidate answer",
+            duration_seconds=2.45,
+            rag_recall_score=0.9,
+            semantic_score=0.85,
+            extra_metrics={
+                "step_count": 3,
+                "internal_monologue": [{"step_name": "Step 1"}, {"step_name": "Step 2"}],
+                "route_to": "SUCCESS"
+            }
+        )
+
+        # Test CSV export
+        res_csv = self.client.get(f"/benchmarking/export/dataframe/{inv.id}/?format=csv")
+        self.assertEqual(res_csv.status_code, 200)
+        self.assertEqual(res_csv["Content-Type"], "text/csv")
+        csv_text = res_csv.content.decode("utf-8")
+        self.assertIn("extra_metrics.step_count", csv_text)
+        self.assertIn("Candidate answer", csv_text)
+
+        # Test JSON export
+        res_json = self.client.get(f"/benchmarking/export/dataframe/{inv.id}/?format=json")
+        self.assertEqual(res_json.status_code, 200)
+        self.assertEqual(res_json["Content-Type"], "application/json")
+        data = json.loads(res_json.content.decode("utf-8"))
+        self.assertIsInstance(data, list)
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]["extra_metrics.step_count"], 3)
+
+
+
 
 

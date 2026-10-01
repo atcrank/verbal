@@ -113,7 +113,10 @@ class Investigation(models.Model):
         results = BenchmarkResult.objects.filter(run__experiment__investigation=self).values(
             'run__experiment__name',
             'run__id',
+            'scenario__id',
             'scenario__question',
+            'scenario__ideal_answer',
+            'generated_response',
             'duration_seconds',
             'rag_recall_score',
             'semantic_score',

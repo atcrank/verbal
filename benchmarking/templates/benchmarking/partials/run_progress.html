@@ -69,6 +69,12 @@
                     {% if res.extra_metrics.latency %}
                     <span>Lat: <strong>{{ res.extra_metrics.latency|floatformat:2 }}s</strong></span>
                     {% endif %}
+                    {% if res.extra_metrics.step_count %}
+                    <span class="badge badge-info" style="font-size: 0.68rem; padding: 0.15rem 0.4rem;">{{ res.extra_metrics.step_count }} steps</span>
+                    {% endif %}
+                    {% if res.extra_metrics.route_to == "USER_INPUT_REQUIRED" %}
+                    <span class="badge badge-warning" style="font-size: 0.68rem; padding: 0.15rem 0.4rem;">Halted (Needs Input)</span>
+                    {% endif %}
                     <span style="color: var(--link-color); text-decoration: underline; margin-left: auto;">Inspect Diff &rarr;</span>
                 </div>
             </div>
@@ -82,12 +88,18 @@
 
     <!-- Action Bar -->
     {% if status == "COMPLETED" %}
-    <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
+    <div style="display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap;">
         <a href="{% url 'benchmarking:export_run_csv' run.id %}" class="btn btn-secondary btn-sm" download>
-            &darr; Download Run CSV
+            &darr; Run CSV
+        </a>
+        <a href="/benchmarking/export/dataframe/{{ run.experiment.investigation.id }}/?format=csv" class="btn btn-secondary btn-sm" download title="Download complete flattened DataFrame with step counts and monologue trajectories">
+            &darr; High-Res DataFrame (CSV)
+        </a>
+        <a href="/benchmarking/export/dataframe/{{ run.experiment.investigation.id }}/?format=json" class="btn btn-secondary btn-sm" download title="Download complete JSON format">
+            &darr; High-Res (JSON)
         </a>
         <a href="{% url 'benchmarking:investigation_dashboard' run.experiment.investigation.id %}" class="btn btn-secondary btn-sm" target="_blank">
-            Open Investigation Report &rarr;
+            Analytics Report &rarr;
         </a>
     </div>
     {% endif %}

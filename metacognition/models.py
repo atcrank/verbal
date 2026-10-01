@@ -112,6 +112,37 @@ class CognitiveBlueprint(models.Model):
             prod *= s
         return prod
 
+    @property
+    def autonomy_tier(self) -> str:
+        """
+        Dynamically classifies blueprint operational autonomy:
+        - 'AUTONOMOUS': Fully self-routing and automated failure recovery (is_autonomous=True).
+        - 'INTERACTIVE_BY_DESIGN': Elicitation/conversational graph where human dialogue is the primary purpose (e.g. Grill me!).
+        - 'INTERACTIVE_ON_BLOCKED': Mostly autonomous task graph that yields to human input only when blocked.
+        """
+        if self.is_autonomous:
+            return "AUTONOMOUS"
+        name_lower = self.name.lower()
+        if "grill" in name_lower or "interview" in name_lower:
+            return "INTERACTIVE_BY_DESIGN"
+        start_step = self.steps.filter(is_start_node=True).first()
+        if start_step and ("ask the best new question" in start_step.system_prompt.lower() or "user says" in start_step.system_prompt.lower()):
+            return "INTERACTIVE_BY_DESIGN"
+        return "INTERACTIVE_ON_BLOCKED"
+
+    @property
+    def sub_blueprints_summary(self) -> dict:
+        """
+        Inspects whether this blueprint invokes child blueprints and returns details.
+        """
+        sub_steps = self.steps.filter(sub_blueprint__isnull=False).select_related('sub_blueprint')
+        sub_names = list({s.sub_blueprint.name for s in sub_steps if s.sub_blueprint})
+        return {
+            "has_sub_blueprints": len(sub_names) > 0,
+            "sub_blueprint_count": len(sub_names),
+            "sub_blueprint_names": sub_names,
+        }
+
     def save(self, *args, force_canonical_update=False, **kwargs):
         if self.pk and not force_canonical_update and not is_lock_bypassed():
             # Check the original DB state to see if it was ALREADY canonical

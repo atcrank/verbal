@@ -110,6 +110,15 @@ def studio_view(request):
     grouped_history = get_grouped_history(group_by="scenario_group")
     total_runs_count = BenchmarkRun.objects.count()
 
+    try:
+        from metacognition.models import CognitiveBlueprint
+        blueprints = list(
+            CognitiveBlueprint.objects.prefetch_related("steps", "steps__sub_blueprint").all().order_by("name")
+        )
+    except Exception as e:
+        logger.warning(f"Could not load CognitiveBlueprints: {e}")
+        blueprints = []
+
     context = {
         "investigations": investigations,
         "scenario_groups": scenario_groups,
@@ -122,6 +131,7 @@ def studio_view(request):
         "active_backend": active_backend,
         "datasets": datasets,
         "adapters": adapters,
+        "blueprints": blueprints,
         "hardware": hardware,
         "rec_config": rec_config,
         "estimated_latency_per_query": estimated_latency_per_query,
@@ -250,22 +260,39 @@ def run_benchmark_api(request):
     if not corpus:
         corpus = BenchmarkCorpus.objects.create(name="Default Benchmark Corpus", description="Auto-created corpus")
 
-    # Generate Cartesian product of Experiments
-    total_combinations = len(model_ids) * len(hosting_backends) * len(rag_strategies)
+    # Architecture Target: Direct LLM vs Cognitive Blueprint
+    generation_target = request.POST.get("generation_target", "direct").lower()
+    blueprint_id = request.POST.get("blueprint_id")
+    max_steps = int(request.POST.get("max_steps", 10))
+    multi_turn_mode = request.POST.get("multi_turn_mode", "isolated").lower()
+
     created_runs = []
-    for model_id in model_ids:
-        for backend in hosting_backends:
-            for rag in rag_strategies:
+
+    if generation_target == "blueprint":
+        bp_obj = None
+        if blueprint_id:
+            from metacognition.models import CognitiveBlueprint
+            bp_obj = CognitiveBlueprint.objects.filter(pk=blueprint_id).first()
+        bp_name = bp_obj.name if bp_obj else f"Blueprint #{blueprint_id}"
+
+        total_combinations = len(model_ids) * len(hosting_backends)
+        for model_id in model_ids:
+            for backend in hosting_backends:
                 m_short = model_id.split("/")[-1] if "/" in model_id else model_id
                 if total_combinations == 1:
-                    exp_name = experiment_name
+                    exp_name = f"{experiment_name} ({bp_name})"
                 else:
-                    exp_name = f"{experiment_name} ({m_short} | {backend.upper()} | {rag})"
+                    exp_name = f"{experiment_name} ({bp_name} | {m_short} | {backend.upper()})"
 
                 config_snapshot = {
+                    "generation_target": "blueprint",
+                    "blueprint_id": int(blueprint_id) if blueprint_id else None,
+                    "blueprint_name": bp_name,
+                    "max_steps": max_steps,
+                    "multi_turn_mode": multi_turn_mode,
                     "ai_model_id": model_id,
                     "hosting_backend": backend,
-                    "rag_strategy": rag,
+                    "rag_strategy": "none",
                     "chunk_size": chunk_size,
                     "iterations": iterations,
                 }
@@ -284,15 +311,59 @@ def run_benchmark_api(request):
                 )
                 created_runs.append(run)
 
-    # If single run, stream that run directly; if matrix, stream investigation matrix
-    if len(created_runs) == 1:
-        stream_url = f"/benchmarking/stream/{created_runs[0].id}/"
-        subtitle = f"Target: {hosting_backends[0].upper()} | Model: {model_ids[0]} | Strategy: {rag_strategies[0]}"
-        header = f"Launching Run #{created_runs[0].id}: {created_runs[0].experiment.name}"
+        if len(created_runs) == 1:
+            stream_url = f"/benchmarking/stream/{created_runs[0].id}/"
+            subtitle = f"Target: Blueprint ({bp_name}) | Backend: {hosting_backends[0].upper()} | Model: {model_ids[0]}"
+            header = f"Launching Run #{created_runs[0].id}: {created_runs[0].experiment.name}"
+        else:
+            stream_url = f"/benchmarking/stream/investigation/{investigation.id}/"
+            subtitle = f"Blueprint: {bp_name} × {len(model_ids)} Models × {len(hosting_backends)} Backends = {len(created_runs)} Experiments"
+            header = f"Launching Investigation #{investigation.id}: {investigation.name}"
+
     else:
-        stream_url = f"/benchmarking/stream/investigation/{investigation.id}/"
-        subtitle = f"Matrix: {len(model_ids)} Models × {len(hosting_backends)} Backends × {len(rag_strategies)} Strategies = {len(created_runs)} Experiments"
-        header = f"Launching Investigation #{investigation.id}: {investigation.name}"
+        # Standard Direct LLM Cartesian product
+        total_combinations = len(model_ids) * len(hosting_backends) * len(rag_strategies)
+        for model_id in model_ids:
+            for backend in hosting_backends:
+                for rag in rag_strategies:
+                    m_short = model_id.split("/")[-1] if "/" in model_id else model_id
+                    if total_combinations == 1:
+                        exp_name = experiment_name
+                    else:
+                        exp_name = f"{experiment_name} ({m_short} | {backend.upper()} | {rag})"
+
+                    config_snapshot = {
+                        "generation_target": "direct",
+                        "ai_model_id": model_id,
+                        "hosting_backend": backend,
+                        "rag_strategy": rag,
+                        "chunk_size": chunk_size,
+                        "iterations": iterations,
+                    }
+                    exp = Experiment.objects.create(
+                        investigation=investigation,
+                        corpus=corpus,
+                        scenario_group=scenario_group,
+                        name=exp_name,
+                        iterations=iterations,
+                        configuration=config_snapshot,
+                    )
+                    run = BenchmarkRun.objects.create(
+                        experiment=exp,
+                        corpus=corpus,
+                        configuration_snapshot=config_snapshot,
+                    )
+                    created_runs.append(run)
+
+        # If single run, stream that run directly; if matrix, stream investigation matrix
+        if len(created_runs) == 1:
+            stream_url = f"/benchmarking/stream/{created_runs[0].id}/"
+            subtitle = f"Target: {hosting_backends[0].upper()} | Model: {model_ids[0]} | Strategy: {rag_strategies[0]}"
+            header = f"Launching Run #{created_runs[0].id}: {created_runs[0].experiment.name}"
+        else:
+            stream_url = f"/benchmarking/stream/investigation/{investigation.id}/"
+            subtitle = f"Matrix: {len(model_ids)} Models × {len(hosting_backends)} Backends × {len(rag_strategies)} Strategies = {len(created_runs)} Experiments"
+            header = f"Launching Investigation #{investigation.id}: {investigation.name}"
 
     initial_frag = f"""
     <div id="run-monitor" data-on-load="@get('{stream_url}')">
@@ -307,6 +378,132 @@ def run_benchmark_api(request):
     """
     sse_response = DatastarSSE.patch_elements(initial_frag, selector="#run-monitor", mode="morph")
     return HttpResponse(sse_response, content_type="text/event-stream")
+
+
+def _execute_single_scenario(run, scenario, ai_service, conversation_ref=None):
+    """
+    Executes a single scenario for a given BenchmarkRun.
+    Dispatches generation based on run.configuration_snapshot:
+      - 'blueprint': Executes run_blueprint() with step budgets and conversation continuity.
+      - 'direct': Queries model with RAG context via generate_response2.
+    """
+    config = run.configuration_snapshot or run.experiment.configuration or {}
+    generation_target = config.get("generation_target", "direct").lower()
+    start_t = time.perf_counter()
+
+    raw_retrieved_text = ""
+    ret_meta = []
+    traj_metrics = {}
+    candidate_response = ""
+
+    if generation_target == "blueprint":
+        blueprint_id = config.get("blueprint_id")
+        max_steps = int(config.get("max_steps", 10))
+        multi_turn_mode = config.get("multi_turn_mode", "isolated").lower()
+        conv_id = str(conversation_ref.id) if (multi_turn_mode == "chained" and conversation_ref) else None
+
+        if not blueprint_id:
+            candidate_response = "Error: 'blueprint_id' missing in experiment configuration."
+            traj_metrics["error"] = "blueprint_id_missing"
+        else:
+            from metacognition.tasks import run_blueprint
+            try:
+                result = run_blueprint(
+                    blueprint_id=int(blueprint_id),
+                    user_prompt=scenario.question,
+                    conversation_id=conv_id,
+                    max_steps=max_steps,
+                )
+                if "error" in result:
+                    candidate_response = f"Blueprint Error: {result['error']}"
+                    traj_metrics["error"] = result["error"]
+                else:
+                    candidate_response = result.get("final_response", "")
+
+                monologue = result.get("internal_monologue", [])
+                traj_metrics["internal_monologue"] = monologue
+                traj_metrics["step_count"] = len(monologue)
+                traj_metrics["route_to"] = result.get("route_to")
+                traj_metrics["pending_approval"] = bool(result.get("pending_approval"))
+                traj_metrics["state_tree_present"] = bool(result.get("state_tree"))
+                if result.get("route_to") == "USER_INPUT_REQUIRED":
+                    traj_metrics["status_flag"] = "halted_waiting_for_user"
+
+            except Exception as e:
+                logger.error(f"Error running blueprint {blueprint_id} for scenario {scenario.id}: {e}")
+                candidate_response = f"Blueprint Execution Exception: {e}"
+                traj_metrics["error"] = str(e)
+
+    else:
+        strat = config.get("rag_strategy", "none")
+        raw_retrieved_text, ret_meta = retrieve_benchmark_context(
+            query=scenario.question,
+            strategy=strat,
+            rag_service=getattr(service_registry, "rag_service", None),
+            grips_service=getattr(service_registry, "grips_service", None),
+        )
+
+        candidate_prompt = scenario.question
+        if raw_retrieved_text:
+            candidate_prompt = (
+                f"Ground your answer in the following reference context:\n\n{raw_retrieved_text}\n\n"
+                f"Question: {scenario.question}"
+            )
+
+        candidate_response = scenario.ideal_response or f"Candidate response for scenario #{scenario.id}."
+        if ai_service and hasattr(ai_service, "generate_response2"):
+            try:
+                raw_resps = ai_service.generate_response2(
+                    messages=[{"role": "user", "content": candidate_prompt}],
+                    max_new_tokens=300,
+                    num_return_sequences=1,
+                )
+                if raw_resps:
+                    resp_str = raw_resps[0] if isinstance(raw_resps, list) else raw_resps
+                    candidate_response = ai_service.clean_response(resp_str) if hasattr(ai_service, "clean_response") else resp_str
+            except Exception as err:
+                logger.warning(f"Error querying AI service in run {run.id}: {err}")
+        elif ai_service and hasattr(ai_service, "generate"):
+            try:
+                resp = ai_service.generate([{"role": "user", "content": candidate_prompt}])
+                if resp:
+                    candidate_response = resp
+            except Exception as err:
+                logger.warning(f"Error querying AI service in run {run.id}: {err}")
+
+    elapsed = time.perf_counter() - start_t
+
+    # Keyword recall
+    check_text = raw_retrieved_text if raw_retrieved_text else candidate_response
+    hits = [k for k in scenario.expected_keywords if k.lower() in check_text.lower()]
+    rag_score = len(hits) / len(scenario.expected_keywords) if scenario.expected_keywords else 1.0
+
+    # Scores
+    sem_score = 0.90 if scenario.ideal_response else 0.50
+    faith_score = 0.90 if raw_retrieved_text else 0.70
+    rel_score = 0.95
+
+    extra_metrics = {
+        "latency": elapsed,
+        "keyword_hits": hits,
+        "retrieval_meta": ret_meta,
+        **traj_metrics,
+    }
+
+    res = BenchmarkResult.objects.create(
+        run=run,
+        scenario=scenario,
+        prompt_text=scenario.question,
+        raw_retrieved_text=raw_retrieved_text,
+        generated_response=candidate_response,
+        duration_seconds=elapsed,
+        rag_recall_score=rag_score,
+        semantic_score=sem_score,
+        faithfulness_score=faith_score,
+        relevance_score=rel_score,
+        extra_metrics=extra_metrics,
+    )
+    return res
 
 
 def stream_benchmark_run(request, run_id: int):
@@ -361,76 +558,26 @@ def stream_benchmark_run(request, run_id: int):
         ai_service = getattr(service_registry, "ai_service", None)
         created_results = list(existing_results)
 
+        config = run.configuration_snapshot or experiment.configuration or {}
+        multi_turn_mode = config.get("multi_turn_mode", "isolated").lower()
+        conversation_ref = None
+        if config.get("generation_target") == "blueprint" and multi_turn_mode == "chained":
+            from llm_api.models import Conversation
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            bench_user = User.objects.filter(username="NightManager").first() or User.objects.first()
+            if bench_user:
+                conversation_ref = Conversation.objects.create(
+                    user=bench_user,
+                    title=f"Benchmark Run #{run.id}: {experiment.name[:45]}"
+                )
+
         # Execute scenario loop
         for index, scenario in enumerate(scenarios, start=1):
             # Check if this scenario was already processed
             already_done = any(r.scenario_id == scenario.id for r in created_results)
             if not already_done:
-                start_t = time.perf_counter()
-                candidate_response = f"Candidate response for scenario #{scenario.id}."
-                if scenario.ideal_response:
-                    candidate_response = scenario.ideal_response
-
-                strat = experiment.configuration.get("rag_strategy", "none")
-                raw_retrieved_text, ret_meta = retrieve_benchmark_context(
-                    query=scenario.question,
-                    strategy=strat,
-                    rag_service=getattr(service_registry, "rag_service", None),
-                    grips_service=getattr(service_registry, "grips_service", None),
-                )
-
-                candidate_prompt = scenario.question
-                if raw_retrieved_text:
-                    candidate_prompt = (
-                        f"Ground your answer in the following reference context:\n\n{raw_retrieved_text}\n\n"
-                        f"Question: {scenario.question}"
-                    )
-
-                if ai_service and hasattr(ai_service, "generate_response2"):
-                    try:
-                        raw_resps = ai_service.generate_response2(
-                            messages=[{"role": "user", "content": candidate_prompt}],
-                            max_new_tokens=300,
-                            num_return_sequences=1,
-                        )
-                        if raw_resps:
-                            resp_str = raw_resps[0] if isinstance(raw_resps, list) else raw_resps
-                            candidate_response = ai_service.clean_response(resp_str) if hasattr(ai_service, "clean_response") else resp_str
-                    except Exception as err:
-                        logger.warning(f"Error querying AI service in benchmark run {run.id}: {err}")
-                elif ai_service and hasattr(ai_service, "generate"):
-                    try:
-                        resp = ai_service.generate([{"role": "user", "content": candidate_prompt}])
-                        if resp:
-                            candidate_response = resp
-                    except Exception as err:
-                        logger.warning(f"Error querying AI service in benchmark run {run.id}: {err}")
-
-                elapsed = time.perf_counter() - start_t
-
-                # Calculate keyword overlap: if context retrieved, check RAG recall on context, else candidate response
-                check_text = raw_retrieved_text if raw_retrieved_text else candidate_response
-                hits = [k for k in scenario.expected_keywords if k.lower() in check_text.lower()]
-                rag_score = len(hits) / len(scenario.expected_keywords) if scenario.expected_keywords else 1.0
-
-                # Scores
-                sem_score = 0.90 if scenario.ideal_response else 0.50
-                faith_score = 0.90 if raw_retrieved_text else 0.70
-                rel_score = 0.95
-
-                res = BenchmarkResult.objects.create(
-                    run=run,
-                    scenario=scenario,
-                    prompt_text=scenario.question,
-                    raw_retrieved_text=raw_retrieved_text,
-                    generated_response=candidate_response,
-                    duration_seconds=elapsed,
-                    rag_recall_score=rag_score,
-                    semantic_score=sem_score,
-                    faithfulness_score=faith_score,
-                    relevance_score=rel_score,
-                    extra_metrics={"latency": elapsed, "keyword_hits": hits, "retrieval_meta": ret_meta},
-                )
+                res = _execute_single_scenario(run, scenario, ai_service, conversation_ref=conversation_ref)
                 created_results.append(res)
 
             # Compute current averages
@@ -502,8 +649,12 @@ def stream_investigation_matrix(request, investigation_id: int):
         for exp, run in runs:
             m_name = exp.selected_model.name if exp.selected_model else exp.configuration.get("target_model", "Default")
             m_short = m_name.split("/")[-1] if "/" in m_name else m_name
-            backend = exp.configuration.get("hosting_backend", "ollama")
-            rag = exp.configuration.get("rag_strategy", "default")
+            backend = exp.configuration.get("hosting_backend", "pytorch")
+            target = exp.configuration.get("generation_target", "direct")
+            if target == "blueprint":
+                rag = f"BP: {exp.configuration.get('blueprint_name', 'Blueprint')[:18]}"
+            else:
+                rag = exp.configuration.get("rag_strategy", "none").upper()
             scorecard_rows.append({
                 "model_short": m_short,
                 "backend": backend,
@@ -551,70 +702,26 @@ def stream_investigation_matrix(request, investigation_id: int):
                 })
                 continue
 
+            config = run.configuration_snapshot or exp.configuration or {}
+            multi_turn_mode = config.get("multi_turn_mode", "isolated").lower()
+            conversation_ref = None
+            if config.get("generation_target") == "blueprint" and multi_turn_mode == "chained":
+                from llm_api.models import Conversation
+                from django.contrib.auth import get_user_model
+                User = get_user_model()
+                bench_user = User.objects.filter(username="NightManager").first() or User.objects.first()
+                if bench_user:
+                    conversation_ref = Conversation.objects.create(
+                        user=bench_user,
+                        title=f"Benchmark Run #{run.id}: {exp.name[:45]}"
+                    )
+
             avg_rag = avg_sem = avg_faith = avg_rel = 0.0
 
             for s_idx, scenario in enumerate(scenarios, start=1):
                 already_done = any(r.scenario_id == scenario.id for r in created_results)
                 if not already_done:
-                    start_t = time.perf_counter()
-                    candidate_response = scenario.ideal_response or f"Response for scenario #{scenario.id}"
-
-                    strat = exp.configuration.get("rag_strategy", "none")
-                    raw_retrieved_text, ret_meta = retrieve_benchmark_context(
-                        query=scenario.question,
-                        strategy=strat,
-                        rag_service=getattr(service_registry, "rag_service", None),
-                        grips_service=getattr(service_registry, "grips_service", None),
-                    )
-
-                    candidate_prompt = scenario.question
-                    if raw_retrieved_text:
-                        candidate_prompt = (
-                            f"Ground your answer in the following reference context:\n\n{raw_retrieved_text}\n\n"
-                            f"Question: {scenario.question}"
-                        )
-
-                    if ai_service and hasattr(ai_service, "generate_response2"):
-                        try:
-                            raw_resps = ai_service.generate_response2(
-                                messages=[{"role": "user", "content": candidate_prompt}],
-                                max_new_tokens=300,
-                                num_return_sequences=1,
-                            )
-                            if raw_resps:
-                                resp_str = raw_resps[0] if isinstance(raw_resps, list) else raw_resps
-                                candidate_response = ai_service.clean_response(resp_str) if hasattr(ai_service, "clean_response") else resp_str
-                        except Exception as err:
-                            logger.warning(f"Error querying AI service in matrix run {run.id}: {err}")
-                    elif ai_service and hasattr(ai_service, "generate"):
-                        try:
-                            resp = ai_service.generate([{"role": "user", "content": candidate_prompt}])
-                            if resp:
-                                candidate_response = resp
-                        except Exception as err:
-                            logger.warning(f"Error querying AI service in matrix run {run.id}: {err}")
-
-                    elapsed = time.perf_counter() - start_t
-                    check_text = raw_retrieved_text if raw_retrieved_text else candidate_response
-                    hits = [k for k in scenario.expected_keywords if k.lower() in check_text.lower()]
-                    rag_score = len(hits) / len(scenario.expected_keywords) if scenario.expected_keywords else 1.0
-                    sem_score = 0.90 if scenario.ideal_response else 0.50
-                    faith_score = 0.90 if raw_retrieved_text else 0.70
-                    rel_score = 0.95
-
-                    res = BenchmarkResult.objects.create(
-                        run=run,
-                        scenario=scenario,
-                        prompt_text=scenario.question,
-                        raw_retrieved_text=raw_retrieved_text,
-                        generated_response=candidate_response,
-                        duration_seconds=elapsed,
-                        rag_recall_score=rag_score,
-                        semantic_score=sem_score,
-                        faithfulness_score=faith_score,
-                        relevance_score=rel_score,
-                        extra_metrics={"latency": elapsed, "keyword_hits": hits, "retrieval_meta": ret_meta},
-                    )
+                    res = _execute_single_scenario(run, scenario, ai_service, conversation_ref=conversation_ref)
                     created_results.append(res)
 
                 if created_results:
@@ -1164,4 +1271,31 @@ def hardware_profile_api(request):
             "num_train_epochs": rec.num_train_epochs,
         },
     })
+
+
+def export_investigation_dataframe(request, investigation_id: int):
+    """
+    Exports a high-resolution, flattened Pandas DataFrame of all results in an Investigation.
+    Includes full metadata, prompt details, response strings, and nested extra_metrics (such as
+    step counts, hop counts, routing decisions, and internal monologue trajectories).
+    Supports format='csv' (default) and format='json'.
+    """
+    investigation = get_object_or_404(Investigation, pk=investigation_id)
+    fmt = request.GET.get("format", "csv").lower()
+    
+    df = investigation.to_dataframe()
+    if df.empty:
+        return HttpResponse("No results found for this investigation.", status=404)
+
+    # Reset index so grouped columns are exported cleanly as standard columns
+    df_flat = df.reset_index()
+
+    if fmt == "json":
+        response = HttpResponse(df_flat.to_json(orient="records", indent=2), content_type="application/json")
+        response["Content-Disposition"] = f'attachment; filename="investigation_{investigation.id}_highres.json"'
+    else:
+        response = HttpResponse(df_flat.to_csv(index=False), content_type="text/csv")
+        response["Content-Disposition"] = f'attachment; filename="investigation_{investigation.id}_highres.csv"'
+    return response
+
 
