@@ -1309,7 +1309,32 @@ class AdaptiveBenchmarkHubAndLeaderboardTests(TestCase):
         from benchmarking.admin import BenchmarkRunAdmin, RunResolutionFilter, mark_runs_resolved_action, mark_runs_unresolved_action
         from django.contrib.admin.sites import AdminSite
 
-        # 1. Create a historical failed run with system defect
+        # 1. Create a healthy assessed run
+        exp_healthy = Experiment.objects.create(
+            investigation=self.inv,
+            name="Healthy Active Run",
+            scenario_group=self.sg1,
+            selected_model=self.model_a,
+            configuration={"hosting_backend": "pytorch", "ai_model_id": self.model_a.hf_model_id}
+        )
+        run_healthy = BenchmarkRun.objects.create(
+            experiment=exp_healthy,
+            corpus=self.corpus,
+            average_semantic_score=0.90,
+            configuration_snapshot={"hosting_backend": "pytorch", "ai_model_id": self.model_a.hf_model_id}
+        )
+        BenchmarkResult.objects.create(
+            run=run_healthy,
+            scenario=self.scen1,
+            prompt_text="Q1",
+            raw_retrieved_text="Context",
+            generated_response="Ideal complete output.",
+            duration_seconds=5.0,
+            rag_recall_score=0.9,
+            semantic_score=0.90
+        )
+
+        # Create a historical failed run with system defect (latest run)
         exp_failed = Experiment.objects.create(
             investigation=self.inv,
             name="Crashed Historical Run",
@@ -1354,12 +1379,20 @@ class AdaptiveBenchmarkHubAndLeaderboardTests(TestCase):
         run_failed.refresh_from_db()
 
         self.assertTrue(run_failed.is_resolved)
-        self.assertEqual(run_failed.resolved_by, self.user.username)
-        self.assertTrue(bool(run_failed.resolved_at))
+        self.assertEqual(run_failed.resolved_by, self.user)
+        self.assertEqual(run_failed.resolved_by.username, self.user.username)
+        self.assertIsNotNone(run_failed.resolved_at)
         self.assertEqual(run_failed.resolution_notes, "vLLM container network bridge restored.")
+
+        # Test direct ORM database querying on the new indexed field
+        self.assertEqual(BenchmarkRun.objects.filter(is_resolved=True).count(), 1)
+        self.assertEqual(BenchmarkRun.objects.filter(is_resolved=False).count(), 1)
 
         # 4. With run resolved, diagnose_run_defect(..., include_resolved=False) returns None
         self.assertIsNone(diagnose_run_defect(run_failed, include_resolved=False))
+        defect_with_resolved = diagnose_run_defect(run_failed, include_resolved=True)
+        self.assertTrue(defect_with_resolved.is_resolved)
+        self.assertEqual(defect_with_resolved.resolved_by, self.user.username)
 
         # Operational status no longer flags engine failure
         op_status_after = get_operational_status()
@@ -1380,6 +1413,7 @@ class AdaptiveBenchmarkHubAndLeaderboardTests(TestCase):
         run_failed.mark_unresolved()
         run_failed.refresh_from_db()
         self.assertFalse(run_failed.is_resolved)
+        self.assertIsNone(run_failed.resolved_by)
 
         # Non-authenticated user should be rejected
         anon_client = Client()
@@ -1392,7 +1426,8 @@ class AdaptiveBenchmarkHubAndLeaderboardTests(TestCase):
         self.assertEqual(resp_resolve["Content-Type"], "text/event-stream")
         run_failed.refresh_from_db()
         self.assertTrue(run_failed.is_resolved)
-        self.assertEqual(run_failed.resolved_by, self.user.username)
+        self.assertEqual(run_failed.resolved_by, self.user)
+        self.assertEqual(run_failed.resolved_by.username, self.user.username)
 
         # 6. Test Django Admin integration (filter and actions)
         site = AdminSite()

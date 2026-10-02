@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 from background_resources.models import Document, RAGChunk
 from llm_api.models import LocalAIModel, ExternalAIModel
 from django.utils.safestring import mark_safe
@@ -244,52 +245,58 @@ class BenchmarkRun(models.Model):
     eval_success_rate = models.FloatField(null=True, help_text="Rate of valid JSON generations by the LLM Judge")
     configuration_snapshot = models.JSONField(default=dict, help_text="Configuration state at time of run")
 
+    # Resolution & defect lifecycle tracking
+    is_resolved = models.BooleanField(
+        default=False,
+        db_index=True,
+        help_text="Indicates if an environmental or codebase defect in this historical run has been signed off as resolved."
+    )
+    resolved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="resolved_benchmark_runs",
+        help_text="Staff user who reviewed and signed off on this run's defect resolution."
+    )
+    resolved_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Timestamp when this run defect was signed off as resolved."
+    )
+    resolution_notes = models.TextField(
+        blank=True,
+        default="",
+        help_text="Staff notes detailing root cause remediation (e.g. bugfix, environment repair)."
+    )
+
     def __str__(self):
         return f"Run {self.id} - {self.experiment.name}"
 
-    @property
-    def is_resolved(self) -> bool:
-        """Indicates if an environmental or codebase defect in this historical run has been signed off as resolved."""
-        res = self.configuration_snapshot.get("resolution") if isinstance(self.configuration_snapshot, dict) else None
-        return bool(res and res.get("is_resolved"))
-
-    @property
-    def resolved_by(self) -> str:
-        """Username or identifier of the staff member who signed off on the resolution."""
-        res = self.configuration_snapshot.get("resolution") if isinstance(self.configuration_snapshot, dict) else None
-        return res.get("resolved_by", "") if res else ""
-
-    @property
-    def resolved_at(self) -> str:
-        """ISO timestamp when this run defect was signed off."""
-        res = self.configuration_snapshot.get("resolution") if isinstance(self.configuration_snapshot, dict) else None
-        return res.get("resolved_at", "") if res else ""
-
-    @property
-    def resolution_notes(self) -> str:
-        """Optional notes describing why the historical failed run is resolved."""
-        res = self.configuration_snapshot.get("resolution") if isinstance(self.configuration_snapshot, dict) else None
-        return res.get("notes", "") if res else ""
-
     def mark_resolved(self, user=None, notes: str = ""):
         """Marks this run defect as resolved, recording the sign-off user and timestamp."""
-        if not isinstance(self.configuration_snapshot, dict):
-            self.configuration_snapshot = {}
         from django.utils import timezone
-        username = user.username if user and hasattr(user, "username") else (str(user) if user else "system")
-        self.configuration_snapshot["resolution"] = {
-            "is_resolved": True,
-            "resolved_by": username,
-            "resolved_at": timezone.now().isoformat(),
-            "notes": notes.strip(),
-        }
-        self.save(update_fields=["configuration_snapshot"])
+        self.is_resolved = True
+        if user and hasattr(user, "pk"):
+            self.resolved_by = user
+        elif user and isinstance(user, str):
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            self.resolved_by = User.objects.filter(username=user).first()
+        else:
+            self.resolved_by = None
+        self.resolved_at = timezone.now()
+        self.resolution_notes = notes.strip()
+        self.save(update_fields=["is_resolved", "resolved_by", "resolved_at", "resolution_notes"])
 
     def mark_unresolved(self):
         """Clears resolution sign-off, restoring this run to active defect status."""
-        if isinstance(self.configuration_snapshot, dict) and "resolution" in self.configuration_snapshot:
-            self.configuration_snapshot.pop("resolution", None)
-            self.save(update_fields=["configuration_snapshot"])
+        self.is_resolved = False
+        self.resolved_by = None
+        self.resolved_at = None
+        self.resolution_notes = ""
+        self.save(update_fields=["is_resolved", "resolved_by", "resolved_at", "resolution_notes"])
 
 
 class BenchmarkResult(models.Model):

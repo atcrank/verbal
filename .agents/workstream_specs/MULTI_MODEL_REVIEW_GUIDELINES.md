@@ -107,7 +107,7 @@ Reviewing agents must strictly adhere to the operational rules defined in [.agen
 1. **Python Environment**: Always use the Python 3.13 venv at `../../py313/bin/python` to run tests, inspect packages, or execute shell commands.
 2. **Syntactic Conventions**: Always expect and use Python 3.13+ syntax and idioms. Prefer functional composition over deep class inheritance in novel AI code.
 3. **Protected Boundaries**: **NEVER modify or create files inside `documents/`, `resources/`, `workspaces/`, or `sandbox/`** unless explicitly instructed.
-4. **No Database Migrations**: **NEVER run `manage.py migrate` or `makemigrations`**. The Postgres database is shared; test fixtures use atomic transactions or mock databases.
+4. **Database Migrations & Data Modeling**: Prefer strongly-typed model fields over unstructured JSON fields. You may generate Django migrations via `makemigrations` for test databases, but **NEVER run `manage.py migrate` directly against the dev/default Postgres database**. The human developer reviews and applies migrations to dev manually.
 5. **Note Consultation Rule**: Review [.agents/workstream_specs/notes/INDEX.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/INDEX.md) for enduring architectural notes (especially note 17 regarding RAG design hazards and local SLMs).
 6. **Package Verification**: Check `requirements.in` and `requirements.txt` to verify whether libraries exist before claiming a dependency is present or missing.
 

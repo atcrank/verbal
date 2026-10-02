@@ -243,15 +243,14 @@ class RunResolutionFilter(admin.SimpleListFilter):
 
     def queryset(self, request, queryset):
         if self.value() == 'resolved':
-            resolved_ids = [r.id for r in queryset if r.is_resolved]
-            return queryset.filter(id__in=resolved_ids)
+            return queryset.filter(is_resolved=True)
         elif self.value() == 'defects':
             from .hub import diagnose_run_defect
-            defect_ids = [r.id for r in queryset if not r.is_resolved and diagnose_run_defect(r) is not None]
+            defect_ids = [r.id for r in queryset.filter(is_resolved=False) if diagnose_run_defect(r) is not None]
             return queryset.filter(id__in=defect_ids)
         elif self.value() == 'assessed':
             from .hub import diagnose_run_defect
-            assessed_ids = [r.id for r in queryset if not r.is_resolved and diagnose_run_defect(r) is None]
+            assessed_ids = [r.id for r in queryset.filter(is_resolved=False) if diagnose_run_defect(r) is None]
             return queryset.filter(id__in=assessed_ids)
         return queryset
 
@@ -281,11 +280,13 @@ class BenchmarkRunAdmin(admin.ModelAdmin):
         'id', 'experiment', 'corpus', 'status_badge', 'resolved_signoff',
         'timestamp', 'average_semantic_score', 'eval_success_rate'
     )
-    list_filter = (RunResolutionFilter, 'corpus', 'timestamp')
-    search_fields = ('id', 'experiment__name', 'experiment__investigation__name')
+    list_filter = (RunResolutionFilter, 'is_resolved', 'corpus', 'timestamp')
+    search_fields = ('id', 'experiment__name', 'experiment__investigation__name', 'resolved_by__username', 'resolution_notes')
+    raw_id_fields = ('resolved_by', 'experiment', 'corpus')
+    list_select_related = ('experiment', 'corpus', 'resolved_by')
     readonly_fields = (
         'status_badge', 'defect_diagnostics_display', 'resolution_details_display',
-        'configuration_snapshot'
+        'resolved_at', 'configuration_snapshot'
     )
     inlines = [BenchmarkResultInline]
     actions = [mark_runs_resolved_action, mark_runs_unresolved_action]
@@ -316,10 +317,11 @@ class BenchmarkRunAdmin(admin.ModelAdmin):
     @admin.display(description='Resolution Sign-Off')
     def resolved_signoff(self, obj):
         if obj.is_resolved:
-            date_str = obj.resolved_at[:10] if len(obj.resolved_at) >= 10 else obj.resolved_at
+            username = obj.resolved_by.username if obj.resolved_by else "staff"
+            date_str = obj.resolved_at.strftime("%Y-%m-%d") if obj.resolved_at else ""
             return format_html(
                 '<strong>{}</strong> <span style="color: #64748b; font-size: 0.75rem;">({})</span>',
-                obj.resolved_by or "staff", date_str
+                username, date_str
             )
         return mark_safe('<span style="color: #64748b;">—</span>')
 
@@ -342,6 +344,8 @@ class BenchmarkRunAdmin(admin.ModelAdmin):
     def resolution_details_display(self, obj):
         if not obj.is_resolved:
             return mark_safe('<span style="color: #f59e0b;">Unresolved. Use the "Mark selected runs as Resolved" action or click below to sign off.</span>')
+        username = obj.resolved_by.username if obj.resolved_by else "staff"
+        date_str = obj.resolved_at.strftime("%Y-%m-%d %H:%M:%S") if obj.resolved_at else ""
         return format_html(
             '<div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 6px; padding: 0.75rem;">'
             '<div style="font-weight: 700; color: #10b981; margin-bottom: 0.25rem;">✅ Resolved & Signed Off</div>'
@@ -349,8 +353,9 @@ class BenchmarkRunAdmin(admin.ModelAdmin):
             '<div style="color: #cbd5e1; margin-bottom: 0.25rem;"><strong>Signed off at:</strong> {}</div>'
             '<div style="color: #94a3b8; font-style: italic;">{}</div>'
             '</div>',
-            obj.resolved_by or "staff", obj.resolved_at, obj.resolution_notes or "No additional notes"
+            username, date_str, obj.resolution_notes or "No additional notes"
         )
+
 
 @admin.register(BenchmarkResult)
 class BenchmarkResultAdmin(admin.ModelAdmin):

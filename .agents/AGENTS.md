@@ -17,9 +17,12 @@ description: Core instructions for Antigravity agents working in this repository
 - When drafting code according to the plan, you must begin by devising an API and tests that match the specification.
 - When reviewing code, always prioritize PEP 8 compliance and invoke the `/code-reviewer` skill.
 
-# Boundaries
+# Boundaries & Data Modeling
 - Do not modify any files inside the `documents/`, `resources/`, `workspaces/`, or `sandbox` directories unless explicitly instructed.
-- Do not run database migrations. The Testing framework database fixtures will use them, but you are working in a git branch so changes to the default postgres database are a side effect. 
+- Prefer proper, strongly-typed Django model fields over generic JSON fields when modeling first-class domain entities, attributes, and lifecycle state.
+- You CAN and SHOULD create new Django migrations via `makemigrations <app_name>` whenever you propose or modify model fields so that the Django test runner applies them against the isolated test database.
+- NEVER run `manage.py migrate` directly against the running default/dev database. The developer reviews model changes and migrations, and applies them to the dev database manually after test verification.
+
 
 # Note Consultation Rule
 On starting a new feature or debugging session, always check `.agents/workstream_specs/notes/INDEX.md` for any "enduring" constraints or pending notes related to the files you are about to edit.

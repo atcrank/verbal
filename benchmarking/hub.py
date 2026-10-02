@@ -166,6 +166,14 @@ def diagnose_run_defect(run: BenchmarkRun, include_resolved: bool = True) -> Opt
         category = "Runtime System Defect"
         summary = "Unclassified runtime exception during generation."
 
+    resolved_by_str = ""
+    if run.resolved_by:
+        resolved_by_str = getattr(run.resolved_by, "username", str(run.resolved_by))
+
+    resolved_at_str = ""
+    if run.resolved_at:
+        resolved_at_str = run.resolved_at.strftime("%Y-%m-%d %H:%M") if hasattr(run.resolved_at, "strftime") else str(run.resolved_at)
+
     return DefectRecord(
         run_id=run.id,
         investigation_id=run.experiment.investigation_id if run.experiment else None,
@@ -178,8 +186,8 @@ def diagnose_run_defect(run: BenchmarkRun, include_resolved: bool = True) -> Opt
         raw_error=combined_err[:220] if combined_err else "No output captured",
         timestamp=run.timestamp,
         is_resolved=run.is_resolved,
-        resolved_by=run.resolved_by,
-        resolved_at=run.resolved_at,
+        resolved_by=resolved_by_str,
+        resolved_at=resolved_at_str,
         resolution_notes=run.resolution_notes,
     )
 
@@ -191,7 +199,9 @@ def get_operational_status() -> Dict[str, Any]:
     Historical runs signed off as resolved do not trigger engine failure state.
     """
     latest_run = (
-        BenchmarkRun.objects.select_related("experiment", "experiment__investigation", "experiment__selected_model", "experiment__scenario_group")
+        BenchmarkRun.objects.select_related(
+            "experiment", "experiment__investigation", "experiment__selected_model", "experiment__scenario_group", "resolved_by"
+        )
         .prefetch_related("results")
         .order_by("-timestamp")
         .first()
@@ -294,7 +304,7 @@ def get_nuanced_leaderboard(scenario_group_id: Optional[int] = None, include_res
     Historical failed runs that have been marked resolved are excluded unless include_resolved is True.
     """
     query = BenchmarkRun.objects.select_related(
-        "experiment", "experiment__investigation", "experiment__selected_model", "experiment__scenario_group"
+        "experiment", "experiment__investigation", "experiment__selected_model", "experiment__scenario_group", "resolved_by"
     ).prefetch_related("results")
 
     if scenario_group_id:
@@ -452,7 +462,7 @@ def get_grouped_history(group_by: str = "scenario_group") -> List[GroupedHistory
     """
     runs = list(
         BenchmarkRun.objects.select_related(
-            "experiment", "experiment__investigation", "experiment__selected_model", "experiment__scenario_group"
+            "experiment", "experiment__investigation", "experiment__selected_model", "experiment__scenario_group", "resolved_by"
         )
         .prefetch_related("results")
         .order_by("-timestamp")
