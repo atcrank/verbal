@@ -605,6 +605,19 @@ header.studio-header {
     color: var(--text-secondary);
 }
 
+/* Summary-Details Disclosure Widget Styling */
+details.studio-matrix-details summary::-webkit-details-marker {
+    display: none;
+}
+
+details.studio-matrix-details summary {
+    list-style: none;
+}
+
+details.studio-matrix-details[open] summary .matrix-details-caret {
+    transform: rotate(90deg);
+}
+
 /* Benchmark Hub Tabs & Operational Styles */
 .hub-tab-bar {
     display: flex;

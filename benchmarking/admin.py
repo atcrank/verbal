@@ -230,11 +230,127 @@ class BenchmarkResultInline(admin.TabularInline):
     can_delete = False
     show_change_link = True
 
+class RunResolutionFilter(admin.SimpleListFilter):
+    title = 'Execution & Resolution Status'
+    parameter_name = 'resolution_status'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('defects', '⚠️ Active Defect (Unresolved)'),
+            ('resolved', '✅ Resolved Defect'),
+            ('assessed', '🛡️ Assessed / Healthy'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == 'resolved':
+            resolved_ids = [r.id for r in queryset if r.is_resolved]
+            return queryset.filter(id__in=resolved_ids)
+        elif self.value() == 'defects':
+            from .hub import diagnose_run_defect
+            defect_ids = [r.id for r in queryset if not r.is_resolved and diagnose_run_defect(r) is not None]
+            return queryset.filter(id__in=defect_ids)
+        elif self.value() == 'assessed':
+            from .hub import diagnose_run_defect
+            assessed_ids = [r.id for r in queryset if not r.is_resolved and diagnose_run_defect(r) is None]
+            return queryset.filter(id__in=assessed_ids)
+        return queryset
+
+
+@admin.action(description="Mark selected runs as Resolved (Sign-off)")
+def mark_runs_resolved_action(modeladmin, request, queryset):
+    count = 0
+    username = request.user.username or "staff"
+    for run in queryset:
+        run.mark_resolved(user=request.user, notes=f"Signed off via Django Admin by {username}")
+        count += 1
+    modeladmin.message_user(request, f"Successfully marked {count} benchmark run(s) as resolved by {username}.", level=messages.SUCCESS)
+
+
+@admin.action(description="Re-open / Unmark resolution for selected runs")
+def mark_runs_unresolved_action(modeladmin, request, queryset):
+    count = 0
+    for run in queryset:
+        run.mark_unresolved()
+        count += 1
+    modeladmin.message_user(request, f"Re-opened {count} benchmark run(s) as active.", level=messages.INFO)
+
+
 @admin.register(BenchmarkRun)
 class BenchmarkRunAdmin(admin.ModelAdmin):
-    list_display = ('experiment', 'corpus', 'timestamp', 'average_rag_score', 'average_semantic_score', 'eval_success_rate')
-    readonly_fields = ('configuration_snapshot',)
+    list_display = (
+        'id', 'experiment', 'corpus', 'status_badge', 'resolved_signoff',
+        'timestamp', 'average_semantic_score', 'eval_success_rate'
+    )
+    list_filter = (RunResolutionFilter, 'corpus', 'timestamp')
+    search_fields = ('id', 'experiment__name', 'experiment__investigation__name')
+    readonly_fields = (
+        'status_badge', 'defect_diagnostics_display', 'resolution_details_display',
+        'configuration_snapshot'
+    )
     inlines = [BenchmarkResultInline]
+    actions = [mark_runs_resolved_action, mark_runs_unresolved_action]
+
+    @admin.display(description='Run Status')
+    def status_badge(self, obj):
+        if obj.is_resolved:
+            return mark_safe(
+                '<span style="background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 0.2rem 0.5rem; '
+                'border-radius: 4px; font-weight: 600; font-size: 0.8rem;">'
+                '✅ Resolved</span>'
+            )
+        from .hub import diagnose_run_defect
+        defect = diagnose_run_defect(obj)
+        if defect:
+            return format_html(
+                '<span style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; padding: 0.2rem 0.5rem; '
+                'border-radius: 4px; font-weight: 600; font-size: 0.8rem;" title="{}">'
+                '⚠️ Defect: {}</span>',
+                defect.summary, defect.defect_category
+            )
+        return mark_safe(
+            '<span style="background: rgba(99, 102, 241, 0.15); color: #6366f1; padding: 0.2rem 0.5rem; '
+            'border-radius: 4px; font-weight: 600; font-size: 0.8rem;">'
+            '🛡️ Assessed</span>'
+        )
+
+    @admin.display(description='Resolution Sign-Off')
+    def resolved_signoff(self, obj):
+        if obj.is_resolved:
+            date_str = obj.resolved_at[:10] if len(obj.resolved_at) >= 10 else obj.resolved_at
+            return format_html(
+                '<strong>{}</strong> <span style="color: #64748b; font-size: 0.75rem;">({})</span>',
+                obj.resolved_by or "staff", date_str
+            )
+        return mark_safe('<span style="color: #64748b;">—</span>')
+
+    @admin.display(description='Defect Diagnostics')
+    def defect_diagnostics_display(self, obj):
+        from .hub import diagnose_run_defect
+        defect = diagnose_run_defect(obj)
+        if not defect:
+            return mark_safe('<span style="color: #10b981;">No runtime or infrastructure defects detected. Run produced valid completions.</span>')
+        return format_html(
+            '<div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 6px; padding: 0.75rem;">'
+            '<div style="font-weight: 700; color: #f59e0b; margin-bottom: 0.25rem;">Defect Category: {}</div>'
+            '<div style="color: #cbd5e1; margin-bottom: 0.5rem;">{}</div>'
+            '<div style="font-family: monospace; font-size: 0.75rem; background: rgba(15, 23, 42, 0.6); padding: 0.5rem; border-radius: 4px; color: #fda4af; max-height: 150px; overflow-y: auto;">{}</div>'
+            '</div>',
+            defect.defect_category, defect.summary, defect.raw_error
+        )
+
+    @admin.display(description='Resolution Sign-off Details')
+    def resolution_details_display(self, obj):
+        if not obj.is_resolved:
+            return mark_safe('<span style="color: #f59e0b;">Unresolved. Use the "Mark selected runs as Resolved" action or click below to sign off.</span>')
+        return format_html(
+            '<div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 6px; padding: 0.75rem;">'
+            '<div style="font-weight: 700; color: #10b981; margin-bottom: 0.25rem;">✅ Resolved & Signed Off</div>'
+            '<div style="color: #cbd5e1; margin-bottom: 0.25rem;"><strong>Signed off by:</strong> {}</div>'
+            '<div style="color: #cbd5e1; margin-bottom: 0.25rem;"><strong>Signed off at:</strong> {}</div>'
+            '<div style="color: #94a3b8; font-style: italic;">{}</div>'
+            '</div>',
+            obj.resolved_by or "staff", obj.resolved_at, obj.resolution_notes or "No additional notes"
+        )
 
 @admin.register(BenchmarkResult)
 class BenchmarkResultAdmin(admin.ModelAdmin):

@@ -145,20 +145,31 @@
     <!-- Defect & Unassessed Runs Section (Explicitly separated from model performance) -->
     {% if defect_entries %}
     <div style="margin-top: 0.85rem; border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 6px; background: rgba(15, 23, 42, 0.6); overflow: hidden;">
-        <div style="padding: 0.55rem 0.85rem; background: rgba(245, 158, 11, 0.1); cursor: pointer; display: flex; align-items: center; justify-content: space-between; outline: none;"
+        <div style="padding: 0.6rem 0.85rem; background: rgba(245, 158, 11, 0.1); cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; flex-wrap: wrap; outline: none;"
              onclick="toggleHistoryCard('hub-defect-drawer-body')">
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <span id="icon-hub-defect-drawer-body" style="font-size: 0.75rem; color: var(--accent-warning);">&#9660;</span>
-                <span style="font-weight: 700; color: var(--accent-warning); font-size: 0.82rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1 1 240px; min-width: 0;">
+                <span id="icon-hub-defect-drawer-body" style="font-size: 0.8rem; color: var(--accent-warning); flex-shrink: 0; display: inline-block; width: 14px; text-align: center;">&#9660;</span>
+                <span style="font-weight: 700; color: var(--accent-warning); font-size: 0.82rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                     ⚠️ Unassessed Configurations & System Defects ({{ defect_entries|length }})
                 </span>
-                <span style="font-size: 0.7rem; color: var(--text-muted);">
+                <span style="font-size: 0.7rem; color: var(--text-muted); flex-shrink: 0;">
                     Excluded from performance rankings
                 </span>
             </div>
-            <span style="font-size: 0.68rem; color: var(--accent-warning); font-weight: 600;">
-                Infrastructure / Runtime Issues
-            </span>
+            <div style="display: flex; align-items: center; gap: 0.6rem; flex-shrink: 0;">
+                <span style="font-size: 0.68rem; color: var(--accent-warning); font-weight: 600;">
+                    Infrastructure / Runtime Issues
+                </span>
+                {% if request.user.is_staff or user.is_staff %}
+                <a href="{% url 'admin:benchmarking_benchmarkrun_changelist' %}?resolution_status=defects" 
+                   target="_blank" class="btn btn-secondary btn-sm" 
+                   style="font-size: 0.68rem; padding: 0.15rem 0.45rem; border-color: rgba(245, 158, 11, 0.4);" 
+                   onclick="event.stopPropagation();" 
+                   title="Deep-dive in Django Admin to inspect, sign off, or bulk-delete historical defect runs">
+                    Admin Deep-Dive &rarr;
+                </a>
+                {% endif %}
+            </div>
         </div>
         <div id="hub-defect-drawer-body" style="padding: 0.4rem 0.5rem; overflow-x: auto;">
             <table class="studio-table" style="font-size: 0.78rem; margin-bottom: 0;">
@@ -196,13 +207,21 @@
                             {{ d.summary }}
                         </td>
                         <td>
-                            <div style="display: flex; gap: 0.3rem;">
+                            <div style="display: flex; gap: 0.3rem; align-items: center;">
                                 <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 0.15rem 0.4rem;"
                                         data-on-click="@get('/benchmarking/stream/{{ d.run_id }}/')"
                                         onclick="switchHubTab('monitor')"
                                         title="Inspect raw defect trace in Telemetry">
                                     Diagnostics
                                 </button>
+                                {% if request.user.is_staff or user.is_staff %}
+                                <button type="button" class="btn btn-primary btn-sm" 
+                                        style="font-size: 0.68rem; padding: 0.15rem 0.45rem; background: #059669; border-color: #10b981;"
+                                        data-on-click="@post('/benchmarking/api/run/{{ d.run_id }}/resolve/', {contentType: 'form'})"
+                                        title="Mark defect resolved (records your username sign-off and hides this run)">
+                                    ✓ Resolve
+                                </button>
+                                {% endif %}
                                 {% if d.investigation_id %}
                                 <a href="{% url 'benchmarking:investigation_dashboard' d.investigation_id %}" 
                                    class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 0.15rem 0.4rem;" 

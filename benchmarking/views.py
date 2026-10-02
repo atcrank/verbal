@@ -7,7 +7,7 @@ from typing import Generator
 
 from django.contrib.admin.views.decorators import staff_member_required
 from django.db import transaction
-from django.http import HttpResponse, StreamingHttpResponse, JsonResponse
+from django.http import HttpResponse, StreamingHttpResponse, JsonResponse, HttpResponseForbidden, HttpResponseNotFound
 from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
@@ -166,6 +166,46 @@ def leaderboard_api(request):
     }
     html = render(request, "benchmarking/partials/hub_leaderboard.html", context).content.decode("utf-8")
     sse = DatastarSSE.patch_elements(html) + "\n" + DatastarSSE.patch_signals({"leaderboardScenarioGroup": scenario_group_id or ""})
+    response = HttpResponse(sse, content_type="text/event-stream")
+    response["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response["Pragma"] = "no-cache"
+    response["Expires"] = "0"
+    return response
+
+
+@require_POST
+def resolve_run_api(request, run_id):
+    """
+    Staff-only Datastar SSE endpoint to mark a historical failed benchmark run as resolved.
+    Records the signing-off staff user and timestamp, then re-renders the leaderboard defect drawer
+    so the resolved defect is immediately removed from the active view.
+    """
+    if not request.user.is_authenticated or not request.user.is_staff:
+        return HttpResponseForbidden("Staff authentication required to sign off on benchmark run resolutions.")
+
+    try:
+        run = BenchmarkRun.objects.get(pk=run_id)
+    except BenchmarkRun.DoesNotExist:
+        return HttpResponseNotFound("BenchmarkRun not found.")
+
+    notes = request.POST.get("notes", "Resolved from Benchmark Studio Hub")
+    run.mark_resolved(user=request.user, notes=notes)
+
+    scenario_group_id = request.POST.get("scenario_group_id") or request.GET.get("scenario_group_id")
+    scenario_groups = ScenarioGroup.objects.all().prefetch_related("scenarios").order_by("-id")
+    leaderboard_data = get_nuanced_leaderboard(
+        scenario_group_id=int(scenario_group_id) if scenario_group_id else None,
+        include_resolved=False
+    )
+    context = {
+        "leaderboard": leaderboard_data.scored_entries,
+        "defect_entries": leaderboard_data.defect_entries,
+        "scenario_groups": scenario_groups,
+        "selected_sg_id": scenario_group_id,
+        "user": request.user,
+    }
+    html = render(request, "benchmarking/partials/hub_leaderboard.html", context).content.decode("utf-8")
+    sse = DatastarSSE.patch_elements(html)
     response = HttpResponse(sse, content_type="text/event-stream")
     response["Cache-Control"] = "no-cache, no-store, must-revalidate"
     response["Pragma"] = "no-cache"

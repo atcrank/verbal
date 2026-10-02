@@ -10,6 +10,7 @@ urlpatterns = [
     path("stream/<int:run_id>/", views.stream_benchmark_run, name="stream_benchmark_run"),
     path("stream/investigation/<int:investigation_id>/", views.stream_investigation_matrix, name="stream_investigation_matrix"),
     path("api/run/", views.run_benchmark_api, name="run_benchmark_api"),
+    path("api/run/<int:run_id>/resolve/", views.resolve_run_api, name="api_resolve_run"),
     path("api/scenario/<int:scenario_id>/", views.scenario_detail_api, name="scenario_detail"),
     path("api/scenario/<int:scenario_id>/update/", views.update_scenario_api, name="update_scenario"),
     path("api/scenario/close/", views.close_inspector_api, name="close_inspector"),

@@ -1294,6 +1294,145 @@ class AdaptiveBenchmarkHubAndLeaderboardTests(TestCase):
         self.assertIn("hub-history-container", resp_gh.content.decode("utf-8"))
         self.assertIn("Investigation Project", resp_gh.content.decode("utf-8"))
 
+    def test_historical_failed_run_resolution_and_lifecycle(self):
+        """
+        Verify historical failed runs can be marked resolved with staff sign-off,
+        are excluded from active defect views and operational status failure,
+        and can be managed/filtered in Django admin.
+        """
+        from benchmarking.hub import (
+            diagnose_run_defect,
+            get_operational_status,
+            get_nuanced_leaderboard,
+            get_grouped_history,
+        )
+        from benchmarking.admin import BenchmarkRunAdmin, RunResolutionFilter, mark_runs_resolved_action, mark_runs_unresolved_action
+        from django.contrib.admin.sites import AdminSite
+
+        # 1. Create a historical failed run with system defect
+        exp_failed = Experiment.objects.create(
+            investigation=self.inv,
+            name="Crashed Historical Run",
+            scenario_group=self.sg1,
+            selected_model=self.model_a,
+            configuration={"hosting_backend": "vllm", "ai_model_id": self.model_a.hf_model_id}
+        )
+        run_failed = BenchmarkRun.objects.create(
+            experiment=exp_failed,
+            corpus=self.corpus,
+            average_semantic_score=None,
+            configuration_snapshot={"hosting_backend": "vllm", "ai_model_id": self.model_a.hf_model_id}
+        )
+        BenchmarkResult.objects.create(
+            run=run_failed,
+            scenario=self.scen1,
+            prompt_text="Q1",
+            raw_retrieved_text="",
+            generated_response="GenerationFailed: Connection refused to vLLM container",
+            duration_seconds=0.1,
+            rag_recall_score=0.0,
+            semantic_score=0.0,
+            extra_metrics={"error": "ConnectionRefusedError"}
+        )
+
+        # 2. Check initial defect state
+        defect = diagnose_run_defect(run_failed)
+        self.assertIsNotNone(defect)
+        self.assertFalse(defect.is_resolved)
+        self.assertEqual(defect.defect_category, "Hosting Backend Defect")
+
+        # Operational status reports failure
+        op_status = get_operational_status()
+        self.assertTrue(op_status["is_failed"])
+
+        # Leaderboard contains the active defect
+        lb_data = get_nuanced_leaderboard()
+        self.assertTrue(any(d.run_id == run_failed.id for d in lb_data.defect_entries))
+
+        # 3. Mark run as resolved with staff user
+        run_failed.mark_resolved(user=self.user, notes="vLLM container network bridge restored.")
+        run_failed.refresh_from_db()
+
+        self.assertTrue(run_failed.is_resolved)
+        self.assertEqual(run_failed.resolved_by, self.user.username)
+        self.assertTrue(bool(run_failed.resolved_at))
+        self.assertEqual(run_failed.resolution_notes, "vLLM container network bridge restored.")
+
+        # 4. With run resolved, diagnose_run_defect(..., include_resolved=False) returns None
+        self.assertIsNone(diagnose_run_defect(run_failed, include_resolved=False))
+
+        # Operational status no longer flags engine failure
+        op_status_after = get_operational_status()
+        self.assertFalse(op_status_after["is_failed"])
+
+        # Nuanced leaderboard hides resolved runs from active defect drawer
+        lb_after = get_nuanced_leaderboard(include_resolved=False)
+        self.assertFalse(any(d.run_id == run_failed.id for d in lb_after.defect_entries))
+
+        # Grouped history tracks resolved defect runs cleanly
+        history = get_grouped_history(group_by="scenario_group")
+        matching_section = next((s for s in history if s.group_key == self.sg1.name), None)
+        self.assertIsNotNone(matching_section)
+        self.assertGreaterEqual(matching_section.resolved_defect_runs, 1)
+
+        # 5. Test staff resolve API endpoint
+        # Unresolve to test API
+        run_failed.mark_unresolved()
+        run_failed.refresh_from_db()
+        self.assertFalse(run_failed.is_resolved)
+
+        # Non-authenticated user should be rejected
+        anon_client = Client()
+        resp_anon = anon_client.post(f"/benchmarking/api/run/{run_failed.id}/resolve/")
+        self.assertEqual(resp_anon.status_code, 403)
+
+        # Staff user should succeed and return SSE stream
+        resp_resolve = self.client.post(f"/benchmarking/api/run/{run_failed.id}/resolve/", {"notes": "Resolved via Studio API"})
+        self.assertEqual(resp_resolve.status_code, 200)
+        self.assertEqual(resp_resolve["Content-Type"], "text/event-stream")
+        run_failed.refresh_from_db()
+        self.assertTrue(run_failed.is_resolved)
+        self.assertEqual(run_failed.resolved_by, self.user.username)
+
+        # 6. Test Django Admin integration (filter and actions)
+        site = AdminSite()
+        admin_obj = BenchmarkRunAdmin(BenchmarkRun, site)
+        
+        # Test status_badge rendering
+        badge_html = admin_obj.status_badge(run_failed)
+        self.assertIn("✅ Resolved", badge_html)
+
+        # Test resolved signoff
+        signoff_html = admin_obj.resolved_signoff(run_failed)
+        self.assertIn(self.user.username, signoff_html)
+
+        # Test Admin Filter
+        from django.test import RequestFactory
+        from django.contrib.messages.storage.fallback import FallbackStorage
+        factory = RequestFactory()
+        request_mock = factory.get('/')
+        request_mock.user = self.user
+        setattr(request_mock, 'session', 'session')
+        setattr(request_mock, '_messages', FallbackStorage(request_mock))
+
+        filt_resolved = RunResolutionFilter(None, {'resolution_status': ['resolved']}, BenchmarkRun, admin_obj)
+        qs_resolved = filt_resolved.queryset(request_mock, BenchmarkRun.objects.all())
+        self.assertTrue(qs_resolved.filter(id=run_failed.id).exists())
+
+        filt_defects = RunResolutionFilter(None, {'resolution_status': ['defects']}, BenchmarkRun, admin_obj)
+        qs_defects = filt_defects.queryset(request_mock, BenchmarkRun.objects.all())
+        self.assertFalse(qs_defects.filter(id=run_failed.id).exists())
+
+        # Test Admin Action Unmark
+        mark_runs_unresolved_action(admin_obj, request_mock, BenchmarkRun.objects.filter(id=run_failed.id))
+        run_failed.refresh_from_db()
+        self.assertFalse(run_failed.is_resolved)
+
+        # Test Admin Action Mark Resolved
+        mark_runs_resolved_action(admin_obj, request_mock, BenchmarkRun.objects.filter(id=run_failed.id))
+        run_failed.refresh_from_db()
+        self.assertTrue(run_failed.is_resolved)
+
 
 class TestGoldStandardsAndSuiteInspection(TestCase):
     """

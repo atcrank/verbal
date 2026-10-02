@@ -54,6 +54,10 @@ class DefectRecord:
     summary: str               # Human-readable defect explanation
     raw_error: str             # Error snippet or trace
     timestamp: Any
+    is_resolved: bool = False
+    resolved_by: str = ""
+    resolved_at: str = ""
+    resolution_notes: str = ""
 
 
 @dataclass
@@ -97,6 +101,7 @@ class GroupedHistorySection:
     avg_latency: Optional[float]
     runs: List[BenchmarkRun] = field(default_factory=list)
     investigation_id: Optional[int] = None
+    resolved_defect_runs: int = 0
 
 
 def _is_result_successful(res: BenchmarkResult) -> bool:
@@ -110,11 +115,15 @@ def _is_result_successful(res: BenchmarkResult) -> bool:
     return True
 
 
-def diagnose_run_defect(run: BenchmarkRun) -> Optional[DefectRecord]:
+def diagnose_run_defect(run: BenchmarkRun, include_resolved: bool = True) -> Optional[DefectRecord]:
     """
     Diagnoses whether a run failed due to a system defect rather than model performance.
     Identifies the defect category: Hosting Backend, Hardware Resource, RAG, or Scenario.
+    If include_resolved is False and the run has been marked as resolved, returns None.
     """
+    if not include_resolved and run.is_resolved:
+        return None
+
     results = list(run.results.all())
     total_results = len(results)
 
@@ -168,6 +177,10 @@ def diagnose_run_defect(run: BenchmarkRun) -> Optional[DefectRecord]:
         summary=summary,
         raw_error=combined_err[:220] if combined_err else "No output captured",
         timestamp=run.timestamp,
+        is_resolved=run.is_resolved,
+        resolved_by=run.resolved_by,
+        resolved_at=run.resolved_at,
+        resolution_notes=run.resolution_notes,
     )
 
 
@@ -175,6 +188,7 @@ def get_operational_status() -> Dict[str, Any]:
     """
     Returns the real-time operational status of the benchmarking subsystem.
     Differentiates healthy completed runs from crashed runs with accurate defect diagnosis.
+    Historical runs signed off as resolved do not trigger engine failure state.
     """
     latest_run = (
         BenchmarkRun.objects.select_related("experiment", "experiment__investigation", "experiment__selected_model", "experiment__scenario_group")
@@ -194,9 +208,9 @@ def get_operational_status() -> Dict[str, Any]:
             "error_message": "",
         }
 
-    defect = diagnose_run_defect(latest_run)
-    is_failed = defect is not None
-    error_message = defect.summary if defect else ""
+    defect = diagnose_run_defect(latest_run, include_resolved=True)
+    is_failed = defect is not None and not defect.is_resolved
+    error_message = defect.summary if (defect and not defect.is_resolved) else ""
 
     backend = latest_run.configuration_snapshot.get("hosting_backend", "default")
     model_hf = latest_run.configuration_snapshot.get("ai_model_id") or (
@@ -270,13 +284,14 @@ def get_smart_opportunities(limit: int = 3) -> List[SmartOpportunity]:
     return opportunities
 
 
-def get_nuanced_leaderboard(scenario_group_id: Optional[int] = None) -> LeaderboardData:
+def get_nuanced_leaderboard(scenario_group_id: Optional[int] = None, include_resolved: bool = False) -> LeaderboardData:
     """
     Builds a multi-objective Pareto leaderboard across configurations.
     IMPORTANT ARCHITECTURAL RULE:
     Benchmark failures (vLLM timeouts, OOM, container death) are NOT treated as model evaluation scores.
     They are classified as unassessed system defects and separated into defect_entries.
     scored_entries contains ONLY assessed configurations that produced valid completions.
+    Historical failed runs that have been marked resolved are excluded unless include_resolved is True.
     """
     query = BenchmarkRun.objects.select_related(
         "experiment", "experiment__investigation", "experiment__selected_model", "experiment__scenario_group"
@@ -318,8 +333,8 @@ def get_nuanced_leaderboard(scenario_group_id: Optional[int] = None) -> Leaderbo
         # If 0 successful results across all runs in this configuration, it is an Unassessed System Defect
         if total_scenarios > 0 and success_count == 0:
             for r in cfg_runs:
-                defect = diagnose_run_defect(r)
-                if defect:
+                defect = diagnose_run_defect(r, include_resolved=include_resolved)
+                if defect and (include_resolved or not defect.is_resolved):
                     defect_records.append(defect)
             continue
 
@@ -339,8 +354,8 @@ def get_nuanced_leaderboard(scenario_group_id: Optional[int] = None) -> Leaderbo
         # Exclude configurations that have no valid semantic score from scored leaderboard
         if avg_semantic is None:
             for r in cfg_runs:
-                defect = diagnose_run_defect(r)
-                if defect:
+                defect = diagnose_run_defect(r, include_resolved=include_resolved)
+                if defect and (include_resolved or not defect.is_resolved):
                     defect_records.append(defect)
             continue
 
@@ -475,7 +490,8 @@ def get_grouped_history(group_by: str = "scenario_group") -> List[GroupedHistory
 
     for group_key, group_runs in sections_dict.items():
         total_runs = len(group_runs)
-        defect_runs = sum(1 for r in group_runs if r.defect_record is not None)
+        defect_runs = sum(1 for r in group_runs if r.defect_record is not None and not r.defect_record.is_resolved)
+        resolved_defect_runs = sum(1 for r in group_runs if r.defect_record is not None and r.defect_record.is_resolved)
         assessed_runs = total_runs - defect_runs
         all_defects = (total_runs > 0 and assessed_runs == 0)
 
@@ -483,7 +499,7 @@ def get_grouped_history(group_by: str = "scenario_group") -> List[GroupedHistory
         valid_sems = []
         valid_durs = []
         for r in group_runs:
-            if r.defect_record is None:
+            if r.defect_record is None or r.defect_record.is_resolved:
                 if r.average_semantic_score is not None and r.average_semantic_score >= 0:
                     valid_sems.append(r.average_semantic_score)
                 else:
@@ -516,6 +532,7 @@ def get_grouped_history(group_by: str = "scenario_group") -> List[GroupedHistory
                 avg_latency=avg_lat,
                 runs=group_runs,
                 investigation_id=inv_id,
+                resolved_defect_runs=resolved_defect_runs,
             )
         )
 
