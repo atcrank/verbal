@@ -335,41 +335,45 @@ def run_benchmark_api(request):
             bp_obj = CognitiveBlueprint.objects.filter(pk=blueprint_id).first()
         bp_name = bp_obj.name if bp_obj else f"Blueprint #{blueprint_id}"
 
-        total_combinations = len(model_ids) * len(hosting_backends)
+        rag_strats = rag_strategies if rag_strategies else ["none"]
+        total_combinations = len(model_ids) * len(hosting_backends) * len(rag_strats)
         for model_id in model_ids:
             for backend in hosting_backends:
-                m_short = model_id.split("/")[-1] if "/" in model_id else model_id
-                if total_combinations == 1:
-                    exp_name = f"{experiment_name} ({bp_name})"
-                else:
-                    exp_name = f"{experiment_name} ({bp_name} | {m_short} | {backend.upper()})"
+                for rag_strat in rag_strats:
+                    m_short = model_id.split("/")[-1] if "/" in model_id else model_id
+                    if total_combinations == 1:
+                        exp_name = f"{experiment_name} ({bp_name})"
+                    elif rag_strat == "none":
+                        exp_name = f"{experiment_name} ({bp_name} | {m_short} | {backend.upper()} | Zero RAG)"
+                    else:
+                        exp_name = f"{experiment_name} ({bp_name} | {m_short} | {backend.upper()} | {rag_strat})"
 
-                config_snapshot = {
-                    "generation_target": "blueprint",
-                    "blueprint_id": int(blueprint_id) if blueprint_id else None,
-                    "blueprint_name": bp_name,
-                    "max_steps": max_steps,
-                    "multi_turn_mode": multi_turn_mode,
-                    "ai_model_id": model_id,
-                    "hosting_backend": backend,
-                    "rag_strategy": "none",
-                    "chunk_size": chunk_size,
-                    "iterations": iterations,
-                }
-                exp = Experiment.objects.create(
-                    investigation=investigation,
-                    corpus=corpus,
-                    scenario_group=scenario_group,
-                    name=exp_name,
-                    iterations=iterations,
-                    configuration=config_snapshot,
-                )
-                run = BenchmarkRun.objects.create(
-                    experiment=exp,
-                    corpus=corpus,
-                    configuration_snapshot=config_snapshot,
-                )
-                created_runs.append(run)
+                    config_snapshot = {
+                        "generation_target": "blueprint",
+                        "blueprint_id": int(blueprint_id) if blueprint_id else None,
+                        "blueprint_name": bp_name,
+                        "max_steps": max_steps,
+                        "multi_turn_mode": multi_turn_mode,
+                        "ai_model_id": model_id,
+                        "hosting_backend": backend,
+                        "rag_strategy": rag_strat,
+                        "chunk_size": chunk_size,
+                        "iterations": iterations,
+                    }
+                    exp = Experiment.objects.create(
+                        investigation=investigation,
+                        corpus=corpus,
+                        scenario_group=scenario_group,
+                        name=exp_name,
+                        iterations=iterations,
+                        configuration=config_snapshot,
+                    )
+                    run = BenchmarkRun.objects.create(
+                        experiment=exp,
+                        corpus=corpus,
+                        configuration_snapshot=config_snapshot,
+                    )
+                    created_runs.append(run)
 
         if len(created_runs) == 1:
             stream_url = f"/benchmarking/stream/{created_runs[0].id}/"
@@ -728,7 +732,9 @@ def stream_investigation_matrix(request, investigation_id: int):
             backend = exp.configuration.get("hosting_backend", "pytorch")
             target = exp.configuration.get("generation_target", "direct")
             if target == "blueprint":
-                rag = f"BP: {exp.configuration.get('blueprint_name', 'Blueprint')[:18]}"
+                bp_label = exp.configuration.get('blueprint_name', 'Blueprint')[:14]
+                rag_strat = exp.configuration.get('rag_strategy', 'none')
+                rag = f"BP: {bp_label} [{rag_strat}]"
             else:
                 rag = exp.configuration.get("rag_strategy", "none").upper()
             scorecard_rows.append({

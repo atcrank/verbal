@@ -1175,6 +1175,68 @@ def seed_all():
         seed_task_decomposer(CognitiveBlueprint, ReasoningStep, ResponseSchema, ToolDefinition)
         seed_propose_blueprint(CognitiveBlueprint, ReasoningStep, ToolDefinition)
         seed_deep_reader(CognitiveBlueprint, ReasoningStep, ToolDefinition, ResponseSchema)
+        seed_evidence_extractor(CognitiveBlueprint, ReasoningStep, ToolDefinition)
+
+
+def seed_evidence_extractor(CognitiveBlueprint, ReasoningStep, ToolDefinition):
+    """
+    Seeds the canonical Evidence Extractor blueprint.
+    Demonstrates pure_tool deterministic retrieval followed by flexible, citation-grounded excerpt extraction.
+    """
+    from .models import bypass_canonical_lock
+    with bypass_canonical_lock():
+        bp, _ = CognitiveBlueprint.objects.update_or_create(
+            name="Evidence Extractor",
+            defaults={
+                'description': "Retrieves relevant literature chunks deterministically and extracts cited, quantitative empirical findings into working memory.",
+                'is_canonical': True,
+                'is_autonomous': True
+            }
+        )
+
+        ReasoningStep.objects.filter(blueprint=bp).delete()
+
+        doc_tool = ToolDefinition.objects.filter(name="document_reader").first()
+        if not doc_tool:
+            doc_tool = ToolDefinition.objects.filter(name__icontains="search").first()
+
+        step1 = ReasoningStep.objects.create(
+            blueprint=bp,
+            name="Retrieve Literature Chunks",
+            is_start_node=True,
+            execution_mode="pure_tool",
+            deterministic_tool=doc_tool,
+            tool_args_mapping={"action": "search", "query": "$user_prompt", "k": 3},
+            system_prompt="Deterministic tool execution: Queries the corpus index for top-matching literature passages.",
+        )
+
+        step2 = ReasoningStep.objects.create(
+            blueprint=bp,
+            name="Extract Cited Empirical Finding",
+            execution_mode="llm",
+            include_state_tree=True,
+            system_prompt=(
+                "You are an empirical evidence analyst.\n"
+                "Examine the retrieved literature chunks provided in your Scratchpad Variables or Working Context.\n\n"
+                "Goal: Extract the most relevant factual finding directly addressing the question or active task.\n\n"
+                "Guidelines:\n"
+                "1. Extract a concise, focused excerpt (typically 1 to 3 sentences). Do not impose an arbitrary word limit, but avoid unnecessary filler.\n"
+                "2. Retain all quantitative measurements, experimental parameters, sensor types, error margins, or operating conditions.\n"
+                "3. Format each finding with an academic citation header: [Author, Year - Section/Page].\n"
+                "4. If the retrieved text contains only superficial definitions (e.g. dictionary entries) or lacks empirical relevance, state: 'No empirical evidence found in corpus.'\n\n"
+                "Output format:\n"
+                "- Finding: <Exact or tightly focused excerpt>\n"
+                "- Citation: [Author, Year]\n"
+                "- Relevance: <One sentence explaining significance to the active goal>"
+            ),
+            evaluation_criteria="The extracted finding contains a verifiable citation and addresses the active inquiry, or explicitly reports no empirical evidence.",
+            max_retries=2
+        )
+
+        step1.on_success_step = step2
+        step1.on_failure_step = step2
+        step1.save()
+
 
 def seed_deep_reader(CognitiveBlueprint, ReasoningStep, ToolDefinition, ResponseSchema):
     bp, _ = CognitiveBlueprint.objects.update_or_create(

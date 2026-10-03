@@ -215,9 +215,10 @@
                     <!-- Variable 3: RAG / Knowledge Retrieval Strategies (Multi-Select) -->
                     <div class="form-group" id="rag-strategies-group">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
-                            <label class="form-label" style="margin-bottom: 0;">Knowledge Retrieval Strategies</label>
+                            <label class="form-label" id="rag-group-title" style="margin-bottom: 0;">Knowledge Retrieval Strategies</label>
                             <span style="font-size: 0.72rem; color: var(--accent-primary); cursor: pointer;" onclick="toggleAllInGroup('rag-checkboxes')">Toggle All</span>
                         </div>
+                        <div id="rag-group-subtext" style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.4rem;">Evaluates direct model completion with different RAG grounding pipelines.</div>
                         <div class="pill-checkbox-group" id="rag-checkboxes">
                             <label class="pill-checkbox" title="Pure LLM baseline without retrieval context">
                                 <input type="checkbox" name="rag_strategies" value="none" checked onchange="updateMatrixCalculations()">
@@ -496,14 +497,20 @@
         function toggleGenerationTarget(target) {
             var bpGroup = document.getElementById('blueprint-config-group');
             var ragGroup = document.getElementById('rag-strategies-group');
+            var ragTitle = document.getElementById('rag-group-title');
+            var ragSub = document.getElementById('rag-group-subtext');
             if (target === 'blueprint') {
                 if (bpGroup) bpGroup.style.display = 'block';
-                if (ragGroup) ragGroup.style.display = 'none';
+                if (ragGroup) ragGroup.style.display = 'block';
+                if (ragTitle) ragTitle.textContent = 'Environment Retrieval Backend Override';
+                if (ragSub) ragSub.textContent = 'Overrides the RAG service queried by the blueprint\'s deterministic tool nodes during this benchmark run (Dense vs GROBID vs Unified RAG).';
                 var bpSelect = document.getElementById('id_blueprint_select');
                 if (bpSelect) onBlueprintSelected(bpSelect);
             } else {
                 if (bpGroup) bpGroup.style.display = 'none';
                 if (ragGroup) ragGroup.style.display = 'block';
+                if (ragTitle) ragTitle.textContent = 'Knowledge Retrieval Strategies';
+                if (ragSub) ragSub.textContent = 'Evaluates direct model completion with different RAG grounding pipelines.';
             }
             updateMatrixCalculations();
         }
@@ -553,12 +560,7 @@
             var targetRadio = document.querySelector('input[name="generation_target"]:checked');
             var isBlueprint = targetRadio && targetRadio.value === 'blueprint';
 
-            var expCount = 0;
-            if (isBlueprint) {
-                expCount = models.length * backends.length;
-            } else {
-                expCount = models.length * backends.length * rags.length;
-            }
+            var expCount = models.length * backends.length * (rags.length > 0 ? rags.length : 1);
 
             var sgSelect = document.getElementById('id_scenario_group');
             var scenarioCount = 0;
@@ -663,14 +665,18 @@
                 if (isBlueprint) {
                     var bpSelect = document.getElementById('id_blueprint_select');
                     var bpName = (bpSelect && bpSelect.selectedOptions && bpSelect.selectedOptions[0]) ? bpSelect.selectedOptions[0].text.replace(/^[🟢🟡🔵\s\[\w+\]]+/, '').trim() : 'Blueprint';
+                    var activeRags = rags.length > 0 ? rags : ['none'];
                     models.forEach(function(m) {
                         var mShort = m.split('/').pop();
                         backends.forEach(function(b) {
-                            var chip = document.createElement('span');
-                            chip.className = 'matrix-preview-chip';
-                            chip.textContent = comboIdx + '. ' + mShort + ' (' + b.toUpperCase() + ') \u2192 ' + bpName;
-                            previewList.appendChild(chip);
-                            comboIdx++;
+                            activeRags.forEach(function(r) {
+                                var chip = document.createElement('span');
+                                chip.className = 'matrix-preview-chip';
+                                var rLabel = r === 'none' ? 'Zero RAG' : r;
+                                chip.textContent = comboIdx + '. ' + mShort + ' (' + b.toUpperCase() + ') \u2192 ' + bpName + ' [' + rLabel + ']';
+                                previewList.appendChild(chip);
+                                comboIdx++;
+                            });
                         });
                     });
                 } else {

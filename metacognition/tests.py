@@ -2693,3 +2693,329 @@ class ToolGovernanceHostingBackendTests(TestCase):
                     self.assertNotIn("test_backend_code_tool", allowed_names_in_schema)
 
 
+class PureToolExecutionAndEvidenceMergingTests(TestCase):
+    """
+    Tests for deterministic pure_tool reasoning steps, state-tree argument resolution,
+    and established_facts accumulation across sub-blueprints.
+    """
+
+    def setUp(self):
+        from django.contrib.auth.models import User
+        from llm_api.models import Conversation
+        from metacognition.models import CognitiveBlueprint, ReasoningStep, ToolDefinition
+
+        self.user = User.objects.create_user(username="pure_tool_tester", password="pw")
+        self.conv = Conversation.objects.create(
+            user=self.user,
+            title="Pure Tool Conversation",
+            state_tree={
+                "macro_objective": "Test deterministic evidence retrieval",
+                "active_task": "task_1",
+                "established_facts": ["Baseline fact alpha"]
+            }
+        )
+
+        self.test_tool = ToolDefinition.objects.create(
+            name="mock_pure_search",
+            description="Mock search tool for pure tool testing",
+            tool_type="builtin",
+            python_path="metacognition.tests._mock_tool_callable",
+            capability_category="READ_ONLY",
+            required_clearance="STANDARD"
+        )
+
+        self.failing_tool = ToolDefinition.objects.create(
+            name="mock_failing_tool",
+            description="Mock tool that raises an error",
+            tool_type="builtin",
+            python_path="metacognition.tests._mock_failing_tool_callable",
+            capability_category="READ_ONLY",
+            required_clearance="STANDARD"
+        )
+
+    def test_merge_state_trees_unions_established_facts_and_citations(self):
+        from metacognition.compiler import _merge_state_trees
+
+        parent_tree = {
+            "macro_objective": "Firefighting robotics",
+            "established_facts": ["Thermal sensor operates up to 300C", "Common fact"],
+            "tasks": {"t1": {"status": "IN_PROGRESS"}}
+        }
+        child_tree = {
+            "established_facts": ["Common fact", "FMCW radar achieved 94% accuracy (Li et al., 2023)"],
+            "evidence_citations": ["Li et al. (2023) IEEE Sensors"],
+            "tasks": {"t1": {"status": "COMPLETED", "resolution": "Retrieved evidence"}}
+        }
+
+        merged = _merge_state_trees(parent_tree, child_tree)
+
+        self.assertIn("Thermal sensor operates up to 300C", merged["established_facts"])
+        self.assertIn("FMCW radar achieved 94% accuracy (Li et al., 2023)", merged["established_facts"])
+        # Verify deduplication of 'Common fact'
+        self.assertEqual(merged["established_facts"].count("Common fact"), 1)
+        self.assertEqual(len(merged["established_facts"]), 3)
+        self.assertEqual(merged["evidence_citations"], ["Li et al. (2023) IEEE Sensors"])
+        self.assertEqual(merged["tasks"]["t1"]["status"], "COMPLETED")
+
+    def test_resolve_tool_arguments(self):
+        from langchain_core.messages import HumanMessage
+        from metacognition.compiler import _resolve_tool_arguments
+        from metacognition.models import CognitiveBlueprint, ReasoningStep
+
+        bp = CognitiveBlueprint.objects.create(name="ArgResolveBP", is_autonomous=False)
+        step = ReasoningStep.objects.create(
+            blueprint=bp,
+            name="ResolveStep",
+            execution_mode="pure_tool",
+            deterministic_tool=self.test_tool,
+            tool_args_mapping={
+                "query": "$user_prompt",
+                "target_task": "$state_tree.active_task",
+                "nested_val": "$state_tree.nested.subval",
+                "cached": "$scratch.my_key",
+                "static_param": "exact_value"
+            }
+        )
+
+        state = {
+            "working_memory": [HumanMessage(content="What radar sensor is best for smoke?")],
+            "state_tree": {
+                "active_task": "task_obstacle_avoidance",
+                "nested": {"subval": "deep_payload"}
+            },
+            "scratch": {"my_key": "cached_token_123"}
+        }
+
+        resolved = _resolve_tool_arguments(step.tool_args_mapping, state, step)
+
+        self.assertEqual(resolved["query"], "What radar sensor is best for smoke?")
+        self.assertEqual(resolved["target_task"], "task_obstacle_avoidance")
+        self.assertEqual(resolved["nested_val"], "deep_payload")
+        self.assertEqual(resolved["cached"], "cached_token_123")
+        self.assertEqual(resolved["static_param"], "exact_value")
+
+    def test_pure_tool_step_executes_deterministically_without_llm(self):
+        from unittest.mock import patch
+        from langchain_core.messages import HumanMessage
+        from metacognition.compiler import compile_graph_from_blueprint
+        from metacognition.models import CognitiveBlueprint, ReasoningStep
+
+        bp = CognitiveBlueprint.objects.create(name="PureToolTestBP", is_autonomous=False)
+        step_done = ReasoningStep.objects.create(
+            blueprint=bp,
+            name="DoneStep",
+            execution_mode="llm",
+            system_prompt="All finished."
+        )
+        step_pure = ReasoningStep.objects.create(
+            blueprint=bp,
+            name="PureToolNode",
+            is_start_node=True,
+            execution_mode="pure_tool",
+            deterministic_tool=self.test_tool,
+            tool_args_mapping={"query": "$user_prompt"},
+            on_success_step=step_done
+        )
+
+        graph = compile_graph_from_blueprint(bp)
+
+        initial_state = {
+            "working_memory": [HumanMessage(content="Query: radar in smoke")],
+            "rag_context": "",
+            "route_to": None,
+            "conversation_id": str(self.conv.id),
+            "user_id": self.user.id,
+            "step_count": 0,
+            "max_steps": 10,
+            "retries_remaining": {},
+            "internal_monologue": [],
+            "scratch": {},
+            "token_budget_remaining": 8000
+        }
+
+        with patch("llm_api.ai_service.AIService.generate_response2") as mock_gen, \
+             patch("llm_api.ai_service.AIService.generate_outline") as mock_outline:
+            # We also mock DoneStep so it doesn't fail on LLM generation
+            mock_gen.return_value = ["Task Complete Response"]
+            
+            res = graph.invoke(initial_state, {"configurable": {"thread_id": f"{self.conv.id}_pure_test"}})
+
+            # The pure tool step must have executed without calling generate_response2 or generate_outline for step_pure!
+            # Out of total generations, DoneStep ran once, but step_pure did NOT call LLM.
+            self.assertEqual(mock_gen.call_count, 1) # Only for DoneStep!
+            self.assertFalse(mock_outline.called)
+
+            # Verify scratchpad has raw tool output from mock_pure_search
+            self.assertIn("mock_search_result_for: Query: radar in smoke", res["scratch"]["tool_output"])
+            self.assertIn("mock_search_result_for: Query: radar in smoke", res["scratch"]["raw_retrieval_chunks"])
+
+            # Verify monologue entry
+            step_names = [m["step_name"] for m in res["internal_monologue"]]
+            self.assertIn("PureToolNode", step_names)
+            pure_monologue = [m for m in res["internal_monologue"] if m["step_name"] == "PureToolNode"][0]
+            self.assertFalse(pure_monologue["failed"])
+            self.assertIn("mock_search_result_for", pure_monologue["output"])
+
+    def test_pure_tool_step_routes_to_failure_on_tool_error(self):
+        from unittest.mock import patch
+        from langchain_core.messages import HumanMessage
+        from metacognition.compiler import compile_graph_from_blueprint
+        from metacognition.models import CognitiveBlueprint, ReasoningStep
+
+        bp = CognitiveBlueprint.objects.create(name="PureToolFailBP", is_autonomous=False)
+        fail_recovery = ReasoningStep.objects.create(
+            blueprint=bp,
+            name="FailRecoveryStep",
+            execution_mode="llm",
+            system_prompt="Recover from tool failure."
+        )
+        success_step = ReasoningStep.objects.create(
+            blueprint=bp,
+            name="SuccessStep",
+            execution_mode="llm",
+            system_prompt="Should not be reached."
+        )
+        step_failing = ReasoningStep.objects.create(
+            blueprint=bp,
+            name="FailingPureToolNode",
+            is_start_node=True,
+            execution_mode="pure_tool",
+            deterministic_tool=self.failing_tool,
+            on_success_step=success_step,
+            on_failure_step=fail_recovery
+        )
+
+        graph = compile_graph_from_blueprint(bp)
+
+        initial_state = {
+            "working_memory": [HumanMessage(content="Trigger tool error")],
+            "rag_context": "",
+            "route_to": None,
+            "conversation_id": str(self.conv.id),
+            "user_id": self.user.id,
+            "step_count": 0,
+            "max_steps": 10,
+            "retries_remaining": {},
+            "internal_monologue": [],
+            "scratch": {},
+            "token_budget_remaining": 8000
+        }
+
+        with patch("llm_api.ai_service.AIService.generate_response2", return_value=["Recovered"]):
+            res = graph.invoke(initial_state, {"configurable": {"thread_id": f"{self.conv.id}_pure_fail_test"}})
+
+            step_names = [m["step_name"] for m in res["internal_monologue"]]
+            self.assertIn("FailingPureToolNode", step_names)
+            self.assertIn("FailRecoveryStep", step_names)
+            self.assertNotIn("SuccessStep", step_names)
+
+    def test_pure_tool_step_governance_block(self):
+        from unittest.mock import patch
+        from langchain_core.messages import HumanMessage
+        from metacognition.compiler import compile_graph_from_blueprint
+        from metacognition.models import CognitiveBlueprint, ReasoningStep, ToolDefinition
+
+        admin_tool = ToolDefinition.objects.create(
+            name="admin_only_pure_tool",
+            description="Tool requiring admin clearance",
+            tool_type="builtin",
+            python_path="metacognition.tests._mock_tool_callable",
+            capability_category="STATE_MUTATION",
+            required_clearance="ADMIN"
+        )
+
+        bp = CognitiveBlueprint.objects.create(name="PureToolGovBP", is_autonomous=False)
+        fail_recovery = ReasoningStep.objects.create(
+            blueprint=bp,
+            name="BlockedRecoveryStep",
+            execution_mode="llm",
+            system_prompt="Recovery from governance block."
+        )
+        step_blocked = ReasoningStep.objects.create(
+            blueprint=bp,
+            name="BlockedPureToolNode",
+            is_start_node=True,
+            execution_mode="pure_tool",
+            deterministic_tool=admin_tool,
+            on_failure_step=fail_recovery
+        )
+
+        graph = compile_graph_from_blueprint(bp)
+
+        initial_state = {
+            "working_memory": [HumanMessage(content="Attempt unauthorized execution")],
+            "rag_context": "",
+            "route_to": None,
+            "conversation_id": str(self.conv.id),
+            "user_id": self.user.id, # standard user, not staff/admin
+            "step_count": 0,
+            "max_steps": 10,
+            "retries_remaining": {},
+            "internal_monologue": [],
+            "scratch": {},
+            "token_budget_remaining": 8000
+        }
+
+        with patch("llm_api.ai_service.AIService.generate_response2", return_value=["Handled"]):
+            res = graph.invoke(initial_state, {"configurable": {"thread_id": f"{self.conv.id}_pure_gov_test"}})
+
+            step_names = [m["step_name"] for m in res["internal_monologue"]]
+            self.assertIn("BlockedPureToolNode", step_names)
+            self.assertIn("BlockedRecoveryStep", step_names)
+            blocked_monologue = [m for m in res["internal_monologue"] if m["step_name"] == "BlockedPureToolNode"][0]
+            self.assertTrue(blocked_monologue["failed"])
+            self.assertIn("blocked by governance policy", blocked_monologue["output"])
+
+    def test_seed_evidence_extractor_blueprint_structure(self):
+        from metacognition.models import CognitiveBlueprint, ReasoningStep, ToolDefinition
+        from metacognition.seed import seed_evidence_extractor
+
+        # Ensure document_reader exists
+        ToolDefinition.objects.get_or_create(
+            name="document_reader",
+            defaults={
+                "tool_type": "builtin",
+                "python_path": "metacognition.tests._mock_tool_callable",
+                "capability_category": "READ_ONLY",
+                "required_clearance": "STANDARD"
+            }
+        )
+
+        seed_evidence_extractor(CognitiveBlueprint, ReasoningStep, ToolDefinition)
+
+        bp = CognitiveBlueprint.objects.filter(name="Evidence Extractor").first()
+        self.assertIsNotNone(bp)
+        self.assertTrue(bp.is_canonical)
+        self.assertTrue(bp.is_autonomous)
+
+        steps = list(bp.steps.all())
+        self.assertEqual(len(steps), 2)
+
+        start_step = bp.steps.get(is_start_node=True)
+        self.assertEqual(start_step.name, "Retrieve Literature Chunks")
+        self.assertEqual(start_step.execution_mode, "pure_tool")
+        self.assertEqual(start_step.deterministic_tool.name, "document_reader")
+        self.assertEqual(start_step.tool_args_mapping.get("action"), "search")
+        self.assertEqual(start_step.tool_args_mapping.get("query"), "$user_prompt")
+
+        llm_step = start_step.on_success_step
+        self.assertIsNotNone(llm_step)
+        self.assertEqual(llm_step.name, "Extract Cited Empirical Finding")
+        self.assertEqual(llm_step.execution_mode, "llm")
+        self.assertTrue(llm_step.include_state_tree)
+
+
+
+
+def _mock_tool_callable(state: dict, params: dict) -> str:
+    """Mock helper callable for pure tool test execution."""
+    query = params.get("query", "")
+    return f"mock_search_result_for: {query}"
+
+
+def _mock_failing_tool_callable(state: dict, params: dict) -> str:
+    """Mock helper callable that fails."""
+    return "Error: Database connection timeout during search."
+
+
+

@@ -1860,6 +1860,30 @@ class CognitiveBlueprintBenchmarkingTests(TestCase):
         appended_exp = Experiment.objects.filter(investigation=new_inv, name__contains="Appended Grobid Run").first()
         self.assertIsNotNone(appended_exp)
 
+    def test_run_benchmark_api_blueprint_with_rag_strategies(self):
+        """POST /benchmarking/api/run/ matrices Blueprint across selected RAG strategies."""
+        res = self.client.post(
+            "/benchmarking/api/run/",
+            data={
+                "generation_target": "blueprint",
+                "blueprint_id": str(self.auto_bp.id),
+                "model_ids": ["current"],
+                "hosting_backends": ["pytorch"],
+                "rag_strategies": ["none", "grobid"],
+                "scenario_group_id": str(self.scenario_group.id),
+                "max_steps": "10",
+                "experiment_name": "Blueprint RAG Matrix",
+            }
+        )
+        self.assertEqual(res.status_code, 200)
+
+        exps = list(Experiment.objects.filter(name__contains="Blueprint RAG Matrix"))
+        self.assertEqual(len(exps), 2)
+        strategies = [e.configuration.get("rag_strategy") for e in exps]
+        self.assertIn("none", strategies)
+        self.assertIn("grobid", strategies)
+
+
 
 
 

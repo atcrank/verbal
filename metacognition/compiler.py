@@ -101,7 +101,7 @@ def _merge_state_trees(parent_tree: dict, child_tree: dict) -> dict:
 
     merged = dict(parent_tree)
     for key, val in child_tree.items():
-        if key in ["working_hypotheses", "open_questions"] and isinstance(val, list):
+        if key in ["working_hypotheses", "open_questions", "established_facts", "evidence_citations"] and isinstance(val, list):
             existing = merged.get(key, [])
             if isinstance(existing, list):
                 merged[key] = list(dict.fromkeys(existing + val))
@@ -122,6 +122,63 @@ def _merge_state_trees(parent_tree: dict, child_tree: dict) -> dict:
         else:
             merged[key] = val
     return merged
+
+
+def _resolve_tool_arguments(mapping: dict, state: AgentState, step: ReasoningStep) -> dict:
+    """
+    Resolves declarative parameter mapping from the current agent state.
+    Supports templates:
+    - "$user_prompt": extracts the original user prompt or latest human message content
+    - "$state_tree.<path>": resolves dot-separated path in Conversation.state_tree
+    - "$scratch.<key>": resolves variable from scratch dict
+    - default fallback: if empty mapping and tool has 'document_reader' or 'search' in name,
+      passes query=$user_prompt, action='search'
+    """
+    resolved = {}
+    
+    # Helper to get user prompt
+    user_prompt = ""
+    wm = state.get("working_memory", [])
+    for m in wm:
+        m_type = getattr(m, "type", "") or getattr(m, "role", "")
+        if m_type in ("human", "user"):
+            user_prompt = getattr(m, "content", str(m))
+    if not user_prompt and state.get("user_prompt"):
+        user_prompt = state.get("user_prompt")
+        
+    state_tree = state.get("state_tree") or {}
+    scratch = state.get("scratch") or {}
+    
+    mapping = mapping or {}
+    for param_name, template in mapping.items():
+        if isinstance(template, str):
+            if template == "$user_prompt":
+                resolved[param_name] = user_prompt
+            elif template.startswith("$state_tree."):
+                path = template[len("$state_tree."):].split(".")
+                curr = state_tree
+                for p in path:
+                    if isinstance(curr, dict):
+                        curr = curr.get(p)
+                    else:
+                        curr = None
+                        break
+                resolved[param_name] = curr if curr is not None else ""
+            elif template.startswith("$scratch."):
+                key = template[len("$scratch."):]
+                resolved[param_name] = scratch.get(key, "")
+            else:
+                resolved[param_name] = template
+        else:
+            resolved[param_name] = template
+            
+    # Default fallback for document_reader or search tools if mapping is empty
+    if not resolved and step.deterministic_tool:
+        tool_name = step.deterministic_tool.name.lower()
+        if "document_reader" in tool_name or "search" in tool_name:
+            resolved = {"action": "search", "query": user_prompt}
+            
+    return resolved
 
 
 def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
@@ -345,6 +402,155 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                     "scratch": dict(state.get("scratch", {})),
                     "token_budget_remaining": current_budget
                 }
+
+        # 2. Pure Tool Execution Bypass
+        if getattr(step, 'execution_mode', 'llm') == 'pure_tool':
+            tool_def = step.deterministic_tool
+            if not tool_def:
+                err_msg = f"Step '{step.name}' configured with execution_mode='pure_tool' but no deterministic_tool specified."
+                logger.error(err_msg)
+                monologue_entry = {
+                    "step_name": step.name,
+                    "output": err_msg,
+                    "failed": True,
+                    "step_count": step_count,
+                    "system_prompt": f"Deterministic Tool Executor (Missing Tool): {step.name}",
+                    "user_prompt": []
+                }
+                return {
+                    "working_memory": summary_remove_msgs + [SystemMessage(content=err_msg)],
+                    "route_to": "FAILURE",
+                    "resume_to": None,
+                    "step_count": step_count,
+                    "retries_remaining": retries_remaining,
+                    "internal_monologue": [monologue_entry],
+                    "scratch": dict(state.get("scratch", {})),
+                    "token_budget_remaining": current_budget
+                }
+
+            # Check WS17 governance policy
+            from .governance import is_tool_permitted
+            user = state.get("user")
+            if not user and state.get("user_id"):
+                from django.contrib.auth.models import User
+                user = User.objects.filter(id=state.get("user_id")).first()
+
+            permitted, reason = is_tool_permitted(tool_def, user)
+            if not permitted:
+                err_msg = f"Deterministic tool '{tool_def.name}' blocked by governance policy: {reason}"
+                logger.warning(err_msg)
+                monologue_entry = {
+                    "step_name": step.name,
+                    "output": err_msg,
+                    "failed": True,
+                    "step_count": step_count,
+                    "system_prompt": f"Deterministic Tool Governance Block: {tool_def.name}",
+                    "user_prompt": []
+                }
+                return {
+                    "working_memory": summary_remove_msgs + [SystemMessage(content=err_msg)],
+                    "route_to": "FAILURE",
+                    "resume_to": None,
+                    "step_count": step_count,
+                    "retries_remaining": retries_remaining,
+                    "internal_monologue": [monologue_entry],
+                    "scratch": dict(state.get("scratch", {})),
+                    "token_budget_remaining": current_budget
+                }
+
+            # Check Human-in-the-Loop authorization if required
+            approved_tools_list = list(state.get("approved_tools", []))
+            tool_params = _resolve_tool_arguments(step.tool_args_mapping or {}, state, step)
+            call_sig = f"{tool_def.name}:{json.dumps(tool_params, sort_keys=True)}"
+            canonical_self_id = root_mapping[step.id]
+
+            if tool_def.requires_approval and call_sig not in approved_tools_list and tool_def.name not in approved_tools_list:
+                logger.warning(f"Tool '{tool_def.name}' requires human approval before execution. Suspending graph.")
+                approval_payload = {
+                    "tool_name": tool_def.name,
+                    "tool_args": tool_params,
+                    "tool_description": tool_def.description,
+                    "step_id": step.id,
+                    "step_name": step.name,
+                    "call_signature": call_sig,
+                    "thread_id": f"{state.get('conversation_id')}_{step.blueprint.name}",
+                    "run_id": run_id
+                }
+                publish_blueprint_event(run_id, "approval_required", approval_payload)
+
+                monologue_entry = {
+                    "step_name": step.name,
+                    "output": f"⏸️ Tool '{tool_def.name}' requires human approval before execution. Graph suspended.",
+                    "tool_result": "Awaiting human authorization.",
+                    "failed": False,
+                    "step_count": step_count,
+                    "system_prompt": f"Deterministic Tool Approval Required: {tool_def.name}",
+                    "user_prompt": []
+                }
+                return {
+                    "working_memory": summary_remove_msgs + [AIMessage(content=str(monologue_entry["output"]))],
+                    "route_to": "USER_INPUT_REQUIRED",
+                    "resume_to": f"step_{canonical_self_id}_action",
+                    "pending_approval": approval_payload,
+                    "step_count": step_count,
+                    "retries_remaining": retries_remaining,
+                    "internal_monologue": [monologue_entry],
+                    "scratch": dict(state.get("scratch", {})),
+                    "token_budget_remaining": current_budget
+                }
+
+            # Execute the tool directly
+            try:
+                hook_result = execute_tool(tool_def, state, params=tool_params)
+                tool_failed = False
+                if isinstance(hook_result, dict) and "error" in hook_result:
+                    tool_failed = True
+                    tool_output_str = str(hook_result["error"])
+                elif isinstance(hook_result, str) and hook_result.lower().startswith("error"):
+                    tool_failed = True
+                    tool_output_str = hook_result
+                else:
+                    tool_output_str = str(hook_result)
+            except Exception as e:
+                logger.exception(f"Error executing deterministic tool '{tool_def.name}': {e}")
+                tool_failed = True
+                tool_output_str = f"Error: {e}"
+
+            scratch_updates = dict(state.get("scratch", {}))
+            scratch_updates["tool_output"] = tool_output_str
+            scratch_updates["raw_retrieval_chunks"] = tool_output_str
+            state_tree_updates = dict(state.get("state_tree") or {})
+
+            if isinstance(hook_result, dict):
+                if "scratch" in hook_result:
+                    scratch_updates.update(hook_result["scratch"])
+                if "current_chunk_index" in hook_result:
+                    scratch_updates["current_chunk_index"] = hook_result["current_chunk_index"]
+                if "state_tree" in hook_result:
+                    state_tree_updates.update(hook_result["state_tree"])
+
+            msg_content = f"[Deterministic Tool '{tool_def.name}' Output]:\n{tool_output_str}"
+            monologue_entry = {
+                "step_name": step.name,
+                "output": msg_content,
+                "failed": tool_failed,
+                "step_count": step_count,
+                "system_prompt": f"Deterministic Tool Executor: {tool_def.name}",
+                "user_prompt": []
+            }
+
+            return {
+                "working_memory": summary_remove_msgs + [SystemMessage(content=msg_content)],
+                "route_to": "FAILURE" if tool_failed else "SUCCESS",
+                "resume_to": None,
+                "step_count": step_count,
+                "retries_remaining": retries_remaining,
+                "internal_monologue": [monologue_entry],
+                "scratch": scratch_updates,
+                "state_tree": state_tree_updates,
+                "token_budget_remaining": current_budget
+            }
+
         system_prompt = step.system_prompt
         if state.get("rag_context"):
             system_prompt += f"\n\nContext provided:\n{state.get('rag_context')}"

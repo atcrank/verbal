@@ -223,8 +223,36 @@ class ReasoningStep(models.Model):
 
     objects = ReasoningStepManager()
 
+    # Execution Mode: LLM generation vs. Deterministic Tool Execution
+    EXECUTION_MODES = [
+        ('llm', 'LLM Generation (Prompt + Optional Tools)'),
+        ('pure_tool', 'Deterministic Tool Execution (No LLM Call)'),
+    ]
+    execution_mode = models.CharField(
+        max_length=20,
+        choices=EXECUTION_MODES,
+        default='llm',
+        help_text="In 'pure_tool' mode, deterministic_tool executes immediately without calling the LLM."
+    )
+    deterministic_tool = models.ForeignKey(
+        'ToolDefinition',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='deterministic_steps',
+        help_text="The tool to execute deterministically when execution_mode='pure_tool'."
+    )
+    tool_args_mapping = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Declarative parameter mapping, e.g. {'query': '$user_prompt'} or {'query': '$state_tree.active_task'}."
+    )
+
     # The core instruction for this specific step
-    system_prompt = models.TextField(help_text="The prompt driving this step. For a pre-written plan, instruct the LLM to output a specific sequence of tools in the ExecutionPlan.")
+    system_prompt = models.TextField(
+        blank=True,
+        help_text="The prompt driving this step. For a pre-written plan, instruct the LLM to output a specific sequence of tools in the ExecutionPlan."
+    )
 
     # The Routing / Graph Edges
     on_success_step = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True,
