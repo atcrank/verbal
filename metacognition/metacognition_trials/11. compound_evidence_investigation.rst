@@ -1,0 +1,140 @@
+Scenario 11: Compound Investigation Blueprint with Sub-Blueprint Evidence Delegation
+=====================================================================================
+
+This trial demonstrates a compound parent blueprint (``Firefighting Robotics Sensor Investigation``)
+delegating literature research to the ``Evidence Extractor`` sub-blueprint and accumulating verified findings
+into the shared Conversation State Tree.
+
+It highlights:
+1. **Sub-Blueprint Delegation**: The parent graph pauses its execution and delegates the focal research question to the canonical ``Evidence Extractor`` child blueprint.
+2. **Deterministic-to-LLM Hybrid Pipeline**: Inside the child blueprint, Step 1 performs deterministic ``pure_tool`` retrieval, and Step 2 extracts cited findings.
+3. **State-Tree Fact Accumulation**: Upon completion, ``_merge_state_trees`` automatically bubbles the child's ``established_facts`` up into the parent conversation's working memory map.
+4. **Grounded Downstream Synthesis**: Downstream reasoning nodes in the parent blueprint immediately receive the accumulated facts in their prompt context without re-querying the database.
+
+Setup & Database Seeding
+------------------------
+We initialize the canonical ``Evidence Extractor`` and construct a parent ``Sensor Investigation`` blueprint.
+
+    >>> from django.contrib.auth.models import User
+    >>> from llm_api.models import Conversation
+    >>> from metacognition.models import CognitiveBlueprint, ReasoningStep, ToolDefinition
+    >>> from metacognition.seed import seed_evidence_extractor, seed_tools
+    >>> from metacognition.tasks import run_blueprint
+    >>> from unittest.mock import patch
+    >>> import contextlib, io
+
+    >>> user, _ = User.objects.get_or_create(username="compound_evidence_user")
+    >>> seed_tools(ToolDefinition)
+    >>> seed_evidence_extractor(CognitiveBlueprint, ReasoningStep, ToolDefinition)
+    >>> child_bp = CognitiveBlueprint.objects.get(name="Evidence Extractor")
+
+    >>> # Build Parent Blueprint
+    >>> parent_bp, _ = CognitiveBlueprint.objects.update_or_create(
+    ...     name="Firefighting Sensor Investigation",
+    ...     defaults={
+    ...         "description": "Investigates robot sensor configurations and synthesizes empirical recommendations.",
+    ...         "is_autonomous": True
+    ...     }
+    ... )
+    >>> _ = ReasoningStep.objects.filter(blueprint=parent_bp).delete()
+
+    >>> # Step 1: Delegate to Evidence Extractor child blueprint
+    >>> step_sub = ReasoningStep.objects.create(
+    ...     blueprint=parent_bp,
+    ...     name="Delegate Evidence Extraction",
+    ...     is_start_node=True,
+    ...     sub_blueprint=child_bp,
+    ...     system_prompt="Extract verified empirical findings on sensor resilience in dense smoke."
+    ... )
+
+    >>> # Step 2: Synthesize Robot Architecture from accumulated established_facts
+    >>> step_synth = ReasoningStep.objects.create(
+    ...     blueprint=parent_bp,
+    ...     name="Synthesize Robot Architecture",
+    ...     execution_mode="llm",
+    ...     include_state_tree=True,
+    ...     system_prompt=(
+    ...         "You are a Chief Robotics Engineer.\n"
+    ...         "Examine the verified established_facts in your Conversation State Tree.\n"
+    ...         "Synthesize a sensor suite specification for an autonomous urban firefighting robot. "
+    ...         "Explicitly ground your choice in the empirical citations provided."
+    ...     )
+    ... )
+    >>> step_sub.on_success_step = step_synth
+    >>> step_sub.save()
+
+Mocking Retrieval & Model Inference
+-----------------------------------
+We mock candidate chunks returned by ``document_reader`` and the LLM responses for the child and parent steps.
+
+    >>> chunk_empirical = (
+    ...     "[Li et al., 2023 - IEEE Sensors Letters, Sec IV-B] "
+    ...     "Frequency-Modulated Continuous-Wave (FMCW) 77-GHz millimeter-wave radar "
+    ...     "maintained 94.2% obstacle detection accuracy through particulate smoke densities "
+    ...     "up to 120 mg/m3 at temperatures up to 250C, with a maximum ranging error of +-3.5 cm at 15 meters."
+    ... )
+    >>> def mock_doc_reader_call(state, params):
+    ...     return f"Candidate Chunks:\n1. {chunk_empirical}"
+
+    >>> mock_extractor_finding = (
+    ...     "- Finding: FMCW 77-GHz radar maintained 94.2% obstacle detection accuracy through particulate smoke up to 120 mg/m3 at 250C (error +-3.5 cm at 15 m).\n"
+    ...     "- Citation: [Li et al., 2023 - IEEE Sensors Letters, Sec IV-B]\n"
+    ...     "- Relevance: Empirical validation of radar penetrative capabilities in extreme thermal smoke."
+    ... )
+    >>> mock_parent_synth = (
+    ...     "Based on verified empirical evidence [Li et al., 2023], we recommend deploying "
+    ...     "a 77-GHz FMCW radar array as the primary navigation sensor. It ensures 94.2% obstacle "
+    ...     "accuracy up to 250C, overcoming optical and LiDAR degradation in heavy particulate smoke."
+    ... )
+
+    >>> def mock_llm_responses(*args, **kwargs):
+    ...     # Return child extraction on first call, parent synthesis on second call
+    ...     if not hasattr(mock_llm_responses, "call_count"):
+    ...         mock_llm_responses.call_count = 0
+    ...     mock_llm_responses.call_count += 1
+    ...     if mock_llm_responses.call_count == 1:
+    ...         return [mock_extractor_finding]
+    ...     return [mock_parent_synth]
+
+Execution
+---------
+We run the parent compound blueprint.
+
+    >>> prompt = "Design an obstacle detection sensor payload for autonomous indoor firefighting robots."
+    >>> conv = Conversation.objects.create(
+    ...     user=user,
+    ...     title="Compound Sensor Investigation",
+    ...     state_tree={"macro_objective": prompt, "established_facts": []}
+    ... )
+
+    >>> with patch("metacognition.meta_tools.document_reader", side_effect=mock_doc_reader_call), \
+    ...      patch("llm_api.ai_service.AIService.generate_response2", side_effect=mock_llm_responses):
+    ...     with contextlib.redirect_stdout(io.StringIO()):
+    ...         result = run_blueprint(parent_bp.id, prompt, conversation_id=str(conv.id), user_id=user.id)
+
+    >>> report_doctest_run("11. compound_evidence_investigation", prompt, result)
+
+Verification & Report Card
+--------------------------
+We verify the nested execution trace and downstream recommendation grounding.
+
+    >>> monologue = result.get("internal_monologue", [])
+    >>> step_names = [m.get("step_name") for m in monologue]
+    >>> print(f"- parent invoked sub-blueprint: {1 if 'Delegate Evidence Extraction' in step_names else 0}/1")
+    - parent invoked sub-blueprint: 1/1
+
+    >>> sub_entry = [m for m in monologue if m.get("step_name") == "Delegate Evidence Extraction"][0]
+    >>> sub_mono = sub_entry.get("sub_monologue", [])
+    >>> print(f"- child execution trace present: {1 if len(sub_mono) >= 2 else 0}/1")
+    - child execution trace present: 1/1
+
+    >>> final_resp = result.get("final_response", "")
+    >>> has_citation = "Li et al" in final_resp or "77-GHz" in final_resp or "FMCW" in final_resp
+    >>> print(f"- synthesis grounded in evidence: {1 if has_citation else 0}/1")
+    - synthesis grounded in evidence: 1/1
+
+    >>> state_tree = result.get("state_tree", {})
+    >>> facts = state_tree.get("established_facts", [])
+    >>> print(f"- established_facts accumulated: {1 if len(facts) >= 1 and 'Li et al' in facts[0] else 0}/1")
+    - established_facts accumulated: 1/1
+

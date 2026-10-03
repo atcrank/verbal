@@ -83,6 +83,14 @@ def _format_state_tree(state_tree: dict) -> str:
         lines.append("- **Open Questions:**")
         for q in state_tree["open_questions"]:
             lines.append(f"  - {q}")
+    if "established_facts" in state_tree and isinstance(state_tree["established_facts"], list):
+        lines.append("- **Established Facts:**")
+        for f in state_tree["established_facts"]:
+            lines.append(f"  - {f}")
+    if "evidence_citations" in state_tree and isinstance(state_tree["evidence_citations"], list):
+        lines.append("- **Evidence Citations:**")
+        for c in state_tree["evidence_citations"]:
+            lines.append(f"  - {c}")
 
     if len(lines) == 1:
         return f"### Conversation State Tree:\n```json\n{json.dumps(state_tree, indent=2)}\n```"
@@ -336,15 +344,6 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                     max_steps=150  # Sub-blueprint step budget
                 )
                 
-                # Merge child state_tree updates back into parent conversation
-                sub_conv.refresh_from_db()
-                scratch_merged = dict(state.get("scratch", {}))
-                if sub_conv.state_tree and parent_conv:
-                    merged_tree = _merge_state_trees(parent_conv.state_tree or {}, sub_conv.state_tree)
-                    parent_conv.state_tree = merged_tree
-                    parent_conv.save(update_fields=['state_tree'])
-                    scratch_merged["state_tree"] = merged_tree
-                
                 final_response = res.get("final_response", "")
                 monologue = res.get("internal_monologue", [])
                 
@@ -356,6 +355,28 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                     final_response = f"Sub-Blueprint '{step.sub_blueprint.name}' returned no execution trace."
                 elif monologue[-1].get("failed"):
                     sub_failed = True
+
+                # Merge child state_tree updates back into parent conversation
+                sub_conv.refresh_from_db()
+                scratch_merged = dict(state.get("scratch", {}))
+                merged_tree = dict(state.get("state_tree") or {})
+                if parent_conv:
+                    current_parent_tree = parent_conv.state_tree or {}
+                    merged_tree = _merge_state_trees(current_parent_tree, sub_conv.state_tree or {})
+                    if not sub_failed and final_response:
+                        facts = list(merged_tree.get("established_facts", []))
+                        if final_response not in facts:
+                            facts.append(final_response)
+                        merged_tree["established_facts"] = facts
+                    parent_conv.state_tree = merged_tree
+                    parent_conv.save(update_fields=['state_tree'])
+                elif not sub_failed and final_response:
+                    facts = list(merged_tree.get("established_facts", []))
+                    if final_response not in facts:
+                        facts.append(final_response)
+                    merged_tree["established_facts"] = facts
+
+                scratch_merged["state_tree"] = merged_tree
                     
                 working_prompt = f"\n[SYSTEM: Sub-Blueprint '{step.sub_blueprint.name}' Completed.\nSuccess: {not sub_failed}\nOutput:\n{final_response}\n]\n"
                 
@@ -377,6 +398,7 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                     "retries_remaining": retries_remaining,
                     "internal_monologue": [monologue_entry],
                     "scratch": scratch_merged,
+                    "state_tree": merged_tree,
                     "token_budget_remaining": current_budget
                 }
 

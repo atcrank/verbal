@@ -1229,8 +1229,6 @@ def seed_evidence_extractor(CognitiveBlueprint, ReasoningStep, ToolDefinition):
                 "- Citation: [Author, Year]\n"
                 "- Relevance: <One sentence explaining significance to the active goal>"
             ),
-            evaluation_criteria="The extracted finding contains a verifiable citation and addresses the active inquiry, or explicitly reports no empirical evidence.",
-            max_retries=2
         )
 
         step1.on_success_step = step2

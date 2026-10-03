@@ -1,0 +1,78 @@
+Scenario 10: Deterministic Evidence Extraction and Empirical Sifting
+===================================================================
+
+This trial demonstrates the canonical ``Evidence Extractor`` blueprint.
+It highlights:
+1. **Deterministic Retrieval (``pure_tool``)**: Step 1 executes the ``document_reader`` tool without invoking the LLM, burning 0 LLM tokens and achieving immediate zero-inference retrieval into ``scratch["raw_retrieval_chunks"]``.
+2. **Empirical Distillation (``llm``)**: Step 2 examines the retrieved candidate chunks. Rather than blindly accepting superficial definitions or trivia, it sifts the chunks, extracts the concrete quantitative finding, preserves all measurements and conditions, and attaches an academic citation header without being constrained by an arbitrary 20-word cap.
+
+Setup & Database Seeding
+------------------------
+We initialize the canonical blueprint via ``seed_evidence_extractor`` and configure test literature chunks.
+
+    >>> from django.contrib.auth.models import User
+    >>> from metacognition.models import CognitiveBlueprint, ReasoningStep, ToolDefinition
+    >>> from metacognition.seed import seed_evidence_extractor, seed_tools
+    >>> from metacognition.tasks import run_blueprint
+    >>> from unittest.mock import patch
+    >>> import contextlib, io
+
+    >>> user, _ = User.objects.get_or_create(username="evidence_trial_user")
+    >>> seed_tools(ToolDefinition)
+    >>> seed_evidence_extractor(CognitiveBlueprint, ReasoningStep, ToolDefinition)
+    >>> bp = CognitiveBlueprint.objects.get(name="Evidence Extractor")
+
+Mocking Candidate Retrieval
+---------------------------
+We mock ``document_reader`` so the deterministic tool returns candidate literature chunks:
+one superficial definition/noise chunk, and one high-precision empirical research excerpt with numerical bounds.
+
+    >>> chunk_noise = (
+    ...     "Sensors are physical devices converting stimuli to electrical signals. "
+    ...     "In firefighting, standard NFPA equipment guidelines should be reviewed regularly."
+    ... )
+    >>> chunk_empirical = (
+    ...     "[Li et al., 2023 - IEEE Sensors Letters, Sec IV-B] "
+    ...     "Frequency-Modulated Continuous-Wave (FMCW) 77-GHz millimeter-wave radar "
+    ...     "maintained 94.2% obstacle detection accuracy through particulate smoke densities "
+    ...     "up to 120 mg/m3 at temperatures up to 250C, with a maximum ranging error of +-3.5 cm at 15 meters."
+    ... )
+
+    >>> def mock_doc_reader_call(state, params):
+    ...     return f"Candidate Chunks:\n1. {chunk_noise}\n\n2. {chunk_empirical}"
+
+Execution
+---------
+We invoke the Evidence Extractor blueprint with a technical question on obstacle detection in smoke.
+
+    >>> prompt = (
+    ...     "What is the measured obstacle detection accuracy and ranging precision of "
+    ...     "77-GHz radar in thick particulate smoke at high temperatures?"
+    ... )
+
+    >>> mock_finding = (
+    ...     "- Finding: Frequency-Modulated Continuous-Wave (FMCW) 77-GHz radar maintained 94.2% obstacle detection accuracy through particulate smoke densities up to 120 mg/m3 at temperatures up to 250C, with ranging error +-3.5 cm at 15 meters.\n"
+    ...     "- Citation: [Li et al., 2023 - IEEE Sensors Letters, Sec IV-B]\n"
+    ...     "- Relevance: Provides direct empirical resilience data for obstacle navigation under dense smoke and thermal stress."
+    ... )
+    >>> with patch("metacognition.meta_tools.document_reader", side_effect=mock_doc_reader_call), \
+    ...      patch("llm_api.ai_service.AIService.generate_response2", return_value=[mock_finding]):
+    ...     with contextlib.redirect_stdout(io.StringIO()):
+    ...         result = run_blueprint(bp.id, prompt, user_id=user.id)
+
+    >>> report_doctest_run("10. evidence_extractor", prompt, result)
+
+Verification & Report Card
+--------------------------
+We verify that Step 1 ran deterministically and Step 2 produced a cited finding.
+
+    >>> monologue = result.get("internal_monologue", [])
+    >>> step1 = monologue[0] if len(monologue) > 0 else {}
+    >>> is_step1_pure = "Deterministic Tool Executor" in step1.get("system_prompt", "")
+    >>> print(f"- deterministic pure_tool retrieval: {1 if is_step1_pure else 0}/1")
+    - deterministic pure_tool retrieval: 1/1
+
+    >>> final_resp = result.get("final_response", "")
+    >>> has_citation = "Li et al" in final_resp or "2023" in final_resp or "radar" in final_resp.lower()
+    >>> print(f"- cited empirical finding: {1 if has_citation else 0}/1")
+    - cited empirical finding: 1/1
