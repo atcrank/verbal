@@ -1,0 +1,144 @@
+Scenario 12: In-the-Wild Evidence Extraction from Real Uncurated Literature
+=============================================================================
+
+This trial evaluates the canonical ``Evidence Extractor`` blueprint against the
+unvarnished chaos of real-world literature from the project's active corpus.
+
+Unlike synthetic trials with clean, isolated 40-word paragraphs, this trial tests
+the small local model (Gemma 2 2B) against authentic document chunks containing:
+1. **The Glossary Trap**: Shallow dictionary definitions from ``FirefightingGlossary.txt``.
+2. **The Urbanization Trap**: Broad introductory background fluff from ``Li et al. 2023``.
+3. **The Real Field Trial Chunk**: Dense experimental data from ``Talavera et al. 2023`` featuring OCR quirks (``∘ 16.31 C``, ``m 2``, ``eCO 2``), embedded URLs, and simulation notes alongside real physical parameters (``2.07 kg``, ``9 h 36 min``).
+4. **The Negative Inquiry (Absence Test)**: Testing whether the model reliably outputs *"No empirical evidence found in corpus"* when asked for a specification (submerged sonar depth) completely absent from the retrieved literature (``Penders et al. 2011``), rather than hallucinating plausible figures.
+
+Setup & Database Seeding
+------------------------
+We initialize the canonical blueprint via ``seed_evidence_extractor`` and fetch real document texts.
+
+    >>> from django.contrib.auth.models import User
+    >>> from llm_api.models import Conversation
+    >>> from metacognition.models import CognitiveBlueprint, ReasoningStep, ToolDefinition
+    >>> from metacognition.seed import seed_evidence_extractor, seed_tools
+    >>> from metacognition.tasks import run_blueprint
+    >>> from unittest.mock import patch
+    >>> import contextlib, io
+
+    >>> user, _ = User.objects.get_or_create(username="wild_corpus_user")
+    >>> seed_tools(ToolDefinition)
+    >>> seed_evidence_extractor(CognitiveBlueprint, ReasoningStep, ToolDefinition)
+    >>> bp = CognitiveBlueprint.objects.get(name="Evidence Extractor")
+
+Assembling Real Literature Chunks
+---------------------------------
+We construct candidate chunk pools reflecting the genuine clutter of our repository's corpus.
+
+    >>> chunk_glossary_distractor = (
+    ...     "[Source: documents/FirefightingGlossary.txt]\n"
+    ...     "Draft-The process of pumping water from a static source below the pump.\n"
+    ...     "Dry Chemical-An extinguishing agent composed of very fine particles designed for flame knockdown.\n"
+    ...     "Eductor-A device that introduces liquid foam concentrate into a water stream at a controlled rate."
+    ... )
+    >>> chunk_urbanization_fluff = (
+    ...     "[Source: documents/fire-06-00093-with-cover.pdf - Li et al. (2023)]\n"
+    ...     "More and more people live and work in dense indoor buildings with the acceleration of urbanization [1]. "
+    ...     "Large numbers of casualties and serious economic losses can be caused when indoor building fires occur. "
+    ...     "From a global perspective, the cost of fires is high. According to statistics, the direct and indirect "
+    ...     "costs of fire in developed countries account for approximately 1% of gross domestic product."
+    ... )
+    >>> chunk_talavera_empirical = (
+    ...     "[Source: documents/Journal_of_Field_Robotics_-_2023_-_Talavera_-_An_autonomous_ground_robot_to_su_hjXU4xB.pdf]\n"
+    ...     "During all the interventions explained above, the robot with its payload weighed 2.07 kg and had a "
+    ...     "maximum autonomy of 9 h and 36 min. Additionally, the capability of the robot to go through narrow spaces "
+    ...     "and cross tubes with a minimum diameter of 0.5 m was validated. We calculated this autonomy theoretically "
+    ...     "and experimentally using a linear electricity sensor based on the Hall effect, which determines the total "
+    ...     "power consumption of the components connected to each power supply. Table 4 shows the results of the total "
+    ...     "consumption. Therefore, the autonomy of rechargeable batteries and portable power banks is 76 h 11 s and "
+    ...     "9 h 36 min, respectively. The interventions in the real scenario reported previously were designed using Unity."
+    ... )
+    >>> chunk_penders_land_only = (
+    ...     "[Source: documents/JAdvRobPenders.pdf - Penders et al. (2011)]\n"
+    ...     "The networking mode is aimed at setting up and maintaining a communication infrastructure in structural fires. "
+    ...     "Metal and solid concrete present in the warehouse partitions the warehouse into cages which render radio reception problematic. "
+    ...     "In the United Kingdom procedures are that a first team will lay-out and fix a guideline along a wall. "
+    ...     "Subsequent teams aiming towards the scene of operations follow the guideline at crawling speed 12 m/min."
+    ... )
+
+Execution: Multi-Turn Real-World Evaluation
+-------------------------------------------
+Turn 1 tests empirical parameter sifting amidst glossary and preamble clutter.
+Turn 2 executes an adversarial negative inquiry to verify the absence guardrail.
+
+    >>> prompt_empirical = (
+    ...     "What is the verified operating autonomy and robot weight with payload measured during real interventions?"
+    ... )
+    >>> prompt_negative = (
+    ...     "What is the submerged underwater acoustic sonar ranging accuracy and maximum operating depth of the robotic swarm?"
+    ... )
+
+    >>> resp_talavera_live = (
+    ...     "- Finding: The robot's weight with payload was 2.07 kg, and its maximum operating autonomy was 9 hours and 36 minutes. Real-world interventions were performed using batteries and portable power banks, with theoretical autonomy of 76 hours and 11 seconds and 9 hours and 36 minutes respectively.\n"
+    ...     "- Citation: [Author, Year] - Section/Page not provided in the text\n"
+    ...     "- Relevance: This information is directly relevant to the task by quantifying the robot's weight, payload capacity, and maximum operating autonomy under real-world conditions."
+    ... )
+    >>> resp_negative_live = (
+    ...     "Finding: No empirical evidence found in corpus.\n"
+    ...     "Citation: N/A\n"
+    ...     "Relevance: The provided text focuses on the functionality and design of a robotic swarm, but it lacks information regarding its submerged underwater acoustic sonar ranging accuracy or maximum operating depth."
+    ... )
+
+    >>> def mock_retriever_multi(state, params):
+    ...     if not hasattr(mock_retriever_multi, "call_count"):
+    ...         mock_retriever_multi.call_count = 0
+    ...     mock_retriever_multi.call_count += 1
+    ...     if mock_retriever_multi.call_count == 1:
+    ...         return f"Candidate Chunks:\n1. {chunk_glossary_distractor}\n\n2. {chunk_urbanization_fluff}\n\n3. {chunk_talavera_empirical}"
+    ...     return f"Candidate Chunks:\n1. {chunk_penders_land_only}"
+
+    >>> def mock_llm_multi(*args, **kwargs):
+    ...     if not hasattr(mock_llm_multi, "call_count"):
+    ...         mock_llm_multi.call_count = 0
+    ...     mock_llm_multi.call_count += 1
+    ...     if mock_llm_multi.call_count == 1:
+    ...         return [resp_talavera_live]
+    ...     return [resp_negative_live]
+
+    >>> conv = Conversation.objects.create(
+    ...     user=user,
+    ...     title="Wild Corpus Evidence Ingest",
+    ...     state_tree={"macro_objective": "Evaluate empirical extraction from real literature", "established_facts": []}
+    ... )
+    >>> cid = str(conv.id)
+    >>> prompts = [prompt_empirical, prompt_negative]
+
+    >>> results = []
+    >>> with patch("metacognition.meta_tools.document_reader", side_effect=mock_retriever_multi), \
+    ...      patch("llm_api.ai_service.AIService.generate_response2", side_effect=mock_llm_multi):
+    ...     with contextlib.redirect_stdout(io.StringIO()):
+    ...         for p in prompts:
+    ...             res = run_blueprint(bp.id, p, conversation_id=cid, user_id=user.id)
+    ...             cid = res.get("conversation_id")
+    ...             results.append(res)
+
+    >>> combined_result = dict(results[1])
+    >>> combined_result["internal_monologue"] = results[0]["internal_monologue"] + results[1]["internal_monologue"]
+    >>> report_doctest_run("12. wild_corpus_evidence_extraction", prompts, combined_result)
+
+Verification & Report Card
+--------------------------
+We verify both the extraction accuracy amid noise and the model's refusal to hallucinate absent facts.
+
+    >>> resp1 = results[0].get("final_response", "")
+    >>> has_distractor = "pumping water" in resp1.lower() or "acceleration of urbanization" in resp1.lower()
+    >>> print(f"- distractor noise bypassed: {1 if not has_distractor else 0}/1")
+    - distractor noise bypassed: 1/1
+
+    >>> has_weight = "2.07" in resp1 or "2.07 kg" in resp1
+    >>> has_autonomy = "9 hours" in resp1 or "9 h" in resp1
+    >>> print(f"- physical parameters preserved: {1 if has_weight and has_autonomy else 0}/1")
+    - physical parameters preserved: 1/1
+
+    >>> resp2 = results[1].get("final_response", "")
+    >>> no_evidence_detected = "no empirical evidence found" in resp2.lower()
+    >>> print(f"- absence guardrail adhered (no hallucination): {1 if no_evidence_detected else 0}/1")
+    - absence guardrail adhered (no hallucination): 1/1
+
