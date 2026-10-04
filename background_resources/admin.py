@@ -29,16 +29,18 @@ def process_document(modeladmin, request, queryset):
 
 @admin.action(description="Execute this Reading Strategy")
 def process_reading(modeladmin, request, queryset):
-    strategy_ids = list(queryset.values_list('id', flat=True))
+    strategy_ids = [str(sid) for sid in queryset.values_list('id', flat=True)]
     task_process_reading_strategies.enqueue(strategy_ids)
-    modeladmin.message_user(request, f"Queued {len(strategy_ids)} reading strateg(ies) for execution.", level=messages.SUCCESS)
+    if modeladmin:
+        modeladmin.message_user(request, f"Queued {len(strategy_ids)} reading strateg(ies) for execution.", level=messages.SUCCESS)
 
 
 @admin.action(description="Execute this Grobid Semantic Strategy")
 def process_grobid_reading(modeladmin, request, queryset):
-    strategy_ids = list(queryset.values_list('id', flat=True))
+    strategy_ids = [str(sid) for sid in queryset.values_list('id', flat=True)]
     task_process_grobid_reading_strategies.enqueue(strategy_ids)
-    modeladmin.message_user(request, f"Queued {len(strategy_ids)} Grobid reading strateg(ies) for execution.", level=messages.SUCCESS)
+    if modeladmin:
+        modeladmin.message_user(request, f"Queued {len(strategy_ids)} Grobid reading strateg(ies) for execution.", level=messages.SUCCESS)
 
 
 @admin.action(description="Generate Synthetic Benchmarks")

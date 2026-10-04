@@ -29,15 +29,17 @@ class Reference(models.Model):
     def clean(self):
         super().clean()
         # Explicitly truncate strings to prevent PostgreSQL DataErrors during programmatic inserts
-        if self.title and len(self.title) > 996: self.title = self.title[:996] + "..."
-        if self.journal and len(self.journal) > 996: self.journal = self.journal[:996] + "..."
-        if self.publisher and len(self.publisher) > 251: self.publisher = self.publisher[:251] + "..."
-        if self.year and len(self.year) > 196: self.year = self.year[:196] + "..."
-        if self.publication_date and len(self.publication_date) > 46: self.publication_date = self.publication_date[:46] + "..."
-        if self.volume and len(self.volume) > 46: self.volume = self.volume[:46] + "..."
-        if self.issue and len(self.issue) > 46: self.issue = self.issue[:46] + "..."
-        if self.pages and len(self.pages) > 46: self.pages = self.pages[:46] + "..."
-        if self.doi and len(self.doi) > 96: self.doi = self.doi[:96] + "..."
+        if self.title and len(str(self.title)) > 996: self.title = str(self.title)[:996] + "..."
+        if self.journal and len(str(self.journal)) > 996: self.journal = str(self.journal)[:996] + "..."
+        if self.publisher and len(str(self.publisher)) > 251: self.publisher = str(self.publisher)[:251] + "..."
+        if self.year:
+            self.year = str(self.year)
+            if len(self.year) > 196: self.year = self.year[:196] + "..."
+        if self.publication_date and len(str(self.publication_date)) > 46: self.publication_date = str(self.publication_date)[:46] + "..."
+        if self.volume and len(str(self.volume)) > 46: self.volume = str(self.volume)[:46] + "..."
+        if self.issue and len(str(self.issue)) > 46: self.issue = str(self.issue)[:46] + "..."
+        if self.pages and len(str(self.pages)) > 46: self.pages = str(self.pages)[:46] + "..."
+        if self.doi and len(str(self.doi)) > 96: self.doi = str(self.doi)[:96] + "..."
 
     def save(self, *args, **kwargs):
         self.clean()

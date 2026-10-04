@@ -443,18 +443,22 @@ class GrobidReadingStrategy(models.Model):
     def __str__(self):
         return f"{self.document.title} - {self.strategy_description}"
 
-    def read_document(self, rag_service_inject):
-        chunks, chunk_ids = rag_service_inject.convert_chunk_store_document_grobid(self.document)
+    def read_document(self, rag_service_inject, force=False):
+        chunks, chunk_ids = rag_service_inject.convert_chunk_store_document_grobid(self.document, force=force)
         
         if not chunks and chunk_ids:
             chunks = rag_service_inject.store.mget(chunk_ids)
         ct = ContentType.objects.get_for_model(self)
         for chunk_id, chunk in zip(chunk_ids, chunks):
-            rag_chunk, _ = RAGChunk.objects.get_or_create(
+            meta = chunk.metadata if chunk else {}
+            raw_type = (meta.get('chunk_type') or 'TEXT').upper()
+            chunk_type = raw_type if raw_type in RAGChunk.ChunkType.values else RAGChunk.ChunkType.TEXT
+            rag_chunk, _ = RAGChunk.objects.update_or_create(
                 chunk_id=chunk_id,
                 defaults={
                     'text_content': chunk.page_content if chunk else "",
-                    'metadata': chunk.metadata if chunk else {},
+                    'metadata': meta,
+                    'chunk_type': chunk_type,
                     'in_vector_index': False,
                     'in_byte_store': True
                 }
@@ -473,7 +477,7 @@ class GrobidReadingStrategy(models.Model):
 
     def apply_strategy(self, rag_service, force=False, source_chunks=None):
         if force or self.usages.count() == 0:
-            self.read_document(rag_service_inject=rag_service)
+            self.read_document(rag_service_inject=rag_service, force=force)
         return
 
     def extract_content(self, chunk, rag_service):

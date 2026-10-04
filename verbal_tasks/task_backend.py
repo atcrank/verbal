@@ -36,13 +36,16 @@ class DatabaseTaskBackend(BaseTaskBackend):
         task_path = f"{task.func.__module__}.{task.func.__qualname__}"
         now = timezone.now()
 
+        normalized_args = tuple(_normalize_json(args))
+        normalized_kwargs = _normalize_json(kwargs)
+
         record = TaskRecord.objects.create(
             id=result_id,
             task_path=task_path,
             queue_name=task.queue_name,
             priority=task.priority,
-            args_json=_normalize_json(args),
-            kwargs_json=_normalize_json(kwargs),
+            args_json=normalized_args,
+            kwargs_json=normalized_kwargs,
             status=TaskRecordStatus.READY,
             enqueued_at=now,
             run_after=task.run_after,
@@ -56,8 +59,8 @@ class DatabaseTaskBackend(BaseTaskBackend):
             started_at=None,
             last_attempted_at=None,
             finished_at=None,
-            args=args,
-            kwargs=kwargs,
+            args=normalized_args,
+            kwargs=normalized_kwargs,
             backend=self.alias,
             errors=[],
             worker_ids=[],

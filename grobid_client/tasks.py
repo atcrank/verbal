@@ -464,10 +464,17 @@ def extract_grobid_figures(
         chunk_category = "TABLE" if fig_type == "table" else "FIGURE"
 
         fig_id = fig.get("xml:id") or ""
-        coords = fig.get("coords") or ""
+        graphic = fig.find("graphic")
+        coords = fig.get("coords") or (graphic.get("coords") if graphic else "") or ""
 
         head = fig.find("head")
         fig_label = head.text.strip() if head else ""
+        label_elem = fig.find("label")
+        if not fig_label and label_elem and label_elem.text.strip():
+            fig_label = f"Figure {label_elem.text.strip()}"
+
+        if fig_label:
+            fig_label = re.sub(r'[\s\.:]+$', '', fig_label)
 
         fig_desc = fig.find("figDesc")
         fig_caption = fig_desc.text.strip() if fig_desc else ""
@@ -484,9 +491,14 @@ def extract_grobid_figures(
         # Discussion context from in-text references
         discussion = mention_map.get(fig_id, "")
 
-        # Format content
-        label_part = f"[{fig_label}] " if fig_label else ""
-        content_parts = [f"{label_part}{fig_caption}".strip()]
+        # Format content cleanly without redundant prefix duplication
+        if fig_label and fig_caption.lower().startswith(fig_label.lower()):
+            clean_caption = re.sub(r'^' + re.escape(fig_label) + r'[\s\.:]*', '', fig_caption, flags=re.IGNORECASE).strip()
+            content_parts = [f"[{fig_label}] {clean_caption}".strip()]
+        else:
+            label_part = f"[{fig_label}] " if fig_label else ""
+            content_parts = [f"{label_part}{fig_caption}".strip()]
+
         if discussion:
             content_parts.append(f"Discussion Context: {discussion}")
         content_str = "\n".join(content_parts)
@@ -498,7 +510,7 @@ def extract_grobid_figures(
             from django.conf import settings
             doc_id_str = str(document_id) if document_id else "extracted"
             dest_dir = os.path.join(settings.MEDIA_ROOT, "documents", "figures", doc_id_str)
-            clean_id = fig_id or (fig_label.replace(" ", "_").lower() if fig_label else f"fig_{len(figure_chunks)}")
+            clean_id = fig_id or (re.sub(r'[^a-zA-Z0-9_-]', '_', fig_label.lower()) if fig_label else f"fig_{len(figure_chunks)}")
             out_filename = f"{clean_id}.png"
             dest_path = os.path.join(dest_dir, out_filename)
             rel_path = os.path.join("documents", "figures", doc_id_str, out_filename)

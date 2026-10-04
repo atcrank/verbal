@@ -8,7 +8,9 @@ from datetime import datetime
 from django.test import TestCase, tag
 from django.test.utils import override_settings
 from django.conf import settings
+from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import SimpleUploadedFile
+from uuid import UUID
 
 from background_resources.models import (
     Document, 
@@ -833,4 +835,132 @@ class TestRAGServiceIntegration(TestCase):
         top_def_chunk, top_def_score = scored_def[0]
         self.assertEqual(top_def_chunk.metadata.get("original_term"), "UWB",
                          "Explicit definition query should rank UWB glossary definition at the top!")
+
+
+class UserChoicesAndStrategyExecutionTests(TestCase):
+    """
+    Verifies that user choices in the UI and Django admin (e.g. executing strategies with UUIDs,
+    re-running Grobid chunking with figure extraction, and task queueing) operate cleanly.
+    """
+    def setUp(self):
+        from llm_api.apps import service_registry
+        self.rag_service = service_registry.rag_service
+
+    def test_admin_process_grobid_reading_with_uuid_queryset(self):
+        """Verifies that admin process_grobid_reading action handles UUID querysets without TypeError."""
+        from django.test import RequestFactory
+        from django.contrib.messages.storage.fallback import FallbackStorage
+        from background_resources.models import Document, GrobidReadingStrategy
+        from background_resources.admin import process_grobid_reading
+
+        doc = Document.objects.create(title="Robotics Study", file=ContentFile(b"test pdf content", name="study.pdf"))
+        strat = GrobidReadingStrategy.objects.create(document=doc)
+        self.assertIsInstance(strat.id, UUID)
+
+        factory = RequestFactory()
+        request = factory.post("/admin/background_resources/grobidreadingstrategy/")
+        setattr(request, 'session', {})
+        messages_storage = FallbackStorage(request)
+        setattr(request, '_messages', messages_storage)
+
+        from unittest.mock import MagicMock
+        mock_admin = MagicMock()
+        qs = GrobidReadingStrategy.objects.filter(id=strat.id)
+        # Must execute without raising TypeError: Unsupported type: <class 'uuid.UUID'>
+        process_grobid_reading(mock_admin, request, qs)
+        mock_admin.message_user.assert_called_once()
+
+    def test_admin_process_reading_with_uuid_queryset(self):
+        """Verifies that admin process_reading action handles UUID querysets without TypeError."""
+        from unittest.mock import MagicMock
+        from django.test import RequestFactory
+        from django.contrib.messages.storage.fallback import FallbackStorage
+        from background_resources.models import Document, ReadingStrategy
+        from background_resources.admin import process_reading
+
+        doc = Document.objects.create(title="Text Study", file=ContentFile(b"test text", name="study.txt"))
+        strat = ReadingStrategy.objects.create(document=doc, strategy_description="Default Chunking")
+        self.assertIsInstance(strat.id, UUID)
+
+        factory = RequestFactory()
+        request = factory.post("/admin/background_resources/readingstrategy/")
+        setattr(request, 'session', {})
+        messages_storage = FallbackStorage(request)
+        setattr(request, '_messages', messages_storage)
+
+        mock_admin = MagicMock()
+        qs = ReadingStrategy.objects.filter(id=strat.id)
+        process_reading(mock_admin, request, qs)
+        mock_admin.message_user.assert_called_once()
+
+    def test_grobid_reading_strategy_execution_and_clipping(self):
+        """Verifies that executing GrobidReadingStrategy extracts figures, crops images, and logs usages."""
+        import tempfile
+        from reportlab.pdfgen import canvas
+        from reportlab.lib import colors
+        from background_resources.models import Document, GrobidReadingStrategy, RAGChunk, StrategyChunkUsage
+        from grobid_client.models import Reference
+
+        sample_tei = """<TEI xmlns="http://www.tei-c.org/ns/1.0">
+            <text>
+                <body>
+                    <div>
+                        <head>1. Introduction</head>
+                        <p>We analyze robotic smoke penetration under high temperatures.</p>
+                        <p>Figure 1 illustrates the robot platform.</p>
+                        <figure xml:id="fig_1">
+                            <head>Figure 1 .</head>
+                            <label>1</label>
+                            <figDesc>Figure 1. Field inspection robot.</figDesc>
+                            <graphic coords="1,100.0,150.0,250.0,180.0" type="bitmap"/>
+                        </figure>
+                    </div>
+                </body>
+            </text>
+        </TEI>"""
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            pdf_path = os.path.join(tmpdir, "robot_study.pdf")
+            c = canvas.Canvas(pdf_path, pagesize=(612, 792))
+            c.drawString(100, 700, "Robotic Study Header")
+            c.setFillColor(colors.blue)
+            c.rect(100, 450, 250, 180, fill=1)
+            c.showPage()
+            c.save()
+
+            with open(pdf_path, "rb") as f:
+                doc = Document.objects.create(
+                    title="Field Inspection Robot",
+                    file=ContentFile(f.read(), name="robot_study.pdf")
+                )
+
+            Reference.objects.create(
+                document=doc,
+                tei_xml=sample_tei,
+                authors="Smith et al.",
+                year=2024,
+                title="Field Inspection Robot"
+            )
+
+            strat = GrobidReadingStrategy.objects.create(document=doc)
+            # Execute strategy with force=True
+            strat.apply_strategy(self.rag_service, force=True)
+
+            # Verify figure chunks created in RAGChunk
+            figure_chunks = RAGChunk.objects.filter(chunk_type=RAGChunk.ChunkType.FIGURE)
+            self.assertGreaterEqual(figure_chunks.count(), 1)
+            fig_chunk = figure_chunks.first()
+            self.assertEqual(fig_chunk.metadata.get("figure_label"), "Figure 1")
+            self.assertIn("image_path", fig_chunk.metadata)
+
+            # Verify image file was cropped to disk
+            img_rel_path = fig_chunk.metadata["image_path"]
+            img_full_path = os.path.join(settings.MEDIA_ROOT, img_rel_path)
+            self.assertTrue(os.path.exists(img_full_path))
+
+            # Verify StrategyChunkUsage
+            usages = StrategyChunkUsage.objects.filter(object_id=strat.id)
+            self.assertGreaterEqual(usages.count(), 1)
+            self.assertTrue(usages.filter(chunk=fig_chunk).exists())
+
 

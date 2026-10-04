@@ -245,7 +245,7 @@ class GrobidTaskErrorHandlingTests(TestCase):
         self.assertEqual(Citation.objects.filter(source_reference=ref).count(), 0)
 
     def test_extract_grobid_figures_and_mentions(self):
-        """Test extraction of <figure> elements, captions, and context mentions."""
+        """Test extraction of <figure> elements, graphic coords, captions, and context mentions."""
         from grobid_client.tasks import extract_grobid_figures, grobid_tei_to_semantic_chunks
         
         sample_tei = """<TEI xmlns="http://www.tei-c.org/ns/1.0">
@@ -255,9 +255,11 @@ class GrobidTaskErrorHandlingTests(TestCase):
                         <head>Experimental Setup</head>
                         <p>We benchmark sensor ranging accuracy under extreme particulate loading across multiple trials.</p>
                         <p>As demonstrated in <ref type="figure" target="#fig_0">Figure 4</ref>, optical backscatter degrades LiDAR beyond 150C.</p>
-                        <figure xml:id="fig_0" coords="1,100.0,200.0,300.0,150.0">
+                        <figure xml:id="fig_0">
                             <head>Figure 4:</head>
+                            <label>4</label>
                             <figDesc>Ranging error of 77-GHz FMCW radar and 3D LiDAR in dense smoke.</figDesc>
+                            <graphic coords="1,100.0,200.0,300.0,150.0" type="bitmap"/>
                         </figure>
                     </div>
                 </body>
@@ -268,9 +270,9 @@ class GrobidTaskErrorHandlingTests(TestCase):
         self.assertEqual(len(figs), 1)
         fig = figs[0]
         self.assertEqual(fig.metadata["chunk_type"], "figure")
-        self.assertEqual(fig.metadata["figure_label"], "Figure 4:")
+        self.assertEqual(fig.metadata["figure_label"], "Figure 4")
         self.assertEqual(fig.metadata["coords"], "1,100.0,200.0,300.0,150.0")
-        self.assertIn("[Figure 4:] Ranging error of 77-GHz FMCW radar", fig.page_content)
+        self.assertIn("[Figure 4] Ranging error of 77-GHz FMCW radar", fig.page_content)
         self.assertIn("Discussion Context: As demonstrated in Figure 4", fig.page_content)
 
         # Test composite grobid_tei_to_semantic_chunks includes both text and figure chunks

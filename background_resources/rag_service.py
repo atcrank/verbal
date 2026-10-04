@@ -481,13 +481,13 @@ class RAGService:
             document.save(update_fields=['currently_indexed', 'metadata'])
         return chunks, chunk_ids
 
-    def convert_chunk_store_document_grobid(self, document: DjangoDocument) -> Tuple[List[LangchainDocument], List[str]]:
+    def convert_chunk_store_document_grobid(self, document: DjangoDocument, force: bool = False) -> Tuple[List[LangchainDocument], List[str]]:
         """
         Uses the cached TEI XML from the Grobid client to split the document cleanly by semantic sections.
         """
         current_scheme = f"{document.indexed_hash}-grobid_semantic"
         
-        if current_scheme in self.hashes_indexed:
+        if not force and current_scheme in self.hashes_indexed:
             existing_ids = self.hashes_indexed[current_scheme]
             if existing_ids and self.store.mget([existing_ids[0]])[0] is not None:
                 logger.info(f'Reusing {len(existing_ids)} existing Grobid chunks for scheme {current_scheme}')
@@ -522,20 +522,22 @@ class RAGService:
         total_chunks = len(final_chunks)
         ref = getattr(document, 'grobid_metadata', None)
         for index, vec_doc in enumerate(final_chunks):
-            global_meta = document.metadata.copy() if document.metadata else {}
-            vec_doc.metadata.update(global_meta)
-            vec_doc.metadata["document_id"] = str(document.id)
+            chunk_specific_meta = vec_doc.metadata.copy() if vec_doc.metadata else {}
+            meta = document.metadata.copy() if document.metadata else {}
+            meta.update(chunk_specific_meta)
+            meta["document_id"] = str(document.id)
             if ref:
-                if getattr(ref, 'authors', None): vec_doc.metadata["authors"] = ref.authors
-                if getattr(ref, 'year', None): vec_doc.metadata["year"] = str(ref.year)
-                if getattr(ref, 'doi', None): vec_doc.metadata["doi"] = ref.doi
-                if getattr(ref, 'journal', None): vec_doc.metadata["journal"] = ref.journal
-                if getattr(ref, 'title', None): vec_doc.metadata["paper_title"] = ref.title
-            vec_doc.metadata["chunk_index"] = index
-            vec_doc.metadata["total_chunks"] = total_chunks
-            vec_doc.metadata["location_percent"] = int(((index + 1) / total_chunks) * 100) if total_chunks > 0 else 0
-            if "page_number" not in vec_doc.metadata:
-                vec_doc.metadata["page_number"] = f"{vec_doc.metadata['location_percent']}%"
+                if getattr(ref, 'authors', None): meta["authors"] = ref.authors
+                if getattr(ref, 'year', None): meta["year"] = str(ref.year)
+                if getattr(ref, 'doi', None): meta["doi"] = ref.doi
+                if getattr(ref, 'journal', None): meta["journal"] = ref.journal
+                if getattr(ref, 'title', None): meta["paper_title"] = ref.title
+            meta["chunk_index"] = index
+            meta["total_chunks"] = total_chunks
+            meta["location_percent"] = int(((index + 1) / total_chunks) * 100) if total_chunks > 0 else 0
+            if "page_number" not in meta:
+                meta["page_number"] = f"{meta['location_percent']}%"
+            vec_doc.metadata = meta
 
         chunk_ids = [str(uuid4()) for _ in range(len(final_chunks))]
         
@@ -612,14 +614,17 @@ class RAGService:
             self.ingest_queryset_reading_strategies(document.grobidreadingstrategy_set.all())
 
 
-    def ingest_queryset_reading_strategies(self, queryset=None):
+    def ingest_queryset_reading_strategies(self, queryset=None, force: bool = False):
         """This is to be the top function for ingestion and assumes a queryset of our Django ReadingStrategy models."""
 
         if queryset is None:
             return
 
         for readingstrategy in queryset:
-            self.complete_reading(readingstrategy)
+            if hasattr(readingstrategy, 'apply_strategy'):
+                readingstrategy.apply_strategy(self, force=force)
+            else:
+                self.complete_reading(readingstrategy)
 
 
     def get_chunk_summary(self, chunk_text, custom_prompt=None):
