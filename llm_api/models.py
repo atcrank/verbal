@@ -420,7 +420,14 @@ class LocalAIModel(models.Model):
     )
     load_in_4bit = models.BooleanField(default=True, help_text="Legacy flag: Use 4-bit quantization (synced with quantization_mode)")
     context_window = models.IntegerField(default=4096, help_text="Max tokens")
-    is_multimodal = models.BooleanField(default=False, help_text="Whether this model architecture supports visual/multimodal inputs.")
+
+    @property
+    def is_multimodal(self) -> bool:
+        """Dynamically introspects whether this model architecture supports visual/multimodal inputs."""
+        if not self.hf_model_id:
+            return False
+        from .modality_detector import introspect_hf_modality
+        return introspect_hf_modality(self.hf_model_id)
 
     def save(self, *args, **kwargs):
         # Keep legacy load_in_4bit in sync with quantization_mode
@@ -428,15 +435,6 @@ class LocalAIModel(models.Model):
             self.quantization_mode = self.QuantizationMode.NONE
         elif self.load_in_4bit and self.quantization_mode == self.QuantizationMode.NONE:
             self.quantization_mode = self.QuantizationMode.NF4
-
-        # Auto-detect visual modality if not explicitly marked
-        if not self.is_multimodal and self.hf_model_id:
-            try:
-                from .modality_detector import introspect_hf_modality
-                self.is_multimodal = introspect_hf_modality(self.hf_model_id)
-            except Exception:
-                pass
-
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -524,16 +522,11 @@ class ExternalAIModel(models.Model):
     api_url = models.URLField(default="https://api.openai.com/v1/chat/completions")
     api_model_name = models.CharField(max_length=255, help_text="e.g. 'gpt-4o'")
     context_window = models.IntegerField(default=128000)
-    is_multimodal = models.BooleanField(default=False, help_text="Whether this external API endpoint supports visual/multimodal inputs.")
-
-    def save(self, *args, **kwargs):
-        if not self.is_multimodal and (self.api_model_name or self.name):
-            try:
-                from .modality_detector import introspect_external_modality
-                self.is_multimodal = introspect_external_modality(self.api_model_name or self.name)
-            except Exception:
-                pass
-        super().save(*args, **kwargs)
+    @property
+    def is_multimodal(self) -> bool:
+        """Dynamically introspects whether this external API endpoint supports visual/multimodal inputs."""
+        from .modality_detector import introspect_external_modality
+        return introspect_external_modality(self.api_model_name or self.name)
 
     def __str__(self):
         modality_label = " [Vision]" if self.is_multimodal else ""

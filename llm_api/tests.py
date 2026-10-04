@@ -926,13 +926,21 @@ class ModalityDetectorTests(TestCase):
         self.assertFalse(text_model.is_multimodal)
         self.assertNotIn("[Vision]", str(text_model))
 
-        # Vision model
+        # Vision model (Qwen2-VL)
         vision_model = LocalAIModel.objects.create(
             name="Qwen2-VL",
             hf_model_id="Qwen/Qwen2-VL-2B-Instruct"
         )
         self.assertTrue(vision_model.is_multimodal)
         self.assertIn("[Vision]", str(vision_model))
+
+        # Vision model (Gemma 4 E2B natively multimodal)
+        gemma4_model = LocalAIModel.objects.create(
+            name="Gemma 4 E2B",
+            hf_model_id="google/gemma-4-E2B-it"
+        )
+        self.assertTrue(gemma4_model.is_multimodal)
+        self.assertIn("[Vision]", str(gemma4_model))
 
     def test_external_ai_model_auto_detects_modality_on_save(self):
         from llm_api.models import ExternalAIModel

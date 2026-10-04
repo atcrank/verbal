@@ -3091,11 +3091,15 @@ class PureToolExecutionAndEvidenceMergingTests(TestCase):
             search_out = document_reader({}, {"action": "search_document", "query": "radar ranging error"})
             self.assertIn("Type: Visual Figure", search_out)
             self.assertIn("Asset: documents/figures/42_fig_4.png", search_out)
+            self.assertIn("Preview: ![", search_out)
+            self.assertIn("/media/documents/figures/42_fig_4.png", search_out)
             self.assertIn("[Citation: Talavera et al. (2023) — Figure 4: FMCW Radar vs 3D LiDAR Ranging Error]", search_out)
 
             fetch_out = document_reader({}, {"action": "fetch_chunk", "target_id": chunk_id})
             self.assertIn("Type: Visual Figure", fetch_out)
             self.assertIn("Asset: documents/figures/42_fig_4.png", fetch_out)
+            self.assertIn("Preview: ![", fetch_out)
+            self.assertIn("/media/documents/figures/42_fig_4.png", fetch_out)
 
     def test_inspect_chart_image_tool(self):
         """Verifies multimodal visual inspection tool execution and structured result handling."""

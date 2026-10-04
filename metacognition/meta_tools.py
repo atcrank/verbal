@@ -316,8 +316,10 @@ def document_reader(state: dict, params: dict) -> str:
                 image_path = meta.get('image_path')
                 type_tag = f"\n  Type: Visual {chunk_type.capitalize()}" if chunk_type in ['figure', 'table'] else ""
                 asset_tag = f"\n  Asset: {image_path}" if image_path else ""
+                clean_img = image_path.lstrip('/') if image_path else ""
+                preview_tag = f"\n  Preview: ![{citation}](/media/{clean_img})" if image_path else ""
 
-                res += f"- [Chunk ID: {cid}] [Citation: {citation}]{source_tag}{type_tag}{asset_tag}\n  {d.page_content}\n"
+                res += f"- [Chunk ID: {cid}] [Citation: {citation}]{source_tag}{type_tag}{asset_tag}{preview_tag}\n  {d.page_content}\n"
             return res
             
         elif action == "fetch_chunk":
@@ -339,8 +341,10 @@ def document_reader(state: dict, params: dict) -> str:
             image_path = meta.get('image_path')
             type_tag = f"\nType: Visual {chunk_type.capitalize()}" if chunk_type in ['figure', 'table'] else ""
             asset_tag = f"\nAsset: {image_path}" if image_path else ""
+            clean_img = image_path.lstrip('/') if image_path else ""
+            preview_tag = f"\nPreview: ![{citation}](/media/{clean_img})" if image_path else ""
 
-            output = f"Chunk {target_id} [Citation: {citation}]{source_tag}:{type_tag}{asset_tag}\n{chunk.page_content}\n"
+            output = f"Chunk {target_id} [Citation: {citation}]{source_tag}:{type_tag}{asset_tag}{preview_tag}\n{chunk.page_content}\n"
             
             if doc_range and len(doc_range) == 2:
                 output += f"\n(Range {doc_range} fetching requires document sequence index.)"
@@ -488,10 +492,12 @@ def inspect_chart_image(state: dict, params: dict) -> str:
                 logger.warning(f"Text fallback synthesis failed: {e}")
 
         # Offline / structured fallback response
+        clean_img = image_path.lstrip('/')
         return json.dumps({
             "status": "text_fallback",
             "modality": "text_only_grounded",
             "image_path": image_path,
+            "image_preview": f"![Figure](/media/{clean_img})",
             "dimensions": f"{width}x{height}",
             "note": f"Visual VLM offline; active model '{modality_info.get('model_name')}' is text-only.",
             "discussion_context": fig_text or "Image verified on disk.",
@@ -499,10 +505,12 @@ def inspect_chart_image(state: dict, params: dict) -> str:
         })
 
     # When an actual Vision-Language Model is active, dispatch multimodal messages
+    clean_img = image_path.lstrip('/')
     if not ai_service:
         return json.dumps({
             "status": "success",
             "image_path": image_path,
+            "image_preview": f"![Figure](/media/{clean_img})",
             "dimensions": f"{width}x{height}",
             "note": "AI service offline; image verified on disk.",
             "query": query
@@ -522,6 +530,7 @@ def inspect_chart_image(state: dict, params: dict) -> str:
         return json.dumps({
             "error": f"Visual inspection failed: {e}",
             "image_path": image_path,
+            "image_preview": f"![Figure](/media/{clean_img})",
             "dimensions": f"{width}x{height}"
         })
 
