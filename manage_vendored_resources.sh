@@ -125,7 +125,3 @@ RESOURCES_DIR="$ORIGINAL_RESOURCES_DIR"
 
 echo "----------------------------------------"
 echo "🎉 All resources securely vendored."
-
-echo "📦 Building editdistance wheel from specific GitHub commit..."
-EDITDISTANCE_URL="${EDITDISTANCE_GIT_URL:-git+https://github.com/roy-ht/editdistance.git@3f5a5b0299f36662349df0917352a42c620e3dd4}"
-python -m pip wheel "$EDITDISTANCE_URL" -w ./resources/wheels/

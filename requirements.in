@@ -49,7 +49,6 @@ scispacy>=0.5.4
 pyspellchecker
 
 ./resources/wheels/en_core_web_sm-3.8.0-py3-none-any.whl
-editdistance
 
 # --- Playwright UI Tests ---
 pytest-playwright

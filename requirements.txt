@@ -147,8 +147,6 @@ docutils==0.21.2
     #   sphinx-rtd-theme
 docx2txt==0.9
     # via -r requirements.in
-editdistance==0.8.1
-    # via -r requirements.in
 emoji==2.16.0
     # via unstructured
 ./resources/wheels/en_core_web_sm-3.8.0-py3-none-any.whl
