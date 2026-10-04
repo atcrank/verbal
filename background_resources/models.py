@@ -215,7 +215,20 @@ class RAGChunk(models.Model):
     """
     Registry of all content chunks in the system. Single Source of Truth.
     """
+    class ChunkType(models.TextChoices):
+        TEXT = "TEXT", "Text Paragraph"
+        FIGURE = "FIGURE", "Figure / Image"
+        TABLE = "TABLE", "Data Table"
+        GLOSSARY = "GLOSSARY", "Glossary Definition"
+
     chunk_id = models.CharField(max_length=36, unique=True, db_index=True)
+    chunk_type = models.CharField(
+        max_length=20,
+        choices=ChunkType.choices,
+        default=ChunkType.TEXT,
+        db_index=True,
+        help_text="Structural category of chunk",
+    )
     text_content = models.TextField(null=True, blank=True)
     metadata = models.JSONField(default=dict)
     embedding = VectorField(dimensions=384, null=True, blank=True)
@@ -272,7 +285,7 @@ class RAGChunk(models.Model):
     def get_citation(self) -> str:
         """
         Returns an academic citation identifying the source paper and section:
-        e.g. "Talavera et al. (2023) — Section: ARCHITECTURE"
+        e.g. "Talavera et al. (2023) — Section: ARCHITECTURE" or "Talavera et al. (2023) — Figure 4: FMCW Radar Error"
         Falls back through Document, Grobid, chunk metadata, down to filename or chunk ID.
         """
         meta = self.metadata or {}
@@ -313,9 +326,17 @@ class RAGChunk(models.Model):
             author_str = f"Chunk {str(self.chunk_id)[:8]}"
 
         year_str = f" ({year})" if year else ""
-        section_str = f" — Section: {section_title}" if section_title and section_title not in author_str else ""
         doi_str = f" (DOI: {doi})" if doi else ""
         
+        fig_label = meta.get('figure_label')
+        fig_title = meta.get('figure_title') or meta.get('caption')
+        if self.chunk_type == self.ChunkType.FIGURE or (meta.get('chunk_type') and str(meta.get('chunk_type')).upper() == 'FIGURE') or fig_label:
+            fig_part = f" — {fig_label}" if fig_label else " — Figure"
+            if fig_title and fig_title != fig_label:
+                fig_part += f": {fig_title}"
+            return f"{author_str}{year_str}{fig_part}{doi_str}".strip()
+
+        section_str = f" — Section: {section_title}" if section_title and section_title not in author_str else ""
         return f"{author_str}{year_str}{section_str}{doi_str}".strip()
 
 

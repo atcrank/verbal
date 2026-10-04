@@ -244,3 +244,67 @@ class GrobidTaskErrorHandlingTests(TestCase):
         self.assertEqual(ref.authors, "")
         self.assertEqual(Citation.objects.filter(source_reference=ref).count(), 0)
 
+    def test_extract_grobid_figures_and_mentions(self):
+        """Test extraction of <figure> elements, captions, and context mentions."""
+        from grobid_client.tasks import extract_grobid_figures, grobid_tei_to_semantic_chunks
+        
+        sample_tei = """<TEI xmlns="http://www.tei-c.org/ns/1.0">
+            <text>
+                <body>
+                    <div>
+                        <head>Experimental Setup</head>
+                        <p>We benchmark sensor ranging accuracy under extreme particulate loading across multiple trials.</p>
+                        <p>As demonstrated in <ref type="figure" target="#fig_0">Figure 4</ref>, optical backscatter degrades LiDAR beyond 150C.</p>
+                        <figure xml:id="fig_0" coords="1,100.0,200.0,300.0,150.0">
+                            <head>Figure 4:</head>
+                            <figDesc>Ranging error of 77-GHz FMCW radar and 3D LiDAR in dense smoke.</figDesc>
+                        </figure>
+                    </div>
+                </body>
+            </text>
+        </TEI>"""
+        
+        figs = extract_grobid_figures(sample_tei, document_title="LiDAR Study")
+        self.assertEqual(len(figs), 1)
+        fig = figs[0]
+        self.assertEqual(fig.metadata["chunk_type"], "figure")
+        self.assertEqual(fig.metadata["figure_label"], "Figure 4:")
+        self.assertEqual(fig.metadata["coords"], "1,100.0,200.0,300.0,150.0")
+        self.assertIn("[Figure 4:] Ranging error of 77-GHz FMCW radar", fig.page_content)
+        self.assertIn("Discussion Context: As demonstrated in Figure 4", fig.page_content)
+
+        # Test composite grobid_tei_to_semantic_chunks includes both text and figure chunks
+        chunks = grobid_tei_to_semantic_chunks(sample_tei, document_title="LiDAR Study")
+        self.assertTrue(len(chunks) >= 2)
+        fig_in_chunks = [c for c in chunks if c.metadata.get("chunk_type") == "figure"]
+        self.assertEqual(len(fig_in_chunks), 1)
+
+    def test_pypdfium2_crop_pdf_figure(self):
+        """Test deterministic high-DPI rendering and figure cropping using pypdfium2."""
+        import tempfile
+        from reportlab.pdfgen import canvas
+        from reportlab.lib import colors
+        from PIL import Image
+        from background_resources.image_processing import crop_pdf_figure, parse_grobid_coords
+
+        coords = parse_grobid_coords("1,50.5,100.2,200.0,150.0")
+        self.assertEqual(coords, (1, 50.5, 100.2, 200.0, 150.0))
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            pdf_path = os.path.join(tmpdir, "test_doc.pdf")
+            c = canvas.Canvas(pdf_path, pagesize=(612, 792))
+            c.drawString(100, 700, "Header text on page 1")
+            c.setFillColor(colors.red)
+            c.rect(100, 400, 300, 200, fill=1)
+            c.showPage()
+            c.save()
+
+            out_png = os.path.join(tmpdir, "fig_crop.png")
+            res = crop_pdf_figure(pdf_path, "1,100.0,192.0,300.0,200.0", out_png, dpi=150)
+            self.assertIsNotNone(res)
+            self.assertTrue(os.path.exists(out_png))
+
+            with Image.open(out_png) as img:
+                self.assertGreater(img.width, 100)
+                self.assertGreater(img.height, 100)
+

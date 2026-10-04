@@ -72,11 +72,14 @@ class DjangoChunkStore:
 
     def mset(self, kv_pairs):
         for k, v in kv_pairs:
+            raw_type = (v.metadata.get('chunk_type') or 'TEXT').upper()
+            chunk_type = raw_type if raw_type in DjangoChunk.ChunkType.values else DjangoChunk.ChunkType.TEXT
             DjangoChunk.objects.update_or_create(
                 chunk_id=str(k),
                 defaults={
                     'text_content': v.page_content,
                     'metadata': v.metadata,
+                    'chunk_type': chunk_type,
                     'in_byte_store': True
                 }
             )
@@ -513,8 +516,8 @@ class RAGService:
 
         tei_xml = document.grobid_metadata.tei_xml
         from grobid_client.tasks import grobid_tei_to_semantic_chunks
-        
-        final_chunks = grobid_tei_to_semantic_chunks(tei_xml, document_title=document.title)
+        pdf_path = document.file.path if (document.file and hasattr(document.file, 'path') and os.path.exists(document.file.path)) else None
+        final_chunks = grobid_tei_to_semantic_chunks(tei_xml, document_title=document.title, pdf_path=pdf_path, document_id=document.id)
         
         total_chunks = len(final_chunks)
         ref = getattr(document, 'grobid_metadata', None)

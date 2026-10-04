@@ -3046,6 +3046,110 @@ class PureToolExecutionAndEvidenceMergingTests(TestCase):
             fetch_out = document_reader({}, {"action": "fetch_chunk", "target_id": chunk_id})
             self.assertIn(f"Chunk {chunk_id} [Citation: NIST (2022) — Section: 4.1 Flashover]", fetch_out)
 
+    def test_document_reader_figure_and_asset_formatting(self):
+        """Verifies that document_reader formats visual figures with Type and Asset markers."""
+        from uuid import uuid4
+        from django.core.files.base import ContentFile
+        from langchain_core.documents import Document as LCDocument
+        from metacognition.meta_tools import document_reader
+        from background_resources.models import Document, RAGChunk
+
+        doc = Document.objects.create(
+            title="Radar Ranging in Particulate Smoke",
+            author="Talavera et al.",
+            publication_year="2023",
+            file=ContentFile(b"Radar empirical data", name="talavera2023.pdf")
+        )
+        chunk_id = str(uuid4())
+        chunk = RAGChunk.objects.create(
+            chunk_id=chunk_id,
+            chunk_type=RAGChunk.ChunkType.FIGURE,
+            text_content="[Figure 4] FMCW radar ranging error versus 3D LiDAR in dense smoke aerosol.",
+            metadata={
+                "document_id": str(doc.id),
+                "chunk_type": "figure",
+                "figure_label": "Figure 4",
+                "figure_title": "FMCW Radar vs 3D LiDAR Ranging Error",
+                "image_path": "documents/figures/42_fig_4.png",
+                "filename": "talavera2023.pdf"
+            }
+        )
+
+        mock_lc_doc = LCDocument(
+            page_content="[Figure 4] FMCW radar ranging error versus 3D LiDAR in dense smoke aerosol.",
+            metadata={
+                "chunk_id": chunk_id,
+                "filename": "talavera2023.pdf",
+                "chunk_type": "figure",
+                "image_path": "documents/figures/42_fig_4.png"
+            }
+        )
+
+        from llm_api.apps import service_registry
+        with patch.object(service_registry.rag_service, 'get_context', return_value=[mock_lc_doc]), \
+             patch.object(service_registry.rag_service.store, 'mget', return_value=[mock_lc_doc]):
+            search_out = document_reader({}, {"action": "search_document", "query": "radar ranging error"})
+            self.assertIn("Type: Visual Figure", search_out)
+            self.assertIn("Asset: documents/figures/42_fig_4.png", search_out)
+            self.assertIn("[Citation: Talavera et al. (2023) — Figure 4: FMCW Radar vs 3D LiDAR Ranging Error]", search_out)
+
+            fetch_out = document_reader({}, {"action": "fetch_chunk", "target_id": chunk_id})
+            self.assertIn("Type: Visual Figure", fetch_out)
+            self.assertIn("Asset: documents/figures/42_fig_4.png", fetch_out)
+
+    def test_inspect_chart_image_tool(self):
+        """Verifies multimodal visual inspection tool execution and structured result handling."""
+        import tempfile
+        import json
+        from PIL import Image
+        from metacognition.meta_tools import inspect_chart_image
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            img_path = os.path.join(tmpdir, "test_chart.png")
+            img = Image.new("RGB", (300, 200), color=(255, 255, 255))
+            img.save(img_path)
+
+            mock_json_response = json.dumps({
+                "plot_type": "line_plot",
+                "x_axis": {"label": "Temperature", "units": "C", "range": [20, 300]},
+                "y_axis": {"label": "Ranging Error", "units": "cm", "range": [0, 50]},
+                "series": [
+                    {"name": "77-GHz Radar", "points": [[100, 1.2], [200, 3.2], [250, 3.8]]},
+                    {"name": "3D LiDAR", "points": [[100, 4.5], [150, 28.0], [200, "Lost Track"]]}
+                ],
+                "observations": "Radar retains accuracy up to 250C while LiDAR diverges at 150C."
+            })
+
+            from llm_api.apps import service_registry
+            with patch.object(service_registry.ai_service, 'generate_response2', return_value=mock_json_response):
+                res = inspect_chart_image({}, {"image_path": img_path, "query": "Extract error curves at 200C and 250C"})
+                self.assertIn("77-GHz Radar", res)
+                self.assertIn("3D LiDAR", res)
+                data = json.loads(res)
+                self.assertEqual(data["plot_type"], "line_plot")
+                self.assertEqual(len(data["series"]), 2)
+
+    def test_seed_visual_evidence_investigator_blueprint(self):
+        """Verifies that the canonical Visual Evidence Investigator blueprint seeds properly."""
+        from metacognition.seed import seed_visual_evidence_investigator
+        from metacognition.models import CognitiveBlueprint, ReasoningStep, ToolDefinition
+
+        seed_visual_evidence_investigator(CognitiveBlueprint, ReasoningStep, ToolDefinition)
+        bp = CognitiveBlueprint.objects.filter(name="Visual Evidence Investigator").first()
+        self.assertIsNotNone(bp)
+        self.assertTrue(bp.is_canonical)
+
+        steps = list(bp.steps.order_by('id'))
+        self.assertEqual(len(steps), 3)
+        step1, step2, step3 = steps[0], steps[1], steps[2]
+
+        self.assertEqual(step1.execution_mode, "pure_tool")
+        self.assertEqual(step1.deterministic_tool.name, "document_reader")
+        self.assertEqual(step2.execution_mode, "llm")
+        self.assertTrue(step2.available_tools.filter(name="inspect_chart_image").exists())
+        self.assertEqual(step3.execution_mode, "llm")
+        self.assertTrue(step3.include_state_tree)
+
 
 
 

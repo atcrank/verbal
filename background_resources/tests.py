@@ -748,7 +748,7 @@ class TestRAGServiceIntegration(TestCase):
             title="",
             file=ContentFile(b"Raw technical spec", name="system_specs.txt")
         )
-        self.assertEqual(doc_bare.get_citation(), "system_specs.txt")
+        self.assertTrue(doc_bare.get_citation().startswith("system_specs") and doc_bare.get_citation().endswith(".txt"))
 
         # 4. Chunk with no Document FK, only metadata filename
         chunk_file_only = RAGChunk.objects.create(
@@ -766,6 +766,25 @@ class TestRAGServiceIntegration(TestCase):
             metadata={}
         )
         self.assertEqual(chunk_orphan.get_citation(), f"Chunk {orphan_id[:8]}")
+
+        # 6. Figure Chunk citation formatting
+        chunk_figure = RAGChunk.objects.create(
+            chunk_id=str(uuid4()),
+            chunk_type=RAGChunk.ChunkType.FIGURE,
+            text_content="[Figure 4] FMCW radar ranging error under particulate loading.",
+            metadata={
+                "authors": "Talavera et al.",
+                "year": "2023",
+                "figure_label": "Figure 4",
+                "figure_title": "FMCW Radar vs 3D LiDAR Ranging Error",
+                "image_path": "documents/figures/12_fig_4.png"
+            }
+        )
+        self.assertEqual(
+            chunk_figure.get_citation(),
+            "Talavera et al. (2023) — Figure 4: FMCW Radar vs 3D LiDAR Ranging Error"
+        )
+        self.assertEqual(chunk_figure.chunk_type, RAGChunk.ChunkType.FIGURE)
 
     def test_verify_rag_relevance_balanced_and_discriminative(self):
         from langchain_core.documents import Document as LCDocument

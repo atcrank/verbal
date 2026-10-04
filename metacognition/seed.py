@@ -131,6 +131,14 @@ TOOL_SCHEMAS = {
         },
         "required": ["action"],
     },
+    "inspect_chart_image": {
+        "type": "object",
+        "properties": {
+            "image_path": {"type": "string", "description": "Filesystem or media path to the image/figure asset to inspect."},
+            "query": {"type": "string", "description": "Specific extraction goal, e.g. 'Extract the numerical values from the radar error curve at 100C, 200C, and 250C'."},
+        },
+        "required": ["image_path"],
+    },
     "delegate_task": {
         "type": "object",
         "properties": {
@@ -239,6 +247,7 @@ def seed_tools(ToolDefinition):
         "get_grips_metrics": ("READ_ONLY", "STANDARD"),
         "create_benchmark_scenario": ("STATE_MUTATION", "STANDARD"),
         "document_reader": ("READ_ONLY", "STANDARD"),
+        "inspect_chart_image": ("READ_ONLY", "STANDARD"),
         "delegate_task": ("STATE_MUTATION", "STANDARD"),
         "run_benchmark": ("STATE_MUTATION", "STANDARD"),
         "django_shell_script": ("CODE_EXECUTION", "TRUSTED"),
@@ -304,6 +313,7 @@ def seed_tools(ToolDefinition):
         ("get_grips_metrics", "Summarizes Grips ConceptNode stats and flags downstream failures.", "builtin", "metacognition.meta_tools.get_grips_metrics"),
         ("create_benchmark_scenario", "Creates a new BenchmarkScenario from the agent's analysis.", "builtin", "metacognition.meta_tools.create_benchmark_scenario"),
         ("document_reader", "Unified tool for navigating and fetching documents from the RAG database. You MUST specify the 'action' parameter.", "builtin", "metacognition.meta_tools.document_reader"),
+        ("inspect_chart_image", "Multimodal visual inspection tool for charts, plots, and figures. Inspects axes, curves, and data points from an image asset.", "builtin", "metacognition.meta_tools.inspect_chart_image"),
         ("delegate_task", "Delegates a sub-task to another blueprint via verbal_tasks.", "builtin", "metacognition.meta_tools.delegate_task"),
         ("run_benchmark", "Triggers a benchmarking test for a group of scenarios.", "builtin", "metacognition.meta_tools.run_benchmark"),
         ("django_shell_script", "Executes raw Python code in the host Django environment. Pass code via 'script_content' parameter.", "builtin", "metacognition.meta_tools.django_shell_script"),
@@ -1176,6 +1186,7 @@ def seed_all():
         seed_propose_blueprint(CognitiveBlueprint, ReasoningStep, ToolDefinition)
         seed_deep_reader(CognitiveBlueprint, ReasoningStep, ToolDefinition, ResponseSchema)
         seed_evidence_extractor(CognitiveBlueprint, ReasoningStep, ToolDefinition)
+        seed_visual_evidence_investigator(CognitiveBlueprint, ReasoningStep, ToolDefinition)
 
 
 def seed_evidence_extractor(CognitiveBlueprint, ReasoningStep, ToolDefinition):
@@ -1234,6 +1245,80 @@ def seed_evidence_extractor(CognitiveBlueprint, ReasoningStep, ToolDefinition):
         step1.on_success_step = step2
         step1.on_failure_step = step2
         step1.save()
+
+
+def seed_visual_evidence_investigator(CognitiveBlueprint, ReasoningStep, ToolDefinition):
+    """
+    Seeds the canonical Visual Evidence Investigator blueprint.
+    Demonstrates pure_tool retrieval followed by on-demand multimodal visual inspection of figure assets.
+    """
+    from .models import bypass_canonical_lock
+    with bypass_canonical_lock():
+        bp, _ = CognitiveBlueprint.objects.update_or_create(
+            name="Visual Evidence Investigator",
+            defaults={
+                'description': "Retrieves literature chunks deterministically and inspects charts, plots, and figures using multimodal tools to extract exact numerical and empirical evidence into working memory.",
+                'is_canonical': True,
+                'is_autonomous': True
+            }
+        )
+
+        ReasoningStep.objects.filter(blueprint=bp).delete()
+
+        doc_tool = ToolDefinition.objects.filter(name="document_reader").first()
+        vision_tool = ToolDefinition.objects.filter(name="inspect_chart_image").first()
+
+        step1 = ReasoningStep.objects.create(
+            blueprint=bp,
+            name="Retrieve Literature & Figures",
+            is_start_node=True,
+            execution_mode="pure_tool",
+            deterministic_tool=doc_tool,
+            tool_args_mapping={"action": "search", "query": "$user_prompt", "k": 3},
+            system_prompt="Deterministic tool execution: Queries the corpus index for top-matching literature passages and figure chunks.",
+        )
+
+        step2 = ReasoningStep.objects.create(
+            blueprint=bp,
+            name="Inspect Visual Figures",
+            execution_mode="llm",
+            system_prompt=(
+                "You are a visual inspection coordinator specialized in scientific figures, charts, and plots.\n"
+                "Examine the retrieved literature chunks in your context.\n\n"
+                "Instructions:\n"
+                "1. If a retrieved chunk represents a visual figure (Type: Visual Figure) with an image asset, and the user's inquiry requires precise numerical values, plot coordinates, or visual trend details from that image:\n"
+                "   Call the `inspect_chart_image` tool with `image_path` set to the asset path and `query` set to your extraction goal.\n"
+                "2. When all necessary figure inspections are complete, output an empty list [] to proceed directly to final evidence synthesis."
+            ),
+        )
+        if vision_tool:
+            step2.available_tools.add(vision_tool)
+
+        step3 = ReasoningStep.objects.create(
+            blueprint=bp,
+            name="Synthesize Empirical Findings",
+            execution_mode="llm",
+            include_state_tree=True,
+            system_prompt=(
+                "You are an empirical evidence analyst specialized in scientific figures, charts, and plots.\n"
+                "Examine the retrieved literature chunks and visual inspection results in your working memory.\n\n"
+                "Instructions:\n"
+                "1. Synthesize your final findings clearly, retaining all exact numbers, units, and conditions from the inspected plots.\n"
+                "2. Cite every finding with an authoritative citation header: [Author (Year) — Figure N] or [Author (Year) — Section: Name].\n\n"
+                "Output format:\n"
+                "- Finding: <Focused excerpt with exact numeric parameters>\n"
+                "- Citation: [Author (Year) — Figure N]\n"
+                "- Visual Evidence: <Observed plot curves, axes, or data points from visual inspection>"
+            ),
+        )
+
+        step1.on_success_step = step2
+        step1.on_failure_step = step2
+        step1.save()
+
+        step2.on_success_step = step3
+        step2.on_failure_step = step3
+        step2.save()
 
 
 def seed_deep_reader(CognitiveBlueprint, ReasoningStep, ToolDefinition, ResponseSchema):

@@ -1,0 +1,113 @@
+Scenario 13: Multimodal Visual Evidence and Empirical Chart Reasoning
+======================================================================
+
+This trial demonstrates the canonical ``Visual Evidence Investigator`` blueprint.
+It highlights:
+1. **Deterministic Multimodal Retrieval (``pure_tool``)**: Step 1 executes ``document_reader`` to retrieve candidate literature passages and figure chunks without invoking the LLM, burning 0 LLM tokens and achieving immediate zero-inference retrieval.
+2. **On-Demand Visual Inspection (``inspect_chart_image``)**: Step 2 examines the retrieved chunks. Noting a figure chunk with an associated image asset (``Type: Visual Figure``), the agent detects that precise numerical coordinates are needed and calls ``inspect_chart_image`` on the image asset.
+3. **Empirical Synthesis with Authoritative Citations**: Combines the qualitative textual context with exact numerical measurements extracted from the chart plots, attaching an academic citation header: ``[Author (Year) — Figure N]``.
+
+Setup & Database Seeding
+------------------------
+We initialize the canonical blueprint via ``seed_visual_evidence_investigator`` and create a real image asset on disk for testing.
+
+    >>> import os, json, contextlib, io
+    >>> from unittest.mock import patch
+    >>> from PIL import Image
+    >>> from django.conf import settings
+    >>> from django.contrib.auth.models import User
+    >>> from metacognition.models import CognitiveBlueprint, ReasoningStep, ToolDefinition
+    >>> from metacognition.seed import seed_tools, seed_visual_evidence_investigator
+    >>> from metacognition.tasks import run_blueprint
+
+    >>> user, _ = User.objects.get_or_create(username="visual_trial_user")
+    >>> seed_tools(ToolDefinition)
+    >>> seed_visual_evidence_investigator(CognitiveBlueprint, ReasoningStep, ToolDefinition)
+    >>> bp = CognitiveBlueprint.objects.get(name="Visual Evidence Investigator")
+
+Creating Test Figure Asset
+--------------------------
+We create a test chart image in the media directory.
+
+    >>> fig_rel_path = "documents/figures/trial13_fig4.png"
+    >>> fig_full_path = os.path.join(settings.MEDIA_ROOT, fig_rel_path)
+    >>> os.makedirs(os.path.dirname(fig_full_path), exist_ok=True)
+    >>> test_img = Image.new("RGB", (400, 300), color=(240, 240, 240))
+    >>> test_img.save(fig_full_path)
+
+Mocking Candidate Retrieval
+---------------------------
+We mock ``document_reader`` to return a visual figure chunk referencing our generated image asset.
+
+    >>> figure_chunk_content = (
+    ...     "- [Chunk ID: fig_42] [Citation: Talavera et al. (2023) — Figure 4: FMCW Radar vs 3D LiDAR Ranging Error] Source: talavera2023.pdf\n"
+    ...     "  Type: Visual Figure\n"
+    ...     f"  Asset: {fig_rel_path}\n"
+    ...     "  [Figure 4] Ranging error of 77-GHz FMCW radar and 3D LiDAR in dense particulate smoke aerosol as a function of temperature.\n"
+    ...     "  Discussion Context: As demonstrated in Figure 4, optical backscatter degrades LiDAR ranging beyond 150C, whereas radar maintains sub-4cm accuracy up to 250C."
+    ... )
+
+    >>> def mock_doc_reader_call(state, params):
+    ...     return f"Candidate Chunks:\n{figure_chunk_content}"
+
+Execution
+---------
+We invoke the Visual Evidence Investigator blueprint with a query requiring exact plot coordinates.
+
+    >>> prompt = (
+    ...     "What is the exact ranging error of the 77-GHz FMCW radar and 3D LiDAR at 200C and 250C "
+    ...     "according to the empirical plot in Figure 4 of Talavera et al. (2023)?"
+    ... )
+
+    >>> mock_vlm_tool_response = json.dumps({
+    ...     "plot_type": "line_plot",
+    ...     "x_axis": {"label": "Temperature", "units": "C", "range": [20, 300]},
+    ...     "y_axis": {"label": "Ranging Error", "units": "cm", "range": [0, 50]},
+    ...     "series": [
+    ...         {"name": "77-GHz FMCW Radar", "points": [[100, 1.2], [200, 3.2], [250, 3.8]]},
+    ...         {"name": "3D LiDAR", "points": [[100, 4.5], [150, 28.0], [200, "Lost Track"]]}
+    ...     ],
+    ...     "observations": "Radar error remains under 4cm up to 250C; LiDAR loses track above 150C."
+    ... })
+
+    >>> mock_final_synthesis = (
+    ...     "- Finding: According to Figure 4, 77-GHz FMCW radar maintains ranging errors of 3.2 cm at 200C and 3.8 cm at 250C under dense particulate smoke aerosol. In contrast, 3D LiDAR error escalates to 28.0 cm at 150C and completely loses tracking above 150C.\n"
+    ...     "- Citation: [Talavera et al. (2023) — Figure 4: FMCW Radar vs 3D LiDAR Ranging Error]\n"
+    ...     "- Visual Evidence: Confirmed from line plot series comparing 77-GHz FMCW Radar curve against 3D LiDAR curve."
+    ... )
+
+    >>> with patch("metacognition.meta_tools.document_reader", side_effect=mock_doc_reader_call), \
+    ...      patch("llm_api.ai_service.AIService.supports_native_tools", return_value=True), \
+    ...      patch("llm_api.ai_service.AIService.generate_response2", side_effect=[
+    ...          # Step 2 Turn 1: LLM calls inspect_chart_image tool
+    ...          [{"name": "inspect_chart_image", "args": {"image_path": fig_rel_path, "query": "Extract curve coordinates at 200C and 250C"}}],
+    ...          # inspect_chart_image tool internal VLM call
+    ...          [mock_vlm_tool_response],
+    ...          # Step 2 Turn 2: LLM completes visual inspection phase
+    ...          [[]],
+    ...          # Step 3: LLM generates final empirical synthesis with citations
+    ...          [mock_final_synthesis]
+    ...      ]):
+    ...     with contextlib.redirect_stdout(io.StringIO()):
+    ...         result = run_blueprint(bp.id, prompt, user_id=user.id)
+
+    >>> report_doctest_run("13. multimodal_chart_reasoning", prompt, result)
+
+Verification & Report Card
+--------------------------
+We verify deterministic retrieval, tool invocation, and cited empirical synthesis.
+
+    >>> monologue = result.get("internal_monologue", [])
+    >>> step1 = monologue[0] if len(monologue) > 0 else {}
+    >>> is_step1_pure = "Deterministic Tool Executor" in step1.get("system_prompt", "")
+    >>> print(f"- deterministic pure_tool retrieval: {1 if is_step1_pure else 0}/1")
+    - deterministic pure_tool retrieval: 1/1
+
+    >>> final_resp = result.get("final_response", "")
+    >>> has_citation = "Talavera et al." in final_resp or "Figure 4" in final_resp
+    >>> print(f"- cited empirical finding: {1 if has_citation else 0}/1")
+    - cited empirical finding: 1/1
+
+    >>> has_numeric_data = "3.2" in final_resp and "3.8" in final_resp
+    >>> print(f"- exact numeric plot extraction: {1 if has_numeric_data else 0}/1")
+    - exact numeric plot extraction: 1/1

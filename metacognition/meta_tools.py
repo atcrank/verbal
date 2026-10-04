@@ -310,7 +310,14 @@ def document_reader(state: dict, params: dict) -> str:
                     citation = (d.metadata.get('citation') or d.metadata.get('filename') or 'Unknown Source') if d.metadata else 'Unknown Source'
                 filename = d.metadata.get('filename') if d.metadata else None
                 source_tag = f" Source: {filename}" if filename and filename not in citation else ""
-                res += f"- [Chunk ID: {cid}] [Citation: {citation}]{source_tag}\n  {d.page_content}\n"
+                
+                meta = d.metadata or {}
+                chunk_type = str(meta.get('chunk_type') or (chunk_obj.chunk_type if chunk_obj else 'text')).lower()
+                image_path = meta.get('image_path')
+                type_tag = f"\n  Type: Visual {chunk_type.capitalize()}" if chunk_type in ['figure', 'table'] else ""
+                asset_tag = f"\n  Asset: {image_path}" if image_path else ""
+
+                res += f"- [Chunk ID: {cid}] [Citation: {citation}]{source_tag}{type_tag}{asset_tag}\n  {d.page_content}\n"
             return res
             
         elif action == "fetch_chunk":
@@ -327,7 +334,13 @@ def document_reader(state: dict, params: dict) -> str:
             filename = chunk.metadata.get('filename') if chunk.metadata else None
             source_tag = f" Source: {filename}" if filename and filename not in citation else ""
 
-            output = f"Chunk {target_id} [Citation: {citation}]{source_tag}:\n{chunk.page_content}\n"
+            meta = chunk.metadata or {}
+            chunk_type = str(meta.get('chunk_type') or (chunk_obj.chunk_type if chunk_obj else 'text')).lower()
+            image_path = meta.get('image_path')
+            type_tag = f"\nType: Visual {chunk_type.capitalize()}" if chunk_type in ['figure', 'table'] else ""
+            asset_tag = f"\nAsset: {image_path}" if image_path else ""
+
+            output = f"Chunk {target_id} [Citation: {citation}]{source_tag}:{type_tag}{asset_tag}\n{chunk.page_content}\n"
             
             if doc_range and len(doc_range) == 2:
                 output += f"\n(Range {doc_range} fetching requires document sequence index.)"
@@ -342,6 +355,108 @@ def document_reader(state: dict, params: dict) -> str:
             return f"Error: Unknown action '{action}'"
     except Exception as e:
         return f"Error executing document_reader: {e}"
+
+
+def inspect_chart_image(state: dict, params: dict) -> str:
+    """
+    Multimodal visual inspection tool for charts, plots, and figures.
+    Takes an image file path (relative to media or absolute) and an extraction goal/query.
+    Inspects visual features, axes, legends, data trends, and data point values.
+    Returns structured data points and visual observations in JSON format.
+    """
+    import os
+    import json
+    import base64
+    from django.conf import settings
+
+    image_path = params.get("image_path", "")
+    query = params.get("query") or params.get("extraction_goal") or "Extract all data points, axes, and curve values from this chart."
+
+    if not image_path:
+        return "Error: image_path parameter is required for inspect_chart_image."
+
+    # Resolve image path safely against common filesystem locations
+    resolved_path = None
+    candidates = [
+        image_path,
+        os.path.join(settings.MEDIA_ROOT, image_path),
+        os.path.join(settings.BASE_DIR, image_path),
+    ]
+    for c in candidates:
+        if os.path.exists(c) and os.path.isfile(c):
+            resolved_path = os.path.abspath(c)
+            break
+
+    if not resolved_path:
+        return f"Error: Image asset not found at '{image_path}'."
+
+    # Validate image can be opened by PIL
+    try:
+        from PIL import Image
+        with Image.open(resolved_path) as img:
+            width, height = img.size
+            img_format = img.format or "PNG"
+    except Exception as e:
+        return f"Error opening image file '{image_path}': {e}"
+
+    try:
+        with open(resolved_path, "rb") as f:
+            b64_data = base64.b64encode(f.read()).decode("utf-8")
+    except Exception as e:
+        return f"Error reading image file '{resolved_path}': {e}"
+
+    data_url = f"data:image/{img_format.lower()};base64,{b64_data}"
+
+    prompt = (
+        f"You are an expert scientific visual analysis system. Carefully inspect the provided chart/figure image.\n"
+        f"Task: {query}\n\n"
+        f"Return your analysis as structured JSON with the following keys:\n"
+        f"- plot_type: type of visualization (line_plot, bar_chart, scatter_plot, diagram, etc.)\n"
+        f"- x_axis: label, units, and visible scale/range\n"
+        f"- y_axis: label, units, and visible scale/range\n"
+        f"- series: list of curves/series identified, each with name/label and observed key data points [[x, y], ...]\n"
+        f"- observations: key qualitative findings or anomalies (e.g. divergence points, threshold limits)\n"
+        f"Ensure numeric values reflect the exact axis tick marks and data markers in the image."
+    )
+
+    multimodal_messages = [
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": prompt},
+                {"type": "image_url", "image_url": {"url": data_url}}
+            ]
+        }
+    ]
+
+    from llm_api.apps import service_registry
+    ai_service = service_registry.ai_service
+    if not ai_service:
+        # Fallback in minimal testing mode without running inference server
+        return json.dumps({
+            "status": "success",
+            "image_path": image_path,
+            "dimensions": f"{width}x{height}",
+            "note": "AI service offline; image verified on disk.",
+            "query": query
+        })
+
+    try:
+        resp = ai_service.generate_response2(
+            messages=multimodal_messages,
+            max_new_tokens=800,
+            temperature=0.2
+        )
+        if isinstance(resp, list) and len(resp) > 0:
+            return resp[0]
+        return resp
+    except Exception as e:
+        logger.error(f"Multimodal visual inspection failed: {e}")
+        return json.dumps({
+            "error": f"Visual inspection failed: {e}",
+            "image_path": image_path,
+            "dimensions": f"{width}x{height}"
+        })
 
 def delegate_task(state: dict, params: dict) -> str:
     """

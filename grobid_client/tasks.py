@@ -430,7 +430,101 @@ def task_extract_grobid_metadata(document_id: int):
     return f"Grobid extraction complete for {doc.title}. Extracted citations."
 
 
-def grobid_tei_to_semantic_chunks(tei_xml_string, document_title=""):
+def extract_grobid_figures(
+    tei_xml_string: str,
+    document_title: str = "",
+    pdf_path: str = None,
+    document_id: str = None
+) -> List[LangChainDocument]:
+    """
+    Extracts figure and table elements from Grobid TEI XML, resolving labels,
+    captions, and in-text discussion mentions, and optionally rendering crops via pypdfium2.
+    """
+    import os
+    soup = BeautifulSoup(tei_xml_string, "xml")
+    figure_chunks = []
+
+    # Map in-text references to figures: <ref type="figure" target="#fig_0">
+    # to collect surrounding paragraphs mentioning the figure
+    mention_map = {}
+    for ref in soup.find_all("ref"):
+        ref_type = ref.get("type", "").lower()
+        target = ref.get("target", "")
+        if (ref_type == "figure" or "fig" in target.lower()) and target.startswith("#"):
+            fig_id = target[1:]
+            parent_p = ref.find_parent("p")
+            if parent_p:
+                p_text = parent_p.text.strip()
+                if p_text and fig_id not in mention_map:
+                    mention_map[fig_id] = p_text
+
+    figures = soup.find_all("figure")
+    for fig in figures:
+        fig_type = fig.get("type", "").lower()
+        chunk_category = "TABLE" if fig_type == "table" else "FIGURE"
+
+        fig_id = fig.get("xml:id") or ""
+        coords = fig.get("coords") or ""
+
+        head = fig.find("head")
+        fig_label = head.text.strip() if head else ""
+
+        fig_desc = fig.find("figDesc")
+        fig_caption = fig_desc.text.strip() if fig_desc else ""
+
+        # If head is missing, check if caption starts with "Figure X:" or similar
+        if not fig_label and fig_caption:
+            match = re.match(r"^(Figure\s+\d+|Fig\.\s*\d+|Table\s+\d+)", fig_caption, re.IGNORECASE)
+            if match:
+                fig_label = match.group(1)
+
+        if not fig_label and not fig_caption:
+            continue
+
+        # Discussion context from in-text references
+        discussion = mention_map.get(fig_id, "")
+
+        # Format content
+        label_part = f"[{fig_label}] " if fig_label else ""
+        content_parts = [f"{label_part}{fig_caption}".strip()]
+        if discussion:
+            content_parts.append(f"Discussion Context: {discussion}")
+        content_str = "\n".join(content_parts)
+
+        # Image cropping if PDF and coords are available
+        image_path = None
+        if pdf_path and coords and os.path.exists(pdf_path):
+            from background_resources.image_processing import crop_pdf_figure
+            from django.conf import settings
+            doc_id_str = str(document_id) if document_id else "extracted"
+            dest_dir = os.path.join(settings.MEDIA_ROOT, "documents", "figures", doc_id_str)
+            clean_id = fig_id or (fig_label.replace(" ", "_").lower() if fig_label else f"fig_{len(figure_chunks)}")
+            out_filename = f"{clean_id}.png"
+            dest_path = os.path.join(dest_dir, out_filename)
+            rel_path = os.path.join("documents", "figures", doc_id_str, out_filename)
+            
+            cropped = crop_pdf_figure(pdf_path, coords, dest_path)
+            if cropped:
+                image_path = rel_path
+
+        meta = {
+            "chunk_type": chunk_category.lower(),
+            "figure_id": fig_id,
+            "figure_label": fig_label or "Figure",
+            "figure_title": fig_caption[:120] if fig_caption else fig_label,
+            "coords": coords,
+            "is_semantic_chunk": True,
+            "section_title": f"{document_title} - {fig_label}" if (document_title and fig_label) else (fig_label or "Figure"),
+        }
+        if image_path:
+            meta["image_path"] = image_path
+
+        figure_chunks.append(LangChainDocument(page_content=content_str, metadata=meta))
+
+    return figure_chunks
+
+
+def grobid_tei_to_semantic_chunks(tei_xml_string, document_title="", pdf_path=None, document_id=None):
     soup = BeautifulSoup(tei_xml_string, "xml")
     semantic_chunks = []
 
@@ -454,9 +548,19 @@ def grobid_tei_to_semantic_chunks(tei_xml_string, document_title=""):
                 page_content=section_text,
                 metadata={
                     "section_title": compound_title,
-                    "is_semantic_chunk": True
+                    "is_semantic_chunk": True,
+                    "chunk_type": "text"
                 }
             )
             semantic_chunks.append(doc)
+
+    # Also extract figures and tables
+    fig_chunks = extract_grobid_figures(
+        tei_xml_string,
+        document_title=document_title,
+        pdf_path=pdf_path,
+        document_id=document_id
+    )
+    semantic_chunks.extend(fig_chunks)
 
     return semantic_chunks
