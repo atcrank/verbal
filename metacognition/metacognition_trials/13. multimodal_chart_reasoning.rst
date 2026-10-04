@@ -77,6 +77,7 @@ We invoke the Visual Evidence Investigator blueprint with a query requiring exac
     ... )
 
     >>> with patch("metacognition.meta_tools.document_reader", side_effect=mock_doc_reader_call), \
+    ...      patch("llm_api.modality_detector.get_active_modality_status", return_value={"is_multimodal": True, "model_name": "mock-vlm"}), \
     ...      patch("llm_api.ai_service.AIService.supports_native_tools", return_value=True), \
     ...      patch("llm_api.ai_service.AIService.generate_response2", side_effect=[
     ...          # Step 2 Turn 1: LLM calls inspect_chart_image tool

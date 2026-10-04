@@ -880,3 +880,81 @@ class ConversationWorkspaceTests(TestCase):
         # Cleanup canary
         if os.path.exists(canary):
             os.remove(canary)
+
+
+class ModalityDetectorTests(TestCase):
+    """
+    Verifies zero-VRAM model introspection and modality detection
+    for HuggingFace, Ollama, and external endpoints.
+    """
+    def test_introspect_hf_modality(self):
+        from llm_api.modality_detector import introspect_hf_modality
+        # Text-only model
+        self.assertFalse(introspect_hf_modality("google/gemma-2-2b-it"))
+        # Multimodal models (introspects config.json without loading weights)
+        self.assertTrue(introspect_hf_modality("Qwen/Qwen2-VL-2B-Instruct"))
+        self.assertTrue(introspect_hf_modality("google/paligemma-3b-pt-224"))
+        # Invalid / empty
+        self.assertFalse(introspect_hf_modality(""))
+        self.assertFalse(introspect_hf_modality("nonexistent/model_that_does_not_exist_12345"))
+
+    def test_introspect_external_modality(self):
+        from llm_api.modality_detector import introspect_external_modality
+        self.assertTrue(introspect_external_modality("gpt-4o"))
+        self.assertTrue(introspect_external_modality("gpt-4o-mini"))
+        self.assertTrue(introspect_external_modality("claude-3-5-sonnet"))
+        self.assertTrue(introspect_external_modality("gemini-1.5-pro"))
+        self.assertFalse(introspect_external_modality("gpt-3.5-turbo"))
+        self.assertFalse(introspect_external_modality("text-davinci-003"))
+        self.assertFalse(introspect_external_modality(""))
+
+    def test_introspect_ollama_modality_heuristics(self):
+        from llm_api.modality_detector import introspect_ollama_modality
+        self.assertTrue(introspect_ollama_modality("moondream:1.8b"))
+        self.assertTrue(introspect_ollama_modality("qwen2-vl:2b"))
+        self.assertTrue(introspect_ollama_modality("llava:7b"))
+        self.assertFalse(introspect_ollama_modality("gemma2:2b"))
+        self.assertFalse(introspect_ollama_modality(""))
+
+    def test_local_ai_model_auto_detects_modality_on_save(self):
+        from llm_api.models import LocalAIModel
+        # Text model
+        text_model = LocalAIModel.objects.create(
+            name="Gemma 2B",
+            hf_model_id="google/gemma-2-2b-it"
+        )
+        self.assertFalse(text_model.is_multimodal)
+        self.assertNotIn("[Vision]", str(text_model))
+
+        # Vision model
+        vision_model = LocalAIModel.objects.create(
+            name="Qwen2-VL",
+            hf_model_id="Qwen/Qwen2-VL-2B-Instruct"
+        )
+        self.assertTrue(vision_model.is_multimodal)
+        self.assertIn("[Vision]", str(vision_model))
+
+    def test_external_ai_model_auto_detects_modality_on_save(self):
+        from llm_api.models import ExternalAIModel
+        m1 = ExternalAIModel.objects.create(name="OpenAI Vision", api_model_name="gpt-4o")
+        self.assertTrue(m1.is_multimodal)
+        self.assertIn("[Vision]", str(m1))
+
+        m2 = ExternalAIModel.objects.create(name="OpenAI Legacy", api_model_name="gpt-3.5-turbo")
+        self.assertFalse(m2.is_multimodal)
+        self.assertNotIn("[Vision]", str(m2))
+
+    def test_get_active_modality_status(self):
+        from llm_api.models import SystemConfiguration, LocalAIModel
+        from llm_api.modality_detector import get_active_modality_status
+
+        model = LocalAIModel.objects.create(name="Gemma 2B", hf_model_id="google/gemma-2-2b-it")
+        config = SystemConfiguration.get_solo()
+        config.hosting_backend = "pytorch"
+        config.active_local_model = model
+        config.save()
+
+        status = get_active_modality_status()
+        self.assertFalse(status["is_multimodal"])
+        self.assertEqual(status["modality"], "text_only")
+        self.assertEqual(status["backend"], "pytorch")

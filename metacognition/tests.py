@@ -3121,13 +3121,46 @@ class PureToolExecutionAndEvidenceMergingTests(TestCase):
             })
 
             from llm_api.apps import service_registry
-            with patch.object(service_registry.ai_service, 'generate_response2', return_value=mock_json_response):
+            with patch("llm_api.modality_detector.get_active_modality_status", return_value={"is_multimodal": True, "model_name": "mock-vlm"}), \
+                 patch.object(service_registry.ai_service, 'generate_response2', return_value=mock_json_response):
                 res = inspect_chart_image({}, {"image_path": img_path, "query": "Extract error curves at 200C and 250C"})
                 self.assertIn("77-GHz Radar", res)
                 self.assertIn("3D LiDAR", res)
                 data = json.loads(res)
                 self.assertEqual(data["plot_type"], "line_plot")
                 self.assertEqual(len(data["series"]), 2)
+
+    def test_inspect_chart_image_text_only_fallback(self):
+        """Verifies that inspect_chart_image falls back to Grobid discussion context on text-only models."""
+        import tempfile
+        import json
+        from PIL import Image
+        from metacognition.meta_tools import inspect_chart_image
+        from background_resources.models import RAGChunk
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            img_path = os.path.join(tmpdir, "fig_4.png")
+            img = Image.new("RGB", (300, 200), color=(255, 255, 255))
+            img.save(img_path)
+
+            RAGChunk.objects.create(
+                chunk_id="test_fallback_chunk_4",
+                chunk_type=RAGChunk.ChunkType.FIGURE,
+                text_content="[Figure 4] 77-GHz radar maintains error under 4cm up to 250C. Discussion Context: LiDAR loses tracking beyond 150C.",
+                metadata={"figure_label": "Figure 4", "image_path": "fig_4.png"}
+            )
+
+            from llm_api.apps import service_registry
+            mock_synthesis = json.dumps({
+                "plot_type": "empirical_plot",
+                "modality": "text_only_grounded",
+                "observations": "77-GHz radar maintains error under 4cm up to 250C."
+            })
+            with patch("llm_api.modality_detector.get_active_modality_status", return_value={"is_multimodal": False, "model_name": "gemma-2-2b-it"}), \
+                 patch.object(service_registry.ai_service, 'generate_response2', return_value=mock_synthesis):
+                res = inspect_chart_image({}, {"image_path": img_path, "query": "Extract radar error up to 250C"})
+                self.assertIn("text_only_grounded", res)
+                self.assertIn("77-GHz radar", res)
 
     def test_seed_visual_evidence_investigator_blueprint(self):
         """Verifies that the canonical Visual Evidence Investigator blueprint seeds properly."""

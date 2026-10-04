@@ -430,9 +430,76 @@ def inspect_chart_image(state: dict, params: dict) -> str:
     ]
 
     from llm_api.apps import service_registry
+    from llm_api.modality_detector import get_active_modality_status
+
     ai_service = service_registry.ai_service
+    modality_info = get_active_modality_status()
+    is_vlm = modality_info.get("is_multimodal", False)
+
+    # If active model is strictly text-based, execute grounded discussion context fallback
+    # to avoid passing raw base64 images into a text tokenizer (preventing model mayhem)
+    if not is_vlm:
+        logger.info(f"inspect_chart_image: Active model '{modality_info.get('model_name')}' is text-only. Executing grounded discussion context fallback.")
+        
+        # 1. Look up corresponding Grobid figure chunk containing caption and discussion context
+        fig_text = ""
+        try:
+            from background_resources.models import RAGChunk
+            import re
+            base_name = os.path.basename(image_path)
+            matching_chunk = RAGChunk.objects.filter(metadata__image_path__icontains=base_name).first()
+            if not matching_chunk:
+                num_match = re.search(r'fig_(\d+)', base_name)
+                if num_match:
+                    matching_chunk = RAGChunk.objects.filter(metadata__figure_label__icontains=f"Figure {num_match.group(1)}").first()
+            if matching_chunk:
+                fig_text = matching_chunk.text_content
+        except Exception as e:
+            logger.debug(f"Error resolving RAGChunk for {image_path}: {e}")
+
+        # If we have an AI service, use the text model to synthesize findings from the publication's verbatim analysis
+        if ai_service and fig_text:
+            fallback_prompt = (
+                f"You are an expert scientific analytical assistant.\n"
+                f"Analysis Goal: {query}\n\n"
+                f"[SYSTEM NOTICE: The active language model ({modality_info.get('model_name')}) operates in text-only mode.]\n"
+                f"The following empirical caption and analytical discussion context was extracted directly from the peer-reviewed publication for this figure:\n"
+                f"----------------------------------------\n"
+                f"{fig_text}\n"
+                f"----------------------------------------\n"
+                f"Extract all relevant empirical measurements, curve trends, sensor errors, and observations described by the authors.\n"
+                f"Return your analysis as structured JSON with keys:\n"
+                f"- plot_type: type of visualization or empirical finding\n"
+                f"- modality: 'text_only_grounded'\n"
+                f"- observations: key qualitative and quantitative findings from the publication\n"
+                f"- extracted_data: any numeric parameters, error percentages, or thresholds mentioned\n"
+                f"- data_source: 'Grobid Extracted Discussion Context'\n"
+            )
+            try:
+                resp = ai_service.generate_response2(
+                    messages=[{"role": "user", "content": fallback_prompt}],
+                    max_new_tokens=600,
+                    temperature=0.2
+                )
+                if isinstance(resp, list) and len(resp) > 0:
+                    return resp[0]
+                return resp
+            except Exception as e:
+                logger.warning(f"Text fallback synthesis failed: {e}")
+
+        # Offline / structured fallback response
+        return json.dumps({
+            "status": "text_fallback",
+            "modality": "text_only_grounded",
+            "image_path": image_path,
+            "dimensions": f"{width}x{height}",
+            "note": f"Visual VLM offline; active model '{modality_info.get('model_name')}' is text-only.",
+            "discussion_context": fig_text or "Image verified on disk.",
+            "query": query
+        })
+
+    # When an actual Vision-Language Model is active, dispatch multimodal messages
     if not ai_service:
-        # Fallback in minimal testing mode without running inference server
         return json.dumps({
             "status": "success",
             "image_path": image_path,
