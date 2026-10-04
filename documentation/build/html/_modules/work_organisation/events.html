@@ -103,20 +103,20 @@
 <div class="viewcode-block" id="get_whiteboard_channel">
 <a class="viewcode-back" href="../../work_organisation_app.html#work_organisation.events.get_whiteboard_channel">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_whiteboard_channel</span><span class="p">(</span><span class="n">session_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;verbal_whiteboard_</span><span class="si">{</span><span class="n">session_id</span><span class="si">}</span><span class="s2">&quot;</span></div>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"verbal_whiteboard_</span><span class="si">{</span><span class="n">session_id</span><span class="si">}</span><span class="s2">"</span></div>
 
 
 
 <div class="viewcode-block" id="publish_whiteboard_event">
 <a class="viewcode-back" href="../../work_organisation_app.html#work_organisation.events.publish_whiteboard_event">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">publish_whiteboard_event</span><span class="p">(</span><span class="n">session_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">,</span> <span class="n">event_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Publishes a whiteboard mutation event (card_added, card_moved, clustered, ai_stream)</span>
 <span class="sd">    to PostgreSQL Pub/Sub for real-time synchronization across all participating clients.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">channel</span> <span class="o">=</span> <span class="n">get_whiteboard_channel</span><span class="p">(</span><span class="n">session_id</span><span class="p">)</span>
     <span class="n">payload_with_session</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
-    <span class="n">payload_with_session</span><span class="p">[</span><span class="s2">&quot;session_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">session_id</span><span class="p">)</span>
+    <span class="n">payload_with_session</span><span class="p">[</span><span class="s2">"session_id"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">session_id</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">publish_pg_event</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="n">event_type</span><span class="p">,</span> <span class="n">payload_with_session</span><span class="p">)</span></div>
 
 
@@ -124,49 +124,48 @@
 <div class="viewcode-block" id="format_datastar_sse">
 <a class="viewcode-back" href="../../work_organisation_app.html#work_organisation.events.format_datastar_sse">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">format_datastar_sse</span><span class="p">(</span><span class="n">event_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">fragment_html</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Formats an event for Datastar SSE consumption.</span>
-<span class="sd">    Supports both signal merges and fragment merges.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">lines</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">if</span> <span class="n">fragment_html</span><span class="p">:</span>
-        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;event: datastar-merge-fragments&quot;</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">fragment_html</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">):</span>
-            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;data: fragments </span><span class="si">{</span><span class="n">line</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;event: </span><span class="si">{</span><span class="n">event_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;data: </span><span class="si">{</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="sd">    Supports both signal merges and fragment merges via DatastarSSE.</span>
+<span class="sd">    """</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.datastar</span><span class="w"> </span><span class="kn">import</span> <span class="n">DatastarSSE</span>
 
-    <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span></div>
+    <span class="k">if</span> <span class="n">fragment_html</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">DatastarSSE</span><span class="o">.</span><span class="n">patch_elements</span><span class="p">(</span><span class="n">fragment_html</span><span class="p">)</span>
+
+    <span class="n">lines</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"event: </span><span class="si">{</span><span class="n">event_type</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"data: </span><span class="si">{</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="stream_whiteboard_events">
 <a class="viewcode-back" href="../../work_organisation_app.html#work_organisation.events.stream_whiteboard_events">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">stream_whiteboard_events</span><span class="p">(</span><span class="n">session_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">30</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Generator that yields real-time SSE events for a whiteboard session over PostgreSQL notifications.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">channel</span> <span class="o">=</span> <span class="n">get_whiteboard_channel</span><span class="p">(</span><span class="n">session_id</span><span class="p">)</span>
 
     <span class="c1"># Initial connection ping</span>
-    <span class="k">yield</span> <span class="n">format_datastar_sse</span><span class="p">(</span><span class="s2">&quot;connected&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;session_id&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">session_id</span><span class="p">),</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;active&quot;</span><span class="p">})</span>
+    <span class="k">yield</span> <span class="n">format_datastar_sse</span><span class="p">(</span><span class="s2">"connected"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"session_id"</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">session_id</span><span class="p">),</span> <span class="s2">"status"</span><span class="p">:</span> <span class="s2">"active"</span><span class="p">})</span>
 
     <span class="k">try</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">subscribe_pg_events_sync</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">):</span>
-            <span class="n">event_type</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;event&quot;</span><span class="p">,</span> <span class="s2">&quot;message&quot;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">event_type</span> <span class="o">==</span> <span class="s2">&quot;heartbeat&quot;</span><span class="p">:</span>
-                <span class="k">yield</span> <span class="s2">&quot;: heartbeat</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+            <span class="n">event_type</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"event"</span><span class="p">,</span> <span class="s2">"message"</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">event_type</span> <span class="o">==</span> <span class="s2">"heartbeat"</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="s2">": heartbeat</span><span class="se">\n\n</span><span class="s2">"</span>
                 <span class="k">continue</span>
 
-            <span class="n">event_data</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="p">{})</span>
+            <span class="n">event_data</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"data"</span><span class="p">,</span> <span class="p">{})</span>
             <span class="k">yield</span> <span class="n">format_datastar_sse</span><span class="p">(</span><span class="n">event_type</span><span class="p">,</span> <span class="n">event_data</span><span class="p">)</span>
 
     <span class="k">except</span> <span class="ne">GeneratorExit</span><span class="p">:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Whiteboard SSE stream closed for session </span><span class="si">{</span><span class="n">session_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Whiteboard SSE stream closed for session </span><span class="si">{</span><span class="n">session_id</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Whiteboard SSE stream error for session </span><span class="si">{</span><span class="n">session_id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Whiteboard SSE stream error for session </span><span class="si">{</span><span class="n">session_id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span></div>
 
 </pre></div>
 

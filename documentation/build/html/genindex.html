@@ -144,6 +144,8 @@
 </li>
       <li><a href="background_resources_app.html#background_resources.models.AbstractHigherOrderStrategy.Meta">AbstractHigherOrderStrategy.Meta (class in background_resources.models)</a>
 </li>
+      <li><a href="background_resources_app.html#background_resources.models.DocumentType.ACADEMIC_PAPER">ACADEMIC_PAPER (background_resources.models.DocumentType attribute)</a>
+</li>
       <li><a href="work_organisation_app.html#work_organisation.api.SessionCreateSchema.access_mode">access_mode (work_organisation.api.SessionCreateSchema attribute)</a>
 
       <ul>
@@ -280,6 +282,8 @@
         <li><a href="grobid_client_app.html#grobid_client.tasks.DocumentMetadataExtraction.authors">(grobid_client.tasks.DocumentMetadataExtraction attribute)</a>
 </li>
       </ul></li>
+      <li><a href="metacognition_app.html#metacognition.models.CognitiveBlueprint.autonomy_tier">autonomy_tier (metacognition.models.CognitiveBlueprint property)</a>
+</li>
       <li><a href="llm_api_app.html#llm_api.hardware.HostCPUInfo.available_ram_gb">available_ram_gb (llm_api.hardware.HostCPUInfo property)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.hardware.HostCPUInfo.available_ram_mb">available_ram_mb (llm_api.hardware.HostCPUInfo attribute)</a>
@@ -375,20 +379,16 @@
       </ul></li>
       <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkResult">BenchmarkResult (class in benchmarking.models)</a>
 </li>
-      <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkResult.DoesNotExist">BenchmarkResult.DoesNotExist</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkResult.DoesNotExist">BenchmarkResult.DoesNotExist</a>
+</li>
       <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkResult.MultipleObjectsReturned">BenchmarkResult.MultipleObjectsReturned</a>
 </li>
       <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkResult.NotUpdated">BenchmarkResult.NotUpdated</a>
 </li>
-      <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkRun.benchmarkresult_set">benchmarkresult_set (benchmarking.models.BenchmarkRun attribute)</a>
-
-      <ul>
-        <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkScenario.benchmarkresult_set">(benchmarking.models.BenchmarkScenario attribute)</a>
+      <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkScenario.benchmarkresult_set">benchmarkresult_set (benchmarking.models.BenchmarkScenario attribute)</a>
 </li>
-      </ul></li>
       <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkRun">BenchmarkRun (class in benchmarking.models)</a>
 </li>
       <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkRun.DoesNotExist">BenchmarkRun.DoesNotExist</a>
@@ -575,6 +575,8 @@
         <li><a href="background_resources_app.html#background_resources.models.ZeroShotLabelReadingStrategy.chunk_size_override">(background_resources.models.ZeroShotLabelReadingStrategy attribute)</a>
 </li>
       </ul></li>
+      <li><a href="background_resources_app.html#background_resources.models.RAGChunk.chunk_type">chunk_type (background_resources.models.RAGChunk attribute)</a>
+</li>
       <li><a href="background_resources_app.html#background_resources.models.Document.chunking_scheme">chunking_scheme() (background_resources.models.Document method)</a>
 </li>
       <li><a href="grobid_client_app.html#grobid_client.models.Citation">Citation (class in grobid_client.models)</a>
@@ -988,6 +990,12 @@
         <li><a href="work_organisation_app.html#work_organisation.models.Workshop.description">(work_organisation.models.Workshop attribute)</a>
 </li>
       </ul></li>
+      <li><a href="metacognition_app.html#metacognition.models.ToolDefinition.deterministic_steps">deterministic_steps (metacognition.models.ToolDefinition attribute)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.models.ReasoningStep.deterministic_tool">deterministic_tool (metacognition.models.ReasoningStep attribute)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.models.ReasoningStep.deterministic_tool_id">deterministic_tool_id (metacognition.models.ReasoningStep attribute)</a>
+</li>
       <li><a href="metacognition_app.html#metacognition.governance.LockdownLevel.DEVELOPMENT">DEVELOPMENT (metacognition.governance.LockdownLevel attribute)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.hardware.HardwareProfile.devices">devices (llm_api.hardware.HardwareProfile attribute)</a>
@@ -1066,6 +1074,8 @@
         <li><a href="llm_api_app.html#llm_api.api.RegexSuggestIn.document_id">(llm_api.api.RegexSuggestIn attribute)</a>
 </li>
       </ul></li>
+      <li><a href="background_resources_app.html#background_resources.models.Document.document_type">document_type (background_resources.models.Document attribute)</a>
+</li>
       <li><a href="grips_app.html#grips.tasks.DocumentDigest">DocumentDigest (class in grips.tasks)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.rag_service.DocumentHandles">DocumentHandles (class in background_resources.rag_service)</a>
@@ -1078,9 +1088,13 @@
         <li><a href="grips_app.html#grips.models.Domain.documents">(grips.models.Domain attribute)</a>
 </li>
       </ul></li>
-      <li><a href="grobid_client_app.html#grobid_client.models.Reference.doi">doi (grobid_client.models.Reference attribute)</a>
+      <li><a href="background_resources_app.html#background_resources.models.DocumentType">DocumentType (class in background_resources.models)</a>
+</li>
+      <li><a href="background_resources_app.html#background_resources.models.Document.doi">doi (background_resources.models.Document attribute)</a>
 
       <ul>
+        <li><a href="grobid_client_app.html#grobid_client.models.Reference.doi">(grobid_client.models.Reference attribute)</a>
+</li>
         <li><a href="grobid_client_app.html#grobid_client.tasks.CandidateEvaluation.doi">(grobid_client.tasks.CandidateEvaluation attribute)</a>
 </li>
         <li><a href="grobid_client_app.html#grobid_client.tasks.DocumentMetadataExtraction.doi">(grobid_client.tasks.DocumentMetadataExtraction attribute)</a>
@@ -1174,6 +1188,10 @@
 </li>
       <li><a href="metacognition_app.html#metacognition.actions.ExecuteScriptArgs">ExecuteScriptArgs (class in metacognition.actions)</a>
 </li>
+      <li><a href="metacognition_app.html#metacognition.models.ReasoningStep.execution_mode">execution_mode (metacognition.models.ReasoningStep attribute)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.models.ReasoningStep.EXECUTION_MODES">EXECUTION_MODES (metacognition.models.ReasoningStep attribute)</a>
+</li>
       <li><a href="sandbox_manager_app.html#sandbox_manager.models.SandboxConfiguration.execution_timeout">execution_timeout (sandbox_manager.models.SandboxConfiguration attribute)</a>
 </li>
       <li><a href="metacognition_app.html#metacognition.actions.ExecutionPlan">ExecutionPlan (class in metacognition.actions)</a>
@@ -1254,6 +1272,8 @@
         <li><a href="background_resources_app.html#background_resources.models.RegexStrategy.extract_content">(background_resources.models.RegexStrategy method)</a>
 </li>
       </ul></li>
+      <li><a href="grobid_client_app.html#grobid_client.tasks.extract_grobid_figures">extract_grobid_figures() (in module grobid_client.tasks)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -1270,11 +1290,15 @@
 </li>
       <li><a href="metacognition_app.html#metacognition.models.ReasoningStep.failure_sources">failure_sources (metacognition.models.ReasoningStep attribute)</a>
 </li>
+      <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkResult.faithfulness">faithfulness (benchmarking.models.BenchmarkResult property)</a>
+</li>
       <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkResult.faithfulness_score">faithfulness_score (benchmarking.models.BenchmarkResult attribute)</a>
 </li>
       <li><a href="metacognition_app.html#metacognition.models.CognitiveBlueprint.family_success_probability">family_success_probability (metacognition.models.CognitiveBlueprint property)</a>
 </li>
       <li><a href="metacognition_app.html#metacognition.actions.ResultCritique.feedback_for_planner">feedback_for_planner (metacognition.actions.ResultCritique attribute)</a>
+</li>
+      <li><a href="background_resources_app.html#background_resources.models.RAGChunk.ChunkType.FIGURE">FIGURE (background_resources.models.RAGChunk.ChunkType attribute)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.models.Document.file">file (background_resources.models.Document attribute)</a>
 </li>
@@ -1296,10 +1320,10 @@
       </ul></li>
       <li><a href="demo_ui_app.html#demo_ui.views.fill_grips_stub">fill_grips_stub() (in module demo_ui.views)</a>
 </li>
-      <li><a href="metacognition_app.html#metacognition.actions.TaskCompleteArgs.final_answer">final_answer (metacognition.actions.TaskCompleteArgs attribute)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="metacognition_app.html#metacognition.actions.TaskCompleteArgs.final_answer">final_answer (metacognition.actions.TaskCompleteArgs attribute)</a>
+</li>
       <li><a href="benchmarking_app.html#benchmarking.models.FineTuningDataset">FineTuningDataset (class in benchmarking.models)</a>
 </li>
       <li><a href="benchmarking_app.html#benchmarking.models.FineTuningDataset.DoesNotExist">FineTuningDataset.DoesNotExist</a>
@@ -1344,6 +1368,8 @@
 <h2 id="G">G</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="background_resources_app.html#background_resources.models.DocumentType.GENERAL">GENERAL (background_resources.models.DocumentType attribute)</a>
+</li>
       <li><a href="benchmarking_app.html#benchmarking.models.Experiment.generate_comprehensive_matrix">generate_comprehensive_matrix() (benchmarking.models.Experiment method)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.ai_service.AIService.generate_outline">generate_outline() (llm_api.ai_service.AIService method)</a>
@@ -1402,6 +1428,8 @@
       </ul></li>
       <li><a href="background_resources_app.html#background_resources.rag_service.RAGService.get_chunk_summary">get_chunk_summary() (background_resources.rag_service.RAGService method)</a>
 </li>
+      <li><a href="background_resources_app.html#background_resources.models.RAGChunk.get_chunk_type_display">get_chunk_type_display() (background_resources.models.RAGChunk method)</a>
+</li>
       <li><a href="background_resources_app.html#background_resources.models.Document.get_citation">get_citation() (background_resources.models.Document method)</a>
 
       <ul>
@@ -1415,6 +1443,10 @@
       <li><a href="demo_ui_app.html#demo_ui.views.get_conversation">get_conversation() (in module demo_ui.views)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.rag_service.RAGService.get_direct_context">get_direct_context() (background_resources.rag_service.RAGService method)</a>
+</li>
+      <li><a href="background_resources_app.html#background_resources.models.Document.get_document_type_display">get_document_type_display() (background_resources.models.Document method)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.models.ReasoningStep.get_execution_mode_display">get_execution_mode_display() (metacognition.models.ReasoningStep method)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.models.Conversation.get_file_at_commit">get_file_at_commit() (llm_api.models.Conversation method)</a>
 </li>
@@ -1648,6 +1680,12 @@
 </li>
       <li><a href="llm_api_app.html#llm_api.models.PromptResponseLog.git_commit_hash">git_commit_hash (llm_api.models.PromptResponseLog attribute)</a>
 </li>
+      <li><a href="background_resources_app.html#background_resources.models.DocumentType.GLOSSARY">GLOSSARY (background_resources.models.DocumentType attribute)</a>
+
+      <ul>
+        <li><a href="background_resources_app.html#background_resources.models.RAGChunk.ChunkType.GLOSSARY">(background_resources.models.RAGChunk.ChunkType attribute)</a>
+</li>
+      </ul></li>
       <li><a href="background_resources_app.html#background_resources.rag_service.RAGService.glossary_generator">glossary_generator() (background_resources.rag_service.RAGService method)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.rag_service.GlossaryExtraction">GlossaryExtraction (class in background_resources.rag_service)</a>
@@ -1929,6 +1967,8 @@
 </li>
       <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkScenario.ideal_answer">ideal_answer (benchmarking.models.BenchmarkScenario attribute)</a>
 </li>
+      <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkScenario.ideal_response">ideal_response (benchmarking.models.BenchmarkScenario property)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="metacognition_app.html#metacognition.actions.EdgeLintResult.improved_justification">improved_justification (metacognition.actions.EdgeLintResult attribute)</a>
@@ -2036,6 +2076,8 @@
 </li>
       </ul></li>
       <li><a href="metacognition_app.html#metacognition.actions.EvaluateCrossDomainResult.is_related">is_related (metacognition.actions.EvaluateCrossDomainResult attribute)</a>
+</li>
+      <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkRun.is_resolved">is_resolved (benchmarking.models.BenchmarkRun attribute)</a>
 </li>
       <li><a href="benchmarking_app.html#benchmarking.models.FineTuningDataset.is_stale">is_stale (benchmarking.models.FineTuningDataset property)</a>
 
@@ -2251,6 +2293,10 @@
 </li>
       <li><a href="llm_api_app.html#llm_api.models.manage_hosting_backend">manage_hosting_backend() (in module llm_api.models)</a>
 </li>
+      <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkRun.mark_resolved">mark_resolved() (benchmarking.models.BenchmarkRun method)</a>
+</li>
+      <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkRun.mark_unresolved">mark_unresolved() (benchmarking.models.BenchmarkRun method)</a>
+</li>
       <li><a href="verbal_tasks_app.html#verbal_tasks.models.match_cron_field">match_cron_field() (in module verbal_tasks.models)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.api.GenerateIn.max_new_tokens">max_new_tokens (llm_api.api.GenerateIn attribute)</a>
@@ -2342,6 +2388,8 @@
 
       <ul>
         <li><a href="background_resources_app.html#background_resources.models.RAGChunk.metadata">(background_resources.models.RAGChunk attribute)</a>
+</li>
+        <li><a href="benchmarking_app.html#benchmarking.models.FineTuningDataset.metadata">(benchmarking.models.FineTuningDataset attribute)</a>
 </li>
         <li><a href="work_organisation_app.html#work_organisation.api.CardCreateSchema.metadata">(work_organisation.api.CardCreateSchema attribute)</a>
 </li>
@@ -2743,6 +2791,8 @@
 </li>
       <li><a href="llm_api_app.html#llm_api.models.LocalAIModel.QuantizationMode.NONE">NONE (llm_api.models.LocalAIModel.QuantizationMode attribute)</a>
 </li>
+      <li><a href="background_resources_app.html#background_resources.models.DocumentType.NOTEBOOK_OR_CODE">NOTEBOOK_OR_CODE (background_resources.models.DocumentType attribute)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -2888,6 +2938,8 @@
       <li><a href="llm_api_app.html#llm_api.api.OpenAIJsonSchema">OpenAIJsonSchema (class in llm_api.api)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.api.OpenAIResponseFormat">OpenAIResponseFormat (class in llm_api.api)</a>
+</li>
+      <li><a href="background_resources_app.html#background_resources.models.Document.organization">organization (background_resources.models.Document attribute)</a>
 </li>
       <li><a href="grips_app.html#grips.models.ConceptNode.ConceptNodeFlags.ORPHANED">ORPHANED (grips.models.ConceptNode.ConceptNodeFlags attribute)</a>
 </li>
@@ -3141,6 +3193,8 @@
         <li><a href="grobid_client_app.html#grobid_client.models.Reference.publication_date">(grobid_client.models.Reference attribute)</a>
 </li>
       </ul></li>
+      <li><a href="background_resources_app.html#background_resources.models.Document.publication_year">publication_year (background_resources.models.Document attribute)</a>
+</li>
       <li><a href="work_organisation_app.html#work_organisation.events.publish_whiteboard_event">publish_whiteboard_event() (in module work_organisation.events)</a>
 </li>
       <li><a href="grobid_client_app.html#grobid_client.models.Reference.publisher">publisher (grobid_client.models.Reference attribute)</a>
@@ -3207,9 +3261,13 @@
 </li>
       <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkResult.rag_recall_score">rag_recall_score (benchmarking.models.BenchmarkResult attribute)</a>
 </li>
+      <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkResult.rag_score">rag_score (benchmarking.models.BenchmarkResult property)</a>
+</li>
       <li><a href="llm_api_app.html#llm_api.models.PromptResponseLog.rag_selections">rag_selections (llm_api.models.PromptResponseLog attribute)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.models.RAGChunk">RAGChunk (class in background_resources.models)</a>
+</li>
+      <li><a href="background_resources_app.html#background_resources.models.RAGChunk.ChunkType">RAGChunk.ChunkType (class in background_resources.models)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.models.RAGChunk.DoesNotExist">RAGChunk.DoesNotExist</a>
 </li>
@@ -3309,8 +3367,6 @@
 </li>
       <li><a href="grobid_client_app.html#grobid_client.models.Reference.MultipleObjectsReturned">Reference.MultipleObjectsReturned</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="grobid_client_app.html#grobid_client.models.Reference.NotUpdated">Reference.NotUpdated</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.models.RegexStrategy.regex">regex (background_resources.models.RegexStrategy attribute)</a>
@@ -3319,6 +3375,8 @@
         <li><a href="llm_api_app.html#llm_api.api.RegexPreviewIn.regex">(llm_api.api.RegexPreviewIn attribute)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="llm_api_app.html#llm_api.api.RegexCandidate">RegexCandidate (class in llm_api.api)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.api.RegexPreviewIn">RegexPreviewIn (class in llm_api.api)</a>
@@ -3341,6 +3399,8 @@
 </li>
       <li><a href="grips_app.html#grips.models.KnowledgeEdge.relationship_type">relationship_type (grips.models.KnowledgeEdge attribute)</a>
 </li>
+      <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkResult.relevance">relevance (benchmarking.models.BenchmarkResult property)</a>
+</li>
       <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkResult.relevance_score">relevance_score (benchmarking.models.BenchmarkResult attribute)</a>
 </li>
       <li><a href="metacognition_app.html#metacognition.models.ToolDefinition.required_clearance">required_clearance (metacognition.models.ToolDefinition attribute)</a>
@@ -3353,11 +3413,21 @@
 </li>
       <li><a href="metacognition_app.html#metacognition.actions.ResearchEvaluation">ResearchEvaluation (class in metacognition.actions)</a>
 </li>
+      <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkRun.resolution_notes">resolution_notes (benchmarking.models.BenchmarkRun attribute)</a>
+</li>
       <li><a href="metacognition_app.html#metacognition.compiler.resolve_active_steps">resolve_active_steps() (in module metacognition.compiler)</a>
 </li>
       <li><a href="metacognition_app.html#metacognition.tool_executor.resolve_tool">resolve_tool() (in module metacognition.tool_executor)</a>
 </li>
       <li><a href="grips_app.html#grips.wiki_service.resolve_wiki_rel_path">resolve_wiki_rel_path() (in module grips.wiki_service)</a>
+</li>
+      <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkRun.resolved_at">resolved_at (benchmarking.models.BenchmarkRun attribute)</a>
+</li>
+      <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkRun.resolved_by">resolved_by (benchmarking.models.BenchmarkRun attribute)</a>
+</li>
+      <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkRun.resolved_by_id">resolved_by_id (benchmarking.models.BenchmarkRun attribute)</a>
+</li>
+      <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkResult.response">response (benchmarking.models.BenchmarkResult property)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.ai_service.AIService.DefaultOutlineResponse.response_content">response_content (llm_api.ai_service.AIService.DefaultOutlineResponse attribute)</a>
 </li>
@@ -3376,6 +3446,8 @@
       <li><a href="metacognition_app.html#metacognition.governance.LockdownLevel.RESTRICTED">RESTRICTED (metacognition.governance.LockdownLevel attribute)</a>
 </li>
       <li><a href="metacognition_app.html#metacognition.actions.ResultCritique">ResultCritique (class in metacognition.actions)</a>
+</li>
+      <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkRun.results">results (benchmarking.models.BenchmarkRun attribute)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.rag_service.RAGService.retriever">retriever (background_resources.rag_service.RAGService attribute)</a>
 </li>
@@ -3622,12 +3694,16 @@
 </li>
       <li><a href="background_resources_app.html#background_resources.models.RAGChunk.sourced_concepts">sourced_concepts (background_resources.models.RAGChunk attribute)</a>
 </li>
+      <li><a href="benchmarking_app.html#benchmarking.models.FineTuningDataset.split_ratio">split_ratio (benchmarking.models.FineTuningDataset attribute)</a>
+</li>
       <li><a href="metacognition_app.html#metacognition.governance.ClearanceLevel.STANDARD">STANDARD (metacognition.governance.ClearanceLevel attribute)</a>
 </li>
-      <li><a href="llm_api_app.html#llm_api.api.start_download_model_cache">start_download_model_cache() (in module llm_api.api)</a>
+      <li><a href="background_resources_app.html#background_resources.models.DocumentType.STANDARD_OR_REGULATION">STANDARD_OR_REGULATION (background_resources.models.DocumentType attribute)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="llm_api_app.html#llm_api.api.start_download_model_cache">start_download_model_cache() (in module llm_api.api)</a>
+</li>
       <li><a href="llm_api_app.html#llm_api.models.Conversation.start_time">start_time (llm_api.models.Conversation attribute)</a>
 </li>
       <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecord.started_at">started_at (verbal_tasks.models.TaskRecord attribute)</a>
@@ -3742,6 +3818,8 @@
         <li><a href="metacognition_app.html#metacognition.models.ToolDefinition.sub_blueprint_id">(metacognition.models.ToolDefinition attribute)</a>
 </li>
       </ul></li>
+      <li><a href="metacognition_app.html#metacognition.models.CognitiveBlueprint.sub_blueprints_summary">sub_blueprints_summary (metacognition.models.CognitiveBlueprint property)</a>
+</li>
       <li><a href="grips_app.html#grips.tasks.SubConcept">SubConcept (class in grips.tasks)</a>
 </li>
       <li><a href="grips_app.html#grips.tasks.StructuredClaim.subject">subject (grips.tasks.StructuredClaim attribute)</a>
@@ -3834,6 +3912,8 @@
 <h2 id="T">T</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="background_resources_app.html#background_resources.models.RAGChunk.ChunkType.TABLE">TABLE (background_resources.models.RAGChunk.ChunkType attribute)</a>
+</li>
       <li><a href="grips_app.html#grips.models.KnowledgeEdge.target">target (grips.models.KnowledgeEdge attribute)</a>
 </li>
       <li><a href="work_organisation_app.html#work_organisation.api.CardConnectSchema.target_card_id">target_card_id (work_organisation.api.CardConnectSchema attribute)</a>
@@ -3872,6 +3952,8 @@
 </li>
       <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecordStatus">TaskRecordStatus (class in verbal_tasks.models)</a>
 </li>
+      <li><a href="background_resources_app.html#background_resources.models.DocumentType.TECHNICAL_MANUAL">TECHNICAL_MANUAL (background_resources.models.DocumentType attribute)</a>
+</li>
       <li><a href="grobid_client_app.html#grobid_client.models.Reference.tei_xml">tei_xml (grobid_client.models.Reference attribute)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.api.OpenAIChatCompletionIn.temperature">temperature (llm_api.api.OpenAIChatCompletionIn attribute)</a>
@@ -3881,6 +3963,8 @@
       <li><a href="llm_api_app.html#llm_api.api.RegexSuggestIn.term_description">term_description (llm_api.api.RegexSuggestIn attribute)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.ai_service.AIService.terminators">terminators (llm_api.ai_service.AIService attribute)</a>
+</li>
+      <li><a href="background_resources_app.html#background_resources.models.RAGChunk.ChunkType.TEXT">TEXT (background_resources.models.RAGChunk.ChunkType attribute)</a>
 </li>
       <li><a href="work_organisation_app.html#work_organisation.api.CardCreateSchema.text">text (work_organisation.api.CardCreateSchema attribute)</a>
 
@@ -3988,6 +4072,8 @@
         <li><a href="metacognition_app.html#metacognition.actions.WriteFileAction.tool">(metacognition.actions.WriteFileAction attribute)</a>
 </li>
       </ul></li>
+      <li><a href="metacognition_app.html#metacognition.models.ReasoningStep.tool_args_mapping">tool_args_mapping (metacognition.models.ReasoningStep attribute)</a>
+</li>
       <li><a href="metacognition_app.html#metacognition.models.CognitiveBlueprint.tool_definitions">tool_definitions (metacognition.models.CognitiveBlueprint attribute)</a>
 </li>
       <li><a href="metacognition_app.html#metacognition.api.ApproveToolIn.tool_name">tool_name (metacognition.api.ApproveToolIn attribute)</a>
@@ -4029,6 +4115,8 @@
       <li><a href="llm_api_app.html#llm_api.hardware.GPUDeviceInfo.total_vram_mb">total_vram_mb (llm_api.hardware.GPUDeviceInfo attribute)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.models.track_backend_model_changes">track_backend_model_changes() (in module llm_api.models)</a>
+</li>
+      <li><a href="benchmarking_app.html#benchmarking.models.FineTuningDataset.train_example_count">train_example_count (benchmarking.models.FineTuningDataset attribute)</a>
 </li>
       <li><a href="verbal_tasks_app.html#verbal_tasks.models.ScheduledTask.trigger">trigger() (verbal_tasks.models.ScheduledTask method)</a>
 </li>
@@ -4162,9 +4250,17 @@
 <h2 id="V">V</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="benchmarking_app.html#benchmarking.models.FineTuningDataset.val_example_count">val_example_count (benchmarking.models.FineTuningDataset attribute)</a>
+</li>
       <li><a href="background_resources_app.html#background_resources.models.Document.validate_current_index">validate_current_index() (background_resources.models.Document method)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.api.Hydrant.validate_residual_pressure">validate_residual_pressure() (llm_api.api.Hydrant class method)</a>
+</li>
+      <li><a href="benchmarking_app.html#benchmarking.models.ScenarioGroup.validation_datasets">validation_datasets (benchmarking.models.ScenarioGroup attribute)</a>
+</li>
+      <li><a href="benchmarking_app.html#benchmarking.models.FineTuningDataset.validation_group">validation_group (benchmarking.models.FineTuningDataset attribute)</a>
+</li>
+      <li><a href="benchmarking_app.html#benchmarking.models.FineTuningDataset.validation_group_id">validation_group_id (benchmarking.models.FineTuningDataset attribute)</a>
 </li>
       <li><a href="metacognition_app.html#metacognition.actions.PromptVariant.variant_intent">variant_intent (metacognition.actions.PromptVariant attribute)</a>
 
@@ -4182,6 +4278,8 @@
 </li>
       <li><a href="background_resources_app.html#background_resources.models.VectorIndexExplorer.NotUpdated">VectorIndexExplorer.NotUpdated</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     verbal_tasks.models
 
@@ -4189,8 +4287,6 @@
         <li><a href="verbal_tasks_app.html#module-verbal_tasks.models">module</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     verbal_tasks.task_backend
 
@@ -4263,6 +4359,8 @@
       <li><a href="grips_app.html#grips.wiki_views.wiki_history">wiki_history() (in module grips.wiki_views)</a>
 </li>
       <li><a href="grips_app.html#grips.wiki_views.wiki_index">wiki_index() (in module grips.wiki_views)</a>
+</li>
+      <li><a href="grips_app.html#grips.wiki_views.wiki_live_search">wiki_live_search() (in module grips.wiki_views)</a>
 </li>
       <li><a href="grips_app.html#grips.wiki_views.wiki_page">wiki_page() (in module grips.wiki_views)</a>
 </li>

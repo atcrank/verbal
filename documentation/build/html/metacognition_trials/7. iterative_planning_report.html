@@ -514,41 +514,41 @@ Reasoning: . The evaluation requires all sub-tasks in the queue to be executed a
 </section>
 <section id="final-response">
 <h2>Final Response<a class="headerlink" href="#final-response" title="Link to this heading"></a></h2>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ABORTED</span><span class="p">:</span> <span class="n">Max</span> <span class="n">retries</span> <span class="n">reached</span> <span class="k">for</span> <span class="n">step</span> <span class="s1">&#39;Iterative Processor&#39;</span><span class="o">.</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ABORTED</span><span class="p">:</span> <span class="n">Max</span> <span class="n">retries</span> <span class="n">reached</span> <span class="k">for</span> <span class="n">step</span> <span class="s1">'Iterative Processor'</span><span class="o">.</span>
 </pre></div>
 </div>
 </section>
 <section id="conversation-state-tree">
 <h2>Conversation State Tree<a class="headerlink" href="#conversation-state-tree" title="Link to this heading"></a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-  <span class="s2">&quot;tasks&quot;</span><span class="p">:</span> <span class="p">{</span>
-    <span class="s2">&quot;Task 1&quot;</span><span class="p">:</span> <span class="p">{</span>
-      <span class="s2">&quot;goal&quot;</span><span class="p">:</span> <span class="s2">&quot;List all models in `metacognition/models.py`&quot;</span><span class="p">,</span>
-      <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;List all models in `metacognition/models.py`&quot;</span><span class="p">,</span>
-      <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;COMPLETED&quot;</span><span class="p">,</span>
-      <span class="s2">&quot;subtasks&quot;</span><span class="p">:</span> <span class="p">[],</span>
-      <span class="s2">&quot;resolution&quot;</span><span class="p">:</span> <span class="s2">&quot;run_sub_blueprint: Sub-blueprint &#39;Escalation of Effort&#39; executed successfully. Findings: Based on the sandbox execution, I was unable to complete the requested tasks because the file `metacognition/models.py` could not be found.  Therefore, I could not provide a list of the models defined in that fi... [truncated]&quot;</span>
+  <span class="s2">"tasks"</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">"Task 1"</span><span class="p">:</span> <span class="p">{</span>
+      <span class="s2">"goal"</span><span class="p">:</span> <span class="s2">"List all models in `metacognition/models.py`"</span><span class="p">,</span>
+      <span class="s2">"title"</span><span class="p">:</span> <span class="s2">"List all models in `metacognition/models.py`"</span><span class="p">,</span>
+      <span class="s2">"status"</span><span class="p">:</span> <span class="s2">"COMPLETED"</span><span class="p">,</span>
+      <span class="s2">"subtasks"</span><span class="p">:</span> <span class="p">[],</span>
+      <span class="s2">"resolution"</span><span class="p">:</span> <span class="s2">"run_sub_blueprint: Sub-blueprint 'Escalation of Effort' executed successfully. Findings: Based on the sandbox execution, I was unable to complete the requested tasks because the file `metacognition/models.py` could not be found.  Therefore, I could not provide a list of the models defined in that fi... [truncated]"</span>
     <span class="p">},</span>
-    <span class="s2">&quot;Task 2&quot;</span><span class="p">:</span> <span class="p">{</span>
-      <span class="s2">&quot;goal&quot;</span><span class="p">:</span> <span class="s2">&quot;List all functions in `metacognition/actions.py`&quot;</span><span class="p">,</span>
-      <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;List all functions in `metacognition/actions.py`&quot;</span><span class="p">,</span>
-      <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;COMPLETED&quot;</span><span class="p">,</span>
-      <span class="s2">&quot;subtasks&quot;</span><span class="p">:</span> <span class="p">[],</span>
-      <span class="s2">&quot;resolution&quot;</span><span class="p">:</span> <span class="s2">&quot;run_sub_blueprint: Sub-blueprint &#39;Escalation of Effort&#39; executed successfully. Findings: Based on the sandbox execution results, I was unable to list the models because the file `metacognition/models.py` was not found in the execution environment.  Therefore, I cannot provide a list of models or sum... [truncated]&quot;</span>
+    <span class="s2">"Task 2"</span><span class="p">:</span> <span class="p">{</span>
+      <span class="s2">"goal"</span><span class="p">:</span> <span class="s2">"List all functions in `metacognition/actions.py`"</span><span class="p">,</span>
+      <span class="s2">"title"</span><span class="p">:</span> <span class="s2">"List all functions in `metacognition/actions.py`"</span><span class="p">,</span>
+      <span class="s2">"status"</span><span class="p">:</span> <span class="s2">"COMPLETED"</span><span class="p">,</span>
+      <span class="s2">"subtasks"</span><span class="p">:</span> <span class="p">[],</span>
+      <span class="s2">"resolution"</span><span class="p">:</span> <span class="s2">"run_sub_blueprint: Sub-blueprint 'Escalation of Effort' executed successfully. Findings: Based on the sandbox execution results, I was unable to list the models because the file `metacognition/models.py` was not found in the execution environment.  Therefore, I cannot provide a list of models or sum... [truncated]"</span>
     <span class="p">},</span>
-    <span class="s2">&quot;Task 3&quot;</span><span class="p">:</span> <span class="p">{</span>
-      <span class="s2">&quot;goal&quot;</span><span class="p">:</span> <span class="s2">&quot;Provide a brief summary of how the models and functions relate&quot;</span><span class="p">,</span>
-      <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Provide a brief summary of how the models and functions relate&quot;</span><span class="p">,</span>
-      <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;COMPLETED&quot;</span><span class="p">,</span>
-      <span class="s2">&quot;subtasks&quot;</span><span class="p">:</span> <span class="p">[],</span>
-      <span class="s2">&quot;resolution&quot;</span><span class="p">:</span> <span class="s2">&quot;run_sub_blueprint: Sub-blueprint &#39;Escalation of Effort&#39; executed successfully. Findings: ABORTED: Max retries reached for step &#39;Introspection and Planning&#39;.&quot;</span>
+    <span class="s2">"Task 3"</span><span class="p">:</span> <span class="p">{</span>
+      <span class="s2">"goal"</span><span class="p">:</span> <span class="s2">"Provide a brief summary of how the models and functions relate"</span><span class="p">,</span>
+      <span class="s2">"title"</span><span class="p">:</span> <span class="s2">"Provide a brief summary of how the models and functions relate"</span><span class="p">,</span>
+      <span class="s2">"status"</span><span class="p">:</span> <span class="s2">"COMPLETED"</span><span class="p">,</span>
+      <span class="s2">"subtasks"</span><span class="p">:</span> <span class="p">[],</span>
+      <span class="s2">"resolution"</span><span class="p">:</span> <span class="s2">"run_sub_blueprint: Sub-blueprint 'Escalation of Effort' executed successfully. Findings: ABORTED: Max retries reached for step 'Introspection and Planning'."</span>
     <span class="p">}</span>
   <span class="p">},</span>
-  <span class="s2">&quot;active_task&quot;</span><span class="p">:</span> <span class="n">null</span><span class="p">,</span>
-  <span class="s2">&quot;open_questions&quot;</span><span class="p">:</span> <span class="p">[],</span>
-  <span class="s2">&quot;macro_objective&quot;</span><span class="p">:</span> <span class="s2">&quot;We need to analyze our Django project. Task 1: List all models in `metacognition/models.py`. Task 2: List all functions in `metacognition/actions.py`. Task 3: Provide a brief summary of how they relate.&quot;</span><span class="p">,</span>
-  <span class="s2">&quot;established_facts&quot;</span><span class="p">:</span> <span class="p">[],</span>
-  <span class="s2">&quot;settled_milestones&quot;</span><span class="p">:</span> <span class="p">{}</span>
+  <span class="s2">"active_task"</span><span class="p">:</span> <span class="n">null</span><span class="p">,</span>
+  <span class="s2">"open_questions"</span><span class="p">:</span> <span class="p">[],</span>
+  <span class="s2">"macro_objective"</span><span class="p">:</span> <span class="s2">"We need to analyze our Django project. Task 1: List all models in `metacognition/models.py`. Task 2: List all functions in `metacognition/actions.py`. Task 3: Provide a brief summary of how they relate."</span><span class="p">,</span>
+  <span class="s2">"established_facts"</span><span class="p">:</span> <span class="p">[],</span>
+  <span class="s2">"settled_milestones"</span><span class="p">:</span> <span class="p">{}</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -560,27 +560,27 @@ Reasoning: . The evaluation requires all sub-tasks in the queue to be executed a
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;metacognition/models.py&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">"metacognition/models.py"</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
         <span class="n">content</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
 
     <span class="c1"># Attempt to find Django models. This is heuristic and might need refinement</span>
     <span class="n">models</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">content</span><span class="o">.</span><span class="n">splitlines</span><span class="p">():</span>
-        <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;class &quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;models.&quot;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"class "</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">"models."</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
             <span class="c1"># A simple heuristic to capture class definitions that look like models</span>
             <span class="n">models</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
 
     <span class="k">if</span> <span class="n">models</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;--- Models in metacognition/models.py --- &quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"--- Models in metacognition/models.py --- "</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">model</span> <span class="ow">in</span> <span class="n">models</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Could not find models using simple string matching.&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"Could not find models using simple string matching."</span><span class="p">)</span>
 
 <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Error: metacognition/models.py not found.&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Error: metacognition/models.py not found."</span><span class="p">)</span>
 <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;An error occurred: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"An error occurred: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>

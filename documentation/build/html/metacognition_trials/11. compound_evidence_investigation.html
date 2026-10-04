@@ -1,0 +1,271 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scenario 11: Compound Investigation Blueprint with Sub-Blueprint Evidence Delegation &mdash; reason 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=aaf24e6f" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            reason
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../llm_api_app.html">LLM API - Local Inference, Proxy Routing &amp; Hardware-Aware Serving</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../verbal_tasks_app.html">Verbal Tasks - Database-Backed Asynchronous Execution &amp; Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../sandbox_manager_app.html">Sandbox Manager - Isolated Python Execution Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../grobid_client_app.html">Grobid Client - Deterministic Scientific PDF Parsing &amp; Citation Extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../background_resources_app.html">Background Resources - Retrieval-Augmented Generation &amp; Document Ingestion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../grips_app.html">Grips - Structured Knowledge Graph &amp; Propositional Claims</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metacognition_app.html">Metacognition - Cognitive Blueprints, Agentic Workflows &amp; Self-Evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmarking_app.html">Benchmarking - Automated Evaluation, Synthetic Generation &amp; LoRA Flywheels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo_ui_app.html">Demo UI - Empirical Research &amp; Cognitive Workbench</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../using_ollama.html">Ollama as Local AI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo_ui_trials.html">Demo UI Empirical Trials &amp; Verification Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tests.html">Testing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">reason</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Scenario 11: Compound Investigation Blueprint with Sub-Blueprint Evidence Delegation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/metacognition_trials/11. compound_evidence_investigation.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="scenario-11-compound-investigation-blueprint-with-sub-blueprint-evidence-delegation">
+<h1>Scenario 11: Compound Investigation Blueprint with Sub-Blueprint Evidence Delegation<a class="headerlink" href="#scenario-11-compound-investigation-blueprint-with-sub-blueprint-evidence-delegation" title="Link to this heading"></a></h1>
+<p>This trial demonstrates a compound parent blueprint (<code class="docutils literal notranslate"><span class="pre">Firefighting</span> <span class="pre">Robotics</span> <span class="pre">Sensor</span> <span class="pre">Investigation</span></code>)
+delegating literature research to the <code class="docutils literal notranslate"><span class="pre">Evidence</span> <span class="pre">Extractor</span></code> sub-blueprint and accumulating verified findings
+into the shared Conversation State Tree.</p>
+<p>It highlights:
+1. <strong>Sub-Blueprint Delegation</strong>: The parent graph pauses its execution and delegates the focal research question to the canonical <code class="docutils literal notranslate"><span class="pre">Evidence</span> <span class="pre">Extractor</span></code> child blueprint.
+2. <strong>Deterministic-to-LLM Hybrid Pipeline</strong>: Inside the child blueprint, Step 1 performs deterministic <code class="docutils literal notranslate"><span class="pre">pure_tool</span></code> retrieval, and Step 2 extracts cited findings.
+3. <strong>State-Tree Fact Accumulation</strong>: Upon completion, <code class="docutils literal notranslate"><span class="pre">_merge_state_trees</span></code> automatically bubbles the child’s <code class="docutils literal notranslate"><span class="pre">established_facts</span></code> up into the parent conversation’s working memory map.
+4. <strong>Grounded Downstream Synthesis</strong>: Downstream reasoning nodes in the parent blueprint immediately receive the accumulated facts in their prompt context without re-querying the database.</p>
+<section id="setup-database-seeding">
+<h2>Setup &amp; Database Seeding<a class="headerlink" href="#setup-database-seeding" title="Link to this heading"></a></h2>
+<p>We initialize the canonical <code class="docutils literal notranslate"><span class="pre">Evidence</span> <span class="pre">Extractor</span></code> and construct a parent <code class="docutils literal notranslate"><span class="pre">Sensor</span> <span class="pre">Investigation</span></code> blueprint.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">django.contrib.auth.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">User</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Conversation</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">CognitiveBlueprint</span><span class="p">,</span> <span class="n">ReasoningStep</span><span class="p">,</span> <span class="n">ToolDefinition</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.seed</span><span class="w"> </span><span class="kn">import</span> <span class="n">seed_evidence_extractor</span><span class="p">,</span> <span class="n">seed_tools</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_blueprint</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">unittest.mock</span><span class="w"> </span><span class="kn">import</span> <span class="n">patch</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">contextlib</span><span class="o">,</span><span class="w"> </span><span class="nn">io</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">user</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s2">"compound_evidence_user"</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">seed_tools</span><span class="p">(</span><span class="n">ToolDefinition</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">seed_evidence_extractor</span><span class="p">(</span><span class="n">CognitiveBlueprint</span><span class="p">,</span> <span class="n">ReasoningStep</span><span class="p">,</span> <span class="n">ToolDefinition</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">child_bp</span> <span class="o">=</span> <span class="n">CognitiveBlueprint</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"Evidence Extractor"</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Build Parent Blueprint</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parent_bp</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">CognitiveBlueprint</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">update_or_create</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">name</span><span class="o">=</span><span class="s2">"Firefighting Sensor Investigation"</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">defaults</span><span class="o">=</span><span class="p">{</span>
+<span class="gp">... </span>        <span class="s2">"description"</span><span class="p">:</span> <span class="s2">"Investigates robot sensor configurations and synthesizes empirical recommendations."</span><span class="p">,</span>
+<span class="gp">... </span>        <span class="s2">"is_autonomous"</span><span class="p">:</span> <span class="kc">True</span>
+<span class="gp">... </span>    <span class="p">}</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">_</span> <span class="o">=</span> <span class="n">ReasoningStep</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">blueprint</span><span class="o">=</span><span class="n">parent_bp</span><span class="p">)</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Step 1: Delegate to Evidence Extractor child blueprint</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">step_sub</span> <span class="o">=</span> <span class="n">ReasoningStep</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">blueprint</span><span class="o">=</span><span class="n">parent_bp</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">name</span><span class="o">=</span><span class="s2">"Delegate Evidence Extraction"</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">is_start_node</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">sub_blueprint</span><span class="o">=</span><span class="n">child_bp</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">system_prompt</span><span class="o">=</span><span class="s2">"Extract verified empirical findings on sensor resilience in dense smoke."</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Step 2: Synthesize Robot Architecture from accumulated established_facts</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">step_synth</span> <span class="o">=</span> <span class="n">ReasoningStep</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">blueprint</span><span class="o">=</span><span class="n">parent_bp</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">name</span><span class="o">=</span><span class="s2">"Synthesize Robot Architecture"</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">execution_mode</span><span class="o">=</span><span class="s2">"llm"</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">include_state_tree</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">system_prompt</span><span class="o">=</span><span class="p">(</span>
+<span class="gp">... </span>        <span class="s2">"You are a Chief Robotics Engineer.</span><span class="se">\n</span><span class="s2">"</span>
+<span class="gp">... </span>        <span class="s2">"Examine the verified established_facts in your Conversation State Tree.</span><span class="se">\n</span><span class="s2">"</span>
+<span class="gp">... </span>        <span class="s2">"Synthesize a sensor suite specification for an autonomous urban firefighting robot. "</span>
+<span class="gp">... </span>        <span class="s2">"Explicitly ground your choice in the empirical citations provided."</span>
+<span class="gp">... </span>    <span class="p">)</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">step_sub</span><span class="o">.</span><span class="n">on_success_step</span> <span class="o">=</span> <span class="n">step_synth</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">step_sub</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="mocking-retrieval-model-inference">
+<h2>Mocking Retrieval &amp; Model Inference<a class="headerlink" href="#mocking-retrieval-model-inference" title="Link to this heading"></a></h2>
+<p>We mock candidate chunks returned by <code class="docutils literal notranslate"><span class="pre">document_reader</span></code> and the LLM responses for the child and parent steps.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">chunk_empirical</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>    <span class="s2">"[Li et al., 2023 - IEEE Sensors Letters, Sec IV-B] "</span>
+<span class="gp">... </span>    <span class="s2">"Frequency-Modulated Continuous-Wave (FMCW) 77-GHz millimeter-wave radar "</span>
+<span class="gp">... </span>    <span class="s2">"maintained 94.2</span><span class="si">% o</span><span class="s2">bstacle detection accuracy through particulate smoke densities "</span>
+<span class="gp">... </span>    <span class="s2">"up to 120 mg/m3 at temperatures up to 250C, with a maximum ranging error of +-3.5 cm at 15 meters."</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">def</span><span class="w"> </span><span class="nf">mock_doc_reader_call</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="sa">f</span><span class="s2">"Candidate Chunks:</span><span class="se">\n</span><span class="s2">1. </span><span class="si">{</span><span class="n">chunk_empirical</span><span class="si">}</span><span class="s2">"</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mock_extractor_finding</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>    <span class="s2">"- Finding: FMCW 77-GHz radar maintained 94.2</span><span class="si">% o</span><span class="s2">bstacle detection accuracy through particulate smoke up to 120 mg/m3 at 250C (error +-3.5 cm at 15 m).</span><span class="se">\n</span><span class="s2">"</span>
+<span class="gp">... </span>    <span class="s2">"- Citation: [Li et al., 2023 - IEEE Sensors Letters, Sec IV-B]</span><span class="se">\n</span><span class="s2">"</span>
+<span class="gp">... </span>    <span class="s2">"- Relevance: Empirical validation of radar penetrative capabilities in extreme thermal smoke."</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mock_parent_synth</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>    <span class="s2">"Based on verified empirical evidence [Li et al., 2023], we recommend deploying "</span>
+<span class="gp">... </span>    <span class="s2">"a 77-GHz FMCW radar array as the primary navigation sensor. It ensures 94.2</span><span class="si">% o</span><span class="s2">bstacle "</span>
+<span class="gp">... </span>    <span class="s2">"accuracy up to 250C, overcoming optical and LiDAR degradation in heavy particulate smoke."</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span><span class="w"> </span><span class="nf">mock_llm_responses</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="c1"># Return child extraction on first call, parent synthesis on second call</span>
+<span class="gp">... </span>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">mock_llm_responses</span><span class="p">,</span> <span class="s2">"call_count"</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="n">mock_llm_responses</span><span class="o">.</span><span class="n">call_count</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="gp">... </span>    <span class="n">mock_llm_responses</span><span class="o">.</span><span class="n">call_count</span> <span class="o">+=</span> <span class="mi">1</span>
+<span class="gp">... </span>    <span class="k">if</span> <span class="n">mock_llm_responses</span><span class="o">.</span><span class="n">call_count</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="k">return</span> <span class="p">[</span><span class="n">mock_extractor_finding</span><span class="p">]</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="p">[</span><span class="n">mock_parent_synth</span><span class="p">]</span>
+</pre></div>
+</div>
+</section>
+<section id="execution">
+<h2>Execution<a class="headerlink" href="#execution" title="Link to this heading"></a></h2>
+<p>We run the parent compound blueprint.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">prompt</span> <span class="o">=</span> <span class="s2">"Design an obstacle detection sensor payload for autonomous indoor firefighting robots."</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">conv</span> <span class="o">=</span> <span class="n">Conversation</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">user</span><span class="o">=</span><span class="n">user</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">title</span><span class="o">=</span><span class="s2">"Compound Sensor Investigation"</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">state_tree</span><span class="o">=</span><span class="p">{</span><span class="s2">"macro_objective"</span><span class="p">:</span> <span class="n">prompt</span><span class="p">,</span> <span class="s2">"established_facts"</span><span class="p">:</span> <span class="p">[]}</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s2">"metacognition.meta_tools.document_reader"</span><span class="p">,</span> <span class="n">side_effect</span><span class="o">=</span><span class="n">mock_doc_reader_call</span><span class="p">),</span> \
+<span class="gp">... </span>     <span class="n">patch</span><span class="p">(</span><span class="s2">"llm_api.ai_service.AIService.generate_response2"</span><span class="p">,</span> <span class="n">side_effect</span><span class="o">=</span><span class="n">mock_llm_responses</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">with</span> <span class="n">contextlib</span><span class="o">.</span><span class="n">redirect_stdout</span><span class="p">(</span><span class="n">io</span><span class="o">.</span><span class="n">StringIO</span><span class="p">()):</span>
+<span class="gp">... </span>        <span class="n">result</span> <span class="o">=</span> <span class="n">run_blueprint</span><span class="p">(</span><span class="n">parent_bp</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">prompt</span><span class="p">,</span> <span class="n">conversation_id</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">conv</span><span class="o">.</span><span class="n">id</span><span class="p">),</span> <span class="n">user_id</span><span class="o">=</span><span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">report_doctest_run</span><span class="p">(</span><span class="s2">"11. compound_evidence_investigation"</span><span class="p">,</span> <span class="n">prompt</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="verification-report-card">
+<h2>Verification &amp; Report Card<a class="headerlink" href="#verification-report-card" title="Link to this heading"></a></h2>
+<p>We verify the nested execution trace and downstream recommendation grounding.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">monologue</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"internal_monologue"</span><span class="p">,</span> <span class="p">[])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">step_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"step_name"</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">monologue</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"- parent invoked sub-blueprint: </span><span class="si">{</span><span class="mi">1</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="s1">'Delegate Evidence Extraction'</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">step_names</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="mi">0</span><span class="si">}</span><span class="s2">/1"</span><span class="p">)</span>
+<span class="go">- parent invoked sub-blueprint: 1/1</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">sub_entry</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">monologue</span> <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"step_name"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"Delegate Evidence Extraction"</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sub_mono</span> <span class="o">=</span> <span class="n">sub_entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"sub_monologue"</span><span class="p">,</span> <span class="p">[])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"- child execution trace present: </span><span class="si">{</span><span class="mi">1</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">sub_mono</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="mi">0</span><span class="si">}</span><span class="s2">/1"</span><span class="p">)</span>
+<span class="go">- child execution trace present: 1/1</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">final_resp</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"final_response"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">has_citation</span> <span class="o">=</span> <span class="s2">"Li et al"</span> <span class="ow">in</span> <span class="n">final_resp</span> <span class="ow">or</span> <span class="s2">"77-GHz"</span> <span class="ow">in</span> <span class="n">final_resp</span> <span class="ow">or</span> <span class="s2">"FMCW"</span> <span class="ow">in</span> <span class="n">final_resp</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"- synthesis grounded in evidence: </span><span class="si">{</span><span class="mi">1</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">has_citation</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="mi">0</span><span class="si">}</span><span class="s2">/1"</span><span class="p">)</span>
+<span class="go">- synthesis grounded in evidence: 1/1</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">state_tree</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"state_tree"</span><span class="p">,</span> <span class="p">{})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">facts</span> <span class="o">=</span> <span class="n">state_tree</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"established_facts"</span><span class="p">,</span> <span class="p">[])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"- established_facts accumulated: </span><span class="si">{</span><span class="mi">1</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">facts</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="s1">'Li et al'</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">facts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="mi">0</span><span class="si">}</span><span class="s2">/1"</span><span class="p">)</span>
+<span class="go">- established_facts accumulated: 1/1</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Andrew Cruickshank.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

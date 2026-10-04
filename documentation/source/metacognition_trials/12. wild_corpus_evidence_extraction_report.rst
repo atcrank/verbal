@@ -1,0 +1,1 @@
+.. include:: ../../../metacognition/metacognition_trials/12. wild_corpus_evidence_extraction_report.rst

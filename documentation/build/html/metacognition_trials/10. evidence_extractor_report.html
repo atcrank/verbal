@@ -1,0 +1,209 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Doctest Report: 10. evidence_extractor &mdash; reason 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=aaf24e6f" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            reason
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../llm_api_app.html">LLM API - Local Inference, Proxy Routing &amp; Hardware-Aware Serving</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../verbal_tasks_app.html">Verbal Tasks - Database-Backed Asynchronous Execution &amp; Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../sandbox_manager_app.html">Sandbox Manager - Isolated Python Execution Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../grobid_client_app.html">Grobid Client - Deterministic Scientific PDF Parsing &amp; Citation Extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../background_resources_app.html">Background Resources - Retrieval-Augmented Generation &amp; Document Ingestion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../grips_app.html">Grips - Structured Knowledge Graph &amp; Propositional Claims</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metacognition_app.html">Metacognition - Cognitive Blueprints, Agentic Workflows &amp; Self-Evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmarking_app.html">Benchmarking - Automated Evaluation, Synthetic Generation &amp; LoRA Flywheels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo_ui_app.html">Demo UI - Empirical Research &amp; Cognitive Workbench</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../using_ollama.html">Ollama as Local AI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo_ui_trials.html">Demo UI Empirical Trials &amp; Verification Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tests.html">Testing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">reason</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Doctest Report: 10. evidence_extractor</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/metacognition_trials/10. evidence_extractor_report.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="doctest-report-10-evidence-extractor">
+<h1>Doctest Report: 10. evidence_extractor<a class="headerlink" href="#doctest-report-10-evidence-extractor" title="Link to this heading"></a></h1>
+<p>Date: 2026-10-04 14:09:29</p>
+<section id="conversation-prompts">
+<h2>Conversation Prompts<a class="headerlink" href="#conversation-prompts" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>[Turn 1]:
+What is the measured obstacle detection accuracy and ranging precision of 77-GHz radar in thick particulate smoke at high temperatures?
+</pre></div>
+</div>
+</section>
+<section id="execution-trace">
+<h2>Execution Trace<a class="headerlink" href="#execution-trace" title="Link to this heading"></a></h2>
+<p><strong>Step 1: Retrieve Literature Chunks</strong></p>
+<dl class="simple">
+<dt><em>System</em>:</dt><dd><p>Deterministic Tool Executor: document_reader</p>
+</dd>
+<dt><em>Assistant</em>:</dt><dd><p>[Deterministic Tool ‘document_reader’ Output]:
+Candidate Chunks:
+1. Sensors are physical devices converting stimuli to electrical signals. In firefighting, standard NFPA equipment guidelines should be reviewed regularly.</p>
+<ol class="arabic simple" start="2">
+<li><p>[Li et al., 2023 - IEEE Sensors Letters, Sec IV-B] Frequency-Modulated Continuous-Wave (FMCW) 77-GHz millimeter-wave radar maintained 94.2% obstacle detection accuracy through particulate smoke densities up to 120 mg/m3 at temperatures up to 250C, with a maximum ranging error of +-3.5 cm at 15 meters.</p></li>
+</ol>
+</dd>
+</dl>
+<p><strong>Step 2: Extract Cited Empirical Finding</strong></p>
+<p><em>(Generated by: Gemma4-2B)</em></p>
+<dl>
+<dt><em>System</em>:</dt><dd><p>You are an empirical evidence analyst.
+Examine the retrieved literature chunks provided in your Scratchpad Variables or Working Context.</p>
+<p>Goal: Extract the most relevant factual finding directly addressing the question or active task.</p>
+<p>Guidelines:
+1. Extract a concise, focused excerpt (typically 1 to 3 sentences). Do not impose an arbitrary word limit, but avoid unnecessary filler.
+2. Retain all quantitative measurements, experimental parameters, sensor types, error margins, or operating conditions.
+3. Format each finding with an academic citation header: [Author, Year - Section/Page].
+4. If the retrieved text contains only superficial definitions (e.g. dictionary entries) or lacks empirical relevance, state: ‘No empirical evidence found in corpus.’</p>
+<p>Output format:
+- Finding: &lt;Exact or tightly focused excerpt&gt;
+- Citation: [Author, Year]
+- Relevance: &lt;One sentence explaining significance to the active goal&gt;</p>
+<p>Scratchpad Variables:
+{</p>
+<blockquote>
+<div><p>“current_chunk_index”: 0,
+“tool_output”: “Candidate Chunks:n1. Sensors are physical devices converting stimuli to electrical signals. In firefighting, standard NFPA equipment guidelines should be reviewed regularly.nn2. [Li et al., 2023 - IEEE Sensors Letters, Sec IV-B] Frequency-Modulated Continuous-Wave (FMCW) 77-GHz millimeter-wave radar maintained 94.2% obstacle detection accuracy through particulate smoke densities up to 120 mg/m3 at temperatures up to 250C, with a maximum ranging error of +-3.5 cm at 15 meters.”,
+“raw_retrieval_chunks”: “Candidate Chunks:n1. Sensors are physical devices converting stimuli to electrical signals. In firefighting, standard NFPA equipment guidelines should be reviewed regularly.nn2. [Li et al., 2023 - IEEE Sensors Letters, Sec IV-B] Frequency-Modulated Continuous-Wave (FMCW) 77-GHz millimeter-wave radar maintained 94.2% obstacle detection accuracy through particulate smoke densities up to 120 mg/m3 at temperatures up to 250C, with a maximum ranging error of +-3.5 cm at 15 meters.”</p>
+</div></blockquote>
+<p>}</p>
+<p>### Conversation State Tree (Working Memory Map):
+- <strong>Objective:</strong> What is the measured obstacle detection accuracy and ranging precision of 77-GHz radar in thick particulate smoke at high temperatures?</p>
+<p>[SYSTEM GOVERNANCE DIRECTIVE]
+Active Lockdown Mode: DEVELOPMENT. Active Research Mode: Extended tools permitted for development research.</p>
+</dd>
+<dt><em>User</em>:</dt><dd><p>[{‘role’: ‘user’, ‘content’: ‘What is the measured obstacle detection accuracy and ranging precision of 77-GHz radar in thick particulate smoke at high temperatures?’}]</p>
+</dd>
+<dt><em>Assistant</em>:</dt><dd><ul class="simple">
+<li><p>Finding: Frequency-Modulated Continuous-Wave (FMCW) 77-GHz radar maintained 94.2% obstacle detection accuracy through particulate smoke densities up to 120 mg/m3 at temperatures up to 250C, with ranging error +-3.5 cm at 15 meters.</p></li>
+<li><p>Citation: [Li et al., 2023 - IEEE Sensors Letters, Sec IV-B]</p></li>
+<li><p>Relevance: Provides direct empirical resilience data for obstacle navigation under dense smoke and thermal stress.</p></li>
+</ul>
+</dd>
+</dl>
+<p><em>Working Memory Map</em>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>### Conversation State Tree (Working Memory Map):
+- **Objective:** What is the measured obstacle detection accuracy and ranging precision of 77-GHz radar in thick particulate smoke at high temperatures?
+</pre></div>
+</div>
+</section>
+<section id="final-response">
+<h2>Final Response<a class="headerlink" href="#final-response" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">-</span> <span class="n">Finding</span><span class="p">:</span> <span class="n">Frequency</span><span class="o">-</span><span class="n">Modulated</span> <span class="n">Continuous</span><span class="o">-</span><span class="n">Wave</span> <span class="p">(</span><span class="n">FMCW</span><span class="p">)</span> <span class="mi">77</span><span class="o">-</span><span class="n">GHz</span> <span class="n">radar</span> <span class="n">maintained</span> <span class="mf">94.2</span><span class="o">%</span> <span class="n">obstacle</span> <span class="n">detection</span> <span class="n">accuracy</span> <span class="n">through</span> <span class="n">particulate</span> <span class="n">smoke</span> <span class="n">densities</span> <span class="n">up</span> <span class="n">to</span> <span class="mi">120</span> <span class="n">mg</span><span class="o">/</span><span class="n">m3</span> <span class="n">at</span> <span class="n">temperatures</span> <span class="n">up</span> <span class="n">to</span> <span class="mi">250</span><span class="n">C</span><span class="p">,</span> <span class="k">with</span> <span class="n">ranging</span> <span class="n">error</span> <span class="o">+-</span><span class="mf">3.5</span> <span class="n">cm</span> <span class="n">at</span> <span class="mi">15</span> <span class="n">meters</span><span class="o">.</span>
+<span class="o">-</span> <span class="n">Citation</span><span class="p">:</span> <span class="p">[</span><span class="n">Li</span> <span class="n">et</span> <span class="n">al</span><span class="o">.</span><span class="p">,</span> <span class="mi">2023</span> <span class="o">-</span> <span class="n">IEEE</span> <span class="n">Sensors</span> <span class="n">Letters</span><span class="p">,</span> <span class="n">Sec</span> <span class="n">IV</span><span class="o">-</span><span class="n">B</span><span class="p">]</span>
+<span class="o">-</span> <span class="n">Relevance</span><span class="p">:</span> <span class="n">Provides</span> <span class="n">direct</span> <span class="n">empirical</span> <span class="n">resilience</span> <span class="n">data</span> <span class="k">for</span> <span class="n">obstacle</span> <span class="n">navigation</span> <span class="n">under</span> <span class="n">dense</span> <span class="n">smoke</span> <span class="ow">and</span> <span class="n">thermal</span> <span class="n">stress</span><span class="o">.</span>
+</pre></div>
+</div>
+</section>
+<section id="conversation-state-tree">
+<h2>Conversation State Tree<a class="headerlink" href="#conversation-state-tree" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s2">"tasks"</span><span class="p">:</span> <span class="p">{},</span>
+  <span class="s2">"open_questions"</span><span class="p">:</span> <span class="p">[],</span>
+  <span class="s2">"macro_objective"</span><span class="p">:</span> <span class="s2">"What is the measured obstacle detection accuracy and ranging precision of 77-GHz radar in thick particulate smoke at high temperatures?"</span><span class="p">,</span>
+  <span class="s2">"established_facts"</span><span class="p">:</span> <span class="p">[],</span>
+  <span class="s2">"settled_milestones"</span><span class="p">:</span> <span class="p">{}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="generated-workspace-files">
+<h2>Generated Workspace Files<a class="headerlink" href="#generated-workspace-files" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Andrew Cruickshank.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

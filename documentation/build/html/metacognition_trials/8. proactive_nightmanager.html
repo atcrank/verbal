@@ -102,46 +102,46 @@ The NightManager’s instructions execute a 4-phase autonomous pipeline:
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="gp">&gt;&gt;&gt;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Find the NightManager blueprint</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">bp</span> <span class="o">=</span> <span class="n">CognitiveBlueprint</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;NightManager&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bp</span> <span class="o">=</span> <span class="n">CognitiveBlueprint</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"NightManager"</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Trap standard output so the test doesn&#39;t fail due to verbose logging</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Trap standard output so the test doesn't fail due to verbose logging</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">StringIO</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">prompt</span> <span class="o">=</span> <span class="p">(</span>
-<span class="gp">... </span>    <span class="s2">&quot;You are the NightManager, an autonomous system maintenance administrator. &quot;</span>
-<span class="gp">... </span>    <span class="s2">&quot;Perform your multi-phase nightly review: &quot;</span>
-<span class="gp">... </span>    <span class="s2">&quot;1) Run housekeeping tasks (ingestion sweep, Grips digestion &amp; linting, DB backup, workspace janitor); &quot;</span>
-<span class="gp">... </span>    <span class="s2">&quot;2) Evaluate conversation logs, reasoning step variants, and benchmarks, looking at RAG efficiency, Grips recall and precision; &quot;</span>
-<span class="gp">... </span>    <span class="s2">&quot;3a) Consider and propose reasoning step variants for performance improvements&quot;</span>
-<span class="gp">... </span>    <span class="s2">&quot;3b) propose Grips knowledge expansions with new Domains or ConceptNodes where ready knowledge would have been helpful; &quot;</span>
-<span class="gp">... </span>    <span class="s2">&quot;3c) consider and propose new ReadingStrategies for better chunking and retrieval;&quot;</span>
-<span class="gp">... </span>    <span class="s2">&quot;3d) select or design appropriate benchmarking for the amendments and queue benchmarks for execution;&quot;</span>
-<span class="gp">... </span>    <span class="s2">&quot;5) Perform meta-self reflection and report your findings.&quot;</span>
+<span class="gp">... </span>    <span class="s2">"You are the NightManager, an autonomous system maintenance administrator. "</span>
+<span class="gp">... </span>    <span class="s2">"Perform your multi-phase nightly review: "</span>
+<span class="gp">... </span>    <span class="s2">"1) Run housekeeping tasks (ingestion sweep, Grips digestion &amp; linting, DB backup, workspace janitor); "</span>
+<span class="gp">... </span>    <span class="s2">"2) Evaluate conversation logs, reasoning step variants, and benchmarks, looking at RAG efficiency, Grips recall and precision; "</span>
+<span class="gp">... </span>    <span class="s2">"3a) Consider and propose reasoning step variants for performance improvements"</span>
+<span class="gp">... </span>    <span class="s2">"3b) propose Grips knowledge expansions with new Domains or ConceptNodes where ready knowledge would have been helpful; "</span>
+<span class="gp">... </span>    <span class="s2">"3c) consider and propose new ReadingStrategies for better chunking and retrieval;"</span>
+<span class="gp">... </span>    <span class="s2">"3d) select or design appropriate benchmarking for the amendments and queue benchmarks for execution;"</span>
+<span class="gp">... </span>    <span class="s2">"5) Perform meta-self reflection and report your findings."</span>
 <span class="gp">... </span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Mock database_backup to prevent dumpdata inside test transactions</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">unittest.mock</span><span class="w"> </span><span class="kn">import</span> <span class="n">patch</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s1">&#39;django.core.management.call_command&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mock_call</span><span class="p">:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s1">'django.core.management.call_command'</span><span class="p">)</span> <span class="k">as</span> <span class="n">mock_call</span><span class="p">:</span>
 <span class="gp">... </span>    <span class="n">mock_call</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="gp">... </span>    <span class="k">with</span> <span class="n">contextlib</span><span class="o">.</span><span class="n">redirect_stdout</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
 <span class="gp">... </span>        <span class="n">result</span> <span class="o">=</span> <span class="n">run_blueprint</span><span class="p">(</span>
 <span class="gp">... </span>            <span class="n">blueprint_id</span><span class="o">=</span><span class="n">bp</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
 <span class="gp">... </span>            <span class="n">user_prompt</span><span class="o">=</span><span class="n">prompt</span>
 <span class="gp">... </span>        <span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">report_doctest_run</span><span class="p">(</span><span class="s2">&quot;8. proactive_nightmanager&quot;</span><span class="p">,</span> <span class="n">prompt</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">report_doctest_run</span><span class="p">(</span><span class="s2">"8. proactive_nightmanager"</span><span class="p">,</span> <span class="n">prompt</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># The agent should complete without crashing</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;- error free: </span><span class="si">{</span><span class="mi">1</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="s1">&#39;error&#39;</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="mi">0</span><span class="si">}</span><span class="s2">/1&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"- error free: </span><span class="si">{</span><span class="mi">1</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="s1">'error'</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="mi">0</span><span class="si">}</span><span class="s2">/1"</span><span class="p">)</span>
 <span class="go">- error free: 1/1</span>
 </pre></div>
 </div>
 <p>The final response of the agent should reflect a completed state or a report of its findings.
 (Note: the generated report for this trial will contain the full standard output and internal monologue for review).</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">final_str</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;final_response&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">monologue</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;internal_monologue&quot;</span><span class="p">,</span> <span class="p">[])</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">final_str</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"final_response"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">monologue</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"internal_monologue"</span><span class="p">,</span> <span class="p">[])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Verify the agent executed steps across the pipeline and returned a valid response dictionary</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">has_monologue</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">monologue</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># We no longer assert `not any_failed` because intentional loops use FAILURE routing, producing &#39;failed=True&#39; steps.</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;- completed response without failures: </span><span class="si">{</span><span class="mi">1</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">has_monologue</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="s1">&#39;error&#39;</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="mi">0</span><span class="si">}</span><span class="s2">/1&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># We no longer assert `not any_failed` because intentional loops use FAILURE routing, producing 'failed=True' steps.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"- completed response without failures: </span><span class="si">{</span><span class="mi">1</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">has_monologue</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="s1">'error'</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="mi">0</span><span class="si">}</span><span class="s2">/1"</span><span class="p">)</span>
 <span class="go">- completed response without failures: 1/1</span>
 </pre></div>
 </div>

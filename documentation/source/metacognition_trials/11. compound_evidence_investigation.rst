@@ -1,0 +1,1 @@
+.. include:: ../../../metacognition/metacognition_trials/11. compound_evidence_investigation.rst

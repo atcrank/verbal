@@ -36,17 +36,37 @@ The Document Ingestion Pipeline
 2. **Deterministic Pre-Parsing**: Academic PDFs are routed through the containerized `grobid_client` to extract structured TEI XML, isolating headings, body paragraphs, and bibliographies.
 3. **Configurable Reading Strategies**: Processing layers attached to documents:
    * **``ReadingStrategy`` (Default)**: Normalizes text and chunks body paragraphs respecting sentence and section boundaries.
+   * **``GrobidReadingStrategy``**: Extracts structured semantic sections from cached Grobid TEI XML, parsing academic headers, paragraphs, and visual figure chunks with bounding boxes. Supports force re-execution (`force=True`) via admin actions.
    * **``RegexStrategy``**: Extracts structured entities (e.g. equipment codes, chemical formulas) matching defined regular expressions.
    * **``PromptStrategy``**: Passes chunks through an LLM to synthesize high-level conceptual summaries.
    * **``AbbreviationStrategy``**: Builds an authoritative glossary of domain acronyms and expanded forms.
 4. **Vector Indexing with PGVector**: Computes dense vector embeddings and stores them natively in PostgreSQL using `pgvector.django.VectorField` with cosine distance indexing.
-5. **Background Execution**: Ingestion, OCR, and vectorization are executed asynchronously via `verbal_tasks`, ensuring file uploads never block the user interface.
+5. **Background Execution**: Ingestion, OCR, and vectorization are executed asynchronously via `verbal_tasks`, ensuring file uploads and strategy executions never block the user interface.
+
+Multimodal Chunk Possibilities & Typed RAG Chunks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Verbal supports first-class typed chunk entities via ``RAGChunk.ChunkType``:
+
+* **``TEXT`` (Prose Chunks)**:
+  Standard narrative sections, methods, literature review paragraphs, and background summaries.
+* **``FIGURE`` (Visual Charts, Diagrams & Plots)**:
+  Extracted directly from academic papers by `grobid_client`. Each figure chunk contains:
+  * **Visual Asset Path**: High-resolution (200 DPI) cropped PNG on disk under ``media/documents/figures/<document_id>/<figure_id>.png``.
+  * **Bounding Coordinates**: Normalized Grobid PostScript coordinates (page index, x, y, width, height).
+  * **Figure Metadata**: Clean label (e.g. ``Figure 4``), detailed caption, author, publication year, and DOI.
+  * **Discussion Context**: In-text analytical paragraphs where the paper's authors discuss the figure (mined from ``<ref type="figure">`` tags), ensuring semantic searches on experimental findings match the visual asset.
+* **``TABLE`` (Structured Data Tables)**:
+  Tabular findings, parameter matrices, and benchmarking tables preserved with row/column context.
+
+Downstream Reasoning & Visual Inspection
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+When `metacognition` agents (such as the *Visual Evidence Investigator*) encounter a retrieved chunk with ``chunk_type == 'FIGURE'``, they can invoke the ``inspect_chart_image`` tool. The tool passes the cropped image asset to a visual-capable model to extract exact axis tick coordinates, regression curves, and empirical anomalies without hallucination.
 
 Unified Retrieval & Deep RAG Architecture
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Rather than performing naive nearest-neighbor lookups, the system uses a **Super Retriever** (`unified_retrieve` and `get_deep_context_report`):
 
-* **Dense Semantic Search**: Cosine similarity matching over PGVector chunk embeddings.
+* **Dense Semantic Search**: Cosine similarity matching over PGVector chunk embeddings across all chunk types (prose, figures, tables).
 * **Lexical Fallback**: PostgreSQL `SearchVector` full-text search, ensuring exact technical terms, acronyms, or proper names are captured even if embedding models fail to place them close in vector space.
 * **Lineage-Aware Deduplication & Concept Promotion**: When raw `RAGChunk` records semantically overlap with higher-level `ConceptNode` entities in `grips` derived from the same source, the system drops the redundant raw chunk and injects the curated concept node with a ranking priority boost.
 * **Salience Windowing**: Instead of injecting 1,000-word sections, the retriever extracts a focused excerpt window (150–250 tokens) centered on the highest concept density, labeled with an academic citation header: `[Source: Author (Year) — Section: Name]`.

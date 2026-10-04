@@ -91,14 +91,18 @@
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkResult.NotUpdated"><code class="docutils literal notranslate"><span class="pre">BenchmarkResult.NotUpdated</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkResult.duration_seconds"><code class="docutils literal notranslate"><span class="pre">BenchmarkResult.duration_seconds</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkResult.extra_metrics"><code class="docutils literal notranslate"><span class="pre">BenchmarkResult.extra_metrics</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkResult.faithfulness"><code class="docutils literal notranslate"><span class="pre">BenchmarkResult.faithfulness</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkResult.faithfulness_score"><code class="docutils literal notranslate"><span class="pre">BenchmarkResult.faithfulness_score</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkResult.generated_response"><code class="docutils literal notranslate"><span class="pre">BenchmarkResult.generated_response</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkResult.id"><code class="docutils literal notranslate"><span class="pre">BenchmarkResult.id</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkResult.objects"><code class="docutils literal notranslate"><span class="pre">BenchmarkResult.objects</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkResult.prompt_text"><code class="docutils literal notranslate"><span class="pre">BenchmarkResult.prompt_text</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkResult.rag_recall_score"><code class="docutils literal notranslate"><span class="pre">BenchmarkResult.rag_recall_score</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkResult.rag_score"><code class="docutils literal notranslate"><span class="pre">BenchmarkResult.rag_score</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkResult.raw_retrieved_text"><code class="docutils literal notranslate"><span class="pre">BenchmarkResult.raw_retrieved_text</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkResult.relevance"><code class="docutils literal notranslate"><span class="pre">BenchmarkResult.relevance</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkResult.relevance_score"><code class="docutils literal notranslate"><span class="pre">BenchmarkResult.relevance_score</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkResult.response"><code class="docutils literal notranslate"><span class="pre">BenchmarkResult.response</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkResult.run"><code class="docutils literal notranslate"><span class="pre">BenchmarkResult.run</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkResult.run_id"><code class="docutils literal notranslate"><span class="pre">BenchmarkResult.run_id</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkResult.scenario"><code class="docutils literal notranslate"><span class="pre">BenchmarkResult.scenario</span></code></a></li>
@@ -114,7 +118,6 @@
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.average_rag_score"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.average_rag_score</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.average_relevance"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.average_relevance</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.average_semantic_score"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.average_semantic_score</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.benchmarkresult_set"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.benchmarkresult_set</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.configuration_snapshot"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.configuration_snapshot</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.corpus"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.corpus</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.corpus_id"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.corpus_id</span></code></a></li>
@@ -124,7 +127,15 @@
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.get_next_by_timestamp"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.get_next_by_timestamp()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.get_previous_by_timestamp"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.get_previous_by_timestamp()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.id"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.is_resolved"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.is_resolved</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.mark_resolved"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.mark_resolved()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.mark_unresolved"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.mark_unresolved()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.objects"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.objects</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.resolution_notes"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.resolution_notes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.resolved_at"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.resolved_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.resolved_by"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.resolved_by</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.resolved_by_id"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.resolved_by_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.results"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.results</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkRun.timestamp"><code class="docutils literal notranslate"><span class="pre">BenchmarkRun.timestamp</span></code></a></li>
 </ul>
 </li>
@@ -137,6 +148,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkScenario.groups"><code class="docutils literal notranslate"><span class="pre">BenchmarkScenario.groups</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkScenario.id"><code class="docutils literal notranslate"><span class="pre">BenchmarkScenario.id</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkScenario.ideal_answer"><code class="docutils literal notranslate"><span class="pre">BenchmarkScenario.ideal_answer</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkScenario.ideal_response"><code class="docutils literal notranslate"><span class="pre">BenchmarkScenario.ideal_response</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkScenario.objects"><code class="docutils literal notranslate"><span class="pre">BenchmarkScenario.objects</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkScenario.question"><code class="docutils literal notranslate"><span class="pre">BenchmarkScenario.question</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.BenchmarkScenario.source_chunk"><code class="docutils literal notranslate"><span class="pre">BenchmarkScenario.source_chunk</span></code></a></li>
@@ -185,12 +197,18 @@
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.FineTuningDataset.id"><code class="docutils literal notranslate"><span class="pre">FineTuningDataset.id</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.FineTuningDataset.is_stale"><code class="docutils literal notranslate"><span class="pre">FineTuningDataset.is_stale</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.FineTuningDataset.loraadapter_set"><code class="docutils literal notranslate"><span class="pre">FineTuningDataset.loraadapter_set</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.FineTuningDataset.metadata"><code class="docutils literal notranslate"><span class="pre">FineTuningDataset.metadata</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.FineTuningDataset.name"><code class="docutils literal notranslate"><span class="pre">FineTuningDataset.name</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.FineTuningDataset.objects"><code class="docutils literal notranslate"><span class="pre">FineTuningDataset.objects</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.FineTuningDataset.scenario_group"><code class="docutils literal notranslate"><span class="pre">FineTuningDataset.scenario_group</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.FineTuningDataset.scenario_group_id"><code class="docutils literal notranslate"><span class="pre">FineTuningDataset.scenario_group_id</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.FineTuningDataset.semantic_diversity_score"><code class="docutils literal notranslate"><span class="pre">FineTuningDataset.semantic_diversity_score</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.FineTuningDataset.split_ratio"><code class="docutils literal notranslate"><span class="pre">FineTuningDataset.split_ratio</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.FineTuningDataset.total_tokens"><code class="docutils literal notranslate"><span class="pre">FineTuningDataset.total_tokens</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.FineTuningDataset.train_example_count"><code class="docutils literal notranslate"><span class="pre">FineTuningDataset.train_example_count</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.FineTuningDataset.val_example_count"><code class="docutils literal notranslate"><span class="pre">FineTuningDataset.val_example_count</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.FineTuningDataset.validation_group"><code class="docutils literal notranslate"><span class="pre">FineTuningDataset.validation_group</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.FineTuningDataset.validation_group_id"><code class="docutils literal notranslate"><span class="pre">FineTuningDataset.validation_group_id</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#benchmarking.models.Investigation"><code class="docutils literal notranslate"><span class="pre">Investigation</span></code></a><ul>
@@ -223,6 +241,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.ScenarioGroup.objects"><code class="docutils literal notranslate"><span class="pre">ScenarioGroup.objects</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.ScenarioGroup.scenarios"><code class="docutils literal notranslate"><span class="pre">ScenarioGroup.scenarios</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.ScenarioGroup.updated_at"><code class="docutils literal notranslate"><span class="pre">ScenarioGroup.updated_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#benchmarking.models.ScenarioGroup.validation_datasets"><code class="docutils literal notranslate"><span class="pre">ScenarioGroup.validation_datasets</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#benchmarking.generators.SyntheticQA"><code class="docutils literal notranslate"><span class="pre">SyntheticQA</span></code></a><ul>
@@ -421,7 +440,7 @@ Under <strong>Benchmarking &gt; Fine Tuning Datasets</strong>, datasets display 
 many-to-one relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
@@ -443,7 +462,7 @@ object the first time, the query is executed.</p>
 a many-to-many relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Pizza</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">toppings</span> <span class="o">=</span> <span class="n">ManyToManyField</span><span class="p">(</span><span class="n">Topping</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;pizzas&#39;</span><span class="p">)</span>
+    <span class="n">toppings</span> <span class="o">=</span> <span class="n">ManyToManyField</span><span class="p">(</span><span class="n">Topping</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'pizzas'</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Pizza.toppings</span></code> and <code class="docutils literal notranslate"><span class="pre">Topping.pizzas</span></code> are <code class="docutils literal notranslate"><span class="pre">ManyToManyDescriptor</span></code>
@@ -459,7 +478,7 @@ class built by <code class="docutils literal notranslate"><span class="pre">crea
 many-to-one relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
@@ -525,6 +544,11 @@ object the first time, the query is executed.</p>
 object the first time, the query is executed.</p>
 </dd></dl>
 
+<dl class="py property">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkResult.faithfulness">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">faithfulness</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkResult.faithfulness" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="benchmarking.models.BenchmarkResult.faithfulness_score">
 <span class="sig-name descname"><span class="pre">faithfulness_score</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkResult.faithfulness_score" title="Link to this definition"></a></dt>
@@ -565,12 +589,22 @@ object the first time, the query is executed.</p>
 object the first time, the query is executed.</p>
 </dd></dl>
 
+<dl class="py property">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkResult.rag_score">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rag_score</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkResult.rag_score" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="benchmarking.models.BenchmarkResult.raw_retrieved_text">
 <span class="sig-name descname"><span class="pre">raw_retrieved_text</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkResult.raw_retrieved_text" title="Link to this definition"></a></dt>
 <dd><p>A wrapper for a deferred-loading field. When the value is read from this
 object the first time, the query is executed.</p>
 </dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkResult.relevance">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">relevance</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkResult.relevance" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="benchmarking.models.BenchmarkResult.relevance_score">
@@ -579,6 +613,11 @@ object the first time, the query is executed.</p>
 object the first time, the query is executed.</p>
 </dd></dl>
 
+<dl class="py property">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkResult.response">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">response</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkResult.response" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="benchmarking.models.BenchmarkResult.run">
 <span class="sig-name descname"><span class="pre">run</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkResult.run" title="Link to this definition"></a></dt>
@@ -586,7 +625,7 @@ object the first time, the query is executed.</p>
 one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
@@ -604,7 +643,7 @@ one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
@@ -676,21 +715,6 @@ object the first time, the query is executed.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="benchmarking.models.BenchmarkRun.benchmarkresult_set">
-<span class="sig-name descname"><span class="pre">benchmarkresult_set</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkRun.benchmarkresult_set" title="Link to this definition"></a></dt>
-<dd><p>Accessor to the related objects manager on the reverse side of a
-many-to-one relation.</p>
-<p>In the example:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-<p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
-<p>Most of the implementation is delegated to a dynamically defined manager
-class built by <code class="docutils literal notranslate"><span class="pre">create_reverse_many_to_one_manager()</span></code> defined below.</p>
-</dd></dl>
-
-<dl class="py attribute">
 <dt class="sig sig-object py" id="benchmarking.models.BenchmarkRun.configuration_snapshot">
 <span class="sig-name descname"><span class="pre">configuration_snapshot</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkRun.configuration_snapshot" title="Link to this definition"></a></dt>
 <dd><p>A wrapper for a deferred-loading field. When the value is read from this
@@ -704,7 +728,7 @@ object the first time, the query is executed.</p>
 one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
@@ -729,7 +753,7 @@ object the first time, the query is executed.</p>
 one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
@@ -758,9 +782,75 @@ object the first time, the query is executed.</p>
 </dd></dl>
 
 <dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkRun.is_resolved">
+<span class="sig-name descname"><span class="pre">is_resolved</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkRun.is_resolved" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkRun.mark_resolved">
+<span class="sig-name descname"><span class="pre">mark_resolved</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">user</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">notes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/benchmarking/models.html#BenchmarkRun.mark_resolved"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmarking.models.BenchmarkRun.mark_resolved" title="Link to this definition"></a></dt>
+<dd><p>Marks this run defect as resolved, recording the sign-off user and timestamp.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkRun.mark_unresolved">
+<span class="sig-name descname"><span class="pre">mark_unresolved</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/benchmarking/models.html#BenchmarkRun.mark_unresolved"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#benchmarking.models.BenchmarkRun.mark_unresolved" title="Link to this definition"></a></dt>
+<dd><p>Clears resolution sign-off, restoring this run to active defect status.</p>
+</dd></dl>
+
+<dl class="py attribute">
 <dt class="sig sig-object py" id="benchmarking.models.BenchmarkRun.objects">
 <span class="sig-name descname"><span class="pre">objects</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;django.db.models.manager.Manager</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#benchmarking.models.BenchmarkRun.objects" title="Link to this definition"></a></dt>
 <dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkRun.resolution_notes">
+<span class="sig-name descname"><span class="pre">resolution_notes</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkRun.resolution_notes" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkRun.resolved_at">
+<span class="sig-name descname"><span class="pre">resolved_at</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkRun.resolved_at" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkRun.resolved_by">
+<span class="sig-name descname"><span class="pre">resolved_by</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkRun.resolved_by" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related object on the forward side of a many-to-one or
+one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkRun.resolved_by_id">
+<span class="sig-name descname"><span class="pre">resolved_by_id</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkRun.resolved_by_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkRun.results">
+<span class="sig-name descname"><span class="pre">results</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkRun.results" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related objects manager on the reverse side of a
+many-to-one relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
+<p>Most of the implementation is delegated to a dynamically defined manager
+class built by <code class="docutils literal notranslate"><span class="pre">create_reverse_many_to_one_manager()</span></code> defined below.</p>
+</dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="benchmarking.models.BenchmarkRun.timestamp">
@@ -801,7 +891,7 @@ object the first time, the query is executed.</p>
 many-to-one relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
@@ -823,7 +913,7 @@ object the first time, the query is executed.</p>
 a many-to-many relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Pizza</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">toppings</span> <span class="o">=</span> <span class="n">ManyToManyField</span><span class="p">(</span><span class="n">Topping</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;pizzas&#39;</span><span class="p">)</span>
+    <span class="n">toppings</span> <span class="o">=</span> <span class="n">ManyToManyField</span><span class="p">(</span><span class="n">Topping</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'pizzas'</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Pizza.toppings</span></code> and <code class="docutils literal notranslate"><span class="pre">Topping.pizzas</span></code> are <code class="docutils literal notranslate"><span class="pre">ManyToManyDescriptor</span></code>
@@ -846,6 +936,11 @@ object the first time, the query is executed.</p>
 object the first time, the query is executed.</p>
 </dd></dl>
 
+<dl class="py property">
+<dt class="sig sig-object py" id="benchmarking.models.BenchmarkScenario.ideal_response">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ideal_response</span></span><a class="headerlink" href="#benchmarking.models.BenchmarkScenario.ideal_response" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="benchmarking.models.BenchmarkScenario.objects">
 <span class="sig-name descname"><span class="pre">objects</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;django.db.models.manager.Manager</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#benchmarking.models.BenchmarkScenario.objects" title="Link to this definition"></a></dt>
@@ -865,7 +960,7 @@ object the first time, the query is executed.</p>
 one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
@@ -883,7 +978,7 @@ one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
@@ -926,7 +1021,7 @@ one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 many-to-one relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
@@ -948,7 +1043,7 @@ object the first time, the query is executed.</p>
 one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
@@ -1004,7 +1099,7 @@ object the first time, the query is executed.</p>
 one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
@@ -1041,7 +1136,7 @@ object the first time, the query is executed.</p>
 one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
@@ -1059,7 +1154,7 @@ one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
@@ -1155,7 +1250,7 @@ object the first time, the query is executed.</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="benchmarking.models.FineTuningDataset.is_stale">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_stale</span></span><a class="headerlink" href="#benchmarking.models.FineTuningDataset.is_stale" title="Link to this definition"></a></dt>
-<dd><p>Returns True if the parent ScenarioGroup has been updated since this dataset was created.</p>
+<dd><p>Returns True if the parent or validation ScenarioGroup has been updated since this dataset was created.</p>
 </dd></dl>
 
 <dl class="py attribute">
@@ -1165,12 +1260,19 @@ object the first time, the query is executed.</p>
 many-to-one relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
 <p>Most of the implementation is delegated to a dynamically defined manager
 class built by <code class="docutils literal notranslate"><span class="pre">create_reverse_many_to_one_manager()</span></code> defined below.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.FineTuningDataset.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><a class="headerlink" href="#benchmarking.models.FineTuningDataset.metadata" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
 </dd></dl>
 
 <dl class="py attribute">
@@ -1192,7 +1294,7 @@ object the first time, the query is executed.</p>
 one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
@@ -1211,11 +1313,50 @@ object the first time, the query is executed.</p>
 </dd></dl>
 
 <dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.FineTuningDataset.split_ratio">
+<span class="sig-name descname"><span class="pre">split_ratio</span></span><a class="headerlink" href="#benchmarking.models.FineTuningDataset.split_ratio" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
 <dt class="sig sig-object py" id="benchmarking.models.FineTuningDataset.total_tokens">
 <span class="sig-name descname"><span class="pre">total_tokens</span></span><a class="headerlink" href="#benchmarking.models.FineTuningDataset.total_tokens" title="Link to this definition"></a></dt>
 <dd><p>A wrapper for a deferred-loading field. When the value is read from this
 object the first time, the query is executed.</p>
 </dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.FineTuningDataset.train_example_count">
+<span class="sig-name descname"><span class="pre">train_example_count</span></span><a class="headerlink" href="#benchmarking.models.FineTuningDataset.train_example_count" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.FineTuningDataset.val_example_count">
+<span class="sig-name descname"><span class="pre">val_example_count</span></span><a class="headerlink" href="#benchmarking.models.FineTuningDataset.val_example_count" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.FineTuningDataset.validation_group">
+<span class="sig-name descname"><span class="pre">validation_group</span></span><a class="headerlink" href="#benchmarking.models.FineTuningDataset.validation_group" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related object on the forward side of a many-to-one or
+one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.FineTuningDataset.validation_group_id">
+<span class="sig-name descname"><span class="pre">validation_group_id</span></span><a class="headerlink" href="#benchmarking.models.FineTuningDataset.validation_group_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 
@@ -1270,7 +1411,7 @@ object the first time, the query is executed.</p>
 many-to-one relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
@@ -1346,7 +1487,7 @@ Nested JSON keys automatically become columns (e.g., ‘extra_metrics.hop_count�
 many-to-one relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
@@ -1368,7 +1509,7 @@ object the first time, the query is executed.</p>
 many-to-one relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
@@ -1412,7 +1553,7 @@ object the first time, the query is executed.</p>
 a many-to-many relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Pizza</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">toppings</span> <span class="o">=</span> <span class="n">ManyToManyField</span><span class="p">(</span><span class="n">Topping</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;pizzas&#39;</span><span class="p">)</span>
+    <span class="n">toppings</span> <span class="o">=</span> <span class="n">ManyToManyField</span><span class="p">(</span><span class="n">Topping</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'pizzas'</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Pizza.toppings</span></code> and <code class="docutils literal notranslate"><span class="pre">Topping.pizzas</span></code> are <code class="docutils literal notranslate"><span class="pre">ManyToManyDescriptor</span></code>
@@ -1426,6 +1567,21 @@ class built by <code class="docutils literal notranslate"><span class="pre">crea
 <span class="sig-name descname"><span class="pre">updated_at</span></span><a class="headerlink" href="#benchmarking.models.ScenarioGroup.updated_at" title="Link to this definition"></a></dt>
 <dd><p>A wrapper for a deferred-loading field. When the value is read from this
 object the first time, the query is executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="benchmarking.models.ScenarioGroup.validation_datasets">
+<span class="sig-name descname"><span class="pre">validation_datasets</span></span><a class="headerlink" href="#benchmarking.models.ScenarioGroup.validation_datasets" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related objects manager on the reverse side of a
+many-to-one relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
+<p>Most of the implementation is delegated to a dynamically defined manager
+class built by <code class="docutils literal notranslate"><span class="pre">create_reverse_many_to_one_manager()</span></code> defined below.</p>
 </dd></dl>
 
 </dd></dl>

@@ -41,13 +41,32 @@ Key Data Models
 * **``Reference``**: Represents the parsed metadata for a document in the library. Stores the raw cached `tei_xml`, cleaned title, comma-separated authors, abstract, publication journal, year, volume, issue, page numbers, and resolved DOI.
 * **``Citation``**: A directed graph edge representing one document citing another (`source_reference` $\rightarrow$ `target_reference`). When a paper cites another document already present in the local database, an explicit relational link is established.
 
-Coordination with RAG
-~~~~~~~~~~~~~~~~~~~~~
+Multimodal Figure & Graphic Extraction Pipeline
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Beyond text parsing, Grobid Client performs deterministic extraction of visual figures, charts, and tables from academic PDFs:
+
+1. **Bounding Box Detection**:
+   The parser scans TEI XML for ``<figure>`` tags and checks both the figure element and its child ``<graphic coords="...">`` attributes. Coordinates are provided in standard Grobid format: ``page, x, y, width, height`` (measured in 72-DPI PostScript points).
+2. **High-Resolution Cropping**:
+   Using `pdf2image` and Pillow, the target page is rendered at 200 DPI. The points-based coordinates are mathematically mapped to the target resolution, and the region is cropped and saved to disk as a clean PNG:
+   ``media/documents/figures/<document_id>/<figure_id>.png``.
+3. **In-Text Discussion Context Mining**:
+   Scientific papers contain critical analysis of figures in the surrounding prose. The parser analyzes all ``<p>`` paragraphs in the document, finding cross-references formatted as ``<ref type="figure" target="#fig_id">``. The sentences citing the figure are compiled into a ``Discussion Context`` block and bound directly to the figure chunk.
+4. **Structured Metadata Normalization**:
+   Figure captions and labels are sanitized (e.g. removing trailing dots and formatting artifacts like ``Figure 1 .`` $\rightarrow$ ``Figure 1``), and caption prefix repetitions are cleanly eliminated.
+
+Coordination with RAG & Multimodal Chunk Storage
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 The structured TEI XML directly informs `background_resources`:
 
-* The extracted title and abstract provide high-signal concept summaries for `ConceptNode` generation in `grips`.
-* Paragraph bodies are chunked respecting section boundaries rather than arbitrary character counts.
-* The citation graph provides a third retrieval path alongside dense semantic search and lexical matching.
+* **Typed Figure Chunks (``chunk_type="figure"``)**:
+  Figures are registered in the RAG store as dedicated ``RAGChunk`` records, storing the relative image path, bounding box coordinates, figure label, and combined caption and discussion text.
+* **Semantic Vector Indexing**:
+  Figure chunks are embedded into PostgreSQL via PGVector, allowing retrieval queries (e.g. *"radar error curves at high temperature"*) to return both the visual image asset and its accompanying paper analysis.
+* **Section-Aware Paragraph Chunks**:
+  Body text is chunked cleanly respecting section boundaries rather than arbitrary character splits.
+* **Citation Graph Traversal**:
+  The citation graph provides a structured path for traversing literature networks alongside vector similarity.
 
 
 3. Observability & Health Signals

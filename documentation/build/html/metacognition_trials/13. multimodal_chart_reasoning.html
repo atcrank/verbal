@@ -1,0 +1,244 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scenario 13: Multimodal Visual Evidence and Empirical Chart Reasoning &mdash; reason 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=aaf24e6f" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            reason
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../llm_api_app.html">LLM API - Local Inference, Proxy Routing &amp; Hardware-Aware Serving</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../verbal_tasks_app.html">Verbal Tasks - Database-Backed Asynchronous Execution &amp; Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../sandbox_manager_app.html">Sandbox Manager - Isolated Python Execution Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../grobid_client_app.html">Grobid Client - Deterministic Scientific PDF Parsing &amp; Citation Extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../background_resources_app.html">Background Resources - Retrieval-Augmented Generation &amp; Document Ingestion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../grips_app.html">Grips - Structured Knowledge Graph &amp; Propositional Claims</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metacognition_app.html">Metacognition - Cognitive Blueprints, Agentic Workflows &amp; Self-Evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmarking_app.html">Benchmarking - Automated Evaluation, Synthetic Generation &amp; LoRA Flywheels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo_ui_app.html">Demo UI - Empirical Research &amp; Cognitive Workbench</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../using_ollama.html">Ollama as Local AI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo_ui_trials.html">Demo UI Empirical Trials &amp; Verification Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tests.html">Testing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">reason</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Scenario 13: Multimodal Visual Evidence and Empirical Chart Reasoning</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/metacognition_trials/13. multimodal_chart_reasoning.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="scenario-13-multimodal-visual-evidence-and-empirical-chart-reasoning">
+<h1>Scenario 13: Multimodal Visual Evidence and Empirical Chart Reasoning<a class="headerlink" href="#scenario-13-multimodal-visual-evidence-and-empirical-chart-reasoning" title="Link to this heading"></a></h1>
+<p>This trial demonstrates the canonical <code class="docutils literal notranslate"><span class="pre">Visual</span> <span class="pre">Evidence</span> <span class="pre">Investigator</span></code> blueprint.
+It highlights:
+1. <strong>Deterministic Multimodal Retrieval (``pure_tool``)</strong>: Step 1 executes <code class="docutils literal notranslate"><span class="pre">document_reader</span></code> to retrieve candidate literature passages and figure chunks without invoking the LLM, burning 0 LLM tokens and achieving immediate zero-inference retrieval.
+2. <strong>On-Demand Visual Inspection (``inspect_chart_image``)</strong>: Step 2 examines the retrieved chunks. Noting a figure chunk with an associated image asset (<code class="docutils literal notranslate"><span class="pre">Type:</span> <span class="pre">Visual</span> <span class="pre">Figure</span></code>), the agent detects that precise numerical coordinates are needed and calls <code class="docutils literal notranslate"><span class="pre">inspect_chart_image</span></code> on the image asset.
+3. <strong>Empirical Synthesis with Authoritative Citations</strong>: Combines the qualitative textual context with exact numerical measurements extracted from the chart plots, attaching an academic citation header: <code class="docutils literal notranslate"><span class="pre">[Author</span> <span class="pre">(Year)</span> <span class="pre">—</span> <span class="pre">Figure</span> <span class="pre">N]</span></code>.</p>
+<section id="setup-database-seeding">
+<h2>Setup &amp; Database Seeding<a class="headerlink" href="#setup-database-seeding" title="Link to this heading"></a></h2>
+<p>We initialize the canonical blueprint via <code class="docutils literal notranslate"><span class="pre">seed_visual_evidence_investigator</span></code> and create a real image asset on disk for testing.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span><span class="o">,</span><span class="w"> </span><span class="nn">json</span><span class="o">,</span><span class="w"> </span><span class="nn">contextlib</span><span class="o">,</span><span class="w"> </span><span class="nn">io</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">unittest.mock</span><span class="w"> </span><span class="kn">import</span> <span class="n">patch</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">PIL</span><span class="w"> </span><span class="kn">import</span> <span class="n">Image</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">django.conf</span><span class="w"> </span><span class="kn">import</span> <span class="n">settings</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">django.contrib.auth.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">User</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">CognitiveBlueprint</span><span class="p">,</span> <span class="n">ReasoningStep</span><span class="p">,</span> <span class="n">ToolDefinition</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.seed</span><span class="w"> </span><span class="kn">import</span> <span class="n">seed_tools</span><span class="p">,</span> <span class="n">seed_visual_evidence_investigator</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_blueprint</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">user</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s2">"visual_trial_user"</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">seed_tools</span><span class="p">(</span><span class="n">ToolDefinition</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">seed_visual_evidence_investigator</span><span class="p">(</span><span class="n">CognitiveBlueprint</span><span class="p">,</span> <span class="n">ReasoningStep</span><span class="p">,</span> <span class="n">ToolDefinition</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bp</span> <span class="o">=</span> <span class="n">CognitiveBlueprint</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"Visual Evidence Investigator"</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="creating-test-figure-asset">
+<h2>Creating Test Figure Asset<a class="headerlink" href="#creating-test-figure-asset" title="Link to this heading"></a></h2>
+<p>We create a test chart image in the media directory.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">fig_rel_path</span> <span class="o">=</span> <span class="s2">"documents/figures/trial13_fig4.png"</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fig_full_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">MEDIA_ROOT</span><span class="p">,</span> <span class="n">fig_rel_path</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">fig_full_path</span><span class="p">),</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">test_img</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">"RGB"</span><span class="p">,</span> <span class="p">(</span><span class="mi">400</span><span class="p">,</span> <span class="mi">300</span><span class="p">),</span> <span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mi">240</span><span class="p">,</span> <span class="mi">240</span><span class="p">,</span> <span class="mi">240</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">test_img</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">fig_full_path</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="mocking-candidate-retrieval">
+<h2>Mocking Candidate Retrieval<a class="headerlink" href="#mocking-candidate-retrieval" title="Link to this heading"></a></h2>
+<p>We mock <code class="docutils literal notranslate"><span class="pre">document_reader</span></code> to return a visual figure chunk referencing our generated image asset.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">figure_chunk_content</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>    <span class="s2">"- [Chunk ID: fig_42] [Citation: Talavera et al. (2023) — Figure 4: FMCW Radar vs 3D LiDAR Ranging Error] Source: talavera2023.pdf</span><span class="se">\n</span><span class="s2">"</span>
+<span class="gp">... </span>    <span class="s2">"  Type: Visual Figure</span><span class="se">\n</span><span class="s2">"</span>
+<span class="gp">... </span>    <span class="sa">f</span><span class="s2">"  Asset: </span><span class="si">{</span><span class="n">fig_rel_path</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+<span class="gp">... </span>    <span class="s2">"  [Figure 4] Ranging error of 77-GHz FMCW radar and 3D LiDAR in dense particulate smoke aerosol as a function of temperature.</span><span class="se">\n</span><span class="s2">"</span>
+<span class="gp">... </span>    <span class="s2">"  Discussion Context: As demonstrated in Figure 4, optical backscatter degrades LiDAR ranging beyond 150C, whereas radar maintains sub-4cm accuracy up to 250C."</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span><span class="w"> </span><span class="nf">mock_doc_reader_call</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="sa">f</span><span class="s2">"Candidate Chunks:</span><span class="se">\n</span><span class="si">{</span><span class="n">figure_chunk_content</span><span class="si">}</span><span class="s2">"</span>
+</pre></div>
+</div>
+</section>
+<section id="execution">
+<h2>Execution<a class="headerlink" href="#execution" title="Link to this heading"></a></h2>
+<p>We invoke the Visual Evidence Investigator blueprint with a query requiring exact plot coordinates.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">prompt</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>    <span class="s2">"What is the exact ranging error of the 77-GHz FMCW radar and 3D LiDAR at 200C and 250C "</span>
+<span class="gp">... </span>    <span class="s2">"according to the empirical plot in Figure 4 of Talavera et al. (2023)?"</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mock_vlm_tool_response</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span>
+<span class="gp">... </span>    <span class="s2">"plot_type"</span><span class="p">:</span> <span class="s2">"line_plot"</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="s2">"x_axis"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"label"</span><span class="p">:</span> <span class="s2">"Temperature"</span><span class="p">,</span> <span class="s2">"units"</span><span class="p">:</span> <span class="s2">"C"</span><span class="p">,</span> <span class="s2">"range"</span><span class="p">:</span> <span class="p">[</span><span class="mi">20</span><span class="p">,</span> <span class="mi">300</span><span class="p">]},</span>
+<span class="gp">... </span>    <span class="s2">"y_axis"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"label"</span><span class="p">:</span> <span class="s2">"Ranging Error"</span><span class="p">,</span> <span class="s2">"units"</span><span class="p">:</span> <span class="s2">"cm"</span><span class="p">,</span> <span class="s2">"range"</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">50</span><span class="p">]},</span>
+<span class="gp">... </span>    <span class="s2">"series"</span><span class="p">:</span> <span class="p">[</span>
+<span class="gp">... </span>        <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"77-GHz FMCW Radar"</span><span class="p">,</span> <span class="s2">"points"</span><span class="p">:</span> <span class="p">[[</span><span class="mi">100</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">],</span> <span class="p">[</span><span class="mi">200</span><span class="p">,</span> <span class="mf">3.2</span><span class="p">],</span> <span class="p">[</span><span class="mi">250</span><span class="p">,</span> <span class="mf">3.8</span><span class="p">]]},</span>
+<span class="gp">... </span>        <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"3D LiDAR"</span><span class="p">,</span> <span class="s2">"points"</span><span class="p">:</span> <span class="p">[[</span><span class="mi">100</span><span class="p">,</span> <span class="mf">4.5</span><span class="p">],</span> <span class="p">[</span><span class="mi">150</span><span class="p">,</span> <span class="mf">28.0</span><span class="p">],</span> <span class="p">[</span><span class="mi">200</span><span class="p">,</span> <span class="s2">"Lost Track"</span><span class="p">]]}</span>
+<span class="gp">... </span>    <span class="p">],</span>
+<span class="gp">... </span>    <span class="s2">"observations"</span><span class="p">:</span> <span class="s2">"Radar error remains under 4cm up to 250C; LiDAR loses track above 150C."</span>
+<span class="gp">... </span><span class="p">})</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mock_final_synthesis</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>    <span class="s2">"- Finding: According to Figure 4, 77-GHz FMCW radar maintains ranging errors of 3.2 cm at 200C and 3.8 cm at 250C under dense particulate smoke aerosol. In contrast, 3D LiDAR error escalates to 28.0 cm at 150C and completely loses tracking above 150C.</span><span class="se">\n</span><span class="s2">"</span>
+<span class="gp">... </span>    <span class="s2">"- Citation: [Talavera et al. (2023) — Figure 4: FMCW Radar vs 3D LiDAR Ranging Error]</span><span class="se">\n</span><span class="s2">"</span>
+<span class="gp">... </span>    <span class="s2">"- Visual Evidence: Confirmed from line plot series comparing 77-GHz FMCW Radar curve against 3D LiDAR curve."</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s2">"metacognition.meta_tools.document_reader"</span><span class="p">,</span> <span class="n">side_effect</span><span class="o">=</span><span class="n">mock_doc_reader_call</span><span class="p">),</span> \
+<span class="gp">... </span>     <span class="n">patch</span><span class="p">(</span><span class="s2">"llm_api.ai_service.AIService.supports_native_tools"</span><span class="p">,</span> <span class="n">return_value</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span> \
+<span class="gp">... </span>     <span class="n">patch</span><span class="p">(</span><span class="s2">"llm_api.ai_service.AIService.generate_response2"</span><span class="p">,</span> <span class="n">side_effect</span><span class="o">=</span><span class="p">[</span>
+<span class="gp">... </span>         <span class="c1"># Step 2 Turn 1: LLM calls inspect_chart_image tool</span>
+<span class="gp">... </span>         <span class="p">[{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"inspect_chart_image"</span><span class="p">,</span> <span class="s2">"args"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"image_path"</span><span class="p">:</span> <span class="n">fig_rel_path</span><span class="p">,</span> <span class="s2">"query"</span><span class="p">:</span> <span class="s2">"Extract curve coordinates at 200C and 250C"</span><span class="p">}}],</span>
+<span class="gp">... </span>         <span class="c1"># inspect_chart_image tool internal VLM call</span>
+<span class="gp">... </span>         <span class="p">[</span><span class="n">mock_vlm_tool_response</span><span class="p">],</span>
+<span class="gp">... </span>         <span class="c1"># Step 2 Turn 2: LLM completes visual inspection phase</span>
+<span class="gp">... </span>         <span class="p">[[]],</span>
+<span class="gp">... </span>         <span class="c1"># Step 3: LLM generates final empirical synthesis with citations</span>
+<span class="gp">... </span>         <span class="p">[</span><span class="n">mock_final_synthesis</span><span class="p">]</span>
+<span class="gp">... </span>     <span class="p">]):</span>
+<span class="gp">... </span>    <span class="k">with</span> <span class="n">contextlib</span><span class="o">.</span><span class="n">redirect_stdout</span><span class="p">(</span><span class="n">io</span><span class="o">.</span><span class="n">StringIO</span><span class="p">()):</span>
+<span class="gp">... </span>        <span class="n">result</span> <span class="o">=</span> <span class="n">run_blueprint</span><span class="p">(</span><span class="n">bp</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">prompt</span><span class="p">,</span> <span class="n">user_id</span><span class="o">=</span><span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">report_doctest_run</span><span class="p">(</span><span class="s2">"13. multimodal_chart_reasoning"</span><span class="p">,</span> <span class="n">prompt</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="verification-report-card">
+<h2>Verification &amp; Report Card<a class="headerlink" href="#verification-report-card" title="Link to this heading"></a></h2>
+<p>We verify deterministic retrieval, tool invocation, and cited empirical synthesis.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">monologue</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"internal_monologue"</span><span class="p">,</span> <span class="p">[])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">step1</span> <span class="o">=</span> <span class="n">monologue</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">monologue</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="p">{}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">is_step1_pure</span> <span class="o">=</span> <span class="s2">"Deterministic Tool Executor"</span> <span class="ow">in</span> <span class="n">step1</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"system_prompt"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"- deterministic pure_tool retrieval: </span><span class="si">{</span><span class="mi">1</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">is_step1_pure</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="mi">0</span><span class="si">}</span><span class="s2">/1"</span><span class="p">)</span>
+<span class="go">- deterministic pure_tool retrieval: 1/1</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">final_resp</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"final_response"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">has_citation</span> <span class="o">=</span> <span class="s2">"Talavera et al."</span> <span class="ow">in</span> <span class="n">final_resp</span> <span class="ow">or</span> <span class="s2">"Figure 4"</span> <span class="ow">in</span> <span class="n">final_resp</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"- cited empirical finding: </span><span class="si">{</span><span class="mi">1</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">has_citation</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="mi">0</span><span class="si">}</span><span class="s2">/1"</span><span class="p">)</span>
+<span class="go">- cited empirical finding: 1/1</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">has_numeric_data</span> <span class="o">=</span> <span class="s2">"3.2"</span> <span class="ow">in</span> <span class="n">final_resp</span> <span class="ow">and</span> <span class="s2">"3.8"</span> <span class="ow">in</span> <span class="n">final_resp</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"- exact numeric plot extraction: </span><span class="si">{</span><span class="mi">1</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">has_numeric_data</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="mi">0</span><span class="si">}</span><span class="s2">/1"</span><span class="p">)</span>
+<span class="go">- exact numeric plot extraction: 1/1</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Andrew Cruickshank.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

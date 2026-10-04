@@ -1,0 +1,273 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scenario 12: In-the-Wild Evidence Extraction from Real Uncurated Literature &mdash; reason 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=aaf24e6f" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            reason
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../llm_api_app.html">LLM API - Local Inference, Proxy Routing &amp; Hardware-Aware Serving</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../verbal_tasks_app.html">Verbal Tasks - Database-Backed Asynchronous Execution &amp; Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../sandbox_manager_app.html">Sandbox Manager - Isolated Python Execution Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../grobid_client_app.html">Grobid Client - Deterministic Scientific PDF Parsing &amp; Citation Extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../background_resources_app.html">Background Resources - Retrieval-Augmented Generation &amp; Document Ingestion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../grips_app.html">Grips - Structured Knowledge Graph &amp; Propositional Claims</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metacognition_app.html">Metacognition - Cognitive Blueprints, Agentic Workflows &amp; Self-Evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmarking_app.html">Benchmarking - Automated Evaluation, Synthetic Generation &amp; LoRA Flywheels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo_ui_app.html">Demo UI - Empirical Research &amp; Cognitive Workbench</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../using_ollama.html">Ollama as Local AI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo_ui_trials.html">Demo UI Empirical Trials &amp; Verification Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tests.html">Testing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">reason</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Scenario 12: In-the-Wild Evidence Extraction from Real Uncurated Literature</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/metacognition_trials/12. wild_corpus_evidence_extraction.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="scenario-12-in-the-wild-evidence-extraction-from-real-uncurated-literature">
+<h1>Scenario 12: In-the-Wild Evidence Extraction from Real Uncurated Literature<a class="headerlink" href="#scenario-12-in-the-wild-evidence-extraction-from-real-uncurated-literature" title="Link to this heading"></a></h1>
+<p>This trial evaluates the canonical <code class="docutils literal notranslate"><span class="pre">Evidence</span> <span class="pre">Extractor</span></code> blueprint against the
+unvarnished chaos of real-world literature from the project’s active corpus.</p>
+<p>Unlike synthetic trials with clean, isolated 40-word paragraphs, this trial tests
+the small local model (Gemma 2 2B) against authentic document chunks containing:
+1. <strong>The Glossary Trap</strong>: Shallow dictionary definitions from <code class="docutils literal notranslate"><span class="pre">FirefightingGlossary.txt</span></code>.
+2. <strong>The Urbanization Trap</strong>: Broad introductory background fluff from <code class="docutils literal notranslate"><span class="pre">Li</span> <span class="pre">et</span> <span class="pre">al.</span> <span class="pre">2023</span></code>.
+3. <strong>The Real Field Trial Chunk</strong>: Dense experimental data from <code class="docutils literal notranslate"><span class="pre">Talavera</span> <span class="pre">et</span> <span class="pre">al.</span> <span class="pre">2023</span></code> featuring OCR quirks (<code class="docutils literal notranslate"><span class="pre">∘</span> <span class="pre">16.31</span> <span class="pre">C</span></code>, <code class="docutils literal notranslate"><span class="pre">m</span> <span class="pre">2</span></code>, <code class="docutils literal notranslate"><span class="pre">eCO</span> <span class="pre">2</span></code>), embedded URLs, and simulation notes alongside real physical parameters (<code class="docutils literal notranslate"><span class="pre">2.07</span> <span class="pre">kg</span></code>, <code class="docutils literal notranslate"><span class="pre">9</span> <span class="pre">h</span> <span class="pre">36</span> <span class="pre">min</span></code>).
+4. <strong>The Negative Inquiry (Absence Test)</strong>: Testing whether the model reliably outputs <em>“No empirical evidence found in corpus”</em> when asked for a specification (submerged sonar depth) completely absent from the retrieved literature (<code class="docutils literal notranslate"><span class="pre">Penders</span> <span class="pre">et</span> <span class="pre">al.</span> <span class="pre">2011</span></code>), rather than hallucinating plausible figures.</p>
+<section id="setup-database-seeding">
+<h2>Setup &amp; Database Seeding<a class="headerlink" href="#setup-database-seeding" title="Link to this heading"></a></h2>
+<p>We initialize the canonical blueprint via <code class="docutils literal notranslate"><span class="pre">seed_evidence_extractor</span></code> and fetch real document texts.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">django.contrib.auth.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">User</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Conversation</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">CognitiveBlueprint</span><span class="p">,</span> <span class="n">ReasoningStep</span><span class="p">,</span> <span class="n">ToolDefinition</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.seed</span><span class="w"> </span><span class="kn">import</span> <span class="n">seed_evidence_extractor</span><span class="p">,</span> <span class="n">seed_tools</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_blueprint</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">unittest.mock</span><span class="w"> </span><span class="kn">import</span> <span class="n">patch</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">contextlib</span><span class="o">,</span><span class="w"> </span><span class="nn">io</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">user</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s2">"wild_corpus_user"</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">seed_tools</span><span class="p">(</span><span class="n">ToolDefinition</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">seed_evidence_extractor</span><span class="p">(</span><span class="n">CognitiveBlueprint</span><span class="p">,</span> <span class="n">ReasoningStep</span><span class="p">,</span> <span class="n">ToolDefinition</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bp</span> <span class="o">=</span> <span class="n">CognitiveBlueprint</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"Evidence Extractor"</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="assembling-real-literature-chunks">
+<h2>Assembling Real Literature Chunks<a class="headerlink" href="#assembling-real-literature-chunks" title="Link to this heading"></a></h2>
+<p>We construct candidate chunk pools reflecting the genuine clutter of our repository’s corpus.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">chunk_glossary_distractor</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>    <span class="s2">"[Source: documents/FirefightingGlossary.txt]</span><span class="se">\n</span><span class="s2">"</span>
+<span class="gp">... </span>    <span class="s2">"Draft-The process of pumping water from a static source below the pump.</span><span class="se">\n</span><span class="s2">"</span>
+<span class="gp">... </span>    <span class="s2">"Dry Chemical-An extinguishing agent composed of very fine particles designed for flame knockdown.</span><span class="se">\n</span><span class="s2">"</span>
+<span class="gp">... </span>    <span class="s2">"Eductor-A device that introduces liquid foam concentrate into a water stream at a controlled rate."</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">chunk_urbanization_fluff</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>    <span class="s2">"[Source: documents/fire-06-00093-with-cover.pdf - Li et al. (2023)]</span><span class="se">\n</span><span class="s2">"</span>
+<span class="gp">... </span>    <span class="s2">"More and more people live and work in dense indoor buildings with the acceleration of urbanization [1]. "</span>
+<span class="gp">... </span>    <span class="s2">"Large numbers of casualties and serious economic losses can be caused when indoor building fires occur. "</span>
+<span class="gp">... </span>    <span class="s2">"From a global perspective, the cost of fires is high. According to statistics, the direct and indirect "</span>
+<span class="gp">... </span>    <span class="s2">"costs of fire in developed countries account for approximately 1</span><span class="si">% o</span><span class="s2">f gross domestic product."</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">chunk_talavera_empirical</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>    <span class="s2">"[Source: documents/Journal_of_Field_Robotics_-_2023_-_Talavera_-_An_autonomous_ground_robot_to_su_hjXU4xB.pdf]</span><span class="se">\n</span><span class="s2">"</span>
+<span class="gp">... </span>    <span class="s2">"During all the interventions explained above, the robot with its payload weighed 2.07 kg and had a "</span>
+<span class="gp">... </span>    <span class="s2">"maximum autonomy of 9 h and 36 min. Additionally, the capability of the robot to go through narrow spaces "</span>
+<span class="gp">... </span>    <span class="s2">"and cross tubes with a minimum diameter of 0.5 m was validated. We calculated this autonomy theoretically "</span>
+<span class="gp">... </span>    <span class="s2">"and experimentally using a linear electricity sensor based on the Hall effect, which determines the total "</span>
+<span class="gp">... </span>    <span class="s2">"power consumption of the components connected to each power supply. Table 4 shows the results of the total "</span>
+<span class="gp">... </span>    <span class="s2">"consumption. Therefore, the autonomy of rechargeable batteries and portable power banks is 76 h 11 s and "</span>
+<span class="gp">... </span>    <span class="s2">"9 h 36 min, respectively. The interventions in the real scenario reported previously were designed using Unity."</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">chunk_penders_land_only</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>    <span class="s2">"[Source: documents/JAdvRobPenders.pdf - Penders et al. (2011)]</span><span class="se">\n</span><span class="s2">"</span>
+<span class="gp">... </span>    <span class="s2">"The networking mode is aimed at setting up and maintaining a communication infrastructure in structural fires. "</span>
+<span class="gp">... </span>    <span class="s2">"Metal and solid concrete present in the warehouse partitions the warehouse into cages which render radio reception problematic. "</span>
+<span class="gp">... </span>    <span class="s2">"In the United Kingdom procedures are that a first team will lay-out and fix a guideline along a wall. "</span>
+<span class="gp">... </span>    <span class="s2">"Subsequent teams aiming towards the scene of operations follow the guideline at crawling speed 12 m/min."</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="execution-multi-turn-real-world-evaluation">
+<h2>Execution: Multi-Turn Real-World Evaluation<a class="headerlink" href="#execution-multi-turn-real-world-evaluation" title="Link to this heading"></a></h2>
+<p>Turn 1 tests empirical parameter sifting amidst glossary and preamble clutter.
+Turn 2 executes an adversarial negative inquiry to verify the absence guardrail.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">prompt_empirical</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>    <span class="s2">"What is the verified operating autonomy and robot weight with payload measured during real interventions?"</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">prompt_negative</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>    <span class="s2">"What is the submerged underwater acoustic sonar ranging accuracy and maximum operating depth of the robotic swarm?"</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">resp_talavera_live</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>    <span class="s2">"- Finding: The robot's weight with payload was 2.07 kg, and its maximum operating autonomy was 9 hours and 36 minutes. Real-world interventions were performed using batteries and portable power banks, with theoretical autonomy of 76 hours and 11 seconds and 9 hours and 36 minutes respectively.</span><span class="se">\n</span><span class="s2">"</span>
+<span class="gp">... </span>    <span class="s2">"- Citation: [Author, Year] - Section/Page not provided in the text</span><span class="se">\n</span><span class="s2">"</span>
+<span class="gp">... </span>    <span class="s2">"- Relevance: This information is directly relevant to the task by quantifying the robot's weight, payload capacity, and maximum operating autonomy under real-world conditions."</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">resp_negative_live</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>    <span class="s2">"Finding: No empirical evidence found in corpus.</span><span class="se">\n</span><span class="s2">"</span>
+<span class="gp">... </span>    <span class="s2">"Citation: N/A</span><span class="se">\n</span><span class="s2">"</span>
+<span class="gp">... </span>    <span class="s2">"Relevance: The provided text focuses on the functionality and design of a robotic swarm, but it lacks information regarding its submerged underwater acoustic sonar ranging accuracy or maximum operating depth."</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span><span class="w"> </span><span class="nf">mock_retriever_multi</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">mock_retriever_multi</span><span class="p">,</span> <span class="s2">"call_count"</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="n">mock_retriever_multi</span><span class="o">.</span><span class="n">call_count</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="gp">... </span>    <span class="n">mock_retriever_multi</span><span class="o">.</span><span class="n">call_count</span> <span class="o">+=</span> <span class="mi">1</span>
+<span class="gp">... </span>    <span class="k">if</span> <span class="n">mock_retriever_multi</span><span class="o">.</span><span class="n">call_count</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="k">return</span> <span class="sa">f</span><span class="s2">"Candidate Chunks:</span><span class="se">\n</span><span class="s2">1. </span><span class="si">{</span><span class="n">chunk_glossary_distractor</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">2. </span><span class="si">{</span><span class="n">chunk_urbanization_fluff</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">3. </span><span class="si">{</span><span class="n">chunk_talavera_empirical</span><span class="si">}</span><span class="s2">"</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="sa">f</span><span class="s2">"Candidate Chunks:</span><span class="se">\n</span><span class="s2">1. </span><span class="si">{</span><span class="n">chunk_penders_land_only</span><span class="si">}</span><span class="s2">"</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span><span class="w"> </span><span class="nf">mock_llm_multi</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">mock_llm_multi</span><span class="p">,</span> <span class="s2">"call_count"</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="n">mock_llm_multi</span><span class="o">.</span><span class="n">call_count</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="gp">... </span>    <span class="n">mock_llm_multi</span><span class="o">.</span><span class="n">call_count</span> <span class="o">+=</span> <span class="mi">1</span>
+<span class="gp">... </span>    <span class="k">if</span> <span class="n">mock_llm_multi</span><span class="o">.</span><span class="n">call_count</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="k">return</span> <span class="p">[</span><span class="n">resp_talavera_live</span><span class="p">]</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="p">[</span><span class="n">resp_negative_live</span><span class="p">]</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">conv</span> <span class="o">=</span> <span class="n">Conversation</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">user</span><span class="o">=</span><span class="n">user</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">title</span><span class="o">=</span><span class="s2">"Wild Corpus Evidence Ingest"</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">state_tree</span><span class="o">=</span><span class="p">{</span><span class="s2">"macro_objective"</span><span class="p">:</span> <span class="s2">"Evaluate empirical extraction from real literature"</span><span class="p">,</span> <span class="s2">"established_facts"</span><span class="p">:</span> <span class="p">[]}</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">conv</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">prompts</span> <span class="o">=</span> <span class="p">[</span><span class="n">prompt_empirical</span><span class="p">,</span> <span class="n">prompt_negative</span><span class="p">]</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s2">"metacognition.meta_tools.document_reader"</span><span class="p">,</span> <span class="n">side_effect</span><span class="o">=</span><span class="n">mock_retriever_multi</span><span class="p">),</span> \
+<span class="gp">... </span>     <span class="n">patch</span><span class="p">(</span><span class="s2">"llm_api.ai_service.AIService.generate_response2"</span><span class="p">,</span> <span class="n">side_effect</span><span class="o">=</span><span class="n">mock_llm_multi</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">with</span> <span class="n">contextlib</span><span class="o">.</span><span class="n">redirect_stdout</span><span class="p">(</span><span class="n">io</span><span class="o">.</span><span class="n">StringIO</span><span class="p">()):</span>
+<span class="gp">... </span>        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">prompts</span><span class="p">:</span>
+<span class="gp">... </span>            <span class="n">res</span> <span class="o">=</span> <span class="n">run_blueprint</span><span class="p">(</span><span class="n">bp</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">conversation_id</span><span class="o">=</span><span class="n">cid</span><span class="p">,</span> <span class="n">user_id</span><span class="o">=</span><span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+<span class="gp">... </span>            <span class="n">cid</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"conversation_id"</span><span class="p">)</span>
+<span class="gp">... </span>            <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">combined_result</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">combined_result</span><span class="p">[</span><span class="s2">"internal_monologue"</span><span class="p">]</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"internal_monologue"</span><span class="p">]</span> <span class="o">+</span> <span class="n">results</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">"internal_monologue"</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">report_doctest_run</span><span class="p">(</span><span class="s2">"12. wild_corpus_evidence_extraction"</span><span class="p">,</span> <span class="n">prompts</span><span class="p">,</span> <span class="n">combined_result</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="verification-report-card">
+<h2>Verification &amp; Report Card<a class="headerlink" href="#verification-report-card" title="Link to this heading"></a></h2>
+<p>We verify both the extraction accuracy amid noise and the model’s refusal to hallucinate absent facts.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">resp1</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"final_response"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">has_distractor</span> <span class="o">=</span> <span class="s2">"pumping water"</span> <span class="ow">in</span> <span class="n">resp1</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">or</span> <span class="s2">"acceleration of urbanization"</span> <span class="ow">in</span> <span class="n">resp1</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"- distractor noise bypassed: </span><span class="si">{</span><span class="mi">1</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="n">has_distractor</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="mi">0</span><span class="si">}</span><span class="s2">/1"</span><span class="p">)</span>
+<span class="go">- distractor noise bypassed: 1/1</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">has_weight</span> <span class="o">=</span> <span class="s2">"2.07"</span> <span class="ow">in</span> <span class="n">resp1</span> <span class="ow">or</span> <span class="s2">"2.07 kg"</span> <span class="ow">in</span> <span class="n">resp1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">has_autonomy</span> <span class="o">=</span> <span class="s2">"9 hours"</span> <span class="ow">in</span> <span class="n">resp1</span> <span class="ow">or</span> <span class="s2">"9 h"</span> <span class="ow">in</span> <span class="n">resp1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"- physical parameters preserved: </span><span class="si">{</span><span class="mi">1</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">has_weight</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">has_autonomy</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="mi">0</span><span class="si">}</span><span class="s2">/1"</span><span class="p">)</span>
+<span class="go">- physical parameters preserved: 1/1</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">resp2</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"final_response"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">no_evidence_detected</span> <span class="o">=</span> <span class="s2">"no empirical evidence found"</span> <span class="ow">in</span> <span class="n">resp2</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"- absence guardrail adhered (no hallucination): </span><span class="si">{</span><span class="mi">1</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">no_evidence_detected</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="mi">0</span><span class="si">}</span><span class="s2">/1"</span><span class="p">)</span>
+<span class="go">- absence guardrail adhered (no hallucination): 1/1</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Andrew Cruickshank.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

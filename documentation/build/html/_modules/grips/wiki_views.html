@@ -118,20 +118,20 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_render_wikilinks_html</span><span class="p">(</span><span class="n">markdown_text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Converts [[slug]] or [[slug|Display Text]] into clickable wiki links,</span>
 <span class="sd">    then renders the markdown into safe HTML.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">replace_link</span><span class="p">(</span><span class="n">match</span><span class="p">):</span>
         <span class="n">target</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
         <span class="n">label</span> <span class="o">=</span> <span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="ow">or</span> <span class="n">target</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
-        <span class="n">url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;/wiki/</span><span class="si">{</span><span class="n">target</span><span class="si">}</span><span class="s2">/&quot;</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;&lt;a href=&quot;</span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s1">&quot; class=&quot;wiki-link text-indigo-600 dark:text-indigo-400 hover:underline font-medium&quot;&gt;[[</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s1">]]&lt;/a&gt;&#39;</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"/wiki/</span><span class="si">{</span><span class="n">target</span><span class="si">}</span><span class="s2">/"</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">'&lt;a href="</span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s1">" class="wiki-link text-indigo-600 dark:text-indigo-400 hover:underline font-medium"&gt;[[</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s1">]]&lt;/a&gt;'</span>
 
     <span class="n">processed_md</span> <span class="o">=</span> <span class="n">WIKILINK_PATTERN</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">replace_link</span><span class="p">,</span> <span class="n">markdown_text</span><span class="p">)</span>
     <span class="n">html</span> <span class="o">=</span> <span class="n">md_lib</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span>
         <span class="n">processed_md</span><span class="p">,</span>
-        <span class="n">extensions</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;extra&#39;</span><span class="p">,</span> <span class="s1">&#39;codehilite&#39;</span><span class="p">,</span> <span class="s1">&#39;tables&#39;</span><span class="p">,</span> <span class="s1">&#39;toc&#39;</span><span class="p">]</span>
+        <span class="n">extensions</span><span class="o">=</span><span class="p">[</span><span class="s1">'extra'</span><span class="p">,</span> <span class="s1">'codehilite'</span><span class="p">,</span> <span class="s1">'tables'</span><span class="p">,</span> <span class="s1">'toc'</span><span class="p">]</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">html</span>
 
@@ -140,44 +140,44 @@
 <a class="viewcode-back" href="../../grips_app.html#grips.wiki_views.wiki_index">[docs]</a>
 <span class="nd">@ensure_csrf_cookie</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">wiki_index</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Landing page for the Grips OKF Wiki. Shows domain tree, statistics,</span>
 <span class="sd">    and recent activity stream.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">wiki_root</span> <span class="o">=</span> <span class="n">get_wiki_root</span><span class="p">()</span>
     <span class="n">domains</span> <span class="o">=</span> <span class="p">{}</span>
 
-    <span class="k">for</span> <span class="n">concept_file</span> <span class="ow">in</span> <span class="p">(</span><span class="n">wiki_root</span> <span class="o">/</span> <span class="s1">&#39;concepts&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">rglob</span><span class="p">(</span><span class="s1">&#39;*.md&#39;</span><span class="p">):</span>
-        <span class="n">parts</span> <span class="o">=</span> <span class="n">concept_file</span><span class="o">.</span><span class="n">relative_to</span><span class="p">(</span><span class="n">wiki_root</span> <span class="o">/</span> <span class="s1">&#39;concepts&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">parts</span>
+    <span class="k">for</span> <span class="n">concept_file</span> <span class="ow">in</span> <span class="p">(</span><span class="n">wiki_root</span> <span class="o">/</span> <span class="s1">'concepts'</span><span class="p">)</span><span class="o">.</span><span class="n">rglob</span><span class="p">(</span><span class="s1">'*.md'</span><span class="p">):</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="n">concept_file</span><span class="o">.</span><span class="n">relative_to</span><span class="p">(</span><span class="n">wiki_root</span> <span class="o">/</span> <span class="s1">'concepts'</span><span class="p">)</span><span class="o">.</span><span class="n">parts</span>
         <span class="k">if</span> <span class="n">parts</span><span class="p">:</span>
-            <span class="n">domain_name</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">title</span><span class="p">()</span>
+            <span class="n">domain_name</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">'-'</span><span class="p">,</span> <span class="s1">' '</span><span class="p">)</span><span class="o">.</span><span class="n">title</span><span class="p">()</span>
             <span class="n">domains</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">domain_name</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
-                <span class="s1">&#39;slug&#39;</span><span class="p">:</span> <span class="n">concept_file</span><span class="o">.</span><span class="n">stem</span><span class="p">,</span>
-                <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="n">concept_file</span><span class="o">.</span><span class="n">stem</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">title</span><span class="p">(),</span>
-                <span class="s1">&#39;rel_path&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">concept_file</span><span class="o">.</span><span class="n">relative_to</span><span class="p">(</span><span class="n">wiki_root</span><span class="p">)),</span>
+                <span class="s1">'slug'</span><span class="p">:</span> <span class="n">concept_file</span><span class="o">.</span><span class="n">stem</span><span class="p">,</span>
+                <span class="s1">'title'</span><span class="p">:</span> <span class="n">concept_file</span><span class="o">.</span><span class="n">stem</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">'-'</span><span class="p">,</span> <span class="s1">' '</span><span class="p">)</span><span class="o">.</span><span class="n">title</span><span class="p">(),</span>
+                <span class="s1">'rel_path'</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">concept_file</span><span class="o">.</span><span class="n">relative_to</span><span class="p">(</span><span class="n">wiki_root</span><span class="p">)),</span>
             <span class="p">})</span>
 
     <span class="n">recent_activity</span> <span class="o">=</span> <span class="n">get_wiki_reflog</span><span class="p">(</span><span class="n">limit</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 
     <span class="n">context</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">&#39;domains&#39;</span><span class="p">:</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">domains</span><span class="o">.</span><span class="n">items</span><span class="p">()),</span>
-        <span class="s1">&#39;total_concepts&#39;</span><span class="p">:</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">domains</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>
-        <span class="s1">&#39;recent_activity&#39;</span><span class="p">:</span> <span class="n">recent_activity</span><span class="p">,</span>
+        <span class="s1">'domains'</span><span class="p">:</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">domains</span><span class="o">.</span><span class="n">items</span><span class="p">()),</span>
+        <span class="s1">'total_concepts'</span><span class="p">:</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">domains</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>
+        <span class="s1">'recent_activity'</span><span class="p">:</span> <span class="n">recent_activity</span><span class="p">,</span>
     <span class="p">}</span>
-    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;grips/wiki/index.html&#39;</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">'grips/wiki/index.html'</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="wiki_page">
 <a class="viewcode-back" href="../../grips_app.html#grips.wiki_views.wiki_page">[docs]</a>
 <span class="nd">@ensure_csrf_cookie</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">wiki_page</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">wiki_page</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="s2">""</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Displays a wiki page in read-only mode with breadcrumbs, rendered markdown,</span>
 <span class="sd">    incoming backlinks, and a toggle button to enter Milkdown edit mode.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span> <span class="ow">or</span> <span class="n">path</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="s1">&#39;grips:wiki_index&#39;</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span> <span class="ow">or</span> <span class="n">path</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">'/'</span><span class="p">)</span> <span class="o">==</span> <span class="s1">''</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="s1">'grips:wiki_index'</span><span class="p">)</span>
 
     <span class="k">try</span><span class="p">:</span>
         <span class="n">rel_path</span> <span class="o">=</span> <span class="n">_resolve_wiki_rel_path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
@@ -186,46 +186,46 @@
         <span class="k">raise</span> <span class="n">Http404</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
 
     <span class="n">page_data</span> <span class="o">=</span> <span class="n">get_page_content_and_sha</span><span class="p">(</span><span class="n">rel_path</span><span class="p">)</span>
-    <span class="n">rendered_body_html</span> <span class="o">=</span> <span class="n">mark_safe</span><span class="p">(</span><span class="n">_render_wikilinks_html</span><span class="p">(</span><span class="n">page_data</span><span class="p">[</span><span class="s1">&#39;body&#39;</span><span class="p">]))</span>
+    <span class="n">rendered_body_html</span> <span class="o">=</span> <span class="n">mark_safe</span><span class="p">(</span><span class="n">_render_wikilinks_html</span><span class="p">(</span><span class="n">page_data</span><span class="p">[</span><span class="s1">'body'</span><span class="p">]))</span>
 
     <span class="n">context</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">&#39;page&#39;</span><span class="p">:</span> <span class="n">page_data</span><span class="p">,</span>
-        <span class="s1">&#39;rendered_body_html&#39;</span><span class="p">:</span> <span class="n">rendered_body_html</span><span class="p">,</span>
-        <span class="s1">&#39;rel_path&#39;</span><span class="p">:</span> <span class="n">rel_path</span><span class="p">,</span>
-        <span class="s1">&#39;slug&#39;</span><span class="p">:</span> <span class="n">page_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;slug&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">Path</span><span class="p">(</span><span class="n">rel_path</span><span class="p">)</span><span class="o">.</span><span class="n">stem</span><span class="p">,</span>
+        <span class="s1">'page'</span><span class="p">:</span> <span class="n">page_data</span><span class="p">,</span>
+        <span class="s1">'rendered_body_html'</span><span class="p">:</span> <span class="n">rendered_body_html</span><span class="p">,</span>
+        <span class="s1">'rel_path'</span><span class="p">:</span> <span class="n">rel_path</span><span class="p">,</span>
+        <span class="s1">'slug'</span><span class="p">:</span> <span class="n">page_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'slug'</span><span class="p">)</span> <span class="ow">or</span> <span class="n">Path</span><span class="p">(</span><span class="n">rel_path</span><span class="p">)</span><span class="o">.</span><span class="n">stem</span><span class="p">,</span>
     <span class="p">}</span>
-    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;grips/wiki/page.html&#39;</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">'grips/wiki/page.html'</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="wiki_save">
 <a class="viewcode-back" href="../../grips_app.html#grips.wiki_views.wiki_save">[docs]</a>
-<span class="nd">@require_http_methods</span><span class="p">([</span><span class="s2">&quot;POST&quot;</span><span class="p">])</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">wiki_save</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="nd">@require_http_methods</span><span class="p">([</span><span class="s2">"POST"</span><span class="p">])</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">wiki_save</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="s2">""</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Saves updated markdown content, commits to Git, and syncs to PostgreSQL models.</span>
 <span class="sd">    Accepts JSON: { markdown: str, message: str, base_sha: str }</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">'utf-8'</span><span class="p">))</span>
     <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">HttpResponseBadRequest</span><span class="p">(</span><span class="s2">&quot;Invalid JSON body.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">HttpResponseBadRequest</span><span class="p">(</span><span class="s2">"Invalid JSON body."</span><span class="p">)</span>
 
-    <span class="n">markdown_content</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;markdown&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
-    <span class="n">commit_message</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;message&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
-    <span class="n">base_sha</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;base_sha&#39;</span><span class="p">)</span>
+    <span class="n">markdown_content</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'markdown'</span><span class="p">,</span> <span class="s1">''</span><span class="p">)</span>
+    <span class="n">commit_message</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'message'</span><span class="p">,</span> <span class="s1">''</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="n">base_sha</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'base_sha'</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">markdown_content</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">HttpResponseBadRequest</span><span class="p">(</span><span class="s2">&quot;Markdown content cannot be empty.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">HttpResponseBadRequest</span><span class="p">(</span><span class="s2">"Markdown content cannot be empty."</span><span class="p">)</span>
 
     <span class="k">try</span><span class="p">:</span>
         <span class="n">rel_path</span> <span class="o">=</span> <span class="n">_resolve_wiki_rel_path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
         <span class="n">assert_safe_path</span><span class="p">(</span><span class="n">rel_path</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">PermissionError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)},</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s1">'success'</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">'error'</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)},</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
 
-    <span class="n">user_name</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">get_full_name</span><span class="p">()</span> <span class="ow">or</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">username</span> <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">is_authenticated</span> <span class="k">else</span> <span class="s2">&quot;Wiki Contributor&quot;</span>
-    <span class="n">user_email</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">email</span> <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">is_authenticated</span> <span class="ow">and</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">email</span> <span class="k">else</span> <span class="s2">&quot;wiki@verbal.local&quot;</span>
+    <span class="n">user_name</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">get_full_name</span><span class="p">()</span> <span class="ow">or</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">username</span> <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">is_authenticated</span> <span class="k">else</span> <span class="s2">"Wiki Contributor"</span>
+    <span class="n">user_email</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">email</span> <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">is_authenticated</span> <span class="ow">and</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">email</span> <span class="k">else</span> <span class="s2">"wiki@verbal.local"</span>
 
     <span class="n">result</span> <span class="o">=</span> <span class="n">save_and_commit_page</span><span class="p">(</span>
         <span class="n">rel_path</span><span class="o">=</span><span class="n">rel_path</span><span class="p">,</span>
@@ -243,23 +243,50 @@
 <div class="viewcode-block" id="wiki_query_links">
 <a class="viewcode-back" href="../../grips_app.html#grips.wiki_views.wiki_query_links">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">wiki_query_links</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    JSON API for debounced autocomplete when a user types [[ in Milkdown.</span>
 <span class="sd">    Query parameter: ?q=&lt;search term&gt;</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">q</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;q&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+<span class="sd">    """</span>
+    <span class="n">q</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'q'</span><span class="p">,</span> <span class="s1">''</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
     <span class="n">results</span> <span class="o">=</span> <span class="n">search_wiki_links</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s1">&#39;results&#39;</span><span class="p">:</span> <span class="n">results</span><span class="p">})</span></div>
+    <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s1">'results'</span><span class="p">:</span> <span class="n">results</span><span class="p">})</span></div>
+
+
+
+<div class="viewcode-block" id="wiki_live_search">
+<a class="viewcode-back" href="../../grips_app.html#grips.wiki_views.wiki_live_search">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">wiki_live_search</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Modern Datastar SSE endpoint for reactive wiki search autocomplete.</span>
+<span class="sd">    Uses DatastarSSE.patch_elements to morph the search dropdown in place.</span>
+<span class="sd">    """</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.datastar</span><span class="w"> </span><span class="kn">import</span> <span class="n">DatastarSSE</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">django.template.loader</span><span class="w"> </span><span class="kn">import</span> <span class="n">render_to_string</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">django.http</span><span class="w"> </span><span class="kn">import</span> <span class="n">StreamingHttpResponse</span>
+
+    <span class="n">q</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'q'</span><span class="p">,</span> <span class="s1">''</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="n">search_wiki_links</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span> <span class="k">if</span> <span class="n">q</span> <span class="k">else</span> <span class="p">[]</span>
+
+    <span class="n">html</span> <span class="o">=</span> <span class="n">render_to_string</span><span class="p">(</span>
+        <span class="s1">'grips/wiki/partials/search_dropdown.html'</span><span class="p">,</span>
+        <span class="p">{</span><span class="s1">'query'</span><span class="p">:</span> <span class="n">q</span><span class="p">,</span> <span class="s1">'results'</span><span class="p">:</span> <span class="n">results</span><span class="p">},</span>
+        <span class="n">request</span><span class="o">=</span><span class="n">request</span>
+    <span class="p">)</span>
+    <span class="n">sse_data</span> <span class="o">=</span> <span class="n">DatastarSSE</span><span class="o">.</span><span class="n">patch_elements</span><span class="p">(</span><span class="n">html</span><span class="p">,</span> <span class="n">selector</span><span class="o">=</span><span class="s2">"#search-dropdown"</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">"morph"</span><span class="p">)</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">StreamingHttpResponse</span><span class="p">(</span><span class="nb">iter</span><span class="p">([</span><span class="n">sse_data</span><span class="p">]),</span> <span class="n">content_type</span><span class="o">=</span><span class="s2">"text/event-stream"</span><span class="p">)</span>
+    <span class="n">response</span><span class="p">[</span><span class="s2">"Cache-Control"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"no-cache"</span>
+    <span class="n">response</span><span class="p">[</span><span class="s2">"X-Accel-Buffering"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"no"</span>
+    <span class="k">return</span> <span class="n">response</span></div>
 
 
 
 <div class="viewcode-block" id="wiki_history">
 <a class="viewcode-back" href="../../grips_app.html#grips.wiki_views.wiki_history">[docs]</a>
 <span class="nd">@ensure_csrf_cookie</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">wiki_history</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">wiki_history</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="s2">""</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Displays the commit history log and diffs for a specific wiki file.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">rel_path</span> <span class="o">=</span> <span class="n">_resolve_wiki_rel_path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
         <span class="n">assert_safe_path</span><span class="p">(</span><span class="n">rel_path</span><span class="p">)</span>
@@ -267,20 +294,20 @@
         <span class="k">raise</span> <span class="n">Http404</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
 
     <span class="n">history</span> <span class="o">=</span> <span class="n">get_page_history</span><span class="p">(</span><span class="n">rel_path</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">25</span><span class="p">)</span>
-    <span class="n">selected_sha</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;sha&#39;</span><span class="p">)</span>
-    <span class="n">diff_output</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">selected_sha</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'sha'</span><span class="p">)</span>
+    <span class="n">diff_output</span> <span class="o">=</span> <span class="s2">""</span>
 
     <span class="k">if</span> <span class="n">selected_sha</span><span class="p">:</span>
         <span class="n">diff_output</span> <span class="o">=</span> <span class="n">get_page_diff</span><span class="p">(</span><span class="n">rel_path</span><span class="p">,</span> <span class="n">selected_sha</span><span class="p">)</span>
 
     <span class="n">context</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">&#39;rel_path&#39;</span><span class="p">:</span> <span class="n">rel_path</span><span class="p">,</span>
-        <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="n">Path</span><span class="p">(</span><span class="n">rel_path</span><span class="p">)</span><span class="o">.</span><span class="n">stem</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">title</span><span class="p">(),</span>
-        <span class="s1">&#39;history&#39;</span><span class="p">:</span> <span class="n">history</span><span class="p">,</span>
-        <span class="s1">&#39;selected_sha&#39;</span><span class="p">:</span> <span class="n">selected_sha</span><span class="p">,</span>
-        <span class="s1">&#39;diff_output&#39;</span><span class="p">:</span> <span class="n">diff_output</span><span class="p">,</span>
+        <span class="s1">'rel_path'</span><span class="p">:</span> <span class="n">rel_path</span><span class="p">,</span>
+        <span class="s1">'title'</span><span class="p">:</span> <span class="n">Path</span><span class="p">(</span><span class="n">rel_path</span><span class="p">)</span><span class="o">.</span><span class="n">stem</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">'-'</span><span class="p">,</span> <span class="s1">' '</span><span class="p">)</span><span class="o">.</span><span class="n">title</span><span class="p">(),</span>
+        <span class="s1">'history'</span><span class="p">:</span> <span class="n">history</span><span class="p">,</span>
+        <span class="s1">'selected_sha'</span><span class="p">:</span> <span class="n">selected_sha</span><span class="p">,</span>
+        <span class="s1">'diff_output'</span><span class="p">:</span> <span class="n">diff_output</span><span class="p">,</span>
     <span class="p">}</span>
-    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;grips/wiki/history.html&#39;</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">'grips/wiki/history.html'</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span></div>
 
 
 
@@ -288,29 +315,29 @@
 <a class="viewcode-back" href="../../grips_app.html#grips.wiki_views.wiki_activity">[docs]</a>
 <span class="nd">@ensure_csrf_cookie</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">wiki_activity</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Global activity log showing commits and affected files across grips_okf.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">limit</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;limit&#39;</span><span class="p">,</span> <span class="mi">50</span><span class="p">))</span>
+<span class="sd">    """</span>
+    <span class="n">limit</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'limit'</span><span class="p">,</span> <span class="mi">50</span><span class="p">))</span>
     <span class="n">reflog</span> <span class="o">=</span> <span class="n">get_wiki_reflog</span><span class="p">(</span><span class="n">limit</span><span class="o">=</span><span class="n">limit</span><span class="p">)</span>
 
-    <span class="n">selected_sha</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;sha&#39;</span><span class="p">)</span>
-    <span class="n">selected_file</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;file&#39;</span><span class="p">)</span>
-    <span class="n">diff_output</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">selected_sha</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'sha'</span><span class="p">)</span>
+    <span class="n">selected_file</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'file'</span><span class="p">)</span>
+    <span class="n">diff_output</span> <span class="o">=</span> <span class="s2">""</span>
     <span class="k">if</span> <span class="n">selected_sha</span> <span class="ow">and</span> <span class="n">selected_file</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">assert_safe_path</span><span class="p">(</span><span class="n">selected_file</span><span class="p">)</span>
             <span class="n">diff_output</span> <span class="o">=</span> <span class="n">get_page_diff</span><span class="p">(</span><span class="n">selected_file</span><span class="p">,</span> <span class="n">selected_sha</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-            <span class="n">diff_output</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+            <span class="n">diff_output</span> <span class="o">=</span> <span class="s2">""</span>
 
     <span class="n">context</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">&#39;reflog&#39;</span><span class="p">:</span> <span class="n">reflog</span><span class="p">,</span>
-        <span class="s1">&#39;selected_sha&#39;</span><span class="p">:</span> <span class="n">selected_sha</span><span class="p">,</span>
-        <span class="s1">&#39;selected_file&#39;</span><span class="p">:</span> <span class="n">selected_file</span><span class="p">,</span>
-        <span class="s1">&#39;diff_output&#39;</span><span class="p">:</span> <span class="n">diff_output</span><span class="p">,</span>
+        <span class="s1">'reflog'</span><span class="p">:</span> <span class="n">reflog</span><span class="p">,</span>
+        <span class="s1">'selected_sha'</span><span class="p">:</span> <span class="n">selected_sha</span><span class="p">,</span>
+        <span class="s1">'selected_file'</span><span class="p">:</span> <span class="n">selected_file</span><span class="p">,</span>
+        <span class="s1">'diff_output'</span><span class="p">:</span> <span class="n">diff_output</span><span class="p">,</span>
     <span class="p">}</span>
-    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;grips/wiki/activity.html&#39;</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">'grips/wiki/activity.html'</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span></div>
 
 
 
@@ -318,33 +345,33 @@
 <a class="viewcode-back" href="../../grips_app.html#grips.wiki_views.wiki_graph">[docs]</a>
 <span class="nd">@ensure_csrf_cookie</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">wiki_graph</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Interactive network graph visualization view supporting Knowledge, Citation,</span>
 <span class="sd">    and Hybrid modes. Renders vis-network.js canvas and Mermaid code toggle.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">mode</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;mode&#39;</span><span class="p">,</span> <span class="s1">&#39;knowledge&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
-    <span class="k">if</span> <span class="n">mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;knowledge&#39;</span><span class="p">,</span> <span class="s1">&#39;citation&#39;</span><span class="p">,</span> <span class="s1">&#39;hybrid&#39;</span><span class="p">):</span>
-        <span class="n">mode</span> <span class="o">=</span> <span class="s1">&#39;knowledge&#39;</span>
+<span class="sd">    """</span>
+    <span class="n">mode</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'mode'</span><span class="p">,</span> <span class="s1">'knowledge'</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">'knowledge'</span><span class="p">,</span> <span class="s1">'citation'</span><span class="p">,</span> <span class="s1">'hybrid'</span><span class="p">):</span>
+        <span class="n">mode</span> <span class="o">=</span> <span class="s1">'knowledge'</span>
 
     <span class="n">graph_data</span> <span class="o">=</span> <span class="n">get_graph_data</span><span class="p">(</span><span class="n">mode</span><span class="p">)</span>
     <span class="n">context</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">&#39;mode&#39;</span><span class="p">:</span> <span class="n">mode</span><span class="p">,</span>
-        <span class="s1">&#39;graph_data&#39;</span><span class="p">:</span> <span class="n">graph_data</span><span class="p">,</span>
-        <span class="s1">&#39;graph_data_json&#39;</span><span class="p">:</span> <span class="n">mark_safe</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">graph_data</span><span class="p">)),</span>
+        <span class="s1">'mode'</span><span class="p">:</span> <span class="n">mode</span><span class="p">,</span>
+        <span class="s1">'graph_data'</span><span class="p">:</span> <span class="n">graph_data</span><span class="p">,</span>
+        <span class="s1">'graph_data_json'</span><span class="p">:</span> <span class="n">mark_safe</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">graph_data</span><span class="p">)),</span>
     <span class="p">}</span>
-    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;grips/wiki/graph.html&#39;</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">'grips/wiki/graph.html'</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="wiki_graph_data">
 <a class="viewcode-back" href="../../grips_app.html#grips.wiki_views.wiki_graph_data">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">wiki_graph_data</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    JSON API for dynamic, client-side switching of graph visualization modes.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">mode</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;mode&#39;</span><span class="p">,</span> <span class="s1">&#39;knowledge&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
-    <span class="k">if</span> <span class="n">mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;knowledge&#39;</span><span class="p">,</span> <span class="s1">&#39;citation&#39;</span><span class="p">,</span> <span class="s1">&#39;hybrid&#39;</span><span class="p">):</span>
-        <span class="n">mode</span> <span class="o">=</span> <span class="s1">&#39;knowledge&#39;</span>
+<span class="sd">    """</span>
+    <span class="n">mode</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'mode'</span><span class="p">,</span> <span class="s1">'knowledge'</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">'knowledge'</span><span class="p">,</span> <span class="s1">'citation'</span><span class="p">,</span> <span class="s1">'hybrid'</span><span class="p">):</span>
+        <span class="n">mode</span> <span class="o">=</span> <span class="s1">'knowledge'</span>
 
     <span class="n">graph_data</span> <span class="o">=</span> <span class="n">get_graph_data</span><span class="p">(</span><span class="n">mode</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">(</span><span class="n">graph_data</span><span class="p">)</span></div>
@@ -355,12 +382,12 @@
 <a class="viewcode-back" href="../../grips_app.html#grips.wiki_views.wiki_reading_list">[docs]</a>
 <span class="nd">@ensure_csrf_cookie</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">wiki_reading_list</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Academic research analytics view: seminal papers ranked by citation in-degree,</span>
 <span class="sd">    acquisition wishlist for missing PDFs, and concept coverage statistics.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">data</span> <span class="o">=</span> <span class="n">get_reading_list_analytics</span><span class="p">()</span>
-    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;grips/wiki/research_reading.html&#39;</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">'grips/wiki/research_reading.html'</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span></div>
 
 
 
@@ -368,11 +395,11 @@
 <a class="viewcode-back" href="../../grips_app.html#grips.wiki_views.wiki_synthesis_matrix">[docs]</a>
 <span class="nd">@ensure_csrf_cookie</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">wiki_synthesis_matrix</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Literature synthesis cross-tabulation: documents vs core concepts coverage grid.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">data</span> <span class="o">=</span> <span class="n">get_synthesis_matrix_data</span><span class="p">()</span>
-    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;grips/wiki/synthesis_matrix.html&#39;</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">'grips/wiki/synthesis_matrix.html'</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span></div>
 
 
 </pre></div>

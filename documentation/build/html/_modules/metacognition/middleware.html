@@ -86,13 +86,13 @@
            <div itemprop="articleBody">
              
   <h1>Source code for metacognition.middleware</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Tool Governance and Lockdown Middleware (WS17).</span>
 
 <span class="sd">Injects the active system lockdown level into HTTP response headers:</span>
 <span class="sd">    X-Verbal-Lockdown-Level: &lt;LEVEL&gt;</span>
 <span class="sd">This applies across all standard views, API responses, and SSE streaming sessions.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">django.conf</span><span class="w"> </span><span class="kn">import</span> <span class="n">settings</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.governance</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_lockdown_level</span>
@@ -101,18 +101,18 @@
 <div class="viewcode-block" id="ToolGovernanceMiddleware">
 <a class="viewcode-back" href="../../metacognition_app.html#metacognition.middleware.ToolGovernanceMiddleware">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ToolGovernanceMiddleware</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    WS17 Layered Tool Governance Middleware.</span>
 <span class="sd">    Injects the active governance lockdown level header into all HTTP, API,</span>
 <span class="sd">    and streaming responses.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">get_response</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">get_response</span> <span class="o">=</span> <span class="n">get_response</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
         <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_response</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
-        <span class="n">response</span><span class="p">[</span><span class="s2">&quot;X-Verbal-Lockdown-Level&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_lockdown_level</span><span class="p">()</span>
+        <span class="n">response</span><span class="p">[</span><span class="s2">"X-Verbal-Lockdown-Level"</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_lockdown_level</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">response</span></div>
 
 </pre></div>

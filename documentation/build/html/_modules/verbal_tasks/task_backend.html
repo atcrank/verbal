@@ -101,17 +101,17 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_normalize_json</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Serialize and deserialize to ensure JSON-compatible primitives.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Serialize and deserialize to ensure JSON-compatible primitives."""</span>
     <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">DjangoJSONEncoder</span><span class="p">))</span>
 
 
 <div class="viewcode-block" id="DatabaseTaskBackend">
 <a class="viewcode-back" href="../../verbal_tasks_app.html#verbal_tasks.task_backend.DatabaseTaskBackend">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">DatabaseTaskBackend</span><span class="p">(</span><span class="n">BaseTaskBackend</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    PostgreSQL-backed task backend for Django Tasks.</span>
 <span class="sd">    Stores enqueued tasks and results in the verbal.TaskRecord table.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">supports_async_task</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="n">supports_defer</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="n">supports_get_result</span> <span class="o">=</span> <span class="kc">True</span>
@@ -125,16 +125,19 @@
         <span class="kn">from</span><span class="w"> </span><span class="nn">verbal_tasks.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">TaskRecord</span><span class="p">,</span> <span class="n">TaskRecordStatus</span>
 
         <span class="n">result_id</span> <span class="o">=</span> <span class="n">get_random_string</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span>
-        <span class="n">task_path</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">task</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="vm">__module__</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">task</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="vm">__qualname__</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">task_path</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">task</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="vm">__module__</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">task</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="vm">__qualname__</span><span class="si">}</span><span class="s2">"</span>
         <span class="n">now</span> <span class="o">=</span> <span class="n">timezone</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+
+        <span class="n">normalized_args</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">_normalize_json</span><span class="p">(</span><span class="n">args</span><span class="p">))</span>
+        <span class="n">normalized_kwargs</span> <span class="o">=</span> <span class="n">_normalize_json</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
 
         <span class="n">record</span> <span class="o">=</span> <span class="n">TaskRecord</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
             <span class="nb">id</span><span class="o">=</span><span class="n">result_id</span><span class="p">,</span>
             <span class="n">task_path</span><span class="o">=</span><span class="n">task_path</span><span class="p">,</span>
             <span class="n">queue_name</span><span class="o">=</span><span class="n">task</span><span class="o">.</span><span class="n">queue_name</span><span class="p">,</span>
             <span class="n">priority</span><span class="o">=</span><span class="n">task</span><span class="o">.</span><span class="n">priority</span><span class="p">,</span>
-            <span class="n">args_json</span><span class="o">=</span><span class="n">_normalize_json</span><span class="p">(</span><span class="n">args</span><span class="p">),</span>
-            <span class="n">kwargs_json</span><span class="o">=</span><span class="n">_normalize_json</span><span class="p">(</span><span class="n">kwargs</span><span class="p">),</span>
+            <span class="n">args_json</span><span class="o">=</span><span class="n">normalized_args</span><span class="p">,</span>
+            <span class="n">kwargs_json</span><span class="o">=</span><span class="n">normalized_kwargs</span><span class="p">,</span>
             <span class="n">status</span><span class="o">=</span><span class="n">TaskRecordStatus</span><span class="o">.</span><span class="n">READY</span><span class="p">,</span>
             <span class="n">enqueued_at</span><span class="o">=</span><span class="n">now</span><span class="p">,</span>
             <span class="n">run_after</span><span class="o">=</span><span class="n">task</span><span class="o">.</span><span class="n">run_after</span><span class="p">,</span>
@@ -148,8 +151,8 @@
             <span class="n">started_at</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">last_attempted_at</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">finished_at</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">,</span>
-            <span class="n">kwargs</span><span class="o">=</span><span class="n">kwargs</span><span class="p">,</span>
+            <span class="n">args</span><span class="o">=</span><span class="n">normalized_args</span><span class="p">,</span>
+            <span class="n">kwargs</span><span class="o">=</span><span class="n">normalized_kwargs</span><span class="p">,</span>
             <span class="n">backend</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">alias</span><span class="p">,</span>
             <span class="n">errors</span><span class="o">=</span><span class="p">[],</span>
             <span class="n">worker_ids</span><span class="o">=</span><span class="p">[],</span>
@@ -167,27 +170,27 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="n">record</span> <span class="o">=</span> <span class="n">TaskRecord</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">result_id</span><span class="p">)</span>
         <span class="k">except</span> <span class="n">TaskRecord</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">TaskResultDoesNotExist</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Task result with ID &#39;</span><span class="si">{</span><span class="n">result_id</span><span class="si">}</span><span class="s2">&#39; does not exist.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">TaskResultDoesNotExist</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Task result with ID '</span><span class="si">{</span><span class="n">result_id</span><span class="si">}</span><span class="s2">' does not exist."</span><span class="p">)</span>
 
         <span class="k">try</span><span class="p">:</span>
             <span class="n">task_func</span> <span class="o">=</span> <span class="n">import_string</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">task_path</span><span class="p">)</span>
-            <span class="n">task_obj</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">task_func</span><span class="p">,</span> <span class="s1">&#39;task&#39;</span><span class="p">,</span> <span class="n">task_func</span><span class="p">)</span>
+            <span class="n">task_obj</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">task_func</span><span class="p">,</span> <span class="s1">'task'</span><span class="p">,</span> <span class="n">task_func</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not import task function &#39;</span><span class="si">{</span><span class="n">record</span><span class="o">.</span><span class="n">task_path</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not import task function '</span><span class="si">{</span><span class="n">record</span><span class="o">.</span><span class="n">task_path</span><span class="si">}</span><span class="s2">': </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="n">task_obj</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="n">errors</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="n">record</span><span class="o">.</span><span class="n">error_traceback</span><span class="p">:</span>
             <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">TaskError</span><span class="p">(</span>
-                <span class="n">exception_class_path</span><span class="o">=</span><span class="s2">&quot;TaskExecutionError&quot;</span><span class="p">,</span>
+                <span class="n">exception_class_path</span><span class="o">=</span><span class="s2">"TaskExecutionError"</span><span class="p">,</span>
                 <span class="n">traceback</span><span class="o">=</span><span class="n">record</span><span class="o">.</span><span class="n">error_traceback</span>
             <span class="p">))</span>
 
         <span class="n">status_mapping</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;READY&quot;</span><span class="p">:</span> <span class="n">TaskResultStatus</span><span class="o">.</span><span class="n">READY</span><span class="p">,</span>
-            <span class="s2">&quot;RUNNING&quot;</span><span class="p">:</span> <span class="n">TaskResultStatus</span><span class="o">.</span><span class="n">RUNNING</span><span class="p">,</span>
-            <span class="s2">&quot;SUCCESSFUL&quot;</span><span class="p">:</span> <span class="n">TaskResultStatus</span><span class="o">.</span><span class="n">SUCCESSFUL</span><span class="p">,</span>
-            <span class="s2">&quot;FAILED&quot;</span><span class="p">:</span> <span class="n">TaskResultStatus</span><span class="o">.</span><span class="n">FAILED</span><span class="p">,</span>
+            <span class="s2">"READY"</span><span class="p">:</span> <span class="n">TaskResultStatus</span><span class="o">.</span><span class="n">READY</span><span class="p">,</span>
+            <span class="s2">"RUNNING"</span><span class="p">:</span> <span class="n">TaskResultStatus</span><span class="o">.</span><span class="n">RUNNING</span><span class="p">,</span>
+            <span class="s2">"SUCCESSFUL"</span><span class="p">:</span> <span class="n">TaskResultStatus</span><span class="o">.</span><span class="n">SUCCESSFUL</span><span class="p">,</span>
+            <span class="s2">"FAILED"</span><span class="p">:</span> <span class="n">TaskResultStatus</span><span class="o">.</span><span class="n">FAILED</span><span class="p">,</span>
         <span class="p">}</span>
         <span class="n">mapped_status</span> <span class="o">=</span> <span class="n">status_mapping</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">status</span><span class="p">,</span> <span class="n">TaskResultStatus</span><span class="o">.</span><span class="n">READY</span><span class="p">)</span>
 
@@ -207,7 +210,7 @@
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">record</span><span class="o">.</span><span class="n">return_value_json</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="n">task_result</span><span class="p">,</span> <span class="s2">&quot;_return_value&quot;</span><span class="p">,</span> <span class="n">record</span><span class="o">.</span><span class="n">return_value_json</span><span class="p">)</span>
+            <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="n">task_result</span><span class="p">,</span> <span class="s2">"_return_value"</span><span class="p">,</span> <span class="n">record</span><span class="o">.</span><span class="n">return_value_json</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">task_result</span></div>
 </div>

@@ -56,7 +56,8 @@
 <li class="toctree-l2"><a class="reference internal" href="#architecture-mechanism">2. Architecture &amp; Mechanism</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#grobid-microservice-integration">GROBID Microservice Integration</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#key-data-models">Key Data Models</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#coordination-with-rag">Coordination with RAG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#multimodal-figure-graphic-extraction-pipeline">Multimodal Figure &amp; Graphic Extraction Pipeline</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#coordination-with-rag-multimodal-chunk-storage">Coordination with RAG &amp; Multimodal Chunk Storage</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#observability-health-signals">3. Observability &amp; Health Signals</a><ul>
@@ -139,6 +140,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#grobid_client.tasks.DocumentMetadataExtraction.year"><code class="docutils literal notranslate"><span class="pre">DocumentMetadataExtraction.year</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="#grobid_client.tasks.extract_grobid_figures"><code class="docutils literal notranslate"><span class="pre">extract_grobid_figures()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#grobid_client.tasks.grobid_tei_to_semantic_chunks"><code class="docutils literal notranslate"><span class="pre">grobid_tei_to_semantic_chunks()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#grobid_client.api.process_pdf_with_grobid"><code class="docutils literal notranslate"><span class="pre">process_pdf_with_grobid()</span></code></a></li>
 </ul>
@@ -199,20 +201,21 @@
 <ul>
 <li><p><a class="reference internal" href="#grobid-microservice-integration" id="id4">GROBID Microservice Integration</a></p></li>
 <li><p><a class="reference internal" href="#key-data-models" id="id5">Key Data Models</a></p></li>
-<li><p><a class="reference internal" href="#coordination-with-rag" id="id6">Coordination with RAG</a></p></li>
+<li><p><a class="reference internal" href="#multimodal-figure-graphic-extraction-pipeline" id="id6">Multimodal Figure &amp; Graphic Extraction Pipeline</a></p></li>
+<li><p><a class="reference internal" href="#coordination-with-rag-multimodal-chunk-storage" id="id7">Coordination with RAG &amp; Multimodal Chunk Storage</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#observability-health-signals" id="id7">3. Observability &amp; Health Signals</a></p>
+<li><p><a class="reference internal" href="#observability-health-signals" id="id8">3. Observability &amp; Health Signals</a></p>
 <ul>
-<li><p><a class="reference internal" href="#how-to-know-the-grobid-parser-is-working-well" id="id8">How to Know the GROBID Parser is Working Well</a></p></li>
+<li><p><a class="reference internal" href="#how-to-know-the-grobid-parser-is-working-well" id="id9">How to Know the GROBID Parser is Working Well</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#diagnostic-tips-failure-modes" id="id9">4. Diagnostic Tips &amp; Failure Modes</a></p>
+<li><p><a class="reference internal" href="#diagnostic-tips-failure-modes" id="id10">4. Diagnostic Tips &amp; Failure Modes</a></p>
 <ul>
-<li><p><a class="reference internal" href="#when-the-parser-misses-the-mark-how-to-tune" id="id10">When the Parser Misses the Mark &amp; How to Tune</a></p></li>
+<li><p><a class="reference internal" href="#when-the-parser-misses-the-mark-how-to-tune" id="id11">When the Parser Misses the Mark &amp; How to Tune</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#module-grobid_client.models" id="id11">Module Reference</a></p></li>
+<li><p><a class="reference internal" href="#module-grobid_client.models" id="id12">Module Reference</a></p></li>
 </ul>
 </nav>
 <section id="purpose-motivating-problem">
@@ -247,20 +250,40 @@
 <li><p><strong>``Citation``</strong>: A directed graph edge representing one document citing another (<cite>source_reference</cite> $rightarrow$ <cite>target_reference</cite>). When a paper cites another document already present in the local database, an explicit relational link is established.</p></li>
 </ul>
 </section>
-<section id="coordination-with-rag">
-<h3><a class="toc-backref" href="#id6" role="doc-backlink">Coordination with RAG</a><a class="headerlink" href="#coordination-with-rag" title="Link to this heading"></a></h3>
+<section id="multimodal-figure-graphic-extraction-pipeline">
+<h3><a class="toc-backref" href="#id6" role="doc-backlink">Multimodal Figure &amp; Graphic Extraction Pipeline</a><a class="headerlink" href="#multimodal-figure-graphic-extraction-pipeline" title="Link to this heading"></a></h3>
+<p>Beyond text parsing, Grobid Client performs deterministic extraction of visual figures, charts, and tables from academic PDFs:</p>
+<ol class="arabic simple">
+<li><p><strong>Bounding Box Detection</strong>:
+The parser scans TEI XML for <code class="docutils literal notranslate"><span class="pre">&lt;figure&gt;</span></code> tags and checks both the figure element and its child <code class="docutils literal notranslate"><span class="pre">&lt;graphic</span> <span class="pre">coords=&quot;...&quot;&gt;</span></code> attributes. Coordinates are provided in standard Grobid format: <code class="docutils literal notranslate"><span class="pre">page,</span> <span class="pre">x,</span> <span class="pre">y,</span> <span class="pre">width,</span> <span class="pre">height</span></code> (measured in 72-DPI PostScript points).</p></li>
+<li><p><strong>High-Resolution Cropping</strong>:
+Using <cite>pdf2image</cite> and Pillow, the target page is rendered at 200 DPI. The points-based coordinates are mathematically mapped to the target resolution, and the region is cropped and saved to disk as a clean PNG:
+<code class="docutils literal notranslate"><span class="pre">media/documents/figures/&lt;document_id&gt;/&lt;figure_id&gt;.png</span></code>.</p></li>
+<li><p><strong>In-Text Discussion Context Mining</strong>:
+Scientific papers contain critical analysis of figures in the surrounding prose. The parser analyzes all <code class="docutils literal notranslate"><span class="pre">&lt;p&gt;</span></code> paragraphs in the document, finding cross-references formatted as <code class="docutils literal notranslate"><span class="pre">&lt;ref</span> <span class="pre">type=&quot;figure&quot;</span> <span class="pre">target=&quot;#fig_id&quot;&gt;</span></code>. The sentences citing the figure are compiled into a <code class="docutils literal notranslate"><span class="pre">Discussion</span> <span class="pre">Context</span></code> block and bound directly to the figure chunk.</p></li>
+<li><p><strong>Structured Metadata Normalization</strong>:
+Figure captions and labels are sanitized (e.g. removing trailing dots and formatting artifacts like <code class="docutils literal notranslate"><span class="pre">Figure</span> <span class="pre">1</span> <span class="pre">.</span></code> $rightarrow$ <code class="docutils literal notranslate"><span class="pre">Figure</span> <span class="pre">1</span></code>), and caption prefix repetitions are cleanly eliminated.</p></li>
+</ol>
+</section>
+<section id="coordination-with-rag-multimodal-chunk-storage">
+<h3><a class="toc-backref" href="#id7" role="doc-backlink">Coordination with RAG &amp; Multimodal Chunk Storage</a><a class="headerlink" href="#coordination-with-rag-multimodal-chunk-storage" title="Link to this heading"></a></h3>
 <p>The structured TEI XML directly informs <cite>background_resources</cite>:</p>
 <ul class="simple">
-<li><p>The extracted title and abstract provide high-signal concept summaries for <cite>ConceptNode</cite> generation in <cite>grips</cite>.</p></li>
-<li><p>Paragraph bodies are chunked respecting section boundaries rather than arbitrary character counts.</p></li>
-<li><p>The citation graph provides a third retrieval path alongside dense semantic search and lexical matching.</p></li>
+<li><p><strong>Typed Figure Chunks (``chunk_type=”figure”``)</strong>:
+Figures are registered in the RAG store as dedicated <code class="docutils literal notranslate"><span class="pre">RAGChunk</span></code> records, storing the relative image path, bounding box coordinates, figure label, and combined caption and discussion text.</p></li>
+<li><p><strong>Semantic Vector Indexing</strong>:
+Figure chunks are embedded into PostgreSQL via PGVector, allowing retrieval queries (e.g. <em>“radar error curves at high temperature”</em>) to return both the visual image asset and its accompanying paper analysis.</p></li>
+<li><p><strong>Section-Aware Paragraph Chunks</strong>:
+Body text is chunked cleanly respecting section boundaries rather than arbitrary character splits.</p></li>
+<li><p><strong>Citation Graph Traversal</strong>:
+The citation graph provides a structured path for traversing literature networks alongside vector similarity.</p></li>
 </ul>
 </section>
 </section>
 <section id="observability-health-signals">
-<h2><a class="toc-backref" href="#id7" role="doc-backlink">3. Observability &amp; Health Signals</a><a class="headerlink" href="#observability-health-signals" title="Link to this heading"></a></h2>
+<h2><a class="toc-backref" href="#id8" role="doc-backlink">3. Observability &amp; Health Signals</a><a class="headerlink" href="#observability-health-signals" title="Link to this heading"></a></h2>
 <section id="how-to-know-the-grobid-parser-is-working-well">
-<h3><a class="toc-backref" href="#id8" role="doc-backlink">How to Know the GROBID Parser is Working Well</a><a class="headerlink" href="#how-to-know-the-grobid-parser-is-working-well" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id9" role="doc-backlink">How to Know the GROBID Parser is Working Well</a><a class="headerlink" href="#how-to-know-the-grobid-parser-is-working-well" title="Link to this heading"></a></h3>
 <ol class="arabic simple">
 <li><p><strong>Populated Metadata Fields</strong>:
 In Django Admin under <strong>Grobid Client &gt; References</strong>, inspect parsed documents. A successful parse exhibits:
@@ -275,9 +298,9 @@ Pinging <cite>http://127.0.0.1:8070/api/isalive</cite> returns an immediate HTTP
 </section>
 </section>
 <section id="diagnostic-tips-failure-modes">
-<h2><a class="toc-backref" href="#id9" role="doc-backlink">4. Diagnostic Tips &amp; Failure Modes</a><a class="headerlink" href="#diagnostic-tips-failure-modes" title="Link to this heading"></a></h2>
+<h2><a class="toc-backref" href="#id10" role="doc-backlink">4. Diagnostic Tips &amp; Failure Modes</a><a class="headerlink" href="#diagnostic-tips-failure-modes" title="Link to this heading"></a></h2>
 <section id="when-the-parser-misses-the-mark-how-to-tune">
-<h3><a class="toc-backref" href="#id10" role="doc-backlink">When the Parser Misses the Mark &amp; How to Tune</a><a class="headerlink" href="#when-the-parser-misses-the-mark-how-to-tune" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id11" role="doc-backlink">When the Parser Misses the Mark &amp; How to Tune</a><a class="headerlink" href="#when-the-parser-misses-the-mark-how-to-tune" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p><strong>Scanned or Image-Only PDFs (Empty TEI Output)</strong>:
 * <em>Hazard</em>: GROBID requires an embedded digital text layer. When presented with scanned historical papers or faxed documents, it returns empty body text.
@@ -292,7 +315,7 @@ Pinging <cite>http://127.0.0.1:8070/api/isalive</cite> returns an immediate HTTP
 </section>
 </section>
 <section id="module-grobid_client.models">
-<span id="module-reference"></span><h2><a class="toc-backref" href="#id11" role="doc-backlink">Module Reference</a><a class="headerlink" href="#module-grobid_client.models" title="Link to this heading"></a></h2>
+<span id="module-reference"></span><h2><a class="toc-backref" href="#id12" role="doc-backlink">Module Reference</a><a class="headerlink" href="#module-grobid_client.models" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="grobid_client.models.Citation">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grobid_client.models.</span></span><span class="sig-name descname"><span class="pre">Citation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grobid_client/models.html#Citation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grobid_client.models.Citation" title="Link to this definition"></a></dt>
@@ -349,7 +372,7 @@ object the first time, the query is executed.</p>
 one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
@@ -367,7 +390,7 @@ one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
@@ -471,7 +494,7 @@ NON_FIELD_ERRORS.</p>
 relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Restaurant</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">place</span> <span class="o">=</span> <span class="n">OneToOneField</span><span class="p">(</span><span class="n">Place</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;restaurant&#39;</span><span class="p">)</span>
+    <span class="n">place</span> <span class="o">=</span> <span class="n">OneToOneField</span><span class="p">(</span><span class="n">Place</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'restaurant'</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Restaurant.place</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardOneToOneDescriptor</span></code> instance.</p>
@@ -520,7 +543,7 @@ object the first time, the query is executed.</p>
 many-to-one relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
@@ -554,7 +577,7 @@ object the first time, the query is executed.</p>
 many-to-one relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
@@ -710,8 +733,15 @@ object the first time, the query is executed.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="grobid_client.tasks.extract_grobid_figures">
+<span class="sig-prename descclassname"><span class="pre">grobid_client.tasks.</span></span><span class="sig-name descname"><span class="pre">extract_grobid_figures</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tei_xml_string</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">document_title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pdf_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">document_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Document</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/grobid_client/tasks.html#extract_grobid_figures"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grobid_client.tasks.extract_grobid_figures" title="Link to this definition"></a></dt>
+<dd><p>Extracts figure and table elements from Grobid TEI XML, resolving labels,
+captions, and in-text discussion mentions, and optionally rendering crops via pypdfium2.</p>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="grobid_client.tasks.grobid_tei_to_semantic_chunks">
-<span class="sig-prename descclassname"><span class="pre">grobid_client.tasks.</span></span><span class="sig-name descname"><span class="pre">grobid_tei_to_semantic_chunks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tei_xml_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">document_title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grobid_client/tasks.html#grobid_tei_to_semantic_chunks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grobid_client.tasks.grobid_tei_to_semantic_chunks" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">grobid_client.tasks.</span></span><span class="sig-name descname"><span class="pre">grobid_tei_to_semantic_chunks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tei_xml_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">document_title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pdf_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">document_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grobid_client/tasks.html#grobid_tei_to_semantic_chunks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grobid_client.tasks.grobid_tei_to_semantic_chunks" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py function" id="module-grobid_client.api">

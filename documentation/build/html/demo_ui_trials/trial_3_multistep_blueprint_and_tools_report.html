@@ -169,14 +169,14 @@ characters. Route: SUCCESS.</p>
 
 <span class="c1"># Power Consumption (W)</span>
 <span class="n">sensor_draws</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s1">&#39;Baseline&#39;</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span>
-    <span class="s1">&#39;Standard Multi-spectral&#39;</span><span class="p">:</span> <span class="mi">75</span><span class="p">,</span>
-    <span class="s1">&#39;Heavy LiDAR+Thermal+Compute&#39;</span><span class="p">:</span> <span class="mi">110</span>
+    <span class="s1">'Baseline'</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span>
+    <span class="s1">'Standard Multi-spectral'</span><span class="p">:</span> <span class="mi">75</span><span class="p">,</span>
+    <span class="s1">'Heavy LiDAR+Thermal+Compute'</span><span class="p">:</span> <span class="mi">110</span>
 <span class="p">}</span>
 
 <span class="n">locomotion_draws</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s1">&#39;Smooth Concrete&#39;</span><span class="p">:</span> <span class="mi">280</span><span class="p">,</span>
-    <span class="s1">&#39;Heavy Rubble/Debris&#39;</span><span class="p">:</span> <span class="mi">460</span>
+    <span class="s1">'Smooth Concrete'</span><span class="p">:</span> <span class="mi">280</span><span class="p">,</span>
+    <span class="s1">'Heavy Rubble/Debris'</span><span class="p">:</span> <span class="mi">460</span>
 <span class="p">}</span>
 
 <span class="c1"># Required operational time (minutes)</span>
@@ -207,50 +207,50 @@ characters. Route: SUCCESS.</p>
 
         <span class="c1"># Check the constraint</span>
         <span class="n">meets_requirement</span> <span class="o">=</span> <span class="n">operational_time_minutes</span> <span class="o">&gt;=</span> <span class="n">min_operational_time</span>
-        <span class="n">results</span><span class="p">[(</span><span class="n">sensor_name</span><span class="p">,</span> <span class="n">terrain_name</span><span class="p">)][</span><span class="s1">&#39;Time (min)&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">operational_time_minutes</span>
-        <span class="n">results</span><span class="p">[(</span><span class="n">sensor_name</span><span class="p">,</span> <span class="n">terrain_name</span><span class="p">)][</span><span class="s1">&#39;Meets Requirement&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">meets_requirement</span>
+        <span class="n">results</span><span class="p">[(</span><span class="n">sensor_name</span><span class="p">,</span> <span class="n">terrain_name</span><span class="p">)][</span><span class="s1">'Time (min)'</span><span class="p">]</span> <span class="o">=</span> <span class="n">operational_time_minutes</span>
+        <span class="n">results</span><span class="p">[(</span><span class="n">sensor_name</span><span class="p">,</span> <span class="n">terrain_name</span><span class="p">)][</span><span class="s1">'Meets Requirement'</span><span class="p">]</span> <span class="o">=</span> <span class="n">meets_requirement</span>
 
 <span class="c1"># --- Output Formatting ---</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;--- Operational Time Calculation Results ---&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Minimum required operational time: </span><span class="si">{</span><span class="n">min_operational_time</span><span class="si">}</span><span class="s2"> minutes&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;------------------------------------------&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"--- Operational Time Calculation Results ---"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Minimum required operational time: </span><span class="si">{</span><span class="n">min_operational_time</span><span class="si">}</span><span class="s2"> minutes"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"------------------------------------------"</span><span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Sensor | Terrain | Power Draw (W) | Operational Time (min) | Meets Requirement&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-----------------------------------------------------------------------------------</span>
-<span class="o">-----------------------</span><span class="s2">&quot;)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Sensor | Terrain | Power Draw (W) | Operational Time (min) | Meets Requirement"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"-----------------------------------------------------------------------------------</span>
+<span class="o">-----------------------</span><span class="s2">")</span>
 
 <span class="k">for</span> <span class="p">(</span><span class="n">sensor</span><span class="p">,</span> <span class="n">terrain</span><span class="p">),</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">results</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-    <span class="n">status</span> <span class="o">=</span> <span class="s2">&quot;YES&quot;</span> <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;Meets Requirement&#39;</span><span class="p">]</span> <span class="k">else</span> <span class="s2">&quot;NO&quot;</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">sensor</span><span class="si">:</span><span class="s2">&lt;15</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">terrain</span><span class="si">:</span><span class="s2">&lt;10</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Power Draw (W)&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">&lt;18</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Time</span>
-<span class="p">(</span><span class="nb">min</span><span class="p">)</span><span class="s1">&#39;]:.2f} | </span><span class="si">{status}</span><span class="s1">&quot;)</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="s2">"YES"</span> <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s1">'Meets Requirement'</span><span class="p">]</span> <span class="k">else</span> <span class="s2">"NO"</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">sensor</span><span class="si">:</span><span class="s2">&lt;15</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">terrain</span><span class="si">:</span><span class="s2">&lt;10</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">data</span><span class="p">[</span><span class="s1">'Power Draw (W)'</span><span class="p">]</span><span class="si">:</span><span class="s2">&lt;18</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">data</span><span class="p">[</span><span class="s1">'Time</span>
+<span class="p">(</span><span class="nb">min</span><span class="p">)</span><span class="s1">']:.2f} | </span><span class="si">{status}</span><span class="s1">")</span>
 
 <span class="c1"># --- Recommendation ---</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">--- Recommendation ---&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">--- Recommendation ---"</span><span class="p">)</span>
 
 <span class="n">qualified_configurations</span> <span class="o">=</span> <span class="p">[]</span>
 <span class="k">for</span> <span class="p">(</span><span class="n">sensor</span><span class="p">,</span> <span class="n">terrain</span><span class="p">),</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">results</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-    <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;Meets Requirement&#39;</span><span class="p">]:</span>
-        <span class="n">qualified_configurations</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">sensor</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;Time (min)&#39;</span><span class="p">]))</span>
+    <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s1">'Meets Requirement'</span><span class="p">]:</span>
+        <span class="n">qualified_configurations</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">sensor</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="s1">'Time (min)'</span><span class="p">]))</span>
 
 <span class="k">if</span> <span class="n">qualified_configurations</span><span class="p">:</span>
     <span class="c1"># Find the configuration with the maximum operational time</span>
     <span class="n">best_config</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">qualified_configurations</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
     <span class="n">best_sensor</span><span class="p">,</span> <span class="n">best_time</span> <span class="o">=</span> <span class="n">best_config</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The highest capability sensor package meeting the </span><span class="si">{</span><span class="n">min_operational_time</span><span class="si">}</span><span class="s2"> min</span>
-<span class="n">requirement</span> <span class="ow">is</span><span class="p">:</span> <span class="p">{</span><span class="n">best_sensor</span><span class="p">}</span> <span class="p">(</span><span class="n">Time</span><span class="p">:</span> <span class="p">{</span><span class="n">best_time</span><span class="p">:</span><span class="mf">.2</span><span class="n">f</span><span class="p">}</span> <span class="nb">min</span><span class="p">)</span><span class="s2">&quot;)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The highest capability sensor package meeting the </span><span class="si">{</span><span class="n">min_operational_time</span><span class="si">}</span><span class="s2"> min</span>
+<span class="n">requirement</span> <span class="ow">is</span><span class="p">:</span> <span class="p">{</span><span class="n">best_sensor</span><span class="p">}</span> <span class="p">(</span><span class="n">Time</span><span class="p">:</span> <span class="p">{</span><span class="n">best_time</span><span class="p">:</span><span class="mf">.2</span><span class="n">f</span><span class="p">}</span> <span class="nb">min</span><span class="p">)</span><span class="s2">")</span>
 <span class="k">else</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No configuration met the minimum operational time requirement of 120 minutes.&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"No configuration met the minimum operational time requirement of 120 minutes."</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><strong>Docker Sandbox Execution Output (verbal_sandbox)</strong>:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">SYSTEM</span><span class="p">:</span> <span class="n">Sandbox</span> <span class="n">Execution</span> <span class="n">Failed</span> <span class="p">(</span><span class="n">RC</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span>
 <span class="n">Error</span><span class="p">:</span>
 <span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
-  <span class="n">File</span> <span class="s2">&quot;/workspace/3e797c65-5707-4d92-9082-ce30be719dbd/sandbox_script.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">48</span><span class="p">,</span> <span class="ow">in</span>
+  <span class="n">File</span> <span class="s2">"/workspace/3e797c65-5707-4d92-9082-ce30be719dbd/sandbox_script.py"</span><span class="p">,</span> <span class="n">line</span> <span class="mi">48</span><span class="p">,</span> <span class="ow">in</span>
 <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
-    <span class="n">results</span><span class="p">[(</span><span class="n">sensor_name</span><span class="p">,</span> <span class="n">terrain_name</span><span class="p">)][</span><span class="s1">&#39;Time (min)&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">operational_time_minutes</span>
+    <span class="n">results</span><span class="p">[(</span><span class="n">sensor_name</span><span class="p">,</span> <span class="n">terrain_name</span><span class="p">)][</span><span class="s1">'Time (min)'</span><span class="p">]</span> <span class="o">=</span> <span class="n">operational_time_minutes</span>
     <span class="o">~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^</span>
-<span class="ne">TypeError</span><span class="p">:</span> <span class="s1">&#39;float&#39;</span> <span class="nb">object</span> <span class="n">does</span> <span class="ow">not</span> <span class="n">support</span> <span class="n">item</span> <span class="n">assignment</span>
+<span class="ne">TypeError</span><span class="p">:</span> <span class="s1">'float'</span> <span class="nb">object</span> <span class="n">does</span> <span class="ow">not</span> <span class="n">support</span> <span class="n">item</span> <span class="n">assignment</span>
 
 <span class="n">Output</span><span class="p">:</span>
 
@@ -325,8 +325,8 @@ Based on the simulation results, the following recommendations are provided for 
 the subsequent empirical experiment:
 
 **Recommendation 1: Define the Minimum Acceptable Configuration Space**
-Since the &quot;Heavy LiDAR+Thermal+Compute&quot; package fails when paired with &quot;Heavy
-Rubble/Debris,&quot; this combination should be **excluded or flagged as failure** in initial
+Since the "Heavy LiDAR+Thermal+Compute" package fails when paired with "Heavy
+Rubble/Debris," this combination should be **excluded or flagged as failure** in initial
 testing, as it represents the worst-case scenario. The experimental design should focus
 primarily on the scenarios that *do* meet the threshold.
 
@@ -348,7 +348,7 @@ baseline significantly degrades performance in difficult terrain.
 **Conclusion for Experimental Design:**
 
 The experiment should be designed to **test the viability of the sensor/terrain pairing
-relative to the fixed energy budget.** The parameter space defining the &quot;Heavy&quot; sensor
+relative to the fixed energy budget.** The parameter space defining the "Heavy" sensor
 package must be treated with caution, as its inclusion severely constrains the achievable
 operational time under high-load locomotion.
 </pre></div>
@@ -358,15 +358,15 @@ operational time under high-load locomotion.
 <h4>Step 3: Adversarial Verification &amp; Causal Evaluation (0.9s)<a class="headerlink" href="#step-3-adversarial-verification-causal-evaluation-0-9s" title="Link to this heading"></a></h4>
 <p><strong>Verbal / Reason Response (Synthesized by: google/gemma-2-2b-it)</strong>:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-  <span class="s2">&quot;tool_calls&quot;</span><span class="p">:</span> <span class="p">[</span>
+  <span class="s2">"tool_calls"</span><span class="p">:</span> <span class="p">[</span>
     <span class="p">{</span>
-      <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;python_sandbox&quot;</span><span class="p">,</span>
-      <span class="s2">&quot;args&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="s2">&quot;import numpy as np</span><span class="se">\n\n</span><span class="s2"># --- Parameters Definition ---</span><span class="se">\n\n</span><span class="s2"># Battery</span>
+      <span class="s2">"name"</span><span class="p">:</span> <span class="s2">"python_sandbox"</span><span class="p">,</span>
+      <span class="s2">"args"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"code"</span><span class="p">:</span> <span class="s2">"import numpy as np</span><span class="se">\n\n</span><span class="s2"># --- Parameters Definition ---</span><span class="se">\n\n</span><span class="s2"># Battery</span>
 <span class="n">capacity</span> <span class="p">(</span><span class="n">Wh</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1200</span><span class="n">Wh</span> <span class="n">total</span>\<span class="n">n</span><span class="c1"># Usable energy (Wh) = 1200 * 0.80 = 960Wh\n\n# Power</span>
-<span class="n">Consumption</span> <span class="p">(</span><span class="n">W</span><span class="p">)</span>\<span class="n">nsensor_draws</span> <span class="o">=</span> <span class="p">{</span>\<span class="n">n</span>    <span class="s1">&#39;Baseline&#39;</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span>\<span class="n">n</span>    <span class="s1">&#39;Standard Multi-spectral&#39;</span><span class="p">:</span>
-<span class="mi">75</span><span class="p">,</span>\<span class="n">n</span>    <span class="s1">&#39;Heavy LiDAR+Thermal+Compute&#39;</span><span class="p">:</span> <span class="mi">110</span>\<span class="n">n</span><span class="p">}</span>\<span class="n">n</span>\<span class="n">nlocomotion_draws</span> <span class="o">=</span> <span class="p">{</span>\<span class="n">n</span>    <span class="s1">&#39;Smooth</span>
-<span class="n">Concrete</span><span class="s1">&#39;: 280,</span><span class="se">\n</span><span class="s1">    &#39;</span><span class="n">Heavy</span> <span class="n">Rubble</span><span class="o">/</span><span class="n">Debris</span><span class="s1">&#39;: 460</span><span class="se">\n</span><span class="s1">}</span><span class="se">\n\n</span><span class="s1"># Required operational time</span>
+<span class="n">Consumption</span> <span class="p">(</span><span class="n">W</span><span class="p">)</span>\<span class="n">nsensor_draws</span> <span class="o">=</span> <span class="p">{</span>\<span class="n">n</span>    <span class="s1">'Baseline'</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span>\<span class="n">n</span>    <span class="s1">'Standard Multi-spectral'</span><span class="p">:</span>
+<span class="mi">75</span><span class="p">,</span>\<span class="n">n</span>    <span class="s1">'Heavy LiDAR+Thermal+Compute'</span><span class="p">:</span> <span class="mi">110</span>\<span class="n">n</span><span class="p">}</span>\<span class="n">n</span>\<span class="n">nlocomotion_draws</span> <span class="o">=</span> <span class="p">{</span>\<span class="n">n</span>    <span class="s1">'Smooth</span>
+<span class="n">Concrete</span><span class="s1">': 280,</span><span class="se">\n</span><span class="s1">    '</span><span class="n">Heavy</span> <span class="n">Rubble</span><span class="o">/</span><span class="n">Debris</span><span class="s1">': 460</span><span class="se">\n</span><span class="s1">}</span><span class="se">\n\n</span><span class="s1"># Required operational time</span>
 <span class="p">(</span><span class="n">minutes</span><span class="p">)</span>\<span class="n">nmin_operational_time</span> <span class="o">=</span> <span class="mi">120</span>\<span class="n">n</span>\<span class="n">n</span><span class="c1"># --- Calculation Setup ---\n\n# Time</span>
 <span class="n">calculation</span><span class="p">:</span> <span class="n">Time</span> <span class="p">(</span><span class="n">hours</span><span class="p">)</span> <span class="o">=</span> <span class="n">Usable</span> <span class="n">Energy</span> <span class="p">(</span><span class="n">Wh</span><span class="p">)</span> <span class="o">/</span> <span class="n">Power</span> <span class="n">Draw</span> <span class="p">(</span><span class="n">W</span><span class="p">)</span>\<span class="n">n</span><span class="c1"># Convert to minutes:</span>
 <span class="n">Time</span> <span class="p">(</span><span class="nb">min</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="n">Usable</span> <span class="n">Energy</span> <span class="o">/</span> <span class="n">Power</span> <span class="n">Draw</span><span class="p">)</span> <span class="o">*</span> <span class="mi">60</span>\<span class="n">n</span>\<span class="n">nresults</span> <span class="o">=</span> <span class="p">{}</span>\<span class="n">n</span>\<span class="n">n</span><span class="c1"># Iterate through all</span>
@@ -377,26 +377,26 @@ operational time under high-load locomotion.
 <span class="n">minutes</span>\<span class="n">n</span>        <span class="n">operational_time_minutes</span> <span class="o">=</span> <span class="n">time_hours</span> <span class="o">*</span> <span class="mi">60</span>\<span class="n">n</span>        \<span class="n">n</span>        <span class="c1"># Store</span>
 <span class="n">results</span>\<span class="n">n</span>        <span class="n">results</span><span class="p">[(</span><span class="n">sensor_name</span><span class="p">,</span> <span class="n">terrain_name</span><span class="p">)]</span> <span class="o">=</span> <span class="n">operational_time_minutes</span>\<span class="n">n</span>
 \<span class="n">n</span>        <span class="c1"># Check the constraint\n        meets_requirement = operational_time_minutes &gt;=</span>
-<span class="n">min_operational_time</span>\<span class="n">n</span>        <span class="n">results</span><span class="p">[(</span><span class="n">sensor_name</span><span class="p">,</span> <span class="n">terrain_name</span><span class="p">)][</span><span class="s1">&#39;Time (min)&#39;</span><span class="p">]</span> <span class="o">=</span>
-<span class="n">operational_time_minutes</span>\<span class="n">n</span>        <span class="n">results</span><span class="p">[(</span><span class="n">sensor_name</span><span class="p">,</span> <span class="n">terrain_name</span><span class="p">)][</span><span class="s1">&#39;Meets</span>
-<span class="n">Requirement</span><span class="s1">&#39;] = meets_requirement</span><span class="se">\n\n</span><span class="s1"># --- Output Formatting ---</span><span class="se">\n</span><span class="s1">print(</span><span class="se">\&quot;</span><span class="s1">--- Operational</span>
-<span class="n">Time</span> <span class="n">Calculation</span> <span class="n">Results</span> <span class="o">---</span>\<span class="s2">&quot;)</span><span class="se">\n</span><span class="s2">print(f</span><span class="se">\&quot;</span><span class="s2">Minimum required operational time:</span>
+<span class="n">min_operational_time</span>\<span class="n">n</span>        <span class="n">results</span><span class="p">[(</span><span class="n">sensor_name</span><span class="p">,</span> <span class="n">terrain_name</span><span class="p">)][</span><span class="s1">'Time (min)'</span><span class="p">]</span> <span class="o">=</span>
+<span class="n">operational_time_minutes</span>\<span class="n">n</span>        <span class="n">results</span><span class="p">[(</span><span class="n">sensor_name</span><span class="p">,</span> <span class="n">terrain_name</span><span class="p">)][</span><span class="s1">'Meets</span>
+<span class="n">Requirement</span><span class="s1">'] = meets_requirement</span><span class="se">\n\n</span><span class="s1"># --- Output Formatting ---</span><span class="se">\n</span><span class="s1">print(</span><span class="se">\"</span><span class="s1">--- Operational</span>
+<span class="n">Time</span> <span class="n">Calculation</span> <span class="n">Results</span> <span class="o">---</span>\<span class="s2">")</span><span class="se">\n</span><span class="s2">print(f</span><span class="se">\"</span><span class="s2">Minimum required operational time:</span>
 <span class="p">{</span><span class="n">min_operational_time</span><span class="p">}</span>
-<span class="n">minutes</span>\<span class="s2">&quot;)</span><span class="se">\n</span><span class="s2">print(</span><span class="se">\&quot;</span><span class="s2">------------------------------------------</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n\n</span><span class="s2">print(</span><span class="se">\&quot;</span><span class="s2">Sensor |</span>
-<span class="n">Terrain</span> <span class="o">|</span> <span class="n">Power</span> <span class="n">Draw</span> <span class="p">(</span><span class="n">W</span><span class="p">)</span> <span class="o">|</span> <span class="n">Operational</span> <span class="n">Time</span> <span class="p">(</span><span class="nb">min</span><span class="p">)</span> <span class="o">|</span> <span class="n">Meets</span> <span class="n">Requirement</span>\<span class="s2">&quot;)</span><span class="se">\n</span><span class="s2">print(</span><span class="se">\&quot;</span><span class="s2">--------</span>
+<span class="n">minutes</span>\<span class="s2">")</span><span class="se">\n</span><span class="s2">print(</span><span class="se">\"</span><span class="s2">------------------------------------------</span><span class="se">\"</span><span class="s2">)</span><span class="se">\n\n</span><span class="s2">print(</span><span class="se">\"</span><span class="s2">Sensor |</span>
+<span class="n">Terrain</span> <span class="o">|</span> <span class="n">Power</span> <span class="n">Draw</span> <span class="p">(</span><span class="n">W</span><span class="p">)</span> <span class="o">|</span> <span class="n">Operational</span> <span class="n">Time</span> <span class="p">(</span><span class="nb">min</span><span class="p">)</span> <span class="o">|</span> <span class="n">Meets</span> <span class="n">Requirement</span>\<span class="s2">")</span><span class="se">\n</span><span class="s2">print(</span><span class="se">\"</span><span class="s2">--------</span>
 <span class="o">------------------------------------------------------------------------------------------</span>
-<span class="o">--------</span>\<span class="s2">&quot;)</span><span class="se">\n\n</span><span class="s2">for (sensor, terrain), data in results.items():</span><span class="se">\n</span><span class="s2">    status = </span><span class="se">\&quot;</span><span class="s2">YES</span><span class="se">\&quot;</span><span class="s2"> if</span>
-<span class="n">data</span><span class="p">[</span><span class="s1">&#39;Meets Requirement&#39;</span><span class="p">]</span> <span class="k">else</span> \<span class="s2">&quot;NO</span><span class="se">\&quot;\n</span><span class="s2">    print(f</span><span class="se">\&quot;</span><span class="si">{sensor:&lt;15}</span><span class="s2"> | </span><span class="si">{terrain:&lt;10}</span><span class="s2"> |</span>
-<span class="p">{</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Power Draw (W)&#39;</span><span class="p">]:</span><span class="o">&lt;</span><span class="mi">18</span><span class="p">}</span> <span class="o">|</span> <span class="p">{</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Time (min)&#39;</span><span class="p">]:</span><span class="mf">.2</span><span class="n">f</span><span class="p">}</span> <span class="o">|</span> <span class="p">{</span><span class="n">status</span><span class="p">}</span>\<span class="s2">&quot;)</span><span class="se">\n\n</span><span class="s2"># ---</span>
-<span class="n">Recommendation</span> <span class="o">---</span>\<span class="n">nprint</span><span class="p">(</span>\<span class="s2">&quot;</span><span class="se">\\</span><span class="s2">n--- Recommendation ---</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n\n</span><span class="s2">qualified_configurations =</span>
-<span class="p">[]</span>\<span class="n">nfor</span> <span class="p">(</span><span class="n">sensor</span><span class="p">,</span> <span class="n">terrain</span><span class="p">),</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">results</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>\<span class="n">n</span>    <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;Meets Requirement&#39;</span><span class="p">]:</span>\<span class="n">n</span>
-<span class="n">qualified_configurations</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">sensor</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;Time (min)&#39;</span><span class="p">]))</span>\<span class="n">n</span>\<span class="n">nif</span>
+<span class="o">--------</span>\<span class="s2">")</span><span class="se">\n\n</span><span class="s2">for (sensor, terrain), data in results.items():</span><span class="se">\n</span><span class="s2">    status = </span><span class="se">\"</span><span class="s2">YES</span><span class="se">\"</span><span class="s2"> if</span>
+<span class="n">data</span><span class="p">[</span><span class="s1">'Meets Requirement'</span><span class="p">]</span> <span class="k">else</span> \<span class="s2">"NO</span><span class="se">\"\n</span><span class="s2">    print(f</span><span class="se">\"</span><span class="si">{sensor:&lt;15}</span><span class="s2"> | </span><span class="si">{terrain:&lt;10}</span><span class="s2"> |</span>
+<span class="p">{</span><span class="n">data</span><span class="p">[</span><span class="s1">'Power Draw (W)'</span><span class="p">]:</span><span class="o">&lt;</span><span class="mi">18</span><span class="p">}</span> <span class="o">|</span> <span class="p">{</span><span class="n">data</span><span class="p">[</span><span class="s1">'Time (min)'</span><span class="p">]:</span><span class="mf">.2</span><span class="n">f</span><span class="p">}</span> <span class="o">|</span> <span class="p">{</span><span class="n">status</span><span class="p">}</span>\<span class="s2">")</span><span class="se">\n\n</span><span class="s2"># ---</span>
+<span class="n">Recommendation</span> <span class="o">---</span>\<span class="n">nprint</span><span class="p">(</span>\<span class="s2">"</span><span class="se">\\</span><span class="s2">n--- Recommendation ---</span><span class="se">\"</span><span class="s2">)</span><span class="se">\n\n</span><span class="s2">qualified_configurations =</span>
+<span class="p">[]</span>\<span class="n">nfor</span> <span class="p">(</span><span class="n">sensor</span><span class="p">,</span> <span class="n">terrain</span><span class="p">),</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">results</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>\<span class="n">n</span>    <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s1">'Meets Requirement'</span><span class="p">]:</span>\<span class="n">n</span>
+<span class="n">qualified_configurations</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">sensor</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="s1">'Time (min)'</span><span class="p">]))</span>\<span class="n">n</span>\<span class="n">nif</span>
 <span class="n">qualified_configurations</span><span class="p">:</span>\<span class="n">n</span>    <span class="c1"># Find the configuration with the maximum operational</span>
 <span class="n">time</span>\<span class="n">n</span>    <span class="n">best_config</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">qualified_configurations</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>\<span class="n">n</span>
-<span class="n">best_sensor</span><span class="p">,</span> <span class="n">best_time</span> <span class="o">=</span> <span class="n">best_config</span>\<span class="n">n</span>    <span class="nb">print</span><span class="p">(</span><span class="n">f</span>\<span class="s2">&quot;The highest capability sensor package</span>
+<span class="n">best_sensor</span><span class="p">,</span> <span class="n">best_time</span> <span class="o">=</span> <span class="n">best_config</span>\<span class="n">n</span>    <span class="nb">print</span><span class="p">(</span><span class="n">f</span>\<span class="s2">"The highest capability sensor package</span>
 <span class="n">meeting</span> <span class="n">the</span> <span class="p">{</span><span class="n">min_operational_time</span><span class="p">}</span> <span class="nb">min</span> <span class="n">requirement</span> <span class="ow">is</span><span class="p">:</span> <span class="p">{</span><span class="n">best_sensor</span><span class="p">}</span> <span class="p">(</span><span class="n">Time</span><span class="p">:</span>
-<span class="p">{</span><span class="n">best_time</span><span class="p">:</span><span class="mf">.2</span><span class="n">f</span><span class="p">}</span> <span class="nb">min</span><span class="p">)</span>\<span class="s2">&quot;)</span><span class="se">\n</span><span class="s2">else:</span><span class="se">\n</span><span class="s2">    print(</span><span class="se">\&quot;</span><span class="s2">No configuration met the minimum operational</span>
-<span class="n">time</span> <span class="n">requirement</span> <span class="n">of</span> <span class="mi">120</span> <span class="n">minutes</span><span class="o">.</span>\<span class="s2">&quot;)&quot;</span>
+<span class="p">{</span><span class="n">best_time</span><span class="p">:</span><span class="mf">.2</span><span class="n">f</span><span class="p">}</span> <span class="nb">min</span><span class="p">)</span>\<span class="s2">")</span><span class="se">\n</span><span class="s2">else:</span><span class="se">\n</span><span class="s2">    print(</span><span class="se">\"</span><span class="s2">No configuration met the minimum operational</span>
+<span class="n">time</span> <span class="n">requirement</span> <span class="n">of</span> <span class="mi">120</span> <span class="n">minutes</span><span class="o">.</span>\<span class="s2">")"</span>
       <span class="p">}</span>
     <span class="p">}</span>
   <span class="p">]</span>
@@ -445,7 +445,7 @@ This motivates Trial 4.</p>
 <p><em>(Generated by: Gemma4-2B)</em></p>
 <p><strong>System Instructions</strong>:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>You are a scientific research assistant specializing in experimental and engineering
-analysis. Formulate the analytical equations for the user&#39;s problem. Write and execute a
+analysis. Formulate the analytical equations for the user's problem. Write and execute a
 clean, concise Python script using the `python_sandbox` tool to calculate exact numerical
 values, trade-off curves, or parameter grids. Use simple print() statements to display the
 calculated results clearly. Once the calculation is executed and verified, use the
@@ -453,12 +453,12 @@ calculated results clearly. Once the calculation is executed and verified, use t
 
 Scratchpad Variables:
 {
-  &quot;current_chunk_index&quot;: 0
+  "current_chunk_index": 0
 }
 </pre></div>
 </div>
 <p><strong>User Prompt &amp; Working State</strong>:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[{</span><span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="s1">&#39;We are designing an empirical intervention trial for an</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[{</span><span class="s1">'role'</span><span class="p">:</span> <span class="s1">'user'</span><span class="p">,</span> <span class="s1">'content'</span><span class="p">:</span> <span class="s1">'We are designing an empirical intervention trial for an</span>
 <span class="n">autonomous</span> <span class="n">tracked</span> <span class="n">firefighting</span> <span class="n">robot</span> <span class="n">operating</span> <span class="ow">in</span> <span class="n">a</span> <span class="n">collapsed</span> <span class="n">multi</span><span class="o">-</span><span class="n">story</span>
 <span class="n">structure</span><span class="o">.</span>\<span class="n">nPower</span> <span class="n">system</span> <span class="n">parameters</span> <span class="p">(</span><span class="n">grounded</span> <span class="ow">in</span> <span class="n">Talavera</span> <span class="n">et</span> <span class="n">al</span><span class="o">.</span> <span class="mi">2023</span><span class="p">):</span>\<span class="n">n</span><span class="o">-</span> <span class="n">Battery</span>
 <span class="n">capacity</span><span class="p">:</span> <span class="mi">1200</span><span class="n">Wh</span> <span class="n">pack</span> <span class="k">with</span> <span class="n">a</span> <span class="mi">20</span><span class="o">%</span> <span class="n">emergency</span> <span class="n">safety</span> <span class="n">reserve</span> <span class="p">(</span><span class="mi">80</span><span class="o">%</span> <span class="n">usable</span> <span class="n">energy</span> <span class="o">=</span> <span class="mi">960</span><span class="n">Wh</span>
@@ -469,16 +469,16 @@ Scratchpad Variables:
 <span class="n">compute</span> <span class="n">the</span> <span class="n">exact</span> <span class="n">operational</span> <span class="n">search</span> <span class="n">duration</span> <span class="ow">in</span> <span class="n">minutes</span> <span class="k">for</span> <span class="nb">all</span> <span class="mi">6</span> <span class="n">factor</span> <span class="n">combinations</span><span class="o">.</span>
 <span class="n">Filter</span> <span class="n">strictly</span> <span class="k">for</span> <span class="n">configurations</span> <span class="n">meeting</span> <span class="n">the</span> <span class="mi">120</span><span class="o">-</span><span class="n">minute</span> <span class="n">minimum</span> <span class="n">operational</span> <span class="n">requirement</span>
 <span class="p">(</span><span class="n">T_op</span> <span class="o">&gt;=</span> <span class="mi">120</span><span class="p">),</span> <span class="ow">and</span> <span class="n">recommend</span> <span class="n">the</span> <span class="n">highest</span><span class="o">-</span><span class="n">capability</span> <span class="n">sensor</span> <span class="n">package</span> <span class="n">that</span> <span class="n">meets</span> <span class="n">this</span>
-<span class="n">constraint</span><span class="o">.</span><span class="s1">&#39;}]</span>
+<span class="n">constraint</span><span class="o">.</span><span class="s1">'}]</span>
 </pre></div>
 </div>
 <p><strong>Model Output</strong>:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;python_sandbox&#39;</span><span class="p">,</span> <span class="s1">&#39;args&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;code&#39;</span><span class="p">:</span> <span class="s1">&#39;import numpy as np</span><span class="se">\n\n</span><span class="s1"># --- Parameters</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[{</span><span class="s1">'name'</span><span class="p">:</span> <span class="s1">'python_sandbox'</span><span class="p">,</span> <span class="s1">'args'</span><span class="p">:</span> <span class="p">{</span><span class="s1">'code'</span><span class="p">:</span> <span class="s1">'import numpy as np</span><span class="se">\n\n</span><span class="s1"># --- Parameters</span>
 <span class="n">Definition</span> <span class="o">---</span>\<span class="n">n</span>\<span class="n">n</span><span class="c1"># Battery capacity (Wh) - 1200Wh total\n# Usable energy (Wh) = 1200 *</span>
-<span class="mf">0.80</span> <span class="o">=</span> <span class="mi">960</span><span class="n">Wh</span>\<span class="n">n</span>\<span class="n">n</span><span class="c1"># Power Consumption (W)\nsensor_draws = {\n    \&#39;Baseline\&#39;: 25,\n</span>
-\<span class="s1">&#39;Standard Multi-spectral</span><span class="se">\&#39;</span><span class="s1">: 75,</span><span class="se">\n</span><span class="s1">    </span><span class="se">\&#39;</span><span class="s1">Heavy LiDAR+Thermal+Compute</span><span class="se">\&#39;</span><span class="s1">:</span>
-<span class="mi">110</span>\<span class="n">n</span><span class="p">}</span>\<span class="n">n</span>\<span class="n">nlocomotion_draws</span> <span class="o">=</span> <span class="p">{</span>\<span class="n">n</span>    \<span class="s1">&#39;Smooth Concrete</span><span class="se">\&#39;</span><span class="s1">: 280,</span><span class="se">\n</span><span class="s1">    </span><span class="se">\&#39;</span><span class="s1">Heavy</span>
-<span class="n">Rubble</span><span class="o">/</span><span class="n">Debris</span>\<span class="s1">&#39;: 460</span><span class="se">\n</span><span class="s1">}</span><span class="se">\n\n</span><span class="s1"># Required operational time (minutes)</span><span class="se">\n</span><span class="s1">min_operational_time =</span>
+<span class="mf">0.80</span> <span class="o">=</span> <span class="mi">960</span><span class="n">Wh</span>\<span class="n">n</span>\<span class="n">n</span><span class="c1"># Power Consumption (W)\nsensor_draws = {\n    \'Baseline\': 25,\n</span>
+\<span class="s1">'Standard Multi-spectral</span><span class="se">\'</span><span class="s1">: 75,</span><span class="se">\n</span><span class="s1">    </span><span class="se">\'</span><span class="s1">Heavy LiDAR+Thermal+Compute</span><span class="se">\'</span><span class="s1">:</span>
+<span class="mi">110</span>\<span class="n">n</span><span class="p">}</span>\<span class="n">n</span>\<span class="n">nlocomotion_draws</span> <span class="o">=</span> <span class="p">{</span>\<span class="n">n</span>    \<span class="s1">'Smooth Concrete</span><span class="se">\'</span><span class="s1">: 280,</span><span class="se">\n</span><span class="s1">    </span><span class="se">\'</span><span class="s1">Heavy</span>
+<span class="n">Rubble</span><span class="o">/</span><span class="n">Debris</span>\<span class="s1">': 460</span><span class="se">\n</span><span class="s1">}</span><span class="se">\n\n</span><span class="s1"># Required operational time (minutes)</span><span class="se">\n</span><span class="s1">min_operational_time =</span>
 <span class="mi">120</span>\<span class="n">n</span>\<span class="n">n</span><span class="c1"># --- Calculation Setup ---\n\n# Time calculation: Time (hours) = Usable Energy</span>
 <span class="p">(</span><span class="n">Wh</span><span class="p">)</span> <span class="o">/</span> <span class="n">Power</span> <span class="n">Draw</span> <span class="p">(</span><span class="n">W</span><span class="p">)</span>\<span class="n">n</span><span class="c1"># Convert to minutes: Time (min) = (Usable Energy / Power Draw) *</span>
 <span class="mi">60</span>\<span class="n">n</span>\<span class="n">nresults</span> <span class="o">=</span> <span class="p">{}</span>\<span class="n">n</span>\<span class="n">n</span><span class="c1"># Iterate through all combinations\nfor sensor_name, sensor_draw in</span>
@@ -489,37 +489,37 @@ Scratchpad Variables:
 <span class="n">operational_time_minutes</span> <span class="o">=</span> <span class="n">time_hours</span> <span class="o">*</span> <span class="mi">60</span>\<span class="n">n</span>        \<span class="n">n</span>        <span class="c1"># Store results\n</span>
 <span class="n">results</span><span class="p">[(</span><span class="n">sensor_name</span><span class="p">,</span> <span class="n">terrain_name</span><span class="p">)]</span> <span class="o">=</span> <span class="n">operational_time_minutes</span>\<span class="n">n</span>        \<span class="n">n</span>        <span class="c1"># Check</span>
 <span class="n">the</span> <span class="n">constraint</span>\<span class="n">n</span>        <span class="n">meets_requirement</span> <span class="o">=</span> <span class="n">operational_time_minutes</span> <span class="o">&gt;=</span>
-<span class="n">min_operational_time</span>\<span class="n">n</span>        <span class="n">results</span><span class="p">[(</span><span class="n">sensor_name</span><span class="p">,</span> <span class="n">terrain_name</span><span class="p">)][</span>\<span class="s1">&#39;Time (min)</span><span class="se">\&#39;</span><span class="s1">] =</span>
-<span class="n">operational_time_minutes</span>\<span class="n">n</span>        <span class="n">results</span><span class="p">[(</span><span class="n">sensor_name</span><span class="p">,</span> <span class="n">terrain_name</span><span class="p">)][</span>\<span class="s1">&#39;Meets</span>
-<span class="n">Requirement</span>\<span class="s1">&#39;] = meets_requirement</span><span class="se">\n\n</span><span class="s1"># --- Output Formatting ---</span><span class="se">\n</span><span class="s1">print(&quot;--- Operational</span>
-<span class="n">Time</span> <span class="n">Calculation</span> <span class="n">Results</span> <span class="o">---</span><span class="s2">&quot;)</span><span class="se">\n</span><span class="s2">print(f&quot;</span><span class="n">Minimum</span> <span class="n">required</span> <span class="n">operational</span> <span class="n">time</span><span class="p">:</span>
+<span class="n">min_operational_time</span>\<span class="n">n</span>        <span class="n">results</span><span class="p">[(</span><span class="n">sensor_name</span><span class="p">,</span> <span class="n">terrain_name</span><span class="p">)][</span>\<span class="s1">'Time (min)</span><span class="se">\'</span><span class="s1">] =</span>
+<span class="n">operational_time_minutes</span>\<span class="n">n</span>        <span class="n">results</span><span class="p">[(</span><span class="n">sensor_name</span><span class="p">,</span> <span class="n">terrain_name</span><span class="p">)][</span>\<span class="s1">'Meets</span>
+<span class="n">Requirement</span>\<span class="s1">'] = meets_requirement</span><span class="se">\n\n</span><span class="s1"># --- Output Formatting ---</span><span class="se">\n</span><span class="s1">print("--- Operational</span>
+<span class="n">Time</span> <span class="n">Calculation</span> <span class="n">Results</span> <span class="o">---</span><span class="s2">")</span><span class="se">\n</span><span class="s2">print(f"</span><span class="n">Minimum</span> <span class="n">required</span> <span class="n">operational</span> <span class="n">time</span><span class="p">:</span>
 <span class="p">{</span><span class="n">min_operational_time</span><span class="p">}</span>
-<span class="n">minutes</span><span class="s2">&quot;)</span><span class="se">\n</span><span class="s2">print(&quot;</span><span class="o">------------------------------------------</span><span class="s2">&quot;)</span><span class="se">\n\n</span><span class="s2">print(&quot;</span><span class="n">Sensor</span> <span class="o">|</span> <span class="n">Terrain</span>
-<span class="o">|</span> <span class="n">Power</span> <span class="n">Draw</span> <span class="p">(</span><span class="n">W</span><span class="p">)</span> <span class="o">|</span> <span class="n">Operational</span> <span class="n">Time</span> <span class="p">(</span><span class="nb">min</span><span class="p">)</span> <span class="o">|</span> <span class="n">Meets</span> <span class="n">Requirement</span><span class="s2">&quot;)</span><span class="se">\n</span><span class="s2">print(&quot;</span><span class="o">------------------</span>
-<span class="o">----------------------------------------------------------------------------------------</span><span class="s2">&quot;)</span>
-\<span class="n">n</span>\<span class="n">nfor</span> <span class="p">(</span><span class="n">sensor</span><span class="p">,</span> <span class="n">terrain</span><span class="p">),</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">results</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>\<span class="n">n</span>    <span class="n">status</span> <span class="o">=</span> <span class="s2">&quot;YES&quot;</span> <span class="k">if</span> <span class="n">data</span><span class="p">[</span>\<span class="s1">&#39;Meets</span>
-<span class="n">Requirement</span>\<span class="s1">&#39;] else &quot;NO&quot;</span><span class="se">\n</span><span class="s1">    print(f&quot;</span><span class="si">{sensor:&lt;15}</span><span class="s1"> | </span><span class="si">{terrain:&lt;10}</span><span class="s1"> | </span><span class="si">{data[\&#39;Power Draw</span>
-<span class="si">(W)\&#39;]:&lt;18}</span><span class="s1"> | </span><span class="si">{data[\&#39;Time (min)\&#39;]:.2f}</span><span class="s1"> | </span><span class="si">{status}</span><span class="s1">&quot;)</span><span class="se">\n\n</span><span class="s1"># --- Recommendation</span>
-<span class="o">---</span>\<span class="n">nprint</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">n--- Recommendation ---&quot;</span><span class="p">)</span>\<span class="n">n</span>\<span class="n">nqualified_configurations</span> <span class="o">=</span> <span class="p">[]</span>\<span class="n">nfor</span> <span class="p">(</span><span class="n">sensor</span><span class="p">,</span>
-<span class="n">terrain</span><span class="p">),</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">results</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>\<span class="n">n</span>    <span class="k">if</span> <span class="n">data</span><span class="p">[</span>\<span class="s1">&#39;Meets Requirement</span><span class="se">\&#39;</span><span class="s1">]:</span><span class="se">\n</span>
-<span class="n">qualified_configurations</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">sensor</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span>\<span class="s1">&#39;Time (min)</span><span class="se">\&#39;</span><span class="s1">]))</span><span class="se">\n\n</span><span class="s1">if</span>
+<span class="n">minutes</span><span class="s2">")</span><span class="se">\n</span><span class="s2">print("</span><span class="o">------------------------------------------</span><span class="s2">")</span><span class="se">\n\n</span><span class="s2">print("</span><span class="n">Sensor</span> <span class="o">|</span> <span class="n">Terrain</span>
+<span class="o">|</span> <span class="n">Power</span> <span class="n">Draw</span> <span class="p">(</span><span class="n">W</span><span class="p">)</span> <span class="o">|</span> <span class="n">Operational</span> <span class="n">Time</span> <span class="p">(</span><span class="nb">min</span><span class="p">)</span> <span class="o">|</span> <span class="n">Meets</span> <span class="n">Requirement</span><span class="s2">")</span><span class="se">\n</span><span class="s2">print("</span><span class="o">------------------</span>
+<span class="o">----------------------------------------------------------------------------------------</span><span class="s2">")</span>
+\<span class="n">n</span>\<span class="n">nfor</span> <span class="p">(</span><span class="n">sensor</span><span class="p">,</span> <span class="n">terrain</span><span class="p">),</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">results</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>\<span class="n">n</span>    <span class="n">status</span> <span class="o">=</span> <span class="s2">"YES"</span> <span class="k">if</span> <span class="n">data</span><span class="p">[</span>\<span class="s1">'Meets</span>
+<span class="n">Requirement</span>\<span class="s1">'] else "NO"</span><span class="se">\n</span><span class="s1">    print(f"</span><span class="si">{sensor:&lt;15}</span><span class="s1"> | </span><span class="si">{terrain:&lt;10}</span><span class="s1"> | </span><span class="si">{data[\'Power Draw</span>
+<span class="si">(W)\']:&lt;18}</span><span class="s1"> | </span><span class="si">{data[\'Time (min)\']:.2f}</span><span class="s1"> | </span><span class="si">{status}</span><span class="s1">")</span><span class="se">\n\n</span><span class="s1"># --- Recommendation</span>
+<span class="o">---</span>\<span class="n">nprint</span><span class="p">(</span><span class="s2">"</span><span class="se">\\</span><span class="s2">n--- Recommendation ---"</span><span class="p">)</span>\<span class="n">n</span>\<span class="n">nqualified_configurations</span> <span class="o">=</span> <span class="p">[]</span>\<span class="n">nfor</span> <span class="p">(</span><span class="n">sensor</span><span class="p">,</span>
+<span class="n">terrain</span><span class="p">),</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">results</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>\<span class="n">n</span>    <span class="k">if</span> <span class="n">data</span><span class="p">[</span>\<span class="s1">'Meets Requirement</span><span class="se">\'</span><span class="s1">]:</span><span class="se">\n</span>
+<span class="n">qualified_configurations</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">sensor</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span>\<span class="s1">'Time (min)</span><span class="se">\'</span><span class="s1">]))</span><span class="se">\n\n</span><span class="s1">if</span>
 <span class="n">qualified_configurations</span><span class="p">:</span>\<span class="n">n</span>    <span class="c1"># Find the configuration with the maximum operational</span>
 <span class="n">time</span>\<span class="n">n</span>    <span class="n">best_config</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">qualified_configurations</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>\<span class="n">n</span>
-<span class="n">best_sensor</span><span class="p">,</span> <span class="n">best_time</span> <span class="o">=</span> <span class="n">best_config</span>\<span class="n">n</span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The highest capability sensor package</span>
+<span class="n">best_sensor</span><span class="p">,</span> <span class="n">best_time</span> <span class="o">=</span> <span class="n">best_config</span>\<span class="n">n</span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The highest capability sensor package</span>
 <span class="n">meeting</span> <span class="n">the</span> <span class="p">{</span><span class="n">min_operational_time</span><span class="p">}</span> <span class="nb">min</span> <span class="n">requirement</span> <span class="ow">is</span><span class="p">:</span> <span class="p">{</span><span class="n">best_sensor</span><span class="p">}</span> <span class="p">(</span><span class="n">Time</span><span class="p">:</span>
-<span class="p">{</span><span class="n">best_time</span><span class="p">:</span><span class="mf">.2</span><span class="n">f</span><span class="p">}</span> <span class="nb">min</span><span class="p">)</span><span class="s2">&quot;)</span><span class="se">\n</span><span class="s2">else:</span><span class="se">\n</span><span class="s2">    print(&quot;</span><span class="n">No</span> <span class="n">configuration</span> <span class="n">met</span> <span class="n">the</span> <span class="n">minimum</span> <span class="n">operational</span>
-<span class="n">time</span> <span class="n">requirement</span> <span class="n">of</span> <span class="mi">120</span> <span class="n">minutes</span><span class="o">.</span><span class="s2">&quot;)&#39;}}]</span>
+<span class="p">{</span><span class="n">best_time</span><span class="p">:</span><span class="mf">.2</span><span class="n">f</span><span class="p">}</span> <span class="nb">min</span><span class="p">)</span><span class="s2">")</span><span class="se">\n</span><span class="s2">else:</span><span class="se">\n</span><span class="s2">    print("</span><span class="n">No</span> <span class="n">configuration</span> <span class="n">met</span> <span class="n">the</span> <span class="n">minimum</span> <span class="n">operational</span>
+<span class="n">time</span> <span class="n">requirement</span> <span class="n">of</span> <span class="mi">120</span> <span class="n">minutes</span><span class="o">.</span><span class="s2">")'}}]</span>
 </pre></div>
 </div>
 <p><strong>Tool Execution Result</strong>:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">SYSTEM</span><span class="p">:</span> <span class="n">Sandbox</span> <span class="n">Execution</span> <span class="n">Failed</span> <span class="p">(</span><span class="n">RC</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span>
 <span class="n">Error</span><span class="p">:</span>
 <span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
-  <span class="n">File</span> <span class="s2">&quot;/workspace/3e797c65-5707-4d92-9082-ce30be719dbd/sandbox_script.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">48</span><span class="p">,</span> <span class="ow">in</span>
+  <span class="n">File</span> <span class="s2">"/workspace/3e797c65-5707-4d92-9082-ce30be719dbd/sandbox_script.py"</span><span class="p">,</span> <span class="n">line</span> <span class="mi">48</span><span class="p">,</span> <span class="ow">in</span>
 <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
-    <span class="n">results</span><span class="p">[(</span><span class="n">sensor_name</span><span class="p">,</span> <span class="n">terrain_name</span><span class="p">)][</span><span class="s1">&#39;Time (min)&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">operational_time_minutes</span>
+    <span class="n">results</span><span class="p">[(</span><span class="n">sensor_name</span><span class="p">,</span> <span class="n">terrain_name</span><span class="p">)][</span><span class="s1">'Time (min)'</span><span class="p">]</span> <span class="o">=</span> <span class="n">operational_time_minutes</span>
     <span class="o">~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^</span>
-<span class="ne">TypeError</span><span class="p">:</span> <span class="s1">&#39;float&#39;</span> <span class="nb">object</span> <span class="n">does</span> <span class="ow">not</span> <span class="n">support</span> <span class="n">item</span> <span class="n">assignment</span>
+<span class="ne">TypeError</span><span class="p">:</span> <span class="s1">'float'</span> <span class="nb">object</span> <span class="n">does</span> <span class="ow">not</span> <span class="n">support</span> <span class="n">item</span> <span class="n">assignment</span>
 
 <span class="n">Output</span><span class="p">:</span>
 
@@ -532,7 +532,7 @@ Scratchpad Variables:
 <p><em>(Generated by: Gemma4-2B)</em></p>
 <p><strong>System Instructions</strong>:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>You are a scientific research assistant specializing in experimental and engineering
-analysis. Formulate the analytical equations for the user&#39;s problem. Write and execute a
+analysis. Formulate the analytical equations for the user's problem. Write and execute a
 clean, concise Python script using the `python_sandbox` tool to calculate exact numerical
 values, trade-off curves, or parameter grids. Use simple print() statements to display the
 calculated results clearly. Once the calculation is executed and verified, use the
@@ -540,12 +540,12 @@ calculated results clearly. Once the calculation is executed and verified, use t
 
 Scratchpad Variables:
 {
-  &quot;current_chunk_index&quot;: 0
+  "current_chunk_index": 0
 }
 </pre></div>
 </div>
 <p><strong>User Prompt &amp; Working State</strong>:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>[{&#39;role&#39;: &#39;user&#39;, &#39;content&#39;: &#39;We are designing an empirical intervention trial for an
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>[{'role': 'user', 'content': 'We are designing an empirical intervention trial for an
 autonomous tracked firefighting robot operating in a collapsed multi-story
 structure.\nPower system parameters (grounded in Talavera et al. 2023):\n- Battery
 capacity: 1200Wh pack with a 20% emergency safety reserve (80% usable energy = 960Wh
@@ -556,12 +556,12 @@ calculation and write a clean Python script using the python_sandbox tool to com
 exact operational search duration in minutes for all 6 factor combinations. Filter
 strictly for configurations meeting the 120-minute minimum operational requirement (T_op
 &gt;= 120), and recommend the highest-capability sensor package that meets this
-constraint.&#39;}, {&#39;role&#39;: &#39;assistant&#39;, &#39;content&#39;: &#39;[{\&#39;name\&#39;: \&#39;python_sandbox\&#39;, \&#39;args\&#39;:
-{\&#39;code\&#39;: \&#39;import numpy as np\\n\\n# --- Parameters Definition ---\\n\\n# Battery
+constraint.'}, {'role': 'assistant', 'content': '[{\'name\': \'python_sandbox\', \'args\':
+{\'code\': \'import numpy as np\\n\\n# --- Parameters Definition ---\\n\\n# Battery
 capacity (Wh) - 1200Wh total\\n# Usable energy (Wh) = 1200 * 0.80 = 960Wh\\n\\n# Power
-Consumption (W)\\nsensor_draws = {\\n    \\\&#39;Baseline\\\&#39;: 25,\\n    \\\&#39;Standard Multi-
-spectral\\\&#39;: 75,\\n    \\\&#39;Heavy LiDAR+Thermal+Compute\\\&#39;: 110\\n}\\n\\nlocomotion_draws
-= {\\n    \\\&#39;Smooth Concrete\\\&#39;: 280,\\n    \\\&#39;Heavy Rubble/Debris\\\&#39;: 460\\n}\\n\\n#
+Consumption (W)\\nsensor_draws = {\\n    \\\'Baseline\\\': 25,\\n    \\\'Standard Multi-
+spectral\\\': 75,\\n    \\\'Heavy LiDAR+Thermal+Compute\\\': 110\\n}\\n\\nlocomotion_draws
+= {\\n    \\\'Smooth Concrete\\\': 280,\\n    \\\'Heavy Rubble/Debris\\\': 460\\n}\\n\\n#
 Required operational time (minutes)\\nmin_operational_time = 120\\n\\n# --- Calculation
 Setup ---\\n\\n# Time calculation: Time (hours) = Usable Energy (Wh) / Power Draw (W)\\n#
 Convert to minutes: Time (min) = (Usable Energy / Power Draw) * 60\\n\\nresults =
@@ -573,29 +573,29 @@ loc_draw\\n        \\n        # Calculate operational time in hours\\n        ti
 operational_time_minutes = time_hours * 60\\n        \\n        # Store results\\n
 results[(sensor_name, terrain_name)] = operational_time_minutes\\n        \\n        #
 Check the constraint\\n        meets_requirement = operational_time_minutes &gt;=
-min_operational_time\\n        results[(sensor_name, terrain_name)][\\\&#39;Time (min)\\\&#39;] =
-operational_time_minutes\\n        results[(sensor_name, terrain_name)][\\\&#39;Meets
-Requirement\\\&#39;] = meets_requirement\\n\\n# --- Output Formatting ---\\nprint(&quot;---
-Operational Time Calculation Results ---&quot;)\\nprint(f&quot;Minimum required operational time:
+min_operational_time\\n        results[(sensor_name, terrain_name)][\\\'Time (min)\\\'] =
+operational_time_minutes\\n        results[(sensor_name, terrain_name)][\\\'Meets
+Requirement\\\'] = meets_requirement\\n\\n# --- Output Formatting ---\\nprint("---
+Operational Time Calculation Results ---")\\nprint(f"Minimum required operational time:
 {min_operational_time}
-minutes&quot;)\\nprint(&quot;------------------------------------------&quot;)\\n\\nprint(&quot;Sensor |
-Terrain | Power Draw (W) | Operational Time (min) | Meets Requirement&quot;)\\nprint(&quot;---------
+minutes")\\nprint("------------------------------------------")\\n\\nprint("Sensor |
+Terrain | Power Draw (W) | Operational Time (min) | Meets Requirement")\\nprint("---------
 ------------------------------------------------------------------------------------------
--------&quot;)\\n\\nfor (sensor, terrain), data in results.items():\\n    status = &quot;YES&quot; if
-data[\\\&#39;Meets Requirement\\\&#39;] else &quot;NO&quot;\\n    print(f&quot;{sensor:&lt;15} | {terrain:&lt;10} |
-{data[\\\&#39;Power Draw (W)\\\&#39;]:&lt;18} | {data[\\\&#39;Time (min)\\\&#39;]:.2f} | {status}&quot;)\\n\\n#
---- Recommendation ---\\nprint(&quot;\\\\n--- Recommendation
----&quot;)\\n\\nqualified_configurations = []\\nfor (sensor, terrain), data in
-results.items():\\n    if data[\\\&#39;Meets Requirement\\\&#39;]:\\n
-qualified_configurations.append((sensor, data[\\\&#39;Time (min)\\\&#39;]))\\n\\nif
+-------")\\n\\nfor (sensor, terrain), data in results.items():\\n    status = "YES" if
+data[\\\'Meets Requirement\\\'] else "NO"\\n    print(f"{sensor:&lt;15} | {terrain:&lt;10} |
+{data[\\\'Power Draw (W)\\\']:&lt;18} | {data[\\\'Time (min)\\\']:.2f} | {status}")\\n\\n#
+--- Recommendation ---\\nprint("\\\\n--- Recommendation
+---")\\n\\nqualified_configurations = []\\nfor (sensor, terrain), data in
+results.items():\\n    if data[\\\'Meets Requirement\\\']:\\n
+qualified_configurations.append((sensor, data[\\\'Time (min)\\\']))\\n\\nif
 qualified_configurations:\\n    # Find the configuration with the maximum operational
 time\\n    best_config = max(qualified_configurations, key=lambda x: x[1])\\n
-best_sensor, best_time = best_config\\n    print(f&quot;The highest capability sensor package
+best_sensor, best_time = best_config\\n    print(f"The highest capability sensor package
 meeting the {min_operational_time} min requirement is: {best_sensor} (Time:
-{best_time:.2f} min)&quot;)\\nelse:\\n    print(&quot;No configuration met the minimum operational
-time requirement of 120 minutes.&quot;)\&#39;}}]&#39;}, {&#39;role&#39;: &#39;user&#39;, &#39;content&#39;: &#39;Tool execution
+{best_time:.2f} min)")\\nelse:\\n    print("No configuration met the minimum operational
+time requirement of 120 minutes.")\'}}]'}, {'role': 'user', 'content': 'Tool execution
 completed. Review the results above. If you have achieved your goal, you MUST output the
-`TASK_COMPLETE` tool now. Do not call the same tools again with the same arguments.&#39;}]
+`TASK_COMPLETE` tool now. Do not call the same tools again with the same arguments.'}]
 </pre></div>
 </div>
 <p><strong>Model Output</strong>:</p>
@@ -614,12 +614,12 @@ completed. Review the results above. If you have achieved your goal, you MUST ou
 
 <span class="n">Scratchpad</span> <span class="n">Variables</span><span class="p">:</span>
 <span class="p">{</span>
-  <span class="s2">&quot;current_chunk_index&quot;</span><span class="p">:</span> <span class="mi">0</span>
+  <span class="s2">"current_chunk_index"</span><span class="p">:</span> <span class="mi">0</span>
 <span class="p">}</span>
 </pre></div>
 </div>
 <p><strong>User Prompt &amp; Working State</strong>:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>[{&#39;role&#39;: &#39;user&#39;, &#39;content&#39;: &#39;We are designing an empirical intervention trial for an
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>[{'role': 'user', 'content': 'We are designing an empirical intervention trial for an
 autonomous tracked firefighting robot operating in a collapsed multi-story
 structure.\nPower system parameters (grounded in Talavera et al. 2023):\n- Battery
 capacity: 1200Wh pack with a 20% emergency safety reserve (80% usable energy = 960Wh
@@ -630,12 +630,12 @@ calculation and write a clean Python script using the python_sandbox tool to com
 exact operational search duration in minutes for all 6 factor combinations. Filter
 strictly for configurations meeting the 120-minute minimum operational requirement (T_op
 &gt;= 120), and recommend the highest-capability sensor package that meets this
-constraint.&#39;}, {&#39;role&#39;: &#39;assistant&#39;, &#39;content&#39;: &#39;[{\&#39;name\&#39;: \&#39;python_sandbox\&#39;, \&#39;args\&#39;:
-{\&#39;code\&#39;: \&#39;import numpy as np\\n\\n# --- Parameters Definition ---\\n\\n# Battery
+constraint.'}, {'role': 'assistant', 'content': '[{\'name\': \'python_sandbox\', \'args\':
+{\'code\': \'import numpy as np\\n\\n# --- Parameters Definition ---\\n\\n# Battery
 capacity (Wh) - 1200Wh total\\n# Usable energy (Wh) = 1200 * 0.80 = 960Wh\\n\\n# Power
-Consumption (W)\\nsensor_draws = {\\n    \\\&#39;Baseline\\\&#39;: 25,\\n    \\\&#39;Standard Multi-
-spectral\\\&#39;: 75,\\n    \\\&#39;Heavy LiDAR+Thermal+Compute\\\&#39;: 110\\n}\\n\\nlocomotion_draws
-= {\\n    \\\&#39;Smooth Concrete\\\&#39;: 280,\\n    \\\&#39;Heavy Rubble/Debris\\\&#39;: 460\\n}\\n\\n#
+Consumption (W)\\nsensor_draws = {\\n    \\\'Baseline\\\': 25,\\n    \\\'Standard Multi-
+spectral\\\': 75,\\n    \\\'Heavy LiDAR+Thermal+Compute\\\': 110\\n}\\n\\nlocomotion_draws
+= {\\n    \\\'Smooth Concrete\\\': 280,\\n    \\\'Heavy Rubble/Debris\\\': 460\\n}\\n\\n#
 Required operational time (minutes)\\nmin_operational_time = 120\\n\\n# --- Calculation
 Setup ---\\n\\n# Time calculation: Time (hours) = Usable Energy (Wh) / Power Draw (W)\\n#
 Convert to minutes: Time (min) = (Usable Energy / Power Draw) * 60\\n\\nresults =
@@ -647,30 +647,30 @@ loc_draw\\n        \\n        # Calculate operational time in hours\\n        ti
 operational_time_minutes = time_hours * 60\\n        \\n        # Store results\\n
 results[(sensor_name, terrain_name)] = operational_time_minutes\\n        \\n        #
 Check the constraint\\n        meets_requirement = operational_time_minutes &gt;=
-min_operational_time\\n        results[(sensor_name, terrain_name)][\\\&#39;Time (min)\\\&#39;] =
-operational_time_minutes\\n        results[(sensor_name, terrain_name)][\\\&#39;Meets
-Requirement\\\&#39;] = meets_requirement\\n\\n# --- Output Formatting ---\\nprint(&quot;---
-Operational Time Calculation Results ---&quot;)\\nprint(f&quot;Minimum required operational time:
+min_operational_time\\n        results[(sensor_name, terrain_name)][\\\'Time (min)\\\'] =
+operational_time_minutes\\n        results[(sensor_name, terrain_name)][\\\'Meets
+Requirement\\\'] = meets_requirement\\n\\n# --- Output Formatting ---\\nprint("---
+Operational Time Calculation Results ---")\\nprint(f"Minimum required operational time:
 {min_operational_time}
-minutes&quot;)\\nprint(&quot;------------------------------------------&quot;)\\n\\nprint(&quot;Sensor |
-Terrain | Power Draw (W) | Operational Time (min) | Meets Requirement&quot;)\\nprint(&quot;---------
+minutes")\\nprint("------------------------------------------")\\n\\nprint("Sensor |
+Terrain | Power Draw (W) | Operational Time (min) | Meets Requirement")\\nprint("---------
 ------------------------------------------------------------------------------------------
--------&quot;)\\n\\nfor (sensor, terrain), data in results.items():\\n    status = &quot;YES&quot; if
-data[\\\&#39;Meets Requirement\\\&#39;] else &quot;NO&quot;\\n    print(f&quot;{sensor:&lt;15} | {terrain:&lt;10} |
-{data[\\\&#39;Power Draw (W)\\\&#39;]:&lt;18} | {data[\\\&#39;Time (min)\\\&#39;]:.2f} | {status}&quot;)\\n\\n#
---- Recommendation ---\\nprint(&quot;\\\\n--- Recommendation
----&quot;)\\n\\nqualified_configurations = []\\nfor (sensor, terrain), data in
-results.items():\\n    if data[\\\&#39;Meets Requirement\\\&#39;]:\\n
-qualified_configurations.append((sensor, data[\\\&#39;Time (min)\\\&#39;]))\\n\\nif
+-------")\\n\\nfor (sensor, terrain), data in results.items():\\n    status = "YES" if
+data[\\\'Meets Requirement\\\'] else "NO"\\n    print(f"{sensor:&lt;15} | {terrain:&lt;10} |
+{data[\\\'Power Draw (W)\\\']:&lt;18} | {data[\\\'Time (min)\\\']:.2f} | {status}")\\n\\n#
+--- Recommendation ---\\nprint("\\\\n--- Recommendation
+---")\\n\\nqualified_configurations = []\\nfor (sensor, terrain), data in
+results.items():\\n    if data[\\\'Meets Requirement\\\']:\\n
+qualified_configurations.append((sensor, data[\\\'Time (min)\\\']))\\n\\nif
 qualified_configurations:\\n    # Find the configuration with the maximum operational
 time\\n    best_config = max(qualified_configurations, key=lambda x: x[1])\\n
-best_sensor, best_time = best_config\\n    print(f&quot;The highest capability sensor package
+best_sensor, best_time = best_config\\n    print(f"The highest capability sensor package
 meeting the {min_operational_time} min requirement is: {best_sensor} (Time:
-{best_time:.2f} min)&quot;)\\nelse:\\n    print(&quot;No configuration met the minimum operational
-time requirement of 120 minutes.&quot;)\&#39;}}]&#39;}, {&#39;role&#39;: &#39;user&#39;, &#39;content&#39;: &#39;Tool execution
+{best_time:.2f} min)")\\nelse:\\n    print("No configuration met the minimum operational
+time requirement of 120 minutes.")\'}}]'}, {'role': 'user', 'content': 'Tool execution
 completed. Review the results above. If you have achieved your goal, you MUST output the
-`TASK_COMPLETE` tool now. Do not call the same tools again with the same arguments.&#39;},
-{&#39;role&#39;: &#39;assistant&#39;, &#39;content&#39;: &#39;[]&#39;}]
+`TASK_COMPLETE` tool now. Do not call the same tools again with the same arguments.'},
+{'role': 'assistant', 'content': '[]'}]
 </pre></div>
 </div>
 <p><strong>Model Output</strong>:</p>
@@ -741,8 +741,8 @@ Based on the simulation results, the following recommendations are provided for 
 the subsequent empirical experiment:
 
 **Recommendation 1: Define the Minimum Acceptable Configuration Space**
-Since the &quot;Heavy LiDAR+Thermal+Compute&quot; package fails when paired with &quot;Heavy
-Rubble/Debris,&quot; this combination should be **excluded or flagged as failure** in initial
+Since the "Heavy LiDAR+Thermal+Compute" package fails when paired with "Heavy
+Rubble/Debris," this combination should be **excluded or flagged as failure** in initial
 testing, as it represents the worst-case scenario. The experimental design should focus
 primarily on the scenarios that *do* meet the threshold.
 
@@ -764,7 +764,7 @@ baseline significantly degrades performance in difficult terrain.
 **Conclusion for Experimental Design:**
 
 The experiment should be designed to **test the viability of the sensor/terrain pairing
-relative to the fixed energy budget.** The parameter space defining the &quot;Heavy&quot; sensor
+relative to the fixed energy budget.** The parameter space defining the "Heavy" sensor
 package must be treated with caution, as its inclusion severely constrains the achievable
 operational time under high-load locomotion.
 </pre></div>
@@ -839,8 +839,8 @@ Based on the simulation results, the following recommendations are provided for 
 the subsequent empirical experiment:
 
 **Recommendation 1: Define the Minimum Acceptable Configuration Space**
-Since the &quot;Heavy LiDAR+Thermal+Compute&quot; package fails when paired with &quot;Heavy
-Rubble/Debris,&quot; this combination should be **excluded or flagged as failure** in initial
+Since the "Heavy LiDAR+Thermal+Compute" package fails when paired with "Heavy
+Rubble/Debris," this combination should be **excluded or flagged as failure** in initial
 testing, as it represents the worst-case scenario. The experimental design should focus
 primarily on the scenarios that *do* meet the threshold.
 
@@ -862,7 +862,7 @@ baseline significantly degrades performance in difficult terrain.
 **Conclusion for Experimental Design:**
 
 The experiment should be designed to **test the viability of the sensor/terrain pairing
-relative to the fixed energy budget.** The parameter space defining the &quot;Heavy&quot; sensor
+relative to the fixed energy budget.** The parameter space defining the "Heavy" sensor
 package must be treated with caution, as its inclusion severely constrains the achievable
 operational time under high-load locomotion.
 </pre></div>
@@ -884,14 +884,14 @@ operational time under high-load locomotion.
 
 <span class="c1"># Power Consumption (W)</span>
 <span class="n">sensor_draws</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s1">&#39;Baseline&#39;</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span>
-    <span class="s1">&#39;Standard Multi-spectral&#39;</span><span class="p">:</span> <span class="mi">75</span><span class="p">,</span>
-    <span class="s1">&#39;Heavy LiDAR+Thermal+Compute&#39;</span><span class="p">:</span> <span class="mi">110</span>
+    <span class="s1">'Baseline'</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span>
+    <span class="s1">'Standard Multi-spectral'</span><span class="p">:</span> <span class="mi">75</span><span class="p">,</span>
+    <span class="s1">'Heavy LiDAR+Thermal+Compute'</span><span class="p">:</span> <span class="mi">110</span>
 <span class="p">}</span>
 
 <span class="n">locomotion_draws</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s1">&#39;Smooth Concrete&#39;</span><span class="p">:</span> <span class="mi">280</span><span class="p">,</span>
-    <span class="s1">&#39;Heavy Rubble/Debris&#39;</span><span class="p">:</span> <span class="mi">460</span>
+    <span class="s1">'Smooth Concrete'</span><span class="p">:</span> <span class="mi">280</span><span class="p">,</span>
+    <span class="s1">'Heavy Rubble/Debris'</span><span class="p">:</span> <span class="mi">460</span>
 <span class="p">}</span>
 
 <span class="c1"># Required operational time (minutes)</span>
@@ -922,39 +922,39 @@ operational time under high-load locomotion.
 
         <span class="c1"># Check the constraint</span>
         <span class="n">meets_requirement</span> <span class="o">=</span> <span class="n">operational_time_minutes</span> <span class="o">&gt;=</span> <span class="n">min_operational_time</span>
-        <span class="n">results</span><span class="p">[(</span><span class="n">sensor_name</span><span class="p">,</span> <span class="n">terrain_name</span><span class="p">)][</span><span class="s1">&#39;Time (min)&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">operational_time_minutes</span>
-        <span class="n">results</span><span class="p">[(</span><span class="n">sensor_name</span><span class="p">,</span> <span class="n">terrain_name</span><span class="p">)][</span><span class="s1">&#39;Meets Requirement&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">meets_requirement</span>
+        <span class="n">results</span><span class="p">[(</span><span class="n">sensor_name</span><span class="p">,</span> <span class="n">terrain_name</span><span class="p">)][</span><span class="s1">'Time (min)'</span><span class="p">]</span> <span class="o">=</span> <span class="n">operational_time_minutes</span>
+        <span class="n">results</span><span class="p">[(</span><span class="n">sensor_name</span><span class="p">,</span> <span class="n">terrain_name</span><span class="p">)][</span><span class="s1">'Meets Requirement'</span><span class="p">]</span> <span class="o">=</span> <span class="n">meets_requirement</span>
 
 <span class="c1"># --- Output Formatting ---</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;--- Operational Time Calculation Results ---&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Minimum required operational time: </span><span class="si">{</span><span class="n">min_operational_time</span><span class="si">}</span><span class="s2"> minutes&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;------------------------------------------&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"--- Operational Time Calculation Results ---"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Minimum required operational time: </span><span class="si">{</span><span class="n">min_operational_time</span><span class="si">}</span><span class="s2"> minutes"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"------------------------------------------"</span><span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Sensor | Terrain | Power Draw (W) | Operational Time (min) | Meets Requirement&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-----------------------------------------------------------------------------------</span>
-<span class="o">-----------------------</span><span class="s2">&quot;)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Sensor | Terrain | Power Draw (W) | Operational Time (min) | Meets Requirement"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"-----------------------------------------------------------------------------------</span>
+<span class="o">-----------------------</span><span class="s2">")</span>
 
 <span class="k">for</span> <span class="p">(</span><span class="n">sensor</span><span class="p">,</span> <span class="n">terrain</span><span class="p">),</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">results</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-    <span class="n">status</span> <span class="o">=</span> <span class="s2">&quot;YES&quot;</span> <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;Meets Requirement&#39;</span><span class="p">]</span> <span class="k">else</span> <span class="s2">&quot;NO&quot;</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">sensor</span><span class="si">:</span><span class="s2">&lt;15</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">terrain</span><span class="si">:</span><span class="s2">&lt;10</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Power Draw (W)&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">&lt;18</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Time</span>
-<span class="p">(</span><span class="nb">min</span><span class="p">)</span><span class="s1">&#39;]:.2f} | </span><span class="si">{status}</span><span class="s1">&quot;)</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="s2">"YES"</span> <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s1">'Meets Requirement'</span><span class="p">]</span> <span class="k">else</span> <span class="s2">"NO"</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">sensor</span><span class="si">:</span><span class="s2">&lt;15</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">terrain</span><span class="si">:</span><span class="s2">&lt;10</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">data</span><span class="p">[</span><span class="s1">'Power Draw (W)'</span><span class="p">]</span><span class="si">:</span><span class="s2">&lt;18</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">data</span><span class="p">[</span><span class="s1">'Time</span>
+<span class="p">(</span><span class="nb">min</span><span class="p">)</span><span class="s1">']:.2f} | </span><span class="si">{status}</span><span class="s1">")</span>
 
 <span class="c1"># --- Recommendation ---</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">--- Recommendation ---&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">--- Recommendation ---"</span><span class="p">)</span>
 
 <span class="n">qualified_configurations</span> <span class="o">=</span> <span class="p">[]</span>
 <span class="k">for</span> <span class="p">(</span><span class="n">sensor</span><span class="p">,</span> <span class="n">terrain</span><span class="p">),</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">results</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-    <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;Meets Requirement&#39;</span><span class="p">]:</span>
-        <span class="n">qualified_configurations</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">sensor</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;Time (min)&#39;</span><span class="p">]))</span>
+    <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s1">'Meets Requirement'</span><span class="p">]:</span>
+        <span class="n">qualified_configurations</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">sensor</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="s1">'Time (min)'</span><span class="p">]))</span>
 
 <span class="k">if</span> <span class="n">qualified_configurations</span><span class="p">:</span>
     <span class="c1"># Find the configuration with the maximum operational time</span>
     <span class="n">best_config</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">qualified_configurations</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
     <span class="n">best_sensor</span><span class="p">,</span> <span class="n">best_time</span> <span class="o">=</span> <span class="n">best_config</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The highest capability sensor package meeting the </span><span class="si">{</span><span class="n">min_operational_time</span><span class="si">}</span><span class="s2"> min</span>
-<span class="n">requirement</span> <span class="ow">is</span><span class="p">:</span> <span class="p">{</span><span class="n">best_sensor</span><span class="p">}</span> <span class="p">(</span><span class="n">Time</span><span class="p">:</span> <span class="p">{</span><span class="n">best_time</span><span class="p">:</span><span class="mf">.2</span><span class="n">f</span><span class="p">}</span> <span class="nb">min</span><span class="p">)</span><span class="s2">&quot;)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The highest capability sensor package meeting the </span><span class="si">{</span><span class="n">min_operational_time</span><span class="si">}</span><span class="s2"> min</span>
+<span class="n">requirement</span> <span class="ow">is</span><span class="p">:</span> <span class="p">{</span><span class="n">best_sensor</span><span class="p">}</span> <span class="p">(</span><span class="n">Time</span><span class="p">:</span> <span class="p">{</span><span class="n">best_time</span><span class="p">:</span><span class="mf">.2</span><span class="n">f</span><span class="p">}</span> <span class="nb">min</span><span class="p">)</span><span class="s2">")</span>
 <span class="k">else</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No configuration met the minimum operational time requirement of 120 minutes.&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"No configuration met the minimum operational time requirement of 120 minutes."</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
