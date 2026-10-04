@@ -244,13 +244,29 @@ class DocumentForm(forms.ModelForm):
 
 
 class DocumentAdmin(admin.ModelAdmin):
-    fields = ("title", "file", "chunk_size", "chunk_overlap", "metadata", "reference_link")
+    fieldsets = (
+        ("Core Information", {
+            "fields": ("title", "file", "document_type")
+        }),
+        ("Provenance & Citation", {
+            "fields": ("author", "organization", "publication_year", "publication_date", "doi", "citation_text", "source_url", "reference_link")
+        }),
+        ("Indexing Configuration", {
+            "fields": ("chunk_size", "chunk_overlap", "metadata", "currently_indexed"),
+            "classes": ("collapse",)
+        }),
+    )
     readonly_fields = ("metadata", "reference_link")
-    list_display = ("title", "file", "uploaded_at", "metadata", "reference_link")
-    search_fields = ("title", "file")
+    list_display = ("title", "document_type", "author_or_organization", "publication_year", "file", "uploaded_at", "reference_link")
+    list_filter = ("document_type", "currently_indexed", "uploaded_at")
+    search_fields = ("title", "author", "organization", "doi", "file")
     form = DocumentForm
     actions = [process_document, generate_benchmarks, extract_grobid_metadata]
     inlines = [ReadingStrategyInline, GrobidReadingStrategyInline, RegexStrategyInline, PromptStrategyInline, AbbreviationStrategyInline]
+
+    def author_or_organization(self, obj):
+        return obj.author or obj.organization or "-"
+    author_or_organization.short_description = "Author / Org"
 
     def reference_link(self, obj):
         if hasattr(obj, 'grobid_metadata') and obj.grobid_metadata:

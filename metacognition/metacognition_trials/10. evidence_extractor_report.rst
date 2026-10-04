@@ -2,7 +2,7 @@
 Doctest Report: 10. evidence_extractor
 =======================================
 
-Date: 2026-10-03 17:18:57
+Date: 2026-10-04 14:09:29
 
 Conversation Prompts
 --------------------

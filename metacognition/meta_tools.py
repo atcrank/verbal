@@ -291,13 +291,26 @@ def document_reader(state: dict, params: dict) -> str:
         return "Error: RAG service not available."
         
     try:
+        from background_resources.models import RAGChunk
         if action == "search_document":
             if not query: return "Error: query is required for search_document."
             docs = rag.get_context(query, k=3)
             if not docs: return f"No results found for '{query}'"
+
+            chunk_ids = [d.metadata.get('chunk_id') for d in docs if d.metadata and d.metadata.get('chunk_id')]
+            chunks_by_id = {c.chunk_id: c for c in RAGChunk.objects.filter(chunk_id__in=chunk_ids)} if chunk_ids else {}
+
             res = f"Search Results for '{query}':\n"
             for d in docs:
-                res += f"- [Chunk ID: {d.metadata.get('chunk_id')}] Source: {d.metadata.get('filename')}\n  {d.page_content}\n"
+                cid = d.metadata.get('chunk_id') if d.metadata else None
+                chunk_obj = chunks_by_id.get(cid) if cid else None
+                if chunk_obj:
+                    citation = chunk_obj.get_citation()
+                else:
+                    citation = (d.metadata.get('citation') or d.metadata.get('filename') or 'Unknown Source') if d.metadata else 'Unknown Source'
+                filename = d.metadata.get('filename') if d.metadata else None
+                source_tag = f" Source: {filename}" if filename and filename not in citation else ""
+                res += f"- [Chunk ID: {cid}] [Citation: {citation}]{source_tag}\n  {d.page_content}\n"
             return res
             
         elif action == "fetch_chunk":
@@ -306,7 +319,15 @@ def document_reader(state: dict, params: dict) -> str:
             chunk = chunks[0] if chunks else None
             if not chunk: return f"Error: Chunk {target_id} not found."
             
-            output = f"Chunk {target_id}:\n{chunk.page_content}\n"
+            chunk_obj = RAGChunk.objects.filter(chunk_id=target_id).first()
+            if chunk_obj:
+                citation = chunk_obj.get_citation()
+            else:
+                citation = (chunk.metadata.get('citation') or chunk.metadata.get('filename') or 'Unknown Source') if chunk.metadata else 'Unknown Source'
+            filename = chunk.metadata.get('filename') if chunk.metadata else None
+            source_tag = f" Source: {filename}" if filename and filename not in citation else ""
+
+            output = f"Chunk {target_id} [Citation: {citation}]{source_tag}:\n{chunk.page_content}\n"
             
             if doc_range and len(doc_range) == 2:
                 output += f"\n(Range {doc_range} fetching requires document sequence index.)"

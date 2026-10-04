@@ -3004,6 +3004,48 @@ class PureToolExecutionAndEvidenceMergingTests(TestCase):
         self.assertEqual(llm_step.execution_mode, "llm")
         self.assertTrue(llm_step.include_state_tree)
 
+    def test_document_reader_citation_formatting_and_fallbacks(self):
+        from metacognition.meta_tools import document_reader
+        from background_resources.models import Document, DocumentType, RAGChunk
+        from langchain_core.documents import Document as LCDocument
+        from django.core.files.base import ContentFile
+        from unittest.mock import patch, MagicMock
+        from uuid import uuid4
+
+        doc = Document.objects.create(
+            title="Indoor Fire Dynamics",
+            organization="NIST",
+            publication_year="2022",
+            document_type=DocumentType.TECHNICAL_MANUAL,
+            file=ContentFile(b"NIST content", name="nist_fire.pdf")
+        )
+        chunk_id = str(uuid4())
+        chunk = RAGChunk.objects.create(
+            chunk_id=chunk_id,
+            text_content="Flashover occurs when ceiling temperatures reach 600C.",
+            metadata={"document_id": str(doc.id), "section_title": "4.1 Flashover"}
+        )
+
+        mock_rag = MagicMock()
+        mock_lc_doc = LCDocument(
+            page_content="Flashover occurs when ceiling temperatures reach 600C.",
+            metadata={"chunk_id": chunk_id, "filename": "nist_fire.pdf"}
+        )
+        mock_rag.get_context.return_value = [mock_lc_doc]
+        mock_rag.store.mget.return_value = [mock_lc_doc]
+
+        from llm_api.apps import service_registry
+        with patch.object(service_registry.rag_service, 'get_context', return_value=[mock_lc_doc]), \
+             patch.object(service_registry.rag_service.store, 'mget', return_value=[mock_lc_doc]):
+            # 1. Test search_document action
+            search_out = document_reader({}, {"action": "search_document", "query": "flashover"})
+            self.assertIn("[Citation: NIST (2022) — Section: 4.1 Flashover]", search_out)
+            self.assertIn("Flashover occurs when ceiling temperatures reach 600C.", search_out)
+
+            # 2. Test fetch_chunk action
+            fetch_out = document_reader({}, {"action": "fetch_chunk", "target_id": chunk_id})
+            self.assertIn(f"Chunk {chunk_id} [Citation: NIST (2022) — Section: 4.1 Flashover]", fetch_out)
+
 
 
 

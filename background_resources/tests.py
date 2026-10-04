@@ -695,6 +695,78 @@ class TestRAGServiceIntegration(TestCase):
         self.assertIn("(2023)", chunk_citation)
         self.assertIn("Section: EXPERIMENTAL RESULTS", chunk_citation)
 
+    def test_provenance_fallback_hierarchy_and_document_types(self):
+        from background_resources.models import Document, DocumentType, RAGChunk
+        from django.core.files.base import ContentFile
+        from uuid import uuid4
+
+        # 1. Organization + publication_year + DOI + STANDARD_OR_REGULATION
+        doc_standard = Document.objects.create(
+            title="Standard on Protective Ensembles for Structural Fire Fighting",
+            organization="NFPA",
+            publication_year="2020",
+            doi="10.1111/nfpa.1971",
+            document_type=DocumentType.STANDARD_OR_REGULATION,
+            file=ContentFile(b"NFPA Standard", name="nfpa_1971.pdf")
+        )
+        self.assertEqual(
+            doc_standard.get_citation(),
+            "NFPA. (2020) Standard on Protective Ensembles for Structural Fire Fighting. DOI: 10.1111/nfpa.1971"
+        )
+
+        chunk_std = RAGChunk.objects.create(
+            chunk_id=str(uuid4()),
+            text_content="Thermal shrinkage test requirements for protective garments.",
+            metadata={
+                "document_id": str(doc_standard.id),
+                "section_title": "Section 4.2 Thermal Testing"
+            }
+        )
+        std_citation = chunk_std.get_citation()
+        self.assertIn("NFPA", std_citation)
+        self.assertIn("(2020)", std_citation)
+        self.assertIn("Section: Section 4.2 Thermal Testing", std_citation)
+        self.assertIn("DOI: 10.1111/nfpa.1971", std_citation)
+
+        # 2. Document with title only (e.g. GLOSSARY)
+        doc_glossary = Document.objects.create(
+            title="Firefighting Glossary",
+            document_type=DocumentType.GLOSSARY,
+            file=ContentFile(b"Glossary terms", name="FirefightingGlossary.txt")
+        )
+        self.assertEqual(doc_glossary.get_citation(), "Firefighting Glossary")
+
+        chunk_glossary = RAGChunk.objects.create(
+            chunk_id=str(uuid4()),
+            text_content="Draft - The process of pumping water from a static source.",
+            metadata={"document_id": str(doc_glossary.id)}
+        )
+        self.assertEqual(chunk_glossary.get_citation(), "Firefighting Glossary")
+
+        # 3. Document with empty title, only filename
+        doc_bare = Document.objects.create(
+            title="",
+            file=ContentFile(b"Raw technical spec", name="system_specs.txt")
+        )
+        self.assertEqual(doc_bare.get_citation(), "system_specs.txt")
+
+        # 4. Chunk with no Document FK, only metadata filename
+        chunk_file_only = RAGChunk.objects.create(
+            chunk_id=str(uuid4()),
+            text_content="Internal sensor log trace.",
+            metadata={"filename": "documents/sensors/telemetry_raw.csv"}
+        )
+        self.assertEqual(chunk_file_only.get_citation(), "telemetry_raw.csv")
+
+        # 5. Completely orphaned chunk with no metadata
+        orphan_id = str(uuid4())
+        chunk_orphan = RAGChunk.objects.create(
+            chunk_id=orphan_id,
+            text_content="Orphaned chunk content.",
+            metadata={}
+        )
+        self.assertEqual(chunk_orphan.get_citation(), f"Chunk {orphan_id[:8]}")
+
     def test_verify_rag_relevance_balanced_and_discriminative(self):
         from langchain_core.documents import Document as LCDocument
 

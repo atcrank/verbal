@@ -31,6 +31,15 @@ from pgvector.django import VectorField, HnswIndex
 from langchain_core.documents import Document as LangchainDocument
 
 
+class DocumentType(models.TextChoices):
+    ACADEMIC_PAPER = "ACADEMIC_PAPER", "Academic Paper"
+    STANDARD_OR_REGULATION = "STANDARD_OR_REGULATION", "Standard / Regulation"
+    TECHNICAL_MANUAL = "TECHNICAL_MANUAL", "Technical Manual"
+    GLOSSARY = "GLOSSARY", "Glossary / Dictionary"
+    NOTEBOOK_OR_CODE = "NOTEBOOK_OR_CODE", "Notebook / Code"
+    GENERAL = "GENERAL", "General Document"
+
+
 class Document(models.Model):
     """
     A model to store uploaded documents, their content hash, and manage
@@ -39,8 +48,17 @@ class Document(models.Model):
 
     title = models.CharField(max_length=255)
     # Citation / Provenance Information
-    author = models.CharField(max_length=255, blank=True, null=True, help_text="Original author or organization")
-    publication_date = models.DateField(blank=True, null=True)
+    author = models.CharField(max_length=255, blank=True, null=True, help_text="Original author or individual contributor")
+    organization = models.CharField(max_length=255, blank=True, null=True, help_text="Publishing organization or institution, e.g. NFPA, NIST, IEEE")
+    publication_year = models.CharField(max_length=50, blank=True, null=True, help_text="Publication year or span, e.g. 2023 or 2022-2024")
+    publication_date = models.DateField(blank=True, null=True, help_text="Exact publication date if known")
+    doi = models.CharField(max_length=100, blank=True, null=True, help_text="Digital Object Identifier")
+    document_type = models.CharField(
+        max_length=50,
+        choices=DocumentType.choices,
+        default=DocumentType.GENERAL,
+        help_text="Category of source document"
+    )
     citation_text = models.TextField(blank=True, null=True, help_text="APA/MLA citation string")
     source_url = models.URLField(blank=True, null=True)
     
@@ -60,9 +78,10 @@ class Document(models.Model):
 
     def get_citation(self) -> str:
         """
-        Returns an authoritative academic citation for this document.
+        Returns an authoritative academic/provenance citation for this document.
         Uses citation_text if present, falls back to grobid_metadata Reference,
-        or constructs from author/title.
+        or constructs from author/organization, year, and title.
+        Falls back to document title or filename.
         """
         if self.citation_text and self.citation_text.strip():
             return self.citation_text.strip()
@@ -75,7 +94,10 @@ class Document(models.Model):
                 parts.append(ref.authors.strip())
             if ref.year:
                 parts.append(f"({ref.year.strip()})")
-            parts.append(f"{ref.title.strip()}.")
+            if ref.title:
+                parts.append(f"{ref.title.strip()}.")
+            elif self.title:
+                parts.append(f"{self.title.strip()}.")
             if ref.journal:
                 parts.append(f"{ref.journal.strip()}.")
             if ref.doi:
@@ -83,10 +105,26 @@ class Document(models.Model):
             citation = " ".join(parts).strip()
             if citation:
                 return citation
-                
-        if self.author:
-            return f"{self.author}. {self.title}."
-        return self.title
+
+        author_or_org = self.author or self.organization
+        year = self.publication_year or (str(self.publication_date.year) if self.publication_date else None)
+        
+        if author_or_org:
+            year_part = f" ({year})" if year else ""
+            title_part = f" {self.title}." if self.title else ""
+            doi_part = f" DOI: {self.doi.strip()}" if self.doi else ""
+            return f"{author_or_org}.{year_part}{title_part}{doi_part}".strip()
+            
+        if self.title:
+            year_part = f" ({year})" if year else ""
+            doi_part = f" DOI: {self.doi.strip()}" if self.doi else ""
+            return f"{self.title}{year_part}{doi_part}".strip()
+            
+        if self.file and self.file.name:
+            import os
+            return os.path.basename(self.file.name)
+            
+        return "Unknown Document"
 
     def chunking_scheme(self, override_size=None, override_overlap=None):
         # Allows calculating scheme for specific strategies
@@ -235,6 +273,7 @@ class RAGChunk(models.Model):
         """
         Returns an academic citation identifying the source paper and section:
         e.g. "Talavera et al. (2023) — Section: ARCHITECTURE"
+        Falls back through Document, Grobid, chunk metadata, down to filename or chunk ID.
         """
         meta = self.metadata or {}
         authors = meta.get('authors')
@@ -248,16 +287,33 @@ class RAGChunk(models.Model):
             authors = ref.authors
         elif not authors and doc and doc.author:
             authors = doc.author
+        elif not authors and doc and doc.organization:
+            authors = doc.organization
             
         if not year and ref and ref.year:
             year = ref.year
+        elif not year and doc and doc.publication_year:
+            year = doc.publication_year
+        elif not year and doc and doc.publication_date:
+            year = str(doc.publication_date.year)
             
         if not doi and ref and ref.doi:
             doi = ref.doi
+        elif not doi and doc and doc.doi:
+            doi = doc.doi
 
-        author_str = authors or (doc.title if doc else meta.get('filename', 'Unknown Source'))
+        if authors:
+            author_str = authors
+        elif doc and doc.title:
+            author_str = doc.title
+        elif meta.get('filename'):
+            import os
+            author_str = os.path.basename(meta.get('filename'))
+        else:
+            author_str = f"Chunk {str(self.chunk_id)[:8]}"
+
         year_str = f" ({year})" if year else ""
-        section_str = f" — Section: {section_title}" if section_title else ""
+        section_str = f" — Section: {section_title}" if section_title and section_title not in author_str else ""
         doi_str = f" (DOI: {doi})" if doi else ""
         
         return f"{author_str}{year_str}{section_str}{doi_str}".strip()
