@@ -18,5 +18,8 @@ Audit and eliminate uncommanded network access to Hugging Face and unintended la
 ## Tags
 llm_api, architecture, performance, huggingface, networking, bug, improvement
 
+## Progress & Resolution
+- [2026-10-04] Fixed `llm_api/modality_detector.py`: Updated `introspect_hf_modality` to prioritize local disk cache (`local_files_only=True`) and in-memory boolean caching (`_MODALITY_CACHE`). Introspecting cached models (e.g. `gemma-4-E2B-it`, `Qwen2-VL`, `gemma-2-2b-it`) now performs zero outbound network requests and executes in sub-milliseconds without network latency or external dependencies.
+
 ## Status
-pending
+in progress
