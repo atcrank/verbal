@@ -56,44 +56,62 @@ KNOWN_EXTERNAL_VISION_PATTERNS = [
 ]
 
 
+# In-memory cache to prevent repetitive disk I/O or network checks
+_MODALITY_CACHE: Dict[str, bool] = {}
+
+
 def introspect_hf_modality(model_id_or_path: str) -> bool:
     """
-    Introspects a Hugging Face model repository or local directory to determine
+    Introspects a local directory or cached Hugging Face model repository to determine
     if it is a multimodal / vision-language model.
     
-    Reads ONLY config.json (~1 KB). Does NOT download model weights or touch GPU VRAM.
+    PREFERS LOCAL DISK:
+    1. First attempts purely offline load (`local_files_only=True`) from local disk/HF cache.
+    2. Zero GPU VRAM, zero network polling when model is present locally.
+    3. Caches result in memory to avoid repetitive disk I/O.
     """
     if not model_id_or_path:
         return False
 
+    if model_id_or_path in _MODALITY_CACHE:
+        return _MODALITY_CACHE[model_id_or_path]
+
+    name_lower = model_id_or_path.lower()
+
     try:
         from transformers import AutoConfig
-        cfg = AutoConfig.from_pretrained(model_id_or_path, trust_remote_code=True)
-        
+
+        # Priority 1: Check local disk / cache ONLY (no network polling)
+        try:
+            cfg = AutoConfig.from_pretrained(model_id_or_path, local_files_only=True, trust_remote_code=True)
+        except Exception:
+            # Priority 2: If not in local cache, fallback to standard lookup
+            cfg = AutoConfig.from_pretrained(model_id_or_path, trust_remote_code=True)
+
+        is_multi = False
         # 1. Check for explicit vision_config attribute
         if hasattr(cfg, "vision_config") and cfg.vision_config is not None:
-            return True
-            
+            is_multi = True
         # 2. Check model_type
-        model_type = getattr(cfg, "model_type", "").lower()
-        if model_type in KNOWN_VLM_MODEL_TYPES:
-            return True
-        if "vl" in model_type or "vision" in model_type:
-            return True
-            
+        elif getattr(cfg, "model_type", "").lower() in KNOWN_VLM_MODEL_TYPES:
+            is_multi = True
         # 3. Check declared architectures
-        architectures = getattr(cfg, "architectures", []) or []
-        for arch in architectures:
-            if arch in KNOWN_VLM_ARCHITECTURES:
-                return True
-            arch_lower = arch.lower()
-            if "vision" in arch_lower or "vl" in arch_lower:
-                return True
-                
-        return False
+        elif any(arch in KNOWN_VLM_ARCHITECTURES for arch in (getattr(cfg, "architectures", []) or [])):
+            is_multi = True
+        else:
+            model_type = getattr(cfg, "model_type", "").lower()
+            archs = " ".join(getattr(cfg, "architectures", []) or []).lower()
+            if "vision" in model_type or "vl" in model_type or "vision" in archs or "vl" in archs:
+                is_multi = True
+
+        _MODALITY_CACHE[model_id_or_path] = is_multi
+        return is_multi
     except Exception as e:
         logger.debug(f"HF modality introspection skipped for '{model_id_or_path}': {e}")
-        return False
+        # Safe offline heuristic if network is unavailable and not in local cache
+        is_multi = any(tag in name_lower for tag in ["-vl", "_vl", "paligemma", "llava", "pixtral", "florence", "gemma-4"])
+        _MODALITY_CACHE[model_id_or_path] = is_multi
+        return is_multi
 
 
 def introspect_ollama_modality(model_name: str, host: str = "http://127.0.0.1:11434", timeout: float = 3.0) -> bool:
