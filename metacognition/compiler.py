@@ -633,8 +633,12 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
             "conversation_id": state.get("conversation_id"),
             "user_id": state.get("user_id"),
             "reasoning_step_id": step.id,
+            "blueprint_id": step.blueprint_id,
+            "parent_log_id": state.get("last_log_id"),
+            "initial_log_id": state.get("initial_log_id"),
             "log_ids": []
         }
+
             
         def _map_role(m_type: str) -> str:
             if m_type == "human":
@@ -1032,9 +1036,13 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
             "scratch": scratch_updates,
             "token_budget_remaining": final_budget
         }
+        if log_kwargs.get("log_ids"):
+            action_ret["last_log_id"] = str(log_kwargs["log_ids"][-1])
+            action_ret["initial_log_id"] = None
         if state_tree_updates:
             action_ret["state_tree"] = state_tree_updates
         return action_ret
+
         
     return action_node
 
@@ -1095,7 +1103,14 @@ def _make_eval_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                 eval_result = ai_service.generate_outline(
                     messages=[{"role": _map_role(m.type), "content": getattr(m, 'content', str(m))} for m in eval_messages],
                     response_schema=EvaluationResult,
-                    log_kwargs={"conversation_id": state.get("conversation_id"), "user_id": state.get("user_id"), "reasoning_step_id": step.id}
+                    log_kwargs={
+                        "conversation_id": state.get("conversation_id"),
+                        "user_id": state.get("user_id"),
+                        "reasoning_step_id": step.id,
+                        "blueprint_id": step.blueprint_id,
+                        "parent_log_id": state.get("last_log_id"),
+                    }
+
                 )
                 if isinstance(eval_result, list):
                     eval_result = eval_result[0]

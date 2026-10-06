@@ -72,9 +72,19 @@ from uuid import uuid4
 from .events import publish_blueprint_event, clear_cancellation_flag
 
 @task
-def task_run_blueprint_async(blueprint_id: int, user_prompt: str, conversation_id: typing.Optional[str] = None, user_id: typing.Optional[int] = None, max_steps: int = 100, run_id: typing.Optional[str] = None):
+def task_run_blueprint_async(blueprint_id: int, 
+                             user_prompt: str, 
+                             conversation_id: typing.Optional[str] = None, 
+                             user_id: typing.Optional[int] = None, 
+                             max_steps: int = 100, 
+                             run_id: typing.Optional[str] = None,
+                             parent_log_id: typing.Optional[str] = None,
+                             initial_log_id: typing.Optional[str] = None):
     """Asynchronous wrapper for running a blueprint."""
-    return run_blueprint(blueprint_id, user_prompt, conversation_id, user_id, max_steps=max_steps, run_id=run_id)
+    return run_blueprint(blueprint_id, user_prompt, conversation_id, user_id, 
+                         parent_log_id=parent_log_id, initial_log_id=initial_log_id,
+                         max_steps=max_steps, run_id=run_id)
+
 
 @task
 def task_resume_blueprint_async(blueprint_id: int, thread_id: str, run_id: str, approved_tool: typing.Optional[str] = None, user_prompt: typing.Optional[str] = None, max_steps: int = 100):
@@ -131,8 +141,10 @@ def run_blueprint(blueprint_id: int,
                   conversation_id: typing.Optional[str] = None, 
                   user_id: typing.Optional[int] = None,
                   parent_log_id: typing.Optional[str] = None,
+                  initial_log_id: typing.Optional[str] = None,
                   max_steps: int = 100,
                   run_id: typing.Optional[str] = None):
+
     run_id = run_id or str(uuid4())
 
     try:
@@ -259,7 +271,10 @@ def run_blueprint(blueprint_id: int,
         run_id=run_id,
         pending_approval=None,
         approved_tools=[],
+        last_log_id=parent_log_id,
+        initial_log_id=initial_log_id,
     )
+
     
     # Key the checkpoint thread_id by conversation + blueprint name
     # to prevent sub-blueprints from colliding with parent checkpoints.
@@ -305,7 +320,15 @@ def run_blueprint(blueprint_id: int,
         from llm_api.state_tree import fast_compact_state_tree
         compacted = fast_compact_state_tree(result_state["state_tree"])
         conversation.state_tree = compacted
-        conversation.save(update_fields=['state_tree'])
+        update_fields = ['state_tree']
+        macro_obj = compacted.get("macro_objective")
+        if macro_obj and str(macro_obj).strip():
+            clean_title = str(macro_obj).strip().split("\n")[0][:80]
+            if clean_title:
+                conversation.title = clean_title
+                update_fields.append('title')
+        conversation.save(update_fields=update_fields)
+
 
     monologue = result_state.get("internal_monologue", [])
     final_response = monologue[-1].get("output", monologue[-1].get("result", "No output.")) if monologue else "No output."

@@ -211,14 +211,6 @@ def send_message(request):
             from metacognition.tasks import task_run_blueprint_async
             
             run_id = str(uuid4())
-            task_run_blueprint_async.enqueue(
-                blueprint_id=int(blueprint_id),
-                user_prompt=user_prompt,
-                conversation_id=str(conversation.id),
-                user_id=request.user.id,
-                run_id=run_id
-            )
-            
             streaming_markup = f"""<div id="blueprint-exec-{run_id}" data-signals="{{isStreaming: true}}" data-on-load="@get('/api/meta/stream_blueprint/?run_id={run_id}')">
 <div id="blueprint-status" class="agent-step active">
     <span class="badge">Dispatched</span>
@@ -234,11 +226,23 @@ def send_message(request):
                 user_prompt=user_prompt,
                 conversation=conversation,
                 parent_log=parent_log,
+                blueprint_id=int(blueprint_id),
                 generated_response=streaming_markup, 
                 user=request.user,
                 input_tokens=0,
                 output_tokens=0
             )
+
+            task_run_blueprint_async.enqueue(
+                blueprint_id=int(blueprint_id),
+                user_prompt=user_prompt,
+                conversation_id=str(conversation.id),
+                user_id=request.user.id,
+                run_id=run_id,
+                parent_log_id=str(parent_log.id) if parent_log else None,
+                initial_log_id=str(log.id)
+            )
+
     else:
         messages = conversation.as_messages()
         if not messages:

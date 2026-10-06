@@ -47,3 +47,7 @@
 
 - [ ] [Bug/Performance] Prevent Uncommanded Hugging Face Polling & Unintended Lazy Service Reloads in Views (Status: pending) -> [Link to note](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260929_uncommanded_reloads_and_hf_polling.md)
   *Summary*: Audit all views and API endpoints to ensure informational UI routes query relational state rather than triggering `service_registry.ai_service` lazy container reloads. Enforce `local_files_only=True` / offline Hugging Face resolution so external network polling never occurs without explicit user command in Model Admin.
+
+- [ ] [Deployment/Resilience] Deployment Hardening & Cognitive Execution Lifecycle (Status: in-progress) -> [ws20_deployment_hardening_and_execution_lifecycle.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/ws20_deployment_hardening_and_execution_lifecycle.md)
+  *Summary*: Resolve 11 operational items from multi-instance deployment testing: normalize sandbox Docker base image, add fail-fast sandbox error pathway, populate PromptResponseLog blueprint and parent_log ForeignKeys, update conversation titles from macro_objective, purge redundant TASK_COMPLETE tool, ensure synchronous SSE streaming, and add UI active model indicators and KaTeX math rendering.
+

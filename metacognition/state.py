@@ -64,3 +64,8 @@ class AgentState(TypedDict):
     run_id: Annotated[Optional[str], override_last]
     pending_approval: Annotated[Optional[Dict[str, Any]], override_last]
     approved_tools: Annotated[list[str], update_monologue]
+    
+    # PromptResponseLog DAG lineage tracking
+    last_log_id: Annotated[Optional[str], override_last]
+    initial_log_id: Annotated[Optional[str], override_last]
+

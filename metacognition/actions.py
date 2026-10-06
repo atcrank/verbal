@@ -406,11 +406,13 @@ def _tool_list_files(params: ListFilesArgs, workspace_dir: str) -> str:
     except Exception as e:
         return f"\n\n[LIST_FILES Error]\nFailed to list directory: {str(e)}"
 
-def _tool_execute_script(params: ExecuteScriptArgs, workspace_dir: str) -> str:
+def _tool_execute_script(params, workspace_dir: str) -> str:
     import requests
 
     # Pass relative path from workspaces root to the sandbox
-    safe_filepath = params.filepath.lstrip("/\\")
+    filepath_val = getattr(params, 'filepath', None) or (params.get('filepath') if isinstance(params, dict) else "")
+    safe_filepath = filepath_val.lstrip("/\\")
+
     workspaces_root = getattr(settings, 'WORKSPACE_ROOT', os.path.join(settings.BASE_DIR, 'workspaces'))
     rel_workspace = os.path.relpath(workspace_dir, workspaces_root)
     sandbox_filepath = os.path.join(rel_workspace, safe_filepath).replace("\\", "/")
@@ -449,8 +451,11 @@ def _tool_execute_script(params: ExecuteScriptArgs, workspace_dir: str) -> str:
             output += f"\n--- STDERR ---\n{_truncate_output(data.get('stderr').strip())}"
             
         return output
+    except requests.exceptions.RequestException as e:
+        return f"\n\n[EXECUTE_SCRIPT Alert]\nSandbox service offline or unreachable at {sandbox_url}: {e}. Ensure the sandbox container is running ('docker compose up -d sandbox')."
     except Exception as e:
         return f"\n\n[EXECUTE_SCRIPT Alert]\nFailed to execute script. Sandbox error: {str(e)}"
+
 
 def handle_execution_plan(state: dict, params: dict) -> dict:
     queue = params.get("queue", [])
@@ -780,15 +785,22 @@ def python_sandbox(state: dict, params: dict) -> dict:
                     "route_to": "SUCCESS"
                 }
         else:
+            is_infra_err = resp.status_code in (502, 503, 504)
             return {
                 "working_prompt": f"\n\n[SYSTEM: Sandbox API returned status {resp.status_code}: {resp.text}]\n",
-                "route_to": "SELF"
+                "route_to": "FAILURE" if is_infra_err else "SELF"
             }
+    except requests.exceptions.RequestException as e:
+        return {
+            "working_prompt": f"\n\n[SYSTEM: Sandbox service offline or unreachable at {sandbox_url}: {e}. Please ensure the sandbox container is running ('docker compose up -d sandbox').]\n",
+            "route_to": "FAILURE"
+        }
     except Exception as e:
         return {
             "working_prompt": f"\n\n[SYSTEM: Sandbox API Request Failed: {e}]\n",
-            "route_to": "SELF"
+            "route_to": "FAILURE"
         }
+
 
 class EdgeLintResult(BaseModel):
     """

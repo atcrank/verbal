@@ -687,7 +687,8 @@ def django_shell_script(state: dict, params: dict) -> str:
         else:
             return f"Sandbox error (HTTP {response.status_code}): {response.text}"
     except requests.exceptions.RequestException as e:
-        return f"Error: Sandbox service unreachable at {sandbox_url}: {e}"
+        raise RuntimeError(f"Sandbox service offline or unreachable at {sandbox_url}: {e}. Ensure the container is running ('docker compose up -d sandbox').")
+
 
 def system_janitor(state: dict, params: dict) -> str:
     """

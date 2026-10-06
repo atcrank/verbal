@@ -424,24 +424,54 @@ class AIService:
                 if state_tree_snapshot is None:
                     state_tree_snapshot = {}
 
-                log = PromptResponseLog.objects.create(
-                    system_prompt=system_prompt,
-                    user_prompt=user_prompt,
-                    generated_response=text_to_save,
-                    user_id=log_kwargs.get("user_id"),
-                    conversation_id=log_kwargs.get("conversation_id"),
-                    rag_selections=log_kwargs.get("rag_selections", ""),
-                    state_tree_snapshot=state_tree_snapshot,
-                    parent_log_id=log_kwargs.get("parent_log_id"),
-                    input_tokens=input_tokens,
-                    output_tokens=output_tokens,
-                    generation_duration_ms=duration_ms,
-                    tokens_per_second=tps,
-                    model_name=model_name,
-                    reasoning_step_id=log_kwargs.get("reasoning_step_id")
-                )
+                target_log_id = log_kwargs.get("initial_log_id")
+                log = None
+                if target_log_id:
+                    log = PromptResponseLog.objects.filter(id=target_log_id).first()
+
+                if log:
+                    log.system_prompt = system_prompt
+                    log.user_prompt = user_prompt
+                    log.generated_response = text_to_save
+                    if log_kwargs.get("user_id"):
+                        log.user_id = log_kwargs.get("user_id")
+                    if log_kwargs.get("conversation_id"):
+                        log.conversation_id = log_kwargs.get("conversation_id")
+                    log.rag_selections = log_kwargs.get("rag_selections", "")
+                    log.state_tree_snapshot = state_tree_snapshot
+                    if log_kwargs.get("parent_log_id"):
+                        log.parent_log_id = log_kwargs.get("parent_log_id")
+                    log.input_tokens = input_tokens
+                    log.output_tokens = output_tokens
+                    log.generation_duration_ms = duration_ms
+                    log.tokens_per_second = tps
+                    log.model_name = model_name
+                    log.reasoning_step_id = log_kwargs.get("reasoning_step_id")
+                    if log_kwargs.get("blueprint_id"):
+                        log.blueprint_id = log_kwargs.get("blueprint_id")
+                    log.save()
+                    log_kwargs["initial_log_id"] = None
+                else:
+                    log = PromptResponseLog.objects.create(
+                        system_prompt=system_prompt,
+                        user_prompt=user_prompt,
+                        generated_response=text_to_save,
+                        user_id=log_kwargs.get("user_id"),
+                        conversation_id=log_kwargs.get("conversation_id"),
+                        rag_selections=log_kwargs.get("rag_selections", ""),
+                        state_tree_snapshot=state_tree_snapshot,
+                        parent_log_id=log_kwargs.get("parent_log_id"),
+                        input_tokens=input_tokens,
+                        output_tokens=output_tokens,
+                        generation_duration_ms=duration_ms,
+                        tokens_per_second=tps,
+                        model_name=model_name,
+                        reasoning_step_id=log_kwargs.get("reasoning_step_id"),
+                        blueprint_id=log_kwargs.get("blueprint_id")
+                    )
                 if "log_ids" in log_kwargs:
                     log_kwargs["log_ids"].append(log.id)
+
 
                 # If running inside a background task, record telemetry to the active context
                 try:

@@ -1,4 +1,5 @@
-FROM python:3.13-slim
+ARG DOCKER_PYTHON_IMAGE=python:3.13-slim
+FROM ${DOCKER_PYTHON_IMAGE}
 
 # Capture pip mirror configurations from docker-compose build args
 ARG PIP_INDEX_URL

@@ -3201,4 +3201,153 @@ def _mock_failing_tool_callable(state: dict, params: dict) -> str:
     return "Error: Database connection timeout during search."
 
 
+class DeploymentHardeningPhase1Tests(TestCase):
+    """
+    WS20 Phase 1 Tests:
+    - Task 1.1: Sandbox Dockerfile and docker-compose.yml image parameterization
+    - Task 1.2: Sandbox offline fail-fast error pathways
+    - Task 1.3 & 1.4: PromptResponseLog FK population, DAG lineage chaining & Step-1 log claiming
+    - Task 1.5: Conversation title synchronization from state_tree macro_objective
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_user(username='ws20_tester', password='password123')
+        self.bp = CognitiveBlueprint.objects.create(name="WS20 Blueprint", description="Tests WS20 lifecycle")
+        self.step1 = ReasoningStep.objects.create(
+            blueprint=self.bp,
+            name="Plan Step",
+            is_start_node=True,
+            system_prompt="Initial planning",
+            max_retries=1
+        )
+        self.step2 = ReasoningStep.objects.create(
+            blueprint=self.bp,
+            name="Synthesize Step",
+            system_prompt="Final synthesis",
+            max_retries=1
+        )
+        self.step1.on_success_step = self.step2
+        self.step1.save()
+
+
+    def test_sandbox_dockerfile_normalization(self):
+        """Task 1.1: Verifies sandbox/Dockerfile and docker-compose.yml use DOCKER_PYTHON_IMAGE."""
+        import os
+        from django.conf import settings
+        
+        dockerfile_path = os.path.join(settings.BASE_DIR, "sandbox", "Dockerfile")
+        with open(dockerfile_path, "r", encoding="utf-8") as f:
+            dockerfile_content = f.read()
+        self.assertIn("ARG DOCKER_PYTHON_IMAGE", dockerfile_content)
+        self.assertIn("FROM ${DOCKER_PYTHON_IMAGE}", dockerfile_content)
+
+        compose_path = os.path.join(settings.BASE_DIR, "docker-compose.yml")
+        with open(compose_path, "r", encoding="utf-8") as f:
+            compose_content = f.read()
+        self.assertIn("DOCKER_PYTHON_IMAGE", compose_content)
+
+    @patch('requests.post')
+    def test_sandbox_offline_routes_to_failure(self, mock_post):
+        """Task 1.2: Verifies unreachable sandbox service routes to FAILURE instead of looping on SELF."""
+        import requests
+        from metacognition.actions import python_sandbox, _tool_execute_script
+
+        mock_post.side_effect = requests.exceptions.ConnectionError("Connection refused to sandbox:8000")
+
+        # 1. python_sandbox fail-fast test
+        res = python_sandbox({}, {"code": "print('hello')"})
+        self.assertEqual(res.get("route_to"), "FAILURE")
+        self.assertIn("offline or unreachable", res.get("working_prompt", ""))
+        self.assertIn("docker compose up -d sandbox", res.get("working_prompt", ""))
+
+        # 2. _tool_execute_script fail-fast test
+        script_res = _tool_execute_script({"filepath": "test.py"}, "test_ws")
+        self.assertIn("[EXECUTE_SCRIPT Alert]", script_res)
+        self.assertIn("offline or unreachable", script_res)
+        self.assertIn("docker compose up -d sandbox", script_res)
+
+    @patch('llm_api.ai_service.AIService.generate_response2')
+    @patch('llm_api.ai_service.AIService.clean_response')
+    def test_prompt_response_log_dag_lineage_and_step1_claim(self, mock_clean, mock_generate):
+        """Task 1.3 & 1.4: Verifies step 1 claims initial log and subsequent steps chain via parent_log."""
+        from llm_api.models import Conversation, PromptResponseLog
+        from llm_api.apps import service_registry
+        from metacognition.tasks import run_blueprint
+
+        mock_clean.side_effect = lambda x: x
+        fake_responses = ["Step 1 Plan Output", "Step 2 Final Advice"]
+
+        def fake_generate(messages, *args, log_kwargs=None, **kwargs):
+            text = fake_responses.pop(0)
+            if log_kwargs is not None:
+                service_registry.ai_service._log_generation(messages, [text], log_kwargs=log_kwargs, model_name="MockModel")
+            return [text]
+
+        mock_generate.side_effect = fake_generate
+
+        conv = Conversation.objects.create(user=self.user, title="Initial Title")
+        initial_log = PromptResponseLog.objects.create(
+            conversation=conv,
+            user=self.user,
+            user_prompt="Run multi-step analysis",
+            generated_response="[Streaming Placeholder]",
+            blueprint=self.bp,
+            input_tokens=0,
+            output_tokens=0
+        )
+
+        res = run_blueprint(
+            blueprint_id=self.bp.id,
+            user_prompt="Run multi-step analysis",
+            conversation_id=str(conv.id),
+            user_id=self.user.id,
+            initial_log_id=str(initial_log.id)
+        )
+
+
+        # 1. Initial log claimed by Step 1
+        initial_log.refresh_from_db()
+        self.assertEqual(initial_log.blueprint_id, self.bp.id)
+        self.assertEqual(initial_log.reasoning_step_id, self.step1.id)
+        self.assertEqual(initial_log.generated_response, "Step 1 Plan Output")
+
+        # 2. Step 2 created a child log chained via parent_log
+        child_logs = PromptResponseLog.objects.filter(parent_log=initial_log)
+        self.assertEqual(child_logs.count(), 1)
+        step2_log = child_logs.first()
+        self.assertEqual(step2_log.blueprint_id, self.bp.id)
+        self.assertEqual(step2_log.reasoning_step_id, self.step2.id)
+        self.assertEqual(step2_log.generated_response, "Step 2 Final Advice")
+
+    @patch('llm_api.ai_service.AIService.generate_response2')
+    @patch('llm_api.ai_service.AIService.clean_response')
+    def test_conversation_title_sync_from_macro_objective(self, mock_clean, mock_generate):
+        """Task 1.5: Verifies conversation title is updated from state_tree macro_objective."""
+        from llm_api.models import Conversation
+        from metacognition.tasks import run_blueprint
+
+        mock_clean.side_effect = lambda x: x
+        mock_generate.return_value = ["Output"]
+
+        conv = Conversation.objects.create(
+            user=self.user,
+            title="Old Generic Prompt...",
+            state_tree={
+                "macro_objective": "Optimize range vs battery trade-off for tactical robotic deployment",
+                "tasks": {}
+            }
+        )
+
+        run_blueprint(
+            blueprint_id=self.bp.id,
+            user_prompt="Calculate trade-off",
+            conversation_id=str(conv.id),
+            user_id=self.user.id
+        )
+
+        conv.refresh_from_db()
+        self.assertEqual(conv.title, "Optimize range vs battery trade-off for tactical robotic deployment")
+
+
+
 
