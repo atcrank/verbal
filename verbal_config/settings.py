@@ -31,14 +31,26 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "django-insecure-di_unz7h49exp@
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = VERBAL_ENV == "dev"
 
-ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,reason.andrew.com").split(",")
+ALLOWED_HOSTS = [h.strip() for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,reason.andrew.com").split(",") if h.strip()]
 if "testserver" not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append("testserver")
+
+# CSRF trusted origins required for Django 4/5 HTTPS reverse proxying
+_csrf_env = os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS")
+if _csrf_env:
+    CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in _csrf_env.split(",") if origin.strip()]
+else:
+    CSRF_TRUSTED_ORIGINS = [
+        f"https://{h}"
+        for h in ALLOWED_HOSTS
+        if h not in ("localhost", "127.0.0.1", "testserver")
+    ]
 
 # Reverse proxy SSL & Host headers (when running behind Nginx)
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 USE_X_FORWARDED_HOST = True
 USE_X_FORWARDED_PORT = True
+
 
 
 # Application definition

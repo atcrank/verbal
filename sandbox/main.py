@@ -36,7 +36,7 @@ def set_limits():
 
 @app.post("/execute")
 def execute(req: ExecuteRequest):
-    workspace_root = "/workspace"
+    workspace_root = os.environ.get("WORKSPACE_DIR", "/home/python/workspace")
     full_path = os.path.abspath(os.path.join(workspace_root, req.filepath))
 
     if not full_path.startswith(workspace_root):

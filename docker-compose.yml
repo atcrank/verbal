@@ -73,13 +73,13 @@ services:
     build:
       context: ./sandbox
       args:
-        - DOCKER_PYTHON_IMAGE=${DOCKER_PYTHON_IMAGE:-python:3.13-slim}
+        - DOCKER_PYTHON_IMAGE=${DOCKER_PYTHON_IMAGE:-python:3.12-slim}
         - PIP_INDEX_URL=${PIP_INDEX_URL:-}
         - PIP_TRUSTED_HOST=${PIP_TRUSTED_HOST:-}
 
     volumes:
       # Map the Django workspaces folder directly into the sandbox
-      - ./workspaces:/workspace
+      - ./workspaces:/home/python/workspace
     ports:
       - "127.0.0.1:8002:8000"
     environment:
