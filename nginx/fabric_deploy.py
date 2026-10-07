@@ -74,8 +74,15 @@ def provision_system(c):
     print("🚀 [1/4] Provisioning system users, groups, and directory hierarchy...")
 
     # 1. Ensure users exist
-    c.sudo(f"id -u {DEPLOY_USER} &>/dev/null || useradd -m -s /bin/bash {DEPLOY_USER}")
-    c.sudo(f"id -u {DJANGO_USER} &>/dev/null || useradd -r -s /bin/false {DJANGO_USER}")
+    check_deploy = c.sudo(f"id -u {DEPLOY_USER}", warn=True, hide=True)
+    if check_deploy.failed:
+        print(f"👤 Creating deployment user '{DEPLOY_USER}'...")
+        c.sudo(f"useradd -m -s /bin/bash {DEPLOY_USER}")
+
+    check_django = c.sudo(f"id -u {DJANGO_USER}", warn=True, hide=True)
+    if check_django.failed:
+        print(f"👤 Creating system execution user '{DJANGO_USER}'...")
+        c.sudo(f"useradd -r -s /bin/false {DJANGO_USER}")
 
     # 2. Add both to www-data group for controlled file traversal
     c.sudo(f"usermod -aG {WEB_GROUP} {DEPLOY_USER}")
@@ -140,8 +147,10 @@ def setup_nginx_and_ssl(c, source_ssl_dir=None):
 
     # Install SSL certs into system standard locations (resolves home dir permission blocks)
     c.sudo("mkdir -p /etc/ssl/certs /etc/ssl/private")
-    c.sudo(f"test -f {source_ssl_dir}/{DOMAIN}.crt && cp {source_ssl_dir}/{DOMAIN}.crt {SSL_CERT_PATH} || true")
-    c.sudo(f"test -f {source_ssl_dir}/{DOMAIN}.key && cp {source_ssl_dir}/{DOMAIN}.key {SSL_KEY_PATH} || true")
+    if c.run(f"test -f {source_ssl_dir}/{DOMAIN}.crt", warn=True, hide=True).ok:
+        c.sudo(f"cp {source_ssl_dir}/{DOMAIN}.crt {SSL_CERT_PATH}")
+    if c.run(f"test -f {source_ssl_dir}/{DOMAIN}.key", warn=True, hide=True).ok:
+        c.sudo(f"cp {source_ssl_dir}/{DOMAIN}.key {SSL_KEY_PATH}")
 
     # If certificates do not exist yet, generate self-signed fallback certs
     cert_check = c.run(f"test -f {SSL_CERT_PATH} && test -f {SSL_KEY_PATH}", warn=True)
@@ -259,7 +268,9 @@ server {{
     print("🔍 Testing Nginx syntax...")
     c.sudo("nginx -t")
     print("🔄 Reloading Nginx service...")
-    c.sudo("systemctl reload nginx || systemctl restart nginx")
+    reload_res = c.sudo("systemctl reload nginx", warn=True)
+    if reload_res.failed:
+        c.sudo("systemctl restart nginx")
     print("✅ Nginx and SSL configuration active.")
 
 
@@ -454,7 +465,8 @@ def update_code(c, git_url=None, branch="main", local_source=None):
 
     # Symlink persistent .env if present in shared
     env_source = f"{SHARED_DIR}/.env"
-    c.sudo(f"test -f {env_source} && ln -sfn {env_source} {APP_DIR}/.env || true")
+    if c.run(f"test -f {env_source}", warn=True, hide=True).ok:
+        c.sudo(f"ln -sfn {env_source} {APP_DIR}/.env")
 
     # Enforce Read-Only Code Boundaries:
     # Owned by DEPLOY_USER, readable by DJANGO_USER/WEB_GROUP, unwritable by runtime.
