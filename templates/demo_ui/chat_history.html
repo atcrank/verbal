@@ -13,7 +13,33 @@
     {% if log.generated_response %}
     <div class="chat-message ai" id="message-log-{{ log.id }}">
         <div class="bubble">
-            {{ log.html_response|safe }}
+            {% if log.visualizer_html %}
+                {{ log.visualizer_html|safe }}
+            {% endif %}
+
+            {% if log.thinking_steps %}
+            <details class="blueprint-thinking-trace">
+                <summary class="thinking-trace-summary">💭 Thinking Trace ({{ log.thinking_steps|length }} steps)</summary>
+                <div class="thinking-trace-content">
+                    {% for t_step in log.thinking_steps %}
+                    <div class="thinking-step-item">
+                        <div class="thinking-step-header">
+                            <span class="thinking-step-badge">{{ t_step.step_badge }}</span>
+                            <strong>{{ t_step.step_title }}</strong>
+                        </div>
+                        {% if t_step.html_content %}
+                        <div class="thinking-step-body">{{ t_step.html_content|safe }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </details>
+            {% endif %}
+
+            <div class="main-response-content">
+                {{ log.html_response|safe }}
+            </div>
+
             <div class="message-actions-bar">
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <button type="button" class="branch-btn"
@@ -28,7 +54,7 @@
                     {% endif %}
                 </div>
                 <div style="font-size: 0.74rem; color: var(--text-muted);">
-                    Tokens: <span style="color: var(--text-main); font-weight: 600;">{{ log.input_tokens }}</span> in / <span style="color: var(--text-main); font-weight: 600;">{{ log.output_tokens }}</span> out
+                    Tokens: <span id="token-in-{{ log.id }}" style="color: var(--text-main); font-weight: 600;">{{ log.input_tokens }}</span> in / <span id="token-out-{{ log.id }}" style="color: var(--text-main); font-weight: 600;">{{ log.output_tokens }}</span> out
                 </div>
             </div>
         </div>

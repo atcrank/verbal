@@ -88,10 +88,10 @@ def clone_blueprint(modeladmin, request, queryset):
 @admin.register(CognitiveBlueprint)
 class CognitiveBlueprintAdmin(admin.ModelAdmin):
     form = CognitiveBlueprintForm
-    list_display = ('name', 'description', 'step_count', 'is_canonical', 'family_success_probability', 'blueprint_family')
+    list_display = ('name', 'category', 'step_count', 'is_canonical', 'is_autonomous', 'family_success_probability', 'blueprint_family')
     inlines = [ReasoningStepInline]
     search_fields = ('name', 'description')
-    list_filter = ('is_canonical', 'is_autonomous')
+    list_filter = ('category', 'is_canonical', 'is_autonomous')
     actions = [clone_blueprint]
     readonly_fields = ('resolved_steps_display',)
 

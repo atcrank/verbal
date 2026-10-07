@@ -3,11 +3,12 @@ Event dispatch and PostgreSQL Pub/Sub bridge for asynchronous LangGraph executio
 Facilitates zero-Redis communication between background task workers and ASGI Datastar SSE streams.
 """
 import logging
-from typing import Dict, Any, Optional, AsyncGenerator
+from typing import Dict, Any, Optional, AsyncGenerator, Generator
 
 from verbal_tasks.postgres_events import (
     publish_pg_event,
     subscribe_pg_events_async,
+    subscribe_pg_events_sync,
     set_runtime_flag,
     is_runtime_flag_set,
     clear_runtime_flag
@@ -75,3 +76,17 @@ async def subscribe_blueprint_events(run_id: str) -> AsyncGenerator[Dict[str, An
     channel_name = get_event_channel(run_id)
     async for event in subscribe_pg_events_async(channel_name):
         yield event
+
+
+def subscribe_blueprint_events_sync(run_id: str, timeout: float = 30.0) -> Generator[Dict[str, Any], None, None]:
+    """
+    Synchronous generator subscribing to the PostgreSQL event channel for run_id
+    and yielding parsed event dictionaries.
+    """
+    if not run_id:
+        return
+
+    channel_name = get_event_channel(run_id)
+    for event in subscribe_pg_events_sync(channel_name, timeout=timeout):
+        yield event
+

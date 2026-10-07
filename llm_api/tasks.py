@@ -144,7 +144,9 @@ def task_generate_response(
         publish_pg_event(f"verbal_events_{run_id}", "completed", {
             "final_response": cleaned_response,
             "log_id": str(log_id),
-            "run_id": run_id
+            "run_id": run_id,
+            "output_tokens": output_tokens,
+            "input_tokens": log.input_tokens if log else 0,
         })
 
         return {

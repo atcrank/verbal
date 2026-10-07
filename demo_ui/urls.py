@@ -18,4 +18,6 @@ urlpatterns = [
     path('grips-explorer/', views.grips_explorer_tab, name='grips_explorer_tab'),
     path('grips-explorer/children/<int:concept_id>/', views.grips_concept_children, name='grips_concept_children'),
     path('grips-explorer/fill-stub/<int:concept_id>/', views.fill_grips_stub, name='fill_grips_stub'),
+    path('grips-blueprints/', views.grips_blueprints_tab, name='grips_blueprints_tab'),
+    path('set_active_provider/', views.set_active_provider, name='set_active_provider'),
 ]

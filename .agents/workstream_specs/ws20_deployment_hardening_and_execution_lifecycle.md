@@ -10,20 +10,20 @@ The goal is to ensure robust, self-healing execution across distributed instance
 
 ## Issue Catalog & Mapping
 
-| ID | Issue Observed | Category | Target Phase |
-|---|---|---|---|
-| **#1** | No visual cue of loaded/responsive model, no toggle for external API credentials | UI / Experience | Phase 3 |
-| **#2** | Multi-step blueprint progress and node layout not visible to user | UI / Experience | Phase 3 |
-| **#3** | Sandbox offline causes endless 35s retry loop without user error pathway | Resilience | Phase 1 |
-| **#4** | NF4 inference speed at 24 tps with 0.5s worker yield delay | Performance | Phase 4 (Analysis) |
-| **#5** | Raw HTML badge `"Dispatched..."` saved in `PromptResponseLog.generated_response` | Data Lineage | Phase 1 |
-| **#6** | Redundant `TASK_COMPLETE` tool invocation before final synthesis node | Graph Architecture | Phase 2 |
-| **#7a** | Live Datastar SSE stream drops updates during blueprint execution | Streaming | Phase 2 |
-| **#7b** | LaTeX math markdown (`$...$`, `$$...$$`) does not render to HTML | UI / Markdown | Phase 3 |
-| **#8** | Conversation title takes raw prompt snippet instead of state tree `macro_objective` | UX / Data Lineage | Phase 1 |
-| **#9** | `parent_log` is `None` across sequential nodes in blueprint executions | Data Lineage | Phase 1 |
-| **#10** | `blueprint` and `reasoning_step` ForeignKeys on `PromptResponseLog` unpopulated | Data Lineage | Phase 1 |
-| **#11** | `sandbox/Dockerfile` hardcodes base image, breaking environment variable pattern | Configuration | Phase 1 |
+| ID | Issue Observed | Category | Target Phase | Status |
+|---|---|---|---|---|
+| **#1** | No visual cue of loaded/responsive model, no toggle for external API credentials | UI / Experience | Phase 3 | ✅ Completed |
+| **#2** | Multi-step blueprint progress and node layout not visible to user | UI / Experience | Phase 3 | ✅ Completed |
+| **#3** | Sandbox offline causes endless 35s retry loop without user error pathway | Resilience | Phase 1 | ✅ Completed |
+| **#4** | NF4 inference speed at 24 tps with 0.5s worker yield delay | Performance | Phase 4 (Analysis) | 📋 Documented |
+| **#5** | Raw HTML badge `"Dispatched..."` saved in `PromptResponseLog.generated_response` | Data Lineage | Phase 1 | ✅ Completed |
+| **#6** | Redundant `TASK_COMPLETE` tool invocation before final synthesis node | Graph Architecture | Phase 2 | ✅ Completed |
+| **#7a** | Live Datastar SSE stream drops updates during blueprint execution | Streaming | Phase 2 | ✅ Completed |
+| **#7b** | LaTeX math markdown (`$...$`, `$$...$$`) does not render to HTML | UI / Markdown | Phase 3 | ✅ Completed |
+| **#8** | Conversation title takes raw prompt snippet instead of state tree `macro_objective` | UX / Data Lineage | Phase 1 | ✅ Completed |
+| **#9** | `parent_log` is `None` across sequential nodes in blueprint executions | Data Lineage | Phase 1 | ✅ Completed |
+| **#10** | `blueprint` and `reasoning_step` ForeignKeys on `PromptResponseLog` unpopulated | Data Lineage | Phase 1 | ✅ Completed |
+| **#11** | `sandbox/Dockerfile` hardcodes base image, breaking environment variable pattern | Configuration | Phase 1 | ✅ Completed |
 
 ---
 
@@ -121,36 +121,30 @@ The goal is to ensure robust, self-healing execution across distributed instance
 
 ---
 
-### Phase 3: UI & Experience Enhancements
+### Phase 3: UI & Experience Enhancements (Completed & Verified)
 
-#### Task 3.1: Active Model Indicator & External Provider Toggle (Item #1)
-- **Problem**: User has no visual indication of which model is actively loaded or responsive, and cannot select an external provider for which credentials exist.
-- **Implementation**:
-  - In `demo_ui/views.py:index`, fetch:
-    - Active model name from `SystemConfiguration.get_solo()`.
-    - Available external models and user API keys from `UserActiveModel` / `UserAPIKey`.
-  - In `templates/demo_ui/index.html`, add a status badge in the header:
-    - `🟢 Local: Gemma-2-4B (GPU)`
-    - If external keys exist (e.g. OpenAI, Anthropic), render a model picker dropdown that posts to an endpoint toggling `UserActiveModel.use_external`.
+#### Task 3.1: Active Model Indicator & External Provider Toggle (Item #1) - Completed
+- **Delivered**:
+  - `metacognition/context_processors.py`: added `active_model_context` providing `active_model_info` and `available_external_models`.
+  - `templates/includes/active_model_pill.html`: interactive pill and dropdown embedded in the universal header bar.
+  - `demo_ui/views.py`: added `@login_required @require_POST set_active_provider` endpoint for switching between local GPU and external models.
+  - `demo_ui/urls.py`: registered `/demo/set_active_provider/`.
+  - Verified with `test_set_active_provider_toggle`.
 
-#### Task 3.2: KaTeX Math Markdown Rendering with Vendored Static Assets (Item #7b)
-- **Problem**: Mathematical formulas in model outputs (`$...$` and `$$...$$`) display as raw markdown text. The deployed environment is self-contained and must not load assets from external CDNs.
-- **Implementation**:
-  - Vendor KaTeX assets (`katex.min.js`, `katex.min.css`, `auto-render.min.js`, and fonts) directly into `static/vendor/katex/`.
-  - Include them in `templates/demo_ui/base.html` via Django `{% static 'vendor/katex/...' %}` tags.
-  - Configure the auto-render extension to parse inline `$...$` and display `$$...$$` blocks on initial page load and reactively after Datastar DOM morph events.
+#### Task 3.2: KaTeX Math Markdown Rendering with Vendored Static Assets (Item #7b) - Completed
+- **Delivered**:
+  - Offline release v0.16.11 vendored to `static/vendor/katex/` (CSS, JS, auto-render, and all fonts) and collected via `collectstatic`.
+  - `templates/demo_ui/index.html`: loaded local KaTeX assets and configured auto-render for `$...$` (inline) and `$$...$$` (display) with hooks for `DOMContentLoaded`, `htmx:afterSwap`, and `MutationObserver` on `#chat-history`.
+  - Verified with `test_katex_static_assets_available`.
 
-#### Task 3.3: Lightweight Blueprint Progress Node Visualizer (Item #2)
-- **Problem**: Complex blueprints execute in the background with opaque progress. Heavy solutions like SVG or Mermaid introduce excessive visual overhead and layout recalculation.
-- **Adopted Design**:
-  - **Grid & Unicode Iconography**: Use a clean, compact CSS Grid / flexbox layout.
-    - Linear graphs (the most common type) render as a single horizontal row of step pills connected by unicode arrows (`➔` / `➜`).
-    - Composite blueprints using sub-blueprints branch down to begin their own row directly below the parent step.
-  - **State Coloring**:
-    - **Active Step**: Distinct highlighted color (e.g., active blue/amber with subtle pulse).
-    - **Past Completed Steps**: Green on success, Red on failure/error.
-    - **Pending Steps**: Muted neutral gray.
-  - Integrates seamlessly into the chat stream and status card without external graphing library dependencies.
+#### Task 3.3: Lightweight Blueprint Progress Node Visualizer & Thinking Trace (Item #2) - Completed
+- **Delivered**:
+  - `metacognition/visualizer.py`: implemented `build_visualizer_data` and `render_blueprint_visualizer_html` using CSS grid/flexbox with unicode arrows (`➔`), distinct active state (`●`, pulsing blue/amber), success (`✓`, green), failure (`✗`, red), and pending (`○`, gray). Sub-blueprints branch down to their own row (`↳ [Sub-Blueprint Name]`).
+  - `static/demo_ui/css/styles.css`: added classes and keyframes for visualizer pills and `<details class="blueprint-thinking-trace">`.
+  - `demo_ui/views.py`: added `group_conversation_logs_for_display` to group intermediate blueprint steps inside `<details class="blueprint-thinking-trace">`, displaying the final leaf log as the primary message.
+  - `templates/demo_ui/chat_message.html` and `chat_history.html`: rendered the visualizer and collapsible thinking trace.
+  - `metacognition/api.py`: updated `stream_blueprint` SSE to patch `#blueprint-visualizer` dynamically across `step_started`, `step_completed`, and `completed`.
+  - Verified with `test_visualizer_rendering_and_grouping`.
 
 
 ---

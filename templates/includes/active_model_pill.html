@@ -1,0 +1,116 @@
+<style>
+.active-model-container {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+.active-model-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 10px;
+    border-radius: 9999px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid #475569;
+    color: #f1f5f9;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.active-model-pill:hover {
+    background: #334155;
+    border-color: #64748b;
+}
+.model-selector-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    background: #1e293b;
+    border: 1px solid #475569;
+    border-radius: 8px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    min-width: 220px;
+    padding: 6px 0;
+    font-size: 0.78rem;
+}
+.model-dropdown-item {
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    padding: 8px 12px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #f1f5f9;
+    transition: background-color 0.1s ease;
+}
+.model-dropdown-item:hover {
+    background-color: #334155;
+}
+.model-dropdown-item.is-selected-local {
+    color: #34d399;
+    font-weight: 600;
+}
+.model-dropdown-item.is-selected-ext {
+    color: #38bdf8;
+    font-weight: 600;
+}
+</style>
+
+<div class="active-model-container" id="active-model-container">
+    <button type="button" class="active-model-pill" id="active-model-pill" onclick="toggleModelSelectorDropdown(event)"
+        title="Active Model: {{ active_model_info.name }} ({{ active_model_info.backend }}). {% if available_external_models %}Click to switch provider.{% endif %}">
+        <span class="model-pill-icon" style="font-size: 0.8rem;">{{ active_model_info.badge_icon }}</span>
+        <span class="model-pill-label" style="max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ active_model_info.badge_label }}</span>
+        {% if available_external_models %}
+        <span class="model-pill-caret" style="font-size: 0.65rem; color: #94a3b8; margin-left: 2px;">▾</span>
+        {% endif %}
+    </button>
+    {% if available_external_models %}
+    <div id="model-selector-dropdown" class="model-selector-dropdown">
+        <div style="padding: 4px 12px 6px; font-size: 0.68rem; text-transform: uppercase; font-weight: 700; color: #94a3b8; letter-spacing: 0.05em; border-bottom: 1px solid #334155;">Active Inference Provider</div>
+        <button type="button" class="model-dropdown-item {% if not active_model_info.is_external %}is-selected-local{% endif %}"
+            hx-post="{% url 'demo_ui:set_active_provider' %}"
+            hx-vals='{"use_external": "false"}'
+            hx-target="#active-model-container"
+            hx-swap="outerHTML">
+            <span>🟢</span> <span>Local GPU / Container</span>
+        </button>
+        {% for ext_model in available_external_models %}
+        <button type="button" class="model-dropdown-item {% if active_model_info.is_external and active_model_info.name == ext_model.name %}is-selected-ext{% endif %}"
+            hx-post="{% url 'demo_ui:set_active_provider' %}"
+            hx-vals='{"use_external": "true", "model_id": "{{ ext_model.id }}"}'
+            hx-target="#active-model-container"
+            hx-swap="outerHTML">
+            <span>⚡</span> <span>{{ ext_model.name }} ({{ ext_model.provider|upper }})</span>
+        </button>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+
+<script>
+if (!window.toggleModelSelectorDropdown) {
+    window.toggleModelSelectorDropdown = function(event) {
+        event.stopPropagation();
+        var menu = document.getElementById('model-selector-dropdown');
+        if (menu) {
+            menu.style.display = (menu.style.display === 'none' || menu.style.display === '') ? 'block' : 'none';
+        }
+    };
+    document.addEventListener('click', function(e) {
+        var menu = document.getElementById('model-selector-dropdown');
+        var container = document.getElementById('active-model-container');
+        if (menu && container && !container.contains(e.target)) {
+            menu.style.display = 'none';
+        }
+    });
+}
+</script>

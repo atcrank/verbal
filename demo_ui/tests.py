@@ -396,3 +396,259 @@ class BroadcastEndpointsTestCase(TestCase):
         self.assertNotIn("linear-gradient(135deg, #fff, #94a3b8)", content)
         self.assertIn("Grips Knowledge Base", content)
 
+
+class DeploymentHardeningPhase3Tests(TestCase):
+    def setUp(self):
+        User = get_user_model()
+        self.user = User.objects.create_user(username='phase3_tester', password='password123')
+        self.client = Client()
+        self.client.login(username='phase3_tester', password='password123')
+
+    def test_set_active_provider_toggle(self):
+        """Verifies switching active inference provider via set_active_provider view."""
+        from llm_api.models import ExternalAIModel, UserActiveModel, UserAPIKey
+        
+        ext_model = ExternalAIModel.objects.create(
+            name="Claude 3.5 Sonnet",
+            provider="anthropic",
+            api_model_name="claude-3-5-sonnet-20241022"
+        )
+        UserAPIKey.objects.create(
+            user=self.user,
+            provider="anthropic",
+            api_key="sk-test-anthropic-key"
+        )
+
+        url = reverse('demo_ui:set_active_provider')
+
+        # 1. Switch to external model
+        res = self.client.post(url, {
+            'use_external': 'true',
+            'model_id': str(ext_model.id)
+        })
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Claude 3.5 Sonnet")
+        pref = UserActiveModel.objects.get(user=self.user)
+        self.assertTrue(pref.use_external)
+        self.assertEqual(pref.active_external, ext_model)
+
+        # 2. Switch back to local GPU
+        res = self.client.post(url, {
+            'use_external': 'false'
+        })
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Local GPU / Container")
+        pref.refresh_from_db()
+        self.assertFalse(pref.use_external)
+
+    def test_katex_static_assets_available(self):
+        """Verifies that offline KaTeX assets are available in static files."""
+        from django.contrib.staticfiles import finders
+        self.assertIsNotNone(finders.find('vendor/katex/katex.min.css'))
+        self.assertIsNotNone(finders.find('vendor/katex/katex.min.js'))
+        self.assertIsNotNone(finders.find('vendor/katex/contrib/auto-render.min.js'))
+
+    def test_visualizer_rendering_and_grouping(self):
+        """Verifies blueprint visualizer generation and log grouping with thinking trace."""
+        from metacognition.models import CognitiveBlueprint, ReasoningStep
+        from metacognition.visualizer import render_blueprint_visualizer_html
+        from demo_ui.views import group_conversation_logs_for_display
+
+        bp = CognitiveBlueprint.objects.create(name="Scientific Method BP", description="Testing BP")
+        s1 = ReasoningStep.objects.create(blueprint=bp, name="Formulate Hypothesis", is_start_node=True)
+        s2 = ReasoningStep.objects.create(blueprint=bp, name="Design Experiment")
+        s1.on_success_step = s2
+        s1.save()
+
+        # Render visualizer directly
+        viz_html = render_blueprint_visualizer_html(bp, completed_steps=["Formulate Hypothesis"], active_step="Design Experiment")
+        self.assertIn("blueprint-visualizer", viz_html)
+        self.assertIn("Formulate Hypothesis", viz_html)
+        self.assertIn("Design Experiment", viz_html)
+        self.assertIn("viz-success", viz_html)
+        self.assertIn("viz-active", viz_html)
+        self.assertIn("➔", viz_html)
+
+        # Test log grouping
+        conv = Conversation.objects.create(user=self.user, title="BP Test Conv")
+        log1 = PromptResponseLog.objects.create(
+            user=self.user,
+            conversation=conv,
+            blueprint=bp,
+            reasoning_step=s1,
+            user_prompt="Explain photosynthesis",
+            generated_response="Hypothesis: Light converts CO2 and H2O to glucose.",
+            input_tokens=10,
+            output_tokens=15,
+            step_status="SUCCESS"
+        )
+        log2 = PromptResponseLog.objects.create(
+            user=self.user,
+            conversation=conv,
+            parent_log=log1,
+            blueprint=bp,
+            reasoning_step=s2,
+            user_prompt="Next step",
+            generated_response="Final Answer: Photosynthesis converts light energy into chemical energy.",
+            input_tokens=20,
+            output_tokens=25,
+            step_status="SUCCESS"
+        )
+
+        grouped = group_conversation_logs_for_display([log1, log2])
+        self.assertEqual(len(grouped), 1)
+        leaf = grouped[0]
+        self.assertEqual(leaf.user_prompt, "Explain photosynthesis")
+        self.assertEqual(leaf.input_tokens, 30)
+        self.assertEqual(leaf.output_tokens, 40)
+        self.assertEqual(len(leaf.thinking_steps), 1)
+        self.assertEqual(leaf.thinking_steps[0]["step_title"], "Step 1: Formulate Hypothesis")
+        self.assertIn("blueprint-visualizer", leaf.visualizer_html)
+
+    def test_blueprint_sets_discrimination_in_chat(self):
+        """Verifies chat UI only includes REASONING blueprints, filtering out Grips and System routines."""
+        from metacognition.models import CognitiveBlueprint
+
+        CognitiveBlueprint.objects.all().delete()
+        bp_reasoning = CognitiveBlueprint.objects.create(
+            name="Conversational Strategist",
+            description="Thinking pattern",
+            category="REASONING"
+        )
+        bp_grips = CognitiveBlueprint.objects.create(
+            name="LintGripsEdge",
+            description="Grips graph linter",
+            category="GRIPS"
+        )
+        bp_system = CognitiveBlueprint.objects.create(
+            name="NM_Housekeeping",
+            description="System housekeeping",
+            category="SYSTEM"
+        )
+        bp_malformed = CognitiveBlueprint.objects.create(
+            name=":CognitiveBlueprintProposal",
+            description="Malformed proposal",
+            category="SYSTEM"
+        )
+
+        response = self.client.get(reverse('demo_ui:index'))
+        self.assertEqual(response.status_code, 200)
+        blueprints = response.context['blueprints']
+        bp_names = [b.name for b in blueprints]
+
+        self.assertIn("Conversational Strategist", bp_names)
+        self.assertNotIn("LintGripsEdge", bp_names)
+        self.assertNotIn("NM_Housekeeping", bp_names)
+        self.assertNotIn(":CognitiveBlueprintProposal", bp_names)
+
+    def test_grips_blueprints_tab_endpoint(self):
+        """Verifies the dedicated Grips Knowledge Blueprints pathway renders cleanly."""
+        from metacognition.models import CognitiveBlueprint, ReasoningStep
+
+        CognitiveBlueprint.objects.all().delete()
+        bp = CognitiveBlueprint.objects.create(
+            name="LintGripsEdge",
+            description="Rewrites edge justifications without placeholders.",
+            category="GRIPS"
+        )
+        s1 = ReasoningStep.objects.create(blueprint=bp, name="Rewrite Justification", is_start_node=True)
+        s2 = ReasoningStep.objects.create(blueprint=bp, name="Verify Justification Quality")
+        s1.on_success_step = s2
+        s1.save()
+        s2.on_failure_step = s1 # Loop back
+        s2.save()
+
+        response = self.client.get(reverse('demo_ui:grips_blueprints_tab'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "LintGripsEdge")
+        self.assertContains(response, "Level-1 Self-Check")
+        self.assertContains(response, "Rewrite Justification")
+        self.assertContains(response, "Verify Justification Quality")
+        self.assertContains(response, "Loop-back on failure")
+
+    def test_prepare_log_for_display_preserves_streaming_markup(self):
+        """Verifies _prepare_log_for_display does not mangle pre-rendered Datastar HTML markup."""
+        from demo_ui.views import _prepare_log_for_display
+
+        markup = (
+            '<div id="blueprint-exec-12345" data-signals="{isStreaming: true}" '
+            'data-on-load="@get(\'/api/meta/stream_blueprint/?run_id=12345&log_id=99\')">'
+            '<div id="blueprint-visualizer" class="blueprint-visualizer"></div>'
+            '<div id="blueprint-status" class="agent-step active">Executing...</div>'
+            '<details id="blueprint-thinking-trace" class="blueprint-thinking-trace" open>'
+            '<summary id="thinking-trace-summary">Thinking</summary>'
+            '<div id="monologue-stream" class="thinking-trace-content"></div>'
+            '</details>'
+            '<div id="blueprint-final-response"></div>'
+            '</div>'
+        )
+        conv = Conversation.objects.create(user=self.user)
+        log = PromptResponseLog.objects.create(
+            user=self.user,
+            conversation=conv,
+            user_prompt="Run blueprint",
+            generated_response=markup
+        )
+        prepared = _prepare_log_for_display(log)
+        self.assertEqual(str(prepared.html_response), markup)
+        self.assertNotIn("<p>", str(prepared.html_response))
+        self.assertIn('id="monologue-stream"', str(prepared.html_response))
+
+    def test_stream_generation_fast_path_patches_tokens(self):
+        """Verifies stream_generation yields Datastar patches updating output and input token counts."""
+        from demo_ui.views import stream_generation
+        from django.test import RequestFactory
+
+        conv = Conversation.objects.create(user=self.user)
+        log = PromptResponseLog.objects.create(
+            user=self.user,
+            conversation=conv,
+            user_prompt="Hello",
+            generated_response="This is the completed AI answer.",
+            input_tokens=14,
+            output_tokens=32
+        )
+
+        factory = RequestFactory()
+        req = factory.get(f"/demo/stream_generation/?run_id=test-run&log_id={log.id}")
+        req.user = self.user
+
+        response = stream_generation(req)
+        body = b"".join(list(response.streaming_content)).decode("utf-8")
+        self.assertIn(f"token-out-{log.id}", body)
+        self.assertIn("32", body)
+        self.assertIn(f"token-in-{log.id}", body)
+        self.assertIn("14", body)
+
+    def test_seed_grips_blueprints_level1_self_checks_and_cleanup(self):
+        """Verifies seed blueprints contain level-1 loop-backs and corruptions are cleaned up."""
+        from metacognition.seed import seed_all, cleanup_legacy_corruptions
+        from metacognition.models import CognitiveBlueprint, bypass_canonical_lock
+
+        # Create corrupted legacy records
+        with bypass_canonical_lock():
+            CognitiveBlueprint.objects.create(name=":CognitiveBlueprintProposal", description="Corrupt")
+            CognitiveBlueprint.objects.create(name="]CognitiveBlueprintProposal", description="Corrupt")
+            CognitiveBlueprint.objects.create(name="CognitiveBlueprintProposal", description="Duplicate")
+
+        # Run seed
+        seed_all()
+
+        # Check legacy corruptions are removed
+        self.assertFalse(CognitiveBlueprint.objects.filter(name__startswith=":").exists())
+        self.assertFalse(CognitiveBlueprint.objects.filter(name__startswith="]").exists())
+        self.assertFalse(CognitiveBlueprint.objects.filter(name="CognitiveBlueprintProposal").exists())
+
+        # Check canonical Grips blueprints have category="GRIPS" and loopbacks
+        for name in ["LintGripsEdge", "DigestDocumentChunk", "EvaluateConceptNeighbors", "EvaluateCrossDomain", "LintGripsNode"]:
+            bp = CognitiveBlueprint.objects.filter(name=name).first()
+            self.assertIsNotNone(bp, f"Blueprint {name} should exist")
+            self.assertEqual(bp.category, "GRIPS", f"{name} should have category GRIPS")
+            steps = list(bp.steps.all())
+            self.assertGreaterEqual(len(steps), 2, f"{name} should have at least 2 steps (action + self-check)")
+            step1 = steps[0]
+            step2 = steps[1]
+            # Verify loop-back connection exists between step 1 and step 2
+            has_loopback = (step2.on_failure_step == step1) or (step2.on_success_step == step1)
+            self.assertTrue(has_loopback, f"{name} should have a level-1 loop-back connection between step 2 and step 1")
+

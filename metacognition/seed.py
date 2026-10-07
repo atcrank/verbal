@@ -358,7 +358,7 @@ def seed_tools(ToolDefinition):
 def seed_architect(CognitiveBlueprint, ReasoningStep):
     bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="The Architect",
-        defaults={'description': "Meta-agent blueprint capable of self-composing tools and blueprints.", 'is_canonical': True}
+        defaults={'description': "Meta-agent blueprint capable of self-composing tools and blueprints.", 'is_canonical': True, 'category': 'SYSTEM'}
     )
 
     ReasoningStep.objects.filter(blueprint=bp).delete()
@@ -390,7 +390,7 @@ def seed_architect(CognitiveBlueprint, ReasoningStep):
 def seed_grips_stub_filler(CognitiveBlueprint, ReasoningStep, ToolDefinition):
     bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="Grips Stub Filler",
-        defaults={'description': "Reads a ConceptNode ID, researches context, and writes its narrative.", 'is_autonomous': True, 'is_canonical': True}
+        defaults={'description': "Reads a ConceptNode ID, researches context, and writes its narrative.", 'is_autonomous': True, 'is_canonical': True, 'category': 'GRIPS'}
     )
     ReasoningStep.objects.filter(blueprint=bp).delete()
     step1 = ReasoningStep.objects.create(
@@ -398,21 +398,21 @@ def seed_grips_stub_filler(CognitiveBlueprint, ReasoningStep, ToolDefinition):
         name="Fill Stub",
         is_start_node=True,
         is_canonical=True,
-        system_prompt="You are a research assistant filling in empty Grips ConceptNodes. The user prompt provides the ID. Query the database, research the topic if necessary, and use django_shell_script to save the narrative. Then output TASK_COMPLETE.",
+        system_prompt="You are a research assistant filling in empty Grips ConceptNodes. The user prompt provides the ID. Query the database, research the topic if necessary, and use django_shell_script to save the narrative.",
         max_retries=3,
         max_new_tokens=800,
     )
     step1.on_success_step = None
     step1.on_failure_step = step1
     step1.save()
-    for t in ["read_django_models", "django_shell_script", "document_reader", "TASK_COMPLETE"]:
+    for t in ["read_django_models", "django_shell_script", "document_reader"]:
         tool, _ = ToolDefinition.objects.get_or_create(name=t)
         step1.available_tools.add(tool)
 
 def seed_variant_scorer(CognitiveBlueprint, ReasoningStep, ToolDefinition):
     bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="Variant Scorer",
-        defaults={'description': "Computes EWMA for ReasoningSteps and updates performance_score.", 'is_autonomous': True, 'is_canonical': True}
+        defaults={'description': "Computes EWMA for ReasoningSteps and updates performance_score.", 'is_autonomous': True, 'is_canonical': True, 'category': 'SYSTEM'}
     )
 def seed_nm_housekeeping(CognitiveBlueprint, ReasoningStep, ToolDefinition):
     bp_qs = CognitiveBlueprint.objects.filter(name="NM_Housekeeping")
@@ -423,7 +423,7 @@ def seed_nm_housekeeping(CognitiveBlueprint, ReasoningStep, ToolDefinition):
     
     bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="NM_Housekeeping",
-        defaults={'description': "NightManager sub-blueprint for system cleanup.", 'is_autonomous': True, 'is_canonical': True}
+        defaults={'description': "NightManager sub-blueprint for system cleanup.", 'is_autonomous': True, 'is_canonical': True, 'category': 'SYSTEM'}
     )
     ReasoningStep.objects.filter(blueprint=bp).delete()
     
@@ -517,7 +517,7 @@ def seed_nm_housekeeping(CognitiveBlueprint, ReasoningStep, ToolDefinition):
 def seed_nm_deep_system_evaluation(CognitiveBlueprint, ReasoningStep, ToolDefinition):
     bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="NM_Deep_system_evaluation",
-        defaults={'description': "Phase 1: Evaluates conversations, blueprint reasoning step variants, benchmark trends, RAG input efficiency, and Grips recall/precision.", 'is_autonomous': True, 'is_canonical': True}
+        defaults={'description': "Phase 1: Evaluates conversations, blueprint reasoning step variants, benchmark trends, RAG input efficiency, and Grips recall/precision.", 'is_autonomous': True, 'is_canonical': True, 'category': 'SYSTEM'}
     )
     ReasoningStep.objects.filter(blueprint=bp).delete()
 
@@ -633,7 +633,7 @@ def seed_nm_deep_system_evaluation(CognitiveBlueprint, ReasoningStep, ToolDefini
 def seed_nm_optimize_reasoning(CognitiveBlueprint, ReasoningStep, ToolDefinition, ResponseSchema=None):
     bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="NM_Optimize_Reasoning",
-        defaults={'description': "Sub-blueprint to fetch, contemplate, and save ReasoningStep variants.", 'is_autonomous': True, 'is_canonical': True}
+        defaults={'description': "Sub-blueprint to fetch, contemplate, and save ReasoningStep variants.", 'is_autonomous': True, 'is_canonical': True, 'category': 'SYSTEM'}
     )
     ReasoningStep.objects.filter(blueprint=bp).delete()
     
@@ -687,7 +687,7 @@ def seed_nm_optimize_reasoning(CognitiveBlueprint, ReasoningStep, ToolDefinition
 def seed_nm_refine_rag_grips(CognitiveBlueprint, ReasoningStep, ToolDefinition, ResponseSchema=None):
     bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="NM_Refine_RAG_Grips",
-        defaults={'description': "Sub-blueprint to analyze and refine RAG/Grips nodes.", 'is_autonomous': True, 'is_canonical': True}
+        defaults={'description': "Sub-blueprint to analyze and refine RAG/Grips nodes.", 'is_autonomous': True, 'is_canonical': True, 'category': 'SYSTEM'}
     )
     ReasoningStep.objects.filter(blueprint=bp).delete()
     
@@ -746,7 +746,7 @@ def seed_nm_refine_rag_grips(CognitiveBlueprint, ReasoningStep, ToolDefinition, 
 def seed_nm_formulate_benchmarks(CognitiveBlueprint, ReasoningStep, ToolDefinition):
     bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="NM_Formulate_Benchmarks",
-        defaults={'description': "Sub-blueprint to formulate and create Benchmarks.", 'is_autonomous': True, 'is_canonical': True}
+        defaults={'description': "Sub-blueprint to formulate and create Benchmarks.", 'is_autonomous': True, 'is_canonical': True, 'category': 'SYSTEM'}
     )
     ReasoningStep.objects.filter(blueprint=bp).delete()
     
@@ -799,7 +799,7 @@ def seed_nm_formulate_benchmarks(CognitiveBlueprint, ReasoningStep, ToolDefiniti
 def seed_nm_system_modifications(CognitiveBlueprint, ReasoningStep, ToolDefinition, ResponseSchema=None):
     bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="NM_Ideas_for_System_Modifications",
-        defaults={'description': "Phase 2: Routes to specific sub-blueprints to formulate system modifications.", 'is_autonomous': True, 'is_canonical': True}
+        defaults={'description': "Phase 2: Routes to specific sub-blueprints to formulate system modifications.", 'is_autonomous': True, 'is_canonical': True, 'category': 'SYSTEM'}
     )
     ReasoningStep.objects.filter(blueprint=bp).delete()
 
@@ -850,7 +850,7 @@ def seed_nm_system_modifications(CognitiveBlueprint, ReasoningStep, ToolDefiniti
 def seed_nm_self_improvement(CognitiveBlueprint, ReasoningStep, ToolDefinition, ResponseSchema=None):
     bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="NM_Self-improvement",
-        defaults={'description': "Phase 3: Meta-self reflection on NightManager execution patterns across model rotations.", 'is_autonomous': True, 'is_canonical': True}
+        defaults={'description': "Phase 3: Meta-self reflection on NightManager execution patterns across model rotations.", 'is_autonomous': True, 'is_canonical': True, 'category': 'SYSTEM'}
     )
     ReasoningStep.objects.filter(blueprint=bp).delete()
 
@@ -917,7 +917,8 @@ def seed_nightmanager(CognitiveBlueprint, ReasoningStep, ResponseSchema, ToolDef
         defaults={
             'description': "Master orchestration blueprint for autonomous nightly system review, maintenance, and self-evolution.",
             'is_autonomous': True,
-            'is_canonical': True
+            'is_canonical': True,
+            'category': 'SYSTEM'
         }
     )
 
@@ -1049,7 +1050,7 @@ def seed_nightmanager(CognitiveBlueprint, ReasoningStep, ResponseSchema, ToolDef
 def seed_grill_me(CognitiveBlueprint, ReasoningStep):
     bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="Grill me!",
-        defaults={'description': "By asking pointed and insightful questions of the user, elicit all the details of the problem", 'is_canonical': True}
+        defaults={'description': "By asking pointed and insightful questions of the user, elicit all the details of the problem", 'is_canonical': True, 'category': 'REASONING'}
     )
     
     ReasoningStep.objects.filter(blueprint=bp).delete()
@@ -1070,24 +1071,36 @@ def seed_grill_me(CognitiveBlueprint, ReasoningStep):
 def seed_computational_logic(CognitiveBlueprint, ReasoningStep, ToolDefinition):
     bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="Computational Logic",
-        defaults={'description': "Solve a strategic decision-making problem using Python code.", 'is_canonical': True}
+        defaults={'description': "Solve a strategic decision-making problem using Python code.", 'is_canonical': True, 'category': 'REASONING'}
     )
     ReasoningStep.objects.filter(blueprint=bp).delete()
-    step = ReasoningStep.objects.create(
+    step1 = ReasoningStep.objects.create(
         blueprint=bp,
         name="Solve Strategic Scenario",
         system_prompt="You are a decision analysis expert. Write a Python script to solve the user's strategic scenario.",
         is_start_node=True,
     )
     python_sandbox_tool = ToolDefinition.objects.filter(name="python_sandbox").first()
-    step.save()
     if python_sandbox_tool:
-        step.available_tools.add(python_sandbox_tool)
+        step1.available_tools.add(python_sandbox_tool)
+    
+    step2 = ReasoningStep.objects.create(
+        blueprint=bp,
+        name="Verify Calculation Results",
+        system_prompt="You are a quantitative validator. Review the calculations and sandbox output from the previous step. Verify that the numerical outputs are logically consistent, satisfy boundary conditions, and directly answer the scenario. If verified, output the final solution and recommendations. If erroneous or uncomputed, critique the failure to re-run.",
+        evaluation_criteria="Pass only if calculation executed cleanly, produced realistic numerical bounds, and answers the prompt.",
+        max_retries=2
+    )
+    step1.on_success_step = step2
+    step1.save()
+    step2.on_success_step = None
+    step2.on_failure_step = step1 # Level-1 loop-back
+    step2.save()
 
 def seed_reasoning_with_code_sandbox(CognitiveBlueprint, ReasoningStep, ToolDefinition):
     bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="Reasoning with Code Sandbox",
-        defaults={'description': "Multi-step analytical reasoning and mathematical verification using the Python code sandbox.", 'is_canonical': True}
+        defaults={'description': "Multi-step analytical reasoning and mathematical verification using the Python code sandbox.", 'is_canonical': True, 'category': 'REASONING'}
     )
     ReasoningStep.objects.filter(blueprint=bp).delete()
     python_sandbox_tool = ToolDefinition.objects.filter(name="python_sandbox").first()
@@ -1126,7 +1139,7 @@ def seed_reasoning_with_code_sandbox(CognitiveBlueprint, ReasoningStep, ToolDefi
 def seed_escalation_of_effort(CognitiveBlueprint, ReasoningStep, ToolDefinition):
     bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="Escalation of Effort",
-        defaults={'description': "Research APIs dynamically, solve the problem with execution, and summarize the result.", 'is_canonical': True}
+        defaults={'description': "Research APIs dynamically, solve the problem with execution, and summarize the result.", 'is_canonical': True, 'category': 'REASONING'}
     )
     
     ReasoningStep.objects.filter(blueprint=bp).delete()
@@ -1161,6 +1174,22 @@ def seed_escalation_of_effort(CognitiveBlueprint, ReasoningStep, ToolDefinition)
     step2.on_success_step = step3
     step2.save()
 
+def cleanup_legacy_corruptions(CognitiveBlueprint):
+    """
+    Cleans up legacy and malformed blueprints:
+    - Blueprints whose names start with punctuation (e.g. ':', ']', '[')
+    - Duplicate/redundant blueprint proposals (e.g. 'CognitiveBlueprintProposal' vs canonical 'Propose Blueprint')
+    """
+    from .models import bypass_canonical_lock
+    with bypass_canonical_lock():
+        for bp in CognitiveBlueprint.objects.all():
+            name = bp.name.strip()
+            if name.startswith((':', ']', '[', '?', '!')):
+                bp.delete()
+            elif name in ("CognitiveBlueprintProposal",):
+                bp.delete()
+
+
 def seed_all():
     from .models import bypass_canonical_lock
     ToolDefinition = apps.get_model('metacognition', 'ToolDefinition')
@@ -1169,6 +1198,7 @@ def seed_all():
     ResponseSchema = apps.get_model('metacognition', 'ResponseSchema')
 
     with bypass_canonical_lock():
+        cleanup_legacy_corruptions(CognitiveBlueprint)
         seed_tools(ToolDefinition)
         seed_architect(CognitiveBlueprint, ReasoningStep)
         seed_nightmanager(CognitiveBlueprint, ReasoningStep, ResponseSchema, ToolDefinition)
@@ -1177,6 +1207,8 @@ def seed_all():
         seed_computational_logic(CognitiveBlueprint, ReasoningStep, ToolDefinition)
         seed_reasoning_with_code_sandbox(CognitiveBlueprint, ReasoningStep, ToolDefinition)
         seed_lint_grips_node(CognitiveBlueprint, ReasoningStep, ResponseSchema)
+        seed_lint_grips_edge(CognitiveBlueprint, ReasoningStep, ResponseSchema)
+        seed_grips_stub_filler(CognitiveBlueprint, ReasoningStep, ToolDefinition)
         seed_digest_document_chunk(CognitiveBlueprint, ReasoningStep, ResponseSchema)
         seed_evaluate_concept_neighbors(CognitiveBlueprint, ReasoningStep, ResponseSchema)
         seed_evaluate_cross_domain(CognitiveBlueprint, ReasoningStep, ResponseSchema)
@@ -1201,7 +1233,8 @@ def seed_evidence_extractor(CognitiveBlueprint, ReasoningStep, ToolDefinition):
             defaults={
                 'description': "Retrieves relevant literature chunks deterministically and extracts cited, quantitative empirical findings into working memory.",
                 'is_canonical': True,
-                'is_autonomous': True
+                'is_autonomous': True,
+                'category': 'REASONING'
             }
         )
 
@@ -1259,7 +1292,8 @@ def seed_visual_evidence_investigator(CognitiveBlueprint, ReasoningStep, ToolDef
             defaults={
                 'description': "Retrieves literature chunks deterministically and inspects charts, plots, and figures using multimodal tools to extract exact numerical and empirical evidence into working memory.",
                 'is_canonical': True,
-                'is_autonomous': True
+                'is_autonomous': True,
+                'category': 'REASONING'
             }
         )
 
@@ -1324,7 +1358,7 @@ def seed_visual_evidence_investigator(CognitiveBlueprint, ReasoningStep, ToolDef
 def seed_deep_reader(CognitiveBlueprint, ReasoningStep, ToolDefinition, ResponseSchema):
     bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="Deep_Reader",
-        defaults={'description': "Super retriever and synthesizer for augmenting RAG.", 'is_canonical': True}
+        defaults={'description': "Super retriever and synthesizer for augmenting RAG.", 'is_canonical': True, 'category': 'REASONING'}
     )
     
     ReasoningStep.objects.filter(blueprint=bp).delete()
@@ -1406,7 +1440,7 @@ def seed_deep_reader(CognitiveBlueprint, ReasoningStep, ToolDefinition, Response
 def seed_research_evaluation(CognitiveBlueprint, ReasoningStep, ResponseSchema):
     bp_eval, _ = CognitiveBlueprint.objects.update_or_create(
         name="ResearchEvaluation",
-        defaults={'description': "Full end-to-end pipeline for doctests.", 'is_canonical': True}
+        defaults={'description': "Full end-to-end pipeline for doctests.", 'is_canonical': True, 'category': 'REASONING'}
     )
     
     schema_research, _ = ResponseSchema.objects.get_or_create(
@@ -1456,7 +1490,7 @@ def seed_research_evaluation(CognitiveBlueprint, ReasoningStep, ResponseSchema):
 def seed_strategic_plan(CognitiveBlueprint, ReasoningStep, ResponseSchema):
     bp_strat, _ = CognitiveBlueprint.objects.update_or_create(
         name="StrategicPlan",
-        defaults={'description': "Strategic Planning isolated pipeline", 'is_canonical': True}
+        defaults={'description': "Strategic Planning isolated pipeline", 'is_canonical': True, 'category': 'REASONING'}
     )
     
     schema_plan, _ = ResponseSchema.objects.get_or_create(
@@ -1464,31 +1498,60 @@ def seed_strategic_plan(CognitiveBlueprint, ReasoningStep, ResponseSchema):
     )
     
     ReasoningStep.objects.filter(blueprint=bp_strat).delete()
-    ReasoningStep.objects.create(
+    step1 = ReasoningStep.objects.create(
         blueprint=bp_strat,
         name="Plan Strategy",
         system_prompt="You are planning a strategy.",
         is_start_node=True,
         output_schema=schema_plan
     )
+    step2 = ReasoningStep.objects.create(
+        blueprint=bp_strat,
+        name="Critique Strategic Feasibility",
+        system_prompt=(
+            "Critique the proposed strategic steps. Ensure every step has clear prerequisites, measurable deliverables, "
+            "and realistic assumptions. If the plan is unfeasible, overly vague, or missing critical contingencies, reject it."
+        ),
+        evaluation_criteria="Pass only if the strategic plan is actionable, coherent, and rigorously structured.",
+        max_retries=2
+    )
+    step1.on_success_step = step2
+    step1.save()
+    step2.on_failure_step = step1 # Level-1 loop-back
+    step2.save()
 
 def seed_propose_blueprint(CognitiveBlueprint, ReasoningStep, ToolDefinition):
     bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="Propose Blueprint",
-        defaults={'description': "Dynamically designs and saves a new CognitiveBlueprint to the database.", 'is_canonical': True}
+        defaults={'description': "Dynamically designs and saves a new CognitiveBlueprint to the database.", 'is_canonical': True, 'category': 'SYSTEM'}
     )
     
     ReasoningStep.objects.filter(blueprint=bp).delete()
     
     create_tool = ToolDefinition.objects.filter(name="create_blueprint").first()
     
-    step = ReasoningStep.objects.create(
+    step1 = ReasoningStep.objects.create(
         blueprint=bp, name="Blueprint Architect",
         system_prompt="You are a metacognitive architect. Your goal is to design a new agentic blueprint for a novel task. Use the 'create_blueprint' tool to save it. Return the name and ID of the created blueprint.",
         is_start_node=True,
     )
     if create_tool:
-        step.available_tools.add(create_tool)
+        step1.available_tools.add(create_tool)
+
+    step2 = ReasoningStep.objects.create(
+        blueprint=bp,
+        name="Validate Blueprint Integrity",
+        system_prompt=(
+            "Inspect the newly proposed blueprint specification. Verify that the blueprint has defined start nodes, "
+            "valid tool assignments, and coherent routing logic. If the definition is incomplete or invalid, loop back."
+        ),
+        evaluation_criteria="Pass only if the blueprint definition is complete, contains valid steps, and has proper terminal or routing logic.",
+        max_retries=2
+    )
+    step1.on_success_step = step2
+    step1.save()
+    step2.on_failure_step = step1 # Level-1 loop-back
+    step2.save()
 
 def seed_task_decomposer(CognitiveBlueprint, ReasoningStep, ResponseSchema, ToolDefinition):
     from .models import bypass_canonical_lock
@@ -1505,6 +1568,7 @@ def seed_task_decomposer(CognitiveBlueprint, ReasoningStep, ResponseSchema, Tool
                 'description': "Iteratively process nested tasks using a JSON queue.",
                 'is_canonical': True,
                 'is_autonomous': True,
+                'category': 'REASONING',
             }
         )
         
@@ -1568,7 +1632,7 @@ def seed_lint_grips_edge(CognitiveBlueprint, ReasoningStep, ResponseSchema):
     
     bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="LintGripsEdge",
-        defaults={'description': "Metacognitive blueprint that rewrites KnowledgeEdge justifications to be human-readable, removing placeholder terms."}
+        defaults={'description': "Metacognitive blueprint that rewrites KnowledgeEdge justifications to be human-readable, removing placeholder terms.", 'category': 'GRIPS'}
     )
     
     ReasoningStep.objects.filter(blueprint=bp).delete()
@@ -1599,7 +1663,21 @@ def seed_lint_grips_edge(CognitiveBlueprint, ReasoningStep, ResponseSchema):
         is_start_node=True, 
     )
     step1.available_tools.add(lint_tool)
+    
+    step2 = ReasoningStep.objects.create(
+        blueprint=bp,
+        name="Verify Justification Quality",
+        system_prompt=(
+            "Evaluate the rewritten relationship justification. Confirm that all placeholder terms (e.g. 'Concept A', 'Concept B') "
+            "have been completely eliminated and replaced with specific, clear domain entities. If any placeholder or generic text remains, reject."
+        ),
+        evaluation_criteria="Pass only if the justification is clear and completely free of placeholders like Concept A/B.",
+        max_retries=2
+    )
+    step1.on_success_step = step2
     step1.save()
+    step2.on_failure_step = step1 # Level-1 loop-back
+    step2.save()
 
 def seed_lint_grips_node(CognitiveBlueprint, ReasoningStep, ResponseSchema):
     from metacognition.models import ToolDefinition
@@ -1607,7 +1685,7 @@ def seed_lint_grips_node(CognitiveBlueprint, ReasoningStep, ResponseSchema):
     
     bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="LintGripsNode",
-        defaults={'description': "Metacognitive blueprint that evaluates ConceptNodes against a style guide and rewrites them if invalid.", 'is_canonical': True}
+        defaults={'description': "Metacognitive blueprint that evaluates ConceptNodes against a style guide and rewrites them if invalid.", 'is_canonical': True, 'category': 'GRIPS'}
     )
     
     ReasoningStep.objects.filter(blueprint=bp).delete()
@@ -1683,7 +1761,7 @@ def seed_digest_document_chunk(CognitiveBlueprint, ReasoningStep, ResponseSchema
     
     bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="DigestDocumentChunk",
-        defaults={'description': "Extracts operational concepts and claims from a document chunk.", 'is_canonical': True}
+        defaults={'description': "Extracts operational concepts and claims from a document chunk.", 'is_canonical': True, 'category': 'GRIPS'}
     )
     
     ReasoningStep.objects.filter(blueprint=bp).delete()
@@ -1750,11 +1828,22 @@ def seed_digest_document_chunk(CognitiveBlueprint, ReasoningStep, ResponseSchema
         is_start_node=True
     )
     step1.available_tools.add(save_tool)
-    step1.save()
     
-    step1.on_success_step = None
-    step1.on_failure_step = None
+    step2 = ReasoningStep.objects.create(
+        blueprint=bp,
+        name="Validate Concept Quality",
+        system_prompt=(
+            "Inspect the extracted concepts and claims. Verify that titles are clean and not prefixed with document IDs, "
+            "codes, or punctuation, and that narrative_content adheres to the required Markdown sections (Definition, Operational Logic, Empirical Context). "
+            "If invalid or superficial, reject."
+        ),
+        evaluation_criteria="Pass only if extracted concepts meet structure and heading requirements without malformed titles.",
+        max_retries=2
+    )
+    step1.on_success_step = step2
     step1.save()
+    step2.on_failure_step = step1 # Level-1 loop-back
+    step2.save()
 
 def seed_evaluate_concept_neighbors(CognitiveBlueprint, ReasoningStep, ResponseSchema):
     from metacognition.models import ToolDefinition
@@ -1762,7 +1851,7 @@ def seed_evaluate_concept_neighbors(CognitiveBlueprint, ReasoningStep, ResponseS
     
     bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="EvaluateConceptNeighbors",
-        defaults={'description': "Evaluates two concepts for merge/edge/distinct relation.", 'is_canonical': True}
+        defaults={'description': "Evaluates two concepts for merge/edge/distinct relation.", 'is_canonical': True, 'category': 'GRIPS'}
     )
     
     ReasoningStep.objects.filter(blueprint=bp).delete()
@@ -1795,11 +1884,21 @@ def seed_evaluate_concept_neighbors(CognitiveBlueprint, ReasoningStep, ResponseS
         is_start_node=True
     )
     step1.available_tools.add(eval_tool)
-    step1.save()
     
-    step1.on_success_step = None
-    step1.on_failure_step = None
+    step2 = ReasoningStep.objects.create(
+        blueprint=bp,
+        name="Verify Evaluation Quality",
+        system_prompt=(
+            "Review the evaluation decision (MERGE, EDGE, or DISTINCT) and its justification. Confirm that the rationale "
+            "is substantiated by concrete semantic and structural attributes rather than vague assertions. If the rationale is insufficient, reject."
+        ),
+        evaluation_criteria="Pass only if the decision is clear, unambiguous, and supported by concrete factual rationale.",
+        max_retries=2
+    )
+    step1.on_success_step = step2
     step1.save()
+    step2.on_failure_step = step1 # Level-1 loop-back
+    step2.save()
 
 def seed_evaluate_cross_domain(CognitiveBlueprint, ReasoningStep, ResponseSchema):
     from metacognition.models import ToolDefinition
@@ -1807,7 +1906,7 @@ def seed_evaluate_cross_domain(CognitiveBlueprint, ReasoningStep, ResponseSchema
     
     bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="EvaluateCrossDomain",
-        defaults={'description': "Evaluates concepts across domains for analogies.", 'is_canonical': True}
+        defaults={'description': "Evaluates concepts across domains for analogies.", 'is_canonical': True, 'category': 'GRIPS'}
     )
     
     ReasoningStep.objects.filter(blueprint=bp).delete()
@@ -1840,8 +1939,18 @@ def seed_evaluate_cross_domain(CognitiveBlueprint, ReasoningStep, ResponseSchema
         is_start_node=True
     )
     step1.available_tools.add(eval_tool)
-    step1.save()
     
-    step1.on_success_step = None
-    step1.on_failure_step = None
+    step2 = ReasoningStep.objects.create(
+        blueprint=bp,
+        name="Verify Structural Analogy",
+        system_prompt=(
+            "Critique the cross-domain analogy. Verify whether the conceptual isomorphism or functional correspondence is genuinely established. "
+            "If the connection is superficial, specious, or unsupported, reject."
+        ),
+        evaluation_criteria="Pass only if the analogy is structurally sound and grounded in valid functional correspondence.",
+        max_retries=2
+    )
+    step1.on_success_step = step2
     step1.save()
+    step2.on_failure_step = step1 # Level-1 loop-back
+    step2.save()

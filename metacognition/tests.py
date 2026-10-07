@@ -3349,5 +3349,172 @@ class DeploymentHardeningPhase1Tests(TestCase):
         self.assertEqual(conv.title, "Optimize range vs battery trade-off for tactical robotic deployment")
 
 
+class DeploymentHardeningPhase2Tests(TestCase):
+    """
+    Tests for WS20 Phase 2:
+    - Purge / Deprecate TASK_COMPLETE tool (Defect 6)
+    - Reliable Synchronous SSE Streaming (Defect 7a)
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_user(username='dh_p2_user', password='password123')
+        self.bp = CognitiveBlueprint.objects.create(
+            name="Phase 2 Blueprint",
+            description="Deployment hardening phase 2 test"
+        )
+        self.step = ReasoningStep.objects.create(
+            blueprint=self.bp,
+            name="Analysis Step",
+            is_start_node=True,
+            system_prompt="Test prompt",
+            evaluation_criteria="Response must satisfy the goal."
+        )
+
+    def test_deprecated_task_complete_tool_function(self):
+        """Task 2.1: metacognition.meta_tools.TASK_COMPLETE returns route_to SUCCESS."""
+        from metacognition.meta_tools import TASK_COMPLETE
+
+        # 1. With final_answer
+        res1 = TASK_COMPLETE({}, {"final_answer": "Analysis complete."})
+        self.assertEqual(res1.get("route_to"), "SUCCESS")
+        self.assertIn("Analysis complete.", res1.get("working_prompt", ""))
+
+        # 2. Without final_answer
+        res2 = TASK_COMPLETE({}, {})
+        self.assertEqual(res2.get("route_to"), "SUCCESS")
+        self.assertIn("Task completed successfully.", res2.get("working_prompt", ""))
+
+    def test_actions_execute_execution_plan_task_complete(self):
+        """Task 2.1: handle_execution_plan handles TASK_COMPLETE even without final_answer."""
+        from metacognition.actions import handle_execution_plan
+
+        state = {"working_prompt": "", "conversation_id": "test_conv"}
+        plan_dict = {
+            "analysis": "Done",
+            "queue": [{
+                "tool": "TASK_COMPLETE",
+                "parameters": {"final_answer": ""},
+                "expected_outcome": "Terminate"
+            }]
+        }
+        ret = handle_execution_plan(state, plan_dict)
+        self.assertEqual(ret.get("route_to"), "SUCCESS")
+        self.assertIn("[TASK COMPLETE]", ret.get("working_prompt", ""))
+
+    @patch('metacognition.compiler.execute_tool')
+    @patch('llm_api.ai_service.AIService.supports_native_tools')
+    @patch('llm_api.ai_service.AIService.generate_response2')
+    def test_action_node_intercepts_unregistered_task_complete(self, mock_gen, mock_native, mock_exec):
+        """Task 2.1: Action node handles TASK_COMPLETE cleanly even if not in step.available_tools."""
+        from metacognition.compiler import _make_action_node
+        from langchain_core.messages import HumanMessage
+
+        mock_native.return_value = True
+        mock_gen.return_value = [[{"name": "TASK_COMPLETE", "args": {"final_answer": "All done!"}}]]
+
+        # Tool Definition for another tool, so step has tools but NOT TASK_COMPLETE
+        tool_other = ToolDefinition.objects.create(
+            name="other_tool",
+            description="Other",
+            python_path="metacognition.meta_tools.TASK_COMPLETE"
+        )
+        self.step.available_tools.add(tool_other)
+
+        action_fn = _make_action_node(self.step, {self.step.id: self.step.id})
+        state = {
+            "working_memory": [HumanMessage(content="Please do the task")],
+            "user": self.user,
+            "retries_remaining": {},
+            "step_count": 0,
+        }
+
+        result = action_fn(state)
+        self.assertEqual(result.get("route_to"), "SUCCESS")
+        monologue = result.get("internal_monologue", [{}])[0]
+        self.assertIn("Task completed: All done!", monologue.get("output", ""))
+
+    @patch('llm_api.ai_service.AIService.generate_outline')
+    def test_eval_node_evaluates_without_task_complete(self, mock_outline):
+        """Task 2.1: Eval node evaluates criteria when route_to is SELF/SUCCESS without requiring TASK_COMPLETE."""
+        from metacognition.compiler import _make_eval_node
+        from langchain_core.messages import HumanMessage, AIMessage
+        from pydantic import BaseModel
+
+        class DummyEvalResult(BaseModel):
+            passed: bool = True
+            reasoning: str = "Meets all criteria."
+
+        mock_outline.return_value = DummyEvalResult()
+
+        eval_fn = _make_eval_node(self.step, {self.step.id: self.step.id})
+        state = {
+            "route_to": "SELF",
+            "working_memory": [
+                HumanMessage(content="Find X"),
+                AIMessage(content="X is 42")
+            ],
+            "internal_monologue": [{"output": "Found 42"}],
+            "step_count": 1
+        }
+
+        eval_ret = eval_fn(state)
+        # Should evaluate and flip route_to to SUCCESS
+        self.assertEqual(eval_ret.get("route_to"), "SUCCESS")
+        mock_outline.assert_called_once()
+
+    @patch('metacognition.api.subscribe_blueprint_events_sync')
+    def test_stream_blueprint_sync_sse(self, mock_sub):
+        """Task 2.2: stream_blueprint yields Datastar SSE events synchronously."""
+        from django.test import RequestFactory
+        from metacognition.api import stream_blueprint
+
+        def fake_events(channel, timeout=30.0):
+            yield {"event": "step_started", "data": {"step_name": "Analysis", "step_count": 1}}
+            yield {"event": "step_completed", "data": {"step_name": "Analysis", "output": "Done"}}
+            yield {"event": "completed", "data": {"final_response": "### Success\nFormula: $E = mc^2$"}}
+
+        mock_sub.side_effect = fake_events
+
+        factory = RequestFactory()
+        req = factory.get('/api/meta/stream_blueprint/?run_id=test-run-123')
+        resp = stream_blueprint(req, run_id="test-run-123")
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.headers.get("Content-Type"), "text/event-stream")
+
+        content = b"".join(resp.streaming_content).decode("utf-8")
+        self.assertIn("datastar-merge-signals", content)
+        self.assertIn("datastar-patch-elements", content)
+        self.assertIn("Executing: Analysis", content)
+        self.assertIn("Formula:", content)
+
+    def test_stream_blueprint_fast_path(self):
+        """Task 2.2: stream_blueprint returns fast-path when log is already completed."""
+        from django.test import RequestFactory
+        from metacognition.api import stream_blueprint
+        from llm_api.models import Conversation, PromptResponseLog
+
+        conv = Conversation.objects.create(user=self.user, title="Fast Path Conv")
+        log = PromptResponseLog.objects.create(
+            conversation=conv,
+            user=self.user,
+            user_prompt="Quick question",
+            generated_response="**Completed Answer**",
+            blueprint=self.bp,
+            input_tokens=0,
+            output_tokens=0
+        )
+
+        factory = RequestFactory()
+        req = factory.get(f'/api/meta/stream_blueprint/?run_id=fast-run-456&log_id={log.id}')
+        resp = stream_blueprint(req, run_id="fast-run-456", log_id=log.id)
+
+        self.assertEqual(resp.status_code, 200)
+        content = b"".join(resp.streaming_content).decode("utf-8")
+        self.assertIn("Completed Answer", content)
+        self.assertIn('"isStreaming": false', content)
+
+
+
 
 

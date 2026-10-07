@@ -784,6 +784,9 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                 for tc in result:
                     if tc.get("name") in valid_tool_names:
                         validated_result.append(tc)
+                    elif tc.get("name") == "TASK_COMPLETE":
+                        # WS20: Allow deprecated TASK_COMPLETE tool call gracefully
+                        validated_result.append(tc)
                     else:
                         logger.warning(f"LLM tried to call unauthorized/invented tool: {tc.get('name')}")
                         validated_result.append({"error": f"Tool '{tc.get('name')}' is not available."})
@@ -852,6 +855,17 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                 for tool_call in result:
                     tool_name = tool_call["name"]
                     tool_args = tool_call["args"]
+
+                    if tool_name == "TASK_COMPLETE":
+                        logger.info("Deprecated TASK_COMPLETE invoked; treating as clean completion.")
+                        final_ans = tool_args.get("final_answer") or tool_args.get("answer") or ""
+                        msg = f"Task completed: {final_ans}" if final_ans else "Task completed successfully."
+                        route_to = "SUCCESS"
+                        monologue_entry["output"] += f"\n{msg}"
+                        additional_messages.append(SystemMessage(content=msg))
+                        tool_results_str.append(msg)
+                        continue
+
                     try:
                         tool_def = ToolDefinition.objects.get(name=tool_name)
                         
@@ -1063,16 +1077,10 @@ def _make_eval_node(step: ReasoningStep, root_mapping: Dict[int, int]):
         if step.sub_blueprint_id:
             return _intercept_failure(route_to, resume_to, state, step, root_mapping)
             
-        # 3. Determine if this is an interactive step (requires TASK_COMPLETE to finish)
-        has_task_complete = "TASK_COMPLETE" in [t.name for t in step.available_tools.all()]
-        
-        # We only evaluate if:
-        # A) It's a deterministic step (no TASK_COMPLETE), so we evaluate immediately after the tool run (route_to == SELF or SUCCESS)
-        # B) It's an interactive step, and the model explicitly finished (route_to == SUCCESS)
-        should_evaluate = step.evaluation_criteria and (
-            (not has_task_complete) or 
-            (has_task_complete and route_to == "SUCCESS")
-        )
+        # 3. WS20: Deprecated TASK_COMPLETE requirement.
+        # When evaluation criteria is specified, evaluate criteria whenever the step executed its
+        # action (route_to in ("SELF", "SUCCESS", None)) rather than requiring an artificial TASK_COMPLETE tool call.
+        should_evaluate = bool(step.evaluation_criteria) and route_to in ("SELF", "SUCCESS", None)
         
         if should_evaluate:
             from llm_api.apps import service_registry

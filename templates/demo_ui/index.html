@@ -10,6 +10,11 @@
     <!-- Load our custom styles -->
     <link rel="stylesheet" href="{% static 'demo_ui/css/styles.css' %}">
 
+    <!-- Vendored KaTeX Math Rendering (Offline) -->
+    <link rel="stylesheet" href="{% static 'vendor/katex/katex.min.css' %}">
+    <script src="{% static 'vendor/katex/katex.min.js' %}"></script>
+    <script src="{% static 'vendor/katex/contrib/auto-render.min.js' %}"></script>
+
     <!-- HTMX and Datastar for seamless interactions & SSE streaming -->
     <script src="{% static 'vendor/htmx.min.js' %}"></script>
     <script type="module" src="{% static 'vendor/datastar.js' %}"></script>
@@ -192,16 +197,45 @@
             </div>
 
             <!-- GRIPS EXPLORER TAB CONTENT -->
-            <div id="grips-tab" class="tab-content">
-                <div style="flex-shrink: 0;">
-                    <input type="text" name="q" placeholder="Search Concepts..." style="width: 100%; font-size: 0.85rem;"
-                        hx-get="{% url 'demo_ui:grips_explorer_tab' %}" hx-trigger="keyup changed delay:500ms, search, load"
-                        hx-target="#grips-explorer-container" hx-swap="innerHTML">
+            <div id="grips-tab" class="tab-content" style="display: flex; flex-direction: column;">
+                <!-- Grips Sub-Navigation Switch -->
+                <div style="display: flex; gap: 4px; background: #e2e8f0; padding: 3px; border-radius: 6px; margin-bottom: 8px; flex-shrink: 0;">
+                    <button id="grips-btn-concepts" type="button" class="grips-subtab-btn active"
+                        onclick="switchGripsSubView('concepts')"
+                        style="flex: 1; font-size: 0.74rem; font-weight: 600; padding: 4px 8px; border: none; border-radius: 4px; cursor: pointer; background: #ffffff; color: #1e293b; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.15s ease;">
+                        Concepts Graph
+                    </button>
+                    <button id="grips-btn-blueprints" type="button" class="grips-subtab-btn"
+                        hx-get="{% url 'demo_ui:grips_blueprints_tab' %}"
+                        hx-target="#grips-blueprints-container"
+                        hx-trigger="click once"
+                        onclick="switchGripsSubView('blueprints')"
+                        style="flex: 1; font-size: 0.74rem; font-weight: 600; padding: 4px 8px; border: none; border-radius: 4px; cursor: pointer; background: transparent; color: #64748b; transition: all 0.15s ease;">
+                        Knowledge Blueprints
+                    </button>
                 </div>
-                
-                <div id="grips-explorer-container" style="flex: 1; overflow-y: auto;">
-                    <div style="text-align: center; color: var(--text-muted); font-size: 0.78rem; padding: 8px;">
-                        Loading Grips Knowledge Base...
+
+                <!-- Sub-View 1: Concepts Graph -->
+                <div id="grips-subview-concepts" style="display: flex; flex-direction: column; flex: 1; overflow: hidden; gap: 8px;">
+                    <div style="flex-shrink: 0;">
+                        <input type="text" name="q" placeholder="Search Concepts..." style="width: 100%; font-size: 0.85rem;"
+                            hx-get="{% url 'demo_ui:grips_explorer_tab' %}" hx-trigger="keyup changed delay:500ms, search, load"
+                            hx-target="#grips-explorer-container" hx-swap="innerHTML">
+                    </div>
+                    
+                    <div id="grips-explorer-container" style="flex: 1; overflow-y: auto;">
+                        <div style="text-align: center; color: var(--text-muted); font-size: 0.78rem; padding: 8px;">
+                            Loading Grips Knowledge Base...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sub-View 2: Grips Blueprints Pathway -->
+                <div id="grips-subview-blueprints" style="display: none; flex: 1; overflow-y: auto;">
+                    <div id="grips-blueprints-container">
+                        <div style="text-align: center; color: var(--text-muted); font-size: 0.78rem; padding: 12px;">
+                            Loading Grips Blueprints...
+                        </div>
                     </div>
                 </div>
             </div>
@@ -575,6 +609,91 @@
                 resizerRight.classList.remove('dragging');
             }
             document.body.style.cursor = '';
+        });
+    </script>
+
+    <!-- Vendored KaTeX Auto-Render Initializer -->
+    <script>
+        (function() {
+            let isRendering = false;
+            window.renderMath = function(targetEl) {
+                if (!window.renderMathInElement || isRendering) return;
+                try {
+                    isRendering = true;
+                    var container = targetEl || document.getElementById('chat-history') || document.body;
+                    window.renderMathInElement(container, {
+                        delimiters: [
+                            {left: '$$', right: '$$', display: true},
+                            {left: '$', right: '$', display: false},
+                            {left: '\\(', right: '\\)', display: false},
+                            {left: '\\[', right: '\\]', display: true}
+                        ],
+                        throwOnError: false
+                    });
+                } catch(e) {
+                    console.debug('KaTeX render error:', e);
+                } finally {
+                    setTimeout(function() { isRendering = false; }, 30);
+                }
+            };
+
+            document.addEventListener('DOMContentLoaded', function() {
+                window.renderMath();
+            });
+
+            document.body.addEventListener('htmx:afterSwap', function(evt) {
+                window.renderMath(evt.detail.target);
+            });
+
+            var chatHistory = document.getElementById('chat-history');
+            if (chatHistory && window.MutationObserver) {
+                var observer = new MutationObserver(function() {
+                    window.renderMath(chatHistory);
+                });
+                observer.observe(chatHistory, { childList: true, subtree: true });
+            }
+        })();
+
+        function switchGripsSubView(subview) {
+            const conceptsBtn = document.getElementById('grips-btn-concepts');
+            const blueprintsBtn = document.getElementById('grips-btn-blueprints');
+            const conceptsView = document.getElementById('grips-subview-concepts');
+            const blueprintsView = document.getElementById('grips-subview-blueprints');
+
+            if (subview === 'concepts') {
+                conceptsView.style.display = 'flex';
+                blueprintsView.style.display = 'none';
+                conceptsBtn.style.background = '#ffffff';
+                conceptsBtn.style.color = '#1e293b';
+                conceptsBtn.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
+                blueprintsBtn.style.background = 'transparent';
+                blueprintsBtn.style.color = '#64748b';
+                blueprintsBtn.style.boxShadow = 'none';
+            } else {
+                conceptsView.style.display = 'none';
+                blueprintsView.style.display = 'block';
+                blueprintsBtn.style.background = '#ffffff';
+                blueprintsBtn.style.color = '#1e293b';
+                blueprintsBtn.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
+                conceptsBtn.style.background = 'transparent';
+                conceptsBtn.style.color = '#64748b';
+                conceptsBtn.style.boxShadow = 'none';
+            }
+        }
+    </script>
+
+    <!-- Datastar & HTMX DOM Mutation Re-evaluation -->
+    <script type="module">
+        import { apply } from "{% static 'vendor/datastar.js' %}";
+        window.datastarApply = apply;
+        document.body.addEventListener('htmx:afterSwap', function(evt) {
+            if (window.datastarApply) {
+                try {
+                    window.datastarApply();
+                } catch(e) {
+                    console.debug("Datastar apply after swap error:", e);
+                }
+            }
         });
     </script>
 </body>

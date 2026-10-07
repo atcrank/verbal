@@ -94,6 +94,19 @@ class CognitiveBlueprint(models.Model):
     moderation_lists = models.ManyToManyField(ModerationList, blank=True, help_text="Reusable moderation rules applied to all steps in this blueprint.")
     is_autonomous = models.BooleanField(default=False, help_text="If True, self-routing on failure (route_to=SELF) is handled automatically rather than pausing for user input.")
     is_canonical = models.BooleanField(default=False, help_text="If True, this object is maintained by seed.py and cannot be mutated.")
+    
+    CATEGORY_CHOICES = [
+        ("REASONING", "Conversational Reasoning"),
+        ("GRIPS", "Grips Knowledge Graph"),
+        ("SYSTEM", "System Infrastructure"),
+    ]
+    category = models.CharField(
+        max_length=50,
+        choices=CATEGORY_CHOICES,
+        default="REASONING",
+        db_index=True,
+        help_text="Discriminates user-facing conversational reasoning blueprints from Grips maintenance and background system routines."
+    )
 
     @property
     def family_success_probability(self):

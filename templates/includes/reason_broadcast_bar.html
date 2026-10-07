@@ -20,6 +20,9 @@
         </div>
 
         <div class="reason-nav-links">
+            <!-- Active Model Indicator & Provider Selector -->
+            {% include "includes/active_model_pill.html" %}
+
             <!-- Governance Policy Lockdown Badge & Modal Trigger -->
             <div class="gov-lockdown-container" id="gov-lockdown-container">
                 <button type="button" class="gov-lockdown-pill {{ governance.color_class }}" id="gov-lockdown-pill" onclick="toggleGovernanceModal()" title="System Lockdown Policy: {{ governance.badge_label }} (Click for details)">

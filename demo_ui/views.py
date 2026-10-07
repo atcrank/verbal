@@ -5,6 +5,7 @@ logger = logging.getLogger(__name__)
 import json
 from django.shortcuts import render, HttpResponse, get_object_or_404
 from django.http import JsonResponse, FileResponse, Http404, HttpResponseForbidden, StreamingHttpResponse
+from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from django.utils.safestring import mark_safe
 from llm_api.models import Conversation, PromptResponseLog
@@ -31,7 +32,9 @@ def _prepare_log_for_display(log):
         except Exception:
             pass
                 
-    if markdown:
+    if ai_text.startswith(('<div id="blueprint-exec-', '<div id="gen-stream-')):
+        log.html_response = mark_safe(ai_text)
+    elif markdown:
         log.html_response = mark_safe(markdown.markdown(ai_text, extensions=['fenced_code', 'tables', 'nl2br', 'sane_lists']))
     else:
         from django.utils.html import linebreaks
@@ -49,11 +52,132 @@ def _prepare_log_for_display(log):
         
     return log
 
+
+def group_conversation_logs_for_display(logs):
+    """
+    Groups intermediate blueprint logs under their primary/final response turn.
+    Extracts intermediate reasoning steps into `log.thinking_steps` and attaches
+    the lightweight node visualizer (`log.visualizer_html`).
+    """
+    from metacognition.visualizer import render_blueprint_visualizer_html
+
+    display_logs = []
+    i = 0
+    n = len(logs)
+
+    while i < n:
+        log = logs[i]
+
+        # If this log is part of an async streaming session, pass it as-is
+        resp = str(log.generated_response or "")
+        if resp.startswith('<div id="blueprint-exec-'):
+            _prepare_log_for_display(log)
+            display_logs.append(log)
+            i += 1
+            continue
+
+        # Check if this log is part of a blueprint run
+        if log.blueprint_id:
+            blueprint = log.blueprint
+            run_logs = [log]
+            j = i + 1
+
+            # Collect consecutive logs that belong to the same blueprint run
+            while j < n and logs[j].blueprint_id == log.blueprint_id:
+                if logs[j].parent_log_id == run_logs[-1].id or logs[j].created_at >= run_logs[-1].created_at:
+                    run_logs.append(logs[j])
+                    j += 1
+                else:
+                    break
+
+            if len(run_logs) > 1:
+                initial_log = run_logs[0]
+                leaf_log = run_logs[-1]
+
+                intermediate_steps = []
+                completed_step_names = []
+                failed_step_names = []
+                total_in = sum(l.input_tokens for l in run_logs)
+                total_out = sum(l.output_tokens for l in run_logs)
+
+                for step_idx, s_log in enumerate(run_logs[:-1], start=1):
+                    step_name = s_log.reasoning_step.name if s_log.reasoning_step else f"Step {step_idx}"
+                    is_failed = (s_log.step_status == "FAILURE")
+                    if is_failed:
+                        failed_step_names.append(step_name)
+                    else:
+                        completed_step_names.append(step_name)
+
+                    step_text = str(s_log.generated_response or "").strip()
+                    html_content = mark_safe(markdown.markdown(step_text, extensions=['fenced_code', 'tables', 'nl2br', 'sane_lists'])) if markdown else step_text
+
+                    intermediate_steps.append({
+                        "step_badge": "❌" if is_failed else "✅",
+                        "step_title": f"Step {step_idx}: {step_name}",
+                        "html_content": html_content,
+                    })
+
+                leaf_step_name = leaf_log.reasoning_step.name if leaf_log.reasoning_step else f"Step {len(run_logs)}"
+                if leaf_log.step_status == "FAILURE":
+                    failed_step_names.append(leaf_step_name)
+                else:
+                    completed_step_names.append(leaf_step_name)
+
+                leaf_log.user_prompt = initial_log.user_prompt
+                leaf_log.thinking_steps = intermediate_steps
+                leaf_log.input_tokens = total_in
+                leaf_log.output_tokens = total_out
+                leaf_log.visualizer_html = render_blueprint_visualizer_html(
+                    blueprint,
+                    completed_steps=completed_step_names,
+                    active_step=None,
+                    failed_steps=failed_step_names
+                )
+                _prepare_log_for_display(leaf_log)
+                display_logs.append(leaf_log)
+                i = j
+                continue
+            else:
+                log.thinking_steps = []
+                log.visualizer_html = render_blueprint_visualizer_html(blueprint)
+                _prepare_log_for_display(log)
+                display_logs.append(log)
+                i += 1
+                continue
+        else:
+            _prepare_log_for_display(log)
+            display_logs.append(log)
+            i += 1
+
+    return display_logs
+
+
 @login_required
 def index(request):
     """Renders the main Demo UI shell."""
     conversations = Conversation.objects.filter(user=request.user).exclude(user__username="NightManager")
-    blueprints = list(CognitiveBlueprint.objects.exclude(name__startswith="NightManager").exclude(name="The Architect"))
+    try:
+        blueprints = list(
+            CognitiveBlueprint.objects.filter(category="REASONING")
+            .exclude(name__startswith="NightManager")
+            .exclude(name="The Architect")
+            .exclude(name__startswith=":")
+            .exclude(name__startswith="]")
+            .exclude(name="CognitiveBlueprintProposal")
+            .order_by("name")
+        )
+    except Exception:
+        blueprints = list(
+            CognitiveBlueprint.objects.exclude(name__startswith="NightManager")
+            .exclude(name="The Architect")
+            .exclude(name__icontains="Grips")
+            .exclude(name__startswith="LintGrips")
+            .exclude(name__in=["DigestDocumentChunk", "EvaluateConceptNeighbors", "EvaluateCrossDomain", "Propose Blueprint"])
+            .exclude(name__startswith=":")
+            .exclude(name__startswith="]")
+            .exclude(name="CognitiveBlueprintProposal")
+            .order_by("name")
+        )
     for bp in blueprints:
         compat = evaluate_blueprint_governance(bp, request.user)
         bp.governance_status = compat["status"]
@@ -70,9 +194,8 @@ def index(request):
     if conv_id:
         active_conversation = Conversation.objects.filter(id=conv_id, user=request.user).first()
         if active_conversation:
-            initial_logs = list(active_conversation.logs.order_by('created_at'))
-            for log in initial_logs:
-                _prepare_log_for_display(log)
+            raw_logs = list(active_conversation.logs.order_by('created_at').select_related('blueprint', 'reasoning_step'))
+            initial_logs = group_conversation_logs_for_display(raw_logs)
             initial_files = _get_workspace_files_list(active_conversation)
 
     return render(request, 'demo_ui/index.html', {
@@ -134,11 +257,8 @@ def get_conversation(request, conversation_id):
     """HTMX endpoint to load an existing conversation's history."""
     conversation = get_object_or_404(Conversation, id=conversation_id, user=request.user)
     
-    # Logs are ordered by -created_at, so we reverse them for top-to-bottom chat flow
-    logs = list(conversation.logs.all())[::-1]
-    
-    for log in logs:
-        _prepare_log_for_display(log)
+    raw_logs = list(conversation.logs.order_by('created_at').select_related('blueprint', 'reasoning_step'))
+    logs = group_conversation_logs_for_display(raw_logs)
 
     response_html = render(request, 'demo_ui/chat_history.html', {
         'conversation': conversation,
@@ -211,27 +331,33 @@ def send_message(request):
             from metacognition.tasks import task_run_blueprint_async
             
             run_id = str(uuid4())
-            streaming_markup = f"""<div id="blueprint-exec-{run_id}" data-signals="{{isStreaming: true}}" data-on-load="@get('/api/meta/stream_blueprint/?run_id={run_id}')">
-<div id="blueprint-status" class="agent-step active">
-    <span class="badge">Dispatched</span>
-    <strong>Executing cognitive blueprint asynchronously...</strong>
-</div>
-<div id="tool-approval-container"></div>
-<div id="monologue-stream"></div>
-<div id="blueprint-final-response"></div>
-</div>"""
-            
             log = PromptResponseLog.objects.create(
                 system_prompt="[Async Blueprint Execution]", 
                 user_prompt=user_prompt,
                 conversation=conversation,
                 parent_log=parent_log,
                 blueprint_id=int(blueprint_id),
-                generated_response=streaming_markup, 
+                generated_response="", 
                 user=request.user,
                 input_tokens=0,
                 output_tokens=0
             )
+
+            streaming_markup = f"""<div id="blueprint-exec-{run_id}" data-signals="{{isStreaming: true}}" data-on-load="@get('/api/meta/stream_blueprint/?run_id={run_id}&log_id={log.id}')">
+<div id="blueprint-visualizer" class="blueprint-visualizer"></div>
+<div id="blueprint-status" class="agent-step active">
+    <span class="badge">Dispatched</span>
+    <strong>Executing cognitive blueprint asynchronously...</strong>
+</div>
+<div id="tool-approval-container"></div>
+<details id="blueprint-thinking-trace" class="blueprint-thinking-trace" open>
+    <summary class="thinking-trace-summary" id="thinking-trace-summary">💭 Thinking Trace (0 steps)</summary>
+    <div id="monologue-stream" class="thinking-trace-content"></div>
+</details>
+<div id="blueprint-final-response" class="blueprint-final-response"></div>
+</div>"""
+            log.generated_response = streaming_markup
+            log.save(update_fields=["generated_response"])
 
             task_run_blueprint_async.enqueue(
                 blueprint_id=int(blueprint_id),
@@ -399,6 +525,12 @@ def stream_generation(request):
                 html = markdown.markdown(log.generated_response, extensions=['fenced_code', 'tables', 'nl2br', 'sane_lists']) if markdown else log.generated_response
                 frag = f'<div id="gen-stream-{run_id}" class="markdown-body">{html}</div>'
                 yield DatastarSSE.patch_elements(frag, selector=f"#gen-stream-{run_id}", mode="morph")
+                if log.output_tokens:
+                    out_frag = f'<span id="token-out-{log_id}" style="color: var(--text-main); font-weight: 600;">{log.output_tokens}</span>'
+                    yield DatastarSSE.patch_elements(out_frag, selector=f"#token-out-{log_id}", mode="morph")
+                if log.input_tokens:
+                    in_frag = f'<span id="token-in-{log_id}" style="color: var(--text-main); font-weight: 600;">{log.input_tokens}</span>'
+                    yield DatastarSSE.patch_elements(in_frag, selector=f"#token-in-{log_id}", mode="morph")
                 yield DatastarSSE.patch_signals({"isStreaming": False, "status": "completed"})
                 return
 
@@ -409,9 +541,23 @@ def stream_generation(request):
 
             if event_type == "completed":
                 final_text = data.get("final_response", "")
+                output_tokens = data.get("output_tokens")
+                input_tokens = data.get("input_tokens")
+                if (output_tokens is None or input_tokens is None) and log_id:
+                    fresh_log = PromptResponseLog.objects.filter(id=log_id).first()
+                    if fresh_log:
+                        output_tokens = fresh_log.output_tokens
+                        input_tokens = fresh_log.input_tokens
+
                 html = markdown.markdown(final_text, extensions=['fenced_code', 'tables', 'nl2br', 'sane_lists']) if markdown else final_text
                 frag = f'<div id="gen-stream-{run_id}" class="markdown-body">{html}</div>'
                 yield DatastarSSE.patch_elements(frag, selector=f"#gen-stream-{run_id}", mode="morph")
+                if log_id and output_tokens is not None:
+                    out_frag = f'<span id="token-out-{log_id}" style="color: var(--text-main); font-weight: 600;">{output_tokens}</span>'
+                    yield DatastarSSE.patch_elements(out_frag, selector=f"#token-out-{log_id}", mode="morph")
+                if log_id and input_tokens is not None:
+                    in_frag = f'<span id="token-in-{log_id}" style="color: var(--text-main); font-weight: 600;">{input_tokens}</span>'
+                    yield DatastarSSE.patch_elements(in_frag, selector=f"#token-in-{log_id}", mode="morph")
                 yield DatastarSSE.patch_signals({"isStreaming": False, "status": "completed"})
                 break
             elif event_type == "error":
@@ -572,13 +718,13 @@ def branch_conversation(request, log_id):
             model_name=old_log.model_name,
             reasoning_step=old_log.reasoning_step,
             step_status=old_log.step_status,
+            blueprint=old_log.blueprint,
         )
         log_map[old_log.id] = cloned_log
         last_cloned = cloned_log
 
-    logs = list(new_conv.logs.order_by('created_at'))
-    for log in logs:
-        _prepare_log_for_display(log)
+    raw_logs = list(new_conv.logs.order_by('created_at').select_related('blueprint', 'reasoning_step'))
+    logs = group_conversation_logs_for_display(raw_logs)
 
     chat_html = render(request, 'demo_ui/chat_history.html', {
         'conversation': new_conv,
@@ -825,3 +971,74 @@ def fill_grips_stub(request, concept_id):
     except Exception as e:
         logger.exception("Failed to fill Grips stub")
         return HttpResponse(f'<span style="color: #b91c1c; font-size: 0.72rem; font-weight: 500;">Error: {str(e)}</span>', status=500)
+
+
+@login_required
+@require_POST
+def set_active_provider(request):
+    """
+    HTMX endpoint to switch the user's active inference provider between local GPU and external models.
+    """
+    from llm_api.models import UserActiveModel, ExternalAIModel
+    from metacognition.context_processors import active_model_context
+
+    use_external_raw = request.POST.get("use_external", "false").lower()
+    use_external = use_external_raw in ("true", "1", "yes")
+    model_id = request.POST.get("model_id")
+
+    active_external = None
+    if use_external and model_id:
+        try:
+            active_external = ExternalAIModel.objects.get(id=model_id)
+        except ExternalAIModel.DoesNotExist:
+            use_external = False
+
+    UserActiveModel.objects.update_or_create(
+        user=request.user,
+        defaults={
+            "use_external": use_external,
+            "active_external": active_external if use_external else None,
+        }
+    )
+
+    context = active_model_context(request)
+    return render(request, "includes/active_model_pill.html", context)
+
+
+@login_required
+def grips_blueprints_tab(request):
+    """
+    HTMX endpoint to render the Grips Knowledge Graph blueprints pathway.
+    Presents the strategies clearly with step sequences, level-1 loop-back indicators,
+    and admin access links.
+    """
+    from metacognition.models import CognitiveBlueprint
+    try:
+        blueprints = list(
+            CognitiveBlueprint.objects.filter(category="GRIPS")
+            .prefetch_related('steps__available_tools', 'steps__output_schema')
+            .order_by('name')
+        )
+    except Exception:
+        grips_names = [
+            "Grips Stub Filler", "LintGripsEdge", "LintGripsNode",
+            "DigestDocumentChunk", "EvaluateConceptNeighbors", "EvaluateCrossDomain"
+        ]
+        blueprints = list(
+            CognitiveBlueprint.objects.filter(name__in=grips_names)
+            .prefetch_related('steps__available_tools', 'steps__output_schema')
+            .order_by('name')
+        )
+
+    for bp in blueprints:
+        steps = list(bp.steps.all())
+        has_loopback = any(
+            (s.on_failure_step is not None) or (s.on_success_step == s)
+            for s in steps
+        )
+        bp.has_loopback = has_loopback
+        bp.ordered_steps = steps
+
+    return render(request, 'demo_ui/grips_blueprints.html', {
+        'blueprints': blueprints
+    })

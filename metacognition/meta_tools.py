@@ -809,10 +809,14 @@ def database_backup(state: dict, params: dict) -> str:
 
 def TASK_COMPLETE(state: dict, params: dict) -> dict:
     """
-    Signals that the agent has finished all its planned work and is ready to go to sleep.
+    [DEPRECATED] Signals that the agent has finished all its planned work.
+    Maintained for backward-compatibility with older blueprints and models.
+    Treats invocation as a clean exit signal setting route_to='SUCCESS'.
     """
+    final_answer = params.get("final_answer") or params.get("answer") or ""
+    msg = f"Task completed successfully: {final_answer}" if final_answer else "Task completed successfully. Shutting down."
     return {
-        "working_prompt": "Task completed successfully. Shutting down.",
+        "working_prompt": msg,
         "route_to": "SUCCESS"
     }
 

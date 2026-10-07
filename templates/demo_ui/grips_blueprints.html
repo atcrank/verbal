@@ -1,0 +1,98 @@
+<div class="grips-blueprints-view" style="display: flex; flex-direction: column; gap: 14px; padding: 4px;">
+    <!-- View Header -->
+    <div style="padding: 10px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">
+        <div style="font-weight: 700; font-size: 0.95rem; color: #1e293b; display: flex; align-items: center; justify-content: space-between;">
+            <span>Grips Knowledge Blueprints</span>
+            <span style="font-size: 0.72rem; font-weight: 600; padding: 2px 8px; border-radius: 12px; background: #e0e7ff; color: #4338ca;">
+                {{ blueprints|length }} Registered
+            </span>
+        </div>
+        <p style="font-size: 0.78rem; color: #64748b; margin: 4px 0 0 0; line-height: 1.35;">
+            Operational thinking graphs dedicated to the Grips ontology. These strategies power concept extraction, relationship evaluation, and automated quality linting.
+        </p>
+    </div>
+
+    <!-- Blueprints Cards List -->
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+        {% for bp in blueprints %}
+        <div class="grips-bp-card" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); transition: border-color 0.15s ease;">
+            <!-- Header Row -->
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 6px;">
+                <div>
+                    <h4 style="margin: 0; font-size: 0.92rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+                        {{ bp.name }}
+                    </h4>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+                    {% if bp.has_loopback %}
+                    <span style="display: inline-flex; align-items: center; gap: 3px; font-size: 0.7rem; font-weight: 600; color: #065f46; background: #d1fae5; border: 1px solid #a7f3d0; padding: 2px 7px; border-radius: 12px;" title="Includes self-check or failure recovery loop-back edge">
+                        ✓ Level-1 Self-Check
+                    </span>
+                    {% else %}
+                    <span style="font-size: 0.7rem; font-weight: 500; color: #64748b; background: #f1f5f9; padding: 2px 7px; border-radius: 12px;">
+                        Single-pass
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Description -->
+            <p style="font-size: 0.79rem; color: #475569; margin: 0 0 10px 0; line-height: 1.4;">
+                {{ bp.description }}
+            </p>
+
+            <!-- Execution Pipeline Flow -->
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 10px; margin-bottom: 10px;">
+                <div style="font-size: 0.72rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 6px;">
+                    Execution Flow ({{ bp.ordered_steps|length }} step{% if bp.ordered_steps|length != 1 %}s{% endif %})
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                    {% for step in bp.ordered_steps %}
+                    <div style="display: flex; align-items: flex-start; gap: 8px; font-size: 0.78rem; background: #ffffff; padding: 6px 8px; border-radius: 4px; border: 1px solid #f1f5f9;">
+                        <span style="font-weight: 700; color: #2563eb; min-width: 18px;">
+                            {{ forloop.counter }}.
+                        </span>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 6px;">
+                                {{ step.name }}
+                                {% if step.is_start_node %}
+                                <span style="font-size: 0.65rem; background: #e0f2fe; color: #0369a1; padding: 1px 5px; border-radius: 3px; font-weight: 600;">Start</span>
+                                {% endif %}
+                                {% if step.on_failure_step %}
+                                <span style="font-size: 0.65rem; background: #fef2f2; color: #b91c1c; padding: 1px 5px; border-radius: 3px; font-weight: 600;" title="Routes to {{ step.on_failure_step.name }} on failure">
+                                    ↺ Loop-back on failure
+                                </span>
+                                {% endif %}
+                            </div>
+                            <!-- Tools -->
+                            {% if step.available_tools.all %}
+                            <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px;">
+                                {% for tool in step.available_tools.all %}
+                                <span style="font-size: 0.68rem; font-family: monospace; background: #f1f5f9; color: #475569; padding: 1px 5px; border-radius: 3px; border: 1px solid #e2e8f0;">
+                                    🔧 {{ tool.name }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Footer Actions -->
+            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+                <a href="/admin/metacognition/cognitiveblueprint/{{ bp.id }}/change/" target="_blank"
+                   style="font-size: 0.74rem; font-weight: 600; color: #2563eb; text-decoration: none; display: inline-flex; align-items: center; gap: 3px; padding: 3px 8px; border-radius: 4px; border: 1px solid #bfdbfe; background: #eff6ff;"
+                   title="Open in Django Admin">
+                    Edit in Admin ↗
+                </a>
+            </div>
+        </div>
+        {% empty %}
+        <div style="text-align: center; color: var(--text-muted); font-size: 0.82rem; padding: 24px;">
+            No Grips blueprints discovered in the database.
+        </div>
+        {% endfor %}
+    </div>
+</div>

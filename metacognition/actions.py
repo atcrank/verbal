@@ -489,8 +489,9 @@ def handle_execution_plan(state: dict, params: dict) -> dict:
     for action in parsed_queue:
         logger.info(f'  -> Executing tool: {action.tool}')
         try:
-            if action.tool == "TASK_COMPLETE" and action.parameters.final_answer:
-                state["working_prompt"] = state.get("working_prompt", "") + f"\n\n[TASK COMPLETE]\n{action.parameters.final_answer}\n"
+            if action.tool == "TASK_COMPLETE":
+                final_ans = getattr(action.parameters, "final_answer", None) or getattr(action.parameters, "answer", "") or ""
+                state["working_prompt"] = state.get("working_prompt", "") + f"\n\n[TASK COMPLETE]\n{final_ans}\n"
                 state["route_to"] = "SUCCESS"
                 return state
                 
