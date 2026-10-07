@@ -18,6 +18,7 @@ Usage examples:
     fab -H localhost health-check
 """
 
+import getpass
 import os
 from fabric import task
 from invoke import Exit
@@ -63,6 +64,35 @@ DB_PORT = 5433
 
 
 # ==============================================================================
+# SUDO & PTY SESSION HARDENING
+# ==============================================================================
+def ensure_sudo(c):
+    """
+    Ensures Fabric has the sudo password cached in memory and PTY enabled so it never
+    prompts into raw unbuffered stdin or misinterprets distribution prompt formats.
+    """
+    c.config.run.pty = True
+    c.config.sudo.pty = True
+
+    # Match any variation of sudo prompt across distros
+    if hasattr(c.config, "sudo"):
+        c.config.sudo.prompt = r"(?:\[sudo\] )?[Pp]assword.*:\s*"
+
+    # If already cached, do not re-prompt
+    existing_pwd = getattr(c.config.sudo, "password", None) if hasattr(c.config, "sudo") else None
+    if not existing_pwd:
+        env_pass = os.environ.get("SUDO_PASSWORD")
+        if env_pass:
+            c.config.sudo.password = env_pass
+        else:
+            try:
+                # Prompt once cleanly on the console using standard Python getpass
+                c.config.sudo.password = getpass.getpass("🔑 [sudo] password: ")
+            except (EOFError, KeyboardInterrupt):
+                pass
+
+
+# ==============================================================================
 # PHASE 1: SYSTEM PROVISIONING & PERMISSIONS
 # ==============================================================================
 @task
@@ -71,7 +101,9 @@ def provision_system(c):
     Provisions system users, directories under /srv, shared caches, and
     establishes the 3-tier ownership model with SetGID on media directories.
     """
+    ensure_sudo(c)
     print("🚀 [1/4] Provisioning system users, groups, and directory hierarchy...")
+
 
     # 1. Ensure users exist
     check_deploy = c.sudo(f"id -u {DEPLOY_USER}", warn=True, hide=True)
@@ -142,6 +174,7 @@ def setup_nginx_and_ssl(c, source_ssl_dir=None):
     configuration with SSE streaming (no buffering) and WebSocket support,
     and reloads Nginx safely.
     """
+    ensure_sudo(c)
     print("🔒 [2/4] Configuring SSL certificates and Nginx reverse proxy...")
 
     # Determine SSL certificate sources
@@ -289,6 +322,7 @@ def setup_systemd(c):
     3. reason-scheduler.service (Periodic task scheduler / beat)
     4. reason-inference.service (Dedicated local AI inference endpoint)
     """
+    ensure_sudo(c)
     print("⚙️ [3/4] Installing systemd service units...")
 
     env_file = f"{SHARED_DIR}/.env"
@@ -407,6 +441,7 @@ def backup_database(c):
     Creates an automated, compressed PostgreSQL dump prior to applying migrations,
     retaining the last 10 snapshots in /srv/reason/backups.
     """
+    ensure_sudo(c)
     print("💾 Creating pre-migration database snapshot...")
     timestamp = c.run("date +%Y%m%d_%H%M%S", hide=True).stdout.strip()
     backup_file = f"{BACKUP_DIR}/pre_deploy_{timestamp}.dump"
@@ -434,6 +469,7 @@ def update_code(c, git_url=None, branch="main", local_source=None):
     Synchronizes code into the active production directory, symlinks shared
     assets and caches, and enforces the read-only code boundary.
     """
+    ensure_sudo(c)
     print(f"📦 Synchronizing application code (branch: {branch})...")
 
     if local_source:
@@ -487,6 +523,7 @@ def build_and_migrate(c):
     """
     Installs Python dependencies, executes Django migrations, and runs collectstatic.
     """
+    ensure_sudo(c)
     print("⚡ Running Python dependency updates and Django maintenance...")
 
     # Install pip requirements
@@ -516,6 +553,7 @@ def restart_services(c):
     """
     Gracefully restarts the 4 supervised systemd services.
     """
+    ensure_sudo(c)
     print("🔄 Restarting Reason systemd services...")
     c.sudo("systemctl restart reason-web reason-worker reason-scheduler reason-inference")
     print("✅ Services restarted.")
@@ -558,6 +596,7 @@ def deploy(c, branch="main", local_source=None):
     4. Restart systemd services
     5. Validate system health
     """
+    ensure_sudo(c)
     print(f"🚀 Commencing deployment for {APP_NAME}...")
     backup_database(c)
     update_code(c, branch=branch, local_source=local_source)
@@ -576,9 +615,50 @@ def setup_all(c, branch="main", local_source=None):
     3. Install systemd process units
     4. Run initial deployment
     """
+    ensure_sudo(c)
     print(f"🌟 Starting complete server bootstrap and deployment for {APP_NAME}...")
     provision_system(c)
     setup_nginx_and_ssl(c)
     setup_systemd(c)
     deploy(c, branch=branch, local_source=local_source)
     print("🏁 Complete server bootstrap finished!")
+
+
+if __name__ == "__main__":
+    import sys
+    task_name = sys.argv[1] if len(sys.argv) > 1 else "setup-all"
+    host = sys.argv[2] if len(sys.argv) > 2 else os.environ.get("REASON_HOST", "localhost")
+    try:
+        from fabric import Connection
+    except ImportError:
+        print("❌ Fabric is required. Install with: pip install fabric")
+        sys.exit(1)
+
+    conn = Connection(host)
+    task_map = {
+        "setup-all": setup_all,
+        "setup_all": setup_all,
+        "provision-system": provision_system,
+        "provision_system": provision_system,
+        "setup-nginx-and-ssl": setup_nginx_and_ssl,
+        "setup_nginx_and_ssl": setup_nginx_and_ssl,
+        "setup-systemd": setup_systemd,
+        "setup_systemd": setup_systemd,
+        "backup-database": backup_database,
+        "backup_database": backup_database,
+        "update-code": update_code,
+        "update_code": update_code,
+        "build-and-migrate": build_and_migrate,
+        "build_and_migrate": build_and_migrate,
+        "restart-services": restart_services,
+        "restart_services": restart_services,
+        "health-check": health_check,
+        "health_check": health_check,
+        "deploy": deploy,
+    }
+    func = task_map.get(task_name)
+    if not func:
+        print(f"Unknown task: '{task_name}'. Available tasks:\n  " + "\n  ".join(sorted(set(task_map.keys()))))
+        sys.exit(1)
+    func(conn)
+
