@@ -77,12 +77,15 @@ def provision_system(c):
     check_deploy = c.sudo(f"id -u {DEPLOY_USER}", warn=True, hide=True)
     if check_deploy.failed:
         print(f"👤 Creating deployment user '{DEPLOY_USER}'...")
-        c.sudo(f"useradd -m -s /bin/bash {DEPLOY_USER}")
+        home_exists = c.sudo(f"test -d /home/{DEPLOY_USER}", warn=True, hide=True).ok
+        useradd_flag = f"-d /home/{DEPLOY_USER}" if home_exists else "-m"
+        c.sudo(f"useradd {useradd_flag} -s /bin/bash {DEPLOY_USER}")
 
     check_django = c.sudo(f"id -u {DJANGO_USER}", warn=True, hide=True)
     if check_django.failed:
         print(f"👤 Creating system execution user '{DJANGO_USER}'...")
         c.sudo(f"useradd -r -s /bin/false {DJANGO_USER}")
+
 
     # 2. Add both to www-data group for controlled file traversal
     c.sudo(f"usermod -aG {WEB_GROUP} {DEPLOY_USER}")
