@@ -19,9 +19,11 @@ Usage examples:
 """
 
 import getpass
+import io
 import os
 from fabric import task
 from invoke import Exit
+from invoke.watchers import StreamWatcher
 
 # ==============================================================================
 # CONFIGURATION
@@ -64,32 +66,84 @@ DB_PORT = 5433
 
 
 # ==============================================================================
-# SUDO & PTY SESSION HARDENING
+# SUDO & SECURITY SESSION HARDENING
 # ==============================================================================
+class StrictSingleAttemptWatcher(StreamWatcher):
+    """
+    Guarantees that any sudo authentication failure aborts IMMEDIATELY on the
+    very first rejected attempt to prevent account lockout on enterprise/PAM systems.
+    """
+    def __init__(self):
+        super().__init__()
+        self.index = 0
+
+    def submit(self, stream):
+        new_ = stream[self.index:]
+        lowered = new_.lower()
+        if any(bad in lowered for bad in ["sorry, try again", "incorrect password", "authentication failure"]):
+            print("\n🚨 [SECURITY] Sudo password rejected! Aborting immediately on first failure to prevent account lockout.")
+            raise Exit("Sudo password rejected on first attempt.")
+        self.index = len(stream)
+        return []
+
+
 def ensure_sudo(c):
     """
-    Ensures Fabric has the sudo password cached in memory and PTY enabled so it never
-    prompts into raw unbuffered stdin or misinterprets distribution prompt formats.
+    Safely establishes and validates sudo credentials:
+    1. NEVER echoes password to screen (pty=False).
+    2. Cleans up prompt formatting so no regex strings leak to sudo -p.
+    3. Prompts once for password with getpass.
+    4. Validates credentials immediately with a single-shot test (sudo -k -S true).
+       Since stdin has EOF after the single password line, sudo CANNOT retry.
+    5. If validation fails, aborts instantly with Exit(1).
+    6. Attaches StrictSingleAttemptWatcher so any subsequent rejection terminates instantly.
     """
-    c.config.run.pty = True
-    c.config.sudo.pty = True
+    # Disable PTY for sudo to prevent credential echo on stdout
+    c.config.run.pty = False
+    c.config.sudo.pty = False
 
-    # Match any variation of sudo prompt across distros
+    # Clean standard prompt string (NOT a regex)
     if hasattr(c.config, "sudo"):
-        c.config.sudo.prompt = r"(?:\[sudo\] )?[Pp]assword.*:\s*"
+        c.config.sudo.prompt = "[sudo] password: "
 
-    # If already cached, do not re-prompt
     existing_pwd = getattr(c.config.sudo, "password", None) if hasattr(c.config, "sudo") else None
     if not existing_pwd:
         env_pass = os.environ.get("SUDO_PASSWORD")
         if env_pass:
-            c.config.sudo.password = env_pass
+            password = env_pass
         else:
             try:
-                # Prompt once cleanly on the console using standard Python getpass
-                c.config.sudo.password = getpass.getpass("🔑 [sudo] password: ")
+                password = getpass.getpass("🔑 [sudo] password: ")
             except (EOFError, KeyboardInterrupt):
-                pass
+                raise Exit("Password entry cancelled.")
+
+        if not password:
+            raise Exit("No sudo password provided.")
+
+        # Single-shot upfront validation:
+        # We test the password once with 'sudo -k -S true' using io.StringIO so stdin closes immediately (EOF).
+        # This makes it physically impossible for sudo to prompt a second or third time!
+        print("🔍 Verifying sudo credentials (single-shot test)...")
+        test_res = c.run(
+            "sudo -k -S -p '[sudo] password: ' true",
+            in_stream=io.StringIO(f"{password}\n"),
+            warn=True,
+            hide=True,
+        )
+
+        if test_res.failed:
+            print("\n🚨 [SECURITY] Sudo password verification failed!")
+            print("🛑 Aborting immediately on first failure to protect your account from lockout.")
+            raise Exit("Invalid sudo password.")
+
+        print("✅ Sudo credentials verified successfully.")
+        c.config.sudo.password = password
+
+    # Register strict single-attempt watcher into watchers list
+    if hasattr(c.config.run, "watchers"):
+        if not any(isinstance(w, StrictSingleAttemptWatcher) for w in c.config.run.watchers):
+            c.config.run.watchers.append(StrictSingleAttemptWatcher())
+
 
 
 # ==============================================================================
