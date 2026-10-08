@@ -124,7 +124,7 @@ def provision_system(c):
     c.sudo(f"usermod -aG {WEB_GROUP} {DJANGO_USER}")
 
     # 3. Create core directory structure
-    c.sudo(f"mkdir -p {BASE_DIR} {REPO_DIR} {APP_DIR} {VENV_DIR} {STATIC_DIR} {MEDIA_DIR} {BACKUP_DIR} {LOG_DIR} {SHARED_DIR}")
+    c.sudo(f"mkdir -p {BASE_DIR} {REPO_DIR} {APP_DIR} {STATIC_DIR} {MEDIA_DIR} {BACKUP_DIR} {LOG_DIR} {SHARED_DIR}")
     c.sudo(f"mkdir -p {SHARED_DIR}/workspaces {SHARED_DIR}/media {HF_CACHE_DIR}")
 
     # 4. Strict base directory lockdown (root owned)
@@ -153,11 +153,17 @@ def provision_system(c):
     c.sudo(f"chown -R {DEPLOY_USER}:{DJANGO_USER} {BACKUP_DIR} {LOG_DIR}")
     c.sudo(f"chmod 0750 {BACKUP_DIR} {LOG_DIR}")
 
-    # 9. Python Virtual Environment
+    # 9. Repo & App directories (owned by deployer, readable by web group)
+    c.sudo(f"chown -R {DEPLOY_USER}:{WEB_GROUP} {REPO_DIR} {APP_DIR}")
+    c.sudo(f"chmod 0750 {REPO_DIR} {APP_DIR}")
+
+    # 10. Python Virtual Environment
+    # Created by root inside /srv/reason to prevent parent permission issues, then chowned
     venv_pip = c.run(f"test -f {VENV_DIR}/bin/pip", warn=True)
     if venv_pip.failed:
         print("🐍 Creating dedicated Python virtual environment...")
-        c.sudo(f"python3 -m venv {VENV_DIR}", user=DEPLOY_USER)
+        c.sudo(f"rm -rf {VENV_DIR}")
+        c.sudo(f"python3 -m venv {VENV_DIR}")
     c.sudo(f"chown -R {DEPLOY_USER}:{DJANGO_USER} {VENV_DIR}")
     c.sudo(f"chmod -R 0750 {VENV_DIR}")
 
