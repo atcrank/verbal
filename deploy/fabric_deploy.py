@@ -239,7 +239,7 @@ def setup_nginx_and_ssl(c, source_ssl_dir=None):
 
     # Determine SSL certificate sources
     if source_ssl_dir is None:
-        source_ssl_dir = f"{REPO_DIR}/nginx/ssl"
+        source_ssl_dir = f"{REPO_DIR}/deploy/ssl"
 
     # Install SSL certs into system standard locations (resolves home dir permission blocks)
     c.sudo("mkdir -p /etc/ssl/certs /etc/ssl/private")
