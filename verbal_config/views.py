@@ -11,15 +11,29 @@ def landing_page(request):
         {
             "name": "Research Workbench (Demo UI)",
             "url": reverse("demo_ui:index"),
-            "description": "Interactive study design, conversational branching, RAG literature ingestion, and sandboxed code execution.",
+            "description": "Interactive study design, conversational branching, live blueprint streaming, literature ingestion, and sandboxed code execution.",
             "icon": "🔬",
             "category": "Core Workbench",
         },
         {
+            "name": "Benchmarking Studio & Evaluation Hub",
+            "url": reverse("benchmarking:studio"),
+            "description": "Systematic model evaluations, scenario prompt suites, candidate promotion to gold standard, and A/B adapter benchmarking.",
+            "icon": "📊",
+            "category": "Evaluation & Benchmarks",
+        },
+        {
             "name": "Grips Knowledge Base (Wiki)",
             "url": reverse("wiki:index"),
-            "description": "Concept graph explorer, structured computable claims, literature synthesis matrix, and reading lists.",
+            "description": "Research wiki summarizing and organizing knowledge from uploaded documents with traceability to sources and atomic computable claims.",
             "icon": "📚",
+            "category": "Knowledge Base",
+        },
+        {
+            "name": "Grips Concept Graph Explorer",
+            "url": reverse("wiki:graph"),
+            "description": "Interactive ontology graph visualization exploring conceptual relationships, claim dependencies, and research clusters.",
+            "icon": "🕸️",
             "category": "Knowledge Base",
         },
         {
@@ -30,7 +44,7 @@ def landing_page(request):
             "category": "Collaboration",
         },
         {
-            "name": "System Documentation",
+            "name": "System Documentation & Trials",
             "url": "/docs/",
             "description": "Sphinx technical documentation, architectural specifications, and executable doctest trial reports.",
             "icon": "📖",
@@ -51,5 +65,6 @@ def landing_page(request):
             "category": "Administration",
         },
     ]
+
 
     return render(request, "landing.html", {"endpoints": endpoints})

@@ -382,11 +382,13 @@ class BroadcastEndpointsTestCase(TestCase):
         content = res.content.decode('utf-8')
         self.assertIn("Reason", content)
         self.assertIn("/demo/", content)
+        self.assertIn("/benchmarking/", content)
         self.assertIn("/wiki/", content)
         self.assertIn("/work/", content)
         self.assertIn("/docs/", content)
         self.assertIn("/api/docs", content)
         self.assertIn("/admin/", content)
+
 
     def test_wiki_index_no_git_badge(self):
         res = self.client.get('/wiki/')
