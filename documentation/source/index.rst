@@ -98,7 +98,7 @@ Tool Governance & Restricted Run-Modes (``VERBAL_LOCKDOWN_LEVEL``)
 * ``DEVELOPMENT``: Full tool access for AI research, including code execution and self-modification.
 * ``CONTROLLED``: Regulated mode. Code execution requires user clearance (``TRUSTED`` or ``ADMIN``); self-modification is blocked.
 * ``RESTRICTED``: Safe evaluation mode. Code execution and external network tools are completely disabled host-wide. Deterministic domain tools (RAG search, Grips graph updates) remain active.
-* ``AIR_GAPPED`` (Aliases: ``TEXT_ONLY``, ``LOCKED``): Pure reasoning mode. All runtime model tools are blocked. The system operates strictly via multi-turn reasoning and structured output schemas. (Internal microservice plumbing between web, inference, and grobid remains intact).
+* ``TEXT_ONLY`` (Alias: ``LOCKED``): Pure reasoning mode. All runtime model tools are blocked. The system operates strictly via multi-turn reasoning and structured output schemas without invoking model tools. (Internal microservice plumbing between web, inference, and grobid remains intact).
 
 To apply a restricted mode in ``.env``:
 

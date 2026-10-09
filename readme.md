@@ -37,7 +37,7 @@ The system coordinates three operational microservice roles over a native Postgr
 * **`verbal_tasks/`**: Native PostgreSQL-backed task queue (`runtaskworker`), cron-like periodic scheduler (`runtaskscheduler`), telemetry, and zombie recovery. Completely replaces Celery/Redis.
 * **`metacognition/`**: Multi-agent reasoning framework compiling database-defined `CognitiveBlueprint` models into LangGraph execution graphs with memory, tool routing, and human-in-the-loop approval.
 * **`background_resources/`**: Grounded document retrieval engine with Docling/Grobid ingestion, semantic chunking, PGVector HNSW indexes, and cross-encoder re-ranking.
-* **`grips/`**: Graph Representation of Intelligent Problem Solving: an ontological knowledge graph linking Markdown narratives to atomic computable claims (`claims_json`) and dependency edges.
+* **`grips/`**: A research wiki summarizing and organizing knowledge from uploaded documents with traceability to sources and a growth path to a true computable knowledge graph, pairing Markdown narratives with atomic computable claims (`claims_json`) and dependency edges.
 * **`llm_api/`**: Hardware inspection (`hardware.py`), dynamic VRAM budgeting, Outlines grammar enforcement, and unified inference endpoints.
 * **`sandbox_manager/`**: Isolated Docker container execution environment (`verbal_sandbox` on port 8002) with strict 1 CPU / 1GB RAM limits and timeout enforcement.
 * **`grobid_client/`**: Academic PDF document processing client using containerized GROBID (port 8070), extracting TEI XML metadata, author affiliations, and citation networks.
@@ -55,7 +55,7 @@ Reason is designed to run with dedicated process separation:
 |---|---|---|---|
 | `web` | `./start_web.sh` (dev)<br>`./start_production_web.sh` (prod) | `8000`<br>`8008` | Serves the research UI, Django admin, and REST API. Bound strictly to `127.0.0.1`. |
 | `inference` | `./start_inference.sh` | `8001` | Dedicated single process monopolizing local GPU(s) with big models via Outlines / Transformers / vLLM. Bound strictly to `127.0.0.1`. |
-| `worker` | `./start_background_services.sh` | — | Runs native `verbal_tasks` queue workers (`runtaskworker`) and periodic schedulers (`runtaskscheduler`). |
+| `worker` | `./start_background_services.sh` | — | Automatically launches Docker infrastructure (`verbal_db` PostgreSQL 18, `verbal_grobid`, and `verbal_sandbox`), followed by native `verbal_tasks` queue workers (`runtaskworker`) and periodic schedulers (`runtaskscheduler`). |
 
 ---
 
@@ -85,6 +85,8 @@ Start PostgreSQL 18 with `pgvector`, containerized GROBID, and the Docker execut
 ```bash
 docker compose up -d
 ```
+*(Note: `./start_background_services.sh` also invokes `docker compose up -d` automatically).*
+
 All container ports are bound strictly to `127.0.0.1`:
 * PostgreSQL: `127.0.0.1:5433`
 * GROBID: `127.0.0.1:8070`
@@ -100,12 +102,13 @@ python manage.py createsuperuser
 ### Step 4: Start Services
 In separate terminal panes or service managers:
 
-1. **Start the Background Worker & Scheduler**:
+1. **Start Background Services, Containers & Worker**:
    ```bash
    ./start_background_services.sh
-   # Or manually:
-   # python manage.py runtaskworker
-   # python manage.py runtaskscheduler
+   # Automatically executes:
+   # 1. docker compose up -d (launches database, grobid, and python sandbox containers)
+   # 2. python manage.py runtaskworker (queue consumer)
+   # 3. python manage.py runtaskscheduler (periodic beat engine)
    ```
 
 2. **Start the Inference Server** (GPU node):
@@ -151,14 +154,14 @@ Reason enforces a 3-tier security governance architecture to restrict autonomous
 | `DEVELOPMENT` | 🧪 DEVELOPMENT | Allowed | Active | All tools active; self-modification allowed for AI development. |
 | `CONTROLLED` | ⚡ CONTROLLED | Clearance-Gated | Blocked | Meta-tools blocked. Code execution requires `TRUSTED` or `ADMIN` clearance. Base domain model writes allowlisted. |
 | `RESTRICTED` | 🔒 RESTRICTED | Blocked | Blocked | Model code execution and outbound network tools blocked host-wide. Deterministic domain tools (RAG search, Grips ontology) active. |
-| `AIR_GAPPED`<br>*(Aliases: `TEXT_ONLY`, `LOCKED`)* | 🛡️ TEXT-ONLY | Blocked | Blocked | All model tools blocked. Operates purely through structured reasoning and JSON schemas. Internal platform plumbing remains fully operational. |
+| `TEXT_ONLY`<br>*(Alias: `LOCKED`)* | 🛡️ TEXT-ONLY | Blocked | Blocked | All model tools blocked. Operates purely through structured reasoning and JSON schemas without external or code tools. Internal platform plumbing remains fully operational. |
 
 ### Applying Restricted Run-Modes in `.env`
 
 To set the host-level lockdown mode, edit your `.env` file:
 
 ```bash
-# Options: DEVELOPMENT | CONTROLLED | RESTRICTED | AIR_GAPPED (or TEXT_ONLY / LOCKED)
+# Options: DEVELOPMENT | CONTROLLED | RESTRICTED | TEXT_ONLY (or LOCKED)
 VERBAL_LOCKDOWN_LEVEL=RESTRICTED
 
 # Fine-grained master clamps:
