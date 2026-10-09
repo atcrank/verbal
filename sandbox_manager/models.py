@@ -11,7 +11,7 @@ class SandboxConfiguration(models.Model):
     Singleton model managing the Docker Sandbox environment.
     """
     requirements_txt = models.TextField(
-        default="fastapi==0.104.1\nuvicorn==0.24.0\nnumpy\npandas\nnetworkx\npgmpy",
+        default="fastapi>=0.110.0\nuvicorn>=0.28.0\nnumpy\npandas\nscipy\nsympy\npint\nnetworkx\npgmpy\npyAgrum",
         help_text="Python packages to install in the sandbox. One per line."
     )
     execution_timeout = models.IntegerField(
