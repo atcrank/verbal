@@ -22,6 +22,7 @@ import getpass
 import io
 import os
 import uuid
+from pathlib import Path
 from fabric import task
 from invoke import Exit
 from invoke.watchers import StreamWatcher
@@ -55,8 +56,9 @@ WEB_GROUP = os.environ.get("REASON_WEB_GROUP", "www-data")            # Shared g
 DOMAIN = os.environ.get("REASON_DOMAIN", "reason.andrew.com")
 GRANIAN_PORT = 8008
 INFERENCE_PORT = 8001
-SSL_CERT_PATH = f"/etc/ssl/certs/{DOMAIN}.crt"
-SSL_KEY_PATH = f"/etc/ssl/private/{DOMAIN}.key"
+SSL_DIR = f"{BASE_DIR}/ssl"
+SSL_CERT_PATH = f"{SSL_DIR}/{DOMAIN}.crt"
+SSL_KEY_PATH = f"{SSL_DIR}/{DOMAIN}.key"
 
 
 # Database parameters for automated pre-migration dumps
@@ -244,20 +246,28 @@ def provision_system(c):
 @task
 def setup_nginx_and_ssl(c, source_ssl_dir=None):
     """
-    Installs SSL certificates into /etc/ssl/, generates an optimized Nginx site
+    Installs SSL certificates into /srv/reason/ssl/, generates an optimized Nginx site
     configuration with SSE streaming (no buffering) and WebSocket support,
     and reloads Nginx safely.
     """
     ensure_sudo(c)
     print("🔒 [2/4] Configuring SSL certificates and Nginx reverse proxy...")
 
-    # Determine SSL certificate sources
+    # Determine SSL certificate sources (check local deploy/ssl first)
     if source_ssl_dir is None:
-        source_ssl_dir = f"{REPO_DIR}/deploy/ssl"
+        local_ssl = Path(__file__).resolve().parent / "ssl"
+        if local_ssl.exists() and (local_ssl / f"{DOMAIN}.crt").exists():
+            source_ssl_dir = str(local_ssl)
+        else:
+            source_ssl_dir = f"{REPO_DIR}/deploy/ssl"
 
-    # Install SSL certs into system standard locations (resolves home dir permission blocks)
-    c.sudo("mkdir -p /etc/ssl/certs /etc/ssl/private")
+    # Install SSL certs into Reason's isolated /srv/reason/ssl directory
+    # (Avoids /etc/ssl/ system policies and AppArmor restrictions)
+    c.sudo(f"mkdir -p {SSL_DIR}")
+    c.sudo(f"chmod 0750 {SSL_DIR} && chown root:{WEB_GROUP} {SSL_DIR}")
+
     if c.run(f"test -f {source_ssl_dir}/{DOMAIN}.crt", warn=True, hide=True).ok:
+        print(f"📋 Installing existing certificates from {source_ssl_dir}...")
         c.sudo(f"cp {source_ssl_dir}/{DOMAIN}.crt {SSL_CERT_PATH}")
     if c.run(f"test -f {source_ssl_dir}/{DOMAIN}.key", warn=True, hide=True).ok:
         c.sudo(f"cp {source_ssl_dir}/{DOMAIN}.key {SSL_KEY_PATH}")
@@ -272,10 +282,10 @@ def setup_nginx_and_ssl(c, source_ssl_dir=None):
             f"-subj '/CN={DOMAIN}/O=Reason/C=AU'"
         )
 
-    # Secure SSL private key permissions (combined to minimize sudo round-trips)
+    # Secure SSL private key permissions (readable by root and Nginx web group)
     c.sudo(
-        f"chmod 0644 {SSL_CERT_PATH} && chown root:root {SSL_CERT_PATH} && "
-        f"chmod 0600 {SSL_KEY_PATH} && chown root:root {SSL_KEY_PATH}"
+        f"chmod 0644 {SSL_CERT_PATH} && chown root:{WEB_GROUP} {SSL_CERT_PATH} && "
+        f"chmod 0640 {SSL_KEY_PATH} && chown root:{WEB_GROUP} {SSL_KEY_PATH}"
     )
 
     # Generate Nginx configuration
