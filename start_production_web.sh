@@ -1,5 +1,5 @@
 #!/bin/bash
-export DJANGO_DEBUG=False 
+export VERBAL_ENV=prod 
 
 if [ -f .env ]; then
     . .env

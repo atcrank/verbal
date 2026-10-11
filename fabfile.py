@@ -3,6 +3,7 @@ Fabric entrypoint for Verbal / Reason.
 Exposes modular deployment tasks defined in deploy/fabric_deploy.py.
 """
 
+import os
 import sys
 from pathlib import Path
 
@@ -22,6 +23,8 @@ if __name__ == "__main__":
 
     conn = Connection(host)
     task_map = {
+        "preflight-check": fabric_deploy.preflight_check,
+        "preflight_check": fabric_deploy.preflight_check,
         "setup-all": fabric_deploy.setup_all,
         "setup_all": fabric_deploy.setup_all,
         "provision-system": fabric_deploy.provision_system,
@@ -47,4 +50,3 @@ if __name__ == "__main__":
         print(f"Unknown task: '{task_name}'. Available tasks:\n  " + "\n  ".join(sorted(set(task_map.keys()))))
         sys.exit(1)
     func(conn)
-

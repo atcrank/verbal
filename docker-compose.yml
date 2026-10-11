@@ -4,9 +4,10 @@ services:
   db:
     image: ${DOCKER_POSTGRES_IMAGE:-pgvector/pgvector:pg18}
     container_name: verbal_db
+    restart: unless-stopped
     environment:
       POSTGRES_USER: verbal_user
-      POSTGRES_PASSWORD: verbal_password
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-verbal_password}
       POSTGRES_DB: verbal_db
     ports:
       - "127.0.0.1:5433:5432"
@@ -70,6 +71,7 @@ services:
               capabilities: [gpu]
   sandbox:
     container_name: verbal_sandbox
+    restart: unless-stopped
     build:
       context: ./sandbox
       args:

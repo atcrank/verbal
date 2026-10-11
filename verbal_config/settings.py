@@ -20,16 +20,29 @@ from dotenv import load_dotenv
 load_dotenv(BASE_DIR / ".env")
 
 import warnings
+from django.core.exceptions import ImproperlyConfigured
 warnings.filterwarnings("ignore", message=r".*allowed_objects.*")
 
 VERBAL_ENV = os.environ.get("VERBAL_ENV", "dev")
-
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "django-insecure-di_unz7h49exp@-(oyl0i2v8i-7%-zr@8c@ejl%!%f6b=-vh8-")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = VERBAL_ENV == "dev"
+
+if VERBAL_ENV != "dev":
+    if not SECRET_KEY or SECRET_KEY.startswith("django-insecure-"):
+        raise ImproperlyConfigured(
+            "In production (VERBAL_ENV != 'dev'), a secure DJANGO_SECRET_KEY must be configured."
+        )
+    if os.environ.get("DB_PASSWORD") == "verbal_password":
+        raise ImproperlyConfigured(
+            "In production (VERBAL_ENV != 'dev'), a custom DB_PASSWORD must be configured."
+        )
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
 
 ALLOWED_HOSTS = [h.strip() for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,reason.andrew.com").split(",") if h.strip()]
 if "testserver" not in ALLOWED_HOSTS:
@@ -163,7 +176,8 @@ STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
 # The absolute path to the directory where collectstatic will collect static files for deployment.
-STATIC_ROOT = BASE_DIR / "staticfiles"
+_custom_static_root = os.environ.get("DJANGO_STATIC_ROOT")
+STATIC_ROOT = Path(_custom_static_root) if _custom_static_root else (BASE_DIR / "staticfiles")
 
 # Media files (User uploaded documents, etc)
 MEDIA_URL = "media/"
