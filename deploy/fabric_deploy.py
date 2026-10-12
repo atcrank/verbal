@@ -581,7 +581,7 @@ def provision_system(c):
 # PHASE 2: SSL CERTIFICATES & NGINX
 # ==============================================================================
 @task
-def setup_nginx_and_ssl(c, source_ssl_dir=None):
+def setup_nginx_and_ssl(c, source_ssl_dir=None, remove_default_site=False):
     """
     Installs SSL certificates into /srv/reason/ssl/, generates an optimized Nginx site
     configuration with SSE streaming and WebSocket support, and reloads Nginx safely.
@@ -641,8 +641,12 @@ def setup_nginx_and_ssl(c, source_ssl_dir=None):
     write_sudo_file(c, conf_dest, nginx_conf, mode="0644", owner="root:root")
     c.sudo(f"ln -sfn {conf_dest} {enabled_dest}")
 
-    # Remove default site if present
-    c.sudo("rm -f /etc/nginx/sites-enabled/default")
+    # Remove default site if explicitly requested or configured via environment
+    if remove_default_site or os.environ.get("REASON_REMOVE_DEFAULT_NGINX", "").lower() in ("true", "1"):
+        print("🗑️ Removing default Nginx site configuration...")
+        c.sudo("rm -f /etc/nginx/sites-enabled/default")
+    else:
+        print("ℹ️ Preserving /etc/nginx/sites-enabled/default (pass remove_default_site=True to unlink).")
 
     # Test and reload
     print("🔍 Testing Nginx syntax...")
@@ -717,6 +721,18 @@ def backup_database(c):
         print(f"🚨 [ERROR] Pre-deploy database backup failed or produced an empty file at {backup_file}!")
         raise Exit("Pre-deploy database backup failed. Aborting to prevent data loss.")
 
+    # Validate archive integrity by checking TOC with pg_restore (host or container)
+    toc_check = sudo_bash(
+        c,
+        f"pg_restore -l {backup_file} >/dev/null 2>&1 || "
+        f"(docker ps -q -f name={DB_CONTAINER} | grep -q . && docker exec -i {DB_CONTAINER} pg_restore -l < {backup_file} >/dev/null 2>&1)",
+        warn=True,
+    )
+    if toc_check.ok:
+        print("🔍 Database backup TOC verified: archive is valid and uncorrupted.")
+    else:
+        print("ℹ️ Note: Database snapshot created (pg_restore check skipped or unavailable).")
+
     # Prune older backups, keeping the most recent 10
     sudo_bash(c, f"ls -1t {BACKUP_DIR}/pre_deploy_*.dump 2>/dev/null | tail -n +11 | xargs -r rm -f")
     print(f"✅ Pre-deploy snapshot secured: {backup_file}")
@@ -770,16 +786,33 @@ def update_code(c, git_url=None, branch="main", local_source=None):
 
 
 @task
-def build_and_migrate(c):
+def build_and_migrate(c, find_links=None, index_url=None, trusted_host=None):
     """
     Installs Python dependencies, verifies deployment health, executes
     Django migrations, and collects static assets into STATIC_DIR.
+    Supports Artifactory wheel links (--find-links) and custom package mirrors.
     """
     ensure_sudo(c)
     print("⚡ Running Python dependency updates and Django maintenance...")
 
-    # Install pip requirements
-    c.sudo(f"{VENV_DIR}/bin/pip install --no-cache-dir -r {APP_DIR}/requirements.txt", user=DEPLOY_USER)
+    # Build pip installation flags (honoring CLI args, environment vars, and shared .env)
+    env_file = f"{SHARED_DIR}/.env"
+    pip_install_cmd = (
+        f'FL="{find_links or os.environ.get("PIP_FIND_LINKS", "")}"; '
+        f'IU="{index_url or os.environ.get("PIP_INDEX_URL", "")}"; '
+        f'TH="{trusted_host or os.environ.get("PIP_TRUSTED_HOST", "")}"; '
+        f'EXTRA_FLAGS=""; '
+        f'if [ -f {env_file} ]; then '
+        f'[ -z "$FL" ] && FL=$(grep -E "^[[:space:]]*PIP_FIND_LINKS=" {env_file} | cut -d= -f2- | tr -d "\\"" | tr -d "\'"); '
+        f'[ -z "$IU" ] && IU=$(grep -E "^[[:space:]]*PIP_INDEX_URL=" {env_file} | cut -d= -f2- | tr -d "\\"" | tr -d "\'"); '
+        f'[ -z "$TH" ] && TH=$(grep -E "^[[:space:]]*PIP_TRUSTED_HOST=" {env_file} | cut -d= -f2- | tr -d "\\"" | tr -d "\'"); '
+        f'fi; '
+        f'[ -n "$FL" ] && EXTRA_FLAGS="$EXTRA_FLAGS --find-links $FL"; '
+        f'[ -n "$IU" ] && EXTRA_FLAGS="$EXTRA_FLAGS --index-url $IU"; '
+        f'[ -n "$TH" ] && EXTRA_FLAGS="$EXTRA_FLAGS --trusted-host $TH"; '
+        f'{VENV_DIR}/bin/pip install --no-cache-dir $EXTRA_FLAGS -r {APP_DIR}/requirements.txt'
+    )
+    sudo_bash(c, pip_install_cmd, user=DEPLOY_USER)
 
     # Run deployment verification checks
     print("🔍 Running Django deployment check...")
@@ -866,7 +899,7 @@ def health_check(c):
 # HIGH-LEVEL ORCHESTRATION PIPELINES
 # ==============================================================================
 @task
-def deploy(c, branch="main", git_url=None, local_source=None):
+def deploy(c, branch="main", git_url=None, local_source=None, find_links=None, index_url=None, trusted_host=None):
     """
     Standard zero-downtime deployment pipeline:
     1. Preflight check
@@ -881,14 +914,14 @@ def deploy(c, branch="main", git_url=None, local_source=None):
     preflight_check(c)
     backup_database(c)
     update_code(c, git_url=git_url, branch=branch, local_source=local_source)
-    build_and_migrate(c)
+    build_and_migrate(c, find_links=find_links, index_url=index_url, trusted_host=trusted_host)
     restart_services(c)
     health_check(c)
     print("🌟 Deployment completed successfully!")
 
 
 @task
-def setup_all(c, branch="main", git_url=None, local_source=None):
+def setup_all(c, branch="main", git_url=None, local_source=None, find_links=None, index_url=None, trusted_host=None, remove_default_site=False):
     """
     Full from-scratch server bootstrap:
     1. Preflight check
@@ -901,9 +934,17 @@ def setup_all(c, branch="main", git_url=None, local_source=None):
     print(f"🌟 Starting complete server bootstrap and deployment for {APP_NAME}...")
     preflight_check(c)
     provision_system(c)
-    setup_nginx_and_ssl(c)
+    setup_nginx_and_ssl(c, remove_default_site=remove_default_site)
     setup_systemd(c)
-    deploy(c, branch=branch, git_url=git_url, local_source=local_source)
+    deploy(
+        c,
+        branch=branch,
+        git_url=git_url,
+        local_source=local_source,
+        find_links=find_links,
+        index_url=index_url,
+        trusted_host=trusted_host,
+    )
     print("🏁 Complete server bootstrap finished!")
 
 

@@ -158,7 +158,12 @@ class LlmApiConfig(AppConfig):
         import sys
         import threading
         
-        if 'test' in sys.argv:
+        management_commands_skip = {
+            'test', 'migrate', 'collectstatic', 'makemigrations',
+            'check', 'dumpdata', 'loaddata', 'showmigrations', 'inspectdb',
+            'sqlmigrate', 'squashmigrations', 'flush'
+        }
+        if any(cmd in sys.argv for cmd in management_commands_skip):
             return
 
         # Prevent running twice in dev mode with the auto-reloader

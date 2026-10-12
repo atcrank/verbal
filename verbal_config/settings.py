@@ -25,6 +25,13 @@ warnings.filterwarnings("ignore", message=r".*allowed_objects.*")
 
 VERBAL_ENV = os.environ.get("VERBAL_ENV", "dev")
 
+# ------------------------------------------------------------------------
+# MICROSERVICE / ROLE CONFIGURATION
+# ------------------------------------------------------------------------
+# Roles: 'standalone' (loads model, dev/testing only), 'inference' (loads model),
+# 'web' (HTTP client), 'worker' (HTTP client), 'scheduler'
+VERBAL_ROLE = os.environ.get("VERBAL_ROLE", "standalone")
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "django-insecure-di_unz7h49exp@-(oyl0i2v8i-7%-zr@8c@ejl%!%f6b=-vh8-")
 
@@ -39,6 +46,11 @@ if VERBAL_ENV != "dev":
     if os.environ.get("DB_PASSWORD") == "verbal_password":
         raise ImproperlyConfigured(
             "In production (VERBAL_ENV != 'dev'), a custom DB_PASSWORD must be configured."
+        )
+    if VERBAL_ROLE == "standalone":
+        raise ImproperlyConfigured(
+            "In production (VERBAL_ENV != 'dev'), VERBAL_ROLE cannot be 'standalone'. "
+            "Configure an explicit role: 'web', 'worker', 'scheduler', or 'inference'."
         )
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
@@ -204,10 +216,8 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Mistral NeMo 12B: Co-developed by Nvidia, this model was practically designed for your GPU. It has a massive 128k context window natively and is explicitly trained for RAG retrieval tasks.
 
 # ------------------------------------------------------------------------
-# MICROSERVICE / ROLE CONFIGURATION
+# MICROSERVICE ENDPOINTS & TIMEOUTS
 # ------------------------------------------------------------------------
-# Roles: 'standalone' (loads model), 'inference' (loads model), 'web' (HTTP client), 'worker' (HTTP client)
-VERBAL_ROLE = os.environ.get("VERBAL_ROLE", "standalone")
 
 # If acting as a web/worker client, where is the inference server?
 INFERENCE_URL = os.environ.get("INFERENCE_URL", "http://127.0.0.1:8001/api/llm")

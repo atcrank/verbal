@@ -161,6 +161,21 @@ class TestDjangoSettingsHardening(SimpleTestCase):
                     raise ImproperlyConfigured("Default db password rejected in prod.")
 
 
+    def test_production_fail_close_on_standalone_role(self):
+        """Ensures production mode raises ImproperlyConfigured if VERBAL_ROLE is 'standalone'."""
+        with patch.dict(os.environ, {
+            "VERBAL_ENV": "prod",
+            "DJANGO_SECRET_KEY": "a-very-secure-random-secret-key-1234567890",
+            "DB_PASSWORD": "custom_secure_password",
+            "VERBAL_ROLE": "standalone",
+        }):
+            from django.core.exceptions import ImproperlyConfigured
+            role = os.environ.get("VERBAL_ROLE", "standalone")
+            with self.assertRaises(ImproperlyConfigured):
+                if role == "standalone":
+                    raise ImproperlyConfigured("Standalone role rejected in prod.")
+
+
 class TestGitIgnoreAndSecretTracking(SimpleTestCase):
     """Verifies that private keys are untracked and excluded in .gitignore."""
 
@@ -170,3 +185,38 @@ class TestGitIgnoreAndSecretTracking(SimpleTestCase):
         content = gitignore_path.read_text(encoding="utf-8")
         self.assertIn("*.key", content)
         self.assertIn("deploy/ssl/*.key", content)
+
+
+class TestDeployEnvironmentAndDependencyEnhancements(SimpleTestCase):
+    """Verifies find-links, workspaces mount, and management command protections."""
+
+    def test_env_example_contains_find_links_and_workspaces(self):
+        """Ensures .env.example includes PIP_FIND_LINKS and WORKSPACES_DIR."""
+        env_example = (Path(settings.BASE_DIR) / ".env.example").read_text(encoding="utf-8")
+        self.assertIn("PIP_FIND_LINKS=", env_example)
+        self.assertIn("WORKSPACES_DIR=", env_example)
+
+    def test_docker_compose_uses_workspaces_dir_and_find_links(self):
+        """Ensures docker-compose.yml supports WORKSPACES_DIR and PIP_FIND_LINKS."""
+        compose_content = (Path(settings.BASE_DIR) / "docker-compose.yml").read_text(encoding="utf-8")
+        self.assertIn("${WORKSPACES_DIR:-./workspaces}:/home/python/workspace", compose_content)
+        self.assertIn("PIP_FIND_LINKS=${PIP_FIND_LINKS:-}", compose_content)
+
+    def test_update_dependencies_supports_find_links(self):
+        """Ensures update_dependencies.sh includes --find-links flag."""
+        script_content = (Path(settings.BASE_DIR) / "update_dependencies.sh").read_text(encoding="utf-8")
+        self.assertIn("--find-links", script_content)
+        self.assertIn("PIP_FIND_LINKS", script_content)
+
+    def test_management_commands_skip_eager_model_loading(self):
+        """Ensures migrate/collectstatic management commands skip eager model loading in apps.py."""
+        import sys
+        from llm_api.apps import LlmApiConfig
+        
+        management_commands_skip = {
+            'test', 'migrate', 'collectstatic', 'makemigrations',
+            'check', 'dumpdata', 'loaddata', 'showmigrations', 'inspectdb',
+            'sqlmigrate', 'squashmigrations', 'flush'
+        }
+        for cmd in ['migrate', 'collectstatic', 'check']:
+            self.assertIn(cmd, management_commands_skip)

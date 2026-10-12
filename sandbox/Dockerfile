@@ -4,8 +4,10 @@ FROM ${DOCKER_PYTHON_IMAGE}
 # Capture pip mirror configurations from docker-compose build args
 ARG PIP_INDEX_URL
 ARG PIP_TRUSTED_HOST
+ARG PIP_FIND_LINKS
 ENV PIP_INDEX_URL=$PIP_INDEX_URL
 ENV PIP_TRUSTED_HOST=$PIP_TRUSTED_HOST
+ENV PIP_FIND_LINKS=$PIP_FIND_LINKS
 
 # Ensure unprivileged 'python' user and home directory structure exist.
 # Also install libgomp1 required by OpenMP extensions (pyAgrum, etc.)

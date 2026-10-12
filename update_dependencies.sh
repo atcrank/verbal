@@ -22,6 +22,7 @@ GENERATE_HASHES=true
 USE_PYTORCH_INDEX=auto
 CUSTOM_PYTORCH_URL=""
 CUSTOM_INDEX_URL=""
+CUSTOM_FIND_LINKS=""
 CUSTOM_TRUSTED_HOST=""
 CUSTOM_EXTRA_INDEX_URL=""
 CUSTOM_CONSTRAINTS=""
@@ -49,6 +50,7 @@ Options:
                                the existing requirements.txt (fast, offline/deployment mode).
   --compile-only               Only compile requirements.in -> requirements.txt without syncing.
   --index-url <URL>            Package index URL (overrides PIP_INDEX_URL in .env).
+  --find-links <URL>           HTML wheel links directory (overrides PIP_FIND_LINKS in .env).
   --extra-index-url <URL>      Additional package index URL.
   --trusted-host <HOST>        Allow insecure / self-signed host (overrides PIP_TRUSTED_HOST).
   --constraint <FILE>          Apply a constraints file during compilation.
@@ -58,6 +60,7 @@ Options:
 
 Environment Variables (from .env or shell):
   PIP_INDEX_URL                Internal Artifactory / PyPI index URL.
+  PIP_FIND_LINKS               HTML wheel links directory / Artifactory wheel page.
   PIP_TRUSTED_HOST             Trusted host for private mirrors.
   PYTORCH_INDEX_URL            PyTorch wheel repository. Set to "none", "off", or "" to disable.
   PYENV_ACTIVATE               Path to virtualenv activate script.
@@ -96,6 +99,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --index-url)
             CUSTOM_INDEX_URL="$2"
+            shift 2
+            ;;
+        --find-links)
+            CUSTOM_FIND_LINKS="$2"
             shift 2
             ;;
         --extra-index-url)
@@ -198,6 +205,11 @@ fi
 TRUSTED_HOST="${CUSTOM_TRUSTED_HOST:-$PIP_TRUSTED_HOST}"
 if [ -n "$TRUSTED_HOST" ]; then
     INDEX_ARGS+=("--allow-insecure-host" "$TRUSTED_HOST")
+fi
+
+FIND_LINKS_URL="${CUSTOM_FIND_LINKS:-$PIP_FIND_LINKS}"
+if [ -n "$FIND_LINKS_URL" ]; then
+    INDEX_ARGS+=("--find-links" "$FIND_LINKS_URL")
 fi
 
 # Determine Constraints
