@@ -6,13 +6,19 @@ systemd unit generation, and Django settings hardening.
 import os
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from django.test import SimpleTestCase
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 
-from deploy.fabric_deploy import generate_nginx_conf, generate_systemd_units, DOMAIN
+from deploy.fabric_deploy import (
+    generate_nginx_conf,
+    generate_systemd_units,
+    DOMAIN,
+    run_as_deploy_user,
+    DEPLOY_USER,
+)
 
 
 class TestNginxConfigGeneration(SimpleTestCase):
@@ -237,3 +243,45 @@ class TestDeployEnvironmentAndDependencyEnhancements(SimpleTestCase):
         setup_sig = inspect.signature(setup_all)
         self.assertIn("use_dumpdata", setup_sig.parameters)
         self.assertTrue(setup_sig.parameters["use_dumpdata"].default)
+
+
+class TestRunAsDeployUser(SimpleTestCase):
+    """Verifies that run_as_deploy_user avoids sudo when authenticated as DEPLOY_USER."""
+
+    def test_executes_directly_without_sudo_when_deploy_user(self):
+        c = MagicMock()
+        mock_whoami = MagicMock(ok=True, stdout=f"{DEPLOY_USER}\n")
+        c.run.side_effect = [mock_whoami, MagicMock(ok=True, stdout="output")]
+
+        res = run_as_deploy_user(c, "git status")
+
+        # First call checks whoami
+        c.run.assert_any_call("whoami", hide=True, warn=True)
+        # Second call executes directly via c.run without sudo
+        c.run.assert_any_call("bash -c 'git status'")
+        # Ensure c.sudo was NOT called
+        c.sudo.assert_not_called()
+        self.assertEqual(c._cached_deploy_user, DEPLOY_USER)
+
+    def test_uses_cached_deploy_user_on_subsequent_calls(self):
+        c = MagicMock()
+        c._cached_deploy_user = DEPLOY_USER
+
+        run_as_deploy_user(c, "git -C /opt/verbal/repo fetch --all")
+
+        # whoami was bypassed, ran directly
+        c.run.assert_called_once_with("bash -c 'git -C /opt/verbal/repo fetch --all'")
+        c.sudo.assert_not_called()
+
+    def test_escalates_via_login_su_when_different_user(self):
+        c = MagicMock()
+        mock_whoami = MagicMock(ok=True, stdout="ubuntu\n")
+        c.run.return_value = mock_whoami
+
+        run_as_deploy_user(c, "git status")
+
+        # Since user is ubuntu, it should use sudo_bash with su - DEPLOY_USER
+        self.assertTrue(c.sudo.called)
+        sudo_args = c.sudo.call_args[0][0]
+        self.assertIn(f"su - {DEPLOY_USER} -c", sudo_args)
+

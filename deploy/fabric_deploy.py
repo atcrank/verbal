@@ -194,6 +194,32 @@ def write_sudo_file(c, dest_path, content, mode="0644", owner="root:root"):
     c.run(f"rm -f {tmp_path}")
 
 
+def run_as_deploy_user(c, command, **kwargs):
+    """
+    Executes a shell command as DEPLOY_USER (verbal_deploy):
+    1. If the current SSH session is already connected as DEPLOY_USER, runs
+       directly via c.run(command) without sudo, preserving user SSH keys
+       (~/.ssh/) and avoiding unnecessary sudoers user-switching checks.
+    2. If connected as another user, escalates via root sudo into a login shell
+       (`su - {DEPLOY_USER} -c '...'`), ensuring HOME=/home/verbal_deploy and
+       SSH keys are active.
+    """
+    current_user = getattr(c, "_cached_deploy_user", None)
+    if not isinstance(current_user, str):
+        try:
+            res = c.run("whoami", hide=True, warn=True)
+            current_user = res.stdout.strip() if res and res.ok else getattr(c, "user", None)
+        except Exception:
+            current_user = getattr(c, "user", None) or os.environ.get("USER", "")
+        c._cached_deploy_user = current_user
+
+    escaped = command.replace("'", "'\\''")
+    if current_user == DEPLOY_USER:
+        return c.run(f"bash -c '{escaped}'", **kwargs)
+    else:
+        return sudo_bash(c, f"su - {DEPLOY_USER} -c '{escaped}'", **kwargs)
+
+
 # ==============================================================================
 # CONFIGURATION TEMPLATING (PURE FUNCTIONS FOR AUDITABILITY & TESTING)
 # ==============================================================================
@@ -726,7 +752,7 @@ def backup_database(c, use_dumpdata=True):
             f"-e contenttypes -e auth.Permission "
             f"--output {backup_file}"
         )
-        res = sudo_bash(c, dump_cmd, user=DEPLOY_USER, warn=True)
+        res = run_as_deploy_user(c, dump_cmd, warn=True)
 
         # Strictly verify backup file exists, is non-empty, and gzip archive is valid
         verify_res = sudo_bash(
@@ -788,15 +814,19 @@ def update_code(c, git_url=None, branch="main", local_source=None):
         print(f"🔄 Syncing directly from local directory {local_source}...")
         sudo_bash(c, f"rsync -ax --delete {RSYNC_EXCLUDES} {local_source}/ {APP_DIR}/")
     else:
-        git_check = c.sudo(f"test -d {REPO_DIR}/.git", warn=True)
+        git_check = run_as_deploy_user(c, f"test -d {REPO_DIR}/.git", warn=True)
+        git_ssh_cmd = 'GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new"'
         if git_check.failed:
             if not git_url:
                 raise Exit(f"No git repository found at {REPO_DIR} and no git_url provided.")
-            print(f"📥 Cloning repository from {git_url}...")
-            c.sudo(f"git clone {git_url} {REPO_DIR}", user=DEPLOY_USER)
+            print(f"📥 Cloning repository from {git_url} as {DEPLOY_USER}...")
+            run_as_deploy_user(c, f"git config --global --add safe.directory {REPO_DIR}", warn=True)
+            run_as_deploy_user(c, f"{git_ssh_cmd} git clone {git_url} {REPO_DIR}")
         else:
-            c.sudo(f"git -C {REPO_DIR} fetch --all", user=DEPLOY_USER)
-            c.sudo(f"git -C {REPO_DIR} reset --hard origin/{branch}", user=DEPLOY_USER)
+            print(f"📥 Fetching updates from git as {DEPLOY_USER}...")
+            run_as_deploy_user(c, f"git config --global --add safe.directory {REPO_DIR}", warn=True)
+            run_as_deploy_user(c, f"{git_ssh_cmd} git -C {REPO_DIR} fetch --all")
+            run_as_deploy_user(c, f"git -C {REPO_DIR} reset --hard origin/{branch}")
 
         sudo_bash(c, f"rsync -ax --delete {RSYNC_EXCLUDES} {REPO_DIR}/ {APP_DIR}/")
 
@@ -846,14 +876,13 @@ def build_and_migrate(c, find_links=None, index_url=None, trusted_host=None):
         f'[ -n "$TH" ] && EXTRA_FLAGS="$EXTRA_FLAGS --trusted-host $TH"; '
         f'{VENV_DIR}/bin/pip install --no-cache-dir $EXTRA_FLAGS -r {APP_DIR}/requirements.txt'
     )
-    sudo_bash(c, pip_install_cmd, user=DEPLOY_USER)
+    run_as_deploy_user(c, pip_install_cmd)
 
     # Run deployment verification checks
     print("🔍 Running Django deployment check...")
-    check_res = sudo_bash(
+    check_res = run_as_deploy_user(
         c,
         f"VERBAL_ROLE=web DJANGO_STATIC_ROOT={STATIC_DIR} {VENV_DIR}/bin/python {APP_DIR}/manage.py check --deploy",
-        user=DEPLOY_USER,
         warn=True,
     )
     if check_res.failed:
@@ -861,14 +890,13 @@ def build_and_migrate(c, find_links=None, index_url=None, trusted_host=None):
 
     # Run migrations as deployer
     print("🗄️ Applying Django database migrations...")
-    c.sudo(f"{VENV_DIR}/bin/python {APP_DIR}/manage.py migrate --noinput", user=DEPLOY_USER)
+    run_as_deploy_user(c, f"{VENV_DIR}/bin/python {APP_DIR}/manage.py migrate --noinput")
 
     # Collect static assets directly into STATIC_DIR
     print(f"🎨 Collecting static assets into {STATIC_DIR}...")
-    sudo_bash(
+    run_as_deploy_user(
         c,
         f"DJANGO_STATIC_ROOT={STATIC_DIR} {VENV_DIR}/bin/python {APP_DIR}/manage.py collectstatic --noinput",
-        user=DEPLOY_USER,
     )
 
     # Lock down static asset permissions for Nginx read-only access
