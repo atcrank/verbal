@@ -43,41 +43,115 @@ except ImportError:
             pass
 
 # ==============================================================================
-# CONFIGURATION
+# ENVIRONMENT & CONFIGURATION LOADER
 # ==============================================================================
-APP_NAME = os.environ.get("REASON_APP_NAME", "reason")
-BASE_DIR = os.environ.get("REASON_BASE_DIR", f"/srv/{APP_NAME}")
-REPO_DIR = f"{BASE_DIR}/repo"
-APP_DIR = f"{BASE_DIR}/app"
-VENV_DIR = os.environ.get("REASON_VENV", f"{BASE_DIR}/venv")
-SHARED_DIR = f"{BASE_DIR}/shared"
-PUBLIC_DIR = f"{BASE_DIR}/public"
-STATIC_DIR = f"{PUBLIC_DIR}/static"
-MEDIA_DIR = f"{PUBLIC_DIR}/media"
-BACKUP_DIR = f"{BASE_DIR}/backups"
-LOG_DIR = f"{BASE_DIR}/logs"
+def load_deploy_env(env_file=None):
+    """
+    Discovers and loads deployment environment variables into os.environ.
+    Priority order:
+    1. Explicit `env_file` argument or `REASON_ENV_FILE` environment variable.
+    2. `.env.prod` in the project root or current working directory.
+    3. `.env` in the project root or current working directory.
 
-# Shared persistent caches & containers
-HF_CACHE_DIR = os.environ.get("REASON_HF_CACHE", "/var/lib/hf_home")
+    Existing os.environ variables take precedence over values in the file
+    (override=False), ensuring CLI exports like `REASON_DOMAIN=foo fab ...`
+    are never overwritten.
+    """
+    repo_root = Path(__file__).resolve().parent.parent
+    cwd = Path.cwd()
 
-# Users and permissions
-DEPLOY_USER = os.environ.get("REASON_DEPLOY_USER", "verbal_deploy")   # Deployment operator
-DJANGO_USER = os.environ.get("REASON_APP_USER", "verbal_run")         # Unprivileged app user (nologin)
-WEB_GROUP = os.environ.get("REASON_WEB_GROUP", "www-data")            # Shared web group
+    candidate_files = []
+    if env_file:
+        candidate_files.append(Path(env_file))
+    elif os.environ.get("REASON_ENV_FILE"):
+        candidate_files.append(Path(os.environ["REASON_ENV_FILE"]))
+    else:
+        candidate_files.extend([
+            repo_root / ".env.prod",
+            cwd / ".env.prod",
+            repo_root / ".env",
+            cwd / ".env",
+        ])
 
-# Web and upstream ports
-DOMAIN = os.environ.get("REASON_DOMAIN", "reason.andrew.com")
-GRANIAN_PORT = 8008
-INFERENCE_PORT = 8001
-SSL_DIR = f"{BASE_DIR}/ssl"
-SSL_CERT_PATH = f"{SSL_DIR}/{DOMAIN}.crt"
-SSL_KEY_PATH = f"{SSL_DIR}/{DOMAIN}.key"
+    target_path = None
+    for path in candidate_files:
+        if path.is_file():
+            target_path = path.resolve()
+            break
 
-# Database parameters for automated pre-migration dumps
-DB_CONTAINER = "verbal_db"
-DB_NAME = "verbal_db"
-DB_USER = "verbal_user"
-DB_PORT = 5433
+    if not target_path:
+        return None
+
+    try:
+        from dotenv import load_dotenv
+        load_dotenv(dotenv_path=target_path, override=False)
+    except ImportError:
+        with open(target_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if "=" in line:
+                    key, val = line.split("=", 1)
+                    key = key.strip()
+                    val = val.strip().strip("'\"")
+                    if key and key not in os.environ:
+                        os.environ[key] = val
+
+    return str(target_path)
+
+
+LOADED_ENV_FILE = load_deploy_env()
+
+
+def reload_deploy_config(env_file=None):
+    """
+    Re-evaluates the environment file and reloads all module-level configuration
+    variables in globals(). Useful for tests and dynamic configuration updates.
+    """
+    loaded = load_deploy_env(env_file=env_file)
+    global APP_NAME, BASE_DIR, REPO_DIR, APP_DIR, VENV_DIR, SHARED_DIR, PUBLIC_DIR
+    global STATIC_DIR, MEDIA_DIR, BACKUP_DIR, LOG_DIR, HF_CACHE_DIR, DEPLOY_USER
+    global DJANGO_USER, WEB_GROUP, DOMAIN, GRANIAN_PORT, INFERENCE_PORT, SSL_DIR
+    global SSL_CERT_PATH, SSL_KEY_PATH, DB_CONTAINER, DB_NAME, DB_USER, DB_PORT, DB_PASSWORD
+    global LOADED_ENV_FILE
+
+    LOADED_ENV_FILE = loaded
+    APP_NAME = os.environ.get("REASON_APP_NAME", "reason")
+    BASE_DIR = os.environ.get("REASON_BASE_DIR", f"/srv/{APP_NAME}")
+    REPO_DIR = os.environ.get("REASON_REPO_DIR", f"{BASE_DIR}/repo")
+    APP_DIR = os.environ.get("REASON_APP_DIR", f"{BASE_DIR}/app")
+    VENV_DIR = os.environ.get("REASON_VENV", f"{BASE_DIR}/venv")
+    SHARED_DIR = os.environ.get("REASON_SHARED_DIR", f"{BASE_DIR}/shared")
+    PUBLIC_DIR = os.environ.get("REASON_PUBLIC_DIR", f"{BASE_DIR}/public")
+    STATIC_DIR = os.environ.get("REASON_STATIC_DIR", f"{PUBLIC_DIR}/static")
+    MEDIA_DIR = os.environ.get("REASON_MEDIA_DIR", f"{PUBLIC_DIR}/media")
+    BACKUP_DIR = os.environ.get("REASON_BACKUP_DIR", f"{BASE_DIR}/backups")
+    LOG_DIR = os.environ.get("REASON_LOG_DIR", f"{BASE_DIR}/logs")
+
+    HF_CACHE_DIR = os.environ.get("REASON_HF_CACHE", "/var/lib/hf_home")
+    DEPLOY_USER = os.environ.get("REASON_DEPLOY_USER", "verbal_deploy")
+    DJANGO_USER = os.environ.get("REASON_APP_USER", "verbal_run")
+    WEB_GROUP = os.environ.get("REASON_WEB_GROUP", "www-data")
+
+    DOMAIN = os.environ.get("REASON_DOMAIN", "reason.andrew.com")
+    GRANIAN_PORT = int(os.environ.get("REASON_GRANIAN_PORT", "8008"))
+    INFERENCE_PORT = int(os.environ.get("REASON_INFERENCE_PORT", "8001"))
+    SSL_DIR = os.environ.get("REASON_SSL_DIR", f"{BASE_DIR}/ssl")
+    SSL_CERT_PATH = os.environ.get("REASON_SSL_CERT_PATH", f"{SSL_DIR}/{DOMAIN}.crt")
+    SSL_KEY_PATH = os.environ.get("REASON_SSL_KEY_PATH", f"{SSL_DIR}/{DOMAIN}.key")
+
+    DB_CONTAINER = os.environ.get("REASON_DB_CONTAINER", "verbal_db")
+    DB_NAME = os.environ.get("DB_NAME", os.environ.get("REASON_DB_NAME", "verbal_db"))
+    DB_USER = os.environ.get("DB_USER", os.environ.get("REASON_DB_USER", "verbal_user"))
+    DB_PASSWORD = os.environ.get("DB_PASSWORD", os.environ.get("REASON_DB_PASSWORD", "verbal_password"))
+    DB_PORT = int(os.environ.get("DB_PORT", os.environ.get("REASON_DB_PORT", "5433")))
+
+    return loaded
+
+
+# Initialize module configuration
+reload_deploy_config()
 
 # Standard rsync exclusion patterns
 RSYNC_EXCLUDES = (
@@ -603,66 +677,93 @@ def provision_system(c):
     print("✅ System paths, users, and ownership hierarchy established.")
 
 
+@task
+def sync_env(c, local_env=None):
+    """
+    Safely pushes local .env.prod (or specified local_env) to the remote server
+    at /srv/reason/shared/.env with locked-down 0600 permissions.
+    """
+    ensure_sudo(c)
+    repo_root = Path(__file__).resolve().parent.parent
+    env_file = local_env or LOADED_ENV_FILE or (repo_root / ".env.prod")
+    env_path = Path(env_file)
+    if not env_path.is_file():
+        raise Exit(f"Local environment file not found at: {env_path}")
+
+    content = env_path.read_text(encoding="utf-8")
+    dest_path = f"{SHARED_DIR}/.env"
+    print(f"📤 Uploading {env_path.name} to {dest_path} on remote server...")
+    c.sudo(f"mkdir -p {SHARED_DIR}")
+    write_sudo_file(c, dest_path, content, mode="0600", owner=f"{DEPLOY_USER}:{WEB_GROUP}")
+    print(f"✅ Production environment configuration synchronized at {dest_path} (mode: 0600).")
+
+
 # ==============================================================================
 # PHASE 2: SSL CERTIFICATES & NGINX
 # ==============================================================================
 @task
-def setup_nginx_and_ssl(c, source_ssl_dir=None, remove_default_site=False):
+def setup_nginx_and_ssl(c, domain=None, source_ssl_dir=None, remove_default_site=False):
     """
     Installs SSL certificates into /srv/reason/ssl/, generates an optimized Nginx site
     configuration with SSE streaming and WebSocket support, and reloads Nginx safely.
+    Supports ad-hoc domain override via domain parameter.
     """
     ensure_sudo(c)
-    print("🔒 [2/4] Configuring SSL certificates and Nginx reverse proxy...")
+    target_domain = domain or DOMAIN
+    target_ssl_dir = f"{BASE_DIR}/ssl"
+    target_cert = f"{target_ssl_dir}/{target_domain}.crt"
+    target_key = f"{target_ssl_dir}/{target_domain}.key"
+
+    print(f"🔒 [2/4] Configuring SSL certificates and Nginx reverse proxy for {target_domain}...")
 
     # Determine SSL certificate sources
     if source_ssl_dir is None:
         local_ssl = Path(__file__).resolve().parent / "ssl"
-        if local_ssl.exists() and (local_ssl / f"{DOMAIN}.crt").exists():
+        if local_ssl.exists() and (local_ssl / f"{target_domain}.crt").exists():
             source_ssl_dir = str(local_ssl)
         else:
             source_ssl_dir = f"{REPO_DIR}/deploy/ssl"
 
     # Install SSL certs into isolated /srv/reason/ssl directory
-    c.sudo(f"mkdir -p {SSL_DIR}")
-    sudo_bash(c, f"chmod 0750 {SSL_DIR} && chown root:{WEB_GROUP} {SSL_DIR}")
+    c.sudo(f"mkdir -p {target_ssl_dir}")
+    sudo_bash(c, f"chmod 0750 {target_ssl_dir} && chown root:{WEB_GROUP} {target_ssl_dir}")
 
-    if c.sudo(f"test -f {source_ssl_dir}/{DOMAIN}.crt", warn=True, hide=True).ok:
+    if c.sudo(f"test -f {source_ssl_dir}/{target_domain}.crt", warn=True, hide=True).ok:
         print(f"📋 Installing certificate from {source_ssl_dir}...")
-        c.sudo(f"cp {source_ssl_dir}/{DOMAIN}.crt {SSL_CERT_PATH}")
-    if c.sudo(f"test -f {source_ssl_dir}/{DOMAIN}.key", warn=True, hide=True).ok:
-        c.sudo(f"cp {source_ssl_dir}/{DOMAIN}.key {SSL_KEY_PATH}")
+        c.sudo(f"cp {source_ssl_dir}/{target_domain}.crt {target_cert}")
+    if c.sudo(f"test -f {source_ssl_dir}/{target_domain}.key", warn=True, hide=True).ok:
+        c.sudo(f"cp {source_ssl_dir}/{target_domain}.key {target_key}")
 
     # Generate fallback self-signed cert if neither exists
-    cert_check = c.sudo(f"test -f {SSL_CERT_PATH} && test -f {SSL_KEY_PATH}", warn=True)
+    cert_check = c.sudo(f"test -f {target_cert} && test -f {target_key}", warn=True)
     if cert_check.failed:
-        print("⚠️ Generating self-signed SSL certificates for local domain...")
+        print(f"⚠️ Generating self-signed SSL certificates for {target_domain}...")
         sudo_bash(
             c,
             f"openssl req -x509 -nodes -days 365 -newkey rsa:2048 "
-            f"-keyout {SSL_KEY_PATH} -out {SSL_CERT_PATH} "
-            f"-subj '/CN={DOMAIN}/O=Reason/C=AU'"
+            f"-keyout {target_key} -out {target_cert} "
+            f"-subj '/CN={target_domain}/O=Reason/C=AU'"
         )
 
     # Secure SSL private key permissions: only root can read key
     sudo_bash(
         c,
-        f"chmod 0644 {SSL_CERT_PATH} && chown root:{WEB_GROUP} {SSL_CERT_PATH} && "
-        f"chmod 0600 {SSL_KEY_PATH} && chown root:root {SSL_KEY_PATH}"
+        f"chmod 0644 {target_cert} && chown root:{WEB_GROUP} {target_cert} && "
+        f"chmod 0600 {target_key} && chown root:root {target_key}"
     )
 
     # Generate and write Nginx configuration
     nginx_conf = generate_nginx_conf(
-        domain=DOMAIN,
-        ssl_cert_path=SSL_CERT_PATH,
-        ssl_key_path=SSL_KEY_PATH,
+        domain=target_domain,
+        ssl_cert_path=target_cert,
+        ssl_key_path=target_key,
         static_dir=STATIC_DIR,
         media_dir=MEDIA_DIR,
         granian_port=GRANIAN_PORT,
     )
 
-    conf_dest = f"/etc/nginx/sites-available/{DOMAIN}.conf"
-    enabled_dest = f"/etc/nginx/sites-enabled/{DOMAIN}.conf"
+    conf_dest = f"/etc/nginx/sites-available/{target_domain}.conf"
+    enabled_dest = f"/etc/nginx/sites-enabled/{target_domain}.conf"
 
     write_sudo_file(c, conf_dest, nginx_conf, mode="0644", owner="root:root")
     c.sudo(f"ln -sfn {conf_dest} {enabled_dest}")
@@ -806,9 +907,12 @@ def update_code(c, git_url=None, branch="main", local_source=None):
     """
     Synchronizes code into the active production directory, symlinks shared
     assets and caches, and enforces the read-only code boundary.
+    Defaults to REASON_GIT_URL and REASON_GIT_BRANCH if configured.
     """
     ensure_sudo(c)
-    print(f"📦 Synchronizing application code (branch: {branch})...")
+    target_branch = branch or os.environ.get("REASON_GIT_BRANCH", "main")
+    target_git_url = git_url or os.environ.get("REASON_GIT_URL")
+    print(f"📦 Synchronizing application code (branch: {target_branch})...")
 
     if local_source:
         print(f"🔄 Syncing directly from local directory {local_source}...")
@@ -817,16 +921,16 @@ def update_code(c, git_url=None, branch="main", local_source=None):
         git_check = run_as_deploy_user(c, f"test -d {REPO_DIR}/.git", warn=True)
         git_ssh_cmd = 'GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new"'
         if git_check.failed:
-            if not git_url:
-                raise Exit(f"No git repository found at {REPO_DIR} and no git_url provided.")
-            print(f"📥 Cloning repository from {git_url} as {DEPLOY_USER}...")
+            if not target_git_url:
+                raise Exit(f"No git repository found at {REPO_DIR} and no git_url / REASON_GIT_URL provided.")
+            print(f"📥 Cloning repository from {target_git_url} as {DEPLOY_USER}...")
             run_as_deploy_user(c, f"git config --global --add safe.directory {REPO_DIR}", warn=True)
-            run_as_deploy_user(c, f"{git_ssh_cmd} git clone {git_url} {REPO_DIR}")
+            run_as_deploy_user(c, f"{git_ssh_cmd} git clone {target_git_url} {REPO_DIR}")
         else:
             print(f"📥 Fetching updates from git as {DEPLOY_USER}...")
             run_as_deploy_user(c, f"git config --global --add safe.directory {REPO_DIR}", warn=True)
             run_as_deploy_user(c, f"{git_ssh_cmd} git -C {REPO_DIR} fetch --all")
-            run_as_deploy_user(c, f"git -C {REPO_DIR} reset --hard origin/{branch}")
+            run_as_deploy_user(c, f"git -C {REPO_DIR} reset --hard origin/{target_branch}")
 
         sudo_bash(c, f"rsync -ax --delete {RSYNC_EXCLUDES} {REPO_DIR}/ {APP_DIR}/")
 
@@ -983,7 +1087,7 @@ def deploy(c, branch="main", git_url=None, local_source=None, find_links=None, i
 
 
 @task
-def setup_all(c, branch="main", git_url=None, local_source=None, find_links=None, index_url=None, trusted_host=None, remove_default_site=False, use_dumpdata=True):
+def setup_all(c, branch="main", git_url=None, local_source=None, find_links=None, index_url=None, trusted_host=None, remove_default_site=False, use_dumpdata=True, domain=None):
     """
     Full from-scratch server bootstrap:
     1. Preflight check
@@ -996,7 +1100,7 @@ def setup_all(c, branch="main", git_url=None, local_source=None, find_links=None
     print(f"🌟 Starting complete server bootstrap and deployment for {APP_NAME}...")
     preflight_check(c)
     provision_system(c)
-    setup_nginx_and_ssl(c, remove_default_site=remove_default_site)
+    setup_nginx_and_ssl(c, domain=domain, remove_default_site=remove_default_site)
     setup_systemd(c)
     deploy(
         c,
@@ -1029,6 +1133,8 @@ if __name__ == "__main__":
         "setup_all": setup_all,
         "provision-system": provision_system,
         "provision_system": provision_system,
+        "sync-env": sync_env,
+        "sync_env": sync_env,
         "setup-nginx-and-ssl": setup_nginx_and_ssl,
         "setup_nginx_and_ssl": setup_nginx_and_ssl,
         "setup-systemd": setup_systemd,

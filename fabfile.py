@@ -29,6 +29,8 @@ if __name__ == "__main__":
         "setup_all": fabric_deploy.setup_all,
         "provision-system": fabric_deploy.provision_system,
         "provision_system": fabric_deploy.provision_system,
+        "sync-env": fabric_deploy.sync_env,
+        "sync_env": fabric_deploy.sync_env,
         "setup-nginx-and-ssl": fabric_deploy.setup_nginx_and_ssl,
         "setup_nginx_and_ssl": fabric_deploy.setup_nginx_and_ssl,
         "setup-systemd": fabric_deploy.setup_systemd,

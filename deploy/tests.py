@@ -18,6 +18,9 @@ from deploy.fabric_deploy import (
     DOMAIN,
     run_as_deploy_user,
     DEPLOY_USER,
+    load_deploy_env,
+    reload_deploy_config,
+    setup_nginx_and_ssl,
 )
 
 
@@ -284,4 +287,79 @@ class TestRunAsDeployUser(SimpleTestCase):
         self.assertTrue(c.sudo.called)
         sudo_args = c.sudo.call_args[0][0]
         self.assertIn(f"su - {DEPLOY_USER} -c", sudo_args)
+
+
+class TestDeployEnvConfiguration(SimpleTestCase):
+    """Verifies that .env.prod and deployment environment variables are discovered, loaded, and applied."""
+
+    def test_env_prod_example_exists_and_contains_core_variables(self):
+        """Ensures .env.prod.example is tracked and documents all essential deploy keys."""
+        example_path = Path(settings.BASE_DIR) / ".env.prod.example"
+        self.assertTrue(example_path.is_file())
+        content = example_path.read_text(encoding="utf-8")
+        required_keys = [
+            "REASON_HOST=",
+            "REASON_DEPLOY_USER=",
+            "REASON_DOMAIN=",
+            "REASON_BASE_DIR=",
+            "REASON_APP_USER=",
+            "REASON_WEB_GROUP=",
+            "REASON_GRANIAN_PORT=",
+            "REASON_INFERENCE_PORT=",
+            "REASON_GIT_URL=",
+            "DB_NAME=",
+            "DB_PORT=",
+            "PIP_FIND_LINKS=",
+            "PIP_INDEX_URL=",
+        ]
+        for key in required_keys:
+            self.assertIn(key, content)
+
+    def test_env_prod_is_ignored_in_gitignore(self):
+        """Ensures .env.prod is untracked to protect production host configuration."""
+        gitignore_path = Path(settings.BASE_DIR) / ".gitignore"
+        content = gitignore_path.read_text(encoding="utf-8")
+        self.assertIn(".env.prod", content)
+
+    def test_load_deploy_env_loads_custom_file_without_clobbering_existing_env(self):
+        """Ensures load_deploy_env reads key-values and respects override=False."""
+        import tempfile
+        with tempfile.NamedTemporaryFile("w+", suffix=".env.prod", delete=False) as tf:
+            tf.write("CUSTOM_DEPLOY_KEY=hello_prod\nREASON_CUSTOM_PORT=9999\n")
+            tf.flush()
+            temp_path = tf.name
+
+        try:
+            with patch.dict(os.environ, {"REASON_CUSTOM_PORT": "8888"}, clear=False):
+                loaded = load_deploy_env(env_file=temp_path)
+                self.assertEqual(loaded, temp_path)
+                self.assertEqual(os.environ.get("CUSTOM_DEPLOY_KEY"), "hello_prod")
+                # Existing shell value was preserved
+                self.assertEqual(os.environ.get("REASON_CUSTOM_PORT"), "8888")
+        finally:
+            os.remove(temp_path)
+
+    def test_reload_deploy_config_updates_module_globals(self):
+        """Ensures reload_deploy_config updates DOMAIN and path constants from environment."""
+        with patch.dict(os.environ, {
+            "REASON_DOMAIN": "verbal.enterprise.corp",
+            "REASON_BASE_DIR": "/opt/custom_reason",
+            "REASON_APP_USER": "custom_app_runner",
+        }):
+            reload_deploy_config()
+            import deploy.fabric_deploy as fd
+            self.assertEqual(fd.DOMAIN, "verbal.enterprise.corp")
+            self.assertEqual(fd.BASE_DIR, "/opt/custom_reason")
+            self.assertEqual(fd.DJANGO_USER, "custom_app_runner")
+            self.assertEqual(fd.SSL_CERT_PATH, "/opt/custom_reason/ssl/verbal.enterprise.corp.crt")
+
+            # Restore defaults after test
+            reload_deploy_config()
+
+    def test_setup_nginx_and_ssl_accepts_domain_override(self):
+        """Ensures setup_nginx_and_ssl honors explicit domain argument."""
+        import inspect
+        sig = inspect.signature(setup_nginx_and_ssl)
+        self.assertIn("domain", sig.parameters)
+
 
