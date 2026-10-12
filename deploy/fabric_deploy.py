@@ -1147,7 +1147,8 @@ if __name__ == "__main__":
         print("❌ Fabric is required. Install with: pip install fabric")
         sys.exit(1)
 
-    conn = Connection(host)
+    ssh_user = os.environ.get("REASON_SSH_USER")
+    conn = Connection(host, user=ssh_user) if ssh_user else Connection(host)
     task_map = {
         "preflight-check": preflight_check,
         "preflight_check": preflight_check,
