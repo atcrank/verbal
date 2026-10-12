@@ -697,44 +697,78 @@ def setup_systemd(c):
 # PHASE 4: PRE-MIGRATION DATABASE BACKUP
 # ==============================================================================
 @task
-def backup_database(c):
+def backup_database(c, use_dumpdata=True):
     """
-    Creates an automated, compressed PostgreSQL dump prior to applying migrations,
+    Creates an automated pre-migration database snapshot prior to applying migrations,
     retaining the last 10 snapshots in /srv/reason/backups. Aborts deploy if backup fails.
+
+    By default, uses Django's native ORM `dumpdata` with gzip compression:
+    - Completely self-contained within Python/Django (no external pg_dump binary required).
+    - Avoids dependency on custom/stripped container images or missing host client utilities.
+    - Excludes transient ContentTypes and Permissions to prevent fixture collisions on restore.
+    - Verified immediately for file integrity with `gzip -t`.
+
+    Set use_dumpdata=False to fall back to native pg_dump if available.
     """
     ensure_sudo(c)
     print("💾 Creating pre-migration database snapshot...")
     timestamp = c.run("date +%Y%m%d_%H%M%S", hide=True).stdout.strip()
-    backup_file = f"{BACKUP_DIR}/pre_deploy_{timestamp}.dump"
 
-    docker_check = c.sudo(f"docker ps -q -f name={DB_CONTAINER}", warn=True)
-    if docker_check.ok and docker_check.stdout.strip():
-        print(f"📦 Dumping database from container '{DB_CONTAINER}'...")
-        res = sudo_bash(c, f"docker exec {DB_CONTAINER} pg_dump -U {DB_USER} -Fc {DB_NAME} > {backup_file}", warn=True)
+    manage_py = f"{APP_DIR}/manage.py"
+    has_app = c.sudo(f"test -f {manage_py}", warn=True, hide=True).ok
+
+    if use_dumpdata and has_app:
+        backup_file = f"{BACKUP_DIR}/pre_deploy_{timestamp}.json.gz"
+        print(f"📦 Dumping database via Django ORM (dumpdata -> {backup_file})...")
+        dump_cmd = (
+            f"VERBAL_ROLE=web {VENV_DIR}/bin/python {APP_DIR}/manage.py dumpdata "
+            f"--natural-foreign --natural-primary "
+            f"-e contenttypes -e auth.Permission "
+            f"--output {backup_file}"
+        )
+        res = sudo_bash(c, dump_cmd, user=DEPLOY_USER, warn=True)
+
+        # Strictly verify backup file exists, is non-empty, and gzip archive is valid
+        verify_res = sudo_bash(
+            c,
+            f"test -s {backup_file} && [ $(stat -c%s {backup_file}) -gt 100 ] && gzip -t {backup_file}",
+            warn=True,
+        )
+        if verify_res.failed or (res and res.failed):
+            print(f"🚨 [ERROR] Pre-deploy database dumpdata failed or produced corrupt archive at {backup_file}!")
+            raise Exit("Pre-deploy database backup failed. Aborting to prevent data loss.")
+
+        print("🔍 Database backup verified: gzip archive integrity is valid and uncorrupted.")
+    elif not has_app:
+        print(f"ℹ️ No existing application found at {APP_DIR}; skipping pre-deploy backup on initial bootstrap.")
+        return
     else:
-        print("📦 Container offline or local DB, running host pg_dump...")
-        res = sudo_bash(c, f"PGPASSWORD=\"${{DB_PASSWORD:-verbal_password}}\" pg_dump -h 127.0.0.1 -p {DB_PORT} -U {DB_USER} -Fc {DB_NAME} > {backup_file}", warn=True)
+        # Native pg_dump fallback
+        backup_file = f"{BACKUP_DIR}/pre_deploy_{timestamp}.dump"
+        docker_check = c.sudo(f"docker ps -q -f name={DB_CONTAINER}", warn=True)
+        if docker_check.ok and docker_check.stdout.strip():
+            print(f"📦 Dumping database from container '{DB_CONTAINER}'...")
+            res = sudo_bash(c, f"docker exec {DB_CONTAINER} pg_dump -U {DB_USER} -Fc {DB_NAME} > {backup_file}", warn=True)
+        else:
+            print("📦 Container offline or local DB, running host pg_dump...")
+            res = sudo_bash(c, f"PGPASSWORD=\"${{DB_PASSWORD:-verbal_password}}\" pg_dump -h 127.0.0.1 -p {DB_PORT} -U {DB_USER} -Fc {DB_NAME} > {backup_file}", warn=True)
 
-    # Strictly verify backup file exists and has content
-    verify_res = sudo_bash(c, f"test -s {backup_file} && [ $(stat -c%s {backup_file}) -gt 100 ]", warn=True)
-    if verify_res.failed or (res and res.failed):
-        print(f"🚨 [ERROR] Pre-deploy database backup failed or produced an empty file at {backup_file}!")
-        raise Exit("Pre-deploy database backup failed. Aborting to prevent data loss.")
+        verify_res = sudo_bash(c, f"test -s {backup_file} && [ $(stat -c%s {backup_file}) -gt 100 ]", warn=True)
+        if verify_res.failed or (res and res.failed):
+            print(f"🚨 [ERROR] Pre-deploy database backup failed or produced an empty file at {backup_file}!")
+            raise Exit("Pre-deploy database backup failed. Aborting to prevent data loss.")
 
-    # Validate archive integrity by checking TOC with pg_restore (host or container)
-    toc_check = sudo_bash(
-        c,
-        f"pg_restore -l {backup_file} >/dev/null 2>&1 || "
-        f"(docker ps -q -f name={DB_CONTAINER} | grep -q . && docker exec -i {DB_CONTAINER} pg_restore -l < {backup_file} >/dev/null 2>&1)",
-        warn=True,
-    )
-    if toc_check.ok:
-        print("🔍 Database backup TOC verified: archive is valid and uncorrupted.")
-    else:
-        print("ℹ️ Note: Database snapshot created (pg_restore check skipped or unavailable).")
+        toc_check = sudo_bash(
+            c,
+            f"pg_restore -l {backup_file} >/dev/null 2>&1 || "
+            f"(docker ps -q -f name={DB_CONTAINER} | grep -q . && docker exec -i {DB_CONTAINER} pg_restore -l < {backup_file} >/dev/null 2>&1)",
+            warn=True,
+        )
+        if toc_check.ok:
+            print("🔍 Database backup TOC verified: archive is valid and uncorrupted.")
 
-    # Prune older backups, keeping the most recent 10
-    sudo_bash(c, f"ls -1t {BACKUP_DIR}/pre_deploy_*.dump 2>/dev/null | tail -n +11 | xargs -r rm -f")
+    # Prune older backups (both .dump and .json.gz), keeping the most recent 10
+    sudo_bash(c, f"ls -1t {BACKUP_DIR}/pre_deploy_* 2>/dev/null | tail -n +11 | xargs -r rm -f")
     print(f"✅ Pre-deploy snapshot secured: {backup_file}")
 
 
@@ -899,7 +933,7 @@ def health_check(c):
 # HIGH-LEVEL ORCHESTRATION PIPELINES
 # ==============================================================================
 @task
-def deploy(c, branch="main", git_url=None, local_source=None, find_links=None, index_url=None, trusted_host=None):
+def deploy(c, branch="main", git_url=None, local_source=None, find_links=None, index_url=None, trusted_host=None, use_dumpdata=True):
     """
     Standard zero-downtime deployment pipeline:
     1. Preflight check
@@ -912,7 +946,7 @@ def deploy(c, branch="main", git_url=None, local_source=None, find_links=None, i
     ensure_sudo(c)
     print(f"🚀 Commencing deployment for {APP_NAME}...")
     preflight_check(c)
-    backup_database(c)
+    backup_database(c, use_dumpdata=use_dumpdata)
     update_code(c, git_url=git_url, branch=branch, local_source=local_source)
     build_and_migrate(c, find_links=find_links, index_url=index_url, trusted_host=trusted_host)
     restart_services(c)
@@ -921,7 +955,7 @@ def deploy(c, branch="main", git_url=None, local_source=None, find_links=None, i
 
 
 @task
-def setup_all(c, branch="main", git_url=None, local_source=None, find_links=None, index_url=None, trusted_host=None, remove_default_site=False):
+def setup_all(c, branch="main", git_url=None, local_source=None, find_links=None, index_url=None, trusted_host=None, remove_default_site=False, use_dumpdata=True):
     """
     Full from-scratch server bootstrap:
     1. Preflight check
@@ -944,6 +978,7 @@ def setup_all(c, branch="main", git_url=None, local_source=None, find_links=None
         find_links=find_links,
         index_url=index_url,
         trusted_host=trusted_host,
+        use_dumpdata=use_dumpdata,
     )
     print("🏁 Complete server bootstrap finished!")
 

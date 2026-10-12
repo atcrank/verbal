@@ -218,5 +218,22 @@ class TestDeployEnvironmentAndDependencyEnhancements(SimpleTestCase):
             'check', 'dumpdata', 'loaddata', 'showmigrations', 'inspectdb',
             'sqlmigrate', 'squashmigrations', 'flush'
         }
-        for cmd in ['migrate', 'collectstatic', 'check']:
+        for cmd in ['migrate', 'collectstatic', 'check', 'dumpdata']:
             self.assertIn(cmd, management_commands_skip)
+
+    def test_backup_database_defaults_to_dumpdata(self):
+        """Ensures backup_database task signature defaults to use_dumpdata=True."""
+        import inspect
+        from deploy.fabric_deploy import backup_database, deploy, setup_all
+
+        backup_sig = inspect.signature(backup_database)
+        self.assertIn("use_dumpdata", backup_sig.parameters)
+        self.assertTrue(backup_sig.parameters["use_dumpdata"].default)
+
+        deploy_sig = inspect.signature(deploy)
+        self.assertIn("use_dumpdata", deploy_sig.parameters)
+        self.assertTrue(deploy_sig.parameters["use_dumpdata"].default)
+
+        setup_sig = inspect.signature(setup_all)
+        self.assertIn("use_dumpdata", setup_sig.parameters)
+        self.assertTrue(setup_sig.parameters["use_dumpdata"].default)
