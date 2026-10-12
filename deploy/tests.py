@@ -290,11 +290,11 @@ class TestRunAsDeployUser(SimpleTestCase):
 
 
 class TestDeployEnvConfiguration(SimpleTestCase):
-    """Verifies that .env.prod and deployment environment variables are discovered, loaded, and applied."""
+    """Verifies that .env.deploy and deployment environment variables are discovered, loaded, and applied."""
 
-    def test_env_prod_example_exists_and_contains_core_variables(self):
-        """Ensures .env.prod.example is tracked and documents all essential deploy keys."""
-        example_path = Path(settings.BASE_DIR) / ".env.prod.example"
+    def test_env_deploy_example_exists_and_contains_deployment_variables(self):
+        """Ensures .env.deploy.example is tracked and documents deployment orchestration keys."""
+        example_path = Path(settings.BASE_DIR) / ".env.deploy.example"
         self.assertTrue(example_path.is_file())
         content = example_path.read_text(encoding="utf-8")
         required_keys = [
@@ -307,37 +307,54 @@ class TestDeployEnvConfiguration(SimpleTestCase):
             "REASON_GRANIAN_PORT=",
             "REASON_INFERENCE_PORT=",
             "REASON_GIT_URL=",
-            "DB_NAME=",
-            "DB_PORT=",
-            "PIP_FIND_LINKS=",
-            "PIP_INDEX_URL=",
+            "REASON_DB_CONTAINER=",
         ]
         for key in required_keys:
             self.assertIn(key, content)
 
-    def test_env_prod_is_ignored_in_gitignore(self):
-        """Ensures .env.prod is untracked to protect production host configuration."""
+        # Verifies that application database secrets are NOT duplicated in .env.deploy.example
+        self.assertNotIn("DB_PASSWORD=", content)
+        self.assertNotIn("DJANGO_SECRET_KEY=", content)
+
+    def test_env_deploy_is_ignored_in_gitignore(self):
+        """Ensures .env.deploy is untracked to protect deployment host configuration."""
         gitignore_path = Path(settings.BASE_DIR) / ".gitignore"
         content = gitignore_path.read_text(encoding="utf-8")
-        self.assertIn(".env.prod", content)
+        self.assertIn(".env.deploy", content)
 
-    def test_load_deploy_env_loads_custom_file_without_clobbering_existing_env(self):
-        """Ensures load_deploy_env reads key-values and respects override=False."""
+    def test_load_deploy_env_imports_base_env_and_layers_deploy_env(self):
+        """Ensures load_deploy_env imports .env without duplication and layers .env.deploy on top."""
         import tempfile
-        with tempfile.NamedTemporaryFile("w+", suffix=".env.prod", delete=False) as tf:
-            tf.write("CUSTOM_DEPLOY_KEY=hello_prod\nREASON_CUSTOM_PORT=9999\n")
-            tf.flush()
-            temp_path = tf.name
+        with tempfile.NamedTemporaryFile("w+", suffix=".env", delete=False) as base_f:
+            base_f.write("DB_NAME=imported_verbal_db\nPIP_FIND_LINKS=https://mirror.local/wheels\nSHARED_SETTING=from_base\n")
+            base_f.flush()
+            base_path = base_f.name
+
+        with tempfile.NamedTemporaryFile("w+", suffix=".env.deploy", delete=False) as deploy_f:
+            deploy_f.write("REASON_DOMAIN=layered.andrew.com\nSHARED_SETTING=from_deploy\n")
+            deploy_f.flush()
+            deploy_path = deploy_f.name
 
         try:
-            with patch.dict(os.environ, {"REASON_CUSTOM_PORT": "8888"}, clear=False):
-                loaded = load_deploy_env(env_file=temp_path)
-                self.assertEqual(loaded, temp_path)
-                self.assertEqual(os.environ.get("CUSTOM_DEPLOY_KEY"), "hello_prod")
-                # Existing shell value was preserved
-                self.assertEqual(os.environ.get("REASON_CUSTOM_PORT"), "8888")
+            # Clean test isolation
+            with patch.dict(os.environ, {}, clear=False):
+                for k in ["DB_NAME", "PIP_FIND_LINKS", "SHARED_SETTING", "REASON_DOMAIN"]:
+                    os.environ.pop(k, None)
+
+                loaded = load_deploy_env(deploy_env_file=deploy_path, base_env_file=base_path)
+                self.assertEqual(loaded, deploy_path)
+
+                # Imported from base .env without duplication:
+                self.assertEqual(os.environ.get("DB_NAME"), "imported_verbal_db")
+                self.assertEqual(os.environ.get("PIP_FIND_LINKS"), "https://mirror.local/wheels")
+
+                # Layered from .env.deploy:
+                self.assertEqual(os.environ.get("REASON_DOMAIN"), "layered.andrew.com")
+                # Deploy overrides base for same key:
+                self.assertEqual(os.environ.get("SHARED_SETTING"), "from_deploy")
         finally:
-            os.remove(temp_path)
+            os.remove(base_path)
+            os.remove(deploy_path)
 
     def test_reload_deploy_config_updates_module_globals(self):
         """Ensures reload_deploy_config updates DOMAIN and path constants from environment."""

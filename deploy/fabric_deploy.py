@@ -45,46 +45,15 @@ except ImportError:
 # ==============================================================================
 # ENVIRONMENT & CONFIGURATION LOADER
 # ==============================================================================
-def load_deploy_env(env_file=None):
-    """
-    Discovers and loads deployment environment variables into os.environ.
-    Priority order:
-    1. Explicit `env_file` argument or `REASON_ENV_FILE` environment variable.
-    2. `.env.prod` in the project root or current working directory.
-    3. `.env` in the project root or current working directory.
-
-    Existing os.environ variables take precedence over values in the file
-    (override=False), ensuring CLI exports like `REASON_DOMAIN=foo fab ...`
-    are never overwritten.
-    """
-    repo_root = Path(__file__).resolve().parent.parent
-    cwd = Path.cwd()
-
-    candidate_files = []
-    if env_file:
-        candidate_files.append(Path(env_file))
-    elif os.environ.get("REASON_ENV_FILE"):
-        candidate_files.append(Path(os.environ["REASON_ENV_FILE"]))
-    else:
-        candidate_files.extend([
-            repo_root / ".env.prod",
-            cwd / ".env.prod",
-            repo_root / ".env",
-            cwd / ".env",
-        ])
-
-    target_path = None
-    for path in candidate_files:
-        if path.is_file():
-            target_path = path.resolve()
-            break
-
-    if not target_path:
-        return None
-
+def _parse_dotenv(target_path):
+    """Parses a dotenv file into a dictionary of key-value pairs."""
+    parsed = {}
+    if not target_path or not Path(target_path).is_file():
+        return parsed
     try:
-        from dotenv import load_dotenv
-        load_dotenv(dotenv_path=target_path, override=False)
+        from dotenv import dotenv_values
+        vals = dotenv_values(target_path)
+        return {k: v for k, v in vals.items() if v is not None}
     except ImportError:
         with open(target_path, "r", encoding="utf-8") as f:
             for line in f:
@@ -95,21 +64,70 @@ def load_deploy_env(env_file=None):
                     key, val = line.split("=", 1)
                     key = key.strip()
                     val = val.strip().strip("'\"")
-                    if key and key not in os.environ:
-                        os.environ[key] = val
+                    if key:
+                        parsed[key] = val
+        return parsed
 
-    return str(target_path)
+
+def load_deploy_env(deploy_env_file=None, base_env_file=None):
+    """
+    Discovers and imports configuration for deployment:
+    1. First imports application environment from .env (if present),
+       providing DB settings, Django keys, and pip flags without duplication.
+    2. Then imports deployment orchestration settings from .env.deploy
+       (or .env.prod for backward compatibility).
+    3. Preserves any variables already exported in the calling shell.
+    """
+    repo_root = Path(__file__).resolve().parent.parent
+    cwd = Path.cwd()
+    initial_keys = set(os.environ.keys())
+
+    # 1. Base application environment (.env)
+    base_candidates = [
+        Path(base_env_file) if base_env_file else None,
+        repo_root / ".env",
+        cwd / ".env",
+    ]
+    loaded_base = None
+    for p in base_candidates:
+        if p and p.is_file():
+            loaded_base = p.resolve()
+            for k, v in _parse_dotenv(loaded_base).items():
+                if k not in initial_keys:
+                    os.environ[k] = v
+            break
+
+    # 2. Deployment orchestration environment (.env.deploy / .env.prod)
+    deploy_candidates = [
+        Path(deploy_env_file) if deploy_env_file else None,
+        Path(os.environ["REASON_DEPLOY_ENV_FILE"]) if os.environ.get("REASON_DEPLOY_ENV_FILE") else None,
+        Path(os.environ["REASON_ENV_FILE"]) if os.environ.get("REASON_ENV_FILE") else None,
+        repo_root / ".env.deploy",
+        cwd / ".env.deploy",
+        repo_root / ".env.prod",
+        cwd / ".env.prod",
+    ]
+    loaded_deploy = None
+    for p in deploy_candidates:
+        if p and p.is_file():
+            loaded_deploy = p.resolve()
+            for k, v in _parse_dotenv(loaded_deploy).items():
+                if k not in initial_keys:
+                    os.environ[k] = v
+            break
+
+    return str(loaded_deploy) if loaded_deploy else (str(loaded_base) if loaded_base else None)
 
 
 LOADED_ENV_FILE = load_deploy_env()
 
 
-def reload_deploy_config(env_file=None):
+def reload_deploy_config(deploy_env_file=None, base_env_file=None):
     """
     Re-evaluates the environment file and reloads all module-level configuration
     variables in globals(). Useful for tests and dynamic configuration updates.
     """
-    loaded = load_deploy_env(env_file=env_file)
+    loaded = load_deploy_env(deploy_env_file=deploy_env_file, base_env_file=base_env_file)
     global APP_NAME, BASE_DIR, REPO_DIR, APP_DIR, VENV_DIR, SHARED_DIR, PUBLIC_DIR
     global STATIC_DIR, MEDIA_DIR, BACKUP_DIR, LOG_DIR, HF_CACHE_DIR, DEPLOY_USER
     global DJANGO_USER, WEB_GROUP, DOMAIN, GRANIAN_PORT, INFERENCE_PORT, SSL_DIR
@@ -586,7 +604,11 @@ def preflight_check(c):
     env_exists = c.sudo(f"test -f {env_path}", warn=True, hide=True).ok
     if not env_exists:
         print(f"⚠️ [WARNING] Production environment file '{env_path}' not found!")
-        print("   Create it from .env.example with secure keys before deploying to production.")
+        repo_root = Path(__file__).resolve().parent.parent
+        if (repo_root / ".env").is_file():
+            print("   💡 Tip: Run 'fab sync-env' to push your local .env to the server.")
+        else:
+            print("   Create .env from .env.example with secure keys, then run 'fab sync-env'.")
     else:
         # Check permissions on .env (must not be world-readable)
         perm = sudo_bash(c, f"stat -c %a {env_path}", hide=True).stdout.strip()
@@ -680,13 +702,13 @@ def provision_system(c):
 @task
 def sync_env(c, local_env=None):
     """
-    Safely pushes local .env.prod (or specified local_env) to the remote server
+    Safely pushes local application configuration (.env) to the remote server
     at /srv/reason/shared/.env with locked-down 0600 permissions.
     """
     ensure_sudo(c)
     repo_root = Path(__file__).resolve().parent.parent
-    env_file = local_env or LOADED_ENV_FILE or (repo_root / ".env.prod")
-    env_path = Path(env_file)
+    candidate = local_env or (repo_root / ".env") or (repo_root / ".env.deploy") or LOADED_ENV_FILE
+    env_path = Path(candidate)
     if not env_path.is_file():
         raise Exit(f"Local environment file not found at: {env_path}")
 
