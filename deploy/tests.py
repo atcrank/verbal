@@ -493,14 +493,16 @@ class TestBuildAndMigrateSpacyWheel(SimpleTestCase):
         # Mock:
         # 1. test -f APP_DIR/.../en_core_web_sm... -> False (missing in app)
         # 2. test -f REPO_DIR/.../en_core_web_sm... -> True (present in repo)
-        # 3. cp ... -> True
-        # 4. pip install -> True
-        # 5. check --deploy -> True
-        # 6. migrate -> True
-        # 7. collectstatic -> True
+        # 3. python3 -m zipfile -t REPO_DIR/... -> True (valid archive)
+        # 4. cp ... -> True
+        # 5. pip install -> True
+        # 6. check --deploy -> True
+        # 7. migrate -> True
+        # 8. collectstatic -> True
         mock_run_deploy.side_effect = [
             MagicMock(ok=False),  # test -f app wheel
             MagicMock(ok=True),   # test -f repo wheel
+            MagicMock(ok=True),   # zipfile -t repo wheel
             MagicMock(ok=True),   # cp repo wheel to app wheel
             MagicMock(ok=True),   # pip install
             MagicMock(ok=True),   # check --deploy
@@ -514,6 +516,42 @@ class TestBuildAndMigrateSpacyWheel(SimpleTestCase):
         cmd_history = [str(call) for call in mock_run_deploy.call_args_list]
         self.assertTrue(any("cp" in cmd and "en_core_web_sm-3.8.0-py3-none-any.whl" in cmd for cmd in cmd_history))
         mock_backup.assert_called_once()
+
+    @patch("deploy.fabric_deploy.ensure_sudo")
+    @patch("deploy.fabric_deploy.backup_database")
+    @patch("deploy.fabric_deploy.run_as_deploy_user")
+    @patch("deploy.fabric_deploy.sudo_bash")
+    def test_purges_corrupt_wheel_and_replaces_from_repo(self, mock_sudo_bash, mock_run_deploy, mock_backup, mock_sudo):
+        from deploy.fabric_deploy import build_and_migrate, APP_DIR, REPO_DIR
+        c = MagicMock()
+
+        # Mock:
+        # 1. test -f APP_DIR/... -> True (file exists)
+        # 2. python3 -m zipfile -t APP_DIR/... -> False (corrupt / HTML page!)
+        # 3. test -f REPO_DIR/... -> True (present in repo)
+        # 4. python3 -m zipfile -t REPO_DIR/... -> True (valid archive)
+        # 5. cp ... -> True
+        # 6. pip install -> True
+        # 7. check --deploy -> True
+        # 8. migrate -> True
+        # 9. collectstatic -> True
+        mock_run_deploy.side_effect = [
+            MagicMock(ok=True),   # test -f app wheel exists
+            MagicMock(ok=False),  # zipfile -t app wheel FAILS (corrupt)
+            MagicMock(ok=True),   # test -f repo wheel
+            MagicMock(ok=True),   # zipfile -t repo wheel succeeds
+            MagicMock(ok=True),   # cp repo wheel to app wheel
+            MagicMock(ok=True),   # pip install
+            MagicMock(ok=True),   # check --deploy
+            MagicMock(ok=True),   # migrate
+            MagicMock(ok=True),   # collectstatic
+        ]
+        c.sudo.return_value = MagicMock(ok=True)
+
+        build_and_migrate(c)
+
+        # Must have purged the corrupt file
+        c.sudo.assert_any_call(f"rm -f {APP_DIR}/resources/wheels/en_core_web_sm-3.8.0-py3-none-any.whl")
 
 
 class TestBackupDatabaseGuards(SimpleTestCase):

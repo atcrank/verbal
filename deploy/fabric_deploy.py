@@ -1017,21 +1017,48 @@ def build_and_migrate(c, find_links=None, index_url=None, trusted_host=None, use
     ensure_sudo(c)
     print("⚡ Running Python dependency updates and Django maintenance...")
 
-    # Ensure vendored spaCy model wheel (en_core_web_sm) is available for pip
+    # Ensure vendored spaCy model wheel (en_core_web_sm) is available and valid for pip
     spacy_wheel_name = "en_core_web_sm-3.8.0-py3-none-any.whl"
     spacy_wheel_app = f"{APP_DIR}/resources/wheels/{spacy_wheel_name}"
     spacy_wheel_repo = f"{REPO_DIR}/resources/wheels/{spacy_wheel_name}"
     env_file = f"{SHARED_DIR}/.env"
 
-    has_app_wheel = run_as_deploy_user(c, f"test -f {spacy_wheel_app}", warn=True).ok
-    if not has_app_wheel:
-        has_repo_wheel = run_as_deploy_user(c, f"test -f {spacy_wheel_repo}", warn=True).ok
-        if has_repo_wheel:
-            print(f"📦 Copying vendored spaCy wheel from {spacy_wheel_repo} to {spacy_wheel_app}...")
-            run_as_deploy_user(c, f"mkdir -p {APP_DIR}/resources/wheels && cp {spacy_wheel_repo} {spacy_wheel_app}")
-            has_app_wheel = True
+    # 1. Check if the wheel in app directory exists and is an uncorrupted zip archive
+    has_valid_wheel = False
+    if run_as_deploy_user(c, f"test -f {spacy_wheel_app}", warn=True).ok:
+        if run_as_deploy_user(c, f"python3 -m zipfile -t {spacy_wheel_app}", warn=True, hide=True).ok:
+            has_valid_wheel = True
+        else:
+            print(f"⚠️ Existing wheel at {spacy_wheel_app} is corrupt or not a valid zip archive (e.g. HTML error page). Purging...")
+            c.sudo(f"rm -f {spacy_wheel_app}")
 
-    if not has_app_wheel:
+    # 2. Check if a valid wheel is present in repo directory
+    if not has_valid_wheel:
+        if run_as_deploy_user(c, f"test -f {spacy_wheel_repo}", warn=True).ok:
+            if run_as_deploy_user(c, f"python3 -m zipfile -t {spacy_wheel_repo}", warn=True, hide=True).ok:
+                print(f"📦 Copying verified spaCy wheel from {spacy_wheel_repo} to {spacy_wheel_app}...")
+                run_as_deploy_user(c, f"mkdir -p {APP_DIR}/resources/wheels && cp {spacy_wheel_repo} {spacy_wheel_app}")
+                has_valid_wheel = True
+
+    # 3. If missing from server, upload verified wheel directly from local development environment
+    if not has_valid_wheel:
+        local_wheel = Path(__file__).resolve().parent.parent / "resources" / "wheels" / spacy_wheel_name
+        if local_wheel.is_file():
+            print(f"🚀 Uploading local verified wheel ({local_wheel.name}) directly to server...")
+            remote_tmp = f"/tmp/{spacy_wheel_name}"
+            try:
+                c.put(str(local_wheel), remote_tmp)
+                c.sudo(f"mkdir -p {APP_DIR}/resources/wheels")
+                c.sudo(f"install -m 0644 -o {DEPLOY_USER} -g {WEB_GROUP} {remote_tmp} {spacy_wheel_app}")
+                c.run(f"rm -f {remote_tmp}", warn=True)
+                if run_as_deploy_user(c, f"python3 -m zipfile -t {spacy_wheel_app}", warn=True, hide=True).ok:
+                    print(f"✅ Successfully uploaded and verified {spacy_wheel_name} on server.")
+                    has_valid_wheel = True
+            except Exception as e:
+                print(f"⚠️ Could not upload local wheel directly: {e}")
+
+    # 4. Fallback: Download via configured URL (Artifactory or upstream) with fail-safe curl
+    if not has_valid_wheel:
         print(f"🔍 Checking for external/Artifactory source for {spacy_wheel_name}...")
         spacy_download_cmd = (
             f'URL="{os.environ.get("SPACY_WHEEL_URL", "")}"; '
@@ -1042,14 +1069,16 @@ def build_and_migrate(c, find_links=None, index_url=None, trusted_host=None, use
             f'URL="https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/{spacy_wheel_name}"; '
             f'fi; '
             f'mkdir -p {APP_DIR}/resources/wheels && '
-            f'(curl -sSL "$URL" -o {spacy_wheel_app} || wget -q "$URL" -O {spacy_wheel_app})'
+            f'(curl -fSL "$URL" -o {spacy_wheel_app} || wget -q "$URL" -O {spacy_wheel_app})'
         )
         dl_res = run_as_deploy_user(c, spacy_download_cmd, warn=True)
-        if dl_res.ok and run_as_deploy_user(c, f"test -s {spacy_wheel_app}", warn=True).ok:
-            print(f"✅ Successfully secured {spacy_wheel_name} at {spacy_wheel_app}")
+        if dl_res.ok and run_as_deploy_user(c, f"python3 -m zipfile -t {spacy_wheel_app}", warn=True, hide=True).ok:
+            print(f"✅ Successfully downloaded and verified {spacy_wheel_name} at {spacy_wheel_app}")
+            has_valid_wheel = True
         else:
+            c.sudo(f"rm -f {spacy_wheel_app}")
             print(
-                f"⚠️ [WARNING] Could not secure {spacy_wheel_name} at {spacy_wheel_app}.\n"
+                f"⚠️ [WARNING] Could not secure valid {spacy_wheel_name} at {spacy_wheel_app}.\n"
                 f"If pip install fails, configure SPACY_WHEEL_URL in .env.deploy or commit the wheel to resources/wheels/."
             )
 
