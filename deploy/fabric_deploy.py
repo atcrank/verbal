@@ -285,7 +285,7 @@ def write_sudo_file(c, dest_path, content, mode="0644", owner="root:root"):
     c.run(f"rm -f {tmp_path}")
 
 
-def run_as_deploy_user(c, command, **kwargs):
+def run_as_deploy_user(c, command, cwd=None, **kwargs):
     """
     Executes a shell command as DEPLOY_USER (verbal_deploy):
     1. If the current SSH session is already connected as DEPLOY_USER, runs
@@ -294,6 +294,7 @@ def run_as_deploy_user(c, command, **kwargs):
     2. If connected as another user, escalates via root sudo into a login shell
        (`su - {DEPLOY_USER} -c '...'`), ensuring HOME=/home/verbal_deploy and
        SSH keys are active.
+    3. If cwd is specified, ensures the command executes within that working directory.
     """
     current_user = getattr(c, "_cached_deploy_user", None)
     if not isinstance(current_user, str):
@@ -304,7 +305,8 @@ def run_as_deploy_user(c, command, **kwargs):
             current_user = getattr(c, "user", None) or os.environ.get("USER", "")
         c._cached_deploy_user = current_user
 
-    escaped = command.replace("'", "'\\''")
+    full_cmd = f"cd {cwd} && {command}" if cwd else command
+    escaped = full_cmd.replace("'", "'\\''")
     if current_user == DEPLOY_USER:
         return c.run(f"bash -c '{escaped}'", **kwargs)
     else:
@@ -881,7 +883,7 @@ def backup_database(c, use_dumpdata=True):
         f"tables = connection.introspection.table_names(); "
         f"sys.exit(0 if 'django_migrations' in tables else 1)\""
     )
-    has_tables = run_as_deploy_user(c, check_tables_cmd, warn=True).ok
+    has_tables = run_as_deploy_user(c, check_tables_cmd, cwd=APP_DIR, warn=True).ok
     if not has_tables:
         print(f"ℹ️ Database has no existing migrated tables; skipping pre-deploy backup on initial bootstrap.")
         return
@@ -895,7 +897,7 @@ def backup_database(c, use_dumpdata=True):
             f"-e contenttypes -e auth.Permission "
             f"--output {backup_file}"
         )
-        res = run_as_deploy_user(c, dump_cmd, warn=True)
+        res = run_as_deploy_user(c, dump_cmd, cwd=APP_DIR, warn=True)
 
         # Strictly verify backup file exists, is non-empty, and gzip archive is valid
         verify_res = sudo_bash(
@@ -1053,10 +1055,11 @@ def build_and_migrate(c, find_links=None, index_url=None, trusted_host=None, use
 
     # Build pip installation flags (honoring CLI args, environment vars, and shared .env)
     pip_install_cmd = (
+        f'cd {APP_DIR} && '
         f'FL="{find_links or os.environ.get("PIP_FIND_LINKS", "")}"; '
         f'IU="{index_url or os.environ.get("PIP_INDEX_URL", "")}"; '
         f'TH="{trusted_host or os.environ.get("PIP_TRUSTED_HOST", "")}"; '
-        f'EXTRA_FLAGS=""; '
+        f'EXTRA_FLAGS="--find-links {APP_DIR}/resources/wheels"; '
         f'if [ -f {env_file} ]; then '
         f'[ -z "$FL" ] && FL=$(grep -E "^[[:space:]]*PIP_FIND_LINKS=" {env_file} | cut -d= -f2- | tr -d "\\"" | tr -d "\'"); '
         f'[ -z "$IU" ] && IU=$(grep -E "^[[:space:]]*PIP_INDEX_URL=" {env_file} | cut -d= -f2- | tr -d "\\"" | tr -d "\'"); '
@@ -1067,13 +1070,14 @@ def build_and_migrate(c, find_links=None, index_url=None, trusted_host=None, use
         f'[ -n "$TH" ] && EXTRA_FLAGS="$EXTRA_FLAGS --trusted-host $TH"; '
         f'{VENV_DIR}/bin/pip install --no-cache-dir $EXTRA_FLAGS -r {APP_DIR}/requirements.txt'
     )
-    run_as_deploy_user(c, pip_install_cmd)
+    run_as_deploy_user(c, pip_install_cmd, cwd=APP_DIR)
 
     # Run deployment verification checks
     print("🔍 Running Django deployment check...")
     check_res = run_as_deploy_user(
         c,
         f"VERBAL_ROLE=web DJANGO_STATIC_ROOT={STATIC_DIR} {VENV_DIR}/bin/python {APP_DIR}/manage.py check --deploy",
+        cwd=APP_DIR,
         warn=True,
     )
     if check_res.failed:
@@ -1084,13 +1088,14 @@ def build_and_migrate(c, find_links=None, index_url=None, trusted_host=None, use
 
     # Run migrations as deployer
     print("🗄️ Applying Django database migrations...")
-    run_as_deploy_user(c, f"{VENV_DIR}/bin/python {APP_DIR}/manage.py migrate --noinput")
+    run_as_deploy_user(c, f"{VENV_DIR}/bin/python {APP_DIR}/manage.py migrate --noinput", cwd=APP_DIR)
 
     # Collect static assets directly into STATIC_DIR
     print(f"🎨 Collecting static assets into {STATIC_DIR}...")
     run_as_deploy_user(
         c,
         f"DJANGO_STATIC_ROOT={STATIC_DIR} {VENV_DIR}/bin/python {APP_DIR}/manage.py collectstatic --noinput",
+        cwd=APP_DIR,
     )
 
     # Lock down static asset permissions for Nginx read-only access

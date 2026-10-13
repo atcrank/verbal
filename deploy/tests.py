@@ -292,6 +292,25 @@ class TestRunAsDeployUser(SimpleTestCase):
         sudo_args = c.sudo.call_args[0][0]
         self.assertIn(f"su - {DEPLOY_USER} -c", sudo_args)
 
+    def test_run_as_deploy_user_prepends_cwd_when_provided(self):
+        c = MagicMock()
+        c._cached_deploy_user = DEPLOY_USER
+
+        run_as_deploy_user(c, "pip install -r requirements.txt", cwd="/srv/reason/app")
+
+        c.run.assert_called_once_with("bash -c 'cd /srv/reason/app && pip install -r requirements.txt'")
+
+    def test_run_as_deploy_user_prepends_cwd_with_su_when_different_user(self):
+        c = MagicMock()
+        mock_whoami = MagicMock(ok=True, stdout="ubuntu\n")
+        c.run.return_value = mock_whoami
+
+        run_as_deploy_user(c, "pip install -r requirements.txt", cwd="/srv/reason/app")
+
+        self.assertTrue(c.sudo.called)
+        sudo_args = c.sudo.call_args[0][0]
+        self.assertIn("cd /srv/reason/app && pip install -r requirements.txt", sudo_args)
+
 
 class TestDeployEnvConfiguration(SimpleTestCase):
     """Verifies that .env.deploy and deployment environment variables are discovered, loaded, and applied."""
