@@ -183,7 +183,6 @@ RSYNC_EXCLUDES = (
     "--exclude='staticfiles/' "
     "--exclude='workspaces/' "
     "--exclude='documents/' "
-    "--exclude='resources/' "
     "--exclude='backups/' "
     "--exclude='.idea/' "
     "--exclude='.pytest_cache/' "
@@ -651,7 +650,7 @@ def provision_system(c):
     c.sudo(f"usermod -aG {WEB_GROUP} {DJANGO_USER}")
 
     # 3. Create core directory structure
-    c.sudo(f"mkdir -p {BASE_DIR} {REPO_DIR} {APP_DIR} {STATIC_DIR} {MEDIA_DIR} {BACKUP_DIR} {LOG_DIR} {SHARED_DIR}")
+    c.sudo(f"mkdir -p {BASE_DIR} {APP_DIR} {STATIC_DIR} {MEDIA_DIR} {BACKUP_DIR} {LOG_DIR} {SHARED_DIR}")
     c.sudo(f"mkdir -p {SHARED_DIR}/workspaces {SHARED_DIR}/media {HF_CACHE_DIR}")
 
     # 4. Strict base directory lockdown (root owned)
@@ -684,8 +683,9 @@ def provision_system(c):
     c.sudo(f"chmod 0750 {BACKUP_DIR} {LOG_DIR}")
 
     # 9. Repo & App directories
-    c.sudo(f"chown -R {DEPLOY_USER}:{WEB_GROUP} {REPO_DIR} {APP_DIR}")
-    c.sudo(f"chmod 0750 {REPO_DIR} {APP_DIR}")
+    c.sudo(f"chown -R {DEPLOY_USER}:{WEB_GROUP} {APP_DIR}")
+    c.sudo(f"chmod 0750 {APP_DIR}")
+    sudo_bash(c, f"if [ -d {REPO_DIR} ]; then chown -R {DEPLOY_USER}:{WEB_GROUP} {REPO_DIR} && chmod 0750 {REPO_DIR}; fi")
 
     # 10. Python Virtual Environment
     venv_pip = c.sudo(f"test -f {VENV_DIR}/bin/pip", warn=True)
@@ -940,19 +940,32 @@ def update_code(c, git_url=None, branch="main", local_source=None):
         print(f"🔄 Syncing directly from local directory {local_source}...")
         sudo_bash(c, f"rsync -ax --delete {RSYNC_EXCLUDES} {local_source}/ {APP_DIR}/")
     else:
-        git_check = run_as_deploy_user(c, f"test -d {REPO_DIR}/.git", warn=True)
         git_ssh_cmd = 'GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new"'
-        if git_check.failed:
+        # Ensure safe.directory is configured before running any git commands
+        run_as_deploy_user(c, f"git config --global --add safe.directory {REPO_DIR}", warn=True)
+
+        is_git_repo = run_as_deploy_user(c, f"git -C {REPO_DIR} rev-parse --is-inside-work-tree", warn=True).ok
+        if not is_git_repo:
             if not target_git_url:
                 raise Exit(f"No git repository found at {REPO_DIR} and no git_url / REASON_GIT_URL provided.")
+            # If REPO_DIR exists (e.g. from previous aborted clone or non-git dir), wipe it for a clean clone
+            if c.sudo(f"test -e {REPO_DIR}", warn=True).ok:
+                print(f"🧹 Clearing non-git or uninitialized directory at {REPO_DIR} for clean clone...")
+                c.sudo(f"rm -rf {REPO_DIR}")
+
             print(f"📥 Cloning repository from {target_git_url} as {DEPLOY_USER}...")
-            run_as_deploy_user(c, f"git config --global --add safe.directory {REPO_DIR}", warn=True)
-            run_as_deploy_user(c, f"{git_ssh_cmd} git clone {target_git_url} {REPO_DIR}")
+            run_as_deploy_user(c, f"{git_ssh_cmd} git clone --branch {target_branch} {target_git_url} {REPO_DIR}")
+            c.sudo(f"chown -R {DEPLOY_USER}:{WEB_GROUP} {REPO_DIR}")
+            sudo_bash(c, f"chmod 0750 {REPO_DIR}")
         else:
-            print(f"📥 Fetching updates from git as {DEPLOY_USER}...")
-            run_as_deploy_user(c, f"git config --global --add safe.directory {REPO_DIR}", warn=True)
-            run_as_deploy_user(c, f"{git_ssh_cmd} git -C {REPO_DIR} fetch --all")
+            print(f"📥 Updating existing git repository at {REPO_DIR} as {DEPLOY_USER}...")
+            if target_git_url:
+                run_as_deploy_user(c, f"git -C {REPO_DIR} remote set-url origin {target_git_url}", warn=True)
+            run_as_deploy_user(c, f"rm -f {REPO_DIR}/.git/index.lock", warn=True)
+            run_as_deploy_user(c, f"{git_ssh_cmd} git -C {REPO_DIR} fetch --all --prune")
+            run_as_deploy_user(c, f"git -C {REPO_DIR} checkout -B {target_branch} origin/{target_branch}")
             run_as_deploy_user(c, f"git -C {REPO_DIR} reset --hard origin/{target_branch}")
+            run_as_deploy_user(c, f"git -C {REPO_DIR} clean -fd")
 
         sudo_bash(c, f"rsync -ax --delete {RSYNC_EXCLUDES} {REPO_DIR}/ {APP_DIR}/")
 
@@ -985,8 +998,43 @@ def build_and_migrate(c, find_links=None, index_url=None, trusted_host=None):
     ensure_sudo(c)
     print("⚡ Running Python dependency updates and Django maintenance...")
 
-    # Build pip installation flags (honoring CLI args, environment vars, and shared .env)
+    # Ensure vendored spaCy model wheel (en_core_web_sm) is available for pip
+    spacy_wheel_name = "en_core_web_sm-3.8.0-py3-none-any.whl"
+    spacy_wheel_app = f"{APP_DIR}/resources/wheels/{spacy_wheel_name}"
+    spacy_wheel_repo = f"{REPO_DIR}/resources/wheels/{spacy_wheel_name}"
     env_file = f"{SHARED_DIR}/.env"
+
+    has_app_wheel = run_as_deploy_user(c, f"test -f {spacy_wheel_app}", warn=True).ok
+    if not has_app_wheel:
+        has_repo_wheel = run_as_deploy_user(c, f"test -f {spacy_wheel_repo}", warn=True).ok
+        if has_repo_wheel:
+            print(f"📦 Copying vendored spaCy wheel from {spacy_wheel_repo} to {spacy_wheel_app}...")
+            run_as_deploy_user(c, f"mkdir -p {APP_DIR}/resources/wheels && cp {spacy_wheel_repo} {spacy_wheel_app}")
+            has_app_wheel = True
+
+    if not has_app_wheel:
+        print(f"🔍 Checking for external/Artifactory source for {spacy_wheel_name}...")
+        spacy_download_cmd = (
+            f'URL="{os.environ.get("SPACY_WHEEL_URL", "")}"; '
+            f'if [ -z "$URL" ] && [ -f {env_file} ]; then '
+            f'URL=$(grep -E "^[[:space:]]*SPACY_WHEEL_URL=" {env_file} | cut -d= -f2- | tr -d "\\"" | tr -d "\'"); '
+            f'fi; '
+            f'if [ -z "$URL" ]; then '
+            f'URL="https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/{spacy_wheel_name}"; '
+            f'fi; '
+            f'mkdir -p {APP_DIR}/resources/wheels && '
+            f'(curl -sSL "$URL" -o {spacy_wheel_app} || wget -q "$URL" -O {spacy_wheel_app})'
+        )
+        dl_res = run_as_deploy_user(c, spacy_download_cmd, warn=True)
+        if dl_res.ok and run_as_deploy_user(c, f"test -s {spacy_wheel_app}", warn=True).ok:
+            print(f"✅ Successfully secured {spacy_wheel_name} at {spacy_wheel_app}")
+        else:
+            print(
+                f"⚠️ [WARNING] Could not secure {spacy_wheel_name} at {spacy_wheel_app}.\n"
+                f"If pip install fails, configure SPACY_WHEEL_URL in .env.deploy or commit the wheel to resources/wheels/."
+            )
+
+    # Build pip installation flags (honoring CLI args, environment vars, and shared .env)
     pip_install_cmd = (
         f'FL="{find_links or os.environ.get("PIP_FIND_LINKS", "")}"; '
         f'IU="{index_url or os.environ.get("PIP_INDEX_URL", "")}"; '

@@ -380,3 +380,114 @@ class TestDeployEnvConfiguration(SimpleTestCase):
         self.assertIn("domain", sig.parameters)
 
 
+class TestRsyncAndVendoredResources(SimpleTestCase):
+    """Verifies that vendored wheels in resources/ are preserved across deployment syncs."""
+
+    def test_resources_is_not_excluded_by_rsync(self):
+        """Ensures resources/ is preserved in RSYNC_EXCLUDES so en_core_web_sm is deployed."""
+        from deploy.fabric_deploy import RSYNC_EXCLUDES
+        self.assertNotIn("resources/", RSYNC_EXCLUDES)
+        self.assertNotIn("--exclude='resources/'", RSYNC_EXCLUDES)
+
+
+class TestUpdateCodeIdempotency(SimpleTestCase):
+    """Verifies that update_code idempotently handles both fresh/dirty dirs and existing repos."""
+
+    @patch("deploy.fabric_deploy.ensure_sudo")
+    @patch("deploy.fabric_deploy.run_as_deploy_user")
+    @patch("deploy.fabric_deploy.sudo_bash")
+    def test_cleans_non_git_repo_directory_before_cloning(self, mock_sudo_bash, mock_run_deploy, mock_sudo):
+        from deploy.fabric_deploy import update_code, REPO_DIR
+        c = MagicMock()
+
+        # Mock: safe.directory succeeds, but rev-parse fails (not a valid git repo)
+        mock_run_deploy.side_effect = [
+            MagicMock(ok=True),   # safe.directory
+            MagicMock(ok=False),  # rev-parse --is-inside-work-tree
+            MagicMock(ok=True),   # git clone
+        ]
+        # test -e REPO_DIR returns true (directory exists from previous run)
+        c.sudo.return_value = MagicMock(ok=True)
+
+        update_code(c, git_url="git@bitbucket.org:org/verbal.git", branch="main")
+
+        # Must have wiped the invalid REPO_DIR
+        c.sudo.assert_any_call(f"rm -rf {REPO_DIR}")
+
+        # Must have cloned freshly as deploy user
+        clone_calls = [
+            call for call in mock_run_deploy.call_args_list
+            if "git clone" in str(call)
+        ]
+        self.assertTrue(len(clone_calls) > 0)
+        self.assertIn("--branch main", str(clone_calls[0]))
+
+    @patch("deploy.fabric_deploy.ensure_sudo")
+    @patch("deploy.fabric_deploy.run_as_deploy_user")
+    @patch("deploy.fabric_deploy.sudo_bash")
+    def test_updates_existing_git_repo_with_fetch_and_reset(self, mock_sudo_bash, mock_run_deploy, mock_sudo):
+        from deploy.fabric_deploy import update_code, REPO_DIR
+        c = MagicMock()
+
+        # Mock: safe.directory succeeds, rev-parse succeeds (valid git repo)
+        mock_run_deploy.side_effect = [
+            MagicMock(ok=True),   # safe.directory
+            MagicMock(ok=True),   # rev-parse --is-inside-work-tree
+            MagicMock(ok=True),   # remote set-url
+            MagicMock(ok=True),   # rm index.lock
+            MagicMock(ok=True),   # fetch --all --prune
+            MagicMock(ok=True),   # checkout -B main origin/main
+            MagicMock(ok=True),   # reset --hard origin/main
+            MagicMock(ok=True),   # clean -fd
+        ]
+        c.sudo.return_value = MagicMock(ok=True)
+
+        update_code(c, git_url="git@bitbucket.org:org/verbal.git", branch="main")
+
+        # Must NOT have removed REPO_DIR
+        for call in c.sudo.call_args_list:
+            self.assertNotIn(f"rm -rf {REPO_DIR}", str(call))
+
+        # Check git maintenance steps
+        cmd_history = [str(call) for call in mock_run_deploy.call_args_list]
+        self.assertTrue(any("fetch --all --prune" in cmd for cmd in cmd_history))
+        self.assertTrue(any("checkout -B main origin/main" in cmd for cmd in cmd_history))
+        self.assertTrue(any("reset --hard origin/main" in cmd for cmd in cmd_history))
+        self.assertTrue(any("clean -fd" in cmd for cmd in cmd_history))
+
+
+class TestBuildAndMigrateSpacyWheel(SimpleTestCase):
+    """Verifies that build_and_migrate ensures the vendored spaCy wheel is in place."""
+
+    @patch("deploy.fabric_deploy.ensure_sudo")
+    @patch("deploy.fabric_deploy.run_as_deploy_user")
+    @patch("deploy.fabric_deploy.sudo_bash")
+    def test_copies_wheel_from_repo_if_missing_in_app(self, mock_sudo_bash, mock_run_deploy, mock_sudo):
+        from deploy.fabric_deploy import build_and_migrate, APP_DIR, REPO_DIR
+        c = MagicMock()
+
+        # Mock:
+        # 1. test -f APP_DIR/.../en_core_web_sm... -> False (missing in app)
+        # 2. test -f REPO_DIR/.../en_core_web_sm... -> True (present in repo)
+        # 3. cp ... -> True
+        # 4. pip install -> True
+        # 5. check --deploy -> True
+        # 6. migrate -> True
+        # 7. collectstatic -> True
+        mock_run_deploy.side_effect = [
+            MagicMock(ok=False),  # test -f app wheel
+            MagicMock(ok=True),   # test -f repo wheel
+            MagicMock(ok=True),   # cp repo wheel to app wheel
+            MagicMock(ok=True),   # pip install
+            MagicMock(ok=True),   # check --deploy
+            MagicMock(ok=True),   # migrate
+            MagicMock(ok=True),   # collectstatic
+        ]
+        c.sudo.return_value = MagicMock(ok=True)
+
+        build_and_migrate(c)
+
+        cmd_history = [str(call) for call in mock_run_deploy.call_args_list]
+        self.assertTrue(any("cp" in cmd and "en_core_web_sm-3.8.0-py3-none-any.whl" in cmd for cmd in cmd_history))
+
+
