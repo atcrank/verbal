@@ -865,8 +865,28 @@ def backup_database(c, use_dumpdata=True):
 
     manage_py = f"{APP_DIR}/manage.py"
     has_app = c.sudo(f"test -f {manage_py}", warn=True, hide=True).ok
+    if not has_app:
+        print(f"ℹ️ No existing application found at {APP_DIR}; skipping pre-deploy backup on initial bootstrap.")
+        return
 
-    if use_dumpdata and has_app:
+    has_django = run_as_deploy_user(c, f"{VENV_DIR}/bin/python -c 'import django'", warn=True).ok
+    if not has_django:
+        print(f"ℹ️ Django is not installed in {VENV_DIR} (virtual environment not populated yet); skipping pre-deploy backup.")
+        return
+
+    # Check if database has any existing tables to dump
+    check_tables_cmd = (
+        f"VERBAL_ROLE=web {VENV_DIR}/bin/python {APP_DIR}/manage.py shell -c \""
+        f"import sys; from django.db import connection; "
+        f"tables = connection.introspection.table_names(); "
+        f"sys.exit(0 if 'django_migrations' in tables else 1)\""
+    )
+    has_tables = run_as_deploy_user(c, check_tables_cmd, warn=True).ok
+    if not has_tables:
+        print(f"ℹ️ Database has no existing migrated tables; skipping pre-deploy backup on initial bootstrap.")
+        return
+
+    if use_dumpdata:
         backup_file = f"{BACKUP_DIR}/pre_deploy_{timestamp}.json.gz"
         print(f"📦 Dumping database via Django ORM (dumpdata -> {backup_file})...")
         dump_cmd = (
@@ -888,9 +908,6 @@ def backup_database(c, use_dumpdata=True):
             raise Exit("Pre-deploy database backup failed. Aborting to prevent data loss.")
 
         print("🔍 Database backup verified: gzip archive integrity is valid and uncorrupted.")
-    elif not has_app:
-        print(f"ℹ️ No existing application found at {APP_DIR}; skipping pre-deploy backup on initial bootstrap.")
-        return
     else:
         # Native pg_dump fallback
         backup_file = f"{BACKUP_DIR}/pre_deploy_{timestamp}.dump"
@@ -989,7 +1006,7 @@ def update_code(c, git_url=None, branch="main", local_source=None):
 
 
 @task
-def build_and_migrate(c, find_links=None, index_url=None, trusted_host=None):
+def build_and_migrate(c, find_links=None, index_url=None, trusted_host=None, use_dumpdata=True):
     """
     Installs Python dependencies, verifies deployment health, executes
     Django migrations, and collects static assets into STATIC_DIR.
@@ -1061,6 +1078,9 @@ def build_and_migrate(c, find_links=None, index_url=None, trusted_host=None):
     )
     if check_res.failed:
         print("⚠️ [WARNING] Django check --deploy identified potential deployment warnings.")
+
+    # Pre-migration database snapshot (safe now that virtual environment is populated with Django)
+    backup_database(c, use_dumpdata=use_dumpdata)
 
     # Run migrations as deployer
     print("🗄️ Applying Django database migrations...")
@@ -1139,18 +1159,22 @@ def deploy(c, branch="main", git_url=None, local_source=None, find_links=None, i
     """
     Standard zero-downtime deployment pipeline:
     1. Preflight check
-    2. Backup database
-    3. Synchronize code
-    4. Update dependencies & run migrations
-    5. Restart systemd services
-    6. Validate system health
+    2. Synchronize code
+    3. Update dependencies, backup database & run migrations
+    4. Restart systemd services
+    5. Validate system health
     """
     ensure_sudo(c)
     print(f"🚀 Commencing deployment for {APP_NAME}...")
     preflight_check(c)
-    backup_database(c, use_dumpdata=use_dumpdata)
     update_code(c, git_url=git_url, branch=branch, local_source=local_source)
-    build_and_migrate(c, find_links=find_links, index_url=index_url, trusted_host=trusted_host)
+    build_and_migrate(
+        c,
+        find_links=find_links,
+        index_url=index_url,
+        trusted_host=trusted_host,
+        use_dumpdata=use_dumpdata,
+    )
     restart_services(c)
     health_check(c)
     print("🌟 Deployment completed successfully!")

@@ -233,11 +233,15 @@ class TestDeployEnvironmentAndDependencyEnhancements(SimpleTestCase):
     def test_backup_database_defaults_to_dumpdata(self):
         """Ensures backup_database task signature defaults to use_dumpdata=True."""
         import inspect
-        from deploy.fabric_deploy import backup_database, deploy, setup_all
+        from deploy.fabric_deploy import backup_database, deploy, setup_all, build_and_migrate
 
         backup_sig = inspect.signature(backup_database)
         self.assertIn("use_dumpdata", backup_sig.parameters)
         self.assertTrue(backup_sig.parameters["use_dumpdata"].default)
+
+        build_sig = inspect.signature(build_and_migrate)
+        self.assertIn("use_dumpdata", build_sig.parameters)
+        self.assertTrue(build_sig.parameters["use_dumpdata"].default)
 
         deploy_sig = inspect.signature(deploy)
         self.assertIn("use_dumpdata", deploy_sig.parameters)
@@ -460,9 +464,10 @@ class TestBuildAndMigrateSpacyWheel(SimpleTestCase):
     """Verifies that build_and_migrate ensures the vendored spaCy wheel is in place."""
 
     @patch("deploy.fabric_deploy.ensure_sudo")
+    @patch("deploy.fabric_deploy.backup_database")
     @patch("deploy.fabric_deploy.run_as_deploy_user")
     @patch("deploy.fabric_deploy.sudo_bash")
-    def test_copies_wheel_from_repo_if_missing_in_app(self, mock_sudo_bash, mock_run_deploy, mock_sudo):
+    def test_copies_wheel_from_repo_if_missing_in_app(self, mock_sudo_bash, mock_run_deploy, mock_backup, mock_sudo):
         from deploy.fabric_deploy import build_and_migrate, APP_DIR, REPO_DIR
         c = MagicMock()
 
@@ -489,5 +494,45 @@ class TestBuildAndMigrateSpacyWheel(SimpleTestCase):
 
         cmd_history = [str(call) for call in mock_run_deploy.call_args_list]
         self.assertTrue(any("cp" in cmd and "en_core_web_sm-3.8.0-py3-none-any.whl" in cmd for cmd in cmd_history))
+        mock_backup.assert_called_once()
+
+
+class TestBackupDatabaseGuards(SimpleTestCase):
+    """Verifies that backup_database gracefully skips unpopulated venvs or empty databases."""
+
+    @patch("deploy.fabric_deploy.ensure_sudo")
+    @patch("deploy.fabric_deploy.run_as_deploy_user")
+    def test_skips_when_django_not_installed_in_venv(self, mock_run_deploy, mock_sudo):
+        from deploy.fabric_deploy import backup_database
+        c = MagicMock()
+        c.sudo.return_value = MagicMock(ok=True)  # manage.py exists
+        # import django fails (venv unpopulated)
+        mock_run_deploy.return_value = MagicMock(ok=False)
+
+        backup_database(c, use_dumpdata=True)
+
+        # Should never invoke dumpdata
+        for call in mock_run_deploy.call_args_list:
+            self.assertNotIn("dumpdata", str(call))
+
+    @patch("deploy.fabric_deploy.ensure_sudo")
+    @patch("deploy.fabric_deploy.run_as_deploy_user")
+    def test_skips_when_database_has_no_tables(self, mock_run_deploy, mock_sudo):
+        from deploy.fabric_deploy import backup_database
+        c = MagicMock()
+        c.sudo.return_value = MagicMock(ok=True)  # manage.py exists
+        # 1. import django -> True
+        # 2. check_tables -> False (no django_migrations table)
+        mock_run_deploy.side_effect = [
+            MagicMock(ok=True),
+            MagicMock(ok=False),
+        ]
+
+        backup_database(c, use_dumpdata=True)
+
+        # Should never invoke dumpdata
+        for call in mock_run_deploy.call_args_list:
+            self.assertNotIn("dumpdata", str(call))
+
 
 
