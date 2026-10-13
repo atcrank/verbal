@@ -40,11 +40,16 @@ services:
   vllm:
     image: ${DOCKER_VLLM_IMAGE:-vllm/vllm-openai:latest}
     container_name: verbal_vllm
+    user: "${VLLM_UID:-2000}:${VLLM_GID:-0}"
+    group_add:
+      - "${WEB_GID:-33}"
+    ipc: host
+    shm_size: "4g"
     ports:
       - "127.0.0.1:8003:8000"
     volumes:
       - ./lora_adapters:/lora_adapters
-      - ~/.cache/huggingface:/root/.cache/huggingface
+      - ${HF_CACHE_DIR:-~/.cache/huggingface}:/home/vllm/.cache/huggingface
     command: >
       ${VLLM_MODEL:-google/gemma-2-2b-it}
       --gpu-memory-utilization ${VLLM_GPU_MEMORY_UTILIZATION:-0.4}
@@ -53,6 +58,8 @@ services:
       ${VLLM_EXTRA_ARGS:-}
     profiles: ["inference"]
     environment:
+      - HOME=/home/vllm
+      - HF_HOME=/home/vllm/.cache/huggingface
       - VLLM_MODEL=${VLLM_MODEL:-google/gemma-2-2b-it}
       - VLLM_GPU_MEMORY_UTILIZATION=${VLLM_GPU_MEMORY_UTILIZATION:-0.4}
       - VLLM_MAX_MODEL_LEN=${VLLM_MAX_MODEL_LEN:-2048}

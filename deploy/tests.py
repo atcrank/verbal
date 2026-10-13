@@ -127,6 +127,7 @@ class TestSystemdUnitsGeneration(SimpleTestCase):
                 self.assertIn("ProtectSystem=strict", unit)
                 self.assertIn("ProtectHome=yes", unit)
                 self.assertIn("PrivateTmp=yes", unit)
+                self.assertIn("UMask=0002", unit)
                 self.assertIn("ReadWritePaths=/srv/reason/shared /var/lib/hf_home /srv/reason/logs", unit)
                 self.assertIn("EnvironmentFile=-/srv/reason/shared/.env.secrets", unit)
 
@@ -210,6 +211,17 @@ class TestDeployEnvironmentAndDependencyEnhancements(SimpleTestCase):
         compose_content = (Path(settings.BASE_DIR) / "docker-compose.yml").read_text(encoding="utf-8")
         self.assertIn("${WORKSPACES_DIR:-./workspaces}:/home/python/workspace", compose_content)
         self.assertIn("PIP_FIND_LINKS=${PIP_FIND_LINKS:-}", compose_content)
+
+    def test_docker_compose_vllm_non_root_security(self):
+        """Ensures vLLM container service in docker-compose.yml is configured for non-root execution and shared cache."""
+        compose_content = (Path(settings.BASE_DIR) / "docker-compose.yml").read_text(encoding="utf-8")
+        self.assertIn('user: "${VLLM_UID:-2000}:${VLLM_GID:-0}"', compose_content)
+        self.assertIn('group_add:\n      - "${WEB_GID:-33}"', compose_content)
+        self.assertIn("ipc: host", compose_content)
+        self.assertIn('shm_size: "4g"', compose_content)
+        self.assertIn("${HF_CACHE_DIR:-~/.cache/huggingface}:/home/vllm/.cache/huggingface", compose_content)
+        self.assertIn("- HOME=/home/vllm", compose_content)
+        self.assertIn("- HF_HOME=/home/vllm/.cache/huggingface", compose_content)
 
     def test_update_dependencies_supports_find_links(self):
         """Ensures update_dependencies.sh includes --find-links flag."""

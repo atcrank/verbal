@@ -489,6 +489,7 @@ Wants=network.target
 Type=simple
 User={django_user}
 Group={web_group}
+UMask=0002
 WorkingDirectory={app_dir}
 EnvironmentFile=-{env_file}
 EnvironmentFile=-{env_secrets}
@@ -516,6 +517,7 @@ Wants=network.target
 Type=simple
 User={django_user}
 Group={web_group}
+UMask=0002
 WorkingDirectory={app_dir}
 EnvironmentFile=-{env_file}
 EnvironmentFile=-{env_secrets}
@@ -541,6 +543,7 @@ Wants=network.target
 Type=simple
 User={django_user}
 Group={web_group}
+UMask=0002
 WorkingDirectory={app_dir}
 EnvironmentFile=-{env_file}
 EnvironmentFile=-{env_secrets}
@@ -566,6 +569,7 @@ Wants=network.target
 Type=simple
 User={django_user}
 Group={web_group}
+UMask=0002
 WorkingDirectory={app_dir}
 EnvironmentFile=-{env_file}
 EnvironmentFile=-{env_secrets}
@@ -647,9 +651,12 @@ def provision_system(c):
         print(f"👤 Creating system execution user '{DJANGO_USER}'...")
         c.sudo(f"useradd -r -s /bin/false {DJANGO_USER}")
 
-    # 2. Add both to web group for controlled traversal
+    # 2. Add deployer, daemon user, and connecting operator to web group for cooperative access
     c.sudo(f"usermod -aG {WEB_GROUP} {DEPLOY_USER}")
     c.sudo(f"usermod -aG {WEB_GROUP} {DJANGO_USER}")
+    connecting_user = getattr(c, "user", None) or os.environ.get("USER", "")
+    if connecting_user and connecting_user not in [DEPLOY_USER, DJANGO_USER, "root"]:
+        c.sudo(f"usermod -aG {WEB_GROUP} {connecting_user}", warn=True)
 
     # 3. Create core directory structure
     c.sudo(f"mkdir -p {BASE_DIR} {APP_DIR} {STATIC_DIR} {MEDIA_DIR} {BACKUP_DIR} {LOG_DIR} {SHARED_DIR}")
@@ -659,9 +666,17 @@ def provision_system(c):
     c.sudo(f"chown root:root {BASE_DIR}")
     c.sudo(f"chmod 0755 {BASE_DIR}")
 
-    # 5. Persistent shared directories & HF Cache
+    # 5. Persistent shared directories & HF Cache (SetGID 2775 + POSIX ACLs for vLLM container UID 2000)
     c.sudo(f"chown -R {DJANGO_USER}:{WEB_GROUP} {HF_CACHE_DIR}")
     sudo_bash(c, f"chmod -R 2775 {HF_CACHE_DIR}")
+    # Apply default inheritance ACLs for UID 2000 (vLLM container) and WEB_GROUP if setfacl is installed
+    sudo_bash(
+        c,
+        f"if command -v setfacl >/dev/null 2>&1; then "
+        f"setfacl -R -m u:2000:rwx -m d:u:2000:rwx -m g:{WEB_GROUP}:rwx -m d:g:{WEB_GROUP}:rwx {HF_CACHE_DIR} 2>/dev/null || true; "
+        f"fi",
+        warn=True,
+    )
 
     c.sudo(f"chown -R {DJANGO_USER}:{WEB_GROUP} {SHARED_DIR}")
     sudo_bash(c, f"find {SHARED_DIR} -type d -exec chmod 2775 {{}} +")
