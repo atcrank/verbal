@@ -36,22 +36,24 @@ def sweep_unprocessed_documents():
 
     actions = []
 
-    # 1. Find PDFs missing Grobid metadata
-    missing_grobid = Document.objects.filter(
-        file__icontains='.pdf',
-        grobid_metadata__isnull=True
-    )[:5]
-    for doc in missing_grobid:
-        task_extract_grobid_metadata.enqueue(doc.id)
-    if missing_grobid:
-        actions.append(f"Queued {missing_grobid.count()} PDFs for Grobid.")
+    # 1. Opportunistic Grobid TEI Extraction (only when daemon is healthy)
+    from grobid_client.api import is_grobid_available
+    if is_grobid_available():
+        missing_grobid = Document.objects.filter(
+            file__icontains='.pdf',
+            grobid_metadata__isnull=True
+        )[:5]
+        for doc in missing_grobid:
+            task_extract_grobid_metadata.enqueue(doc.id)
+        if missing_grobid:
+            actions.append(f"Queued {missing_grobid.count()} PDFs for Grobid.")
+    else:
+        actions.append("Grobid daemon unavailable; bypassing TEI extraction sweep.")
 
-    # 2. Find Docs missing standard RAG ingestion
+    # 2. Native RAG Ingestion for ALL unindexed documents (PDFs, Markdown, Text)
+    # UNBLOCKED: Every document gets chunked into PGVector immediately without waiting on Grobid.
     unindexed_docs = Document.objects.annotate(
         chunk_count=Count('readingstrategy__usages')
-    ).exclude(
-        file__icontains='.pdf',
-        grobid_metadata__isnull=True
     ).filter(chunk_count=0)[:5]
 
     doc_ids = list(unindexed_docs.values_list('id', flat=True))

@@ -11,10 +11,12 @@ from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import SimpleUploadedFile
 from uuid import UUID
+from unittest.mock import patch, MagicMock
 
 from background_resources.models import (
     Document, 
     ReadingStrategy, 
+    GrobidReadingStrategy,
     PromptStrategy, 
     RegexStrategy, 
     AbbreviationsReadingStrategy,
@@ -962,5 +964,47 @@ class UserChoicesAndStrategyExecutionTests(TestCase):
             usages = StrategyChunkUsage.objects.filter(object_id=strat.id)
             self.assertGreaterEqual(usages.count(), 1)
             self.assertTrue(usages.filter(chunk=fig_chunk).exists())
+
+
+class GrobidOptionalityAndResilienceTests(TestCase):
+    """Unit tests ensuring PDF ingestion and RAG search remain operational when Grobid is absent."""
+
+    @patch("grobid_client.api.is_grobid_available", return_value=False)
+    @patch("background_resources.tasks.task_process_documents")
+    @patch("grobid_client.tasks.task_extract_grobid_metadata")
+    def test_sweep_unprocessed_documents_indexes_pdfs_when_grobid_offline(
+        self, mock_grobid_task, mock_rag_task, mock_available
+    ):
+        """PDFs missing Grobid metadata must be queued for standard RAG ingestion without waiting on Grobid."""
+        doc = Document.objects.create(
+            title="Unindexed Paper",
+            file=SimpleUploadedFile("paper.pdf", b"%PDF-1.4 dummy content")
+        )
+        from background_resources.tasks import sweep_unprocessed_documents
+        res = sweep_unprocessed_documents.call()
+
+        # Grobid enqueue must NOT be called when Grobid is offline
+        mock_grobid_task.enqueue.assert_not_called()
+
+        # Standard RAG ingestion MUST be enqueued for the PDF
+        mock_rag_task.enqueue.assert_called_once()
+        queued_ids = mock_rag_task.enqueue.call_args[0][0]
+        self.assertIn(doc.id, queued_ids)
+
+    def test_grobid_reading_strategy_read_document_handles_missing_tei_xml_cleanly(self):
+        """GrobidReadingStrategy must not raise unhandled ValueError when TEI XML is missing."""
+        doc = Document.objects.create(
+            title="No TEI Doc",
+            file=SimpleUploadedFile("notei.pdf", b"%PDF-1.4 dummy content")
+        )
+        strat = GrobidReadingStrategy.objects.create(
+            document=doc,
+            strategy_description="Grobid Semantic Chunking"
+        )
+        from llm_api.apps import service_registry
+        # Must execute cleanly without unhandled exception
+        strat.read_document(service_registry.rag_service)
+        self.assertEqual(strat.usages.count(), 0)
+
 
 

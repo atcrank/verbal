@@ -8,7 +8,21 @@ else
 fi
 
 echo "1/3: Starting Docker containers..."
-docker compose up -d
+# Always start essential core infrastructure (PostgreSQL DB + Python Execution Sandbox)
+docker compose up -d db sandbox
+
+# Gracefully start optional Grobid container if enabled / available
+if [ "${ENABLE_GROBID:-true}" = "true" ]; then
+    echo "Checking Grobid academic PDF container..."
+    if docker compose --profile academic up -d grobid 2>/dev/null; then
+        echo "✅ Grobid service started on port 8070."
+    else
+        echo "⚠️ Grobid unavailable or blocked by security policies; continuing with basic services."
+        echo "   (PDFs will automatically use native chunked vector search via PyPDFLoader)."
+    fi
+else
+    echo "ℹ️ Grobid container disabled via ENABLE_GROBID=false; continuing with basic services."
+fi
 
 echo "2/3: Starting task worker..."
 if [ -n "$PYENV_ACTIVATE" ]; then

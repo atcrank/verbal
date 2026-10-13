@@ -19,6 +19,7 @@ services:
     ports:
       - "127.0.0.1:8070:8070"
     restart: unless-stopped
+    profiles: ["academic"]
     # Grobid can be memory-heavy when processing massive PDFs,
     # but the container handles itself well alongside Ollama.
   ollama:

@@ -13,7 +13,7 @@ from typing import List
 
 from bs4 import BeautifulSoup, NavigableString
 from langchain_core.documents import Document as LangChainDocument
-from .api import process_pdf_with_grobid
+from .api import process_pdf_with_grobid, is_grobid_available
 
 
 class DocumentMetadataExtraction(BaseModel):

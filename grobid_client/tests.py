@@ -310,3 +310,34 @@ class GrobidTaskErrorHandlingTests(TestCase):
                 self.assertGreater(img.width, 100)
                 self.assertGreater(img.height, 100)
 
+
+class GrobidCircuitBreakerTests(TestCase):
+    """Unit tests for the Grobid availability circuit breaker and graceful offline fallback."""
+
+    @patch("grobid_client.api.requests.get")
+    def test_is_grobid_available_returns_true_on_200(self, mock_get):
+        mock_get.return_value = MagicMock(status_code=200)
+        from grobid_client.api import is_grobid_available
+        self.assertTrue(is_grobid_available())
+
+    @patch("grobid_client.api.requests.get")
+    def test_is_grobid_available_returns_false_on_connection_error(self, mock_get):
+        import requests
+        mock_get.side_effect = requests.exceptions.ConnectionError("Connection refused")
+        from grobid_client.api import is_grobid_available
+        self.assertFalse(is_grobid_available())
+
+    @patch("grobid_client.api.requests.get")
+    def test_is_grobid_available_returns_false_on_500(self, mock_get):
+        mock_get.return_value = MagicMock(status_code=500)
+        from grobid_client.api import is_grobid_available
+        self.assertFalse(is_grobid_available())
+
+    @patch("grobid_client.api.is_grobid_available", return_value=False)
+    def test_process_pdf_with_grobid_raises_fast_connection_error_when_offline(self, mock_available):
+        from grobid_client.api import process_pdf_with_grobid
+        with self.assertRaises(ConnectionError) as ctx:
+            process_pdf_with_grobid("some_path.pdf")
+        self.assertIn("refused (daemon offline)", str(ctx.exception))
+
+

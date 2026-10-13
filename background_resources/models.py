@@ -444,7 +444,11 @@ class GrobidReadingStrategy(models.Model):
         return f"{self.document.title} - {self.strategy_description}"
 
     def read_document(self, rag_service_inject, force=False):
-        chunks, chunk_ids = rag_service_inject.convert_chunk_store_document_grobid(self.document, force=force)
+        try:
+            chunks, chunk_ids = rag_service_inject.convert_chunk_store_document_grobid(self.document, force=force)
+        except ValueError as e:
+            logger.warning(f"GrobidReadingStrategy skipped for '{self.document.title}': {e}")
+            return
         
         if not chunks and chunk_ids:
             chunks = rag_service_inject.store.mget(chunk_ids)
