@@ -23,6 +23,27 @@ from deploy.fabric_deploy import (
     setup_nginx_and_ssl,
 )
 
+try:
+    from invoke import Context
+
+    def create_mock_context(**kwargs):
+        c = MagicMock(spec=Context, **kwargs)
+        c.config = MagicMock()
+        c.config.run = MagicMock()
+        c.config.run.pty = False
+        c.config.sudo = MagicMock()
+        c.config.sudo.pty = False
+        return c
+except ImportError:
+    def create_mock_context(**kwargs):
+        c = MagicMock(**kwargs)
+        c.config = MagicMock()
+        c.config.run = MagicMock()
+        c.config.run.pty = False
+        c.config.sudo = MagicMock()
+        c.config.sudo.pty = False
+        return c
+
 
 class TestNginxConfigGeneration(SimpleTestCase):
     """Verifies that the generated Nginx reverse proxy configuration is sound and secure."""
@@ -433,7 +454,7 @@ class TestUpdateCodeIdempotency(SimpleTestCase):
     @patch("deploy.fabric_deploy.sudo_bash")
     def test_cleans_non_git_repo_directory_before_cloning(self, mock_sudo_bash, mock_run_deploy, mock_sudo):
         from deploy.fabric_deploy import update_code, REPO_DIR
-        c = MagicMock()
+        c = create_mock_context()
 
         # Mock: safe.directory succeeds, but rev-parse fails (not a valid git repo)
         mock_run_deploy.side_effect = [
@@ -462,7 +483,7 @@ class TestUpdateCodeIdempotency(SimpleTestCase):
     @patch("deploy.fabric_deploy.sudo_bash")
     def test_updates_existing_git_repo_with_fetch_and_reset(self, mock_sudo_bash, mock_run_deploy, mock_sudo):
         from deploy.fabric_deploy import update_code, REPO_DIR
-        c = MagicMock()
+        c = create_mock_context()
 
         # Mock: safe.directory succeeds, rev-parse succeeds (valid git repo)
         mock_run_deploy.side_effect = [
@@ -500,7 +521,7 @@ class TestBuildAndMigrateSpacyWheel(SimpleTestCase):
     @patch("deploy.fabric_deploy.sudo_bash")
     def test_copies_wheel_from_repo_if_missing_in_app(self, mock_sudo_bash, mock_run_deploy, mock_backup, mock_sudo):
         from deploy.fabric_deploy import build_and_migrate, APP_DIR, REPO_DIR
-        c = MagicMock()
+        c = create_mock_context()
 
         # Mock:
         # 1. test -f APP_DIR/.../en_core_web_sm... -> False (missing in app)
@@ -535,7 +556,7 @@ class TestBuildAndMigrateSpacyWheel(SimpleTestCase):
     @patch("deploy.fabric_deploy.sudo_bash")
     def test_purges_corrupt_wheel_and_replaces_from_repo(self, mock_sudo_bash, mock_run_deploy, mock_backup, mock_sudo):
         from deploy.fabric_deploy import build_and_migrate, APP_DIR, REPO_DIR
-        c = MagicMock()
+        c = create_mock_context()
 
         # Mock:
         # 1. test -f APP_DIR/... -> True (file exists)
@@ -573,7 +594,7 @@ class TestBackupDatabaseGuards(SimpleTestCase):
     @patch("deploy.fabric_deploy.run_as_deploy_user")
     def test_skips_when_django_not_installed_in_venv(self, mock_run_deploy, mock_sudo):
         from deploy.fabric_deploy import backup_database
-        c = MagicMock()
+        c = create_mock_context()
         c.sudo.return_value = MagicMock(ok=True)  # manage.py exists
         # import django fails (venv unpopulated)
         mock_run_deploy.return_value = MagicMock(ok=False)
@@ -588,7 +609,7 @@ class TestBackupDatabaseGuards(SimpleTestCase):
     @patch("deploy.fabric_deploy.run_as_deploy_user")
     def test_skips_when_database_has_no_tables(self, mock_run_deploy, mock_sudo):
         from deploy.fabric_deploy import backup_database
-        c = MagicMock()
+        c = create_mock_context()
         c.sudo.return_value = MagicMock(ok=True)  # manage.py exists
         # 1. import django -> True
         # 2. check_tables -> False (no django_migrations table)
@@ -634,7 +655,7 @@ class TestDependencyAndIndexConsolidation(SimpleTestCase):
     ):
         """Verifies that pytorch_index_url is injected into pip install EXTRA_FLAGS."""
         from deploy.fabric_deploy import build_and_migrate
-        c = MagicMock()
+        c = create_mock_context()
         mock_run_deploy.side_effect = [
             MagicMock(ok=True),  # wheel test
             MagicMock(ok=True),  # zipfile test
@@ -664,7 +685,7 @@ class TestDependencyAndIndexConsolidation(SimpleTestCase):
     ):
         """Verifies that pytorch_index_url='none' omits --extra-index-url."""
         from deploy.fabric_deploy import build_and_migrate
-        c = MagicMock()
+        c = create_mock_context()
         mock_run_deploy.side_effect = [
             MagicMock(ok=True),  # wheel test
             MagicMock(ok=True),  # zipfile test
@@ -682,9 +703,8 @@ class TestDependencyAndIndexConsolidation(SimpleTestCase):
             if "pip install" in str(call)
         ]
         self.assertEqual(len(pip_calls), 1)
-        # Should set PT="none" and pass through bash case statement that suppresses --extra-index-url
-        self.assertIn('PT="none"', pip_calls[0])
-        self.assertIn('case "$PT" in none|off|false|disabled|"") ;;', pip_calls[0])
+        # Should omit --extra-index-url entirely when none
+        self.assertNotIn("--extra-index-url", pip_calls[0])
 
     @patch("deploy.fabric_deploy.ensure_sudo")
     @patch("deploy.fabric_deploy.backup_database")
@@ -695,7 +715,7 @@ class TestDependencyAndIndexConsolidation(SimpleTestCase):
     ):
         """Verifies that all 4 canonical index flags are supported together."""
         from deploy.fabric_deploy import build_and_migrate
-        c = MagicMock()
+        c = create_mock_context()
         mock_run_deploy.side_effect = [
             MagicMock(ok=True),  # wheel test
             MagicMock(ok=True),  # zipfile test
@@ -724,6 +744,30 @@ class TestDependencyAndIndexConsolidation(SimpleTestCase):
         self.assertIn("https://artifactory.local/whl/cu124", cmd_str)
         self.assertIn("https://artifactory.local/wheels", cmd_str)
         self.assertIn("artifactory.local", cmd_str)
+
+    def test_build_pip_install_cmd_pure_function(self):
+        """Ensures build_pip_install_cmd formats a clean, transparent command without shell indirection."""
+        from deploy.fabric_deploy import build_pip_install_cmd
+        cmd = build_pip_install_cmd(
+            index_url="https://mirror.corp/pypi",
+            pytorch_index_url="https://mirror.corp/whl/cu124",
+            find_links="https://mirror.corp/wheels",
+            trusted_host="mirror.corp",
+            app_dir="/srv/reason/app",
+            venv_dir="/srv/reason/venv",
+        )
+        self.assertEqual(
+            cmd,
+            "/srv/reason/venv/bin/pip install "
+            "--find-links /srv/reason/app/resources/wheels "
+            "--find-links https://mirror.corp/wheels "
+            "--index-url https://mirror.corp/pypi "
+            "--trusted-host mirror.corp "
+            "--extra-index-url https://mirror.corp/whl/cu124 "
+            "--no-cache-dir "
+            "-r /srv/reason/app/requirements.txt"
+        )
+
 
 
 

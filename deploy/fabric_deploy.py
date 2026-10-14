@@ -1022,6 +1022,42 @@ def update_code(c, git_url=None, branch="main", local_source=None):
     print("✅ Application code updated and permission boundaries enforced.")
 
 
+def build_pip_install_cmd(
+    find_links=None,
+    index_url=None,
+    trusted_host=None,
+    pytorch_index_url=None,
+    remote_env=None,
+    no_cache_dir=True,
+    app_dir=APP_DIR,
+    venv_dir=VENV_DIR,
+):
+    """
+    Constructs a clean, transparent pip install command using pure Python string functions,
+    resolving canonical index flags from CLI arguments, local environment, and remote .env.
+    """
+    remote = remote_env or {}
+    fl = (find_links or os.environ.get("PIP_FIND_LINKS") or remote.get("PIP_FIND_LINKS", "")).strip()
+    iu = (index_url or os.environ.get("PIP_INDEX_URL") or remote.get("PIP_INDEX_URL", "")).strip()
+    th = (trusted_host or os.environ.get("PIP_TRUSTED_HOST") or remote.get("PIP_TRUSTED_HOST", "")).strip()
+    pt = (pytorch_index_url or os.environ.get("PYTORCH_INDEX_URL") or remote.get("PYTORCH_INDEX_URL", "")).strip()
+
+    flags = [f"--find-links {app_dir}/resources/wheels"]
+    if fl:
+        flags.append(f"--find-links {fl}")
+    if iu:
+        flags.append(f"--index-url {iu}")
+    if th:
+        flags.append(f"--trusted-host {th}")
+    if pt and pt.lower() not in ["none", "off", "false", "disabled", ""]:
+        flags.append(f"--extra-index-url {pt}")
+    if no_cache_dir:
+        flags.append("--no-cache-dir")
+
+    flags_str = " ".join(flags)
+    return f"{venv_dir}/bin/pip install {flags_str} -r {app_dir}/requirements.txt"
+
+
 @task
 def build_and_migrate(c, find_links=None, index_url=None, trusted_host=None, pytorch_index_url=None, use_dumpdata=True):
     """
@@ -1097,26 +1133,27 @@ def build_and_migrate(c, find_links=None, index_url=None, trusted_host=None, pyt
                 f"If pip install fails, configure SPACY_WHEEL_URL in .env.deploy or commit the wheel to resources/wheels/."
             )
 
-    # Build pip installation flags (honoring CLI args, environment vars, and shared .env)
-    pip_install_cmd = (
-        f'cd {APP_DIR} && '
-        f'FL="{find_links or os.environ.get("PIP_FIND_LINKS", "")}"; '
-        f'IU="{index_url or os.environ.get("PIP_INDEX_URL", "")}"; '
-        f'TH="{trusted_host or os.environ.get("PIP_TRUSTED_HOST", "")}"; '
-        f'PT="{pytorch_index_url or os.environ.get("PYTORCH_INDEX_URL", "")}"; '
-        f'EXTRA_FLAGS="--find-links {APP_DIR}/resources/wheels"; '
-        f'if [ -f {env_file} ]; then '
-        f'[ -z "$FL" ] && FL=$(grep -E "^[[:space:]]*PIP_FIND_LINKS=" {env_file} | cut -d= -f2- | tr -d "\\"" | tr -d "\'"); '
-        f'[ -z "$IU" ] && IU=$(grep -E "^[[:space:]]*PIP_INDEX_URL=" {env_file} | cut -d= -f2- | tr -d "\\"" | tr -d "\'"); '
-        f'[ -z "$TH" ] && TH=$(grep -E "^[[:space:]]*PIP_TRUSTED_HOST=" {env_file} | cut -d= -f2- | tr -d "\\"" | tr -d "\'"); '
-        f'[ -z "$PT" ] && PT=$(grep -E "^[[:space:]]*PYTORCH_INDEX_URL=" {env_file} | cut -d= -f2- | tr -d "\\"" | tr -d "\'"); '
-        f'fi; '
-        f'[ -n "$FL" ] && EXTRA_FLAGS="$EXTRA_FLAGS --find-links $FL"; '
-        f'[ -n "$IU" ] && EXTRA_FLAGS="$EXTRA_FLAGS --index-url $IU"; '
-        f'[ -n "$TH" ] && EXTRA_FLAGS="$EXTRA_FLAGS --trusted-host $TH"; '
-        f'case "$PT" in none|off|false|disabled|"") ;; *) EXTRA_FLAGS="$EXTRA_FLAGS --extra-index-url $PT" ;; esac; '
-        f'{VENV_DIR}/bin/pip install --no-cache-dir $EXTRA_FLAGS -r {APP_DIR}/requirements.txt'
+    # Read any persistent remote environment overrides if available
+    remote_env = {}
+    if c.sudo(f"test -f {env_file}", warn=True, hide=True).ok:
+        cat_res = c.sudo(f"cat {env_file}", warn=True, hide=True)
+        if cat_res.ok and cat_res.stdout:
+            for line in cat_res.stdout.splitlines():
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    k, v = line.split("=", 1)
+                    remote_env[k.strip()] = v.strip().strip('"').strip("'")
+
+    # Build pip installation command purely in Python for complete transparency
+    pip_install_cmd = build_pip_install_cmd(
+        find_links=find_links,
+        index_url=index_url,
+        trusted_host=trusted_host,
+        pytorch_index_url=pytorch_index_url,
+        remote_env=remote_env,
     )
+    print(f"\n📦 [pip install] Executing command as {DEPLOY_USER}:")
+    print(f"   {pip_install_cmd}\n")
     run_as_deploy_user(c, pip_install_cmd, cwd=APP_DIR)
 
     # Run deployment verification checks
