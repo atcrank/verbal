@@ -604,4 +604,126 @@ class TestBackupDatabaseGuards(SimpleTestCase):
             self.assertNotIn("dumpdata", str(call))
 
 
+class TestDependencyAndIndexConsolidation(SimpleTestCase):
+    """Verifies index flag consolidation, offline resilience, and requirements.txt purity."""
+
+    def test_requirements_txt_has_no_active_index_directives(self):
+        """Ensures requirements.txt does not contain un-commented index directives that break offline installs."""
+        req_path = Path(settings.BASE_DIR) / "requirements.txt"
+        self.assertTrue(req_path.is_file())
+        with open(req_path, "r", encoding="utf-8") as f:
+            for line in f:
+                stripped = line.strip()
+                if not stripped or stripped.startswith("#"):
+                    continue
+                self.assertFalse(
+                    stripped.startswith("--index-url"),
+                    f"Found hardcoded --index-url in requirements.txt: {stripped}"
+                )
+                self.assertFalse(
+                    stripped.startswith("--extra-index-url"),
+                    f"Found hardcoded --extra-index-url in requirements.txt: {stripped}"
+                )
+
+    @patch("deploy.fabric_deploy.ensure_sudo")
+    @patch("deploy.fabric_deploy.backup_database")
+    @patch("deploy.fabric_deploy.run_as_deploy_user")
+    @patch("deploy.fabric_deploy.sudo_bash")
+    def test_build_and_migrate_includes_pytorch_extra_index_flag(
+        self, mock_sudo_bash, mock_run_deploy, mock_backup, mock_sudo
+    ):
+        """Verifies that pytorch_index_url is injected into pip install EXTRA_FLAGS."""
+        from deploy.fabric_deploy import build_and_migrate
+        c = MagicMock()
+        mock_run_deploy.side_effect = [
+            MagicMock(ok=True),  # wheel test
+            MagicMock(ok=True),  # zipfile test
+            MagicMock(ok=True),  # pip install
+            MagicMock(ok=True),  # check --deploy
+            MagicMock(ok=True),  # migrate
+            MagicMock(ok=True),  # collectstatic
+        ]
+        c.sudo.return_value = MagicMock(ok=True)
+
+        build_and_migrate(c, pytorch_index_url="https://mirror.local/whl/cu124")
+
+        pip_calls = [
+            str(call) for call in mock_run_deploy.call_args_list
+            if "pip install" in str(call)
+        ]
+        self.assertEqual(len(pip_calls), 1)
+        self.assertIn("--extra-index-url", pip_calls[0])
+        self.assertIn("https://mirror.local/whl/cu124", pip_calls[0])
+
+    @patch("deploy.fabric_deploy.ensure_sudo")
+    @patch("deploy.fabric_deploy.backup_database")
+    @patch("deploy.fabric_deploy.run_as_deploy_user")
+    @patch("deploy.fabric_deploy.sudo_bash")
+    def test_build_and_migrate_ignores_pytorch_when_none_or_disabled(
+        self, mock_sudo_bash, mock_run_deploy, mock_backup, mock_sudo
+    ):
+        """Verifies that pytorch_index_url='none' omits --extra-index-url."""
+        from deploy.fabric_deploy import build_and_migrate
+        c = MagicMock()
+        mock_run_deploy.side_effect = [
+            MagicMock(ok=True),  # wheel test
+            MagicMock(ok=True),  # zipfile test
+            MagicMock(ok=True),  # pip install
+            MagicMock(ok=True),  # check --deploy
+            MagicMock(ok=True),  # migrate
+            MagicMock(ok=True),  # collectstatic
+        ]
+        c.sudo.return_value = MagicMock(ok=True)
+
+        build_and_migrate(c, pytorch_index_url="none")
+
+        pip_calls = [
+            str(call) for call in mock_run_deploy.call_args_list
+            if "pip install" in str(call)
+        ]
+        self.assertEqual(len(pip_calls), 1)
+        # Should set PT="none" and pass through bash case statement that suppresses --extra-index-url
+        self.assertIn('PT="none"', pip_calls[0])
+        self.assertIn('case "$PT" in none|off|false|disabled|"") ;;', pip_calls[0])
+
+    @patch("deploy.fabric_deploy.ensure_sudo")
+    @patch("deploy.fabric_deploy.backup_database")
+    @patch("deploy.fabric_deploy.run_as_deploy_user")
+    @patch("deploy.fabric_deploy.sudo_bash")
+    def test_build_and_migrate_formats_all_four_canonical_flags(
+        self, mock_sudo_bash, mock_run_deploy, mock_backup, mock_sudo
+    ):
+        """Verifies that all 4 canonical index flags are supported together."""
+        from deploy.fabric_deploy import build_and_migrate
+        c = MagicMock()
+        mock_run_deploy.side_effect = [
+            MagicMock(ok=True),  # wheel test
+            MagicMock(ok=True),  # zipfile test
+            MagicMock(ok=True),  # pip install
+            MagicMock(ok=True),  # check --deploy
+            MagicMock(ok=True),  # migrate
+            MagicMock(ok=True),  # collectstatic
+        ]
+        c.sudo.return_value = MagicMock(ok=True)
+
+        build_and_migrate(
+            c,
+            index_url="https://artifactory.local/api/pypi/simple",
+            pytorch_index_url="https://artifactory.local/whl/cu124",
+            find_links="https://artifactory.local/wheels",
+            trusted_host="artifactory.local",
+        )
+
+        pip_calls = [
+            str(call) for call in mock_run_deploy.call_args_list
+            if "pip install" in str(call)
+        ]
+        self.assertEqual(len(pip_calls), 1)
+        cmd_str = pip_calls[0]
+        self.assertIn("https://artifactory.local/api/pypi/simple", cmd_str)
+        self.assertIn("https://artifactory.local/whl/cu124", cmd_str)
+        self.assertIn("https://artifactory.local/wheels", cmd_str)
+        self.assertIn("artifactory.local", cmd_str)
+
+
 

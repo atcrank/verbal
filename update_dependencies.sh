@@ -14,6 +14,11 @@ fi
 if [ -x "/usr/bin/gcc" ]; then export CC=/usr/bin/gcc; fi
 if [ -x "/usr/bin/g++" ]; then export CXX=/usr/bin/g++; fi
 
+# Add ~/.local/bin to PATH in case uv is installed there
+if [ -d "$HOME/.local/bin" ]; then
+    export PATH="$HOME/.local/bin:$PATH"
+fi
+
 # Default options
 DO_COMPILE=true
 DO_SYNC=true
@@ -35,34 +40,40 @@ Usage: bash update_dependencies.sh [OPTIONS]
 
 Compile requirements.in -> requirements.txt and sync the virtual environment.
 
+There are two primary environments:
+  1. Open Internet (Default):
+     Uses PyPI and official PyTorch CUDA extra-index.
+  2. Closed Internet / Artifactory:
+     Configured via PIP_INDEX_URL, PYTORCH_INDEX_URL, PIP_FIND_LINKS, and PIP_TRUSTED_HOST.
+
 Options:
   --no-pytorch-index, --no-pytorch, --cpu
                                Do not add the external PyTorch extra-index URL.
                                Recommended when using internal mirrors (Artifactory)
                                or standard PyPI/CPU deployments.
-  --pytorch-url <URL>          Explicit PyTorch wheel index URL.
+  --pytorch-url <URL>          Explicit PyTorch wheel index URL (overrides PYTORCH_INDEX_URL).
+  --index-url <URL>            Package index URL (overrides PIP_INDEX_URL in .env).
+  --extra-index-url <URL>      Additional package index URL.
+  --find-links <URL>           HTML wheel links directory (overrides PIP_FIND_LINKS in .env).
+  --trusted-host <HOST>        Allow insecure / self-signed host (overrides PIP_TRUSTED_HOST).
   --no-upgrade                 Do NOT force upgrading all dependencies to latest versions.
                                Uses existing requirements.txt pins as preference/constraints.
                                Crucial if Artifactory blocks bleeding-edge package releases.
   --no-hashes                  Omit '--generate-hashes'.
                                Useful if internal Artifactory mirrors serve modified/unhashed wheels.
   --sync-only, --deploy        Skip compilation; sync virtual environment directly from
-                               the existing requirements.txt (fast, offline/deployment mode).
+                               the existing requirements.txt (fast, deployment/offline mode).
   --compile-only               Only compile requirements.in -> requirements.txt without syncing.
-  --index-url <URL>            Package index URL (overrides PIP_INDEX_URL in .env).
-  --find-links <URL>           HTML wheel links directory (overrides PIP_FIND_LINKS in .env).
-  --extra-index-url <URL>      Additional package index URL.
-  --trusted-host <HOST>        Allow insecure / self-signed host (overrides PIP_TRUSTED_HOST).
   --constraint <FILE>          Apply a constraints file during compilation.
   --python <PATH>              Path to target python interpreter.
   --skip-playwright            Skip Playwright browser binary installation.
   -h, --help                   Show this help message.
 
-Environment Variables (from .env or shell):
-  PIP_INDEX_URL                Internal Artifactory / PyPI index URL.
+Canonical Environment Variables (from .env or shell):
+  PIP_INDEX_URL                Primary package index URL (e.g. Artifactory / PyPI mirror).
+  PYTORCH_INDEX_URL            PyTorch wheel repository (defaults to CUDA 12.4; set to "none" to disable).
   PIP_FIND_LINKS               HTML wheel links directory / Artifactory wheel page.
-  PIP_TRUSTED_HOST             Trusted host for private mirrors.
-  PYTORCH_INDEX_URL            PyTorch wheel repository. Set to "none", "off", or "" to disable.
+  PIP_TRUSTED_HOST             Trusted host for private mirrors or self-signed SSL certs.
   PYENV_ACTIVATE               Path to virtualenv activate script.
 EOF
     exit 0
@@ -77,6 +88,22 @@ while [[ $# -gt 0 ]]; do
             ;;
         --pytorch-url)
             CUSTOM_PYTORCH_URL="$2"
+            shift 2
+            ;;
+        --index-url)
+            CUSTOM_INDEX_URL="$2"
+            shift 2
+            ;;
+        --extra-index-url)
+            CUSTOM_EXTRA_INDEX_URL="$2"
+            shift 2
+            ;;
+        --find-links)
+            CUSTOM_FIND_LINKS="$2"
+            shift 2
+            ;;
+        --trusted-host)
+            CUSTOM_TRUSTED_HOST="$2"
             shift 2
             ;;
         --no-upgrade)
@@ -96,22 +123,6 @@ while [[ $# -gt 0 ]]; do
             DO_COMPILE=true
             DO_SYNC=false
             shift
-            ;;
-        --index-url)
-            CUSTOM_INDEX_URL="$2"
-            shift 2
-            ;;
-        --find-links)
-            CUSTOM_FIND_LINKS="$2"
-            shift 2
-            ;;
-        --extra-index-url)
-            CUSTOM_EXTRA_INDEX_URL="$2"
-            shift 2
-            ;;
-        --trusted-host)
-            CUSTOM_TRUSTED_HOST="$2"
-            shift 2
             ;;
         --constraint)
             CUSTOM_CONSTRAINTS="$2"
@@ -174,11 +185,11 @@ if [ -z "$PYTHON_BIN" ] || [ ! -x "$PYTHON_BIN" ]; then
 fi
 
 # Determine PyTorch Index URL
-PYTORCH_ARG=""
+PYTORCH_URL=""
 if [ "$USE_PYTORCH_INDEX" = "false" ]; then
     echo "ℹ️  PyTorch extra-index disabled by command line flag."
 elif [ -n "$CUSTOM_PYTORCH_URL" ]; then
-    PYTORCH_ARG="--extra-index-url $CUSTOM_PYTORCH_URL"
+    PYTORCH_URL="$CUSTOM_PYTORCH_URL"
 else
     PT_ENV="${PYTORCH_INDEX_URL:-https://download.pytorch.org/whl/cu124}"
     case "$PT_ENV" in
@@ -186,30 +197,63 @@ else
             echo "ℹ️  PyTorch extra-index disabled via PYTORCH_INDEX_URL ($PT_ENV)."
             ;;
         *)
-            PYTORCH_ARG="--extra-index-url $PT_ENV"
+            PYTORCH_URL="$PT_ENV"
             ;;
     esac
 fi
 
-# Determine Package Index & Trusted Host options
-INDEX_ARGS=()
+# Resolve canonical package index & mirror parameters
 INDEX_URL="${CUSTOM_INDEX_URL:-$PIP_INDEX_URL}"
-if [ -n "$INDEX_URL" ]; then
-    INDEX_ARGS+=("--default-index" "$INDEX_URL")
-fi
-
-if [ -n "$CUSTOM_EXTRA_INDEX_URL" ]; then
-    INDEX_ARGS+=("--extra-index-url" "$CUSTOM_EXTRA_INDEX_URL")
-fi
-
 TRUSTED_HOST="${CUSTOM_TRUSTED_HOST:-$PIP_TRUSTED_HOST}"
-if [ -n "$TRUSTED_HOST" ]; then
-    INDEX_ARGS+=("--allow-insecure-host" "$TRUSTED_HOST")
+FIND_LINKS_URL="${CUSTOM_FIND_LINKS:-$PIP_FIND_LINKS}"
+EXTRA_INDEX_URL="$CUSTOM_EXTRA_INDEX_URL"
+
+# Detect tool availability
+HAVE_UV=false
+if command -v uv >/dev/null 2>&1; then
+    HAVE_UV=true
 fi
 
-FIND_LINKS_URL="${CUSTOM_FIND_LINKS:-$PIP_FIND_LINKS}"
+# Build uv argument lists
+UV_INDEX_ARGS=()
+if [ -n "$INDEX_URL" ]; then
+    UV_INDEX_ARGS+=("--index-url" "$INDEX_URL")
+fi
+if [ -n "$EXTRA_INDEX_URL" ]; then
+    UV_INDEX_ARGS+=("--extra-index-url" "$EXTRA_INDEX_URL")
+fi
+if [ -n "$PYTORCH_URL" ]; then
+    UV_INDEX_ARGS+=("--extra-index-url" "$PYTORCH_URL")
+fi
 if [ -n "$FIND_LINKS_URL" ]; then
-    INDEX_ARGS+=("--find-links" "$FIND_LINKS_URL")
+    UV_INDEX_ARGS+=("--find-links" "$FIND_LINKS_URL")
+fi
+if [ -n "$TRUSTED_HOST" ]; then
+    UV_INDEX_ARGS+=("--allow-insecure-host" "$TRUSTED_HOST")
+fi
+
+# Build standard pip argument lists (used as fallback when uv is not available)
+PIP_INDEX_ARGS=()
+if [ -n "$INDEX_URL" ]; then
+    PIP_INDEX_ARGS+=("--index-url" "$INDEX_URL")
+fi
+if [ -n "$EXTRA_INDEX_URL" ]; then
+    PIP_INDEX_ARGS+=("--extra-index-url" "$EXTRA_INDEX_URL")
+fi
+if [ -n "$PYTORCH_URL" ]; then
+    PIP_INDEX_ARGS+=("--extra-index-url" "$PYTORCH_URL")
+fi
+if [ -n "$FIND_LINKS_URL" ]; then
+    PIP_INDEX_ARGS+=("--find-links" "$FIND_LINKS_URL")
+fi
+if [ -n "$TRUSTED_HOST" ]; then
+    PIP_INDEX_ARGS+=("--trusted-host" "$TRUSTED_HOST")
+fi
+
+# Always include local vendored wheels directory if present
+if [ -d "resources/wheels" ]; then
+    UV_INDEX_ARGS+=("--find-links" "resources/wheels")
+    PIP_INDEX_ARGS+=("--find-links" "resources/wheels")
 fi
 
 # Determine Constraints
@@ -242,97 +286,82 @@ if [ "$DO_COMPILE" = "true" ]; then
         cp requirements.txt requirements_old.txt
     fi
 
-    COMPILE_ARGS=()
-    if [ "$ALLOW_UPGRADE" = "true" ]; then
-        COMPILE_ARGS+=("--upgrade")
-    fi
-    if [ "$GENERATE_HASHES" = "true" ]; then
-        COMPILE_ARGS+=("--generate-hashes")
-    fi
-    if [ -n "$PYTORCH_ARG" ]; then
-        COMPILE_ARGS+=($PYTORCH_ARG)
-    fi
-    if [ ${#INDEX_ARGS[@]} -gt 0 ]; then
-        COMPILE_ARGS+=("${INDEX_ARGS[@]}")
-    fi
-    if [ ${#CONSTRAINT_ARGS[@]} -gt 0 ]; then
-        COMPILE_ARGS+=("${CONSTRAINT_ARGS[@]}")
-    fi
-    COMPILE_ARGS+=("--emit-index-url")
+    if [ "$HAVE_UV" = "true" ]; then
+        COMPILE_ARGS=("--no-emit-index-url")
+        if [ "$ALLOW_UPGRADE" = "true" ]; then
+            COMPILE_ARGS+=("--upgrade")
+        fi
+        if [ "$GENERATE_HASHES" = "true" ]; then
+            COMPILE_ARGS+=("--generate-hashes")
+        fi
+        if [ ${#UV_INDEX_ARGS[@]} -gt 0 ]; then
+            COMPILE_ARGS+=("${UV_INDEX_ARGS[@]}")
+        fi
+        if [ ${#CONSTRAINT_ARGS[@]} -gt 0 ]; then
+            COMPILE_ARGS+=("${CONSTRAINT_ARGS[@]}")
+        fi
 
-    echo "🔄 1/2: Compiling requirements.in -> requirements.txt..."
-    echo "   Command: uv pip compile requirements.in -o requirements.txt ${COMPILE_ARGS[*]} --python $PYTHON_BIN"
+        echo "🔄 1/2: Compiling requirements.in -> requirements.txt via uv..."
+        echo "   Command: uv pip compile requirements.in -o requirements.txt ${COMPILE_ARGS[*]} --python $PYTHON_BIN"
 
-    COMPILE_LOG="$(mktemp 2>/dev/null || echo "compile_error.log")"
-    if uv pip compile requirements.in -o requirements.txt "${COMPILE_ARGS[@]}" --python "$PYTHON_BIN" > "$COMPILE_LOG" 2>&1; then
-        cat "$COMPILE_LOG"
-        rm -f "$COMPILE_LOG"
-        echo "✅ Compilation successful."
-    else
-        EXIT_CODE=$?
-        cat "$COMPILE_LOG"
-        echo ""
-        echo "================================================================================"
-        echo "❌ UV PIP COMPILE FAILED (Exit Code: $EXIT_CODE)"
-        echo "================================================================================"
+        COMPILE_LOG="$(mktemp 2>/dev/null || echo "compile_error.log")"
+        if uv pip compile requirements.in -o requirements.txt "${COMPILE_ARGS[@]}" --python "$PYTHON_BIN" > "$COMPILE_LOG" 2>&1; then
+            cat "$COMPILE_LOG"
+            rm -f "$COMPILE_LOG"
 
-        # Diagnose known failure modes
-        if grep -qi "403" "$COMPILE_LOG" || grep -qi "forbidden" "$COMPILE_LOG"; then
-            AFFECTED_PKG="$(grep -E "(403|Forbidden|distributions for)" "$COMPILE_LOG" | head -n 3 | tr '\n' ' ')"
-            echo "🚨 DIAGNOSIS: Artifactory / Proxy returned HTTP 403 Forbidden."
-            [ -n "$AFFECTED_PKG" ] && echo "   Detail: $AFFECTED_PKG"
-            echo ""
-            echo "   Why this happens:"
-            echo "     - In enterprise Artifactory environments (e.g. JFrog Xray / Curation),"
-            echo "       newly released packages (e.g. sentence-transformers 6.0.x) or unvetted"
-            echo "       major versions are blocked by security/governance policies."
-            echo "     - Or your Artifactory index requires authentication credentials."
-            echo ""
-            echo "   RECOMMENDED REMEDIES:"
-            echo "     Option A: Re-run with '--no-upgrade' to respect existing proven lockfile versions:"
-            echo "        bash update_dependencies.sh --no-upgrade"
-            echo ""
-            echo "     Option B: Deploy directly using the existing tested requirements.txt without compiling:"
-            echo "        bash update_dependencies.sh --sync-only"
-            echo ""
-            echo "     Option C: Add a temporary constraint for the affected package without modifying requirements.in:"
-            echo "        echo 'sentence-transformers<6.0.0' >> constraints.txt"
-            echo "        bash update_dependencies.sh"
-            echo ""
-            echo "     Option D: If Artifactory requires authentication, set credentials in PIP_INDEX_URL in .env:"
-            echo "        PIP_INDEX_URL=https://<user>:<token-or-key>@artifactory.local/api/pypi/simple"
-        elif grep -qi "download.pytorch.org" "$COMPILE_LOG" || grep -qi "connection refused" "$COMPILE_LOG" || grep -qi "failed to connect" "$COMPILE_LOG"; then
-            echo "🚨 DIAGNOSIS: PyTorch index connection failed."
-            echo ""
-            echo "   Why this happens:"
-            echo "     - The host cannot reach download.pytorch.org (firewall, air-gap, or offline)."
-            echo ""
-            echo "   RECOMMENDED REMEDIES:"
-            echo "     1. Disable the PyTorch extra index:"
-            echo "        bash update_dependencies.sh --no-pytorch-index"
-            echo "     2. Or set in your .env:"
-            echo "        PYTORCH_INDEX_URL=none"
-        elif grep -qi "hash" "$COMPILE_LOG"; then
-            echo "🚨 DIAGNOSIS: Cryptographic hash mismatch or missing hashes from mirror."
-            echo ""
-            echo "   RECOMMENDED REMEDY:"
-            echo "     Run without hash verification:"
-            echo "        bash update_dependencies.sh --no-hashes"
+            # Sanitization guarantee: ensure no un-commented index directives leaked into requirements.txt
+            sed -i '/^[[:space:]]*--index-url/d' requirements.txt
+            sed -i '/^[[:space:]]*--extra-index-url/d' requirements.txt
+
+            echo "✅ Compilation successful (portable requirements.txt generated without baked-in index URLs)."
         else
-            echo "🚨 DIAGNOSIS: Dependency resolution failed."
-            echo "   Check the compiler output above for specific conflicting version requirements."
-            echo "   Try running with '--no-upgrade' or using a constraints file."
-        fi
-
-        # Restore requirements.txt if a backup exists
-        if [ -f requirements_old.txt ]; then
+            EXIT_CODE=$?
+            cat "$COMPILE_LOG"
             echo ""
-            echo "ℹ️  Restoring original requirements.txt from requirements_old.txt"
-            cp requirements_old.txt requirements.txt
+            echo "================================================================================"
+            echo "❌ UV PIP COMPILE FAILED (Exit Code: $EXIT_CODE)"
+            echo "================================================================================"
+            # Restore requirements.txt if a backup exists
+            if [ -f requirements_old.txt ]; then
+                echo "ℹ️  Restoring original requirements.txt from requirements_old.txt"
+                cp requirements_old.txt requirements.txt
+            fi
+            rm -f "$COMPILE_LOG"
+            exit $EXIT_CODE
         fi
-        rm -f "$COMPILE_LOG"
-        echo "================================================================================"
-        exit $EXIT_CODE
+    elif "$PYTHON_BIN" -m piptools --version >/dev/null 2>&1 || command -v pip-compile >/dev/null 2>&1; then
+        echo "🔄 1/2: 'uv' not found; compiling via pip-tools (pip-compile)..."
+        PIP_COMPILE_BIN="pip-compile"
+        if ! command -v pip-compile >/dev/null 2>&1; then
+            PIP_COMPILE_BIN="$PYTHON_BIN -m piptools compile"
+        fi
+        COMPILE_ARGS=("--no-emit-index-url" "--output-file=requirements.txt")
+        if [ "$ALLOW_UPGRADE" = "true" ]; then
+            COMPILE_ARGS+=("--upgrade")
+        fi
+        if [ "$GENERATE_HASHES" = "true" ]; then
+            COMPILE_ARGS+=("--generate-hashes")
+        fi
+        if [ ${#PIP_INDEX_ARGS[@]} -gt 0 ]; then
+            COMPILE_ARGS+=("${PIP_INDEX_ARGS[@]}")
+        fi
+        if [ ${#CONSTRAINT_ARGS[@]} -gt 0 ]; then
+            COMPILE_ARGS+=("${CONSTRAINT_ARGS[@]}")
+        fi
+        $PIP_COMPILE_BIN "${COMPILE_ARGS[@]}" requirements.in
+        sed -i '/^[[:space:]]*--index-url/d' requirements.txt
+        sed -i '/^[[:space:]]*--extra-index-url/d' requirements.txt
+        echo "✅ Compilation successful via pip-compile."
+    else
+        echo "❌ Error: Neither 'uv' nor 'pip-tools' is installed for requirements compilation." >&2
+        echo "   Dependency compilation (requirements.in -> requirements.txt) is intended" >&2
+        echo "   for development machines with 'uv' or 'pip-tools' installed." >&2
+        echo "" >&2
+        echo "   Remedies:" >&2
+        echo "     - To install uv: curl -LsSf https://astral.sh/uv/install.sh | sh" >&2
+        echo "     - Or on a deployed server, deploy/sync existing requirements.txt without compiling:" >&2
+        echo "       bash update_dependencies.sh --sync-only" >&2
+        exit 1
     fi
 fi
 
@@ -345,41 +374,44 @@ if [ "$DO_SYNC" = "true" ]; then
         exit 1
     fi
 
-    SYNC_ARGS=()
-    if [ -n "$PYTORCH_ARG" ]; then
-        SYNC_ARGS+=($PYTORCH_ARG)
-    fi
-    if [ ${#INDEX_ARGS[@]} -gt 0 ]; then
-        SYNC_ARGS+=("${INDEX_ARGS[@]}")
-    fi
-
-    echo "📦 2/2: Syncing virtual environment ($PYTHON_BIN)..."
-    echo "   Command: uv pip sync requirements.txt ${SYNC_ARGS[*]} --python $PYTHON_BIN"
-
-    SYNC_LOG="$(mktemp 2>/dev/null || echo "sync_error.log")"
-    if uv pip sync requirements.txt "${SYNC_ARGS[@]}" --python "$PYTHON_BIN" > "$SYNC_LOG" 2>&1; then
-        cat "$SYNC_LOG"
-        rm -f "$SYNC_LOG"
-        echo "----------------------------------------"
-        echo "✅ Success! Dependencies synced cleanly into virtual environment."
-    else
-        EXIT_CODE=$?
-        cat "$SYNC_LOG"
-        echo ""
-        echo "================================================================================"
-        echo "❌ UV PIP SYNC FAILED (Exit Code: $EXIT_CODE)"
-        echo "================================================================================"
-        if grep -qi "hash" "$SYNC_LOG"; then
-            echo "🚨 Hash mismatch detected during download from your package mirror."
-            echo "   Try re-compiling with: bash update_dependencies.sh --no-hashes"
-        elif grep -qi "403" "$SYNC_LOG" || grep -qi "forbidden" "$SYNC_LOG"; then
-            echo "🚨 Artifactory returned HTTP 403 Forbidden during wheel download."
-            echo "   Check that PIP_INDEX_URL in .env contains valid credentials and that your"
-            echo "   user/token has read permissions on all repository wheels."
+    if [ "$HAVE_UV" = "true" ]; then
+        SYNC_ARGS=()
+        if [ ${#UV_INDEX_ARGS[@]} -gt 0 ]; then
+            SYNC_ARGS+=("${UV_INDEX_ARGS[@]}")
         fi
-        rm -f "$SYNC_LOG"
-        echo "================================================================================"
-        exit $EXIT_CODE
+
+        echo "📦 2/2: Syncing virtual environment via uv ($PYTHON_BIN)..."
+        echo "   Command: uv pip sync requirements.txt ${SYNC_ARGS[*]} --python $PYTHON_BIN"
+
+        SYNC_LOG="$(mktemp 2>/dev/null || echo "sync_error.log")"
+        if uv pip sync requirements.txt "${SYNC_ARGS[@]}" --python "$PYTHON_BIN" > "$SYNC_LOG" 2>&1; then
+            cat "$SYNC_LOG"
+            rm -f "$SYNC_LOG"
+            echo "----------------------------------------"
+            echo "✅ Success! Dependencies synced cleanly into virtual environment."
+        else
+            EXIT_CODE=$?
+            cat "$SYNC_LOG"
+            rm -f "$SYNC_LOG"
+            echo "❌ UV PIP SYNC FAILED (Exit Code: $EXIT_CODE)"
+            exit $EXIT_CODE
+        fi
+    else
+        echo "📦 2/2: 'uv' not found; syncing virtual environment using standard pip ($PYTHON_BIN)..."
+        PIP_INSTALL_ARGS=("--no-cache-dir")
+        if [ ${#PIP_INDEX_ARGS[@]} -gt 0 ]; then
+            PIP_INSTALL_ARGS+=("${PIP_INDEX_ARGS[@]}")
+        fi
+
+        echo "   Command: $PYTHON_BIN -m pip install ${PIP_INSTALL_ARGS[*]} -r requirements.txt"
+        if "$PYTHON_BIN" -m pip install "${PIP_INSTALL_ARGS[@]}" -r requirements.txt; then
+            echo "----------------------------------------"
+            echo "✅ Success! Dependencies installed cleanly via pip."
+        else
+            EXIT_CODE=$?
+            echo "❌ PIP INSTALL FAILED (Exit Code: $EXIT_CODE)"
+            exit $EXIT_CODE
+        fi
     fi
 
     if [ "$INSTALL_PLAYWRIGHT" = "true" ]; then

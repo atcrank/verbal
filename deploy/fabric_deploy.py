@@ -1023,11 +1023,11 @@ def update_code(c, git_url=None, branch="main", local_source=None):
 
 
 @task
-def build_and_migrate(c, find_links=None, index_url=None, trusted_host=None, use_dumpdata=True):
+def build_and_migrate(c, find_links=None, index_url=None, trusted_host=None, pytorch_index_url=None, use_dumpdata=True):
     """
     Installs Python dependencies, verifies deployment health, executes
     Django migrations, and collects static assets into STATIC_DIR.
-    Supports Artifactory wheel links (--find-links) and custom package mirrors.
+    Supports Artifactory wheel links (--find-links), PyTorch extra indices, and custom mirrors.
     """
     ensure_sudo(c)
     print("⚡ Running Python dependency updates and Django maintenance...")
@@ -1103,15 +1103,18 @@ def build_and_migrate(c, find_links=None, index_url=None, trusted_host=None, use
         f'FL="{find_links or os.environ.get("PIP_FIND_LINKS", "")}"; '
         f'IU="{index_url or os.environ.get("PIP_INDEX_URL", "")}"; '
         f'TH="{trusted_host or os.environ.get("PIP_TRUSTED_HOST", "")}"; '
+        f'PT="{pytorch_index_url or os.environ.get("PYTORCH_INDEX_URL", "")}"; '
         f'EXTRA_FLAGS="--find-links {APP_DIR}/resources/wheels"; '
         f'if [ -f {env_file} ]; then '
         f'[ -z "$FL" ] && FL=$(grep -E "^[[:space:]]*PIP_FIND_LINKS=" {env_file} | cut -d= -f2- | tr -d "\\"" | tr -d "\'"); '
         f'[ -z "$IU" ] && IU=$(grep -E "^[[:space:]]*PIP_INDEX_URL=" {env_file} | cut -d= -f2- | tr -d "\\"" | tr -d "\'"); '
         f'[ -z "$TH" ] && TH=$(grep -E "^[[:space:]]*PIP_TRUSTED_HOST=" {env_file} | cut -d= -f2- | tr -d "\\"" | tr -d "\'"); '
+        f'[ -z "$PT" ] && PT=$(grep -E "^[[:space:]]*PYTORCH_INDEX_URL=" {env_file} | cut -d= -f2- | tr -d "\\"" | tr -d "\'"); '
         f'fi; '
         f'[ -n "$FL" ] && EXTRA_FLAGS="$EXTRA_FLAGS --find-links $FL"; '
         f'[ -n "$IU" ] && EXTRA_FLAGS="$EXTRA_FLAGS --index-url $IU"; '
         f'[ -n "$TH" ] && EXTRA_FLAGS="$EXTRA_FLAGS --trusted-host $TH"; '
+        f'case "$PT" in none|off|false|disabled|"") ;; *) EXTRA_FLAGS="$EXTRA_FLAGS --extra-index-url $PT" ;; esac; '
         f'{VENV_DIR}/bin/pip install --no-cache-dir $EXTRA_FLAGS -r {APP_DIR}/requirements.txt'
     )
     run_as_deploy_user(c, pip_install_cmd, cwd=APP_DIR)
@@ -1204,7 +1207,7 @@ def health_check(c):
 # HIGH-LEVEL ORCHESTRATION PIPELINES
 # ==============================================================================
 @task
-def deploy(c, branch="main", git_url=None, local_source=None, find_links=None, index_url=None, trusted_host=None, use_dumpdata=True):
+def deploy(c, branch="main", git_url=None, local_source=None, find_links=None, index_url=None, trusted_host=None, pytorch_index_url=None, use_dumpdata=True):
     """
     Standard zero-downtime deployment pipeline:
     1. Preflight check
@@ -1222,6 +1225,7 @@ def deploy(c, branch="main", git_url=None, local_source=None, find_links=None, i
         find_links=find_links,
         index_url=index_url,
         trusted_host=trusted_host,
+        pytorch_index_url=pytorch_index_url,
         use_dumpdata=use_dumpdata,
     )
     restart_services(c)
@@ -1230,7 +1234,7 @@ def deploy(c, branch="main", git_url=None, local_source=None, find_links=None, i
 
 
 @task
-def setup_all(c, branch="main", git_url=None, local_source=None, find_links=None, index_url=None, trusted_host=None, remove_default_site=False, use_dumpdata=True, domain=None):
+def setup_all(c, branch="main", git_url=None, local_source=None, find_links=None, index_url=None, trusted_host=None, pytorch_index_url=None, remove_default_site=False, use_dumpdata=True, domain=None):
     """
     Full from-scratch server bootstrap:
     1. Preflight check
@@ -1253,6 +1257,7 @@ def setup_all(c, branch="main", git_url=None, local_source=None, find_links=None
         find_links=find_links,
         index_url=index_url,
         trusted_host=trusted_host,
+        pytorch_index_url=pytorch_index_url,
         use_dumpdata=use_dumpdata,
     )
     print("🏁 Complete server bootstrap finished!")
