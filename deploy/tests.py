@@ -517,9 +517,10 @@ class TestBuildAndMigrateSpacyWheel(SimpleTestCase):
 
     @patch("deploy.fabric_deploy.ensure_sudo")
     @patch("deploy.fabric_deploy.backup_database")
+    @patch("deploy.fabric_deploy.check_or_create_superuser")
     @patch("deploy.fabric_deploy.run_as_deploy_user")
     @patch("deploy.fabric_deploy.sudo_bash")
-    def test_copies_wheel_from_repo_if_missing_in_app(self, mock_sudo_bash, mock_run_deploy, mock_backup, mock_sudo):
+    def test_copies_wheel_from_repo_if_missing_in_app(self, mock_sudo_bash, mock_run_deploy, mock_su, mock_backup, mock_sudo):
         from deploy.fabric_deploy import build_and_migrate, APP_DIR, REPO_DIR
         c = create_mock_context()
 
@@ -549,12 +550,14 @@ class TestBuildAndMigrateSpacyWheel(SimpleTestCase):
         cmd_history = [str(call) for call in mock_run_deploy.call_args_list]
         self.assertTrue(any("cp" in cmd and "en_core_web_sm-3.8.0-py3-none-any.whl" in cmd for cmd in cmd_history))
         mock_backup.assert_called_once()
+        mock_su.assert_called_once()
 
     @patch("deploy.fabric_deploy.ensure_sudo")
     @patch("deploy.fabric_deploy.backup_database")
+    @patch("deploy.fabric_deploy.check_or_create_superuser")
     @patch("deploy.fabric_deploy.run_as_deploy_user")
     @patch("deploy.fabric_deploy.sudo_bash")
-    def test_purges_corrupt_wheel_and_replaces_from_repo(self, mock_sudo_bash, mock_run_deploy, mock_backup, mock_sudo):
+    def test_purges_corrupt_wheel_and_replaces_from_repo(self, mock_sudo_bash, mock_run_deploy, mock_su, mock_backup, mock_sudo):
         from deploy.fabric_deploy import build_and_migrate, APP_DIR, REPO_DIR
         c = create_mock_context()
 
@@ -585,6 +588,7 @@ class TestBuildAndMigrateSpacyWheel(SimpleTestCase):
 
         # Must have purged the corrupt file
         c.sudo.assert_any_call(f"rm -f {APP_DIR}/resources/wheels/en_core_web_sm-3.8.0-py3-none-any.whl")
+        mock_su.assert_called_once()
 
 
 class TestBackupDatabaseGuards(SimpleTestCase):
@@ -648,10 +652,11 @@ class TestDependencyAndIndexConsolidation(SimpleTestCase):
 
     @patch("deploy.fabric_deploy.ensure_sudo")
     @patch("deploy.fabric_deploy.backup_database")
+    @patch("deploy.fabric_deploy.check_or_create_superuser")
     @patch("deploy.fabric_deploy.run_as_deploy_user")
     @patch("deploy.fabric_deploy.sudo_bash")
     def test_build_and_migrate_includes_pytorch_extra_index_flag(
-        self, mock_sudo_bash, mock_run_deploy, mock_backup, mock_sudo
+        self, mock_sudo_bash, mock_run_deploy, mock_su, mock_backup, mock_sudo
     ):
         """Verifies that pytorch_index_url is injected into pip install EXTRA_FLAGS."""
         from deploy.fabric_deploy import build_and_migrate
@@ -675,13 +680,15 @@ class TestDependencyAndIndexConsolidation(SimpleTestCase):
         self.assertEqual(len(pip_calls), 1)
         self.assertIn("--extra-index-url", pip_calls[0])
         self.assertIn("https://mirror.local/whl/cu124", pip_calls[0])
+        mock_su.assert_called_once()
 
     @patch("deploy.fabric_deploy.ensure_sudo")
     @patch("deploy.fabric_deploy.backup_database")
+    @patch("deploy.fabric_deploy.check_or_create_superuser")
     @patch("deploy.fabric_deploy.run_as_deploy_user")
     @patch("deploy.fabric_deploy.sudo_bash")
     def test_build_and_migrate_ignores_pytorch_when_none_or_disabled(
-        self, mock_sudo_bash, mock_run_deploy, mock_backup, mock_sudo
+        self, mock_sudo_bash, mock_run_deploy, mock_su, mock_backup, mock_sudo
     ):
         """Verifies that pytorch_index_url='none' omits --extra-index-url."""
         from deploy.fabric_deploy import build_and_migrate
@@ -705,13 +712,15 @@ class TestDependencyAndIndexConsolidation(SimpleTestCase):
         self.assertEqual(len(pip_calls), 1)
         # Should omit --extra-index-url entirely when none
         self.assertNotIn("--extra-index-url", pip_calls[0])
+        mock_su.assert_called_once()
 
     @patch("deploy.fabric_deploy.ensure_sudo")
     @patch("deploy.fabric_deploy.backup_database")
+    @patch("deploy.fabric_deploy.check_or_create_superuser")
     @patch("deploy.fabric_deploy.run_as_deploy_user")
     @patch("deploy.fabric_deploy.sudo_bash")
     def test_build_and_migrate_formats_all_four_canonical_flags(
-        self, mock_sudo_bash, mock_run_deploy, mock_backup, mock_sudo
+        self, mock_sudo_bash, mock_run_deploy, mock_su, mock_backup, mock_sudo
     ):
         """Verifies that all 4 canonical index flags are supported together."""
         from deploy.fabric_deploy import build_and_migrate
@@ -744,6 +753,7 @@ class TestDependencyAndIndexConsolidation(SimpleTestCase):
         self.assertIn("https://artifactory.local/whl/cu124", cmd_str)
         self.assertIn("https://artifactory.local/wheels", cmd_str)
         self.assertIn("artifactory.local", cmd_str)
+        mock_su.assert_called_once()
 
     def test_build_pip_install_cmd_pure_function(self):
         """Ensures build_pip_install_cmd formats a clean, transparent command without shell indirection."""
@@ -767,6 +777,160 @@ class TestDependencyAndIndexConsolidation(SimpleTestCase):
             "--no-cache-dir "
             "-r /srv/reason/app/requirements.txt"
         )
+
+
+class TestStartBackendContainers(SimpleTestCase):
+    """Verifies that start_backend_containers brings up core infrastructure and waits for PostgreSQL readiness."""
+
+    @patch("deploy.fabric_deploy.ensure_sudo")
+    @patch("deploy.fabric_deploy.sudo_bash")
+    @patch("deploy.fabric_deploy.get_remote_env")
+    def test_starts_db_and_sandbox_and_waits_for_postgres_ready(self, mock_env, mock_sudo_bash, mock_sudo):
+        from deploy.fabric_deploy import start_backend_containers, APP_DIR, DB_CONTAINER
+        c = create_mock_context()
+        mock_env.return_value = {"ENABLE_GROBID": "true"}
+        mock_sudo_bash.return_value = MagicMock(ok=True, failed=False)
+
+        start_backend_containers(c)
+
+        calls = [str(call) for call in mock_sudo_bash.call_args_list]
+        self.assertTrue(any("docker compose up -d db sandbox" in cmd for cmd in calls))
+        self.assertTrue(any("docker compose --profile academic up -d grobid" in cmd for cmd in calls))
+        self.assertTrue(any("pg_isready" in cmd for cmd in calls))
+
+    @patch("deploy.fabric_deploy.ensure_sudo")
+    @patch("deploy.fabric_deploy.sudo_bash")
+    @patch("deploy.fabric_deploy.get_remote_env")
+    def test_grobid_disabled_via_remote_env(self, mock_env, mock_sudo_bash, mock_sudo):
+        from deploy.fabric_deploy import start_backend_containers
+        c = create_mock_context()
+        mock_env.return_value = {"ENABLE_GROBID": "false"}
+        mock_sudo_bash.return_value = MagicMock(ok=True, failed=False)
+
+        start_backend_containers(c)
+
+        calls = [str(call) for call in mock_sudo_bash.call_args_list]
+        self.assertTrue(any("docker compose up -d db sandbox" in cmd for cmd in calls))
+        self.assertFalse(any("grobid" in cmd for cmd in calls))
+        self.assertTrue(any("pg_isready" in cmd for cmd in calls))
+
+    @patch("deploy.fabric_deploy.ensure_sudo")
+    @patch("deploy.fabric_deploy.time.sleep")
+    @patch("deploy.fabric_deploy.sudo_bash")
+    @patch("deploy.fabric_deploy.get_remote_env")
+    def test_postgres_readiness_failure_raises_exit(self, mock_env, mock_sudo_bash, mock_sleep, mock_sudo):
+        from deploy.fabric_deploy import start_backend_containers, Exit
+        c = create_mock_context()
+        mock_env.return_value = {}
+        # docker compose succeeds, but pg_isready fails repeatedly
+        mock_sudo_bash.side_effect = [MagicMock(ok=True, failed=False)] + [MagicMock(ok=False, failed=True)] * 20
+
+        with self.assertRaises(Exit):
+            start_backend_containers(c)
+
+
+class TestSuperuserManagement(SimpleTestCase):
+    """Verifies automated detection, env-based auto-creation, guidance banner, and interactive task for superusers."""
+
+    @patch("deploy.fabric_deploy.run_as_deploy_user")
+    def test_check_or_create_superuser_detects_existing(self, mock_run_deploy):
+        from deploy.fabric_deploy import check_or_create_superuser
+        c = create_mock_context()
+        mock_run_deploy.return_value = MagicMock(ok=True, stdout="EXISTS\n")
+
+        check_or_create_superuser(c)
+
+        self.assertEqual(mock_run_deploy.call_count, 1)
+        self.assertIn("is_superuser=True", str(mock_run_deploy.call_args))
+
+    @patch.dict(os.environ, {"DJANGO_SUPERUSER_USERNAME": "auto_admin", "DJANGO_SUPERUSER_PASSWORD": "auto_password", "DJANGO_SUPERUSER_EMAIL": "admin@example.com"})
+    @patch("deploy.fabric_deploy.run_as_deploy_user")
+    def test_check_or_create_superuser_auto_creates_from_env(self, mock_run_deploy):
+        from deploy.fabric_deploy import check_or_create_superuser
+        c = create_mock_context()
+        mock_run_deploy.side_effect = [
+            MagicMock(ok=True, stdout="MISSING\n"),  # shell check
+            MagicMock(ok=True, stdout="Created"),    # createsuperuser
+        ]
+
+        check_or_create_superuser(c)
+
+        self.assertEqual(mock_run_deploy.call_count, 2)
+        create_call = str(mock_run_deploy.call_args_list[1])
+        self.assertIn("createsuperuser --noinput", create_call)
+        self.assertIn("--username auto_admin", create_call)
+        self.assertIn("--email admin@example.com", create_call)
+        self.assertIn("DJANGO_SUPERUSER_PASSWORD=auto_password", create_call)
+
+    @patch.dict(os.environ, {}, clear=True)
+    @patch("builtins.print")
+    @patch("deploy.fabric_deploy.run_as_deploy_user")
+    def test_check_or_create_superuser_warns_when_missing_credentials(self, mock_run_deploy, mock_print):
+        from deploy.fabric_deploy import check_or_create_superuser
+        c = create_mock_context()
+        mock_run_deploy.return_value = MagicMock(ok=True, stdout="MISSING\n")
+
+        check_or_create_superuser(c, remote_env={})
+
+        self.assertEqual(mock_run_deploy.call_count, 1)
+        printed_text = " ".join(str(call) for call in mock_print.call_args_list)
+        self.assertIn("No Django superuser found in database", printed_text)
+        self.assertIn("fab -H <host> createsuperuser", printed_text)
+
+    @patch("deploy.fabric_deploy.ensure_sudo")
+    @patch("deploy.fabric_deploy.run_as_deploy_user")
+    @patch("builtins.input", side_effect=["testboss", "boss@test.com"])
+    @patch("getpass.getpass", side_effect=["pass123", "pass123"])
+    def test_createsuperuser_task_interactive(self, mock_pass, mock_input, mock_run_deploy, mock_sudo):
+        from deploy.fabric_deploy import createsuperuser
+        c = create_mock_context()
+        mock_run_deploy.return_value = MagicMock(ok=True)
+
+        createsuperuser(c)
+
+        mock_run_deploy.assert_called_once()
+        create_call = str(mock_run_deploy.call_args)
+        self.assertIn("createsuperuser --noinput", create_call)
+        self.assertIn("--username testboss", create_call)
+        self.assertIn("--email boss@test.com", create_call)
+        self.assertIn("DJANGO_SUPERUSER_PASSWORD=pass123", create_call)
+
+
+class TestDeployOrdering(SimpleTestCase):
+    """Verifies that the high-level deploy pipeline executes tasks in the strict sequence required for Docker/DB health."""
+
+    @patch("deploy.fabric_deploy.ensure_sudo")
+    @patch("deploy.fabric_deploy.preflight_check")
+    @patch("deploy.fabric_deploy.update_code")
+    @patch("deploy.fabric_deploy.start_backend_containers")
+    @patch("deploy.fabric_deploy.build_and_migrate")
+    @patch("deploy.fabric_deploy.restart_services")
+    @patch("deploy.fabric_deploy.health_check")
+    def test_deploy_invokes_start_backend_containers_before_build_and_migrate(
+        self, mock_health, mock_restart, mock_build, mock_start_containers, mock_update, mock_preflight, mock_sudo
+    ):
+        from deploy.fabric_deploy import deploy
+        c = create_mock_context()
+        manager = MagicMock()
+        manager.attach_mock(mock_preflight, "preflight_check")
+        manager.attach_mock(mock_update, "update_code")
+        manager.attach_mock(mock_start_containers, "start_backend_containers")
+        manager.attach_mock(mock_build, "build_and_migrate")
+        manager.attach_mock(mock_restart, "restart_services")
+        manager.attach_mock(mock_health, "health_check")
+
+        deploy(c)
+
+        expected_order = [
+            "preflight_check",
+            "update_code",
+            "start_backend_containers",
+            "build_and_migrate",
+            "restart_services",
+            "health_check",
+        ]
+        actual_order = [call[0] for call in manager.mock_calls]
+        self.assertEqual(actual_order, expected_order)
 
 
 

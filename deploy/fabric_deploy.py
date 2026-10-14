@@ -14,7 +14,9 @@ Usage examples:
 
     # Individual modular tasks:
     fab -H localhost preflight-check
+    fab -H localhost start-backend-containers
     fab -H localhost backup-database
+    fab -H localhost createsuperuser
     fab -H localhost setup-nginx-and-ssl
     fab -H localhost restart-services
     fab -H localhost health-check
@@ -23,6 +25,7 @@ Usage examples:
 import getpass
 import io
 import os
+import shlex
 import time
 import uuid
 from pathlib import Path
@@ -1022,6 +1025,79 @@ def update_code(c, git_url=None, branch="main", local_source=None):
     print("✅ Application code updated and permission boundaries enforced.")
 
 
+def get_remote_env(c, env_file=None):
+    """
+    Parses key-value pairs from the remote persistent environment file (.env).
+    """
+    target = env_file or f"{SHARED_DIR}/.env"
+    remote_env = {}
+    if c.sudo(f"test -f {target}", warn=True, hide=True).ok:
+        cat_res = c.sudo(f"cat {target}", warn=True, hide=True)
+        if cat_res.ok and cat_res.stdout:
+            for line in cat_res.stdout.splitlines():
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    k, v = line.split("=", 1)
+                    remote_env[k.strip()] = v.strip().strip('"').strip("'")
+    return remote_env
+
+
+@task
+def start_backend_containers(c):
+    """
+    Brings up core Docker services (PostgreSQL db, python sandbox) and optional services
+    (Grobid academic PDF parser) before database migrations, and awaits database readiness.
+    """
+    ensure_sudo(c)
+    print("🐳 Starting Docker backend containers (db, sandbox)...")
+
+    # 1. Bring up core containers
+    res = sudo_bash(c, f"cd {APP_DIR} && docker compose up -d db sandbox", warn=True)
+    if not res.ok:
+        print(f"🚨 Failed to start backend containers:\n{res.stderr or res.stdout}")
+        raise Exit("Failed to start Docker backend services.")
+
+    # 2. Check and start Grobid if enabled
+    remote_env = get_remote_env(c)
+    enable_grobid = (
+        os.environ.get("ENABLE_GROBID")
+        or remote_env.get("ENABLE_GROBID", "true")
+    ).lower() not in ["0", "false", "off", "no"]
+
+    if enable_grobid:
+        print("Checking Grobid academic PDF container...")
+        g_res = sudo_bash(c, f"cd {APP_DIR} && docker compose --profile academic up -d grobid 2>/dev/null", warn=True)
+        if g_res.ok:
+            print("✅ Grobid service started on port 8070.")
+        else:
+            print("⚠️ Grobid unavailable or blocked by security policies; continuing with basic services.")
+    else:
+        print("ℹ️ Grobid container disabled via ENABLE_GROBID=false; continuing with basic services.")
+
+    # 3. Wait for PostgreSQL container to become ready
+    print(f"⏳ Waiting for PostgreSQL container '{DB_CONTAINER}' to become healthy...")
+    max_retries = 15
+    retry_interval = 2
+    is_ready = False
+    for attempt in range(1, max_retries + 1):
+        check = sudo_bash(
+            c,
+            f"docker exec {DB_CONTAINER} pg_isready -U {DB_USER} -d {DB_NAME} 2>/dev/null || "
+            f"pg_isready -h 127.0.0.1 -p {DB_PORT} -U {DB_USER} 2>/dev/null",
+            warn=True,
+            hide=True,
+        )
+        if check.ok:
+            is_ready = True
+            print(f"✅ Database container '{DB_CONTAINER}' is healthy and accepting connections.")
+            break
+        time.sleep(retry_interval)
+
+    if not is_ready:
+        print(f"🚨 PostgreSQL container '{DB_CONTAINER}' did not report ready after {max_retries * retry_interval} seconds.")
+        raise Exit(f"Database container {DB_CONTAINER} failed to become healthy.")
+
+
 def build_pip_install_cmd(
     find_links=None,
     index_url=None,
@@ -1134,15 +1210,7 @@ def build_and_migrate(c, find_links=None, index_url=None, trusted_host=None, pyt
             )
 
     # Read any persistent remote environment overrides if available
-    remote_env = {}
-    if c.sudo(f"test -f {env_file}", warn=True, hide=True).ok:
-        cat_res = c.sudo(f"cat {env_file}", warn=True, hide=True)
-        if cat_res.ok and cat_res.stdout:
-            for line in cat_res.stdout.splitlines():
-                line = line.strip()
-                if line and not line.startswith("#") and "=" in line:
-                    k, v = line.split("=", 1)
-                    remote_env[k.strip()] = v.strip().strip('"').strip("'")
+    remote_env = get_remote_env(c, env_file=env_file)
 
     # Build pip installation command purely in Python for complete transparency
     pip_install_cmd = build_pip_install_cmd(
@@ -1174,6 +1242,9 @@ def build_and_migrate(c, find_links=None, index_url=None, trusted_host=None, pyt
     print("🗄️ Applying Django database migrations...")
     run_as_deploy_user(c, f"{VENV_DIR}/bin/python {APP_DIR}/manage.py migrate --noinput", cwd=APP_DIR)
 
+    # Verify or guide superuser setup
+    check_or_create_superuser(c, remote_env=remote_env)
+
     # Collect static assets directly into STATIC_DIR
     print(f"🎨 Collecting static assets into {STATIC_DIR}...")
     run_as_deploy_user(
@@ -1188,6 +1259,113 @@ def build_and_migrate(c, find_links=None, index_url=None, trusted_host=None, pyt
     sudo_bash(c, f"find {STATIC_DIR} -type f -exec chmod 0644 {{}} +")
 
     print("✅ Build, migrations, and static asset collection completed.")
+
+
+def check_or_create_superuser(c, remote_env=None):
+    """
+    Verifies if a Django superuser exists in the database.
+    If none exists:
+      - Automatically creates one if DJANGO_SUPERUSER_USERNAME & DJANGO_SUPERUSER_PASSWORD are set.
+      - Otherwise prints an actionable guidance banner instructing the operator how to create one.
+    """
+    remote = remote_env if remote_env is not None else get_remote_env(c)
+
+    # Check if a superuser already exists
+    check_cmd = (
+        f"VERBAL_ROLE=web {VENV_DIR}/bin/python {APP_DIR}/manage.py shell -c "
+        f"\"from django.contrib.auth import get_user_model; "
+        f"print('EXISTS' if get_user_model().objects.filter(is_superuser=True).exists() else 'MISSING')\""
+    )
+    check_res = run_as_deploy_user(c, check_cmd, cwd=APP_DIR, warn=True, hide=True)
+    if check_res.ok and "EXISTS" in (check_res.stdout or ""):
+        print("👤 Verified existing Django superuser account.")
+        return
+
+    # Check for credentials in env or remote_env
+    su_user = (os.environ.get("DJANGO_SUPERUSER_USERNAME") or remote.get("DJANGO_SUPERUSER_USERNAME", "")).strip()
+    su_pass = (os.environ.get("DJANGO_SUPERUSER_PASSWORD") or remote.get("DJANGO_SUPERUSER_PASSWORD", "")).strip()
+    su_email = (os.environ.get("DJANGO_SUPERUSER_EMAIL") or remote.get("DJANGO_SUPERUSER_EMAIL", "")).strip()
+
+    if su_user and su_pass:
+        print(f"👤 Creating initial Django superuser '{su_user}' from environment credentials...")
+        email_flag = f"--email {shlex.quote(su_email)}" if su_email else ""
+        create_cmd = (
+            f"DJANGO_SUPERUSER_PASSWORD={shlex.quote(su_pass)} "
+            f"{VENV_DIR}/bin/python {APP_DIR}/manage.py createsuperuser "
+            f"--noinput --username {shlex.quote(su_user)} {email_flag}"
+        )
+        create_res = run_as_deploy_user(c, create_cmd, cwd=APP_DIR, warn=True)
+        if create_res.ok:
+            print(f"✅ Initial Django superuser '{su_user}' created successfully.")
+            return
+        elif "already" in (create_res.stderr or create_res.stdout or "").lower():
+            print(f"👤 Django superuser '{su_user}' already exists.")
+            return
+        else:
+            print(f"⚠️ Failed to auto-create superuser '{su_user}': {create_res.stderr or create_res.stdout}")
+
+    # No credentials provided and no superuser exists: display guidance banner
+    print("\n" + "=" * 70)
+    print("📢 [ACTION REQUIRED] No Django superuser found in database!")
+    print("   To log in to Django Admin and configure AI models, create an")
+    print("   administrative account using one of the following methods:")
+    print("")
+    print("   1. From your local deployment workstation:")
+    print("      fab -H <host> createsuperuser")
+    print("")
+    print("   2. Or directly on the server:")
+    print(f"      sudo -u {DEPLOY_USER} {VENV_DIR}/bin/python {APP_DIR}/manage.py createsuperuser")
+    print("=" * 70 + "\n")
+
+
+@task
+def createsuperuser(c, username=None, email=None):
+    """
+    Guides the deployer through creating an administrative superuser account
+    on the remote server, prompting securely for credentials if not supplied.
+    """
+    ensure_sudo(c)
+    print("👤 Setting up Django superuser...")
+
+    target_user = username or os.environ.get("DJANGO_SUPERUSER_USERNAME")
+    if not target_user:
+        target_user = input("Superuser username [admin]: ").strip() or "admin"
+
+    target_email = email if email is not None else os.environ.get("DJANGO_SUPERUSER_EMAIL")
+    if target_email is None:
+        target_email = input("Superuser email address (optional): ").strip()
+
+    target_password = os.environ.get("DJANGO_SUPERUSER_PASSWORD")
+    if not target_password:
+        while True:
+            p1 = getpass.getpass(f"Password for '{target_user}': ")
+            if not p1:
+                print("❌ Password cannot be empty.")
+                continue
+            p2 = getpass.getpass("Password (again): ")
+            if p1 != p2:
+                print("❌ Passwords do not match. Please try again.")
+                continue
+            target_password = p1
+            break
+
+    email_opt = f"--email {shlex.quote(target_email)}" if target_email else ""
+    escaped_pw = shlex.quote(target_password)
+    escaped_user = shlex.quote(target_user)
+
+    cmd = (
+        f"DJANGO_SUPERUSER_PASSWORD={escaped_pw} "
+        f"{VENV_DIR}/bin/python {APP_DIR}/manage.py createsuperuser "
+        f"--noinput --username {escaped_user} {email_opt}"
+    )
+    res = run_as_deploy_user(c, cmd, cwd=APP_DIR, warn=True)
+    if res.ok:
+        print(f"✅ Superuser '{target_user}' created successfully.")
+    elif "already" in (res.stderr or res.stdout or "").lower():
+        print(f"ℹ️ Superuser '{target_user}' already exists in database.")
+    else:
+        print(f"❌ Failed to create superuser:\n{res.stderr or res.stdout}")
+        raise Exit(f"Failed to create superuser '{target_user}'.")
 
 
 # ==============================================================================
@@ -1249,14 +1427,16 @@ def deploy(c, branch="main", git_url=None, local_source=None, find_links=None, i
     Standard zero-downtime deployment pipeline:
     1. Preflight check
     2. Synchronize code
-    3. Update dependencies, backup database & run migrations
-    4. Restart systemd services
-    5. Validate system health
+    3. Start backend infrastructure containers (db, sandbox) and await database health
+    4. Update dependencies, backup database & run migrations
+    5. Restart systemd services
+    6. Validate system health
     """
     ensure_sudo(c)
     print(f"🚀 Commencing deployment for {APP_NAME}...")
     preflight_check(c)
     update_code(c, git_url=git_url, branch=branch, local_source=local_source)
+    start_backend_containers(c)
     build_and_migrate(
         c,
         find_links=find_links,
@@ -1327,10 +1507,15 @@ if __name__ == "__main__":
         "setup_systemd": setup_systemd,
         "backup-database": backup_database,
         "backup_database": backup_database,
+        "start-backend-containers": start_backend_containers,
+        "start_backend_containers": start_backend_containers,
         "update-code": update_code,
         "update_code": update_code,
         "build-and-migrate": build_and_migrate,
         "build_and_migrate": build_and_migrate,
+        "createsuperuser": createsuperuser,
+        "create-superuser": createsuperuser,
+        "create_superuser": createsuperuser,
         "restart-services": restart_services,
         "restart_services": restart_services,
         "health-check": health_check,
