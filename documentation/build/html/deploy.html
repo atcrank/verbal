@@ -94,9 +94,10 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#troubleshooting-failure-modes">6. Troubleshooting &amp; Failure Modes</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#postgresql-readiness-port-collisions">PostgreSQL Readiness &amp; Port Collisions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#postgresql-readiness-version-compatibility-port-collisions">PostgreSQL Readiness, Version Compatibility &amp; Port Collisions</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#grobid-academic-pdf-parser-offline">Grobid Academic PDF Parser Offline</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#code-execution-sandbox-unreachable">Code Execution Sandbox Unreachable</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#code-execution-sandbox-red-hat-ubi-base-images">Code Execution Sandbox &amp; Red Hat UBI Base Images</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nginx-502-bad-gateway">Nginx “502 Bad Gateway”</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemd-sandboxing-permission-denied">Systemd Sandboxing “Permission Denied”</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#django-improperlyconfigured-on-startup">Django <code class="docutils literal notranslate"><span class="pre">ImproperlyConfigured</span></code> on Startup</a></li>
 </ul>
@@ -177,11 +178,12 @@
 </li>
 <li><p><a class="reference internal" href="#troubleshooting-failure-modes" id="id22">6. Troubleshooting &amp; Failure Modes</a></p>
 <ul>
-<li><p><a class="reference internal" href="#postgresql-readiness-port-collisions" id="id23">PostgreSQL Readiness &amp; Port Collisions</a></p></li>
+<li><p><a class="reference internal" href="#postgresql-readiness-version-compatibility-port-collisions" id="id23">PostgreSQL Readiness, Version Compatibility &amp; Port Collisions</a></p></li>
 <li><p><a class="reference internal" href="#grobid-academic-pdf-parser-offline" id="id24">Grobid Academic PDF Parser Offline</a></p></li>
-<li><p><a class="reference internal" href="#code-execution-sandbox-unreachable" id="id25">Code Execution Sandbox Unreachable</a></p></li>
-<li><p><a class="reference internal" href="#systemd-sandboxing-permission-denied" id="id26">Systemd Sandboxing “Permission Denied”</a></p></li>
-<li><p><a class="reference internal" href="#django-improperlyconfigured-on-startup" id="id27">Django <code class="docutils literal notranslate"><span class="pre">ImproperlyConfigured</span></code> on Startup</a></p></li>
+<li><p><a class="reference internal" href="#code-execution-sandbox-red-hat-ubi-base-images" id="id25">Code Execution Sandbox &amp; Red Hat UBI Base Images</a></p></li>
+<li><p><a class="reference internal" href="#nginx-502-bad-gateway" id="id26">Nginx “502 Bad Gateway”</a></p></li>
+<li><p><a class="reference internal" href="#systemd-sandboxing-permission-denied" id="id27">Systemd Sandboxing “Permission Denied”</a></p></li>
+<li><p><a class="reference internal" href="#django-improperlyconfigured-on-startup" id="id28">Django <code class="docutils literal notranslate"><span class="pre">ImproperlyConfigured</span></code> on Startup</a></p></li>
 </ul>
 </li>
 </ul>
@@ -572,11 +574,30 @@ sudo<span class="w"> </span>chmod<span class="w"> </span><span class="m">0644</s
 </section>
 <section id="troubleshooting-failure-modes">
 <h2><a class="toc-backref" href="#id22" role="doc-backlink">6. Troubleshooting &amp; Failure Modes</a><a class="headerlink" href="#troubleshooting-failure-modes" title="Link to this heading"></a></h2>
-<section id="postgresql-readiness-port-collisions">
-<h3><a class="toc-backref" href="#id23" role="doc-backlink">PostgreSQL Readiness &amp; Port Collisions</a><a class="headerlink" href="#postgresql-readiness-port-collisions" title="Link to this heading"></a></h3>
+<section id="postgresql-readiness-version-compatibility-port-collisions">
+<h3><a class="toc-backref" href="#id23" role="doc-backlink">PostgreSQL Readiness, Version Compatibility &amp; Port Collisions</a><a class="headerlink" href="#postgresql-readiness-version-compatibility-port-collisions" title="Link to this heading"></a></h3>
 <ul>
-<li><p><strong>Symptom</strong>: Migrations fail with <code class="docutils literal notranslate"><span class="pre">connection</span> <span class="pre">to</span> <span class="pre">server</span> <span class="pre">at</span> <span class="pre">&quot;127.0.0.1&quot;,</span> <span class="pre">port</span> <span class="pre">5433</span> <span class="pre">failed:</span> <span class="pre">Connection</span> <span class="pre">refused</span></code>.</p></li>
-<li><p><strong>Cause</strong>: The <code class="docutils literal notranslate"><span class="pre">verbal_db</span></code> Docker container is either still initializing or encountered a startup error.</p></li>
+<li><p><strong>Symptom</strong>: Migrations fail with <code class="docutils literal notranslate"><span class="pre">connection</span> <span class="pre">to</span> <span class="pre">server</span> <span class="pre">at</span> <span class="pre">&quot;127.0.0.1&quot;,</span> <span class="pre">port</span> <span class="pre">5433</span> <span class="pre">failed:</span> <span class="pre">Connection</span> <span class="pre">refused</span></code>, or <code class="docutils literal notranslate"><span class="pre">verbal_db</span></code> container enters a crash loop restarting every 20 seconds.</p></li>
+<li><p><strong>Cause 1: Container Still Starting</strong>: The container is initializing. Inspect logs via <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">logs</span> <span class="pre">verbal_db</span></code>.</p></li>
+<li><p><strong>Cause 2: PostgreSQL Major Version Incompatibility</strong>:
+PostgreSQL data directories are strictly locked to the major version that initialized them. If the <code class="docutils literal notranslate"><span class="pre">postgres_data</span></code> volume was initialized by PostgreSQL 16 (<code class="docutils literal notranslate"><span class="pre">pgvector/pgvector:pg16</span></code>), running an image with a different major version (such as PostgreSQL 18) will trigger a fatal error:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>FATAL: database files are incompatible with server
+DETAIL: The data directory was initialized by PostgreSQL version 16, which is not compatible with this version 18.
+HINT: You must either run "pg_upgrade" or dump/restore the data directory to upgrade...
+</pre></div>
+</div>
+<p><strong>Resolution</strong>:
+- Keep the container image set to <code class="docutils literal notranslate"><span class="pre">DOCKER_POSTGRES_IMAGE=pgvector/pgvector:pg16</span></code> in your <code class="docutils literal notranslate"><span class="pre">.env</span></code> and <code class="docutils literal notranslate"><span class="pre">docker-compose.yml</span></code> (with volume mount <code class="docutils literal notranslate"><span class="pre">postgres_data:/var/lib/postgresql/data</span></code>).
+- Alternatively, if setting up a fresh deployment or staging server without data to preserve, reset the volume:</p>
+<blockquote>
+<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>/srv/reason/app
+sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>stop<span class="w"> </span>db
+sudo<span class="w"> </span>docker<span class="w"> </span>volume<span class="w"> </span>rm<span class="w"> </span>reason_postgres_data
+sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d<span class="w"> </span>db
+</pre></div>
+</div>
+</div></blockquote>
+</li>
 <li><p><strong>Diagnostic</strong>:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>ps<span class="w"> </span>-a<span class="w"> </span>--filter<span class="w"> </span><span class="nv">name</span><span class="o">=</span>verbal_db
 docker<span class="w"> </span>logs<span class="w"> </span>verbal_db
@@ -612,25 +633,61 @@ Grobid requires approximately <strong>1.5 GB – 3 GB RAM</strong>. If the conta
 </li>
 </ul>
 </section>
-<section id="code-execution-sandbox-unreachable">
-<h3><a class="toc-backref" href="#id25" role="doc-backlink">Code Execution Sandbox Unreachable</a><a class="headerlink" href="#code-execution-sandbox-unreachable" title="Link to this heading"></a></h3>
+<section id="code-execution-sandbox-red-hat-ubi-base-images">
+<h3><a class="toc-backref" href="#id25" role="doc-backlink">Code Execution Sandbox &amp; Red Hat UBI Base Images</a><a class="headerlink" href="#code-execution-sandbox-red-hat-ubi-base-images" title="Link to this heading"></a></h3>
 <ul>
-<li><p><strong>Symptom</strong>: Analyst script runs or dynamic tools report <code class="docutils literal notranslate"><span class="pre">[EXECUTE_SCRIPT</span> <span class="pre">Error]</span> <span class="pre">Code</span> <span class="pre">execution</span> <span class="pre">sandbox</span> <span class="pre">is</span> <span class="pre">offline</span></code>.</p></li>
+<li><p><strong>Symptom</strong>: Analyst script runs report <code class="docutils literal notranslate"><span class="pre">[EXECUTE_SCRIPT</span> <span class="pre">Error]</span> <span class="pre">Code</span> <span class="pre">execution</span> <span class="pre">sandbox</span> <span class="pre">is</span> <span class="pre">offline</span></code>, or the container logs <code class="docutils literal notranslate"><span class="pre">cannot</span> <span class="pre">start</span> <span class="pre">virtual</span> <span class="pre">environment</span></code> and restarts every 20 seconds.</p></li>
+<li><p><strong>Cause on Enterprise / UBI Python Images</strong>:
+Red Hat Universal Base Images (UBI) pre-install an active virtual environment located in <code class="docutils literal notranslate"><span class="pre">/opt/app-root</span></code> and inherit an S2I entrypoint (<code class="docutils literal notranslate"><span class="pre">ENTRYPOINT</span> <span class="pre">[&quot;container-entrypoint&quot;]</span></code>). When switching to user 1000 without clearing the entrypoint or granting permissions to <code class="docutils literal notranslate"><span class="pre">/opt/app-root</span></code>, the inherited entrypoint fails to activate the virtual environment.</p></li>
+<li><p><strong>Resolution</strong>:
+The hardened <code class="docutils literal notranslate"><span class="pre">sandbox/Dockerfile</span></code> resolves this across Debian and Red Hat UBI by:
+1. Adding group 0 membership: <code class="docutils literal notranslate"><span class="pre">useradd</span> <span class="pre">-m</span> <span class="pre">-u</span> <span class="pre">1000</span> <span class="pre">-g</span> <span class="pre">0</span> <span class="pre">python</span></code>.
+2. Granting ownership and group read/write permissions to <code class="docutils literal notranslate"><span class="pre">/opt/app-root</span></code> if present.
+3. Prepending <code class="docutils literal notranslate"><span class="pre">/opt/app-root/bin</span></code> to <code class="docutils literal notranslate"><span class="pre">PATH</span></code> alongside user bin directories.
+4. Clearing the inherited entrypoint with <code class="docutils literal notranslate"><span class="pre">ENTRYPOINT</span> <span class="pre">[]</span></code> so <code class="docutils literal notranslate"><span class="pre">uvicorn</span></code> starts directly.</p></li>
 <li><p><strong>Diagnostic</strong>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl<span class="w"> </span>-s<span class="w"> </span>http://127.0.0.1:8002/health<span class="w"> </span><span class="o">||</span><span class="w"> </span>curl<span class="w"> </span>-s<span class="w"> </span>http://127.0.0.1:8002/execute
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>ps<span class="w"> </span>-a<span class="w"> </span>--filter<span class="w"> </span><span class="nv">name</span><span class="o">=</span>verbal_sandbox
+docker<span class="w"> </span>logs<span class="w"> </span>verbal_sandbox
+curl<span class="w"> </span>-s<span class="w"> </span>http://127.0.0.1:8002/health<span class="w"> </span><span class="o">||</span><span class="w"> </span>curl<span class="w"> </span>-s<span class="w"> </span>http://127.0.0.1:8002/execute
 </pre></div>
 </div>
 </li>
 <li><p><strong>Remedy</strong>:
-Verify the sandbox container is running:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>/srv/reason/app<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d<span class="w"> </span>sandbox
+Rebuild and restart the sandbox container:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>/srv/reason/app<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>build<span class="w"> </span>sandbox<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d<span class="w"> </span>sandbox
+</pre></div>
+</div>
+</li>
+</ul>
+</section>
+<section id="nginx-502-bad-gateway">
+<h3><a class="toc-backref" href="#id26" role="doc-backlink">Nginx “502 Bad Gateway”</a><a class="headerlink" href="#nginx-502-bad-gateway" title="Link to this heading"></a></h3>
+<ul>
+<li><p><strong>Symptom</strong>: Navigating to the Reason web portal returns an Nginx <code class="docutils literal notranslate"><span class="pre">502</span> <span class="pre">Bad</span> <span class="pre">Gateway</span></code> error.</p></li>
+<li><p><strong>Cause</strong>: Nginx is active, but the backend ASGI application server (<code class="docutils literal notranslate"><span class="pre">reason-web.service</span></code> on <code class="docutils literal notranslate"><span class="pre">127.0.0.1:8008</span></code>) is stopped, crashing, or unable to connect to the database.</p></li>
+<li><p><strong>Diagnostic</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Check reason-web service status and recent crash tracebacks</span>
+sudo<span class="w"> </span>systemctl<span class="w"> </span>status<span class="w"> </span>reason-web
+sudo<span class="w"> </span>journalctl<span class="w"> </span>-u<span class="w"> </span>reason-web<span class="w"> </span>-n<span class="w"> </span><span class="m">50</span><span class="w"> </span>--no-pager
+
+<span class="c1"># Check if Granian is listening on port 8008</span>
+sudo<span class="w"> </span>ss<span class="w"> </span>-tulpn<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span><span class="m">8008</span>
+
+<span class="c1"># Check Docker backend containers that reason-web requires</span>
+<span class="nb">cd</span><span class="w"> </span>/srv/reason/app<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>ps
+</pre></div>
+</div>
+</li>
+<li><p><strong>Remedy</strong>:
+Once the underlying issue in <code class="docutils literal notranslate"><span class="pre">verbal_db</span></code> or <code class="docutils literal notranslate"><span class="pre">verbal_sandbox</span></code> is resolved, restart the application services:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>systemctl<span class="w"> </span>restart<span class="w"> </span>reason
 </pre></div>
 </div>
 </li>
 </ul>
 </section>
 <section id="systemd-sandboxing-permission-denied">
-<h3><a class="toc-backref" href="#id26" role="doc-backlink">Systemd Sandboxing “Permission Denied”</a><a class="headerlink" href="#systemd-sandboxing-permission-denied" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id27" role="doc-backlink">Systemd Sandboxing “Permission Denied”</a><a class="headerlink" href="#systemd-sandboxing-permission-denied" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p><strong>Symptom</strong>: Application crashes with <code class="docutils literal notranslate"><span class="pre">PermissionError:</span> <span class="pre">[Errno</span> <span class="pre">13]</span> <span class="pre">Permission</span> <span class="pre">denied</span></code> when attempting to write to disk.</p></li>
 <li><p><strong>Cause</strong>: <code class="docutils literal notranslate"><span class="pre">ProtectSystem=strict</span></code> prevents systemd services from writing outside authorized directories.</p></li>
@@ -639,7 +696,7 @@ Ensure the process is attempting to write to <code class="docutils literal notra
 </ul>
 </section>
 <section id="django-improperlyconfigured-on-startup">
-<h3><a class="toc-backref" href="#id27" role="doc-backlink">Django <code class="docutils literal notranslate"><span class="pre">ImproperlyConfigured</span></code> on Startup</a><a class="headerlink" href="#django-improperlyconfigured-on-startup" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id28" role="doc-backlink">Django <code class="docutils literal notranslate"><span class="pre">ImproperlyConfigured</span></code> on Startup</a><a class="headerlink" href="#django-improperlyconfigured-on-startup" title="Link to this heading"></a></h3>
 <ul>
 <li><p><strong>Symptom</strong>: <code class="docutils literal notranslate"><span class="pre">reason-web.service</span></code> fails to start; <code class="docutils literal notranslate"><span class="pre">journalctl</span> <span class="pre">-u</span> <span class="pre">reason-web</span></code> shows <code class="docutils literal notranslate"><span class="pre">ImproperlyConfigured:</span> <span class="pre">In</span> <span class="pre">production</span> <span class="pre">(VERBAL_ENV</span> <span class="pre">!=</span> <span class="pre">'dev'),</span> <span class="pre">a</span> <span class="pre">secure</span> <span class="pre">DJANGO_SECRET_KEY</span> <span class="pre">must</span> <span class="pre">be</span> <span class="pre">configured</span></code>.</p></li>
 <li><p><strong>Remedy</strong>:

@@ -391,11 +391,31 @@ If deploying to an internal test or staging host where trusted CA certificates a
 6. Troubleshooting & Failure Modes
 ----------------------------------
 
-PostgreSQL Readiness & Port Collisions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+PostgreSQL Readiness, Version Compatibility & Port Collisions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* **Symptom**: Migrations fail with ``connection to server at "127.0.0.1", port 5433 failed: Connection refused``.
-* **Cause**: The ``verbal_db`` Docker container is either still initializing or encountered a startup error.
+* **Symptom**: Migrations fail with ``connection to server at "127.0.0.1", port 5433 failed: Connection refused``, or ``verbal_db`` container enters a crash loop restarting every 20 seconds.
+* **Cause 1: Container Still Starting**: The container is initializing. Inspect logs via ``docker logs verbal_db``.
+* **Cause 2: PostgreSQL Major Version Incompatibility**:
+  PostgreSQL data directories are strictly locked to the major version that initialized them. If the ``postgres_data`` volume was initialized by PostgreSQL 16 (``pgvector/pgvector:pg16``), running an image with a different major version (such as PostgreSQL 18) will trigger a fatal error:
+
+  .. code-block:: text
+
+     FATAL: database files are incompatible with server
+     DETAIL: The data directory was initialized by PostgreSQL version 16, which is not compatible with this version 18.
+     HINT: You must either run "pg_upgrade" or dump/restore the data directory to upgrade...
+
+  **Resolution**:
+  - Keep the container image set to ``DOCKER_POSTGRES_IMAGE=pgvector/pgvector:pg16`` in your ``.env`` and ``docker-compose.yml`` (with volume mount ``postgres_data:/var/lib/postgresql/data``).
+  - Alternatively, if setting up a fresh deployment or staging server without data to preserve, reset the volume:
+
+    .. code-block:: bash
+
+       cd /srv/reason/app
+       sudo docker compose stop db
+       sudo docker volume rm reason_postgres_data
+       sudo docker compose up -d db
+
 * **Diagnostic**:
 
   .. code-block:: bash
@@ -431,22 +451,58 @@ Grobid Academic PDF Parser Offline
 
      cd /srv/reason/app && sudo docker compose --profile academic up -d grobid
 
-Code Execution Sandbox Unreachable
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Code Execution Sandbox & Red Hat UBI Base Images
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* **Symptom**: Analyst script runs or dynamic tools report ``[EXECUTE_SCRIPT Error] Code execution sandbox is offline``.
+* **Symptom**: Analyst script runs report ``[EXECUTE_SCRIPT Error] Code execution sandbox is offline``, or the container logs ``cannot start virtual environment`` and restarts every 20 seconds.
+* **Cause on Enterprise / UBI Python Images**:
+  Red Hat Universal Base Images (UBI) pre-install an active virtual environment located in ``/opt/app-root`` and inherit an S2I entrypoint (``ENTRYPOINT ["container-entrypoint"]``). When switching to user 1000 without clearing the entrypoint or granting permissions to ``/opt/app-root``, the inherited entrypoint fails to activate the virtual environment.
+* **Resolution**:
+  The hardened ``sandbox/Dockerfile`` resolves this across Debian and Red Hat UBI by:
+  1. Adding group 0 membership: ``useradd -m -u 1000 -g 0 python``.
+  2. Granting ownership and group read/write permissions to ``/opt/app-root`` if present.
+  3. Prepending ``/opt/app-root/bin`` to ``PATH`` alongside user bin directories.
+  4. Clearing the inherited entrypoint with ``ENTRYPOINT []`` so ``uvicorn`` starts directly.
 * **Diagnostic**:
 
   .. code-block:: bash
 
+     docker ps -a --filter name=verbal_sandbox
+     docker logs verbal_sandbox
      curl -s http://127.0.0.1:8002/health || curl -s http://127.0.0.1:8002/execute
 
 * **Remedy**:
-  Verify the sandbox container is running:
+  Rebuild and restart the sandbox container:
 
   .. code-block:: bash
 
-     cd /srv/reason/app && sudo docker compose up -d sandbox
+     cd /srv/reason/app && sudo docker compose build sandbox && sudo docker compose up -d sandbox
+
+Nginx "502 Bad Gateway"
+~~~~~~~~~~~~~~~~~~~~~~~
+
+* **Symptom**: Navigating to the Reason web portal returns an Nginx ``502 Bad Gateway`` error.
+* **Cause**: Nginx is active, but the backend ASGI application server (``reason-web.service`` on ``127.0.0.1:8008``) is stopped, crashing, or unable to connect to the database.
+* **Diagnostic**:
+
+  .. code-block:: bash
+
+     # Check reason-web service status and recent crash tracebacks
+     sudo systemctl status reason-web
+     sudo journalctl -u reason-web -n 50 --no-pager
+
+     # Check if Granian is listening on port 8008
+     sudo ss -tulpn | grep 8008
+
+     # Check Docker backend containers that reason-web requires
+     cd /srv/reason/app && sudo docker compose ps
+
+* **Remedy**:
+  Once the underlying issue in ``verbal_db`` or ``verbal_sandbox`` is resolved, restart the application services:
+
+  .. code-block:: bash
+
+     sudo systemctl restart reason
 
 Systemd Sandboxing "Permission Denied"
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

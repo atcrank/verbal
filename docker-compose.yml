@@ -2,7 +2,7 @@ name: reason
 
 services:
   db:
-    image: ${DOCKER_POSTGRES_IMAGE:-pgvector/pgvector:pg18}
+    image: ${DOCKER_POSTGRES_IMAGE:-pgvector/pgvector:pg16}
     container_name: verbal_db
     restart: unless-stopped
     environment:
@@ -12,7 +12,7 @@ services:
     ports:
       - "127.0.0.1:5433:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql
+      - postgres_data:/var/lib/postgresql/data
   grobid:
     image: ${DOCKER_GROBID_IMAGE:-grobid/grobid:0.8.1}
     container_name: verbal_grobid
