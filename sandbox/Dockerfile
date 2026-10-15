@@ -30,6 +30,13 @@ RUN if ! id -u python >/dev/null 2>&1; then \
     chown -R 1000:0 /home/python 2>/dev/null || true && \
     chmod -R g+rwX /home/python 2>/dev/null || true
 
+# Ensure python symlink exists (compatible with RHEL/UBI minimal where only python3 exists)
+RUN if ! command -v python >/dev/null 2>&1; then \
+        if command -v python3 >/dev/null 2>&1; then \
+            ln -sf "$(command -v python3)" /usr/local/bin/python; \
+        fi; \
+    fi
+
 WORKDIR /home/python/app
 
 COPY requirements.txt .
@@ -38,6 +45,7 @@ RUN python -m pip install --no-cache-dir --root-user-action=ignore -r requiremen
 # If a base virtual environment exists (e.g. /opt/app-root in Red Hat UBI), ensure user 1000 and group 0 have full access
 RUN if [ -d /opt/app-root ]; then \
         chown -R 1000:0 /opt/app-root 2>/dev/null || true; \
+        chmod -R a+rX /opt/app-root 2>/dev/null || true; \
         chmod -R g+rwX /opt/app-root 2>/dev/null || true; \
     fi
 
@@ -46,7 +54,8 @@ RUN chown -R 1000:0 /home/python/app 2>/dev/null || true
 
 USER 1000
 
-ENV PATH="/opt/app-root/bin:/home/python/.local/bin:/usr/local/bin:${PATH}"
+ENV HOME="/home/python"
+ENV PATH="/opt/app-root/bin:/opt/app-root/src/bin:/home/python/.local/bin:/usr/local/bin:${PATH}"
 ENV WORKSPACE_DIR="/home/python/workspace"
 
 # Clear any inherited ENTRYPOINT (such as Red Hat UBI's container-entrypoint script)

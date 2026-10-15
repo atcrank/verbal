@@ -504,6 +504,53 @@ Nginx "502 Bad Gateway"
 
      sudo systemctl restart reason
 
+Systemd Service Start Failed: "reason 'dependency'"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* **Symptom**: Starting or restarting application services (``reason-web``, ``reason-worker``, ``reason-inference``) fails with ``Job for reason-web.service failed because a dependency failed: reason-docker.service``.
+* **Cause**: All application units declare ``Requires=reason-docker.service``. If ``reason-docker.service`` failed to start (or was stopped or left in a failed exit-code state), systemd automatically blocks all dependent units from starting.
+* **Diagnostic**:
+
+  .. code-block:: bash
+
+     # Check reason-docker status and exit code
+     sudo systemctl status reason-docker.service
+
+     # Check detailed journal output from docker compose
+     sudo journalctl -u reason-docker.service -n 50 --no-pager
+
+* **Remedy**:
+  1. Inspect and resolve any container startup issue reported by ``sudo docker compose -f /srv/reason/app/docker-compose.yml ps``.
+  2. Clear systemd failed unit locks:
+
+     .. code-block:: bash
+
+        sudo systemctl reset-failed
+        sudo systemctl restart reason-docker.service
+        sudo systemctl restart reason
+
+systemd-networkd Virtual Interface (``veth*``) Collisions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* **Symptom**: ``journalctl`` reports continuous errors such as ``systemd-networkd[...]: vethXXXX: could not find interface``, ``vethXXXX does not exist``, and Docker fails to assign networking or crashes containers upon startup.
+* **Cause**: When Docker spins up a container, it creates a virtual ethernet pair (host ``veth*`` mapped to container ``eth0``). On systems running ``systemd-networkd``, the network daemon intercepts the newly created interface and attempts to apply DHCP or link configuration. When Docker moves the interface into the container network namespace, ``systemd-networkd`` races and throws missing interface errors, breaking container networking.
+* **Remedy**:
+  Instruct ``systemd-networkd`` to explicitly ignore all Docker virtual ethernet and bridge interfaces:
+
+  .. code-block:: bash
+
+     sudo bash -c 'cat << "EOF" > /etc/systemd/network/99-docker-unmanaged.network
+     [Match]
+     Name=veth* docker0 br-*
+     Driver=veth bridge
+
+     [Link]
+     Unmanaged=yes
+     EOF'
+
+     sudo systemctl restart systemd-networkd
+     sudo systemctl restart docker
+
 Systemd Sandboxing "Permission Denied"
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

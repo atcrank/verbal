@@ -775,6 +775,24 @@ def provision_system(c):
     c.sudo(f"chown -R {DEPLOY_USER}:{DJANGO_USER} {VENV_DIR}")
     sudo_bash(c, f"chmod -R 0750 {VENV_DIR}")
 
+    # 11. Configure systemd-networkd to ignore Docker virtual ethernet (veth*) and bridge interfaces
+    # Prevents race conditions where systemd-networkd attempts to manage temporary container interfaces
+    networkd_dir = "/etc/systemd/network"
+    if c.sudo(f"test -d {networkd_dir}", warn=True, hide=True).ok:
+        networkd_conf = (
+            "[Match]\n"
+            "Name=veth* docker0 br-*\n"
+            "Driver=veth bridge\n\n"
+            "[Link]\n"
+            "Unmanaged=yes\n"
+        )
+        conf_file = f"{networkd_dir}/99-docker-unmanaged.network"
+        existing = c.sudo(f"cat {conf_file} 2>/dev/null || true", warn=True, hide=True).stdout
+        if "Unmanaged=yes" not in existing:
+            print("🌐 Configuring systemd-networkd to ignore Docker virtual network interfaces (veth*, br-*)...")
+            c.sudo(f"bash -c 'cat << \"EOF\" > {conf_file}\n{networkd_conf}\nEOF'")
+            c.sudo("systemctl restart systemd-networkd", warn=True)
+
     print("✅ System paths, users, and ownership hierarchy established.")
 
 
@@ -1171,7 +1189,8 @@ def start_backend_containers(c):
     ensure_sudo(c)
     print("🐳 Starting Docker backend containers (db, sandbox)...")
 
-    # 1. Bring up core containers
+    # 1. Bring up core containers (ensuring sandbox image is built before startup)
+    sudo_bash(c, f"cd {APP_DIR} && docker compose build sandbox", warn=True)
     res = sudo_bash(c, f"cd {APP_DIR} && docker compose up -d db sandbox", warn=True)
     if not res.ok:
         # Check if database container is already running before failing
@@ -1504,10 +1523,11 @@ def createsuperuser(c, username=None, email=None):
 @task
 def restart_services(c):
     """
-    Gracefully restarts the 4 supervised systemd services.
+    Gracefully restarts the supervised systemd services.
     """
     ensure_sudo(c)
     print("🔄 Restarting Reason systemd services...")
+    sudo_bash(c, "systemctl restart reason-docker.service", warn=True)
     sudo_bash(c, "systemctl restart reason-web reason-worker reason-scheduler reason-inference")
     print("✅ Services restarted.")
 

@@ -7,6 +7,11 @@ import resource
 app = FastAPI()
 
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
 class ExecuteRequest(BaseModel):
     filepath: str
     timeout: int = 30
