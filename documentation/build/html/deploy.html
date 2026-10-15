@@ -65,7 +65,7 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#production-architecture-deployment-structure">2. Production Architecture &amp; Deployment Structure</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#high-level-architecture">High-Level Architecture</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#the-systemd-service-units-master-target">The Systemd Service Units &amp; Master Target</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#the-systemd-service-units-master-stack">The Systemd Service Units &amp; Master Stack</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#security-sandboxing-directives">Security &amp; Sandboxing Directives</a></li>
 </ul>
 </li>
@@ -82,6 +82,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#configuration-bring-your-own-secrets">4. Configuration &amp; “Bring Your Own Secrets”</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#dual-directory-environment-resolution-preservation">Dual Directory Environment Resolution &amp; Preservation</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#required-environment-files">Required Environment Files</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#enforced-production-invariants">Enforced Production Invariants</a></li>
 </ul>
@@ -146,7 +147,7 @@
 <li><p><a class="reference internal" href="#production-architecture-deployment-structure" id="id3">2. Production Architecture &amp; Deployment Structure</a></p>
 <ul>
 <li><p><a class="reference internal" href="#high-level-architecture" id="id4">High-Level Architecture</a></p></li>
-<li><p><a class="reference internal" href="#the-systemd-service-units-master-target" id="id5">The Systemd Service Units &amp; Master Target</a></p></li>
+<li><p><a class="reference internal" href="#the-systemd-service-units-master-stack" id="id5">The Systemd Service Units &amp; Master Stack</a></p></li>
 <li><p><a class="reference internal" href="#filesystem-directory-layout" id="id6">Filesystem Directory Layout</a></p></li>
 <li><p><a class="reference internal" href="#docker-compose-infrastructure-profiles" id="id7">Docker Compose Infrastructure &amp; Profiles</a></p></li>
 </ul>
@@ -162,24 +163,25 @@
 </li>
 <li><p><a class="reference internal" href="#configuration-bring-your-own-secrets" id="id14">4. Configuration &amp; “Bring Your Own Secrets”</a></p>
 <ul>
-<li><p><a class="reference internal" href="#required-environment-files" id="id15">Required Environment Files</a></p></li>
-<li><p><a class="reference internal" href="#enforced-production-invariants" id="id16">Enforced Production Invariants</a></p></li>
+<li><p><a class="reference internal" href="#dual-directory-environment-resolution-preservation" id="id15">Dual Directory Environment Resolution &amp; Preservation</a></p></li>
+<li><p><a class="reference internal" href="#required-environment-files" id="id16">Required Environment Files</a></p></li>
+<li><p><a class="reference internal" href="#enforced-production-invariants" id="id17">Enforced Production Invariants</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#tls-ssl-certificates-bring-your-own-certificates" id="id17">5. TLS/SSL Certificates: “Bring Your Own Certificates”</a></p>
+<li><p><a class="reference internal" href="#tls-ssl-certificates-bring-your-own-certificates" id="id18">5. TLS/SSL Certificates: “Bring Your Own Certificates”</a></p>
 <ul>
-<li><p><a class="reference internal" href="#certificate-file-locations" id="id18">Certificate File Locations</a></p></li>
-<li><p><a class="reference internal" href="#key-security-permissions" id="id19">Key Security &amp; Permissions</a></p></li>
-<li><p><a class="reference internal" href="#testing-internal-staging-certificates" id="id20">Testing / Internal Staging Certificates</a></p></li>
+<li><p><a class="reference internal" href="#certificate-file-locations" id="id19">Certificate File Locations</a></p></li>
+<li><p><a class="reference internal" href="#key-security-permissions" id="id20">Key Security &amp; Permissions</a></p></li>
+<li><p><a class="reference internal" href="#testing-internal-staging-certificates" id="id21">Testing / Internal Staging Certificates</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#troubleshooting-failure-modes" id="id21">6. Troubleshooting &amp; Failure Modes</a></p>
+<li><p><a class="reference internal" href="#troubleshooting-failure-modes" id="id22">6. Troubleshooting &amp; Failure Modes</a></p>
 <ul>
-<li><p><a class="reference internal" href="#postgresql-readiness-port-collisions" id="id22">PostgreSQL Readiness &amp; Port Collisions</a></p></li>
-<li><p><a class="reference internal" href="#grobid-academic-pdf-parser-offline" id="id23">Grobid Academic PDF Parser Offline</a></p></li>
-<li><p><a class="reference internal" href="#code-execution-sandbox-unreachable" id="id24">Code Execution Sandbox Unreachable</a></p></li>
-<li><p><a class="reference internal" href="#systemd-sandboxing-permission-denied" id="id25">Systemd Sandboxing “Permission Denied”</a></p></li>
-<li><p><a class="reference internal" href="#django-improperlyconfigured-on-startup" id="id26">Django <code class="docutils literal notranslate"><span class="pre">ImproperlyConfigured</span></code> on Startup</a></p></li>
+<li><p><a class="reference internal" href="#postgresql-readiness-port-collisions" id="id23">PostgreSQL Readiness &amp; Port Collisions</a></p></li>
+<li><p><a class="reference internal" href="#grobid-academic-pdf-parser-offline" id="id24">Grobid Academic PDF Parser Offline</a></p></li>
+<li><p><a class="reference internal" href="#code-execution-sandbox-unreachable" id="id25">Code Execution Sandbox Unreachable</a></p></li>
+<li><p><a class="reference internal" href="#systemd-sandboxing-permission-denied" id="id26">Systemd Sandboxing “Permission Denied”</a></p></li>
+<li><p><a class="reference internal" href="#django-improperlyconfigured-on-startup" id="id27">Django <code class="docutils literal notranslate"><span class="pre">ImproperlyConfigured</span></code> on Startup</a></p></li>
 </ul>
 </li>
 </ul>
@@ -190,10 +192,10 @@
 <section id="daily-operations-cheatsheet">
 <h3><a class="toc-backref" href="#id2" role="doc-backlink">Daily Operations Cheatsheet</a><a class="headerlink" href="#daily-operations-cheatsheet" title="Link to this heading"></a></h3>
 <p>All application commands run under <cite>systemd</cite> as the dedicated unprivileged system user <code class="docutils literal notranslate"><span class="pre">reason</span></code>, while supporting backend containers run via Docker Compose supervised by <code class="docutils literal notranslate"><span class="pre">reason-docker.service</span></code>.</p>
-<p>The entire stack can be managed using the umbrella systemd target <code class="docutils literal notranslate"><span class="pre">reason.target</span></code> (aliased as <code class="docutils literal notranslate"><span class="pre">reason.service</span></code>).</p>
+<p>The entire stack can be managed using the master systemd unit <code class="docutils literal notranslate"><span class="pre">reason.service</span></code> (or <code class="docutils literal notranslate"><span class="pre">reason.target</span></code>).</p>
 <ul>
 <li><p><strong>Check Overall System Health</strong>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Check status of the entire production stack (target + all services)</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Check status of the entire production stack (master service + all units)</span>
 sudo<span class="w"> </span>systemctl<span class="w"> </span>status<span class="w"> </span>reason
 
 <span class="c1"># Check status of individual application and docker services</span>
@@ -268,8 +270,7 @@ fab<span class="w"> </span>backup-database
             │
             ▼  (HTTP reverse proxy to 127.0.0.1:8008)
 ┌────────────────────────────────────────────────────────┐
-│          Systemd Master Umbrella: [reason.target]      │
-│                (Alias: reason.service)                 │
+│    Systemd Master Umbrella: [reason.service / target]  │
 ├────────────────────────────────────────────────────────┤
 │  Application Tier (Hardened unprivileged user 'reason')│
 │  - [reason-web.service]       (Granian ASGI Server)    │
@@ -292,12 +293,14 @@ fab<span class="w"> </span>backup-database
 </pre></div>
 </div>
 </section>
-<section id="the-systemd-service-units-master-target">
-<h3><a class="toc-backref" href="#id5" role="doc-backlink">The Systemd Service Units &amp; Master Target</a><a class="headerlink" href="#the-systemd-service-units-master-target" title="Link to this heading"></a></h3>
+<section id="the-systemd-service-units-master-stack">
+<h3><a class="toc-backref" href="#id5" role="doc-backlink">The Systemd Service Units &amp; Master Stack</a><a class="headerlink" href="#the-systemd-service-units-master-stack" title="Link to this heading"></a></h3>
 <p>All units are generated by <code class="xref py py-func docutils literal notranslate"><span class="pre">deploy.fabric_deploy.generate_systemd_units()</span></code> and installed to <code class="docutils literal notranslate"><span class="pre">/etc/systemd/system/</span></code>:</p>
 <ol class="arabic simple">
-<li><p><strong>``reason.target``</strong> (Alias: <code class="docutils literal notranslate"><span class="pre">reason.service</span></code>):
-The top-level master target grouping all Reason services. Enables single-command orchestration: <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">systemctl</span> <span class="pre">start</span> <span class="pre">reason</span></code>, <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">systemctl</span> <span class="pre">stop</span> <span class="pre">reason</span></code>, and <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">systemctl</span> <span class="pre">restart</span> <span class="pre">reason</span></code>.</p></li>
+<li><p><strong>``reason.service``</strong>:
+The top-level master stack service (<code class="docutils literal notranslate"><span class="pre">Type=oneshot</span></code>, <code class="docutils literal notranslate"><span class="pre">RemainAfterExit=yes</span></code>). Orchestrates all child units in lockstep. Operators can control the full stack with <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">systemctl</span> <span class="pre">start</span> <span class="pre">reason</span></code>, <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">systemctl</span> <span class="pre">stop</span> <span class="pre">reason</span></code>, <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">systemctl</span> <span class="pre">restart</span> <span class="pre">reason</span></code>, and <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">systemctl</span> <span class="pre">enable</span> <span class="pre">reason</span></code>.</p></li>
+<li><p><strong>``reason.target``</strong>:
+Top-level master target grouping all Reason services for target-based systemd environments.</p></li>
 <li><p><strong>``reason-docker.service``</strong>:
 Supervises Docker Compose infrastructure lifecycle. Defined with <code class="docutils literal notranslate"><span class="pre">Type=oneshot</span></code> and <code class="docutils literal notranslate"><span class="pre">RemainAfterExit=yes</span></code>, executing <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">compose</span> <span class="pre">--profile</span> <span class="pre">academic</span> <span class="pre">up</span> <span class="pre">-d</span></code> on startup and <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">compose</span> <span class="pre">--profile</span> <span class="pre">academic</span> <span class="pre">stop</span></code> on shutdown. All application services declare <code class="docutils literal notranslate"><span class="pre">Requires=reason-docker.service</span></code> and <code class="docutils literal notranslate"><span class="pre">After=reason-docker.service</span></code> to guarantee database readiness before Django boots.</p></li>
 <li><p><strong>``reason-web.service``</strong>:
@@ -479,11 +482,27 @@ Polls <code class="docutils literal notranslate"><span class="pre">systemctl</sp
 <section id="configuration-bring-your-own-secrets">
 <h2><a class="toc-backref" href="#id14" role="doc-backlink">4. Configuration &amp; “Bring Your Own Secrets”</a><a class="headerlink" href="#configuration-bring-your-own-secrets" title="Link to this heading"></a></h2>
 <p>Reason enforces a strict separation of code and configuration. In production (<code class="docutils literal notranslate"><span class="pre">VERBAL_ENV=prod</span></code>), the system refuses to boot if default or insecure credentials are used.</p>
+<section id="dual-directory-environment-resolution-preservation">
+<h3><a class="toc-backref" href="#id15" role="doc-backlink">Dual Directory Environment Resolution &amp; Preservation</a><a class="headerlink" href="#dual-directory-environment-resolution-preservation" title="Link to this heading"></a></h3>
+<p>Reason supports placing configuration files in <strong>either</strong> the persistent shared directory (<code class="docutils literal notranslate"><span class="pre">/srv/reason/shared/</span></code>) or directly within the application directory (<code class="docutils literal notranslate"><span class="pre">/srv/reason/app/</span></code>). All application services and deployment routines automatically read and merge both locations:</p>
+<ul class="simple">
+<li><p><strong>Preservation Guarantee</strong>:
+During deployments (<code class="docutils literal notranslate"><span class="pre">fab</span> <span class="pre">deploy</span></code>), any physical <code class="docutils literal notranslate"><span class="pre">.env</span></code>, <code class="docutils literal notranslate"><span class="pre">.env.secrets</span></code>, <code class="docutils literal notranslate"><span class="pre">.env.production</span></code>, or <code class="docutils literal notranslate"><span class="pre">.env.deploy</span></code> files present in <code class="docutils literal notranslate"><span class="pre">/srv/reason/app/</span></code> are <strong>strictly preserved</strong> and never overwritten by symlinks or deleted. If missing from <code class="docutils literal notranslate"><span class="pre">/srv/reason/shared/</span></code>, they are automatically mirrored to shared storage as a persistent backup.</p></li>
+<li><p><strong>Systemd Loading Hierarchy</strong>:
+Systemd units evaluate environment files in sequence:
+1. <code class="docutils literal notranslate"><span class="pre">/srv/reason/shared/.env</span></code>
+2. <code class="docutils literal notranslate"><span class="pre">/srv/reason/shared/.env.secrets</span></code>
+3. <code class="docutils literal notranslate"><span class="pre">/srv/reason/app/.env</span></code>
+4. <code class="docutils literal notranslate"><span class="pre">/srv/reason/app/.env.secrets</span></code>
+5. <code class="docutils literal notranslate"><span class="pre">/srv/reason/app/.env.production</span></code>
+Later files override earlier ones, allowing local application overrides to take effect seamlessly.</p></li>
+</ul>
+</section>
 <section id="required-environment-files">
-<h3><a class="toc-backref" href="#id15" role="doc-backlink">Required Environment Files</a><a class="headerlink" href="#required-environment-files" title="Link to this heading"></a></h3>
-<p>Operators <strong>must supply their own production configuration files</strong> placed in <code class="docutils literal notranslate"><span class="pre">/srv/reason/shared/</span></code>:</p>
+<h3><a class="toc-backref" href="#id16" role="doc-backlink">Required Environment Files</a><a class="headerlink" href="#required-environment-files" title="Link to this heading"></a></h3>
+<p>Operators <strong>must supply their own production configuration files</strong> placed in <code class="docutils literal notranslate"><span class="pre">/srv/reason/shared/</span></code> or <code class="docutils literal notranslate"><span class="pre">/srv/reason/app/</span></code>:</p>
 <ol class="arabic">
-<li><p><strong>``/srv/reason/shared/.env``</strong>:
+<li><p><strong>``/srv/reason/shared/.env`` or ``/srv/reason/app/.env``</strong>:
 Contains non-secret operational parameters:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">VERBAL_ENV</span><span class="o">=</span>prod
 <span class="nv">DJANGO_ALLOWED_HOSTS</span><span class="o">=</span>reason.example.com,127.0.0.1,localhost
@@ -496,20 +515,20 @@ Contains non-secret operational parameters:</p>
 </pre></div>
 </div>
 </li>
-<li><p><strong>``/srv/reason/shared/.env.secrets``</strong>:
-Contains cryptographic keys and API tokens. This file must be locked down to file permissions <code class="docutils literal notranslate"><span class="pre">0600</span></code> owned by <code class="docutils literal notranslate"><span class="pre">reason:root</span></code>:</p>
+<li><p><strong>``/srv/reason/shared/.env.secrets`` or ``/srv/reason/app/.env.secrets``</strong>:
+Contains cryptographic keys and API tokens. This file must be locked down to file permissions <code class="docutils literal notranslate"><span class="pre">0640</span></code> (or <code class="docutils literal notranslate"><span class="pre">0600</span></code>):</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">DJANGO_SECRET_KEY</span><span class="o">=</span>your-high-entropy-random-secret-key-here
 <span class="nv">HUGGING_FACE_HUB_TOKEN</span><span class="o">=</span>hf_...
 <span class="nv">OPENAI_API_KEY</span><span class="o">=</span>sk-...
 </pre></div>
 </div>
 </li>
-<li><p><strong>``.env.production`` or ``.env.deploy``</strong> (Local Operator Machine):
-Optional local environment files containing deployment overrides (such as <code class="docutils literal notranslate"><span class="pre">PIP_INDEX_URL</span></code> or <code class="docutils literal notranslate"><span class="pre">SPACY_WHEEL_URL</span></code>) used by Fabric during deployment.</p></li>
+<li><p><strong>``.env.production`` or ``.env.deploy``</strong> (Local Operator Machine or Server):
+Optional environment files containing deployment overrides (such as <code class="docutils literal notranslate"><span class="pre">PIP_INDEX_URL</span></code> or <code class="docutils literal notranslate"><span class="pre">SPACY_WHEEL_URL</span></code>) used by Fabric during deployment.</p></li>
 </ol>
 </section>
 <section id="enforced-production-invariants">
-<h3><a class="toc-backref" href="#id16" role="doc-backlink">Enforced Production Invariants</a><a class="headerlink" href="#enforced-production-invariants" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id17" role="doc-backlink">Enforced Production Invariants</a><a class="headerlink" href="#enforced-production-invariants" title="Link to this heading"></a></h3>
 <p>When <code class="docutils literal notranslate"><span class="pre">VERBAL_ENV=prod</span></code> is set in <cite>verbal_config/settings.py</cite>:</p>
 <ul class="simple">
 <li><p><strong>Insecure Secret Key Rejection</strong>:
@@ -524,10 +543,10 @@ If <code class="docutils literal notranslate"><span class="pre">DB_PASSWORD</spa
 </section>
 </section>
 <section id="tls-ssl-certificates-bring-your-own-certificates">
-<h2><a class="toc-backref" href="#id17" role="doc-backlink">5. TLS/SSL Certificates: “Bring Your Own Certificates”</a><a class="headerlink" href="#tls-ssl-certificates-bring-your-own-certificates" title="Link to this heading"></a></h2>
+<h2><a class="toc-backref" href="#id18" role="doc-backlink">5. TLS/SSL Certificates: “Bring Your Own Certificates”</a><a class="headerlink" href="#tls-ssl-certificates-bring-your-own-certificates" title="Link to this heading"></a></h2>
 <p>Nginx acts as the TLS termination endpoint. In production, <strong>you must supply valid, trusted SSL/TLS certificates</strong>.</p>
 <section id="certificate-file-locations">
-<h3><a class="toc-backref" href="#id18" role="doc-backlink">Certificate File Locations</a><a class="headerlink" href="#certificate-file-locations" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id19" role="doc-backlink">Certificate File Locations</a><a class="headerlink" href="#certificate-file-locations" title="Link to this heading"></a></h3>
 <p>By default, Nginx looks for certificates matching your domain or the fallback application name:</p>
 <ul class="simple">
 <li><p><strong>Certificate / Full Chain</strong>: <code class="docutils literal notranslate"><span class="pre">/etc/ssl/certs/reason.crt</span></code> (or <code class="docutils literal notranslate"><span class="pre">/etc/ssl/certs/&lt;your_domain&gt;.crt</span></code>)</p></li>
@@ -535,7 +554,7 @@ If <code class="docutils literal notranslate"><span class="pre">DB_PASSWORD</spa
 </ul>
 </section>
 <section id="key-security-permissions">
-<h3><a class="toc-backref" href="#id19" role="doc-backlink">Key Security &amp; Permissions</a><a class="headerlink" href="#key-security-permissions" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id20" role="doc-backlink">Key Security &amp; Permissions</a><a class="headerlink" href="#key-security-permissions" title="Link to this heading"></a></h3>
 <p>Private keys must be strictly protected:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>chown<span class="w"> </span>root:ssl-cert<span class="w"> </span>/etc/ssl/private/reason.key
 sudo<span class="w"> </span>chmod<span class="w"> </span><span class="m">0600</span><span class="w"> </span>/etc/ssl/private/reason.key
@@ -544,7 +563,7 @@ sudo<span class="w"> </span>chmod<span class="w"> </span><span class="m">0644</s
 </div>
 </section>
 <section id="testing-internal-staging-certificates">
-<h3><a class="toc-backref" href="#id20" role="doc-backlink">Testing / Internal Staging Certificates</a><a class="headerlink" href="#testing-internal-staging-certificates" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id21" role="doc-backlink">Testing / Internal Staging Certificates</a><a class="headerlink" href="#testing-internal-staging-certificates" title="Link to this heading"></a></h3>
 <p>If deploying to an internal test or staging host where trusted CA certificates are not yet issued, Fabric can provision a temporary self-signed certificate:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>fab<span class="w"> </span>setup-nginx-and-ssl<span class="w"> </span>--domain<span class="o">=</span>reason.local
 </pre></div>
@@ -552,9 +571,9 @@ sudo<span class="w"> </span>chmod<span class="w"> </span><span class="m">0644</s
 </section>
 </section>
 <section id="troubleshooting-failure-modes">
-<h2><a class="toc-backref" href="#id21" role="doc-backlink">6. Troubleshooting &amp; Failure Modes</a><a class="headerlink" href="#troubleshooting-failure-modes" title="Link to this heading"></a></h2>
+<h2><a class="toc-backref" href="#id22" role="doc-backlink">6. Troubleshooting &amp; Failure Modes</a><a class="headerlink" href="#troubleshooting-failure-modes" title="Link to this heading"></a></h2>
 <section id="postgresql-readiness-port-collisions">
-<h3><a class="toc-backref" href="#id22" role="doc-backlink">PostgreSQL Readiness &amp; Port Collisions</a><a class="headerlink" href="#postgresql-readiness-port-collisions" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id23" role="doc-backlink">PostgreSQL Readiness &amp; Port Collisions</a><a class="headerlink" href="#postgresql-readiness-port-collisions" title="Link to this heading"></a></h3>
 <ul>
 <li><p><strong>Symptom</strong>: Migrations fail with <code class="docutils literal notranslate"><span class="pre">connection</span> <span class="pre">to</span> <span class="pre">server</span> <span class="pre">at</span> <span class="pre">&quot;127.0.0.1&quot;,</span> <span class="pre">port</span> <span class="pre">5433</span> <span class="pre">failed:</span> <span class="pre">Connection</span> <span class="pre">refused</span></code>.</p></li>
 <li><p><strong>Cause</strong>: The <code class="docutils literal notranslate"><span class="pre">verbal_db</span></code> Docker container is either still initializing or encountered a startup error.</p></li>
@@ -569,7 +588,7 @@ docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </spa
 </ul>
 </section>
 <section id="grobid-academic-pdf-parser-offline">
-<h3><a class="toc-backref" href="#id23" role="doc-backlink">Grobid Academic PDF Parser Offline</a><a class="headerlink" href="#grobid-academic-pdf-parser-offline" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id24" role="doc-backlink">Grobid Academic PDF Parser Offline</a><a class="headerlink" href="#grobid-academic-pdf-parser-offline" title="Link to this heading"></a></h3>
 <ul>
 <li><p><strong>Symptom</strong>: Uploaded PDFs extract raw unformatted text without citations or figure crops; logs warn <code class="docutils literal notranslate"><span class="pre">Grobid</span> <span class="pre">unavailable</span> <span class="pre">or</span> <span class="pre">blocked</span> <span class="pre">by</span> <span class="pre">security</span> <span class="pre">policies</span></code>.</p></li>
 <li><p><strong>Diagnostic</strong>:</p>
@@ -594,7 +613,7 @@ Grobid requires approximately <strong>1.5 GB – 3 GB RAM</strong>. If the conta
 </ul>
 </section>
 <section id="code-execution-sandbox-unreachable">
-<h3><a class="toc-backref" href="#id24" role="doc-backlink">Code Execution Sandbox Unreachable</a><a class="headerlink" href="#code-execution-sandbox-unreachable" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id25" role="doc-backlink">Code Execution Sandbox Unreachable</a><a class="headerlink" href="#code-execution-sandbox-unreachable" title="Link to this heading"></a></h3>
 <ul>
 <li><p><strong>Symptom</strong>: Analyst script runs or dynamic tools report <code class="docutils literal notranslate"><span class="pre">[EXECUTE_SCRIPT</span> <span class="pre">Error]</span> <span class="pre">Code</span> <span class="pre">execution</span> <span class="pre">sandbox</span> <span class="pre">is</span> <span class="pre">offline</span></code>.</p></li>
 <li><p><strong>Diagnostic</strong>:</p>
@@ -611,7 +630,7 @@ Verify the sandbox container is running:</p>
 </ul>
 </section>
 <section id="systemd-sandboxing-permission-denied">
-<h3><a class="toc-backref" href="#id25" role="doc-backlink">Systemd Sandboxing “Permission Denied”</a><a class="headerlink" href="#systemd-sandboxing-permission-denied" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id26" role="doc-backlink">Systemd Sandboxing “Permission Denied”</a><a class="headerlink" href="#systemd-sandboxing-permission-denied" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p><strong>Symptom</strong>: Application crashes with <code class="docutils literal notranslate"><span class="pre">PermissionError:</span> <span class="pre">[Errno</span> <span class="pre">13]</span> <span class="pre">Permission</span> <span class="pre">denied</span></code> when attempting to write to disk.</p></li>
 <li><p><strong>Cause</strong>: <code class="docutils literal notranslate"><span class="pre">ProtectSystem=strict</span></code> prevents systemd services from writing outside authorized directories.</p></li>
@@ -620,7 +639,7 @@ Ensure the process is attempting to write to <code class="docutils literal notra
 </ul>
 </section>
 <section id="django-improperlyconfigured-on-startup">
-<h3><a class="toc-backref" href="#id26" role="doc-backlink">Django <code class="docutils literal notranslate"><span class="pre">ImproperlyConfigured</span></code> on Startup</a><a class="headerlink" href="#django-improperlyconfigured-on-startup" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id27" role="doc-backlink">Django <code class="docutils literal notranslate"><span class="pre">ImproperlyConfigured</span></code> on Startup</a><a class="headerlink" href="#django-improperlyconfigured-on-startup" title="Link to this heading"></a></h3>
 <ul>
 <li><p><strong>Symptom</strong>: <code class="docutils literal notranslate"><span class="pre">reason-web.service</span></code> fails to start; <code class="docutils literal notranslate"><span class="pre">journalctl</span> <span class="pre">-u</span> <span class="pre">reason-web</span></code> shows <code class="docutils literal notranslate"><span class="pre">ImproperlyConfigured:</span> <span class="pre">In</span> <span class="pre">production</span> <span class="pre">(VERBAL_ENV</span> <span class="pre">!=</span> <span class="pre">'dev'),</span> <span class="pre">a</span> <span class="pre">secure</span> <span class="pre">DJANGO_SECRET_KEY</span> <span class="pre">must</span> <span class="pre">be</span> <span class="pre">configured</span></code>.</p></li>
 <li><p><strong>Remedy</strong>:

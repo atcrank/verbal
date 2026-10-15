@@ -111,8 +111,9 @@ class TestSystemdUnitsGeneration(SimpleTestCase):
         )
 
     def test_all_services_and_targets_generated(self):
-        """Ensures all 4 modular units, docker service, and master target exist."""
+        """Ensures all 4 modular units, docker service, master service, and master target exist."""
         expected_keys = {
+            "reason.service",
             "reason.target",
             "reason-docker.service",
             "reason-web.service",
@@ -136,16 +137,25 @@ class TestSystemdUnitsGeneration(SimpleTestCase):
         self.assertIn("Environment=VERBAL_ROLE=scheduler", scheduler)
         self.assertIn("Environment=VERBAL_ROLE=inference", inference)
 
-    def test_master_target_and_docker_service(self):
-        """Verifies master target and docker infrastructure service definitions."""
+    def test_master_service_and_target_definitions(self):
+        """Verifies master service, target, and docker infrastructure service definitions."""
+        service = self.units["reason.service"]
         target = self.units["reason.target"]
         docker = self.units["reason-docker.service"]
 
-        self.assertIn("Alias=reason.service", target)
+        self.assertIn("Type=oneshot", service)
+        self.assertIn("RemainAfterExit=yes", service)
+        self.assertIn("Wants=reason-docker.service", service)
+        self.assertIn("WantedBy=multi-user.target", service)
+
         self.assertIn("Wants=reason-docker.service", target)
+        self.assertNotIn("Alias=", target)  # Ensures no invalid cross-type alias
+        self.assertIn("WantedBy=multi-user.target", target)
+
         self.assertIn("ExecStart=/usr/bin/docker compose --profile academic up -d", docker)
         self.assertIn("ExecStop=/usr/bin/docker compose --profile academic stop", docker)
         self.assertIn("RemainAfterExit=yes", docker)
+        self.assertIn("PartOf=reason.service reason.target", docker)
 
     def test_inference_service_includes_noreload(self):
         """Verifies inference service specifies --noreload to prevent double model instantiation."""
@@ -169,10 +179,14 @@ class TestSystemdUnitsGeneration(SimpleTestCase):
                 self.assertIn("ProtectHome=yes", unit)
                 self.assertIn("PrivateTmp=yes", unit)
                 self.assertIn("UMask=0002", unit)
-                self.assertIn("PartOf=reason.target", unit)
+                self.assertIn("PartOf=reason.service reason.target", unit)
                 self.assertIn("Requires=reason-docker.service", unit)
                 self.assertIn("ReadWritePaths=/srv/reason/shared /var/lib/hf_home /srv/reason/logs", unit)
+                self.assertIn("EnvironmentFile=-/srv/reason/shared/.env", unit)
+                self.assertIn("EnvironmentFile=-/srv/reason/app/.env", unit)
                 self.assertIn("EnvironmentFile=-/srv/reason/shared/.env.secrets", unit)
+                self.assertIn("EnvironmentFile=-/srv/reason/app/.env.secrets", unit)
+                self.assertIn("EnvironmentFile=-/srv/reason/app/.env.production", unit)
 
 
 
@@ -954,6 +968,64 @@ class TestDeployOrdering(SimpleTestCase):
         ]
         actual_order = [call[0] for call in manager.mock_calls]
         self.assertEqual(actual_order, expected_order)
+
+
+class TestEnvironmentPreservation(SimpleTestCase):
+    """Verifies that environment files in APP_DIR and SHARED_DIR are preserved and recognized."""
+
+    def test_get_remote_env_merges_app_and_shared_files(self):
+        """Verifies get_remote_env parses environment settings across both SHARED_DIR and APP_DIR."""
+        import deploy.fabric_deploy as fd
+        from deploy.fabric_deploy import get_remote_env
+        c = create_mock_context()
+
+        def mock_sudo(cmd, **kwargs):
+            if f"test -f {fd.SHARED_DIR}/.env" in cmd:
+                return MagicMock(ok=True)
+            if f"test -f {fd.APP_DIR}/.env" in cmd:
+                return MagicMock(ok=True)
+            if f"cat {fd.SHARED_DIR}/.env" in cmd:
+                return MagicMock(ok=True, stdout="DB_NAME=shared_db\nENABLE_GROBID=true\n")
+            if f"cat {fd.APP_DIR}/.env" in cmd:
+                return MagicMock(ok=True, stdout="DB_PORT=5433\nDB_NAME=custom_app_db\n")
+            return MagicMock(ok=False, stdout="")
+
+        c.sudo.side_effect = mock_sudo
+        env = get_remote_env(c)
+
+        self.assertEqual(env["ENABLE_GROBID"], "true")
+        self.assertEqual(env["DB_PORT"], "5433")
+        self.assertEqual(env["DB_NAME"], "custom_app_db")
+
+    @patch("deploy.fabric_deploy.ensure_sudo")
+    @patch("deploy.fabric_deploy.run_as_deploy_user")
+    @patch("deploy.fabric_deploy.sudo_bash")
+    def test_update_code_preserves_regular_app_env_file(self, mock_bash, mock_run_deploy, mock_sudo):
+        """Verifies update_code does not overwrite physical APP_DIR/.env with a symlink."""
+        import deploy.fabric_deploy as fd
+        from deploy.fabric_deploy import update_code
+        c = create_mock_context()
+
+        def mock_sudo_behavior(cmd, **kwargs):
+            if f"test -f {fd.APP_DIR}/.env" in cmd:
+                return MagicMock(ok=True)
+            if f"test -L {fd.APP_DIR}/.env" in cmd:
+                return MagicMock(ok=False)  # regular file, not a symlink
+            if f"test -f {fd.SHARED_DIR}/.env" in cmd:
+                return MagicMock(ok=True)
+            return MagicMock(ok=True)
+
+        c.sudo.side_effect = mock_sudo_behavior
+        mock_run_deploy.return_value = MagicMock(ok=True)
+        mock_bash.return_value = MagicMock(ok=True)
+
+        update_code(c, local_source="/mock/source")
+
+        # Ensure ln -sfn {fd.SHARED_DIR}/.env {fd.APP_DIR}/.env was NOT called
+        all_sudo_calls = [str(call) for call in c.sudo.call_args_list]
+        for call_str in all_sudo_calls:
+            self.assertNotIn(f"ln -sfn {fd.SHARED_DIR}/.env {fd.APP_DIR}/.env", call_str)
+
 
 
 

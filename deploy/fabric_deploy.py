@@ -474,14 +474,37 @@ def generate_systemd_units(
         >>> "--noreload" in units["reason-inference.service"]
         True
     """
-    env_file = f"{shared_dir}/.env"
-    env_secrets = f"{shared_dir}/.env.secrets"
+    env_shared_file = f"{shared_dir}/.env"
+    env_shared_secrets = f"{shared_dir}/.env.secrets"
+    env_app_file = f"{app_dir}/.env"
+    env_app_secrets = f"{app_dir}/.env.secrets"
+    env_app_prod = f"{app_dir}/.env.production"
+
+    env_directives = f"""EnvironmentFile=-{env_shared_file}
+EnvironmentFile=-{env_shared_secrets}
+EnvironmentFile=-{env_app_file}
+EnvironmentFile=-{env_app_secrets}
+EnvironmentFile=-{env_app_prod}"""
 
     sandboxing = f"""NoNewPrivileges=yes
 ProtectSystem=strict
 ProtectHome=yes
 PrivateTmp=yes
 ReadWritePaths={shared_dir} {hf_cache_dir} {log_dir}"""
+
+    master_service = f"""[Unit]
+Description=Reason Cognitive Platform Master Service
+Wants=reason-docker.service reason-web.service reason-worker.service reason-scheduler.service reason-inference.service
+After=reason-docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/true
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+"""
 
     master_target = f"""[Unit]
 Description=Reason Cognitive Platform Master Target
@@ -490,14 +513,13 @@ After=reason-docker.service
 
 [Install]
 WantedBy=multi-user.target
-Alias=reason.service
 """
 
     docker_unit = f"""[Unit]
 Description=Reason Docker Infrastructure (PostgreSQL, Sandbox, Grobid)
 After=network.target docker.service
 Requires=docker.service
-PartOf=reason.target
+PartOf=reason.service reason.target
 
 [Service]
 Type=oneshot
@@ -507,14 +529,14 @@ ExecStart=/usr/bin/docker compose --profile academic up -d
 ExecStop=/usr/bin/docker compose --profile academic stop
 
 [Install]
-WantedBy=multi-user.target reason.target
+WantedBy=multi-user.target reason.target reason.service
 """
 
     web_unit = f"""[Unit]
 Description=Reason Web Server (Granian ASGI)
 After=network.target docker.service reason-docker.service
 Requires=reason-docker.service
-PartOf=reason.target
+PartOf=reason.service reason.target
 Wants=network.target
 
 [Service]
@@ -523,8 +545,7 @@ User={django_user}
 Group={web_group}
 UMask=0002
 WorkingDirectory={app_dir}
-EnvironmentFile=-{env_file}
-EnvironmentFile=-{env_secrets}
+{env_directives}
 Environment=VERBAL_ENV=prod
 Environment=VERBAL_ROLE=web
 Environment=DJANGO_STATIC_ROOT={static_dir}
@@ -537,14 +558,14 @@ LimitNOFILE=65535
 {sandboxing}
 
 [Install]
-WantedBy=multi-user.target reason.target
+WantedBy=multi-user.target reason.target reason.service
 """
 
     worker_unit = f"""[Unit]
 Description=Reason Background Task Worker
 After=network.target docker.service reason-docker.service
 Requires=reason-docker.service
-PartOf=reason.target
+PartOf=reason.service reason.target
 Wants=network.target
 
 [Service]
@@ -553,8 +574,7 @@ User={django_user}
 Group={web_group}
 UMask=0002
 WorkingDirectory={app_dir}
-EnvironmentFile=-{env_file}
-EnvironmentFile=-{env_secrets}
+{env_directives}
 Environment=VERBAL_ENV=prod
 Environment=VERBAL_ROLE=worker
 Environment=PYTHONPATH={app_dir}
@@ -565,14 +585,14 @@ RestartSec=5s
 {sandboxing}
 
 [Install]
-WantedBy=multi-user.target reason.target
+WantedBy=multi-user.target reason.target reason.service
 """
 
     scheduler_unit = f"""[Unit]
 Description=Reason Task Scheduler (NightManager)
 After=network.target docker.service reason-docker.service
 Requires=reason-docker.service
-PartOf=reason.target
+PartOf=reason.service reason.target
 Wants=network.target
 
 [Service]
@@ -581,8 +601,7 @@ User={django_user}
 Group={web_group}
 UMask=0002
 WorkingDirectory={app_dir}
-EnvironmentFile=-{env_file}
-EnvironmentFile=-{env_secrets}
+{env_directives}
 Environment=VERBAL_ENV=prod
 Environment=VERBAL_ROLE=scheduler
 Environment=PYTHONPATH={app_dir}
@@ -593,14 +612,14 @@ RestartSec=10s
 {sandboxing}
 
 [Install]
-WantedBy=multi-user.target reason.target
+WantedBy=multi-user.target reason.target reason.service
 """
 
     inference_unit = f"""[Unit]
 Description=Reason Local AI Model Inference Service
 After=network.target docker.service reason-docker.service
 Requires=reason-docker.service
-PartOf=reason.target
+PartOf=reason.service reason.target
 Wants=network.target
 
 [Service]
@@ -609,8 +628,7 @@ User={django_user}
 Group={web_group}
 UMask=0002
 WorkingDirectory={app_dir}
-EnvironmentFile=-{env_file}
-EnvironmentFile=-{env_secrets}
+{env_directives}
 Environment=VERBAL_ENV=prod
 Environment=VERBAL_ROLE=inference
 Environment=PYTHONPATH={app_dir}
@@ -621,10 +639,11 @@ RestartSec=5s
 {sandboxing}
 
 [Install]
-WantedBy=multi-user.target reason.target
+WantedBy=multi-user.target reason.target reason.service
 """
 
     return {
+        "reason.service": master_service,
         "reason.target": master_target,
         "reason-docker.service": docker_unit,
         "reason-web.service": web_unit,
@@ -646,10 +665,11 @@ def preflight_check(c):
     ensure_sudo(c)
     print("📋 [Preflight] Verifying server environment and production configuration...")
 
-    env_path = f"{SHARED_DIR}/.env"
-    env_exists = c.sudo(f"test -f {env_path}", warn=True, hide=True).ok
+    env_shared = f"{SHARED_DIR}/.env"
+    env_app = f"{APP_DIR}/.env"
+    env_exists = c.sudo(f"test -f {env_shared} || test -f {env_app}", warn=True, hide=True).ok
     if not env_exists:
-        print(f"⚠️ [WARNING] Production environment file '{env_path}' not found!")
+        print(f"⚠️ [WARNING] Production environment file not found at '{env_shared}' or '{env_app}'!")
         repo_root = Path(__file__).resolve().parent.parent
         if (repo_root / ".env").is_file():
             print("   💡 Tip: Run 'fab sync-env' to push your local .env to the server.")
@@ -657,10 +677,11 @@ def preflight_check(c):
             print("   Create .env from .env.example with secure keys, then run 'fab sync-env'.")
     else:
         # Check permissions on .env (must not be world-readable)
-        perm = sudo_bash(c, f"stat -c %a {env_path}", hide=True).stdout.strip()
+        target_env = env_shared if c.sudo(f"test -f {env_shared}", warn=True, hide=True).ok else env_app
+        perm = sudo_bash(c, f"stat -c %a {target_env}", hide=True).stdout.strip()
         if perm in ["777", "666", "775", "664"]:
-            print(f"🔒 Tightening permissions on {env_path} (was {perm})...")
-            sudo_bash(c, f"chmod 0640 {env_path} && chown root:{WEB_GROUP} {env_path}")
+            print(f"🔒 Tightening permissions on {target_env} (was {perm})...")
+            sudo_bash(c, f"chmod 0640 {target_env} && chown root:{WEB_GROUP} {target_env}")
 
     # Check python3
     py_check = c.run("python3 --version", warn=True, hide=True)
@@ -760,8 +781,8 @@ def provision_system(c):
 @task
 def sync_env(c, local_env=None):
     """
-    Safely pushes local application configuration (.env) to the remote server
-    at /srv/reason/shared/.env with locked-down 0600 permissions.
+    Safely pushes local application configuration (.env, .env.secrets) to the remote server
+    at /srv/reason/shared/ and /srv/reason/app/ with locked-down 0640 permissions.
     """
     ensure_sudo(c)
     repo_root = Path(__file__).resolve().parent.parent
@@ -774,8 +795,32 @@ def sync_env(c, local_env=None):
     dest_path = f"{SHARED_DIR}/.env"
     print(f"📤 Uploading {env_path.name} to {dest_path} on remote server...")
     c.sudo(f"mkdir -p {SHARED_DIR}")
-    write_sudo_file(c, dest_path, content, mode="0600", owner=f"{DEPLOY_USER}:{WEB_GROUP}")
-    print(f"✅ Production environment configuration synchronized at {dest_path} (mode: 0600).")
+    write_sudo_file(c, dest_path, content, mode="0640", owner=f"{DEPLOY_USER}:{WEB_GROUP}")
+
+    # Also sync or preserve APP_DIR/.env if APP_DIR exists
+    if c.sudo(f"test -d {APP_DIR}", warn=True, hide=True).ok:
+        app_is_symlink = c.sudo(f"test -L {APP_DIR}/.env", warn=True, hide=True).ok
+        app_is_file = c.sudo(f"test -f {APP_DIR}/.env", warn=True, hide=True).ok
+        if app_is_file and not app_is_symlink:
+            write_sudo_file(c, f"{APP_DIR}/.env", content, mode="0640", owner=f"{DEPLOY_USER}:{WEB_GROUP}")
+        elif not app_is_file:
+            c.sudo(f"ln -sfn {dest_path} {APP_DIR}/.env")
+
+    print(f"✅ Production environment configuration synchronized at {dest_path} (mode: 0640).")
+
+    # If local .env.secrets exists, sync it too!
+    secrets_candidate = repo_root / ".env.secrets"
+    if secrets_candidate.is_file():
+        secrets_content = secrets_candidate.read_text(encoding="utf-8")
+        secrets_dest = f"{SHARED_DIR}/.env.secrets"
+        print(f"📤 Uploading .env.secrets to {secrets_dest}...")
+        write_sudo_file(c, secrets_dest, secrets_content, mode="0640", owner=f"{DJANGO_USER}:{WEB_GROUP}")
+        if c.sudo(f"test -d {APP_DIR}", warn=True, hide=True).ok:
+            if c.sudo(f"test -f {APP_DIR}/.env.secrets && ! test -L {APP_DIR}/.env.secrets", warn=True, hide=True).ok:
+                write_sudo_file(c, f"{APP_DIR}/.env.secrets", secrets_content, mode="0640", owner=f"{DJANGO_USER}:{WEB_GROUP}")
+            elif not c.sudo(f"test -f {APP_DIR}/.env.secrets", warn=True, hide=True).ok:
+                c.sudo(f"ln -sfn {secrets_dest} {APP_DIR}/.env.secrets")
+        print(f"✅ Production secrets synchronized at {secrets_dest} (mode: 0640).")
 
 
 # ==============================================================================
@@ -872,12 +917,13 @@ def setup_nginx_and_ssl(c, domain=None, source_ssl_dir=None, remove_default_site
 def setup_systemd(c):
     """
     Creates and enables modular systemd units for Reason/Verbal:
-    1. reason.target            (Master umbrella target for 'systemctl start reason')
-    2. reason-docker.service    (Docker Compose infrastructure: DB, Sandbox, Grobid)
-    3. reason-web.service       (Granian ASGI web server)
-    4. reason-worker.service    (Background task worker)
-    5. reason-scheduler.service (Periodic task scheduler / beat)
-    6. reason-inference.service (Dedicated local AI inference endpoint)
+    1. reason.service           (Master application stack service for 'systemctl start reason')
+    2. reason.target            (Master umbrella target)
+    3. reason-docker.service    (Docker Compose infrastructure: DB, Sandbox, Grobid)
+    4. reason-web.service       (Granian ASGI web server)
+    5. reason-worker.service    (Background task worker)
+    6. reason-scheduler.service (Periodic task scheduler / beat)
+    7. reason-inference.service (Dedicated local AI inference endpoint)
     """
     ensure_sudo(c)
     print("⚙️ [3/4] Installing systemd service units...")
@@ -898,7 +944,7 @@ def setup_systemd(c):
     for unit_name, content in services.items():
         write_sudo_file(c, f"/etc/systemd/system/{unit_name}", content, mode="0644", owner="root:root")
 
-    sudo_bash(c, "systemctl daemon-reload && systemctl enable reason.target reason-docker reason-web reason-worker reason-scheduler reason-inference")
+    sudo_bash(c, "systemctl daemon-reload && systemctl enable reason.service reason.target reason-docker reason-web reason-worker reason-scheduler reason-inference")
     print("✅ Systemd services installed and registered for automatic boot startup.")
 
 
@@ -1051,10 +1097,34 @@ def update_code(c, git_url=None, branch="main", local_source=None):
     c.sudo(f"ln -sfn {SHARED_DIR}/workspaces {APP_DIR}/workspaces")
     c.sudo(f"ln -sfn {SHARED_DIR}/media {APP_DIR}/media")
 
-    # Symlink persistent .env if present
-    env_source = f"{SHARED_DIR}/.env"
-    if c.sudo(f"test -f {env_source}", warn=True, hide=True).ok:
-        c.sudo(f"ln -sfn {env_source} {APP_DIR}/.env")
+    # Preserve and protect application environment files (.env, .env.secrets, .env.production, etc.)
+    env_shared = f"{SHARED_DIR}/.env"
+    env_app = f"{APP_DIR}/.env"
+    app_is_symlink = c.sudo(f"test -L {env_app}", warn=True, hide=True).ok
+    app_is_file = c.sudo(f"test -f {env_app}", warn=True, hide=True).ok
+    shared_exists = c.sudo(f"test -f {env_shared}", warn=True, hide=True).ok
+
+    if app_is_file and not app_is_symlink:
+        print(f"ℹ️ Preserving regular environment file at {env_app}...")
+        # Mirror to SHARED_DIR as backup if SHARED_DIR/.env is missing
+        if not shared_exists:
+            c.sudo(f"cp -p {env_app} {env_shared}")
+    elif shared_exists:
+        c.sudo(f"ln -sfn {env_shared} {env_app}")
+
+    for extra_env in [".env.secrets", ".env.production", ".env.deploy", ".env.local"]:
+        app_extra = f"{APP_DIR}/{extra_env}"
+        shared_extra = f"{SHARED_DIR}/{extra_env}"
+        extra_is_symlink = c.sudo(f"test -L {app_extra}", warn=True, hide=True).ok
+        extra_is_file = c.sudo(f"test -f {app_extra}", warn=True, hide=True).ok
+        shared_extra_exists = c.sudo(f"test -f {shared_extra}", warn=True, hide=True).ok
+
+        if extra_is_file and not extra_is_symlink:
+            print(f"ℹ️ Preserving regular environment file at {app_extra}...")
+            if not shared_extra_exists:
+                c.sudo(f"cp -p {app_extra} {shared_extra}")
+        elif shared_extra_exists:
+            c.sudo(f"ln -sfn {shared_extra} {app_extra}")
 
     # Enforce Read-Only Code Boundaries
     print("🔒 Enforcing read-only code execution permissions...")
@@ -1068,18 +1138,26 @@ def update_code(c, git_url=None, branch="main", local_source=None):
 
 def get_remote_env(c, env_file=None):
     """
-    Parses key-value pairs from the remote persistent environment file (.env).
+    Parses key-value pairs from remote environment files (.env, .env.secrets, etc.).
+    Inspects both SHARED_DIR and APP_DIR to respect files located in either directory.
     """
-    target = env_file or f"{SHARED_DIR}/.env"
+    targets = [env_file] if env_file else [
+        f"{SHARED_DIR}/.env",
+        f"{SHARED_DIR}/.env.secrets",
+        f"{APP_DIR}/.env",
+        f"{APP_DIR}/.env.secrets",
+        f"{APP_DIR}/.env.production",
+    ]
     remote_env = {}
-    if c.sudo(f"test -f {target}", warn=True, hide=True).ok:
-        cat_res = c.sudo(f"cat {target}", warn=True, hide=True)
-        if cat_res.ok and cat_res.stdout:
-            for line in cat_res.stdout.splitlines():
-                line = line.strip()
-                if line and not line.startswith("#") and "=" in line:
-                    k, v = line.split("=", 1)
-                    remote_env[k.strip()] = v.strip().strip('"').strip("'")
+    for target in targets:
+        if c.sudo(f"test -f {target}", warn=True, hide=True).ok:
+            cat_res = c.sudo(f"cat {target}", warn=True, hide=True)
+            if cat_res.ok and cat_res.stdout:
+                for line in cat_res.stdout.splitlines():
+                    line = line.strip()
+                    if line and not line.startswith("#") and "=" in line:
+                        k, v = line.split("=", 1)
+                        remote_env[k.strip()] = v.strip().strip('"').strip("'")
     return remote_env
 
 
