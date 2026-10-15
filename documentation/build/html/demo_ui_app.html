@@ -77,13 +77,16 @@
 <li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.download_file"><code class="docutils literal notranslate"><span class="pre">download_file()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.fill_grips_stub"><code class="docutils literal notranslate"><span class="pre">fill_grips_stub()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.get_conversation"><code class="docutils literal notranslate"><span class="pre">get_conversation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.grips_blueprints_tab"><code class="docutils literal notranslate"><span class="pre">grips_blueprints_tab()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.grips_concept_children"><code class="docutils literal notranslate"><span class="pre">grips_concept_children()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.grips_explorer_tab"><code class="docutils literal notranslate"><span class="pre">grips_explorer_tab()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.group_conversation_logs_for_display"><code class="docutils literal notranslate"><span class="pre">group_conversation_logs_for_display()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.index"><code class="docutils literal notranslate"><span class="pre">index()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.list_documents"><code class="docutils literal notranslate"><span class="pre">list_documents()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.preview_context_item"><code class="docutils literal notranslate"><span class="pre">preview_context_item()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.search_knowledge_base"><code class="docutils literal notranslate"><span class="pre">search_knowledge_base()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.send_message"><code class="docutils literal notranslate"><span class="pre">send_message()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.set_active_provider"><code class="docutils literal notranslate"><span class="pre">set_active_provider()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.stream_generation"><code class="docutils literal notranslate"><span class="pre">stream_generation()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.trigger_document_ingestion"><code class="docutils literal notranslate"><span class="pre">trigger_document_ingestion()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#demo_ui.views.upload_document"><code class="docutils literal notranslate"><span class="pre">upload_document()</span></code></a></li>
@@ -306,6 +309,14 @@ Because branching creates an entirely new <code class="docutils literal notransl
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="demo_ui.views.grips_blueprints_tab">
+<span class="sig-prename descclassname"><span class="pre">demo_ui.views.</span></span><span class="sig-name descname"><span class="pre">grips_blueprints_tab</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/demo_ui/views.html#grips_blueprints_tab"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#demo_ui.views.grips_blueprints_tab" title="Link to this definition"></a></dt>
+<dd><p>HTMX endpoint to render the Grips Knowledge Graph blueprints pathway.
+Presents the strategies clearly with step sequences, level-1 loop-back indicators,
+and admin access links.</p>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="demo_ui.views.grips_concept_children">
 <span class="sig-prename descclassname"><span class="pre">demo_ui.views.</span></span><span class="sig-name descname"><span class="pre">grips_concept_children</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">concept_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/demo_ui/views.html#grips_concept_children"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#demo_ui.views.grips_concept_children" title="Link to this definition"></a></dt>
 <dd><p>HTMX endpoint to lazily load children of a ConceptNode in the hierarchy.</p>
@@ -315,6 +326,14 @@ Because branching creates an entirely new <code class="docutils literal notransl
 <dt class="sig sig-object py" id="demo_ui.views.grips_explorer_tab">
 <span class="sig-prename descclassname"><span class="pre">demo_ui.views.</span></span><span class="sig-name descname"><span class="pre">grips_explorer_tab</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/demo_ui/views.html#grips_explorer_tab"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#demo_ui.views.grips_explorer_tab" title="Link to this definition"></a></dt>
 <dd><p>HTMX endpoint to render the Grips Explorer.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="demo_ui.views.group_conversation_logs_for_display">
+<span class="sig-prename descclassname"><span class="pre">demo_ui.views.</span></span><span class="sig-name descname"><span class="pre">group_conversation_logs_for_display</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/demo_ui/views.html#group_conversation_logs_for_display"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#demo_ui.views.group_conversation_logs_for_display" title="Link to this definition"></a></dt>
+<dd><p>Groups intermediate blueprint logs under their primary/final response turn.
+Extracts intermediate reasoning steps into <cite>log.thinking_steps</cite> and attaches
+the lightweight node visualizer (<cite>log.visualizer_html</cite>).</p>
 </dd></dl>
 
 <dl class="py function">
@@ -345,6 +364,12 @@ Because branching creates an entirely new <code class="docutils literal notransl
 <dt class="sig sig-object py" id="demo_ui.views.send_message">
 <span class="sig-prename descclassname"><span class="pre">demo_ui.views.</span></span><span class="sig-name descname"><span class="pre">send_message</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/demo_ui/views.html#send_message"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#demo_ui.views.send_message" title="Link to this definition"></a></dt>
 <dd><p>HTMX endpoint to process a prompt, run AI/Blueprint, and return the new bubbles.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="demo_ui.views.set_active_provider">
+<span class="sig-prename descclassname"><span class="pre">demo_ui.views.</span></span><span class="sig-name descname"><span class="pre">set_active_provider</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/demo_ui/views.html#set_active_provider"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#demo_ui.views.set_active_provider" title="Link to this definition"></a></dt>
+<dd><p>HTMX endpoint to switch the user’s active inference provider between local GPU and external models.</p>
 </dd></dl>
 
 <dl class="py function">

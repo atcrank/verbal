@@ -42,13 +42,16 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../llm_api_app.html">LLM API</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../background_resources_app.html">Background Resources - context documents</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../grips_app.html">Grips - wiki knowledge banks</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../llm_api_app.html">LLM API - Local Inference, Proxy Routing &amp; Hardware-Aware Serving</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../verbal_tasks_app.html">Verbal Tasks - Database-Backed Asynchronous Execution &amp; Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../sandbox_manager_app.html">Sandbox Manager - Isolated Python Execution Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grobid_client_app.html">Grobid Client - Deterministic Scientific PDF Parsing &amp; Citation Extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../background_resources_app.html">Background Resources - Retrieval-Augmented Generation &amp; Document Ingestion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grips_app.html">Grips - Structured Knowledge Graph &amp; Propositional Claims</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../metacognition_app.html">Metacognition - Cognitive Blueprints, Agentic Workflows &amp; Self-Evaluation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_app.html">Demo UI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmarking_app.html">Benchmarking - Automated Evaluation, Synthetic Generation &amp; LoRA Flywheels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../demo_ui_app.html">Demo UI - Empirical Research &amp; Cognitive Workbench</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
 <ul>
@@ -532,24 +535,54 @@
                 <span class="k">if</span> <span class="n">state_tree_snapshot</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">state_tree_snapshot</span> <span class="o">=</span> <span class="p">{}</span>
 
-                <span class="n">log</span> <span class="o">=</span> <span class="n">PromptResponseLog</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
-                    <span class="n">system_prompt</span><span class="o">=</span><span class="n">system_prompt</span><span class="p">,</span>
-                    <span class="n">user_prompt</span><span class="o">=</span><span class="n">user_prompt</span><span class="p">,</span>
-                    <span class="n">generated_response</span><span class="o">=</span><span class="n">text_to_save</span><span class="p">,</span>
-                    <span class="n">user_id</span><span class="o">=</span><span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;user_id&quot;</span><span class="p">),</span>
-                    <span class="n">conversation_id</span><span class="o">=</span><span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;conversation_id&quot;</span><span class="p">),</span>
-                    <span class="n">rag_selections</span><span class="o">=</span><span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;rag_selections&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
-                    <span class="n">state_tree_snapshot</span><span class="o">=</span><span class="n">state_tree_snapshot</span><span class="p">,</span>
-                    <span class="n">parent_log_id</span><span class="o">=</span><span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;parent_log_id&quot;</span><span class="p">),</span>
-                    <span class="n">input_tokens</span><span class="o">=</span><span class="n">input_tokens</span><span class="p">,</span>
-                    <span class="n">output_tokens</span><span class="o">=</span><span class="n">output_tokens</span><span class="p">,</span>
-                    <span class="n">generation_duration_ms</span><span class="o">=</span><span class="n">duration_ms</span><span class="p">,</span>
-                    <span class="n">tokens_per_second</span><span class="o">=</span><span class="n">tps</span><span class="p">,</span>
-                    <span class="n">model_name</span><span class="o">=</span><span class="n">model_name</span><span class="p">,</span>
-                    <span class="n">reasoning_step_id</span><span class="o">=</span><span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reasoning_step_id&quot;</span><span class="p">)</span>
-                <span class="p">)</span>
+                <span class="n">target_log_id</span> <span class="o">=</span> <span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;initial_log_id&quot;</span><span class="p">)</span>
+                <span class="n">log</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">if</span> <span class="n">target_log_id</span><span class="p">:</span>
+                    <span class="n">log</span> <span class="o">=</span> <span class="n">PromptResponseLog</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">target_log_id</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+
+                <span class="k">if</span> <span class="n">log</span><span class="p">:</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">system_prompt</span> <span class="o">=</span> <span class="n">system_prompt</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">user_prompt</span> <span class="o">=</span> <span class="n">user_prompt</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">generated_response</span> <span class="o">=</span> <span class="n">text_to_save</span>
+                    <span class="k">if</span> <span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;user_id&quot;</span><span class="p">):</span>
+                        <span class="n">log</span><span class="o">.</span><span class="n">user_id</span> <span class="o">=</span> <span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;user_id&quot;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;conversation_id&quot;</span><span class="p">):</span>
+                        <span class="n">log</span><span class="o">.</span><span class="n">conversation_id</span> <span class="o">=</span> <span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;conversation_id&quot;</span><span class="p">)</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">rag_selections</span> <span class="o">=</span> <span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;rag_selections&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">state_tree_snapshot</span> <span class="o">=</span> <span class="n">state_tree_snapshot</span>
+                    <span class="k">if</span> <span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;parent_log_id&quot;</span><span class="p">):</span>
+                        <span class="n">log</span><span class="o">.</span><span class="n">parent_log_id</span> <span class="o">=</span> <span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;parent_log_id&quot;</span><span class="p">)</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">input_tokens</span> <span class="o">=</span> <span class="n">input_tokens</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">output_tokens</span> <span class="o">=</span> <span class="n">output_tokens</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">generation_duration_ms</span> <span class="o">=</span> <span class="n">duration_ms</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">tokens_per_second</span> <span class="o">=</span> <span class="n">tps</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">model_name</span> <span class="o">=</span> <span class="n">model_name</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">reasoning_step_id</span> <span class="o">=</span> <span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reasoning_step_id&quot;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;blueprint_id&quot;</span><span class="p">):</span>
+                        <span class="n">log</span><span class="o">.</span><span class="n">blueprint_id</span> <span class="o">=</span> <span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;blueprint_id&quot;</span><span class="p">)</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+                    <span class="n">log_kwargs</span><span class="p">[</span><span class="s2">&quot;initial_log_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">log</span> <span class="o">=</span> <span class="n">PromptResponseLog</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+                        <span class="n">system_prompt</span><span class="o">=</span><span class="n">system_prompt</span><span class="p">,</span>
+                        <span class="n">user_prompt</span><span class="o">=</span><span class="n">user_prompt</span><span class="p">,</span>
+                        <span class="n">generated_response</span><span class="o">=</span><span class="n">text_to_save</span><span class="p">,</span>
+                        <span class="n">user_id</span><span class="o">=</span><span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;user_id&quot;</span><span class="p">),</span>
+                        <span class="n">conversation_id</span><span class="o">=</span><span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;conversation_id&quot;</span><span class="p">),</span>
+                        <span class="n">rag_selections</span><span class="o">=</span><span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;rag_selections&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                        <span class="n">state_tree_snapshot</span><span class="o">=</span><span class="n">state_tree_snapshot</span><span class="p">,</span>
+                        <span class="n">parent_log_id</span><span class="o">=</span><span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;parent_log_id&quot;</span><span class="p">),</span>
+                        <span class="n">input_tokens</span><span class="o">=</span><span class="n">input_tokens</span><span class="p">,</span>
+                        <span class="n">output_tokens</span><span class="o">=</span><span class="n">output_tokens</span><span class="p">,</span>
+                        <span class="n">generation_duration_ms</span><span class="o">=</span><span class="n">duration_ms</span><span class="p">,</span>
+                        <span class="n">tokens_per_second</span><span class="o">=</span><span class="n">tps</span><span class="p">,</span>
+                        <span class="n">model_name</span><span class="o">=</span><span class="n">model_name</span><span class="p">,</span>
+                        <span class="n">reasoning_step_id</span><span class="o">=</span><span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reasoning_step_id&quot;</span><span class="p">),</span>
+                        <span class="n">blueprint_id</span><span class="o">=</span><span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;blueprint_id&quot;</span><span class="p">)</span>
+                    <span class="p">)</span>
                 <span class="k">if</span> <span class="s2">&quot;log_ids&quot;</span> <span class="ow">in</span> <span class="n">log_kwargs</span><span class="p">:</span>
                     <span class="n">log_kwargs</span><span class="p">[</span><span class="s2">&quot;log_ids&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">log</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+
 
                 <span class="c1"># If running inside a background task, record telemetry to the active context</span>
                 <span class="k">try</span><span class="p">:</span>

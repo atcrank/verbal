@@ -55,6 +55,7 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="deploy.html">Production Deployment &amp; Operations Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="using_ollama.html">Ollama as Local AI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
 <li class="toctree-l1"><a class="reference internal" href="demo_ui_trials.html">Demo UI Empirical Trials &amp; Verification Reports</a></li>
@@ -175,6 +176,8 @@
       <li><a href="llm_api_app.html#llm_api.models.SystemConfiguration.active_local_model">active_local_model (llm_api.models.SystemConfiguration attribute)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.models.SystemConfiguration.active_local_model_id">active_local_model_id (llm_api.models.SystemConfiguration attribute)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.context_processors.active_model_context">active_model_context() (in module metacognition.context_processors)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.models.SystemConfiguration.active_ollama_model">active_ollama_model (llm_api.models.SystemConfiguration attribute)</a>
 </li>
@@ -495,6 +498,10 @@
       </ul></li>
       <li><a href="work_organisation_app.html#work_organisation.api.CardUpdateSchema">CardUpdateSchema (class in work_organisation.api)</a>
 </li>
+      <li><a href="metacognition_app.html#metacognition.models.CognitiveBlueprint.category">category (metacognition.models.CognitiveBlueprint attribute)</a>
+</li>
+      <li><a href="metacognition_app.html#metacognition.models.CognitiveBlueprint.CATEGORY_CHOICES">CATEGORY_CHOICES (metacognition.models.CognitiveBlueprint attribute)</a>
+</li>
       <li><a href="work_organisation_app.html#work_organisation.clustering.CausalFactorItem">CausalFactorItem (class in work_organisation.clustering)</a>
 </li>
       <li><a href="work_organisation_app.html#work_organisation.clustering.CausalGraphExtractionPlan">CausalGraphExtractionPlan (class in work_organisation.clustering)</a>
@@ -667,10 +674,10 @@
 </li>
       <li><a href="metacognition_app.html#metacognition.governance.ToolCapability.CODE_EXECUTION">CODE_EXECUTION (metacognition.governance.ToolCapability attribute)</a>
 </li>
-      <li><a href="metacognition_app.html#metacognition.models.CognitiveBlueprint">CognitiveBlueprint (class in metacognition.models)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="metacognition_app.html#metacognition.models.CognitiveBlueprint">CognitiveBlueprint (class in metacognition.models)</a>
+</li>
       <li><a href="metacognition_app.html#metacognition.models.CognitiveBlueprint.DoesNotExist">CognitiveBlueprint.DoesNotExist</a>
 </li>
       <li><a href="metacognition_app.html#metacognition.models.CognitiveBlueprint.MultipleObjectsReturned">CognitiveBlueprint.MultipleObjectsReturned</a>
@@ -1416,6 +1423,8 @@
 </li>
       <li><a href="work_organisation_app.html#work_organisation.models.WhiteboardCard.get_card_type_display">get_card_type_display() (work_organisation.models.WhiteboardCard method)</a>
 </li>
+      <li><a href="metacognition_app.html#metacognition.models.CognitiveBlueprint.get_category_display">get_category_display() (metacognition.models.CognitiveBlueprint method)</a>
+</li>
       <li><a href="background_resources_app.html#background_resources.rag_service.RAGService.get_chunk_from_store">get_chunk_from_store() (background_resources.rag_service.RAGService method)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.models.AbstractHigherOrderStrategy.get_chunk_ids">get_chunk_ids() (background_resources.models.AbstractHigherOrderStrategy method)</a>
@@ -1728,6 +1737,8 @@
         <li><a href="grips_app.html#module-grips.wiki_views">module</a>
 </li>
       </ul></li>
+      <li><a href="demo_ui_app.html#demo_ui.views.grips_blueprints_tab">grips_blueprints_tab() (in module demo_ui.views)</a>
+</li>
       <li><a href="demo_ui_app.html#demo_ui.views.grips_concept_children">grips_concept_children() (in module demo_ui.views)</a>
 </li>
       <li><a href="demo_ui_app.html#demo_ui.views.grips_explorer_tab">grips_explorer_tab() (in module demo_ui.views)</a>
@@ -1770,6 +1781,8 @@
       <li><a href="background_resources_app.html#background_resources.models.GrobidReadingStrategy.NotUpdated">GrobidReadingStrategy.NotUpdated</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.models.Document.grobidreadingstrategy_set">grobidreadingstrategy_set (background_resources.models.Document attribute)</a>
+</li>
+      <li><a href="demo_ui_app.html#demo_ui.views.group_conversation_logs_for_display">group_conversation_logs_for_display() (in module demo_ui.views)</a>
 </li>
       <li><a href="work_organisation_app.html#work_organisation.api.ProjectCreateSchema.group_ids">group_ids (work_organisation.api.ProjectCreateSchema attribute)</a>
 
@@ -1969,10 +1982,10 @@
 </li>
       <li><a href="benchmarking_app.html#benchmarking.models.BenchmarkScenario.ideal_response">ideal_response (benchmarking.models.BenchmarkScenario property)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="metacognition_app.html#metacognition.actions.EdgeLintResult.improved_justification">improved_justification (metacognition.actions.EdgeLintResult attribute)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="metacognition_app.html#metacognition.actions.NodeLintResult.improved_narrative">improved_narrative (metacognition.actions.NodeLintResult attribute)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.models.RAGChunk.in_byte_store">in_byte_store (background_resources.models.RAGChunk attribute)</a>
@@ -2057,12 +2070,20 @@
       </ul></li>
       <li><a href="verbal_tasks_app.html#verbal_tasks.models.ScheduledTask.is_due">is_due() (verbal_tasks.models.ScheduledTask method)</a>
 </li>
+      <li><a href="grobid_client_app.html#grobid_client.api.is_grobid_available">is_grobid_available() (in module grobid_client.api)</a>
+</li>
       <li><a href="background_resources_app.html#background_resources.rag_service.RAGService.is_hallucination">is_hallucination() (background_resources.rag_service.RAGService method)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.rag_service.RAGService.is_likely_toc">is_likely_toc() (background_resources.rag_service.RAGService static method)</a>
 </li>
       <li><a href="metacognition_app.html#metacognition.models.is_lock_bypassed">is_lock_bypassed() (in module metacognition.models)</a>
 </li>
+      <li><a href="llm_api_app.html#llm_api.models.ExternalAIModel.is_multimodal">is_multimodal (llm_api.models.ExternalAIModel property)</a>
+
+      <ul>
+        <li><a href="llm_api_app.html#llm_api.models.LocalAIModel.is_multimodal">(llm_api.models.LocalAIModel property)</a>
+</li>
+      </ul></li>
       <li><a href="metacognition_app.html#metacognition.models.ReasoningStep.is_pending_review">is_pending_review (metacognition.models.ReasoningStep attribute)</a>
 </li>
       <li><a href="metacognition_app.html#metacognition.models.ToolDefinition.is_promoted">is_promoted (metacognition.models.ToolDefinition attribute)</a>
@@ -3643,6 +3664,8 @@
       <li><a href="work_organisation_app.html#work_organisation.models.Workshop.sessions">sessions (work_organisation.models.Workshop attribute)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.ai_service.AIService.set_active_adapter">set_active_adapter() (llm_api.ai_service.AIService method)</a>
+</li>
+      <li><a href="demo_ui_app.html#demo_ui.views.set_active_provider">set_active_provider() (in module demo_ui.views)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.rag_service.DocumentHandles.short_form">short_form (background_resources.rag_service.DocumentHandles attribute)</a>
 </li>

@@ -26,6 +26,7 @@ Welcome to the documentation for **reason**, Django handles for gripping your La
    :maxdepth: 2
    :caption: Guides & Testing:
 
+   deploy
    using_ollama
    metacognition_trials
    demo_ui_trials

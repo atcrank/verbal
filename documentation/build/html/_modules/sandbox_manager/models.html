@@ -101,7 +101,7 @@
 <span class="sd">    Singleton model managing the Docker Sandbox environment.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">requirements_txt</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">(</span>
-        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;fastapi==0.104.1</span><span class="se">\n</span><span class="s2">uvicorn==0.24.0</span><span class="se">\n</span><span class="s2">numpy</span><span class="se">\n</span><span class="s2">pandas</span><span class="se">\n</span><span class="s2">networkx</span><span class="se">\n</span><span class="s2">pgmpy&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;fastapi&gt;=0.110.0</span><span class="se">\n</span><span class="s2">uvicorn&gt;=0.28.0</span><span class="se">\n</span><span class="s2">numpy</span><span class="se">\n</span><span class="s2">pandas</span><span class="se">\n</span><span class="s2">scipy</span><span class="se">\n</span><span class="s2">sympy</span><span class="se">\n</span><span class="s2">pint</span><span class="se">\n</span><span class="s2">networkx</span><span class="se">\n</span><span class="s2">pgmpy</span><span class="se">\n</span><span class="s2">pyAgrum&quot;</span><span class="p">,</span>
         <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Python packages to install in the sandbox. One per line.&quot;</span>
     <span class="p">)</span>
     <span class="n">execution_timeout</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span>

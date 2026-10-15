@@ -86,27 +86,110 @@
            <div itemprop="articleBody">
              
   <h1>Source code for metacognition.context_processors</h1><div class="highlight"><pre>
-<span></span><span class="sd">"""</span>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Tool Governance Context Processors (WS17).</span>
 
 <span class="sd">Exposes active governance state, ceiling clamps, badge styles, and effective</span>
 <span class="sd">clearance to all Django templates.</span>
-<span class="sd">"""</span>
+<span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.governance</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_governance_summary</span>
+
+
+<div class="viewcode-block" id="active_model_context">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.context_processors.active_model_context">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">active_model_context</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Exposes active model info (local vs external provider) and available external models</span>
+<span class="sd">    to all rendered templates.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemConfiguration</span><span class="p">,</span> <span class="n">UserActiveModel</span><span class="p">,</span> <span class="n">ExternalAIModel</span>
+
+    <span class="n">user</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">sys_config</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">sys_config</span> <span class="o">=</span> <span class="n">SystemConfiguration</span><span class="o">.</span><span class="n">get_solo</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+    <span class="n">user_ai_settings</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">user</span> <span class="ow">and</span> <span class="n">user</span><span class="o">.</span><span class="n">is_authenticated</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">user_ai_settings</span> <span class="o">=</span> <span class="n">UserActiveModel</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">user</span><span class="p">)</span><span class="o">.</span><span class="n">select_related</span><span class="p">(</span><span class="s2">&quot;active_external&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+    <span class="n">active_model_info</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;is_external&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;No Model Selected&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;backend&quot;</span><span class="p">:</span> <span class="n">sys_config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="k">if</span> <span class="n">sys_config</span> <span class="k">else</span> <span class="s2">&quot;pytorch&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;provider&quot;</span><span class="p">:</span> <span class="s2">&quot;local&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;status_color&quot;</span><span class="p">:</span> <span class="s2">&quot;#94a3b8&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;badge_icon&quot;</span><span class="p">:</span> <span class="s2">&quot;⚪&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;badge_label&quot;</span><span class="p">:</span> <span class="s2">&quot;Local: None&quot;</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="n">user_ai_settings</span> <span class="ow">and</span> <span class="n">user_ai_settings</span><span class="o">.</span><span class="n">use_external</span> <span class="ow">and</span> <span class="n">user_ai_settings</span><span class="o">.</span><span class="n">active_external</span><span class="p">:</span>
+        <span class="n">ext</span> <span class="o">=</span> <span class="n">user_ai_settings</span><span class="o">.</span><span class="n">active_external</span>
+        <span class="n">active_model_info</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;is_external&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">ext</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s2">&quot;backend&quot;</span><span class="p">:</span> <span class="s2">&quot;external&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;provider&quot;</span><span class="p">:</span> <span class="n">ext</span><span class="o">.</span><span class="n">provider</span><span class="p">,</span>
+            <span class="s2">&quot;status_color&quot;</span><span class="p">:</span> <span class="s2">&quot;#38bdf8&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;badge_icon&quot;</span><span class="p">:</span> <span class="s2">&quot;⚡&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;badge_label&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ext</span><span class="o">.</span><span class="n">provider</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">ext</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">}</span>
+    <span class="k">elif</span> <span class="n">sys_config</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">sys_config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="o">==</span> <span class="s1">&#39;pytorch&#39;</span><span class="p">:</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="n">sys_config</span><span class="o">.</span><span class="n">active_local_model</span>
+        <span class="k">elif</span> <span class="n">sys_config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="o">==</span> <span class="s1">&#39;vllm&#39;</span><span class="p">:</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="n">sys_config</span><span class="o">.</span><span class="n">active_vllm_model</span>
+        <span class="k">elif</span> <span class="n">sys_config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="o">==</span> <span class="s1">&#39;ollama&#39;</span><span class="p">:</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="n">sys_config</span><span class="o">.</span><span class="n">active_ollama_model</span>
+
+        <span class="k">if</span> <span class="n">model</span><span class="p">:</span>
+            <span class="n">active_model_info</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;is_external&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                <span class="s2">&quot;backend&quot;</span><span class="p">:</span> <span class="n">sys_config</span><span class="o">.</span><span class="n">get_hosting_backend_display</span><span class="p">(),</span>
+                <span class="s2">&quot;provider&quot;</span><span class="p">:</span> <span class="s2">&quot;local&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;status_color&quot;</span><span class="p">:</span> <span class="s2">&quot;#10b981&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;badge_icon&quot;</span><span class="p">:</span> <span class="s2">&quot;🟢&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;badge_label&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Local: </span><span class="si">{</span><span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">}</span>
+
+    <span class="n">available_external_models</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">user</span> <span class="ow">and</span> <span class="n">user</span><span class="o">.</span><span class="n">is_authenticated</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">user_providers</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">api_keys</span><span class="o">.</span><span class="n">values_list</span><span class="p">(</span><span class="s1">&#39;provider&#39;</span><span class="p">,</span> <span class="n">flat</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">user_providers</span><span class="p">:</span>
+                <span class="n">available_external_models</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">ExternalAIModel</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">provider__in</span><span class="o">=</span><span class="n">user_providers</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;active_model_info&quot;</span><span class="p">:</span> <span class="n">active_model_info</span><span class="p">,</span>
+        <span class="s2">&quot;available_external_models&quot;</span><span class="p">:</span> <span class="n">available_external_models</span><span class="p">,</span>
+    <span class="p">}</span></div>
+
 
 
 <div class="viewcode-block" id="governance_context">
 <a class="viewcode-back" href="../../metacognition_app.html#metacognition.context_processors.governance_context">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">governance_context</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""</span>
-<span class="sd">    Exposes active tool governance state, lockdown level, and user clearance</span>
-<span class="sd">    to all rendered templates as 'governance'.</span>
-<span class="sd">    """</span>
-    <span class="n">user</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s2">"user"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-    <span class="k">return</span> <span class="p">{</span>
-        <span class="s2">"governance"</span><span class="p">:</span> <span class="n">get_governance_summary</span><span class="p">(</span><span class="n">user</span><span class="p">),</span>
-    <span class="p">}</span></div>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Exposes active tool governance state, lockdown level, user clearance,</span>
+<span class="sd">    and active model information to all rendered templates.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">user</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">ctx</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;governance&quot;</span><span class="p">:</span> <span class="n">get_governance_summary</span><span class="p">(</span><span class="n">user</span><span class="p">),</span>
+    <span class="p">}</span>
+    <span class="n">ctx</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">active_model_context</span><span class="p">(</span><span class="n">request</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">ctx</span></div>
+
 
 </pre></div>
 
