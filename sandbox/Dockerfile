@@ -33,7 +33,7 @@ RUN if ! id -u python >/dev/null 2>&1; then \
 WORKDIR /home/python/app
 
 COPY requirements.txt .
-RUN python -m pip install --no-cache-dir -r requirements.txt
+RUN python -m pip install --no-cache-dir --root-user-action=ignore -r requirements.txt
 
 COPY main.py .
 

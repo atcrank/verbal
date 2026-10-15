@@ -483,9 +483,38 @@ ProtectHome=yes
 PrivateTmp=yes
 ReadWritePaths={shared_dir} {hf_cache_dir} {log_dir}"""
 
+    master_target = f"""[Unit]
+Description=Reason Cognitive Platform Master Target
+Wants=reason-docker.service reason-web.service reason-worker.service reason-scheduler.service reason-inference.service
+After=reason-docker.service
+
+[Install]
+WantedBy=multi-user.target
+Alias=reason.service
+"""
+
+    docker_unit = f"""[Unit]
+Description=Reason Docker Infrastructure (PostgreSQL, Sandbox, Grobid)
+After=network.target docker.service
+Requires=docker.service
+PartOf=reason.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory={app_dir}
+ExecStart=/usr/bin/docker compose --profile academic up -d
+ExecStop=/usr/bin/docker compose --profile academic stop
+
+[Install]
+WantedBy=multi-user.target reason.target
+"""
+
     web_unit = f"""[Unit]
 Description=Reason Web Server (Granian ASGI)
-After=network.target docker.service postgresql.service
+After=network.target docker.service reason-docker.service
+Requires=reason-docker.service
+PartOf=reason.target
 Wants=network.target
 
 [Service]
@@ -508,12 +537,14 @@ LimitNOFILE=65535
 {sandboxing}
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=multi-user.target reason.target
 """
 
     worker_unit = f"""[Unit]
 Description=Reason Background Task Worker
-After=network.target docker.service postgresql.service
+After=network.target docker.service reason-docker.service
+Requires=reason-docker.service
+PartOf=reason.target
 Wants=network.target
 
 [Service]
@@ -534,12 +565,14 @@ RestartSec=5s
 {sandboxing}
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=multi-user.target reason.target
 """
 
     scheduler_unit = f"""[Unit]
 Description=Reason Task Scheduler (NightManager)
-After=network.target docker.service postgresql.service
+After=network.target docker.service reason-docker.service
+Requires=reason-docker.service
+PartOf=reason.target
 Wants=network.target
 
 [Service]
@@ -560,12 +593,14 @@ RestartSec=10s
 {sandboxing}
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=multi-user.target reason.target
 """
 
     inference_unit = f"""[Unit]
 Description=Reason Local AI Model Inference Service
-After=network.target
+After=network.target docker.service reason-docker.service
+Requires=reason-docker.service
+PartOf=reason.target
 Wants=network.target
 
 [Service]
@@ -586,15 +621,18 @@ RestartSec=5s
 {sandboxing}
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=multi-user.target reason.target
 """
 
     return {
+        "reason.target": master_target,
+        "reason-docker.service": docker_unit,
         "reason-web.service": web_unit,
         "reason-worker.service": worker_unit,
         "reason-scheduler.service": scheduler_unit,
         "reason-inference.service": inference_unit,
     }
+
 
 
 # ==============================================================================
@@ -833,11 +871,13 @@ def setup_nginx_and_ssl(c, domain=None, source_ssl_dir=None, remove_default_site
 @task
 def setup_systemd(c):
     """
-    Creates and enables 4 modular systemd units for Reason/Verbal:
-    1. reason-web.service       (Granian ASGI web server)
-    2. reason-worker.service    (Background task worker)
-    3. reason-scheduler.service (Periodic task scheduler / beat)
-    4. reason-inference.service (Dedicated local AI inference endpoint)
+    Creates and enables modular systemd units for Reason/Verbal:
+    1. reason.target            (Master umbrella target for 'systemctl start reason')
+    2. reason-docker.service    (Docker Compose infrastructure: DB, Sandbox, Grobid)
+    3. reason-web.service       (Granian ASGI web server)
+    4. reason-worker.service    (Background task worker)
+    5. reason-scheduler.service (Periodic task scheduler / beat)
+    6. reason-inference.service (Dedicated local AI inference endpoint)
     """
     ensure_sudo(c)
     print("⚙️ [3/4] Installing systemd service units...")
@@ -858,8 +898,9 @@ def setup_systemd(c):
     for unit_name, content in services.items():
         write_sudo_file(c, f"/etc/systemd/system/{unit_name}", content, mode="0644", owner="root:root")
 
-    sudo_bash(c, "systemctl daemon-reload && systemctl enable reason-web reason-worker reason-scheduler reason-inference")
+    sudo_bash(c, "systemctl daemon-reload && systemctl enable reason.target reason-docker reason-web reason-worker reason-scheduler reason-inference")
     print("✅ Systemd services installed and registered for automatic boot startup.")
+
 
 
 # ==============================================================================
@@ -1047,6 +1088,7 @@ def start_backend_containers(c):
     """
     Brings up core Docker services (PostgreSQL db, python sandbox) and optional services
     (Grobid academic PDF parser) before database migrations, and awaits database readiness.
+    Idempotent: safely succeeds if backend containers are already running.
     """
     ensure_sudo(c)
     print("🐳 Starting Docker backend containers (db, sandbox)...")
@@ -1054,8 +1096,13 @@ def start_backend_containers(c):
     # 1. Bring up core containers
     res = sudo_bash(c, f"cd {APP_DIR} && docker compose up -d db sandbox", warn=True)
     if not res.ok:
-        print(f"🚨 Failed to start backend containers:\n{res.stderr or res.stdout}")
-        raise Exit("Failed to start Docker backend services.")
+        # Check if database container is already running before failing
+        db_running = sudo_bash(c, f"docker ps -q -f name={DB_CONTAINER} -f status=running", hide=True, warn=True)
+        if not (db_running.ok and db_running.stdout.strip()):
+            print(f"🚨 Failed to start backend containers:\n{res.stderr or res.stdout}")
+            raise Exit("Failed to start Docker backend services.")
+        else:
+            print(f"ℹ️ Database container '{DB_CONTAINER}' is already running.")
 
     # 2. Check and start Grobid if enabled
     remote_env = get_remote_env(c)
@@ -1074,7 +1121,11 @@ def start_backend_containers(c):
     else:
         print("ℹ️ Grobid container disabled via ENABLE_GROBID=false; continuing with basic services.")
 
-    # 3. Wait for PostgreSQL container to become ready
+    # 3. Wait for PostgreSQL container to become ready (resolving credentials from remote_env)
+    db_user = remote_env.get("DB_USER", DB_USER)
+    db_name = remote_env.get("DB_NAME", DB_NAME)
+    db_port = remote_env.get("DB_PORT", DB_PORT)
+
     print(f"⏳ Waiting for PostgreSQL container '{DB_CONTAINER}' to become healthy...")
     max_retries = 15
     retry_interval = 2
@@ -1082,8 +1133,8 @@ def start_backend_containers(c):
     for attempt in range(1, max_retries + 1):
         check = sudo_bash(
             c,
-            f"docker exec {DB_CONTAINER} pg_isready -U {DB_USER} -d {DB_NAME} 2>/dev/null || "
-            f"pg_isready -h 127.0.0.1 -p {DB_PORT} -U {DB_USER} 2>/dev/null",
+            f"docker exec {DB_CONTAINER} pg_isready -U {db_user} -d {db_name} 2>/dev/null || "
+            f"pg_isready -h 127.0.0.1 -p {db_port} -U {db_user} 2>/dev/null",
             warn=True,
             hide=True,
         )
@@ -1096,6 +1147,7 @@ def start_backend_containers(c):
     if not is_ready:
         print(f"🚨 PostgreSQL container '{DB_CONTAINER}' did not report ready after {max_retries * retry_interval} seconds.")
         raise Exit(f"Database container {DB_CONTAINER} failed to become healthy.")
+
 
 
 def build_pip_install_cmd(

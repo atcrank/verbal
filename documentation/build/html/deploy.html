@@ -65,7 +65,7 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#production-architecture-deployment-structure">2. Production Architecture &amp; Deployment Structure</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#high-level-architecture">High-Level Architecture</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#the-4-systemd-application-units">The 4 Systemd Application Units</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#the-systemd-service-units-master-target">The Systemd Service Units &amp; Master Target</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#security-sandboxing-directives">Security &amp; Sandboxing Directives</a></li>
 </ul>
 </li>
@@ -146,7 +146,7 @@
 <li><p><a class="reference internal" href="#production-architecture-deployment-structure" id="id3">2. Production Architecture &amp; Deployment Structure</a></p>
 <ul>
 <li><p><a class="reference internal" href="#high-level-architecture" id="id4">High-Level Architecture</a></p></li>
-<li><p><a class="reference internal" href="#the-4-systemd-application-units" id="id5">The 4 Systemd Application Units</a></p></li>
+<li><p><a class="reference internal" href="#the-systemd-service-units-master-target" id="id5">The Systemd Service Units &amp; Master Target</a></p></li>
 <li><p><a class="reference internal" href="#filesystem-directory-layout" id="id6">Filesystem Directory Layout</a></p></li>
 <li><p><a class="reference internal" href="#docker-compose-infrastructure-profiles" id="id7">Docker Compose Infrastructure &amp; Profiles</a></p></li>
 </ul>
@@ -189,11 +189,15 @@
 <p>For operators and sysadmins managing an active production instance, these are the essential daily operational controls.</p>
 <section id="daily-operations-cheatsheet">
 <h3><a class="toc-backref" href="#id2" role="doc-backlink">Daily Operations Cheatsheet</a><a class="headerlink" href="#daily-operations-cheatsheet" title="Link to this heading"></a></h3>
-<p>All application commands run under <cite>systemd</cite> as the dedicated unprivileged system user <code class="docutils literal notranslate"><span class="pre">reason</span></code>, while supporting backend containers run via Docker Compose.</p>
+<p>All application commands run under <cite>systemd</cite> as the dedicated unprivileged system user <code class="docutils literal notranslate"><span class="pre">reason</span></code>, while supporting backend containers run via Docker Compose supervised by <code class="docutils literal notranslate"><span class="pre">reason-docker.service</span></code>.</p>
+<p>The entire stack can be managed using the umbrella systemd target <code class="docutils literal notranslate"><span class="pre">reason.target</span></code> (aliased as <code class="docutils literal notranslate"><span class="pre">reason.service</span></code>).</p>
 <ul>
 <li><p><strong>Check Overall System Health</strong>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Check status of all 4 application services</span>
-sudo<span class="w"> </span>systemctl<span class="w"> </span>status<span class="w"> </span>reason-web<span class="w"> </span>reason-worker<span class="w"> </span>reason-scheduler<span class="w"> </span>reason-inference
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Check status of the entire production stack (target + all services)</span>
+sudo<span class="w"> </span>systemctl<span class="w"> </span>status<span class="w"> </span>reason
+
+<span class="c1"># Check status of individual application and docker services</span>
+sudo<span class="w"> </span>systemctl<span class="w"> </span>status<span class="w"> </span>reason-docker<span class="w"> </span>reason-web<span class="w"> </span>reason-worker<span class="w"> </span>reason-scheduler<span class="w"> </span>reason-inference
 
 <span class="c1"># Check status of Docker infrastructure containers (Postgres, Sandbox, Grobid)</span>
 <span class="nb">cd</span><span class="w"> </span>/srv/reason/app<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>--profile<span class="w"> </span>academic<span class="w"> </span>ps
@@ -204,26 +208,23 @@ fab<span class="w"> </span>health-check
 </div>
 </li>
 <li><p><strong>Start the Entire Production Stack</strong>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># 1. Bring up Docker backend containers (including Grobid for academic PDF parsing)</span>
-<span class="nb">cd</span><span class="w"> </span>/srv/reason/app
-sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>--profile<span class="w"> </span>academic<span class="w"> </span>up<span class="w"> </span>-d
-
-<span class="c1"># 2. Start the systemd application services</span>
-sudo<span class="w"> </span>systemctl<span class="w"> </span>start<span class="w"> </span>reason-web<span class="w"> </span>reason-worker<span class="w"> </span>reason-scheduler<span class="w"> </span>reason-inference
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Single command brings up Docker Compose containers and all application units:</span>
+sudo<span class="w"> </span>systemctl<span class="w"> </span>start<span class="w"> </span>reason
 </pre></div>
 </div>
 </li>
-<li><p><strong>Restart the Application Services</strong> (e.g. after code or configuration updates):</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>systemctl<span class="w"> </span>restart<span class="w"> </span>reason-web<span class="w"> </span>reason-worker<span class="w"> </span>reason-scheduler<span class="w"> </span>reason-inference
+<li><p><strong>Restart the Stack or Application Services</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Restart the entire stack (including Docker containers):</span>
+sudo<span class="w"> </span>systemctl<span class="w"> </span>restart<span class="w"> </span>reason
+
+<span class="c1"># Or restart only the application services (retaining running Docker DB / Grobid):</span>
+sudo<span class="w"> </span>systemctl<span class="w"> </span>restart<span class="w"> </span>reason-web<span class="w"> </span>reason-worker<span class="w"> </span>reason-scheduler<span class="w"> </span>reason-inference
 </pre></div>
 </div>
 </li>
 <li><p><strong>Stop the Production Stack</strong>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Stop application processes</span>
-sudo<span class="w"> </span>systemctl<span class="w"> </span>stop<span class="w"> </span>reason-web<span class="w"> </span>reason-worker<span class="w"> </span>reason-scheduler<span class="w"> </span>reason-inference
-
-<span class="c1"># Stop Docker containers (if taking down database/sandbox for maintenance)</span>
-<span class="nb">cd</span><span class="w"> </span>/srv/reason/app<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>down
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Cleanly stops all application processes and stops Docker Compose containers:</span>
+sudo<span class="w"> </span>systemctl<span class="w"> </span>stop<span class="w"> </span>reason
 </pre></div>
 </div>
 </li>
@@ -267,12 +268,17 @@ fab<span class="w"> </span>backup-database
             │
             ▼  (HTTP reverse proxy to 127.0.0.1:8008)
 ┌────────────────────────────────────────────────────────┐
-│          Systemd Application Supervision (Tier 2)      │
-│                                                        │
-│  [reason-web.service]       (Granian ASGI Server)      │
-│  [reason-worker.service]    (Django Task Worker)       │
-│  [reason-scheduler.service] (NightManager Beat Daemon) │
-│  [reason-inference.service] (Local AI Model Service)   │
+│          Systemd Master Umbrella: [reason.target]      │
+│                (Alias: reason.service)                 │
+├────────────────────────────────────────────────────────┤
+│  Application Tier (Hardened unprivileged user 'reason')│
+│  - [reason-web.service]       (Granian ASGI Server)    │
+│  - [reason-worker.service]    (Django Task Worker)     │
+│  - [reason-scheduler.service] (NightManager Beat)      │
+│  - [reason-inference.service] (Local AI Model Service) │
+├────────────────────────────────────────────────────────┤
+│  Infrastructure Tier (Supervised Docker Compose)       │
+│  - [reason-docker.service]    (Runs compose up/stop)   │
 └───────────┬────────────────────────────────────────────┘
             │
             ▼  (Internal localhost container networking)
@@ -286,10 +292,14 @@ fab<span class="w"> </span>backup-database
 </pre></div>
 </div>
 </section>
-<section id="the-4-systemd-application-units">
-<h3><a class="toc-backref" href="#id5" role="doc-backlink">The 4 Systemd Application Units</a><a class="headerlink" href="#the-4-systemd-application-units" title="Link to this heading"></a></h3>
+<section id="the-systemd-service-units-master-target">
+<h3><a class="toc-backref" href="#id5" role="doc-backlink">The Systemd Service Units &amp; Master Target</a><a class="headerlink" href="#the-systemd-service-units-master-target" title="Link to this heading"></a></h3>
 <p>All units are generated by <code class="xref py py-func docutils literal notranslate"><span class="pre">deploy.fabric_deploy.generate_systemd_units()</span></code> and installed to <code class="docutils literal notranslate"><span class="pre">/etc/systemd/system/</span></code>:</p>
 <ol class="arabic simple">
+<li><p><strong>``reason.target``</strong> (Alias: <code class="docutils literal notranslate"><span class="pre">reason.service</span></code>):
+The top-level master target grouping all Reason services. Enables single-command orchestration: <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">systemctl</span> <span class="pre">start</span> <span class="pre">reason</span></code>, <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">systemctl</span> <span class="pre">stop</span> <span class="pre">reason</span></code>, and <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">systemctl</span> <span class="pre">restart</span> <span class="pre">reason</span></code>.</p></li>
+<li><p><strong>``reason-docker.service``</strong>:
+Supervises Docker Compose infrastructure lifecycle. Defined with <code class="docutils literal notranslate"><span class="pre">Type=oneshot</span></code> and <code class="docutils literal notranslate"><span class="pre">RemainAfterExit=yes</span></code>, executing <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">compose</span> <span class="pre">--profile</span> <span class="pre">academic</span> <span class="pre">up</span> <span class="pre">-d</span></code> on startup and <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">compose</span> <span class="pre">--profile</span> <span class="pre">academic</span> <span class="pre">stop</span></code> on shutdown. All application services declare <code class="docutils literal notranslate"><span class="pre">Requires=reason-docker.service</span></code> and <code class="docutils literal notranslate"><span class="pre">After=reason-docker.service</span></code> to guarantee database readiness before Django boots.</p></li>
 <li><p><strong>``reason-web.service``</strong>:
 Executes <code class="docutils literal notranslate"><span class="pre">granian</span> <span class="pre">--interface</span> <span class="pre">asgi</span> <span class="pre">--host</span> <span class="pre">127.0.0.1</span> <span class="pre">--port</span> <span class="pre">8008</span> <span class="pre">verbal_config.asgi:application</span></code>. Configured with <code class="docutils literal notranslate"><span class="pre">VERBAL_ROLE=web</span></code> so that heavy LLM models are <strong>never</strong> loaded into memory on web worker processes.</p></li>
 <li><p><strong>``reason-worker.service``</strong>:
@@ -387,7 +397,7 @@ python<span class="w"> </span>fabfile.py<span class="w"> </span>setup-all<span c
 1. <strong>``preflight_check``</strong>: Validates target OS architecture, disk space, and essential tooling.
 2. <strong>``provision_system``</strong>: Creates system user <code class="docutils literal notranslate"><span class="pre">reason</span></code>, group <code class="docutils literal notranslate"><span class="pre">www-data</span></code>, and provisions all <code class="docutils literal notranslate"><span class="pre">/srv/reason/</span></code> directory trees.
 3. <strong>``setup_nginx_and_ssl``</strong>: Generates hardened Nginx virtual host configurations, installs security headers, and binds TLS certificates.
-4. <strong>``setup_systemd``</strong>: Renders and writes the 4 modular systemd service units, runs <code class="docutils literal notranslate"><span class="pre">daemon-reload</span></code>, and enables them for boot startup.
+4. <strong>``setup_systemd``</strong>: Renders and writes the 6 systemd units (<code class="docutils literal notranslate"><span class="pre">reason.target</span></code>, <code class="docutils literal notranslate"><span class="pre">reason-docker</span></code>, and the 4 application services), runs <code class="docutils literal notranslate"><span class="pre">daemon-reload</span></code>, and enables them for boot startup.
 5. <strong>``deploy``</strong>: Triggers the initial code pull, container startup, migration run, and service activation.</p>
 </section>
 <section id="routine-application-deployments-deploy">
@@ -412,9 +422,9 @@ python<span class="w"> </span>fabfile.py<span class="w"> </span>setup-all<span c
 * Checks for or prompts superuser creation.
 * Runs <code class="docutils literal notranslate"><span class="pre">collectstatic</span></code> directly into <code class="docutils literal notranslate"><span class="pre">/srv/reason/static</span></code> and tightens permissions (<code class="docutils literal notranslate"><span class="pre">0755</span></code> dirs, <code class="docutils literal notranslate"><span class="pre">0644</span></code> files).</p></li>
 <li><p><strong>Process Restart (``restart_services``)</strong>:
-Gracefully restarts all 4 systemd services via <code class="docutils literal notranslate"><span class="pre">systemctl</span> <span class="pre">restart</span> <span class="pre">reason-web</span> <span class="pre">reason-worker</span> <span class="pre">reason-scheduler</span> <span class="pre">reason-inference</span></code>.</p></li>
+Gracefully restarts the application services via <code class="docutils literal notranslate"><span class="pre">systemctl</span> <span class="pre">restart</span> <span class="pre">reason-web</span> <span class="pre">reason-worker</span> <span class="pre">reason-scheduler</span> <span class="pre">reason-inference</span></code> (or the full stack via <code class="docutils literal notranslate"><span class="pre">systemctl</span> <span class="pre">restart</span> <span class="pre">reason</span></code>).</p></li>
 <li><p><strong>Health Validation (``health_check``)</strong>:
-Polls <code class="docutils literal notranslate"><span class="pre">systemctl</span> <span class="pre">is-active</span></code> across all 4 units and executes an HTTP check against the web frontend until HTTP 200/302 is received.</p></li>
+Polls <code class="docutils literal notranslate"><span class="pre">systemctl</span> <span class="pre">is-active</span></code> across all application units and executes an HTTP check against the web frontend until HTTP 200/302 is received.</p></li>
 </ol>
 </section>
 <section id="granular-fabric-task-reference">
@@ -440,13 +450,13 @@ Polls <code class="docutils literal notranslate"><span class="pre">systemctl</sp
 <td><p>Installs Python dependencies and runs Django migrations.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">fab</span> <span class="pre">restart-services</span></code></p></td>
-<td><p>Restarts the 4 supervised systemd service units.</p></td>
+<td><p>Restarts the supervised systemd service units.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">fab</span> <span class="pre">health-check</span></code></p></td>
 <td><p>Probes systemd unit status and tests HTTP frontend responsiveness.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">fab</span> <span class="pre">setup-systemd</span></code></p></td>
-<td><p>Re-generates and registers systemd unit files.</p></td>
+<td><p>Re-generates and registers systemd unit files and master target.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">fab</span> <span class="pre">setup-nginx-and-ssl</span></code></p></td>
 <td><p>Updates Nginx virtual host configuration and reloads Nginx.</p></td>
@@ -458,10 +468,10 @@ Polls <code class="docutils literal notranslate"><span class="pre">systemctl</sp
 <h3><a class="toc-backref" href="#id13" role="doc-backlink">Air-Gapped &amp; Custom Mirror Options</a><a class="headerlink" href="#air-gapped-custom-mirror-options" title="Link to this heading"></a></h3>
 <p>When deploying into corporate or air-gapped environments, pass custom mirror flags to the deployment command:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>fab<span class="w"> </span>deploy<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--find-links<span class="o">=</span><span class="s2">&quot;https://artifactory.local/artifactory/wheels&quot;</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--index-url<span class="o">=</span><span class="s2">&quot;https://artifactory.local/api/pypi/simple&quot;</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--trusted-host<span class="o">=</span><span class="s2">&quot;artifactory.local&quot;</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--pytorch-index-url<span class="o">=</span><span class="s2">&quot;https://artifactory.local/api/pypi/pytorch-wheels&quot;</span>
+<span class="w">  </span>--find-links<span class="o">=</span><span class="s2">"https://artifactory.local/artifactory/wheels"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--index-url<span class="o">=</span><span class="s2">"https://artifactory.local/api/pypi/simple"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--trusted-host<span class="o">=</span><span class="s2">"artifactory.local"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--pytorch-index-url<span class="o">=</span><span class="s2">"https://artifactory.local/api/pypi/pytorch-wheels"</span>
 </pre></div>
 </div>
 </section>
@@ -571,7 +581,7 @@ curl<span class="w"> </span>-s<span class="w"> </span>http://127.0.0.1:8070/api/
 <span class="c1"># Expected output: true</span>
 
 <span class="c1"># Test Python circuit breaker</span>
-/srv/reason/venv/bin/python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;from grobid_client.api import is_grobid_available; print(is_grobid_available())&quot;</span>
+/srv/reason/venv/bin/python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"from grobid_client.api import is_grobid_available; print(is_grobid_available())"</span>
 </pre></div>
 </div>
 </li>

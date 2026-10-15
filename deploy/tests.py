@@ -110,9 +110,11 @@ class TestSystemdUnitsGeneration(SimpleTestCase):
             inference_port=8001,
         )
 
-    def test_all_four_services_generated(self):
-        """Ensures all 4 modular units exist."""
+    def test_all_services_and_targets_generated(self):
+        """Ensures all 4 modular units, docker service, and master target exist."""
         expected_keys = {
+            "reason.target",
+            "reason-docker.service",
             "reason-web.service",
             "reason-worker.service",
             "reason-scheduler.service",
@@ -134,6 +136,17 @@ class TestSystemdUnitsGeneration(SimpleTestCase):
         self.assertIn("Environment=VERBAL_ROLE=scheduler", scheduler)
         self.assertIn("Environment=VERBAL_ROLE=inference", inference)
 
+    def test_master_target_and_docker_service(self):
+        """Verifies master target and docker infrastructure service definitions."""
+        target = self.units["reason.target"]
+        docker = self.units["reason-docker.service"]
+
+        self.assertIn("Alias=reason.service", target)
+        self.assertIn("Wants=reason-docker.service", target)
+        self.assertIn("ExecStart=/usr/bin/docker compose --profile academic up -d", docker)
+        self.assertIn("ExecStop=/usr/bin/docker compose --profile academic stop", docker)
+        self.assertIn("RemainAfterExit=yes", docker)
+
     def test_inference_service_includes_noreload(self):
         """Verifies inference service specifies --noreload to prevent double model instantiation."""
         inference = self.units["reason-inference.service"]
@@ -141,16 +154,26 @@ class TestSystemdUnitsGeneration(SimpleTestCase):
         self.assertIn("manage.py runserver --noreload 127.0.0.1:8001", inference)
 
     def test_systemd_sandboxing_and_privilege_isolation(self):
-        """Verifies modern systemd security directives are present in all service units."""
-        for name, unit in self.units.items():
+        """Verifies modern systemd security directives are present in all application service units."""
+        app_services = [
+            "reason-web.service",
+            "reason-worker.service",
+            "reason-scheduler.service",
+            "reason-inference.service",
+        ]
+        for name in app_services:
+            unit = self.units[name]
             with self.subTest(unit=name):
                 self.assertIn("NoNewPrivileges=yes", unit)
                 self.assertIn("ProtectSystem=strict", unit)
                 self.assertIn("ProtectHome=yes", unit)
                 self.assertIn("PrivateTmp=yes", unit)
                 self.assertIn("UMask=0002", unit)
+                self.assertIn("PartOf=reason.target", unit)
+                self.assertIn("Requires=reason-docker.service", unit)
                 self.assertIn("ReadWritePaths=/srv/reason/shared /var/lib/hf_home /srv/reason/logs", unit)
                 self.assertIn("EnvironmentFile=-/srv/reason/shared/.env.secrets", unit)
+
 
 
 class TestDjangoSettingsHardening(SimpleTestCase):
