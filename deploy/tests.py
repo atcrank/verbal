@@ -110,11 +110,10 @@ class TestSystemdUnitsGeneration(SimpleTestCase):
             inference_port=8001,
         )
 
-    def test_all_services_and_targets_generated(self):
-        """Ensures all 4 modular units, docker service, master service, and master target exist."""
+    def test_all_services_generated(self):
+        """Ensures all 4 modular units, docker service, and master service exist."""
         expected_keys = {
             "reason.service",
-            "reason.target",
             "reason-docker.service",
             "reason-web.service",
             "reason-worker.service",
@@ -122,6 +121,7 @@ class TestSystemdUnitsGeneration(SimpleTestCase):
             "reason-inference.service",
         }
         self.assertEqual(set(self.units.keys()), expected_keys)
+        self.assertNotIn("reason.target", self.units)
 
     def test_explicit_roles_assigned_per_unit(self):
         """Verifies VERBAL_ROLE is explicitly set per service."""
@@ -137,10 +137,9 @@ class TestSystemdUnitsGeneration(SimpleTestCase):
         self.assertIn("Environment=VERBAL_ROLE=scheduler", scheduler)
         self.assertIn("Environment=VERBAL_ROLE=inference", inference)
 
-    def test_master_service_and_target_definitions(self):
-        """Verifies master service, target, and docker infrastructure service definitions."""
+    def test_master_service_and_docker_definitions(self):
+        """Verifies master service and docker infrastructure service definitions."""
         service = self.units["reason.service"]
-        target = self.units["reason.target"]
         docker = self.units["reason-docker.service"]
 
         self.assertIn("Type=oneshot", service)
@@ -148,14 +147,12 @@ class TestSystemdUnitsGeneration(SimpleTestCase):
         self.assertIn("Wants=reason-docker.service", service)
         self.assertIn("WantedBy=multi-user.target", service)
 
-        self.assertIn("Wants=reason-docker.service", target)
-        self.assertNotIn("Alias=", target)  # Ensures no invalid cross-type alias
-        self.assertIn("WantedBy=multi-user.target", target)
-
-        self.assertIn("ExecStart=/usr/bin/docker compose --profile academic up -d", docker)
-        self.assertIn("ExecStop=/usr/bin/docker compose --profile academic stop", docker)
+        self.assertIn("ExecStart=/usr/bin/docker compose up -d db sandbox", docker)
+        self.assertIn("ExecStart=-/usr/bin/docker compose --profile academic up -d grobid", docker)
+        self.assertIn("ExecStop=/usr/bin/docker compose stop", docker)
         self.assertIn("RemainAfterExit=yes", docker)
-        self.assertIn("PartOf=reason.service reason.target", docker)
+        self.assertIn("PartOf=reason.service", docker)
+        self.assertNotIn("reason.target", docker)
 
     def test_inference_service_includes_noreload(self):
         """Verifies inference service specifies --noreload to prevent double model instantiation."""
@@ -179,14 +176,15 @@ class TestSystemdUnitsGeneration(SimpleTestCase):
                 self.assertIn("ProtectHome=yes", unit)
                 self.assertIn("PrivateTmp=yes", unit)
                 self.assertIn("UMask=0002", unit)
-                self.assertIn("PartOf=reason.service reason.target", unit)
-                self.assertIn("Requires=reason-docker.service", unit)
+                self.assertIn("PartOf=reason.service", unit)
+                self.assertNotIn("reason.target", unit)
+                self.assertIn("Wants=network.target reason-docker.service", unit)
+                self.assertNotIn("Requires=reason-docker.service", unit)
                 self.assertIn("ReadWritePaths=/srv/reason/shared /var/lib/hf_home /srv/reason/logs", unit)
-                self.assertIn("EnvironmentFile=-/srv/reason/shared/.env", unit)
                 self.assertIn("EnvironmentFile=-/srv/reason/app/.env", unit)
-                self.assertIn("EnvironmentFile=-/srv/reason/shared/.env.secrets", unit)
                 self.assertIn("EnvironmentFile=-/srv/reason/app/.env.secrets", unit)
                 self.assertIn("EnvironmentFile=-/srv/reason/app/.env.production", unit)
+                self.assertNotIn("EnvironmentFile=-/srv/reason/shared/.env", unit)
 
 
 
@@ -300,26 +298,23 @@ class TestDeployEnvironmentAndDependencyEnhancements(SimpleTestCase):
         for cmd in ['migrate', 'collectstatic', 'check', 'dumpdata']:
             self.assertIn(cmd, management_commands_skip)
 
-    def test_backup_database_defaults_to_dumpdata(self):
-        """Ensures backup_database task signature defaults to use_dumpdata=True."""
+    def test_backup_database_uses_dumpdata_only(self):
+        """Ensures backup_database and deploy pipelines do not thread unnecessary use_dumpdata parameters."""
         import inspect
         from deploy.fabric_deploy import backup_database, deploy, setup_all, build_and_migrate
 
         backup_sig = inspect.signature(backup_database)
-        self.assertIn("use_dumpdata", backup_sig.parameters)
-        self.assertTrue(backup_sig.parameters["use_dumpdata"].default)
+        self.assertNotIn("use_dumpdata", backup_sig.parameters)
+        self.assertIn("c", backup_sig.parameters)
 
         build_sig = inspect.signature(build_and_migrate)
-        self.assertIn("use_dumpdata", build_sig.parameters)
-        self.assertTrue(build_sig.parameters["use_dumpdata"].default)
+        self.assertNotIn("use_dumpdata", build_sig.parameters)
 
         deploy_sig = inspect.signature(deploy)
-        self.assertIn("use_dumpdata", deploy_sig.parameters)
-        self.assertTrue(deploy_sig.parameters["use_dumpdata"].default)
+        self.assertNotIn("use_dumpdata", deploy_sig.parameters)
 
         setup_sig = inspect.signature(setup_all)
-        self.assertIn("use_dumpdata", setup_sig.parameters)
-        self.assertTrue(setup_sig.parameters["use_dumpdata"].default)
+        self.assertNotIn("use_dumpdata", setup_sig.parameters)
 
 
 class TestRunAsDeployUser(SimpleTestCase):
@@ -640,7 +635,7 @@ class TestBackupDatabaseGuards(SimpleTestCase):
         # import django fails (venv unpopulated)
         mock_run_deploy.return_value = MagicMock(ok=False)
 
-        backup_database(c, use_dumpdata=True)
+        backup_database(c)
 
         # Should never invoke dumpdata
         for call in mock_run_deploy.call_args_list:
@@ -659,7 +654,7 @@ class TestBackupDatabaseGuards(SimpleTestCase):
             MagicMock(ok=False),
         ]
 
-        backup_database(c, use_dumpdata=True)
+        backup_database(c)
 
         # Should never invoke dumpdata
         for call in mock_run_deploy.call_args_list:
@@ -1025,6 +1020,55 @@ class TestEnvironmentPreservation(SimpleTestCase):
         all_sudo_calls = [str(call) for call in c.sudo.call_args_list]
         for call_str in all_sudo_calls:
             self.assertNotIn(f"ln -sfn {fd.SHARED_DIR}/.env {fd.APP_DIR}/.env", call_str)
+
+
+class TestProvisioningAndEnvSync(SimpleTestCase):
+    """Verifies that provisioning avoids host network interference and sync_env writes directly to APP_DIR."""
+
+    @patch("deploy.fabric_deploy.ensure_sudo")
+    @patch("deploy.fabric_deploy.sudo_bash")
+    def test_provision_system_does_not_modify_host_network(self, mock_bash, mock_sudo_check):
+        """Verifies that provision_system never writes to networkd or restarts network daemons."""
+        import deploy.fabric_deploy as fd
+        from deploy.fabric_deploy import provision_system
+        c = create_mock_context()
+        c.sudo.return_value = MagicMock(ok=True, failed=False)
+        mock_bash.return_value = MagicMock(ok=True)
+
+        provision_system(c)
+
+        for call in c.sudo.call_args_list:
+            call_str = str(call)
+            self.assertNotIn("systemd-networkd", call_str)
+            self.assertNotIn("99-docker-unmanaged.network", call_str)
+            self.assertNotIn("iptables", call_str)
+            self.assertNotIn("ufw", call_str)
+
+        for call in mock_bash.call_args_list:
+            call_str = str(call)
+            self.assertNotIn("systemd-networkd", call_str)
+            self.assertNotIn("99-docker-unmanaged.network", call_str)
+
+    @patch("deploy.fabric_deploy.ensure_sudo")
+    @patch("deploy.fabric_deploy.write_sudo_file")
+    def test_sync_env_writes_directly_to_app_dir(self, mock_write_file, mock_sudo_check):
+        """Verifies sync_env targets APP_DIR/.env directly without shared symlinks."""
+        import deploy.fabric_deploy as fd
+        from deploy.fabric_deploy import sync_env
+        c = create_mock_context()
+        c.sudo.return_value = MagicMock(ok=True)
+
+        repo_root = Path(__file__).resolve().parent.parent
+        test_env = repo_root / ".env.example"
+
+        sync_env(c, local_env=str(test_env))
+
+        # Check write_sudo_file calls
+        written_targets = [call[0][1] for call in mock_write_file.call_args_list]
+        self.assertIn(f"{fd.APP_DIR}/.env", written_targets)
+        for target in written_targets:
+            self.assertNotIn(f"{fd.SHARED_DIR}/.env", target)
+
 
 
 

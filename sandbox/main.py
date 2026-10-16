@@ -3,6 +3,7 @@ from pydantic import BaseModel
 import subprocess
 import os
 import resource
+import sys
 
 app = FastAPI()
 
@@ -52,7 +53,7 @@ def execute(req: ExecuteRequest):
 
     try:
         result = subprocess.run(
-            ["python", full_path],
+            [sys.executable, full_path],
             capture_output=True,
             text=True,
             timeout=req.timeout,

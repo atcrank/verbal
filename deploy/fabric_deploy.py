@@ -474,15 +474,11 @@ def generate_systemd_units(
         >>> "--noreload" in units["reason-inference.service"]
         True
     """
-    env_shared_file = f"{shared_dir}/.env"
-    env_shared_secrets = f"{shared_dir}/.env.secrets"
     env_app_file = f"{app_dir}/.env"
     env_app_secrets = f"{app_dir}/.env.secrets"
     env_app_prod = f"{app_dir}/.env.production"
 
-    env_directives = f"""EnvironmentFile=-{env_shared_file}
-EnvironmentFile=-{env_shared_secrets}
-EnvironmentFile=-{env_app_file}
+    env_directives = f"""EnvironmentFile=-{env_app_file}
 EnvironmentFile=-{env_app_secrets}
 EnvironmentFile=-{env_app_prod}"""
 
@@ -506,38 +502,29 @@ RemainAfterExit=yes
 WantedBy=multi-user.target
 """
 
-    master_target = f"""[Unit]
-Description=Reason Cognitive Platform Master Target
-Wants=reason-docker.service reason-web.service reason-worker.service reason-scheduler.service reason-inference.service
-After=reason-docker.service
-
-[Install]
-WantedBy=multi-user.target
-"""
-
     docker_unit = f"""[Unit]
 Description=Reason Docker Infrastructure (PostgreSQL, Sandbox, Grobid)
 After=network.target docker.service
 Requires=docker.service
-PartOf=reason.service reason.target
+PartOf=reason.service
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
 WorkingDirectory={app_dir}
-ExecStart=/usr/bin/docker compose --profile academic up -d
-ExecStop=/usr/bin/docker compose --profile academic stop
+ExecStart=/usr/bin/docker compose up -d db sandbox
+ExecStart=-/usr/bin/docker compose --profile academic up -d grobid
+ExecStop=/usr/bin/docker compose stop
 
 [Install]
-WantedBy=multi-user.target reason.target reason.service
+WantedBy=multi-user.target reason.service
 """
 
     web_unit = f"""[Unit]
 Description=Reason Web Server (Granian ASGI)
 After=network.target docker.service reason-docker.service
-Requires=reason-docker.service
-PartOf=reason.service reason.target
-Wants=network.target
+Wants=network.target reason-docker.service
+PartOf=reason.service
 
 [Service]
 Type=simple
@@ -558,15 +545,14 @@ LimitNOFILE=65535
 {sandboxing}
 
 [Install]
-WantedBy=multi-user.target reason.target reason.service
+WantedBy=multi-user.target reason.service
 """
 
     worker_unit = f"""[Unit]
 Description=Reason Background Task Worker
 After=network.target docker.service reason-docker.service
-Requires=reason-docker.service
-PartOf=reason.service reason.target
-Wants=network.target
+Wants=network.target reason-docker.service
+PartOf=reason.service
 
 [Service]
 Type=simple
@@ -585,15 +571,14 @@ RestartSec=5s
 {sandboxing}
 
 [Install]
-WantedBy=multi-user.target reason.target reason.service
+WantedBy=multi-user.target reason.service
 """
 
     scheduler_unit = f"""[Unit]
 Description=Reason Task Scheduler (NightManager)
 After=network.target docker.service reason-docker.service
-Requires=reason-docker.service
-PartOf=reason.service reason.target
-Wants=network.target
+Wants=network.target reason-docker.service
+PartOf=reason.service
 
 [Service]
 Type=simple
@@ -612,15 +597,14 @@ RestartSec=10s
 {sandboxing}
 
 [Install]
-WantedBy=multi-user.target reason.target reason.service
+WantedBy=multi-user.target reason.service
 """
 
     inference_unit = f"""[Unit]
 Description=Reason Local AI Model Inference Service
 After=network.target docker.service reason-docker.service
-Requires=reason-docker.service
-PartOf=reason.service reason.target
-Wants=network.target
+Wants=network.target reason-docker.service
+PartOf=reason.service
 
 [Service]
 Type=simple
@@ -639,12 +623,11 @@ RestartSec=5s
 {sandboxing}
 
 [Install]
-WantedBy=multi-user.target reason.target reason.service
+WantedBy=multi-user.target reason.service
 """
 
     return {
         "reason.service": master_service,
-        "reason.target": master_target,
         "reason-docker.service": docker_unit,
         "reason-web.service": web_unit,
         "reason-worker.service": worker_unit,
@@ -775,32 +758,14 @@ def provision_system(c):
     c.sudo(f"chown -R {DEPLOY_USER}:{DJANGO_USER} {VENV_DIR}")
     sudo_bash(c, f"chmod -R 0750 {VENV_DIR}")
 
-    # 11. Configure systemd-networkd to ignore Docker virtual ethernet (veth*) and bridge interfaces
-    # Prevents race conditions where systemd-networkd attempts to manage temporary container interfaces
-    networkd_dir = "/etc/systemd/network"
-    if c.sudo(f"test -d {networkd_dir}", warn=True, hide=True).ok:
-        networkd_conf = (
-            "[Match]\n"
-            "Name=veth* docker0 br-*\n"
-            "Driver=veth bridge\n\n"
-            "[Link]\n"
-            "Unmanaged=yes\n"
-        )
-        conf_file = f"{networkd_dir}/99-docker-unmanaged.network"
-        existing = c.sudo(f"cat {conf_file} 2>/dev/null || true", warn=True, hide=True).stdout
-        if "Unmanaged=yes" not in existing:
-            print("🌐 Configuring systemd-networkd to ignore Docker virtual network interfaces (veth*, br-*)...")
-            c.sudo(f"bash -c 'cat << \"EOF\" > {conf_file}\n{networkd_conf}\nEOF'")
-            c.sudo("systemctl restart systemd-networkd", warn=True)
-
     print("✅ System paths, users, and ownership hierarchy established.")
 
 
 @task
 def sync_env(c, local_env=None):
     """
-    Safely pushes local application configuration (.env, .env.secrets) to the remote server
-    at /srv/reason/shared/ and /srv/reason/app/ with locked-down 0640 permissions.
+    Safely pushes local application configuration (.env, .env.secrets) directly to the
+    application directory at APP_DIR (/srv/reason/app/) with locked-down 0640 permissions.
     """
     ensure_sudo(c)
     repo_root = Path(__file__).resolve().parent.parent
@@ -810,34 +775,22 @@ def sync_env(c, local_env=None):
         raise Exit(f"Local environment file not found at: {env_path}")
 
     content = env_path.read_text(encoding="utf-8")
-    dest_path = f"{SHARED_DIR}/.env"
+    c.sudo(f"mkdir -p {APP_DIR}")
+    dest_path = f"{APP_DIR}/.env"
     print(f"📤 Uploading {env_path.name} to {dest_path} on remote server...")
-    c.sudo(f"mkdir -p {SHARED_DIR}")
+    # Remove any existing symlink to ensure it is a clean regular file
+    c.sudo(f"test -L {dest_path} && rm -f {dest_path} || true")
     write_sudo_file(c, dest_path, content, mode="0640", owner=f"{DEPLOY_USER}:{WEB_GROUP}")
-
-    # Also sync or preserve APP_DIR/.env if APP_DIR exists
-    if c.sudo(f"test -d {APP_DIR}", warn=True, hide=True).ok:
-        app_is_symlink = c.sudo(f"test -L {APP_DIR}/.env", warn=True, hide=True).ok
-        app_is_file = c.sudo(f"test -f {APP_DIR}/.env", warn=True, hide=True).ok
-        if app_is_file and not app_is_symlink:
-            write_sudo_file(c, f"{APP_DIR}/.env", content, mode="0640", owner=f"{DEPLOY_USER}:{WEB_GROUP}")
-        elif not app_is_file:
-            c.sudo(f"ln -sfn {dest_path} {APP_DIR}/.env")
-
     print(f"✅ Production environment configuration synchronized at {dest_path} (mode: 0640).")
 
-    # If local .env.secrets exists, sync it too!
+    # If local .env.secrets exists, sync it too
     secrets_candidate = repo_root / ".env.secrets"
     if secrets_candidate.is_file():
         secrets_content = secrets_candidate.read_text(encoding="utf-8")
-        secrets_dest = f"{SHARED_DIR}/.env.secrets"
+        secrets_dest = f"{APP_DIR}/.env.secrets"
         print(f"📤 Uploading .env.secrets to {secrets_dest}...")
+        c.sudo(f"test -L {secrets_dest} && rm -f {secrets_dest} || true")
         write_sudo_file(c, secrets_dest, secrets_content, mode="0640", owner=f"{DJANGO_USER}:{WEB_GROUP}")
-        if c.sudo(f"test -d {APP_DIR}", warn=True, hide=True).ok:
-            if c.sudo(f"test -f {APP_DIR}/.env.secrets && ! test -L {APP_DIR}/.env.secrets", warn=True, hide=True).ok:
-                write_sudo_file(c, f"{APP_DIR}/.env.secrets", secrets_content, mode="0640", owner=f"{DJANGO_USER}:{WEB_GROUP}")
-            elif not c.sudo(f"test -f {APP_DIR}/.env.secrets", warn=True, hide=True).ok:
-                c.sudo(f"ln -sfn {secrets_dest} {APP_DIR}/.env.secrets")
         print(f"✅ Production secrets synchronized at {secrets_dest} (mode: 0640).")
 
 
@@ -936,12 +889,11 @@ def setup_systemd(c):
     """
     Creates and enables modular systemd units for Reason/Verbal:
     1. reason.service           (Master application stack service for 'systemctl start reason')
-    2. reason.target            (Master umbrella target)
-    3. reason-docker.service    (Docker Compose infrastructure: DB, Sandbox, Grobid)
-    4. reason-web.service       (Granian ASGI web server)
-    5. reason-worker.service    (Background task worker)
-    6. reason-scheduler.service (Periodic task scheduler / beat)
-    7. reason-inference.service (Dedicated local AI inference endpoint)
+    2. reason-docker.service    (Docker Compose infrastructure: DB, Sandbox, Grobid)
+    3. reason-web.service       (Granian ASGI web server)
+    4. reason-worker.service    (Background task worker)
+    5. reason-scheduler.service (Periodic task scheduler / beat)
+    6. reason-inference.service (Dedicated local AI inference endpoint)
     """
     ensure_sudo(c)
     print("⚙️ [3/4] Installing systemd service units...")
@@ -962,7 +914,11 @@ def setup_systemd(c):
     for unit_name, content in services.items():
         write_sudo_file(c, f"/etc/systemd/system/{unit_name}", content, mode="0644", owner="root:root")
 
-    sudo_bash(c, "systemctl daemon-reload && systemctl enable reason.service reason.target reason-docker reason-web reason-worker reason-scheduler reason-inference")
+    # Clean up legacy reason.target if it exists on host
+    sudo_bash(c, "systemctl disable --now reason.target 2>/dev/null || true")
+    c.sudo("rm -f /etc/systemd/system/reason.target")
+
+    sudo_bash(c, "systemctl daemon-reload && systemctl enable reason.service reason-docker reason-web reason-worker reason-scheduler reason-inference")
     print("✅ Systemd services installed and registered for automatic boot startup.")
 
 
@@ -971,18 +927,16 @@ def setup_systemd(c):
 # PHASE 4: PRE-MIGRATION DATABASE BACKUP
 # ==============================================================================
 @task
-def backup_database(c, use_dumpdata=True):
+def backup_database(c):
     """
     Creates an automated pre-migration database snapshot prior to applying migrations,
     retaining the last 10 snapshots in /srv/reason/backups. Aborts deploy if backup fails.
 
-    By default, uses Django's native ORM `dumpdata` with gzip compression:
+    Uses Django's native ORM `dumpdata` with gzip compression:
     - Completely self-contained within Python/Django (no external pg_dump binary required).
     - Avoids dependency on custom/stripped container images or missing host client utilities.
     - Excludes transient ContentTypes and Permissions to prevent fixture collisions on restore.
     - Verified immediately for file integrity with `gzip -t`.
-
-    Set use_dumpdata=False to fall back to native pg_dump if available.
     """
     ensure_sudo(c)
     print("💾 Creating pre-migration database snapshot...")
@@ -1011,54 +965,29 @@ def backup_database(c, use_dumpdata=True):
         print(f"ℹ️ Database has no existing migrated tables; skipping pre-deploy backup on initial bootstrap.")
         return
 
-    if use_dumpdata:
-        backup_file = f"{BACKUP_DIR}/pre_deploy_{timestamp}.json.gz"
-        print(f"📦 Dumping database via Django ORM (dumpdata -> {backup_file})...")
-        dump_cmd = (
-            f"VERBAL_ROLE=web {VENV_DIR}/bin/python {APP_DIR}/manage.py dumpdata "
-            f"--natural-foreign --natural-primary "
-            f"-e contenttypes -e auth.Permission "
-            f"--output {backup_file}"
-        )
-        res = run_as_deploy_user(c, dump_cmd, cwd=APP_DIR, warn=True)
+    backup_file = f"{BACKUP_DIR}/pre_deploy_{timestamp}.json.gz"
+    print(f"📦 Dumping database via Django ORM (dumpdata -> {backup_file})...")
+    dump_cmd = (
+        f"VERBAL_ROLE=web {VENV_DIR}/bin/python {APP_DIR}/manage.py dumpdata "
+        f"--natural-foreign --natural-primary "
+        f"-e contenttypes -e auth.Permission "
+        f"--output {backup_file}"
+    )
+    res = run_as_deploy_user(c, dump_cmd, cwd=APP_DIR, warn=True)
 
-        # Strictly verify backup file exists, is non-empty, and gzip archive is valid
-        verify_res = sudo_bash(
-            c,
-            f"test -s {backup_file} && [ $(stat -c%s {backup_file}) -gt 100 ] && gzip -t {backup_file}",
-            warn=True,
-        )
-        if verify_res.failed or (res and res.failed):
-            print(f"🚨 [ERROR] Pre-deploy database dumpdata failed or produced corrupt archive at {backup_file}!")
-            raise Exit("Pre-deploy database backup failed. Aborting to prevent data loss.")
+    # Strictly verify backup file exists, is non-empty, and gzip archive is valid
+    verify_res = sudo_bash(
+        c,
+        f"test -s {backup_file} && [ $(stat -c%s {backup_file}) -gt 100 ] && gzip -t {backup_file}",
+        warn=True,
+    )
+    if verify_res.failed or (res and res.failed):
+        print(f"🚨 [ERROR] Pre-deploy database dumpdata failed or produced corrupt archive at {backup_file}!")
+        raise Exit("Pre-deploy database backup failed. Aborting to prevent data loss.")
 
-        print("🔍 Database backup verified: gzip archive integrity is valid and uncorrupted.")
-    else:
-        # Native pg_dump fallback
-        backup_file = f"{BACKUP_DIR}/pre_deploy_{timestamp}.dump"
-        docker_check = c.sudo(f"docker ps -q -f name={DB_CONTAINER}", warn=True)
-        if docker_check.ok and docker_check.stdout.strip():
-            print(f"📦 Dumping database from container '{DB_CONTAINER}'...")
-            res = sudo_bash(c, f"docker exec {DB_CONTAINER} pg_dump -U {DB_USER} -Fc {DB_NAME} > {backup_file}", warn=True)
-        else:
-            print("📦 Container offline or local DB, running host pg_dump...")
-            res = sudo_bash(c, f"PGPASSWORD=\"${{DB_PASSWORD:-verbal_password}}\" pg_dump -h 127.0.0.1 -p {DB_PORT} -U {DB_USER} -Fc {DB_NAME} > {backup_file}", warn=True)
+    print("🔍 Database backup verified: gzip archive integrity is valid and uncorrupted.")
 
-        verify_res = sudo_bash(c, f"test -s {backup_file} && [ $(stat -c%s {backup_file}) -gt 100 ]", warn=True)
-        if verify_res.failed or (res and res.failed):
-            print(f"🚨 [ERROR] Pre-deploy database backup failed or produced an empty file at {backup_file}!")
-            raise Exit("Pre-deploy database backup failed. Aborting to prevent data loss.")
-
-        toc_check = sudo_bash(
-            c,
-            f"pg_restore -l {backup_file} >/dev/null 2>&1 || "
-            f"(docker ps -q -f name={DB_CONTAINER} | grep -q . && docker exec -i {DB_CONTAINER} pg_restore -l < {backup_file} >/dev/null 2>&1)",
-            warn=True,
-        )
-        if toc_check.ok:
-            print("🔍 Database backup TOC verified: archive is valid and uncorrupted.")
-
-    # Prune older backups (both .dump and .json.gz), keeping the most recent 10
+    # Prune older backups, keeping the most recent 10
     sudo_bash(c, f"ls -1t {BACKUP_DIR}/pre_deploy_* 2>/dev/null | tail -n +11 | xargs -r rm -f")
     print(f"✅ Pre-deploy snapshot secured: {backup_file}")
 
@@ -1115,34 +1044,11 @@ def update_code(c, git_url=None, branch="main", local_source=None):
     c.sudo(f"ln -sfn {SHARED_DIR}/workspaces {APP_DIR}/workspaces")
     c.sudo(f"ln -sfn {SHARED_DIR}/media {APP_DIR}/media")
 
-    # Preserve and protect application environment files (.env, .env.secrets, .env.production, etc.)
-    env_shared = f"{SHARED_DIR}/.env"
-    env_app = f"{APP_DIR}/.env"
-    app_is_symlink = c.sudo(f"test -L {env_app}", warn=True, hide=True).ok
-    app_is_file = c.sudo(f"test -f {env_app}", warn=True, hide=True).ok
-    shared_exists = c.sudo(f"test -f {env_shared}", warn=True, hide=True).ok
-
-    if app_is_file and not app_is_symlink:
-        print(f"ℹ️ Preserving regular environment file at {env_app}...")
-        # Mirror to SHARED_DIR as backup if SHARED_DIR/.env is missing
-        if not shared_exists:
-            c.sudo(f"cp -p {env_app} {env_shared}")
-    elif shared_exists:
-        c.sudo(f"ln -sfn {env_shared} {env_app}")
-
-    for extra_env in [".env.secrets", ".env.production", ".env.deploy", ".env.local"]:
+    # Clean up any legacy symlinks in APP_DIR/.env* to ensure regular local files are used
+    for extra_env in [".env", ".env.secrets", ".env.production", ".env.deploy", ".env.local"]:
         app_extra = f"{APP_DIR}/{extra_env}"
-        shared_extra = f"{SHARED_DIR}/{extra_env}"
-        extra_is_symlink = c.sudo(f"test -L {app_extra}", warn=True, hide=True).ok
-        extra_is_file = c.sudo(f"test -f {app_extra}", warn=True, hide=True).ok
-        shared_extra_exists = c.sudo(f"test -f {shared_extra}", warn=True, hide=True).ok
-
-        if extra_is_file and not extra_is_symlink:
-            print(f"ℹ️ Preserving regular environment file at {app_extra}...")
-            if not shared_extra_exists:
-                c.sudo(f"cp -p {app_extra} {shared_extra}")
-        elif shared_extra_exists:
-            c.sudo(f"ln -sfn {shared_extra} {app_extra}")
+        if c.sudo(f"test -L {app_extra}", warn=True, hide=True).ok:
+            c.sudo(f"cp --remove-destination $(readlink -f {app_extra}) {app_extra} 2>/dev/null || rm -f {app_extra}")
 
     # Enforce Read-Only Code Boundaries
     print("🔒 Enforcing read-only code execution permissions...")
@@ -1210,7 +1116,7 @@ def start_backend_containers(c):
 
     if enable_grobid:
         print("Checking Grobid academic PDF container...")
-        g_res = sudo_bash(c, f"cd {APP_DIR} && docker compose --profile academic up -d grobid 2>/dev/null", warn=True)
+        g_res = sudo_bash(c, f"cd {APP_DIR} && docker compose --profile academic up -d grobid", warn=True)
         if g_res.ok:
             print("✅ Grobid service started on port 8070.")
         else:
@@ -1284,7 +1190,7 @@ def build_pip_install_cmd(
 
 
 @task
-def build_and_migrate(c, find_links=None, index_url=None, trusted_host=None, pytorch_index_url=None, use_dumpdata=True):
+def build_and_migrate(c, find_links=None, index_url=None, trusted_host=None, pytorch_index_url=None):
     """
     Installs Python dependencies, verifies deployment health, executes
     Django migrations, and collects static assets into STATIC_DIR.
@@ -1297,7 +1203,7 @@ def build_and_migrate(c, find_links=None, index_url=None, trusted_host=None, pyt
     spacy_wheel_name = "en_core_web_sm-3.8.0-py3-none-any.whl"
     spacy_wheel_app = f"{APP_DIR}/resources/wheels/{spacy_wheel_name}"
     spacy_wheel_repo = f"{REPO_DIR}/resources/wheels/{spacy_wheel_name}"
-    env_file = f"{SHARED_DIR}/.env"
+    env_file = f"{APP_DIR}/.env"
 
     # 1. Check if the wheel in app directory exists and is an uncorrupted zip archive
     has_valid_wheel = False
@@ -1385,7 +1291,7 @@ def build_and_migrate(c, find_links=None, index_url=None, trusted_host=None, pyt
         print("⚠️ [WARNING] Django check --deploy identified potential deployment warnings.")
 
     # Pre-migration database snapshot (safe now that virtual environment is populated with Django)
-    backup_database(c, use_dumpdata=use_dumpdata)
+    backup_database(c)
 
     # Run migrations as deployer
     print("🗄️ Applying Django database migrations...")
@@ -1572,7 +1478,7 @@ def health_check(c):
 # HIGH-LEVEL ORCHESTRATION PIPELINES
 # ==============================================================================
 @task
-def deploy(c, branch="main", git_url=None, local_source=None, find_links=None, index_url=None, trusted_host=None, pytorch_index_url=None, use_dumpdata=True):
+def deploy(c, branch="main", git_url=None, local_source=None, find_links=None, index_url=None, trusted_host=None, pytorch_index_url=None):
     """
     Standard zero-downtime deployment pipeline:
     1. Preflight check
@@ -1593,7 +1499,6 @@ def deploy(c, branch="main", git_url=None, local_source=None, find_links=None, i
         index_url=index_url,
         trusted_host=trusted_host,
         pytorch_index_url=pytorch_index_url,
-        use_dumpdata=use_dumpdata,
     )
     restart_services(c)
     health_check(c)
@@ -1601,7 +1506,7 @@ def deploy(c, branch="main", git_url=None, local_source=None, find_links=None, i
 
 
 @task
-def setup_all(c, branch="main", git_url=None, local_source=None, find_links=None, index_url=None, trusted_host=None, pytorch_index_url=None, remove_default_site=False, use_dumpdata=True, domain=None):
+def setup_all(c, branch="main", git_url=None, local_source=None, find_links=None, index_url=None, trusted_host=None, pytorch_index_url=None, remove_default_site=False, domain=None):
     """
     Full from-scratch server bootstrap:
     1. Preflight check
@@ -1625,7 +1530,6 @@ def setup_all(c, branch="main", git_url=None, local_source=None, find_links=None
         index_url=index_url,
         trusted_host=trusted_host,
         pytorch_index_url=pytorch_index_url,
-        use_dumpdata=use_dumpdata,
     )
     print("🏁 Complete server bootstrap finished!")
 

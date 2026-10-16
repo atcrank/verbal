@@ -12,9 +12,9 @@ services:
     ports:
       - "127.0.0.1:5433:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
   grobid:
-    image: ${DOCKER_GROBID_IMAGE:-grobid/grobid:0.8.1}
+    image: ${DOCKER_GROBID_IMAGE:-grobid/grobid:0.8.2}
     container_name: verbal_grobid
     ports:
       - "127.0.0.1:8070:8070"
@@ -87,6 +87,8 @@ services:
         - PIP_INDEX_URL=${PIP_INDEX_URL:-}
         - PIP_TRUSTED_HOST=${PIP_TRUSTED_HOST:-}
         - PIP_FIND_LINKS=${PIP_FIND_LINKS:-}
+    group_add:
+      - "${WEB_GID:-33}"
 
     volumes:
       # Map the Django workspaces folder directly into the sandbox
@@ -104,8 +106,6 @@ services:
           cpus: '1.0'
           # Physical memory limit. If the script actually *uses* >1G RAM, Docker will OOM kill it.
           memory: 1G
-    networks:
-      - internal_network
 
   # SilverBullet: Extensible Markdown knowledge base server for workspaces/grips_okf.
   # Retained for future enablement when container image is available in the deployment environment.
@@ -123,7 +123,3 @@ services:
 volumes:
   ollama_data:
   postgres_data:
-
-networks:
-  internal_network:
-    driver: bridge

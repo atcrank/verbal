@@ -82,7 +82,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#configuration-bring-your-own-secrets">4. Configuration &amp; “Bring Your Own Secrets”</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#dual-directory-environment-resolution-preservation">Dual Directory Environment Resolution &amp; Preservation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#application-environment-configuration-preservation">Application Environment Configuration &amp; Preservation</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#required-environment-files">Required Environment Files</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#enforced-production-invariants">Enforced Production Invariants</a></li>
 </ul>
@@ -96,10 +96,10 @@
 <li class="toctree-l2"><a class="reference internal" href="#troubleshooting-failure-modes">6. Troubleshooting &amp; Failure Modes</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#postgresql-readiness-version-compatibility-port-collisions">PostgreSQL Readiness, Version Compatibility &amp; Port Collisions</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#grobid-academic-pdf-parser-offline">Grobid Academic PDF Parser Offline</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#code-execution-sandbox-red-hat-ubi-base-images">Code Execution Sandbox &amp; Red Hat UBI Base Images</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#code-execution-sandbox-architecture-troubleshooting">Code Execution Sandbox Architecture &amp; Troubleshooting</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#nginx-502-bad-gateway">Nginx “502 Bad Gateway”</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#systemd-service-start-failed-reason-dependency">Systemd Service Start Failed: “reason ‘dependency’”</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#systemd-networkd-virtual-interface-veth-collisions">systemd-networkd Virtual Interface (<code class="docutils literal notranslate"><span class="pre">veth*</span></code>) Collisions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#systemd-service-resilience-wants-vs-requires">Systemd Service Resilience: <code class="docutils literal notranslate"><span class="pre">Wants=</span></code> vs <code class="docutils literal notranslate"><span class="pre">Requires=</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#host-network-neutrality">Host Network Neutrality</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemd-sandboxing-permission-denied">Systemd Sandboxing “Permission Denied”</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#django-improperlyconfigured-on-startup">Django <code class="docutils literal notranslate"><span class="pre">ImproperlyConfigured</span></code> on Startup</a></li>
 </ul>
@@ -166,7 +166,7 @@
 </li>
 <li><p><a class="reference internal" href="#configuration-bring-your-own-secrets" id="id14">4. Configuration &amp; “Bring Your Own Secrets”</a></p>
 <ul>
-<li><p><a class="reference internal" href="#dual-directory-environment-resolution-preservation" id="id15">Dual Directory Environment Resolution &amp; Preservation</a></p></li>
+<li><p><a class="reference internal" href="#application-environment-configuration-preservation" id="id15">Application Environment Configuration &amp; Preservation</a></p></li>
 <li><p><a class="reference internal" href="#required-environment-files" id="id16">Required Environment Files</a></p></li>
 <li><p><a class="reference internal" href="#enforced-production-invariants" id="id17">Enforced Production Invariants</a></p></li>
 </ul>
@@ -182,10 +182,10 @@
 <ul>
 <li><p><a class="reference internal" href="#postgresql-readiness-version-compatibility-port-collisions" id="id23">PostgreSQL Readiness, Version Compatibility &amp; Port Collisions</a></p></li>
 <li><p><a class="reference internal" href="#grobid-academic-pdf-parser-offline" id="id24">Grobid Academic PDF Parser Offline</a></p></li>
-<li><p><a class="reference internal" href="#code-execution-sandbox-red-hat-ubi-base-images" id="id25">Code Execution Sandbox &amp; Red Hat UBI Base Images</a></p></li>
+<li><p><a class="reference internal" href="#code-execution-sandbox-architecture-troubleshooting" id="id25">Code Execution Sandbox Architecture &amp; Troubleshooting</a></p></li>
 <li><p><a class="reference internal" href="#nginx-502-bad-gateway" id="id26">Nginx “502 Bad Gateway”</a></p></li>
-<li><p><a class="reference internal" href="#systemd-service-start-failed-reason-dependency" id="id27">Systemd Service Start Failed: “reason ‘dependency’”</a></p></li>
-<li><p><a class="reference internal" href="#systemd-networkd-virtual-interface-veth-collisions" id="id28">systemd-networkd Virtual Interface (<code class="docutils literal notranslate"><span class="pre">veth*</span></code>) Collisions</a></p></li>
+<li><p><a class="reference internal" href="#systemd-service-resilience-wants-vs-requires" id="id27">Systemd Service Resilience: <code class="docutils literal notranslate"><span class="pre">Wants=</span></code> vs <code class="docutils literal notranslate"><span class="pre">Requires=</span></code></a></p></li>
+<li><p><a class="reference internal" href="#host-network-neutrality" id="id28">Host Network Neutrality</a></p></li>
 <li><p><a class="reference internal" href="#systemd-sandboxing-permission-denied" id="id29">Systemd Sandboxing “Permission Denied”</a></p></li>
 <li><p><a class="reference internal" href="#django-improperlyconfigured-on-startup" id="id30">Django <code class="docutils literal notranslate"><span class="pre">ImproperlyConfigured</span></code> on Startup</a></p></li>
 </ul>
@@ -198,7 +198,7 @@
 <section id="daily-operations-cheatsheet">
 <h3><a class="toc-backref" href="#id2" role="doc-backlink">Daily Operations Cheatsheet</a><a class="headerlink" href="#daily-operations-cheatsheet" title="Link to this heading"></a></h3>
 <p>All application commands run under <cite>systemd</cite> as the dedicated unprivileged system user <code class="docutils literal notranslate"><span class="pre">reason</span></code>, while supporting backend containers run via Docker Compose supervised by <code class="docutils literal notranslate"><span class="pre">reason-docker.service</span></code>.</p>
-<p>The entire stack can be managed using the master systemd unit <code class="docutils literal notranslate"><span class="pre">reason.service</span></code> (or <code class="docutils literal notranslate"><span class="pre">reason.target</span></code>).</p>
+<p>The entire stack can be managed using the master systemd unit <code class="docutils literal notranslate"><span class="pre">reason.service</span></code>.</p>
 <ul>
 <li><p><strong>Check Overall System Health</strong>:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Check status of the entire production stack (master service + all units)</span>
@@ -276,7 +276,7 @@ fab<span class="w"> </span>backup-database
             │
             ▼  (HTTP reverse proxy to 127.0.0.1:8008)
 ┌────────────────────────────────────────────────────────┐
-│    Systemd Master Umbrella: [reason.service / target]  │
+│    Systemd Master Umbrella: [reason.service]           │
 ├────────────────────────────────────────────────────────┤
 │  Application Tier (Hardened unprivileged user 'reason')│
 │  - [reason-web.service]       (Granian ASGI Server)    │
@@ -304,11 +304,9 @@ fab<span class="w"> </span>backup-database
 <p>All units are generated by <code class="xref py py-func docutils literal notranslate"><span class="pre">deploy.fabric_deploy.generate_systemd_units()</span></code> and installed to <code class="docutils literal notranslate"><span class="pre">/etc/systemd/system/</span></code>:</p>
 <ol class="arabic simple">
 <li><p><strong>``reason.service``</strong>:
-The top-level master stack service (<code class="docutils literal notranslate"><span class="pre">Type=oneshot</span></code>, <code class="docutils literal notranslate"><span class="pre">RemainAfterExit=yes</span></code>). Orchestrates all child units in lockstep. Operators can control the full stack with <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">systemctl</span> <span class="pre">start</span> <span class="pre">reason</span></code>, <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">systemctl</span> <span class="pre">stop</span> <span class="pre">reason</span></code>, <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">systemctl</span> <span class="pre">restart</span> <span class="pre">reason</span></code>, and <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">systemctl</span> <span class="pre">enable</span> <span class="pre">reason</span></code>.</p></li>
-<li><p><strong>``reason.target``</strong>:
-Top-level master target grouping all Reason services for target-based systemd environments.</p></li>
+The top-level master stack service (<code class="docutils literal notranslate"><span class="pre">Type=oneshot</span></code>, <code class="docutils literal notranslate"><span class="pre">RemainAfterExit=yes</span></code>). Orchestrates all child units. Operators can control the full stack with <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">systemctl</span> <span class="pre">start</span> <span class="pre">reason</span></code>, <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">systemctl</span> <span class="pre">stop</span> <span class="pre">reason</span></code>, <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">systemctl</span> <span class="pre">restart</span> <span class="pre">reason</span></code>, and <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">systemctl</span> <span class="pre">enable</span> <span class="pre">reason</span></code>.</p></li>
 <li><p><strong>``reason-docker.service``</strong>:
-Supervises Docker Compose infrastructure lifecycle. Defined with <code class="docutils literal notranslate"><span class="pre">Type=oneshot</span></code> and <code class="docutils literal notranslate"><span class="pre">RemainAfterExit=yes</span></code>, executing <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">compose</span> <span class="pre">--profile</span> <span class="pre">academic</span> <span class="pre">up</span> <span class="pre">-d</span></code> on startup and <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">compose</span> <span class="pre">--profile</span> <span class="pre">academic</span> <span class="pre">stop</span></code> on shutdown. All application services declare <code class="docutils literal notranslate"><span class="pre">Requires=reason-docker.service</span></code> and <code class="docutils literal notranslate"><span class="pre">After=reason-docker.service</span></code> to guarantee database readiness before Django boots.</p></li>
+Supervises Docker Compose infrastructure lifecycle. Defined with <code class="docutils literal notranslate"><span class="pre">Type=oneshot</span></code> and <code class="docutils literal notranslate"><span class="pre">RemainAfterExit=yes</span></code>, executing <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">compose</span> <span class="pre">up</span> <span class="pre">-d</span> <span class="pre">db</span> <span class="pre">sandbox</span></code> followed by optional <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">compose</span> <span class="pre">--profile</span> <span class="pre">academic</span> <span class="pre">up</span> <span class="pre">-d</span> <span class="pre">grobid</span></code> on startup, and <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">compose</span> <span class="pre">stop</span></code> on shutdown. Application services declare <code class="docutils literal notranslate"><span class="pre">Wants=reason-docker.service</span></code> and <code class="docutils literal notranslate"><span class="pre">After=reason-docker.service</span></code> so they automatically start after Docker is initialized without hard cascading lockouts if an optional container encounters an issue.</p></li>
 <li><p><strong>``reason-web.service``</strong>:
 Executes <code class="docutils literal notranslate"><span class="pre">granian</span> <span class="pre">--interface</span> <span class="pre">asgi</span> <span class="pre">--host</span> <span class="pre">127.0.0.1</span> <span class="pre">--port</span> <span class="pre">8008</span> <span class="pre">verbal_config.asgi:application</span></code>. Configured with <code class="docutils literal notranslate"><span class="pre">VERBAL_ROLE=web</span></code> so that heavy LLM models are <strong>never</strong> loaded into memory on web worker processes.</p></li>
 <li><p><strong>``reason-worker.service``</strong>:
@@ -406,7 +404,7 @@ python<span class="w"> </span>fabfile.py<span class="w"> </span>setup-all<span c
 1. <strong>``preflight_check``</strong>: Validates target OS architecture, disk space, and essential tooling.
 2. <strong>``provision_system``</strong>: Creates system user <code class="docutils literal notranslate"><span class="pre">reason</span></code>, group <code class="docutils literal notranslate"><span class="pre">www-data</span></code>, and provisions all <code class="docutils literal notranslate"><span class="pre">/srv/reason/</span></code> directory trees.
 3. <strong>``setup_nginx_and_ssl``</strong>: Generates hardened Nginx virtual host configurations, installs security headers, and binds TLS certificates.
-4. <strong>``setup_systemd``</strong>: Renders and writes the 6 systemd units (<code class="docutils literal notranslate"><span class="pre">reason.target</span></code>, <code class="docutils literal notranslate"><span class="pre">reason-docker</span></code>, and the 4 application services), runs <code class="docutils literal notranslate"><span class="pre">daemon-reload</span></code>, and enables them for boot startup.
+4. <strong>``setup_systemd``</strong>: Renders and writes the 6 systemd units (<code class="docutils literal notranslate"><span class="pre">reason.service</span></code>, <code class="docutils literal notranslate"><span class="pre">reason-docker.service</span></code>, and the 4 application services), runs <code class="docutils literal notranslate"><span class="pre">daemon-reload</span></code>, and enables them for boot startup.
 5. <strong>``deploy``</strong>: Triggers the initial code pull, container startup, migration run, and service activation.</p>
 </section>
 <section id="routine-application-deployments-deploy">
@@ -450,7 +448,7 @@ Polls <code class="docutils literal notranslate"><span class="pre">systemctl</sp
 <td><p>Validates remote server readiness and prerequisites.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">fab</span> <span class="pre">sync-env</span></code></p></td>
-<td><p>Copies local <code class="docutils literal notranslate"><span class="pre">.env</span></code> and <code class="docutils literal notranslate"><span class="pre">.env.secrets</span></code> to <code class="docutils literal notranslate"><span class="pre">/srv/reason/shared/</span></code>.</p></td>
+<td><p>Copies local <code class="docutils literal notranslate"><span class="pre">.env</span></code> and <code class="docutils literal notranslate"><span class="pre">.env.secrets</span></code> to <code class="docutils literal notranslate"><span class="pre">/srv/reason/app/</span></code>.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">fab</span> <span class="pre">backup-database</span></code></p></td>
 <td><p>Creates an immediate gzipped JSON ORM dump in <code class="docutils literal notranslate"><span class="pre">/srv/reason/backups/</span></code>.</p></td>
@@ -465,7 +463,7 @@ Polls <code class="docutils literal notranslate"><span class="pre">systemctl</sp
 <td><p>Probes systemd unit status and tests HTTP frontend responsiveness.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">fab</span> <span class="pre">setup-systemd</span></code></p></td>
-<td><p>Re-generates and registers systemd unit files and master target.</p></td>
+<td><p>Re-generates and registers systemd unit files and master service.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">fab</span> <span class="pre">setup-nginx-and-ssl</span></code></p></td>
 <td><p>Updates Nginx virtual host configuration and reloads Nginx.</p></td>
@@ -488,20 +486,18 @@ Polls <code class="docutils literal notranslate"><span class="pre">systemctl</sp
 <section id="configuration-bring-your-own-secrets">
 <h2><a class="toc-backref" href="#id14" role="doc-backlink">4. Configuration &amp; “Bring Your Own Secrets”</a><a class="headerlink" href="#configuration-bring-your-own-secrets" title="Link to this heading"></a></h2>
 <p>Reason enforces a strict separation of code and configuration. In production (<code class="docutils literal notranslate"><span class="pre">VERBAL_ENV=prod</span></code>), the system refuses to boot if default or insecure credentials are used.</p>
-<section id="dual-directory-environment-resolution-preservation">
-<h3><a class="toc-backref" href="#id15" role="doc-backlink">Dual Directory Environment Resolution &amp; Preservation</a><a class="headerlink" href="#dual-directory-environment-resolution-preservation" title="Link to this heading"></a></h3>
-<p>Reason supports placing configuration files in <strong>either</strong> the persistent shared directory (<code class="docutils literal notranslate"><span class="pre">/srv/reason/shared/</span></code>) or directly within the application directory (<code class="docutils literal notranslate"><span class="pre">/srv/reason/app/</span></code>). All application services and deployment routines automatically read and merge both locations:</p>
+<section id="application-environment-configuration-preservation">
+<h3><a class="toc-backref" href="#id15" role="doc-backlink">Application Environment Configuration &amp; Preservation</a><a class="headerlink" href="#application-environment-configuration-preservation" title="Link to this heading"></a></h3>
+<p>Reason stores configuration files directly within the application directory (<code class="docutils literal notranslate"><span class="pre">/srv/reason/app/</span></code>).</p>
 <ul class="simple">
 <li><p><strong>Preservation Guarantee</strong>:
-During deployments (<code class="docutils literal notranslate"><span class="pre">fab</span> <span class="pre">deploy</span></code>), any physical <code class="docutils literal notranslate"><span class="pre">.env</span></code>, <code class="docutils literal notranslate"><span class="pre">.env.secrets</span></code>, <code class="docutils literal notranslate"><span class="pre">.env.production</span></code>, or <code class="docutils literal notranslate"><span class="pre">.env.deploy</span></code> files present in <code class="docutils literal notranslate"><span class="pre">/srv/reason/app/</span></code> are <strong>strictly preserved</strong> and never overwritten by symlinks or deleted. If missing from <code class="docutils literal notranslate"><span class="pre">/srv/reason/shared/</span></code>, they are automatically mirrored to shared storage as a persistent backup.</p></li>
+During deployments (<code class="docutils literal notranslate"><span class="pre">fab</span> <span class="pre">deploy</span></code>), any physical <code class="docutils literal notranslate"><span class="pre">.env</span></code>, <code class="docutils literal notranslate"><span class="pre">.env.secrets</span></code>, <code class="docutils literal notranslate"><span class="pre">.env.production</span></code>, or <code class="docutils literal notranslate"><span class="pre">.env.deploy</span></code> files present in <code class="docutils literal notranslate"><span class="pre">/srv/reason/app/</span></code> are <strong>strictly preserved</strong> and never overwritten by git pulls or deleted by rsync (protected via <code class="docutils literal notranslate"><span class="pre">--exclude='.env*'</span></code>).</p></li>
 <li><p><strong>Systemd Loading Hierarchy</strong>:
-Systemd units evaluate environment files in sequence:
-1. <code class="docutils literal notranslate"><span class="pre">/srv/reason/shared/.env</span></code>
-2. <code class="docutils literal notranslate"><span class="pre">/srv/reason/shared/.env.secrets</span></code>
-3. <code class="docutils literal notranslate"><span class="pre">/srv/reason/app/.env</span></code>
-4. <code class="docutils literal notranslate"><span class="pre">/srv/reason/app/.env.secrets</span></code>
-5. <code class="docutils literal notranslate"><span class="pre">/srv/reason/app/.env.production</span></code>
-Later files override earlier ones, allowing local application overrides to take effect seamlessly.</p></li>
+Systemd units evaluate environment files directly from the application root:
+1. <code class="docutils literal notranslate"><span class="pre">/srv/reason/app/.env</span></code>
+2. <code class="docutils literal notranslate"><span class="pre">/srv/reason/app/.env.secrets</span></code>
+3. <code class="docutils literal notranslate"><span class="pre">/srv/reason/app/.env.production</span></code>
+Later files override earlier ones, allowing production and local secrets overrides to take effect cleanly without complex symlinks.</p></li>
 </ul>
 </section>
 <section id="required-environment-files">
@@ -637,18 +633,17 @@ Grobid requires approximately <strong>1.5 GB – 3 GB RAM</strong>. If the conta
 </li>
 </ul>
 </section>
-<section id="code-execution-sandbox-red-hat-ubi-base-images">
-<h3><a class="toc-backref" href="#id25" role="doc-backlink">Code Execution Sandbox &amp; Red Hat UBI Base Images</a><a class="headerlink" href="#code-execution-sandbox-red-hat-ubi-base-images" title="Link to this heading"></a></h3>
+<section id="code-execution-sandbox-architecture-troubleshooting">
+<h3><a class="toc-backref" href="#id25" role="doc-backlink">Code Execution Sandbox Architecture &amp; Troubleshooting</a><a class="headerlink" href="#code-execution-sandbox-architecture-troubleshooting" title="Link to this heading"></a></h3>
 <ul>
-<li><p><strong>Symptom</strong>: Analyst script runs report <code class="docutils literal notranslate"><span class="pre">[EXECUTE_SCRIPT</span> <span class="pre">Error]</span> <span class="pre">Code</span> <span class="pre">execution</span> <span class="pre">sandbox</span> <span class="pre">is</span> <span class="pre">offline</span></code>, or the container logs <code class="docutils literal notranslate"><span class="pre">cannot</span> <span class="pre">start</span> <span class="pre">virtual</span> <span class="pre">environment</span></code> and restarts every 20 seconds.</p></li>
-<li><p><strong>Cause on Enterprise / UBI Python Images</strong>:
-Red Hat Universal Base Images (UBI) pre-install an active virtual environment located in <code class="docutils literal notranslate"><span class="pre">/opt/app-root</span></code> and inherit an S2I entrypoint (<code class="docutils literal notranslate"><span class="pre">ENTRYPOINT</span> <span class="pre">[&quot;container-entrypoint&quot;]</span></code>). When switching to user 1000 without clearing the entrypoint or granting permissions to <code class="docutils literal notranslate"><span class="pre">/opt/app-root</span></code>, the inherited entrypoint fails to activate the virtual environment.</p></li>
-<li><p><strong>Resolution</strong>:
-The hardened <code class="docutils literal notranslate"><span class="pre">sandbox/Dockerfile</span></code> resolves this across Debian and Red Hat UBI by:
-1. Adding group 0 membership: <code class="docutils literal notranslate"><span class="pre">useradd</span> <span class="pre">-m</span> <span class="pre">-u</span> <span class="pre">1000</span> <span class="pre">-g</span> <span class="pre">0</span> <span class="pre">python</span></code>.
-2. Granting ownership and group read/write permissions to <code class="docutils literal notranslate"><span class="pre">/opt/app-root</span></code> if present.
-3. Prepending <code class="docutils literal notranslate"><span class="pre">/opt/app-root/bin</span></code> to <code class="docutils literal notranslate"><span class="pre">PATH</span></code> alongside user bin directories.
-4. Clearing the inherited entrypoint with <code class="docutils literal notranslate"><span class="pre">ENTRYPOINT</span> <span class="pre">[]</span></code> so <code class="docutils literal notranslate"><span class="pre">uvicorn</span></code> starts directly.</p></li>
+<li><p><strong>Symptom</strong>: Analyst script runs report <code class="docutils literal notranslate"><span class="pre">[EXECUTE_SCRIPT</span> <span class="pre">Error]</span> <span class="pre">Code</span> <span class="pre">execution</span> <span class="pre">sandbox</span> <span class="pre">is</span> <span class="pre">offline</span></code>, or the container logs <code class="docutils literal notranslate"><span class="pre">cannot</span> <span class="pre">start</span> <span class="pre">virtual</span> <span class="pre">environment</span></code> and restarts repeatedly.</p></li>
+<li><p><strong>Architecture &amp; Isolation Design</strong>:
+The hardened <code class="docutils literal notranslate"><span class="pre">sandbox/Dockerfile</span></code> builds a clean virtual environment at <code class="docutils literal notranslate"><span class="pre">/opt/sandbox</span></code> with explicit executable invocation:
+1. Dependencies are installed directly into <code class="docutils literal notranslate"><span class="pre">/opt/sandbox</span></code> via <code class="docutils literal notranslate"><span class="pre">/opt/sandbox/bin/pip</span> <span class="pre">install</span> <span class="pre">--no-cache-dir</span> <span class="pre">-r</span> <span class="pre">requirements.txt</span></code>.
+2. No shell virtualenv activation scripts (<code class="docutils literal notranslate"><span class="pre">activate</span></code>) are used; the server is launched explicitly via <code class="docutils literal notranslate"><span class="pre">/opt/sandbox/bin/python</span> <span class="pre">-m</span> <span class="pre">uvicorn</span> <span class="pre">main:app</span></code>.
+3. Script execution uses <code class="docutils literal notranslate"><span class="pre">sys.executable</span></code> to guarantee that all child analyst processes execute under the dedicated sandbox interpreter and its installed scientific packages (pyAgrum, NetworkX, Pint, etc.).
+4. Runs as unprivileged user <code class="docutils literal notranslate"><span class="pre">USER</span> <span class="pre">1000:0</span></code> with <code class="docutils literal notranslate"><span class="pre">group_add:</span> <span class="pre">[&quot;${WEB_GID:-33}&quot;]</span></code> in <code class="docutils literal notranslate"><span class="pre">docker-compose.yml</span></code> so the container can access mounted workspace volumes owned by the host web group.
+5. Clears any inherited base entrypoint with <code class="docutils literal notranslate"><span class="pre">ENTRYPOINT</span> <span class="pre">[]</span></code> to avoid legacy S2I or container wrapper failures.</p></li>
 <li><p><strong>Diagnostic</strong>:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>ps<span class="w"> </span>-a<span class="w"> </span>--filter<span class="w"> </span><span class="nv">name</span><span class="o">=</span>verbal_sandbox
 docker<span class="w"> </span>logs<span class="w"> </span>verbal_sandbox
@@ -690,11 +685,11 @@ Once the underlying issue in <code class="docutils literal notranslate"><span cl
 </li>
 </ul>
 </section>
-<section id="systemd-service-start-failed-reason-dependency">
-<h3><a class="toc-backref" href="#id27" role="doc-backlink">Systemd Service Start Failed: “reason ‘dependency’”</a><a class="headerlink" href="#systemd-service-start-failed-reason-dependency" title="Link to this heading"></a></h3>
+<section id="systemd-service-resilience-wants-vs-requires">
+<h3><a class="toc-backref" href="#id27" role="doc-backlink">Systemd Service Resilience: <code class="docutils literal notranslate"><span class="pre">Wants=</span></code> vs <code class="docutils literal notranslate"><span class="pre">Requires=</span></code></a><a class="headerlink" href="#systemd-service-resilience-wants-vs-requires" title="Link to this heading"></a></h3>
 <ul>
-<li><p><strong>Symptom</strong>: Starting or restarting application services (<code class="docutils literal notranslate"><span class="pre">reason-web</span></code>, <code class="docutils literal notranslate"><span class="pre">reason-worker</span></code>, <code class="docutils literal notranslate"><span class="pre">reason-inference</span></code>) fails with <code class="docutils literal notranslate"><span class="pre">Job</span> <span class="pre">for</span> <span class="pre">reason-web.service</span> <span class="pre">failed</span> <span class="pre">because</span> <span class="pre">a</span> <span class="pre">dependency</span> <span class="pre">failed:</span> <span class="pre">reason-docker.service</span></code>.</p></li>
-<li><p><strong>Cause</strong>: All application units declare <code class="docutils literal notranslate"><span class="pre">Requires=reason-docker.service</span></code>. If <code class="docutils literal notranslate"><span class="pre">reason-docker.service</span></code> failed to start (or was stopped or left in a failed exit-code state), systemd automatically blocks all dependent units from starting.</p></li>
+<li><p><strong>Resilience Invariant</strong>:
+All Reason application units declare <code class="docutils literal notranslate"><span class="pre">Wants=reason-docker.service</span></code> and <code class="docutils literal notranslate"><span class="pre">After=reason-docker.service</span></code> rather than <code class="docutils literal notranslate"><span class="pre">Requires=</span></code>. This ensures the services wait for Docker infrastructure on boot, while preventing cascading startup lockouts across web, worker, and scheduler units if an optional container (such as Grobid) exits or fails.</p></li>
 <li><p><strong>Diagnostic</strong>:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Check reason-docker status and exit code</span>
 sudo<span class="w"> </span>systemctl<span class="w"> </span>status<span class="w"> </span>reason-docker.service
@@ -705,8 +700,8 @@ sudo<span class="w"> </span>journalctl<span class="w"> </span>-u<span class="w">
 </div>
 </li>
 <li><p><strong>Remedy</strong>:
-1. Inspect and resolve any container startup issue reported by <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">docker</span> <span class="pre">compose</span> <span class="pre">-f</span> <span class="pre">/srv/reason/app/docker-compose.yml</span> <span class="pre">ps</span></code>.
-2. Clear systemd failed unit locks:</p>
+1. Inspect container status via <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">docker</span> <span class="pre">compose</span> <span class="pre">-f</span> <span class="pre">/srv/reason/app/docker-compose.yml</span> <span class="pre">ps</span></code>.
+2. Clear any systemd failed unit locks and restart:</p>
 <blockquote>
 <div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>systemctl<span class="w"> </span>reset-failed
 sudo<span class="w"> </span>systemctl<span class="w"> </span>restart<span class="w"> </span>reason-docker.service
@@ -717,27 +712,13 @@ sudo<span class="w"> </span>systemctl<span class="w"> </span>restart<span class=
 </li>
 </ul>
 </section>
-<section id="systemd-networkd-virtual-interface-veth-collisions">
-<h3><a class="toc-backref" href="#id28" role="doc-backlink">systemd-networkd Virtual Interface (<code class="docutils literal notranslate"><span class="pre">veth*</span></code>) Collisions</a><a class="headerlink" href="#systemd-networkd-virtual-interface-veth-collisions" title="Link to this heading"></a></h3>
-<ul>
-<li><p><strong>Symptom</strong>: <code class="docutils literal notranslate"><span class="pre">journalctl</span></code> reports continuous errors such as <code class="docutils literal notranslate"><span class="pre">systemd-networkd[...]:</span> <span class="pre">vethXXXX:</span> <span class="pre">could</span> <span class="pre">not</span> <span class="pre">find</span> <span class="pre">interface</span></code>, <code class="docutils literal notranslate"><span class="pre">vethXXXX</span> <span class="pre">does</span> <span class="pre">not</span> <span class="pre">exist</span></code>, and Docker fails to assign networking or crashes containers upon startup.</p></li>
-<li><p><strong>Cause</strong>: When Docker spins up a container, it creates a virtual ethernet pair (host <code class="docutils literal notranslate"><span class="pre">veth*</span></code> mapped to container <code class="docutils literal notranslate"><span class="pre">eth0</span></code>). On systems running <code class="docutils literal notranslate"><span class="pre">systemd-networkd</span></code>, the network daemon intercepts the newly created interface and attempts to apply DHCP or link configuration. When Docker moves the interface into the container network namespace, <code class="docutils literal notranslate"><span class="pre">systemd-networkd</span></code> races and throws missing interface errors, breaking container networking.</p></li>
-<li><p><strong>Remedy</strong>:
-Instruct <code class="docutils literal notranslate"><span class="pre">systemd-networkd</span></code> to explicitly ignore all Docker virtual ethernet and bridge interfaces:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>bash<span class="w"> </span>-c<span class="w"> </span><span class="s1">'cat &lt;&lt; "EOF" &gt; /etc/systemd/network/99-docker-unmanaged.network</span>
-<span class="s1">[Match]</span>
-<span class="s1">Name=veth* docker0 br-*</span>
-<span class="s1">Driver=veth bridge</span>
-
-<span class="s1">[Link]</span>
-<span class="s1">Unmanaged=yes</span>
-<span class="s1">EOF'</span>
-
-sudo<span class="w"> </span>systemctl<span class="w"> </span>restart<span class="w"> </span>systemd-networkd
-sudo<span class="w"> </span>systemctl<span class="w"> </span>restart<span class="w"> </span>docker
-</pre></div>
-</div>
-</li>
+<section id="host-network-neutrality">
+<h3><a class="toc-backref" href="#id28" role="doc-backlink">Host Network Neutrality</a><a class="headerlink" href="#host-network-neutrality" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Core Operational Rule</strong>:
+Deployment scripts and application tasks must <strong>never</strong> modify host network interfaces, <code class="docutils literal notranslate"><span class="pre">systemd-networkd</span></code>, UFW, or iptables rules, nor restart host network daemons.</p></li>
+<li><p><strong>Container Interface Dynamics</strong>:
+When Docker spins up containers, host <code class="docutils literal notranslate"><span class="pre">veth*</span></code> interfaces are automatically created and bridged by Docker’s internal networking stack. Transient kernel log notices regarding virtual ethernet interfaces are normal and should not be addressed by tampering with host network configurations, which risks disconnecting operator SSH sessions.</p></li>
 </ul>
 </section>
 <section id="systemd-sandboxing-permission-denied">
