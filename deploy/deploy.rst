@@ -218,7 +218,7 @@ For a brand-new, freshly-installed Linux host (Ubuntu 22.04+ recommended), run t
    python fabfile.py setup-all production.example.com
 
 What ``setup-all`` executes sequentially:
-1. **``preflight_check``**: Validates target OS architecture, disk space, and essential tooling.
+1. **``preflight_check``**: Validates target OS architecture, disk space, and core dependencies (verifying and automatically installing ``python3``, ``python3-venv``, and ``nginx`` via ``apt-get`` if missing on Debian/Ubuntu).
 2. **``provision_system``**: Creates system user ``reason``, group ``www-data``, and provisions all ``/srv/reason/`` directory trees.
 3. **``setup_nginx_and_ssl``**: Generates hardened Nginx virtual host configurations, installs security headers, and binds TLS certificates.
 4. **``setup_systemd``**: Renders and writes the 6 systemd units (``reason.service``, ``reason-docker.service``, and the 4 application services), runs ``daemon-reload``, and enables them for boot startup.
@@ -531,6 +531,21 @@ Host Network Neutrality
   Deployment scripts and application tasks must **never** modify host network interfaces, ``systemd-networkd``, UFW, or iptables rules, nor restart host network daemons.
 * **Container Interface Dynamics**:
   When Docker spins up containers, host ``veth*`` interfaces are automatically created and bridged by Docker's internal networking stack. Transient kernel log notices regarding virtual ethernet interfaces are normal and should not be addressed by tampering with host network configurations, which risks disconnecting operator SSH sessions.
+
+Nginx Duplicate Default Server (Port 80)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* **Symptom**: ``nginx -t`` or ``setup-nginx-and-ssl`` fails with:
+  ``nginx: [emerg] a duplicate default server for 0.0.0.0:80 in /etc/nginx/sites-enabled/reason.conf``.
+* **Cause**: On Debian/Ubuntu systems, installing the ``nginx`` package automatically creates and enables ``/etc/nginx/sites-enabled/default``, which reserves port 80 as ``default_server``.
+* **Remedy**:
+  The deployment pipeline unlinks ``/etc/nginx/sites-enabled/default`` by default during ``setup_nginx_and_ssl`` and ``setup_all`` (controlled via ``REASON_REMOVE_DEFAULT_NGINX=true``). If encountered manually, unlink the default site and test/reload:
+
+  .. code-block:: bash
+
+     sudo rm -f /etc/nginx/sites-enabled/default
+     sudo nginx -t
+     sudo systemctl reload nginx
 
 Systemd Sandboxing "Permission Denied"
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
