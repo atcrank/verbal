@@ -1070,6 +1070,80 @@ class TestProvisioningAndEnvSync(SimpleTestCase):
             self.assertNotIn(f"{fd.SHARED_DIR}/.env", target)
 
 
+class TestNginxAndPackagePreflight(SimpleTestCase):
+    """Verifies that preflight validates packages and setup_nginx_and_ssl defaults to removing default site."""
+
+    def test_setup_nginx_and_ssl_signature_defaults_remove_default_site_to_true(self):
+        """Ensures setup_nginx_and_ssl and setup_all default remove_default_site=True."""
+        import inspect
+        from deploy.fabric_deploy import setup_nginx_and_ssl, setup_all
+        sig_nginx = inspect.signature(setup_nginx_and_ssl)
+        self.assertIn("remove_default_site", sig_nginx.parameters)
+        self.assertTrue(sig_nginx.parameters["remove_default_site"].default)
+
+        sig_setup = inspect.signature(setup_all)
+        self.assertIn("remove_default_site", sig_setup.parameters)
+        self.assertTrue(sig_setup.parameters["remove_default_site"].default)
+
+    @patch.dict(os.environ, {"REASON_REMOVE_DEFAULT_NGINX": "true"}, clear=False)
+    @patch("deploy.fabric_deploy.ensure_sudo")
+    @patch("deploy.fabric_deploy.write_sudo_file")
+    @patch("deploy.fabric_deploy.sudo_bash")
+    def test_setup_nginx_removes_default_site_by_default(self, mock_bash, mock_write, mock_sudo_check):
+        """Verifies setup_nginx_and_ssl removes /etc/nginx/sites-enabled/default by default."""
+        from deploy.fabric_deploy import setup_nginx_and_ssl
+        c = create_mock_context()
+        c.sudo.return_value = MagicMock(ok=True, failed=False)
+        mock_bash.return_value = MagicMock(ok=True)
+
+        setup_nginx_and_ssl(c)
+
+        # Verify default site unlinking was called
+        sudo_calls = [str(call) for call in c.sudo.call_args_list]
+        self.assertTrue(any("rm -f /etc/nginx/sites-enabled/default" in call for call in sudo_calls))
+
+    @patch("deploy.fabric_deploy.ensure_sudo")
+    @patch("deploy.fabric_deploy.write_sudo_file")
+    @patch("deploy.fabric_deploy.sudo_bash")
+    def test_setup_nginx_preserves_default_site_when_disabled(self, mock_bash, mock_write, mock_sudo_check):
+        """Verifies setup_nginx_and_ssl preserves default site when remove_default_site=False."""
+        from deploy.fabric_deploy import setup_nginx_and_ssl
+        c = create_mock_context()
+        c.sudo.return_value = MagicMock(ok=True, failed=False)
+        mock_bash.return_value = MagicMock(ok=True)
+
+        setup_nginx_and_ssl(c, remove_default_site=False)
+
+        sudo_calls = [str(call) for call in c.sudo.call_args_list]
+        self.assertFalse(any("rm -f /etc/nginx/sites-enabled/default" in call for call in sudo_calls))
+
+    @patch("deploy.fabric_deploy.ensure_sudo")
+    def test_preflight_auto_installs_missing_packages(self, mock_sudo_check):
+        """Verifies preflight_check auto-installs python3-venv and nginx via apt-get if missing."""
+        from deploy.fabric_deploy import preflight_check
+        c = create_mock_context()
+        c.sudo.return_value = MagicMock(ok=True, failed=False)
+
+        def mock_run(cmd, **kwargs):
+            if "python3 --version" in cmd:
+                return MagicMock(ok=True, failed=False)
+            if "python3 -m venv -h" in cmd:
+                return MagicMock(ok=False, failed=True)
+            if "which nginx" in cmd:
+                return MagicMock(ok=False, failed=True)
+            if "command -v apt-get" in cmd:
+                return MagicMock(ok=True, failed=False)
+            return MagicMock(ok=True, failed=False)
+
+        c.run.side_effect = mock_run
+
+        preflight_check(c)
+
+        # Check apt-get install was called for missing packages
+        sudo_calls = [str(call) for call in c.sudo.call_args_list]
+        self.assertTrue(any("apt-get install -y python3-venv nginx" in call for call in sudo_calls))
+
+
 
 
 

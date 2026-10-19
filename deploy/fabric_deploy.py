@@ -666,10 +666,37 @@ def preflight_check(c):
             print(f"🔒 Tightening permissions on {target_env} (was {perm})...")
             sudo_bash(c, f"chmod 0640 {target_env} && chown root:{WEB_GROUP} {target_env}")
 
-    # Check python3
+    # Verify core system dependencies (python3, python3-venv, nginx)
+    missing_packages = []
+
     py_check = c.run("python3 --version", warn=True, hide=True)
     if py_check.failed:
-        raise Exit("Python 3 is not installed on target host.")
+        missing_packages.append("python3")
+
+    venv_check = c.run("python3 -m venv -h", warn=True, hide=True)
+    if venv_check.failed:
+        missing_packages.append("python3-venv")
+
+    nginx_check = c.run("which nginx", warn=True, hide=True)
+    if nginx_check.failed:
+        missing_packages.append("nginx")
+
+    if missing_packages:
+        pkgs_str = " ".join(missing_packages)
+        has_apt = c.run("command -v apt-get", warn=True, hide=True).ok
+        if has_apt:
+            print(f"📦 Target host missing required packages ({', '.join(missing_packages)}).")
+            print(f"   Attempting auto-installation via apt-get...")
+            install_res = c.sudo(f"apt-get update && apt-get install -y {pkgs_str}", warn=True)
+            if install_res.failed:
+                print(f"\n🚨 [PREFLIGHT ERROR] Could not automatically install: {pkgs_str}")
+                print(f"   Please run manually on target host: sudo apt update && sudo apt install -y {pkgs_str}\n")
+                raise Exit(f"Missing required packages: {pkgs_str}")
+            print(f"✅ Successfully installed {pkgs_str}.")
+        else:
+            print(f"\n🚨 [PREFLIGHT ERROR] Missing required packages: {', '.join(missing_packages)}")
+            print(f"   Please install them using your system package manager ({pkgs_str}).\n")
+            raise Exit(f"Missing required packages: {pkgs_str}")
 
     print("✅ Preflight checks completed.")
 
@@ -798,7 +825,7 @@ def sync_env(c, local_env=None):
 # PHASE 2: SSL CERTIFICATES & NGINX
 # ==============================================================================
 @task
-def setup_nginx_and_ssl(c, domain=None, source_ssl_dir=None, remove_default_site=False):
+def setup_nginx_and_ssl(c, domain=None, source_ssl_dir=None, remove_default_site=True):
     """
     Installs SSL certificates into /srv/reason/ssl/, generates an optimized Nginx site
     configuration with SSE streaming and WebSocket support, and reloads Nginx safely.
@@ -864,12 +891,12 @@ def setup_nginx_and_ssl(c, domain=None, source_ssl_dir=None, remove_default_site
     write_sudo_file(c, conf_dest, nginx_conf, mode="0644", owner="root:root")
     c.sudo(f"ln -sfn {conf_dest} {enabled_dest}")
 
-    # Remove default site if explicitly requested or configured via environment
-    if remove_default_site or os.environ.get("REASON_REMOVE_DEFAULT_NGINX", "").lower() in ("true", "1"):
-        print("🗑️ Removing default Nginx site configuration...")
+    # Remove default site to prevent "duplicate default server" port 80 collisions
+    if remove_default_site and os.environ.get("REASON_REMOVE_DEFAULT_NGINX", "true").lower() not in ("false", "0"):
+        print("🗑️ Removing default Nginx site configuration to prevent duplicate default server conflicts...")
         c.sudo("rm -f /etc/nginx/sites-enabled/default")
     else:
-        print("ℹ️ Preserving /etc/nginx/sites-enabled/default (pass remove_default_site=True to unlink).")
+        print("ℹ️ Preserving /etc/nginx/sites-enabled/default.")
 
     # Test and reload
     print("🔍 Testing Nginx syntax...")
@@ -1506,7 +1533,7 @@ def deploy(c, branch="main", git_url=None, local_source=None, find_links=None, i
 
 
 @task
-def setup_all(c, branch="main", git_url=None, local_source=None, find_links=None, index_url=None, trusted_host=None, pytorch_index_url=None, remove_default_site=False, domain=None):
+def setup_all(c, branch="main", git_url=None, local_source=None, find_links=None, index_url=None, trusted_host=None, pytorch_index_url=None, remove_default_site=True, domain=None):
     """
     Full from-scratch server bootstrap:
     1. Preflight check
