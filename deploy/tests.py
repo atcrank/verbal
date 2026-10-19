@@ -502,6 +502,12 @@ class TestUpdateCodeIdempotency(SimpleTestCase):
         # Must have wiped the invalid REPO_DIR
         c.sudo.assert_any_call(f"rm -rf {REPO_DIR}")
 
+        # Must have recreated empty REPO_DIR with deploy user permissions
+        from deploy.fabric_deploy import DEPLOY_USER, WEB_GROUP
+        c.sudo.assert_any_call(f"mkdir -p {REPO_DIR}")
+        c.sudo.assert_any_call(f"chown {DEPLOY_USER}:{WEB_GROUP} {REPO_DIR}")
+        c.sudo.assert_any_call(f"chmod 0750 {REPO_DIR}")
+
         # Must have cloned freshly as deploy user
         clone_calls = [
             call for call in mock_run_deploy.call_args_list
@@ -509,6 +515,34 @@ class TestUpdateCodeIdempotency(SimpleTestCase):
         ]
         self.assertTrue(len(clone_calls) > 0)
         self.assertIn("--branch main", str(clone_calls[0]))
+
+    @patch("deploy.fabric_deploy.ensure_sudo")
+    @patch("deploy.fabric_deploy.run_as_deploy_user")
+    @patch("deploy.fabric_deploy.sudo_bash")
+    def test_update_code_skips_rev_parse_when_git_dir_missing(self, mock_sudo_bash, mock_run_deploy, mock_sudo):
+        """Verifies update_code does not run git rev-parse if REPO_DIR/.git does not exist."""
+        from deploy.fabric_deploy import update_code, REPO_DIR, DEPLOY_USER, WEB_GROUP
+        c = create_mock_context()
+
+        # sudo('test -d REPO_DIR/.git') returns False
+        def mock_sudo_cmd(cmd, **kwargs):
+            if f"test -d {REPO_DIR}/.git" in cmd:
+                return MagicMock(ok=False, failed=True)
+            return MagicMock(ok=True, failed=False)
+
+        c.sudo.side_effect = mock_sudo_cmd
+        mock_run_deploy.return_value = MagicMock(ok=True)
+
+        update_code(c, git_url="git@bitbucket.org:org/verbal.git", branch="main")
+
+        deploy_user_calls = [str(call) for call in mock_run_deploy.call_args_list]
+        # Must NOT have called rev-parse on non-existent or uninitialized repo
+        self.assertFalse(any("rev-parse" in call for call in deploy_user_calls))
+        # Must have created and chowned REPO_DIR before clone
+        sudo_calls = [str(call) for call in c.sudo.call_args_list]
+        self.assertTrue(any(f"mkdir -p {REPO_DIR}" in call for call in sudo_calls))
+        self.assertTrue(any(f"chown {DEPLOY_USER}:{WEB_GROUP} {REPO_DIR}" in call for call in sudo_calls))
+        self.assertTrue(any(f"chmod 0750 {REPO_DIR}" in call for call in sudo_calls))
 
     @patch("deploy.fabric_deploy.ensure_sudo")
     @patch("deploy.fabric_deploy.run_as_deploy_user")
@@ -1048,6 +1082,25 @@ class TestProvisioningAndEnvSync(SimpleTestCase):
             call_str = str(call)
             self.assertNotIn("systemd-networkd", call_str)
             self.assertNotIn("99-docker-unmanaged.network", call_str)
+
+    @patch("deploy.fabric_deploy.ensure_sudo")
+    @patch("deploy.fabric_deploy.sudo_bash")
+    def test_provision_system_creates_and_chowns_repo_dir(self, mock_bash, mock_sudo_check):
+        """Verifies provision_system creates REPO_DIR early and grants deploy user ownership."""
+        import deploy.fabric_deploy as fd
+        from deploy.fabric_deploy import provision_system
+        c = create_mock_context()
+        c.sudo.return_value = MagicMock(ok=True, failed=False)
+        mock_bash.return_value = MagicMock(ok=True)
+
+        provision_system(c)
+
+        sudo_calls = [str(call) for call in c.sudo.call_args_list]
+        # Verify REPO_DIR was created in core directory structure
+        self.assertTrue(any(f"mkdir -p {fd.BASE_DIR} {fd.REPO_DIR}" in call for call in sudo_calls))
+        # Verify REPO_DIR was chowned to DEPLOY_USER:WEB_GROUP with 0750
+        self.assertTrue(any(f"chown -R {fd.DEPLOY_USER}:{fd.WEB_GROUP} {fd.APP_DIR} {fd.REPO_DIR}" in call for call in sudo_calls))
+        self.assertTrue(any(f"chmod 0750 {fd.APP_DIR} {fd.REPO_DIR}" in call for call in sudo_calls))
 
     @patch("deploy.fabric_deploy.ensure_sudo")
     @patch("deploy.fabric_deploy.write_sudo_file")

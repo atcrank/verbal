@@ -731,7 +731,7 @@ def provision_system(c):
         c.sudo(f"usermod -aG {WEB_GROUP} {connecting_user}", warn=True)
 
     # 3. Create core directory structure
-    c.sudo(f"mkdir -p {BASE_DIR} {APP_DIR} {STATIC_DIR} {MEDIA_DIR} {BACKUP_DIR} {LOG_DIR} {SHARED_DIR}")
+    c.sudo(f"mkdir -p {BASE_DIR} {REPO_DIR} {APP_DIR} {STATIC_DIR} {MEDIA_DIR} {BACKUP_DIR} {LOG_DIR} {SHARED_DIR}")
     c.sudo(f"mkdir -p {SHARED_DIR}/workspaces {SHARED_DIR}/media {HF_CACHE_DIR}")
 
     # 4. Strict base directory lockdown (root owned)
@@ -772,9 +772,8 @@ def provision_system(c):
     c.sudo(f"chmod 0750 {BACKUP_DIR} {LOG_DIR}")
 
     # 9. Repo & App directories
-    c.sudo(f"chown -R {DEPLOY_USER}:{WEB_GROUP} {APP_DIR}")
-    c.sudo(f"chmod 0750 {APP_DIR}")
-    sudo_bash(c, f"if [ -d {REPO_DIR} ]; then chown -R {DEPLOY_USER}:{WEB_GROUP} {REPO_DIR} && chmod 0750 {REPO_DIR}; fi")
+    c.sudo(f"chown -R {DEPLOY_USER}:{WEB_GROUP} {APP_DIR} {REPO_DIR}")
+    c.sudo(f"chmod 0750 {APP_DIR} {REPO_DIR}")
 
     # 10. Python Virtual Environment
     venv_pip = c.sudo(f"test -f {VENV_DIR}/bin/pip", warn=True)
@@ -1042,7 +1041,12 @@ def update_code(c, git_url=None, branch="main", local_source=None):
         # Ensure safe.directory is configured before running any git commands
         run_as_deploy_user(c, f"git config --global --add safe.directory {REPO_DIR}", warn=True)
 
-        is_git_repo = run_as_deploy_user(c, f"git -C {REPO_DIR} rev-parse --is-inside-work-tree", warn=True).ok
+        # Check if REPO_DIR exists and contains a valid git repository
+        has_git_dir = c.sudo(f"test -d {REPO_DIR}/.git", warn=True, hide=True).ok
+        is_git_repo = False
+        if has_git_dir:
+            is_git_repo = run_as_deploy_user(c, f"git -C {REPO_DIR} rev-parse --is-inside-work-tree", warn=True, hide=True).ok
+
         if not is_git_repo:
             if not target_git_url:
                 raise Exit(f"No git repository found at {REPO_DIR} and no git_url / REASON_GIT_URL provided.")
@@ -1050,6 +1054,11 @@ def update_code(c, git_url=None, branch="main", local_source=None):
             if c.sudo(f"test -e {REPO_DIR}", warn=True).ok:
                 print(f"🧹 Clearing non-git or uninitialized directory at {REPO_DIR} for clean clone...")
                 c.sudo(f"rm -rf {REPO_DIR}")
+
+            # Recreate empty REPO_DIR with deploy user ownership so git clone succeeds
+            c.sudo(f"mkdir -p {REPO_DIR}")
+            c.sudo(f"chown {DEPLOY_USER}:{WEB_GROUP} {REPO_DIR}")
+            c.sudo(f"chmod 0750 {REPO_DIR}")
 
             print(f"📥 Cloning repository from {target_git_url} as {DEPLOY_USER}...")
             run_as_deploy_user(c, f"{git_ssh_cmd} git clone --branch {target_branch} {target_git_url} {REPO_DIR}")
