@@ -781,8 +781,8 @@ def provision_system(c):
         print("🐍 Creating dedicated Python virtual environment...")
         c.sudo(f"rm -rf {VENV_DIR}")
         c.sudo(f"python3 -m venv {VENV_DIR}")
-    c.sudo(f"chown -R {DEPLOY_USER}:{DJANGO_USER} {VENV_DIR}")
-    sudo_bash(c, f"chmod -R 0750 {VENV_DIR}")
+    c.sudo(f"chown -R {DEPLOY_USER}:{WEB_GROUP} {VENV_DIR}")
+    sudo_bash(c, f"chmod -R 0755 {VENV_DIR}")
 
     print("✅ System paths, users, and ownership hierarchy established.")
 
@@ -1348,6 +1348,10 @@ def build_and_migrate(c, find_links=None, index_url=None, trusted_host=None, pyt
     c.sudo(f"chown -R {DEPLOY_USER}:{WEB_GROUP} {STATIC_DIR}")
     sudo_bash(c, f"find {STATIC_DIR} -type d -exec chmod 0755 {{}} +")
     sudo_bash(c, f"find {STATIC_DIR} -type f -exec chmod 0644 {{}} +")
+
+    # Ensure virtual environment packages and binaries are readable and executable by daemon user
+    c.sudo(f"chown -R {DEPLOY_USER}:{WEB_GROUP} {VENV_DIR}")
+    sudo_bash(c, f"chmod -R 0755 {VENV_DIR}")
 
     print("✅ Build, migrations, and static asset collection completed.")
 

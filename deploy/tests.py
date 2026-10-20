@@ -1103,6 +1103,23 @@ class TestProvisioningAndEnvSync(SimpleTestCase):
         self.assertTrue(any(f"chmod 0750 {fd.APP_DIR} {fd.REPO_DIR}" in call for call in sudo_calls))
 
     @patch("deploy.fabric_deploy.ensure_sudo")
+    @patch("deploy.fabric_deploy.sudo_bash")
+    def test_provision_system_venv_permissions(self, mock_bash, mock_sudo_check):
+        """Verifies provision_system grants DEPLOY_USER:WEB_GROUP ownership and 0755 to VENV_DIR."""
+        import deploy.fabric_deploy as fd
+        from deploy.fabric_deploy import provision_system
+        c = create_mock_context()
+        c.sudo.return_value = MagicMock(ok=True, failed=False)
+        mock_bash.return_value = MagicMock(ok=True)
+
+        provision_system(c)
+
+        sudo_calls = [str(call) for call in c.sudo.call_args_list]
+        bash_calls = [str(call) for call in mock_bash.call_args_list]
+        self.assertTrue(any(f"chown -R {fd.DEPLOY_USER}:{fd.WEB_GROUP} {fd.VENV_DIR}" in call for call in sudo_calls))
+        self.assertTrue(any(f"chmod -R 0755 {fd.VENV_DIR}" in call for call in bash_calls))
+
+    @patch("deploy.fabric_deploy.ensure_sudo")
     @patch("deploy.fabric_deploy.write_sudo_file")
     def test_sync_env_writes_directly_to_app_dir(self, mock_write_file, mock_sudo_check):
         """Verifies sync_env targets APP_DIR/.env directly without shared symlinks."""
