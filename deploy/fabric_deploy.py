@@ -316,6 +316,66 @@ def run_as_deploy_user(c, command, cwd=None, **kwargs):
         return sudo_bash(c, f"su - {DEPLOY_USER} -c '{escaped}'", **kwargs)
 
 
+def ensure_deploy_ssh_key(c):
+    """
+    Ensures DEPLOY_USER (/home/verbal_deploy) has a dedicated SSH keypair.
+    If none exists (neither id_ed25519 nor id_rsa), generates an ed25519 keypair
+    with proper 0700/0600 permissions.
+    Returns the public key string.
+    """
+    ensure_sudo(c)
+    ssh_dir = f"/home/{DEPLOY_USER}/.ssh"
+    key_file = f"{ssh_dir}/id_ed25519"
+    pub_file = f"{key_file}.pub"
+    rsa_pub = f"{ssh_dir}/id_rsa.pub"
+
+    has_ed25519 = c.sudo(f"test -f {pub_file}", warn=True, hide=True).ok
+    has_rsa = c.sudo(f"test -f {rsa_pub}", warn=True, hide=True).ok
+
+    if not has_ed25519 and not has_rsa:
+        print(f"🔑 Generating dedicated SSH deploy key for {DEPLOY_USER}...")
+        c.sudo(f"mkdir -p {ssh_dir}")
+        c.sudo(
+            f"ssh-keygen -t ed25519 -N '' -C '{DEPLOY_USER}@reason-deploy' -f {key_file}",
+            hide=True,
+        )
+        c.sudo(f"chown -R {DEPLOY_USER}:{DEPLOY_USER} {ssh_dir}")
+        sudo_bash(c, f"chmod 0700 {ssh_dir} && chmod 0600 {key_file} && chmod 0644 {pub_file}")
+
+    target_pub = pub_file if c.sudo(f"test -f {pub_file}", warn=True, hide=True).ok else rsa_pub
+    pub_res = sudo_bash(c, f"cat {target_pub}", hide=True)
+    return pub_res.stdout.strip() if pub_res.ok else ""
+
+
+def print_deploy_key_guide_and_exit(c, target_git_url, error_message=""):
+    """
+    Displays an actionable banner showing the public key for DEPLOY_USER and
+    step-by-step instructions for adding it as a Deploy Key, then exits cleanly.
+    """
+    pub_key = ensure_deploy_ssh_key(c)
+    print("\n" + "=" * 80)
+    print("🔑 [DEPLOY KEY REQUIRED] SSH Authentication to Git Repository Failed")
+    print("=" * 80)
+    print(f"The deployment user '{DEPLOY_USER}' could not authenticate to:")
+    print(f"  {target_git_url}\n")
+    if error_message:
+        print(f"Git error details: {error_message.strip()}\n")
+    print("To authorize this server, add the following public key as a Deploy Key (Read-Only):")
+    print("-" * 80)
+    print(f"{pub_key}")
+    print("-" * 80)
+    print("\nQuick setup steps:")
+    print("  • Bitbucket: Repository Settings -> Access Keys -> Add key")
+    print("  • GitHub:    Repository Settings -> Deploy Keys -> Add deploy key")
+    print("  • GitLab:    Settings -> Repository -> Deploy keys -> Add key")
+    print("\nOnce added, re-run:")
+    print("  fab deploy  (or fab setup-all)")
+    print("\n💡 Alternative (skip Git/deploy keys entirely):")
+    print("  fab deploy --local-source=.  (syncs directly from your local directory)")
+    print("=" * 80 + "\n")
+    raise Exit(f"Git deploy key authorization required for {DEPLOY_USER} at {target_git_url}")
+
+
 # ==============================================================================
 # CONFIGURATION TEMPLATING (PURE FUNCTIONS FOR AUDITABILITY & TESTING)
 # ==============================================================================
@@ -730,6 +790,9 @@ def provision_system(c):
     if connecting_user and connecting_user not in [DEPLOY_USER, DJANGO_USER, "root"]:
         c.sudo(f"usermod -aG {WEB_GROUP} {connecting_user}", warn=True)
 
+    # Ensure DEPLOY_USER has an SSH keypair for Git repository access
+    ensure_deploy_ssh_key(c)
+
     # 3. Create core directory structure
     c.sudo(f"mkdir -p {BASE_DIR} {REPO_DIR} {APP_DIR} {STATIC_DIR} {MEDIA_DIR} {BACKUP_DIR} {LOG_DIR} {SHARED_DIR}")
     c.sudo(f"mkdir -p {SHARED_DIR}/workspaces {SHARED_DIR}/media {HF_CACHE_DIR}")
@@ -1061,7 +1124,18 @@ def update_code(c, git_url=None, branch="main", local_source=None):
             c.sudo(f"chmod 0750 {REPO_DIR}")
 
             print(f"📥 Cloning repository from {target_git_url} as {DEPLOY_USER}...")
-            run_as_deploy_user(c, f"{git_ssh_cmd} git clone --branch {target_branch} {target_git_url} {REPO_DIR}")
+            clone_res = run_as_deploy_user(
+                c,
+                f"{git_ssh_cmd} git clone --branch {target_branch} {target_git_url} {REPO_DIR}",
+                warn=True,
+            )
+            if not clone_res.ok:
+                err_text = clone_res.stderr or clone_res.stdout or ""
+                auth_keywords = ["permission denied", "publickey", "host key verification", "could not read from remote"]
+                if any(x in err_text.lower() for x in auth_keywords):
+                    print_deploy_key_guide_and_exit(c, target_git_url, error_message=err_text)
+                else:
+                    raise Exit(f"Git clone failed: {err_text.strip()}")
             c.sudo(f"chown -R {DEPLOY_USER}:{WEB_GROUP} {REPO_DIR}")
             sudo_bash(c, f"chmod 0750 {REPO_DIR}")
         else:
@@ -1069,7 +1143,22 @@ def update_code(c, git_url=None, branch="main", local_source=None):
             if target_git_url:
                 run_as_deploy_user(c, f"git -C {REPO_DIR} remote set-url origin {target_git_url}", warn=True)
             run_as_deploy_user(c, f"rm -f {REPO_DIR}/.git/index.lock", warn=True)
-            run_as_deploy_user(c, f"{git_ssh_cmd} git -C {REPO_DIR} fetch --all --prune")
+            fetch_res = run_as_deploy_user(
+                c,
+                f"{git_ssh_cmd} git -C {REPO_DIR} fetch --all --prune",
+                warn=True,
+            )
+            if not fetch_res.ok:
+                err_text = fetch_res.stderr or fetch_res.stdout or ""
+                auth_keywords = ["permission denied", "publickey", "host key verification", "could not read from remote"]
+                if any(x in err_text.lower() for x in auth_keywords):
+                    fetch_url = target_git_url
+                    if not fetch_url:
+                        url_res = run_as_deploy_user(c, f"git -C {REPO_DIR} remote get-url origin", warn=True, hide=True)
+                        fetch_url = url_res.stdout.strip() if url_res.ok else "origin"
+                    print_deploy_key_guide_and_exit(c, fetch_url, error_message=err_text)
+                else:
+                    raise Exit(f"Git fetch failed: {err_text.strip()}")
             run_as_deploy_user(c, f"git -C {REPO_DIR} checkout -B {target_branch} origin/{target_branch}")
             run_as_deploy_user(c, f"git -C {REPO_DIR} reset --hard origin/{target_branch}")
             run_as_deploy_user(c, f"git -C {REPO_DIR} clean -fd")
