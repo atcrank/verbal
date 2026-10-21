@@ -219,10 +219,28 @@ For a brand-new, freshly-installed Linux host (Ubuntu 22.04+ recommended), run t
 
 What ``setup-all`` executes sequentially:
 1. **``preflight_check``**: Validates target OS architecture, disk space, and core dependencies (verifying and automatically installing ``python3``, ``python3-venv``, and ``nginx`` via ``apt-get`` if missing on Debian/Ubuntu).
-2. **``provision_system``**: Creates system user ``reason``, group ``www-data``, and provisions all ``/srv/reason/`` directory trees.
+2. **``provision_system``**: Creates deployment user ``verbal_deploy``, application user ``verbal_run``, group ``www-data``, provisions dedicated SSH keypairs for ``verbal_deploy``, and provisions all ``/srv/reason/`` directory trees.
 3. **``setup_nginx_and_ssl``**: Generates hardened Nginx virtual host configurations, installs security headers, and binds TLS certificates.
 4. **``setup_systemd``**: Renders and writes the 6 systemd units (``reason.service``, ``reason-docker.service``, and the 4 application services), runs ``daemon-reload``, and enables them for boot startup.
 5. **``deploy``**: Triggers the initial code pull, container startup, migration run, and service activation.
+
+Deploy Key Authorization & Graceful Setup
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+During initial bootstrapping or code synchronization, the deployment user (``verbal_deploy``) must be authorized to pull from your remote Git repository (Bitbucket, GitHub, or GitLab):
+
+* **Automated Keypair Generation**:
+  During ``provision_system`` (or upon first running ``update_code``), Fabric automatically generates a dedicated ``ed25519`` SSH keypair in ``/home/verbal_deploy/.ssh/`` (with strict ``0700``/``0600`` permissions) if one does not already exist.
+* **Graceful Banner & Guidance**:
+  If the remote Git repository rejects SSH authentication (``Permission denied (publickey)``), Fabric intercepts the failure and presents an actionable banner displaying the server's public key alongside step-by-step instructions for adding it as a read-only Deploy Key in your Git hosting provider.
+* **Zero Stack Trace Exit**:
+  The task terminates cleanly without an unhandled Python traceback. Once the key is registered, re-running ``fab deploy`` (or ``fab setup-all``) resumes immediately.
+* **Local Source Alternative**:
+  If Git access is unavailable or undesirable on the target host, you can deploy directly from your local development repository without configuring deploy keys:
+
+  .. code-block:: bash
+
+     fab deploy -H user@production.example.com --local-source=.
 
 Routine Application Deployments (``deploy``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

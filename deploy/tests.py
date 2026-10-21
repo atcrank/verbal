@@ -1214,6 +1214,274 @@ class TestNginxAndPackagePreflight(SimpleTestCase):
         self.assertTrue(any("apt-get install -y python3-venv nginx" in call for call in sudo_calls))
 
 
+class TestDeploySSHKeyAndAuthenticationHandling(SimpleTestCase):
+    """
+    Verifies SSH deploy key generation for DEPLOY_USER, actionable error banners,
+    and graceful handling of authentication failures during git operations.
+    """
+
+    @patch("deploy.fabric_deploy.ensure_sudo")
+    @patch("deploy.fabric_deploy.sudo_bash")
+    def test_ensure_deploy_ssh_key_generates_ed25519_key_when_none_exists(self, mock_bash, mock_sudo_check):
+        """Generates an ed25519 keypair if neither ed25519 nor rsa exists, with 0700/0600 permissions."""
+        from deploy.fabric_deploy import ensure_deploy_ssh_key, DEPLOY_USER
+        c = create_mock_context()
+
+        ssh_dir = f"/home/{DEPLOY_USER}/.ssh"
+        key_file = f"{ssh_dir}/id_ed25519"
+        pub_file = f"{key_file}.pub"
+
+        # Initially, neither ed25519 nor rsa pub file exists
+        # After keygen, ed25519 pub file exists
+        def mock_sudo(cmd, **kwargs):
+            if f"test -f {pub_file}" in cmd:
+                mock_sudo.ed25519_checks += 1
+                if mock_sudo.ed25519_checks > 1:
+                    return MagicMock(ok=True, failed=False)
+                return MagicMock(ok=False, failed=True)
+            if "test -f" in cmd and "id_rsa.pub" in cmd:
+                return MagicMock(ok=False, failed=True)
+            return MagicMock(ok=True, failed=False)
+
+        mock_sudo.ed25519_checks = 0
+        c.sudo.side_effect = mock_sudo
+        mock_bash.return_value = MagicMock(ok=True, stdout="ssh-ed25519 AAAAB3NzaC1yc2EAAAADAQABAAABAQ mock_key\n")
+
+        pub_key = ensure_deploy_ssh_key(c)
+
+        # Verify ssh-keygen command
+        sudo_calls = [str(call) for call in c.sudo.call_args_list]
+        self.assertTrue(any(f"ssh-keygen -t ed25519 -N '' -C '{DEPLOY_USER}@reason-deploy' -f {key_file}" in call for call in sudo_calls))
+        self.assertTrue(any(f"mkdir -p {ssh_dir}" in call for call in sudo_calls))
+        self.assertTrue(any(f"chown -R {DEPLOY_USER}:{DEPLOY_USER} {ssh_dir}" in call for call in sudo_calls))
+
+        # Verify permission hardening
+        bash_calls = [str(call) for call in mock_bash.call_args_list]
+        self.assertTrue(any(f"chmod 0700 {ssh_dir} && chmod 0600 {key_file} && chmod 0644 {pub_file}" in call for call in bash_calls))
+        self.assertEqual(pub_key, "ssh-ed25519 AAAAB3NzaC1yc2EAAAADAQABAAABAQ mock_key")
+
+    @patch("deploy.fabric_deploy.ensure_sudo")
+    @patch("deploy.fabric_deploy.sudo_bash")
+    def test_ensure_deploy_ssh_key_preserves_existing_ed25519_key(self, mock_bash, mock_sudo_check):
+        """Returns existing ed25519 public key without generating a new one."""
+        from deploy.fabric_deploy import ensure_deploy_ssh_key, DEPLOY_USER
+        c = create_mock_context()
+        pub_file = f"/home/{DEPLOY_USER}/.ssh/id_ed25519.pub"
+
+        def mock_sudo(cmd, **kwargs):
+            if f"test -f {pub_file}" in cmd:
+                return MagicMock(ok=True, failed=False)
+            return MagicMock(ok=False, failed=True)
+
+        c.sudo.side_effect = mock_sudo
+        mock_bash.return_value = MagicMock(ok=True, stdout="ssh-ed25519 EXISTING_KEY\n")
+
+        pub_key = ensure_deploy_ssh_key(c)
+
+        sudo_calls = [str(call) for call in c.sudo.call_args_list]
+        self.assertFalse(any("ssh-keygen" in call for call in sudo_calls))
+        self.assertEqual(pub_key, "ssh-ed25519 EXISTING_KEY")
+
+    @patch("deploy.fabric_deploy.ensure_sudo")
+    @patch("deploy.fabric_deploy.sudo_bash")
+    def test_ensure_deploy_ssh_key_preserves_existing_rsa_key(self, mock_bash, mock_sudo_check):
+        """Returns existing RSA public key if ed25519 is missing but RSA is present."""
+        from deploy.fabric_deploy import ensure_deploy_ssh_key, DEPLOY_USER
+        c = create_mock_context()
+        rsa_pub = f"/home/{DEPLOY_USER}/.ssh/id_rsa.pub"
+
+        def mock_sudo(cmd, **kwargs):
+            if f"test -f {rsa_pub}" in cmd:
+                return MagicMock(ok=True, failed=False)
+            return MagicMock(ok=False, failed=True)
+
+        c.sudo.side_effect = mock_sudo
+        mock_bash.return_value = MagicMock(ok=True, stdout="ssh-rsa EXISTING_RSA_KEY\n")
+
+        pub_key = ensure_deploy_ssh_key(c)
+
+        sudo_calls = [str(call) for call in c.sudo.call_args_list]
+        self.assertFalse(any("ssh-keygen" in call for call in sudo_calls))
+        self.assertEqual(pub_key, "ssh-rsa EXISTING_RSA_KEY")
+
+    @patch("deploy.fabric_deploy.ensure_deploy_ssh_key")
+    def test_print_deploy_key_guide_and_exit_formats_banner(self, mock_get_key):
+        """Verifies actionable deploy key guidance and clean Exit exception."""
+        import io
+        from unittest.mock import patch as ctx_patch
+        from deploy.fabric_deploy import print_deploy_key_guide_and_exit
+        try:
+            from invoke import Exit
+        except ImportError:
+            from invoke.exceptions import Exit
+
+        mock_get_key.return_value = "ssh-ed25519 AAAA_ACTIONABLE_PUB_KEY verbal_deploy@reason-deploy"
+        c = create_mock_context()
+
+        buf = io.StringIO()
+        with ctx_patch("sys.stdout", buf):
+            with self.assertRaises(Exit) as cm:
+                print_deploy_key_guide_and_exit(
+                    c,
+                    target_git_url="git@bitbucket.org:acme/verbal.git",
+                    error_message="git@bitbucket.org: Permission denied (publickey).",
+                )
+
+        output = buf.getvalue()
+        self.assertIn("KEY REQUIRED", output)
+        self.assertIn("ssh-ed25519 AAAA_ACTIONABLE_PUB_KEY verbal_deploy@reason-deploy", output)
+        self.assertIn("git@bitbucket.org:acme/verbal.git", output)
+        self.assertIn("Permission denied (publickey)", output)
+        self.assertIn("Bitbucket", output)
+        self.assertIn("GitHub", output)
+        self.assertIn("GitLab", output)
+        self.assertIn("--local-source=.", output)
+        self.assertIn("Git deploy key authorization required", str(cm.exception))
+
+    @patch("deploy.fabric_deploy.ensure_sudo")
+    @patch("deploy.fabric_deploy.run_as_deploy_user")
+    @patch("deploy.fabric_deploy.sudo_bash")
+    @patch("deploy.fabric_deploy.print_deploy_key_guide_and_exit")
+    def test_update_code_git_clone_auth_failure_triggers_deploy_key_guide(
+        self, mock_guide, mock_sudo_bash, mock_run_deploy, mock_sudo
+    ):
+        """Verifies git clone authentication failure triggers deploy key guidance."""
+        from deploy.fabric_deploy import update_code
+        try:
+            from invoke import Exit
+        except ImportError:
+            from invoke.exceptions import Exit
+
+        mock_guide.side_effect = Exit("Simulated guide exit")
+        c = create_mock_context()
+
+        mock_run_deploy.side_effect = [
+            MagicMock(ok=True),   # safe.directory
+            MagicMock(ok=False),  # rev-parse -> not git repo
+            MagicMock(ok=False, stderr="git@bitbucket.org: Permission denied (publickey).\nfatal: Could not read from remote repository."),  # clone fails
+        ]
+        c.sudo.return_value = MagicMock(ok=True)
+
+        with self.assertRaises(Exit):
+            update_code(c, git_url="git@bitbucket.org:acme/verbal.git", branch="main")
+
+        mock_guide.assert_called_once()
+        call_args = mock_guide.call_args
+        self.assertEqual(call_args[0][1], "git@bitbucket.org:acme/verbal.git")
+        self.assertIn("Permission denied", call_args[1].get("error_message", ""))
+
+    @patch("deploy.fabric_deploy.ensure_sudo")
+    @patch("deploy.fabric_deploy.run_as_deploy_user")
+    @patch("deploy.fabric_deploy.sudo_bash")
+    @patch("deploy.fabric_deploy.print_deploy_key_guide_and_exit")
+    def test_update_code_git_clone_non_auth_error_raises_standard_exit(
+        self, mock_guide, mock_sudo_bash, mock_run_deploy, mock_sudo
+    ):
+        """Verifies non-auth git clone errors raise Exit without the deploy key guide."""
+        from deploy.fabric_deploy import update_code
+        try:
+            from invoke import Exit
+        except ImportError:
+            from invoke.exceptions import Exit
+
+        c = create_mock_context()
+        mock_run_deploy.side_effect = [
+            MagicMock(ok=True),   # safe.directory
+            MagicMock(ok=False),  # rev-parse
+            MagicMock(ok=False, stderr="Remote branch foo not found in upstream origin"),  # clone error
+        ]
+        c.sudo.return_value = MagicMock(ok=True)
+
+        with self.assertRaises(Exit) as cm:
+            update_code(c, git_url="git@bitbucket.org:acme/verbal.git", branch="foo")
+
+        mock_guide.assert_not_called()
+        self.assertIn("Git clone failed:", str(cm.exception))
+        self.assertIn("Remote branch foo not found", str(cm.exception))
+
+    @patch("deploy.fabric_deploy.ensure_sudo")
+    @patch("deploy.fabric_deploy.run_as_deploy_user")
+    @patch("deploy.fabric_deploy.sudo_bash")
+    @patch("deploy.fabric_deploy.print_deploy_key_guide_and_exit")
+    def test_update_code_git_fetch_auth_failure_triggers_deploy_key_guide(
+        self, mock_guide, mock_sudo_bash, mock_run_deploy, mock_sudo
+    ):
+        """Verifies git fetch authentication failure triggers deploy key guidance."""
+        from deploy.fabric_deploy import update_code
+        try:
+            from invoke import Exit
+        except ImportError:
+            from invoke.exceptions import Exit
+
+        mock_guide.side_effect = Exit("Simulated guide exit")
+        c = create_mock_context()
+        c.sudo.return_value = MagicMock(ok=True)
+
+        mock_run_deploy.side_effect = [
+            MagicMock(ok=True),   # safe.directory
+            MagicMock(ok=True),   # rev-parse -> valid repo
+            MagicMock(ok=True),   # remote set-url
+            MagicMock(ok=True),   # rm index.lock
+            MagicMock(ok=False, stderr="Host key verification failed.\nfatal: Could not read from remote repository."),  # fetch fails
+        ]
+
+        with self.assertRaises(Exit):
+            update_code(c, git_url="git@bitbucket.org:acme/verbal.git", branch="main")
+
+        mock_guide.assert_called_once()
+        call_args = mock_guide.call_args
+        self.assertEqual(call_args[0][1], "git@bitbucket.org:acme/verbal.git")
+        self.assertIn("Host key verification failed", call_args[1].get("error_message", ""))
+
+    @patch("deploy.fabric_deploy.ensure_sudo")
+    @patch("deploy.fabric_deploy.run_as_deploy_user")
+    @patch("deploy.fabric_deploy.sudo_bash")
+    @patch("deploy.fabric_deploy.print_deploy_key_guide_and_exit")
+    def test_update_code_git_fetch_auth_failure_queries_origin_if_no_url_passed(
+        self, mock_guide, mock_sudo_bash, mock_run_deploy, mock_sudo
+    ):
+        """Verifies git fetch queries origin remote url if git_url is omitted."""
+        from deploy.fabric_deploy import update_code
+        try:
+            from invoke import Exit
+        except ImportError:
+            from invoke.exceptions import Exit
+
+        mock_guide.side_effect = Exit("Simulated guide exit")
+        c = create_mock_context()
+        c.sudo.return_value = MagicMock(ok=True)
+
+        mock_run_deploy.side_effect = [
+            MagicMock(ok=True),   # safe.directory
+            MagicMock(ok=True),   # rev-parse
+            MagicMock(ok=True),   # rm index.lock
+            MagicMock(ok=False, stderr="git@github.com: Permission denied (publickey)."),  # fetch fails
+            MagicMock(ok=True, stdout="git@github.com:myorg/repo.git\n"),  # remote get-url origin
+        ]
+
+        with self.assertRaises(Exit):
+            update_code(c, git_url=None, branch="main")
+
+        mock_guide.assert_called_once()
+        call_args = mock_guide.call_args
+        self.assertEqual(call_args[0][1], "git@github.com:myorg/repo.git")
+
+    @patch("deploy.fabric_deploy.ensure_sudo")
+    @patch("deploy.fabric_deploy.ensure_deploy_ssh_key")
+    @patch("deploy.fabric_deploy.sudo_bash")
+    def test_provision_system_ensures_deploy_ssh_key(self, mock_bash, mock_ensure_key, mock_sudo):
+        """Verifies provision_system calls ensure_deploy_ssh_key."""
+        from deploy.fabric_deploy import provision_system
+        c = create_mock_context()
+        c.sudo.return_value = MagicMock(ok=True, failed=False)
+        mock_bash.return_value = MagicMock(ok=True)
+
+        provision_system(c)
+
+        mock_ensure_key.assert_called_once_with(c)
+
+
+
 
 
 
