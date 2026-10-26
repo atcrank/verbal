@@ -223,9 +223,12 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 INFERENCE_URL = os.environ.get("INFERENCE_URL", "http://127.0.0.1:8001/api/llm")
 LLM_REQUEST_TIMEOUT = int(os.environ.get("LLM_REQUEST_TIMEOUT", "3600"))
 
-# Base URLs for external containerized inference endpoints
+# Base URLs for external containerized or bare-metal inference endpoints
 OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
 VLLM_BASE_URL = os.environ.get("VLLM_BASE_URL", "http://127.0.0.1:8003")
+LLAMACPP_BASE_URL = os.environ.get("LLAMACPP_BASE_URL", "http://127.0.0.1:8080")
+LLAMACPP_DEFAULT_CTX_SIZE = int(os.environ.get("LLAMACPP_DEFAULT_CTX_SIZE", "8192"))
+LLAMACPP_DEFAULT_THREADS = int(os.environ.get("LLAMACPP_DEFAULT_THREADS", "0"))  # 0 = auto-detect
 
 # ------------------------------------------------------------------------
 # DJANGO TASKS CONFIGURATION (PostgreSQL DB Backend)

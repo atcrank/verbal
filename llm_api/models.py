@@ -388,6 +388,10 @@ class LocalAIModel(models.Model):
         FP4 = 'fp4', '4-bit Float (BitsAndBytes FP4)'
         AWQ = 'awq', 'AWQ (vLLM / Transformers)'
         GPTQ = 'gptq', 'GPTQ (vLLM / Transformers)'
+        GGUF_Q4_K_M = 'gguf_q4_k_m', 'GGUF 4-bit (Medium - Recommended for CPU)'
+        GGUF_Q5_K_M = 'gguf_q5_k_m', 'GGUF 5-bit (High Precision)'
+        GGUF_Q8_0 = 'gguf_q8_0', 'GGUF 8-bit (Full Integer)'
+        GGUF_OTHER = 'gguf_other', 'GGUF Other Quantization'
 
     name = models.CharField(max_length=255, help_text="Friendly name (e.g. 'Gemma 4 E2B')")
     hf_model_id = models.CharField(max_length=255, help_text="HuggingFace ID")
@@ -418,6 +422,10 @@ class LocalAIModel(models.Model):
         null=True, blank=True,
         help_text="Max model sequence length for vLLM KV-cache. Defaults to model context window."
     )
+    gguf_file_path = models.CharField(
+        max_length=500, blank=True,
+        help_text="Path to local .gguf file or filename in /srv/reason/models/."
+    )
     load_in_4bit = models.BooleanField(default=True, help_text="Legacy flag: Use 4-bit quantization (synced with quantization_mode)")
     context_window = models.IntegerField(default=4096, help_text="Max tokens")
 
@@ -425,6 +433,13 @@ class LocalAIModel(models.Model):
     def is_multimodal(self) -> bool:
         """Dynamically introspects whether this model architecture supports visual/multimodal inputs."""
         if not self.hf_model_id:
+            return False
+        if self.quantization_mode in [
+            self.QuantizationMode.GGUF_Q4_K_M,
+            self.QuantizationMode.GGUF_Q5_K_M,
+            self.QuantizationMode.GGUF_Q8_0,
+            self.QuantizationMode.GGUF_OTHER,
+        ] or bool(self.gguf_file_path):
             return False
         from .modality_detector import introspect_hf_modality
         return introspect_hf_modality(self.hf_model_id)
@@ -467,6 +482,7 @@ class SystemConfiguration(models.Model):
         PYTORCH = 'pytorch', 'Local PyTorch (CPU/GPU)'
         VLLM = 'vllm', 'Local vLLM Container'
         OLLAMA = 'ollama', 'Local Ollama Container'
+        LLAMACPP = 'llamacpp', 'Local llama.cpp Server (CPU/GGUF)'
 
     hosting_backend = models.CharField(
         max_length=20,
@@ -489,6 +505,12 @@ class SystemConfiguration(models.Model):
         LocalAIModel, on_delete=models.SET_NULL, null=True, blank=True,
         related_name="vllm_configurations",
         help_text="Model loaded in the vLLM service. Used only when 'Local vLLM Container' is the active hosting backend."
+    )
+
+    active_llamacpp_model = models.ForeignKey(
+        LocalAIModel, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="llamacpp_configurations",
+        help_text="The selected model running in the local llama.cpp server. Used only when 'Local llama.cpp Server' is the active hosting backend."
     )
 
     system_tokenizer = models.ForeignKey(

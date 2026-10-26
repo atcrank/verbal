@@ -966,3 +966,137 @@ class ModalityDetectorTests(TestCase):
         self.assertFalse(status["is_multimodal"])
         self.assertEqual(status["modality"], "text_only")
         self.assertEqual(status["backend"], "pytorch")
+
+
+class LlamaCppInferenceTests(TestCase):
+    """
+    Tests for WS21: llama.cpp CPU-first inference support, GGUF models,
+    client health probes, and hardware telemetry.
+    """
+
+    def setUp(self):
+        from unittest.mock import patch
+        from llm_api.models import LocalAIModel, SystemConfiguration
+        self.LocalAIModel = LocalAIModel
+        self.SystemConfiguration = SystemConfiguration
+        self.user = User.objects.create_user(username="cpu_tester", password="password123")
+        with patch("llm_api.modality_detector.introspect_hf_modality", return_value=False):
+            self.gguf_model = LocalAIModel.objects.create(
+                name="Gemma 2 9B GGUF",
+                hf_model_id="mock/cpu-gguf-model",
+                quantization_mode=LocalAIModel.QuantizationMode.GGUF_Q4_K_M,
+                gguf_file_path="/srv/reason/models/gemma-2-9b-it-Q4_K_M.gguf",
+                context_window=8192
+            )
+
+    def test_system_configuration_llamacpp_backend_and_active_model(self):
+        config = self.SystemConfiguration.get_solo()
+        self.assertIn("llamacpp", dict(self.SystemConfiguration.HostingBackend.choices))
+
+        config.hosting_backend = self.SystemConfiguration.HostingBackend.LLAMACPP
+        config.active_llamacpp_model = self.gguf_model
+        config.save()
+
+        refreshed = self.SystemConfiguration.get_solo()
+        self.assertEqual(refreshed.hosting_backend, "llamacpp")
+        self.assertEqual(refreshed.active_llamacpp_model, self.gguf_model)
+
+    def test_local_ai_model_gguf_quantization_and_path(self):
+        self.assertEqual(self.gguf_model.quantization_mode, "gguf_q4_k_m")
+        self.assertEqual(self.gguf_model.gguf_file_path, "/srv/reason/models/gemma-2-9b-it-Q4_K_M.gguf")
+        self.assertIn("GGUF 4-bit", str(self.gguf_model))
+
+    def test_llamacpp_client_availability(self):
+        from unittest.mock import patch, MagicMock
+        from llm_api.llamacpp_client import is_llamacpp_available, get_available_llamacpp_models, get_llamacpp_server_props
+
+        # 1. Healthy server
+        mock_resp_health = MagicMock()
+        mock_resp_health.status_code = 200
+
+        mock_resp_models = MagicMock()
+        mock_resp_models.status_code = 200
+        mock_resp_models.json.return_value = {
+            "data": [{"id": "gemma-2-9b-it-Q4_K_M.gguf"}, {"id": "llama-3-8b.gguf"}]
+        }
+
+        mock_resp_props = MagicMock()
+        mock_resp_props.status_code = 200
+        mock_resp_props.json.return_value = {"default_generation_settings": {"n_ctx": 8192}}
+
+        with patch("requests.get") as mock_get:
+            mock_get.return_value = mock_resp_health
+            self.assertTrue(is_llamacpp_available())
+
+            mock_get.return_value = mock_resp_models
+            models = get_available_llamacpp_models()
+            self.assertEqual(models, ["gemma-2-9b-it-Q4_K_M.gguf", "llama-3-8b.gguf"])
+
+            mock_get.return_value = mock_resp_props
+            props = get_llamacpp_server_props()
+            self.assertEqual(props["default_generation_settings"]["n_ctx"], 8192)
+
+        # 2. Offline / unreachable server
+        import requests
+        with patch("requests.get", side_effect=requests.exceptions.ConnectionError("Connection refused")):
+            self.assertFalse(is_llamacpp_available())
+            self.assertEqual(get_available_llamacpp_models(), [])
+            self.assertEqual(get_llamacpp_server_props(), {})
+
+    def test_ai_service_routes_to_llamacpp(self):
+        from unittest.mock import patch, MagicMock
+        from llm_api.ai_service import AIService
+
+        config = self.SystemConfiguration.get_solo()
+        config.hosting_backend = self.SystemConfiguration.HostingBackend.LLAMACPP
+        config.active_llamacpp_model = self.gguf_model
+        config.save()
+
+        mock_openai_response = MagicMock()
+        mock_openai_response.status_code = 200
+        mock_openai_response.json.return_value = {
+            "id": "chatcmpl-test",
+            "choices": [{"message": {"role": "assistant", "content": "Hello from CPU llama-server!"}}],
+            "usage": {"prompt_tokens": 10, "completion_tokens": 8, "total_tokens": 18}
+        }
+
+        service = AIService()
+        service.role = "web"
+
+        with patch("requests.post", return_value=mock_openai_response) as mock_post:
+            response = service.generate_response2(
+                messages=[{"role": "user", "content": "Say hello"}],
+                user=self.user,
+                log_kwargs={"skip_log": True}
+            )
+            self.assertEqual(response, ["Hello from CPU llama-server!"])
+            self.assertTrue(mock_post.called)
+            called_url = mock_post.call_args[0][0]
+            called_payload = mock_post.call_args[1]["json"]
+            self.assertTrue(called_url.endswith("/v1/chat/completions"))
+            self.assertEqual(called_payload["model"], "/srv/reason/models/gemma-2-9b-it-Q4_K_M.gguf")
+
+    def test_hardware_cpu_vector_instructions_and_advisor(self):
+        from llm_api.hardware import HostCPUInfo, HardwareProfile, get_backend_recommendations
+
+        cpu = HostCPUInfo(
+            physical_cores=8,
+            total_threads=16,
+            total_ram_mb=32768.0,
+            available_ram_mb=24000.0,
+            has_avx=True,
+            has_avx2=True,
+            has_avx512=False
+        )
+        self.assertEqual(cpu.recommended_llamacpp_threads, 7)
+        self.assertEqual(cpu.vector_instructions_str, "AVX2")
+
+        profile = HardwareProfile(cuda_available=False, devices=[], primary_device=None, host_cpu=cpu)
+        self.assertIn("AVX2", profile.summary)
+
+        rec = get_backend_recommendations(profile=profile, requested_context=8192)
+        self.assertEqual(rec.llamacpp_threads, 7)
+        self.assertEqual(rec.llamacpp_max_context, 8192)
+        self.assertEqual(rec.llamacpp_recommended_quant, "gguf_q8_0")
+        self.assertEqual(rec.recommended_quantization, "gguf_q4_k_m")
+        self.assertTrue(any("llama.cpp" in note for note in rec.advisory_notes))

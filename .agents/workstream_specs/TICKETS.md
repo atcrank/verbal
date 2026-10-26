@@ -51,3 +51,9 @@
 - [ ] [Deployment/Resilience] Deployment Hardening & Cognitive Execution Lifecycle (Status: in-progress) -> [ws20_deployment_hardening_and_execution_lifecycle.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/ws20_deployment_hardening_and_execution_lifecycle.md)
   *Summary*: Resolve 11 operational items from multi-instance deployment testing: normalize sandbox Docker base image, add fail-fast sandbox error pathway, populate PromptResponseLog blueprint and parent_log ForeignKeys, update conversation titles from macro_objective, purge redundant TASK_COMPLETE tool, ensure synchronous SSE streaming, and add UI active model indicators and KaTeX math rendering.
 
+- [ ] [Architecture/Discussion] Dynamic Heterogeneous Hardware Allocation & Multi-PC Task Routing (Status: pending) -> [Link to note](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20261026_dynamic_heterogeneous_hardware_allocation.md)
+  *Summary*: Deep grill-me architecture session to design dynamic multi-node capability advertisement, transient node failover, and hardware-aware task routing across fluctuating home network machines (e.g., 16GB VRAM laptop, 1660 Ti, and multi-core high-RAM CPU workstation).
+
+- [ ] [Feature/Inference] WS21: Native llama.cpp CPU-First Inference Support & GGUF Integration (Status: in-progress) -> [ws21_native_llamacpp_inference_support.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/ws21_native_llamacpp_inference_support.md)
+  *Summary*: Implement first-class support for llama.cpp as a dedicated CPU-first hosting backend in llm_api. Adds LLAMACPP hosting backend choice, GGUF quantization formats, client routing, CPU hardware inspection & thread advisor, and Docker/systemd deployment templates.
+

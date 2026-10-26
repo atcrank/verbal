@@ -135,6 +135,7 @@ def reload_deploy_config(deploy_env_file=None, base_env_file=None):
     global STATIC_DIR, MEDIA_DIR, BACKUP_DIR, LOG_DIR, HF_CACHE_DIR, DEPLOY_USER
     global DJANGO_USER, WEB_GROUP, DOMAIN, GRANIAN_PORT, INFERENCE_PORT, SSL_DIR
     global SSL_CERT_PATH, SSL_KEY_PATH, DB_CONTAINER, DB_NAME, DB_USER, DB_PORT, DB_PASSWORD
+    global BIN_DIR, MODELS_DIR, LLAMACPP_PORT
     global LOADED_ENV_FILE
 
     LOADED_ENV_FILE = loaded
@@ -149,6 +150,8 @@ def reload_deploy_config(deploy_env_file=None, base_env_file=None):
     MEDIA_DIR = os.environ.get("REASON_MEDIA_DIR", f"{PUBLIC_DIR}/media")
     BACKUP_DIR = os.environ.get("REASON_BACKUP_DIR", f"{BASE_DIR}/backups")
     LOG_DIR = os.environ.get("REASON_LOG_DIR", f"{BASE_DIR}/logs")
+    BIN_DIR = os.environ.get("REASON_BIN_DIR", f"{BASE_DIR}/bin")
+    MODELS_DIR = os.environ.get("REASON_MODELS_DIR", f"{BASE_DIR}/models")
 
     HF_CACHE_DIR = os.environ.get("REASON_HF_CACHE", "/var/lib/hf_home")
     DEPLOY_USER = os.environ.get("REASON_DEPLOY_USER", "verbal_deploy")
@@ -158,6 +161,7 @@ def reload_deploy_config(deploy_env_file=None, base_env_file=None):
     DOMAIN = os.environ.get("REASON_DOMAIN", "reason.andrew.com")
     GRANIAN_PORT = int(os.environ.get("REASON_GRANIAN_PORT", "8008"))
     INFERENCE_PORT = int(os.environ.get("REASON_INFERENCE_PORT", "8001"))
+    LLAMACPP_PORT = int(os.environ.get("REASON_LLAMACPP_PORT", "8080"))
     SSL_DIR = os.environ.get("REASON_SSL_DIR", f"{BASE_DIR}/ssl")
     SSL_CERT_PATH = os.environ.get("REASON_SSL_CERT_PATH", f"{SSL_DIR}/{DOMAIN}.crt")
     SSL_KEY_PATH = os.environ.get("REASON_SSL_KEY_PATH", f"{SSL_DIR}/{DOMAIN}.key")
@@ -513,11 +517,14 @@ def generate_systemd_units(
     shared_dir=SHARED_DIR,
     static_dir=STATIC_DIR,
     log_dir=LOG_DIR,
+    bin_dir=BIN_DIR,
+    models_dir=MODELS_DIR,
     hf_cache_dir=HF_CACHE_DIR,
     django_user=DJANGO_USER,
     web_group=WEB_GROUP,
     granian_port=GRANIAN_PORT,
     inference_port=INFERENCE_PORT,
+    llamacpp_port=LLAMACPP_PORT,
 ):
     """
     Generates dictionary of systemd unit configurations with:
@@ -686,6 +693,30 @@ RestartSec=5s
 WantedBy=multi-user.target reason.service
 """
 
+    llamacpp_unit = f"""[Unit]
+Description=Reason llama.cpp CPU-First Local Inference Service
+After=network.target
+PartOf=reason.service
+
+[Service]
+Type=simple
+User={django_user}
+Group={web_group}
+UMask=0002
+WorkingDirectory={app_dir}
+{env_directives}
+Environment=VERBAL_ENV=prod
+Environment=VERBAL_ROLE=inference
+Environment=LLAMACPP_PORT={llamacpp_port}
+ExecStart={bin_dir}/llama-server --host 127.0.0.1 --port {llamacpp_port}
+Restart=always
+RestartSec=5s
+{sandboxing}
+
+[Install]
+WantedBy=multi-user.target reason.service
+"""
+
     return {
         "reason.service": master_service,
         "reason-docker.service": docker_unit,
@@ -693,6 +724,7 @@ WantedBy=multi-user.target reason.service
         "reason-worker.service": worker_unit,
         "reason-scheduler.service": scheduler_unit,
         "reason-inference.service": inference_unit,
+        "reason-llamacpp.service": llamacpp_unit,
     }
 
 
@@ -794,7 +826,7 @@ def provision_system(c):
     ensure_deploy_ssh_key(c)
 
     # 3. Create core directory structure
-    c.sudo(f"mkdir -p {BASE_DIR} {REPO_DIR} {APP_DIR} {STATIC_DIR} {MEDIA_DIR} {BACKUP_DIR} {LOG_DIR} {SHARED_DIR}")
+    c.sudo(f"mkdir -p {BASE_DIR} {REPO_DIR} {APP_DIR} {STATIC_DIR} {MEDIA_DIR} {BACKUP_DIR} {LOG_DIR} {SHARED_DIR} {BIN_DIR} {MODELS_DIR}")
     c.sudo(f"mkdir -p {SHARED_DIR}/workspaces {SHARED_DIR}/media {HF_CACHE_DIR}")
 
     # 4. Strict base directory lockdown (root owned)
@@ -834,9 +866,10 @@ def provision_system(c):
     c.sudo(f"chown -R {DEPLOY_USER}:{DJANGO_USER} {BACKUP_DIR} {LOG_DIR}")
     c.sudo(f"chmod 0750 {BACKUP_DIR} {LOG_DIR}")
 
-    # 9. Repo & App directories
-    c.sudo(f"chown -R {DEPLOY_USER}:{WEB_GROUP} {APP_DIR} {REPO_DIR}")
+    # 9. Repo, App, Bin & Models directories
+    c.sudo(f"chown -R {DEPLOY_USER}:{WEB_GROUP} {APP_DIR} {REPO_DIR} {BIN_DIR} {MODELS_DIR}")
     c.sudo(f"chmod 0750 {APP_DIR} {REPO_DIR}")
+    sudo_bash(c, f"chmod 0755 {BIN_DIR} && chmod 0775 {MODELS_DIR}")
 
     # 10. Python Virtual Environment
     venv_pip = c.sudo(f"test -f {VENV_DIR}/bin/pip", warn=True)
@@ -1314,6 +1347,221 @@ def build_pip_install_cmd(
     return f"{venv_dir}/bin/pip install {flags_str} -r {app_dir}/requirements.txt"
 
 
+# ==============================================================================
+# PHASE 4B: BARE-METAL LLAMA.CPP COMPILATION & INSTALLATION
+# ==============================================================================
+@task
+def build_llamacpp(c, source_bundle=None, threads=None):
+    """
+    Compiles llama.cpp (llama-server) from a local source bundle in resources/sources/
+    and installs the optimized native binary into /srv/reason/bin/llama-server.
+    
+    Verifies build prerequisites (gcc/g++, make, cmake) with clear remediation guidance,
+    compiles with native CPU vectorization (AVX2/AVX-512), and tests the resulting binary.
+    """
+    ensure_sudo(c)
+    print("🔨 [llama.cpp] Commencing bare-metal build for llama-server...")
+
+    # 1. Ensure target directories exist
+    build_dir = f"{BASE_DIR}/llama.cpp"
+    c.sudo(f"mkdir -p {BIN_DIR} {MODELS_DIR} {build_dir}")
+    c.sudo(f"chown -R {DEPLOY_USER}:{WEB_GROUP} {BIN_DIR} {MODELS_DIR} {build_dir}")
+
+    # 2. Check for build prerequisites on target host
+    missing_prereqs = []
+
+    compiler_check = c.run("which gcc || which g++", warn=True, hide=True)
+    if compiler_check.failed:
+        missing_prereqs.append("gcc/g++ (C++17 capable compiler from build-essential)")
+
+    make_check = c.run("which make", warn=True, hide=True)
+    if make_check.failed:
+        missing_prereqs.append("make (build automation tool)")
+
+    cmake_check = c.run("which cmake", warn=True, hide=True)
+    has_cmake = cmake_check.ok
+    if not has_cmake:
+        venv_cmake = c.sudo(f"test -f {VENV_DIR}/bin/cmake", warn=True, hide=True).ok
+        if not venv_cmake:
+            missing_prereqs.append("cmake (version >= 3.14)")
+
+    if missing_prereqs:
+        print("\n" + "=" * 80)
+        print("🚨 [PREFLIGHT ERROR] Missing build prerequisites on target host:")
+        print("=" * 80)
+        for p in missing_prereqs:
+            print(f"   ❌ Missing: {p}")
+        print("\n🛠️  Remediation Instructions:")
+        print("1. Standard Ubuntu / Debian system package manager (recommended, no PPAs needed):")
+        print("   sudo apt update && sudo apt install -y build-essential cmake")
+        print("\n2. If CMake is missing or restricted in apt, install CMake via PyPI / Artifactory:")
+        print(f"   {VENV_DIR}/bin/pip install cmake")
+        print("   (or 'pip install cmake' in your Python environment)")
+        print("\n3. If running on RedHat / Fedora / CentOS:")
+        print("   sudo dnf install -y gcc-c++ make cmake")
+        print("=" * 80 + "\n")
+        raise Exit(f"Missing build prerequisites: {', '.join(missing_prereqs)}")
+
+    # 3. Locate source bundle in local repository
+    repo_root = Path(__file__).resolve().parent.parent
+    candidate_dirs = [
+        repo_root / "resources" / "sources",
+        repo_root / "resource" / "sources",
+        repo_root / "resources",
+        repo_root / "resource",
+        Path.cwd() / "resources" / "sources",
+        Path.cwd() / "resource" / "sources",
+    ]
+
+    archive_path = None
+    if source_bundle:
+        sb_p = Path(source_bundle)
+        if sb_p.is_file() or sb_p.is_dir():
+            archive_path = sb_p.resolve()
+        else:
+            raise Exit(f"Specified source bundle not found: {source_bundle}")
+    else:
+        for cdir in candidate_dirs:
+            if not cdir.is_dir():
+                continue
+            for pat in [
+                "llama*.tar.gz", "llama*.tgz", "llama*.tar.bz2", "llama*.tar.xz",
+                "llama*.zip", "*llama.cpp*.tar.gz", "*llama.cpp*.zip", "*llama.cpp*.tgz"
+            ]:
+                matches = list(cdir.glob(pat))
+                if matches:
+                    archive_path = matches[0].resolve()
+                    break
+            if archive_path:
+                break
+            llama_dirs = [d for d in cdir.iterdir() if d.is_dir() and "llama" in d.name.lower()]
+            if llama_dirs and (llama_dirs[0] / "CMakeLists.txt").is_file():
+                archive_path = llama_dirs[0].resolve()
+                break
+
+    remote_src_exists = c.sudo(f"test -f {build_dir}/CMakeLists.txt", warn=True, hide=True).ok
+
+    if not archive_path and not remote_src_exists:
+        print("\n" + "=" * 80)
+        print("📢 [ACTION REQUIRED] No llama.cpp source bundle found in local repository!")
+        print("=" * 80)
+        print("Please download a release source bundle of llama.cpp (e.g. from GitHub releases):")
+        print("   https://github.com/ggerganov/llama.cpp/releases")
+        print("and place the .tar.gz, .tgz, .zip, or extracted folder into either:")
+        print(f"   {repo_root}/resource/sources/")
+        print(f"   or: {repo_root}/resources/sources/")
+        print("   (e.g. resource/sources/llama-b4000.tar.gz)")
+        print("\nAlternatively, specify the bundle path explicitly via CLI:")
+        print("   fab build-llamacpp --source-bundle=/path/to/llama.cpp.tar.gz")
+        print("=" * 80 + "\n")
+        raise Exit("Missing llama.cpp source bundle in resource/sources/ or resources/sources/.")
+
+    # 4. Upload & Extract source bundle if local archive is present
+    if archive_path:
+        print(f"📦 Uploading source bundle ({archive_path.name}) to target host...")
+        remote_tmp = f"/tmp/{archive_path.name}"
+        c.put(str(archive_path), remote_tmp)
+
+        c.sudo(f"rm -rf {build_dir}")
+        c.sudo(f"mkdir -p {build_dir}")
+
+        name_lower = archive_path.name.lower()
+        if name_lower.endswith((".tar.gz", ".tgz")):
+            print("📂 Extracting tar.gz archive...")
+            sudo_bash(c, f"tar -xzf {remote_tmp} --strip-components=1 -C {build_dir} 2>/dev/null || tar -xzf {remote_tmp} -C {build_dir}")
+        elif name_lower.endswith(".tar.bz2"):
+            print("📂 Extracting tar.bz2 archive...")
+            sudo_bash(c, f"tar -xjf {remote_tmp} --strip-components=1 -C {build_dir} 2>/dev/null || tar -xjf {remote_tmp} -C {build_dir}")
+        elif name_lower.endswith(".tar.xz"):
+            print("📂 Extracting tar.xz archive...")
+            sudo_bash(c, f"tar -xJf {remote_tmp} --strip-components=1 -C {build_dir} 2>/dev/null || tar -xJf {remote_tmp} -C {build_dir}")
+        elif name_lower.endswith(".zip"):
+            print("📂 Extracting zip archive...")
+            sudo_bash(c, f"unzip -q -o {remote_tmp} -d {build_dir}")
+            sudo_bash(c, f"if [ ! -f {build_dir}/CMakeLists.txt ]; then mv {build_dir}/*/* {build_dir}/ 2>/dev/null || true; fi")
+
+        c.run(f"rm -f {remote_tmp}", warn=True)
+        c.sudo(f"chown -R {DEPLOY_USER}:{WEB_GROUP} {build_dir}")
+        sudo_bash(c, f"chmod -R 0755 {build_dir}")
+
+    # 5. Compile in-place with native CPU vectorization
+    nproc = threads or c.run("nproc", hide=True).stdout.strip() or "4"
+    print(f"⚙️ Compiling llama-server with Release optimizations (-DGGML_CUDA=OFF -DGGML_NATIVE=ON, {nproc} threads)...")
+
+    cmake_bin = "cmake"
+    if c.run("which cmake", warn=True, hide=True).failed:
+        cmake_bin = f"{VENV_DIR}/bin/cmake"
+
+    cmake_configure_cmd = f"{cmake_bin} -B build -DGGML_CUDA=OFF -DGGML_NATIVE=ON -DCMAKE_BUILD_TYPE=Release"
+    print(f"   [configure] {cmake_configure_cmd}")
+    conf_res = run_as_deploy_user(c, cmake_configure_cmd, cwd=build_dir, warn=True)
+    if conf_res.failed:
+        print("\n" + "=" * 80)
+        print("🚨 [BUILD ERROR] CMake configuration failed for llama.cpp!")
+        print("=" * 80)
+        print(f"Command: {cmake_configure_cmd}")
+        print(f"Directory: {build_dir}")
+        print(f"Error Details:\n{conf_res.stderr or conf_res.stdout}")
+        print("\nCommon Causes & Remediation:")
+        print(" 1. Missing C/C++ compiler or standard headers:")
+        print("    Run: sudo apt update && sudo apt install -y build-essential")
+        print(" 2. Outdated CMake version:")
+        print("    Run: sudo apt install -y cmake   (or: pip install cmake)")
+        print(" 3. Corrupted source bundle extraction:")
+        print(f"    Check that {build_dir}/CMakeLists.txt is valid.")
+        print("=" * 80 + "\n")
+        raise Exit("CMake configuration failed for llama.cpp.")
+
+    cmake_build_cmd = f"{cmake_bin} --build build --config Release -j {nproc} --target llama-server"
+    print(f"   [build] {cmake_build_cmd}")
+    build_res = run_as_deploy_user(c, cmake_build_cmd, cwd=build_dir, warn=True)
+    if build_res.failed:
+        print("\n" + "=" * 80)
+        print("🚨 [BUILD ERROR] Compilation failed for llama-server!")
+        print("=" * 80)
+        print(f"Command: {cmake_build_cmd}")
+        print(f"Error Details:\n{build_res.stderr or build_res.stdout}")
+        print("\nCommon Causes & Remediation:")
+        print(" 1. Out-of-memory (OOM) error during parallel compilation:")
+        print("    If compilation was killed or crashed, re-run with fewer threads:")
+        print("    fab build-llamacpp --threads=2")
+        print(" 2. Missing standard C++ libraries or headers:")
+        print("    Run: sudo apt install -y g++ libstdc++-12-dev")
+        print("=" * 80 + "\n")
+        raise Exit("Compilation failed for llama-server.")
+
+    # 6. Locate and install binary
+    built_binary = f"{build_dir}/build/bin/llama-server"
+    if not c.sudo(f"test -f {built_binary}", warn=True, hide=True).ok:
+        alt_check = sudo_bash(c, f"find {build_dir}/build -name llama-server -type f | head -n 1", hide=True)
+        if alt_check.ok and alt_check.stdout.strip():
+            built_binary = alt_check.stdout.strip()
+        else:
+            raise Exit(f"Compiled binary 'llama-server' not found under {build_dir}/build.")
+
+    dest_binary = f"{BIN_DIR}/llama-server"
+    print(f"🚀 Installing native binary to {dest_binary}...")
+    c.sudo(f"install -m 0755 -o {DEPLOY_USER} -g {WEB_GROUP} {built_binary} {dest_binary}")
+
+    sudo_bash(
+        c,
+        f"find $(dirname {built_binary}) -name '*.so*' -type f -exec cp -d {{}} {BIN_DIR}/ \\; 2>/dev/null || true",
+        warn=True,
+    )
+    sudo_bash(c, f"chmod 0755 {BIN_DIR}/*.so* 2>/dev/null || true")
+
+    # 7. Test and verify execution
+    print("🔍 Testing installed llama-server binary...")
+    test_exec = run_as_deploy_user(c, f"{dest_binary} --help | head -n 10", warn=True, hide=True)
+    if test_exec.failed:
+        print(f"⚠️ Binary test returned non-zero. Check CPU compatibility:\n{test_exec.stderr or test_exec.stdout}")
+    else:
+        print("✅ llama-server binary verified and ready for execution.")
+
+    print(f"\n🎉 Successfully compiled and installed llama-server at {dest_binary}!")
+    print(f"   Models directory: {MODELS_DIR}/ (place .gguf files here)\n")
+
+
 @task
 def build_and_migrate(c, find_links=None, index_url=None, trusted_host=None, pytorch_index_url=None):
     """
@@ -1703,6 +1951,8 @@ if __name__ == "__main__":
         "restart_services": restart_services,
         "health-check": health_check,
         "health_check": health_check,
+        "build-llamacpp": build_llamacpp,
+        "build_llamacpp": build_llamacpp,
         "deploy": deploy,
     }
     func = task_map.get(task_name)

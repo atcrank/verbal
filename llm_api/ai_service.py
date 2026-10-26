@@ -142,6 +142,8 @@ class AIService:
                     logger.info('📂 System Config: vLLM is enabled. Bypassing PyTorch load.')
                 elif config.hosting_backend == 'ollama':
                     logger.info('📂 System Config: Ollama is enabled. Bypassing PyTorch load.')
+                elif config.hosting_backend == 'llamacpp':
+                    logger.info('📂 System Config: llama.cpp is enabled. Bypassing PyTorch load.')
                 elif config.hosting_backend == 'pytorch' and config.active_local_model:
                     self.model_id = config.active_local_model.hf_model_id
                     logger.info(f'📂 System Config requests PyTorch load for: {self.model_id}')
@@ -401,6 +403,8 @@ class AIService:
                                 model_name = config.active_vllm_model.name
                             elif config.hosting_backend == 'ollama' and config.active_ollama_model:
                                 model_name = config.active_ollama_model.name
+                            elif config.hosting_backend == 'llamacpp' and config.active_llamacpp_model:
+                                model_name = config.active_llamacpp_model.name
                             elif config.hosting_backend == 'pytorch' and config.active_local_model:
                                 model_name = config.active_local_model.name
                     except Exception:
@@ -514,6 +518,13 @@ class AIService:
                     if lora_adapter:
                         logger.warning("Dynamic LoRA swapping is not supported on the Ollama backend. Falling back to base model.")
                     target_model = config.active_ollama_model.hf_model_id if config.active_ollama_model else target_model
+                elif config.hosting_backend == 'llamacpp':
+                    llamacpp_url = getattr(settings, 'LLAMACPP_BASE_URL', 'http://127.0.0.1:8080')
+                    api_url = f"{llamacpp_url.rstrip('/')}/v1/chat/completions"
+                    if lora_adapter:
+                        logger.warning("Dynamic LoRA swapping is not supported on the llama.cpp backend. Falling back to base model.")
+                    if config.active_llamacpp_model:
+                        target_model = config.active_llamacpp_model.gguf_file_path or config.active_llamacpp_model.hf_model_id or config.active_llamacpp_model.name
         except Exception:
             pass
         
@@ -814,10 +825,10 @@ class AIService:
         try:
             from .models import SystemConfiguration
             config = SystemConfiguration.get_solo()
-            # Local open-weight models (vLLM, Ollama) typically lack tool-calling chat templates,
+            # Local open-weight models (vLLM, Ollama, llama.cpp) typically lack tool-calling chat templates,
             # causing the server to reject requests with tools= parameter.
             # We rely on XML-injected tool calling for these backends instead.
-            if config and config.hosting_backend in ['vllm', 'ollama', 'pytorch']:
+            if config and config.hosting_backend in ['vllm', 'ollama', 'pytorch', 'llamacpp']:
                 needs_proxy = False
         except Exception:
             pass
@@ -850,13 +861,15 @@ class AIService:
         try:
             from .models import SystemConfiguration
             config = SystemConfiguration.get_solo()
-            if config and config.hosting_backend in ['vllm', 'ollama']:
+            if config and config.hosting_backend in ['vllm', 'ollama', 'llamacpp']:
                 needs_proxy = True
                 
-            if config and config.hosting_backend == 'ollama' and lora_adapter:
-                base_model = config.active_ollama_model.hf_model_id if config.active_ollama_model else 'unknown'
+            if config and config.hosting_backend in ['ollama', 'llamacpp'] and lora_adapter:
+                active_mod = config.active_llamacpp_model if config.hosting_backend == 'llamacpp' else config.active_ollama_model
+                base_model = getattr(active_mod, 'name', 'unknown')
+                backend_name = "llama.cpp" if config.hosting_backend == 'llamacpp' else "Ollama"
                 sys_prompt, _ = self._extract_prompts(messages)
-                log_kwargs["system_prompt"] = log_kwargs.get("system_prompt", sys_prompt) + f"\n\n[SYSTEM NOTE: The specialised LoRA adapter '{lora_adapter.name}' for this step was not available on the Ollama backend, so this request fell back to the base model '{base_model}']"
+                log_kwargs["system_prompt"] = log_kwargs.get("system_prompt", sys_prompt) + f"\n\n[SYSTEM NOTE: The specialised LoRA adapter '{lora_adapter.name}' for this step was not available on the {backend_name} backend, so this request fell back to the base model '{base_model}']"
         except Exception:
             pass
 
@@ -979,13 +992,15 @@ class AIService:
         try:
             from .models import SystemConfiguration
             config = SystemConfiguration.get_solo()
-            if config and config.hosting_backend in ['vllm', 'ollama']:
+            if config and config.hosting_backend in ['vllm', 'ollama', 'llamacpp']:
                 needs_proxy = True
                 
-            if config and config.hosting_backend == 'ollama' and lora_adapter:
-                base_model = config.active_ollama_model.hf_model_id if config.active_ollama_model else 'unknown'
+            if config and config.hosting_backend in ['ollama', 'llamacpp'] and lora_adapter:
+                active_mod = config.active_llamacpp_model if config.hosting_backend == 'llamacpp' else config.active_ollama_model
+                base_model = getattr(active_mod, 'name', 'unknown')
+                backend_name = "llama.cpp" if config.hosting_backend == 'llamacpp' else "Ollama"
                 sys_prompt, _ = self._extract_prompts(messages)
-                log_kwargs["system_prompt"] = log_kwargs.get("system_prompt", sys_prompt) + f"\n\n[SYSTEM NOTE: The specialised LoRA adapter '{lora_adapter.name}' for this step was not available on the Ollama backend, so this request fell back to the base model '{base_model}']"
+                log_kwargs["system_prompt"] = log_kwargs.get("system_prompt", sys_prompt) + f"\n\n[SYSTEM NOTE: The specialised LoRA adapter '{lora_adapter.name}' for this step was not available on the {backend_name} backend, so this request fell back to the base model '{base_model}']"
         except Exception:
             pass
 
