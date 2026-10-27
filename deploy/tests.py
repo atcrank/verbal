@@ -111,7 +111,7 @@ class TestSystemdUnitsGeneration(SimpleTestCase):
         )
 
     def test_all_services_generated(self):
-        """Ensures all 4 modular units, docker service, and master service exist."""
+        """Ensures all 4 modular units, docker service, master service, and llamacpp service exist."""
         expected_keys = {
             "reason.service",
             "reason-docker.service",
@@ -119,9 +119,29 @@ class TestSystemdUnitsGeneration(SimpleTestCase):
             "reason-worker.service",
             "reason-scheduler.service",
             "reason-inference.service",
+            "reason-llamacpp.service",
         }
         self.assertEqual(set(self.units.keys()), expected_keys)
         self.assertNotIn("reason.target", self.units)
+
+    def test_unbuffered_python_and_logging_environment(self):
+        """Verifies PYTHONUNBUFFERED=1 and REASON_LOG_DIR are passed to managed services."""
+        for name in ["reason-web.service", "reason-worker.service", "reason-scheduler.service", "reason-inference.service", "reason-llamacpp.service"]:
+            unit = self.units[name]
+            with self.subTest(unit=name):
+                self.assertIn("Environment=PYTHONUNBUFFERED=1", unit)
+                self.assertIn("Environment=REASON_LOG_DIR=/srv/reason/logs", unit)
+
+    def test_systemd_restart_limits_and_failure_policy(self):
+        """Verifies services use restart rate limiting (StartLimitBurst=5) and on-failure policy."""
+        for name in ["reason-web.service", "reason-worker.service", "reason-scheduler.service", "reason-inference.service", "reason-llamacpp.service"]:
+            unit = self.units[name]
+            with self.subTest(unit=name):
+                self.assertIn("StartLimitIntervalSec=60s", unit)
+                self.assertIn("StartLimitBurst=5", unit)
+                self.assertIn("Restart=on-failure", unit)
+                self.assertIn("StandardOutput=journal", unit)
+                self.assertIn("StandardError=journal", unit)
 
     def test_explicit_roles_assigned_per_unit(self):
         """Verifies VERBAL_ROLE is explicitly set per service."""
@@ -1479,6 +1499,83 @@ class TestDeploySSHKeyAndAuthenticationHandling(SimpleTestCase):
         provision_system(c)
 
         mock_ensure_key.assert_called_once_with(c)
+
+
+class TestLoggingConfigurationAndFabricLogs(SimpleTestCase):
+    """Verifies dual output logging configuration, directory symlink, and fab logs command."""
+
+    def test_settings_rotating_file_handler_activation(self):
+        """Verifies that RotatingFileHandler is attached when REASON_LOG_DIR is a writable directory."""
+        import tempfile
+        import importlib
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with patch.dict(os.environ, {"REASON_LOG_DIR": tmpdir, "VERBAL_ROLE": "inference"}):
+                import verbal_config.settings as app_settings
+                importlib.reload(app_settings)
+
+                self.assertIn("file", app_settings.LOGGING["handlers"])
+                file_handler = app_settings.LOGGING["handlers"]["file"]
+                self.assertEqual(file_handler["class"], "logging.handlers.RotatingFileHandler")
+                self.assertEqual(file_handler["filename"], os.path.join(tmpdir, "reason-inference.log"))
+                self.assertEqual(file_handler["maxBytes"], 10 * 1024 * 1024)
+                self.assertEqual(file_handler["backupCount"], 5)
+                self.assertIn("file", app_settings.LOGGING["root"]["handlers"])
+
+            importlib.reload(app_settings)
+
+    def test_settings_fallback_to_console_when_log_dir_missing(self):
+        """Verifies that non-existent REASON_LOG_DIR safely falls back to console logging without error."""
+        import importlib
+        missing_dir = "/tmp/non_existent_reason_log_dir_12345"
+        with patch.dict(os.environ, {"REASON_LOG_DIR": missing_dir, "VERBAL_ROLE": "web"}):
+            import verbal_config.settings as app_settings
+            importlib.reload(app_settings)
+
+            self.assertNotIn("file", app_settings.LOGGING["handlers"])
+            self.assertEqual(app_settings.LOGGING["root"]["handlers"], ["console"])
+
+        importlib.reload(app_settings)
+
+    @patch("deploy.fabric_deploy.ensure_sudo")
+    def test_fab_logs_service_resolution(self, mock_sudo):
+        """Verifies fab logs resolves service aliases and builds journalctl command."""
+        from deploy.fabric_deploy import logs
+        c = create_mock_context()
+
+        # 1. Alias 'inference' -> reason-inference.service
+        logs(c, service="inference", lines=100, follow=False, errors_only=False)
+        c.sudo.assert_called_with("journalctl -u reason-inference.service -n 100 --no-pager", pty=True)
+
+        # 2. Alias 'web' with follow=True
+        logs(c, service="web", lines=20, follow=True, errors_only=False)
+        c.sudo.assert_called_with("journalctl -u reason-web.service -n 20 -f", pty=True)
+
+        # 3. Alias 'all' with errors_only=True
+        logs(c, service="all", lines=50, follow=False, errors_only=True)
+        called_cmd = c.sudo.call_args[0][0]
+        self.assertIn("-p err..alert", called_cmd)
+        self.assertIn("-u reason-web.service", called_cmd)
+        self.assertIn("-u reason-inference.service", called_cmd)
+
+    @patch("deploy.fabric_deploy.ensure_sudo")
+    @patch("deploy.fabric_deploy.ensure_deploy_ssh_key")
+    @patch("deploy.fabric_deploy.sudo_bash")
+    def test_provision_system_creates_log_symlink(self, mock_bash, mock_ensure_key, mock_sudo):
+        """Verifies provision_system creates /var/log/reason symlink and tightens 2775 permissions."""
+        from deploy.fabric_deploy import provision_system
+        c = create_mock_context()
+        c.sudo.return_value = MagicMock(ok=True, failed=False)
+        mock_bash.return_value = MagicMock(ok=True)
+
+        provision_system(c)
+
+        # Verify ln -sfn {LOG_DIR} /var/log/reason was called
+        from deploy.fabric_deploy import LOG_DIR
+        sudo_calls = [call[0][0] for call in c.sudo.call_args_list if call[0]]
+        self.assertTrue(any(f"ln -sfn {LOG_DIR} /var/log/reason" in cmd for cmd in sudo_calls))
+        bash_calls = [call[0][1] for call in mock_bash.call_args_list if len(call[0]) > 1]
+        self.assertTrue(any(f"chmod 2775 {LOG_DIR}" in cmd for cmd in bash_calls))
+
 
 
 

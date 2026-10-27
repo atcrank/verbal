@@ -540,6 +540,10 @@ def generate_systemd_units(
         True
         >>> "--noreload" in units["reason-inference.service"]
         True
+        >>> "StartLimitIntervalSec=60s" in units["reason-inference.service"]
+        True
+        >>> "Environment=PYTHONUNBUFFERED=1" in units["reason-web.service"]
+        True
     """
     env_app_file = f"{app_dir}/.env"
     env_app_secrets = f"{app_dir}/.env.secrets"
@@ -547,7 +551,9 @@ def generate_systemd_units(
 
     env_directives = f"""EnvironmentFile=-{env_app_file}
 EnvironmentFile=-{env_app_secrets}
-EnvironmentFile=-{env_app_prod}"""
+EnvironmentFile=-{env_app_prod}
+Environment=PYTHONUNBUFFERED=1
+Environment=REASON_LOG_DIR={log_dir}"""
 
     sandboxing = f"""NoNewPrivileges=yes
 ProtectSystem=strict
@@ -592,6 +598,8 @@ Description=Reason Web Server (Granian ASGI)
 After=network.target docker.service reason-docker.service
 Wants=network.target reason-docker.service
 PartOf=reason.service
+StartLimitIntervalSec=60s
+StartLimitBurst=5
 
 [Service]
 Type=simple
@@ -606,8 +614,10 @@ Environment=DJANGO_STATIC_ROOT={static_dir}
 Environment=PYTHONPATH={app_dir}
 Environment=HF_HOME={hf_cache_dir}
 ExecStart={venv_dir}/bin/granian --interface asgi --host 127.0.0.1 --port {granian_port} verbal_config.asgi:application
-Restart=always
-RestartSec=3s
+Restart=on-failure
+RestartSec=5s
+StandardOutput=journal
+StandardError=journal
 LimitNOFILE=65535
 {sandboxing}
 
@@ -620,6 +630,8 @@ Description=Reason Background Task Worker
 After=network.target docker.service reason-docker.service
 Wants=network.target reason-docker.service
 PartOf=reason.service
+StartLimitIntervalSec=60s
+StartLimitBurst=5
 
 [Service]
 Type=simple
@@ -633,8 +645,10 @@ Environment=VERBAL_ROLE=worker
 Environment=PYTHONPATH={app_dir}
 Environment=HF_HOME={hf_cache_dir}
 ExecStart={venv_dir}/bin/python manage.py runtaskworker
-Restart=always
+Restart=on-failure
 RestartSec=5s
+StandardOutput=journal
+StandardError=journal
 {sandboxing}
 
 [Install]
@@ -646,6 +660,8 @@ Description=Reason Task Scheduler (NightManager)
 After=network.target docker.service reason-docker.service
 Wants=network.target reason-docker.service
 PartOf=reason.service
+StartLimitIntervalSec=60s
+StartLimitBurst=5
 
 [Service]
 Type=simple
@@ -659,8 +675,10 @@ Environment=VERBAL_ROLE=scheduler
 Environment=PYTHONPATH={app_dir}
 Environment=HF_HOME={hf_cache_dir}
 ExecStart={venv_dir}/bin/python manage.py runtaskscheduler
-Restart=always
+Restart=on-failure
 RestartSec=10s
+StandardOutput=journal
+StandardError=journal
 {sandboxing}
 
 [Install]
@@ -672,6 +690,8 @@ Description=Reason Local AI Model Inference Service
 After=network.target docker.service reason-docker.service
 Wants=network.target reason-docker.service
 PartOf=reason.service
+StartLimitIntervalSec=60s
+StartLimitBurst=5
 
 [Service]
 Type=simple
@@ -685,8 +705,10 @@ Environment=VERBAL_ROLE=inference
 Environment=PYTHONPATH={app_dir}
 Environment=HF_HOME={hf_cache_dir}
 ExecStart={venv_dir}/bin/python manage.py runserver --noreload 127.0.0.1:{inference_port}
-Restart=always
+Restart=on-failure
 RestartSec=5s
+StandardOutput=journal
+StandardError=journal
 {sandboxing}
 
 [Install]
@@ -697,6 +719,8 @@ WantedBy=multi-user.target reason.service
 Description=Reason llama.cpp CPU-First Local Inference Service
 After=network.target
 PartOf=reason.service
+StartLimitIntervalSec=60s
+StartLimitBurst=5
 
 [Service]
 Type=simple
@@ -709,8 +733,10 @@ Environment=VERBAL_ENV=prod
 Environment=VERBAL_ROLE=inference
 Environment=LLAMACPP_PORT={llamacpp_port}
 ExecStart={bin_dir}/llama-server --host 127.0.0.1 --port {llamacpp_port}
-Restart=always
+Restart=on-failure
 RestartSec=5s
+StandardOutput=journal
+StandardError=journal
 {sandboxing}
 
 [Install]
@@ -863,8 +889,14 @@ def provision_system(c):
     c.sudo(f"chown -h {DJANGO_USER}:{WEB_GROUP} {MEDIA_DIR}")
 
     # 8. Backups and logs
-    c.sudo(f"chown -R {DEPLOY_USER}:{DJANGO_USER} {BACKUP_DIR} {LOG_DIR}")
-    c.sudo(f"chmod 0750 {BACKUP_DIR} {LOG_DIR}")
+    c.sudo(f"chown -R {DEPLOY_USER}:{DJANGO_USER} {BACKUP_DIR}")
+    c.sudo(f"chmod 0750 {BACKUP_DIR}")
+    c.sudo(f"chown -R {DJANGO_USER}:{WEB_GROUP} {LOG_DIR}")
+    sudo_bash(c, f"chmod 2775 {LOG_DIR}")
+
+    # Symlink /var/log/reason to LOG_DIR (/srv/reason/logs) for standard Linux convention
+    c.sudo("mkdir -p /var/log")
+    c.sudo(f"ln -sfn {LOG_DIR} /var/log/reason")
 
     # 9. Repo, App, Bin & Models directories
     c.sudo(f"chown -R {DEPLOY_USER}:{WEB_GROUP} {APP_DIR} {REPO_DIR} {BIN_DIR} {MODELS_DIR}")
@@ -1848,7 +1880,70 @@ def health_check(c):
         print(f"⏳ Attempt {attempt}/{max_retries}: Waiting for services to become healthy (HTTP {http_code or 'none'})...")
         time.sleep(retry_interval)
 
-    raise Exit(f"🚨 Health check failed after {max_retries} attempts! Inspect journalctl -u reason-web.")
+    raise Exit(f"🚨 Health check failed after {max_retries} attempts! Inspect logs via 'fab logs -s reason-web' or 'journalctl -u reason-web'.")
+
+
+@task
+def logs(c, service="all", lines=50, follow=False, errors_only=False):
+    """
+    Displays or follows aggregated or service-specific logs from systemd journald and /srv/reason/logs.
+
+    Arguments:
+        service: Service alias or name: 'all', 'web', 'worker', 'scheduler', 'inference', 'llamacpp',
+                 or full systemd unit name like 'reason-inference'. Default: 'all'.
+        lines: Number of recent lines to display. Default: 50.
+        follow: If True, stream logs live (-f). Default: False.
+        errors_only: If True, filter for errors only (-p err..alert). Default: False.
+
+    Examples:
+        fab logs
+        fab logs -s inference
+        fab logs -s web -f
+        fab logs -s worker -l 100 --errors-only
+    """
+    ensure_sudo(c)
+
+    service_alias_map = {
+        "all": [
+            "reason-web.service",
+            "reason-inference.service",
+            "reason-worker.service",
+            "reason-scheduler.service",
+            "reason-llamacpp.service",
+        ],
+        "web": ["reason-web.service"],
+        "inference": ["reason-inference.service"],
+        "worker": ["reason-worker.service"],
+        "scheduler": ["reason-scheduler.service"],
+        "llamacpp": ["reason-llamacpp.service"],
+        "docker": ["reason-docker.service"],
+    }
+
+    key = str(service).strip().lower()
+    if key in service_alias_map:
+        target_units = service_alias_map[key]
+    elif key.startswith("reason-"):
+        unit_name = key if key.endswith(".service") else f"{key}.service"
+        target_units = [unit_name]
+    else:
+        target_units = [f"reason-{key}.service"]
+
+    units_flag = " ".join([f"-u {u}" for u in target_units])
+    lines_val = int(lines)
+    n_flag = f"-n {lines_val}"
+    f_flag = "-f" if follow else "--no-pager"
+    p_flag = "-p err..alert" if errors_only else ""
+
+    display_targets = ", ".join(target_units)
+    print(f"📋 [Logs] Displaying logs for: {display_targets} (lines: {lines_val}, follow: {follow})")
+    print(f"💡 Tip: File logs are also available at {LOG_DIR}/ and /var/log/reason/\n")
+
+    cmd_parts = ["journalctl", units_flag, n_flag]
+    if p_flag:
+        cmd_parts.append(p_flag)
+    cmd_parts.append(f_flag)
+    journal_cmd = " ".join(cmd_parts)
+    c.sudo(journal_cmd, pty=True)
 
 
 # ==============================================================================
@@ -1953,6 +2048,7 @@ if __name__ == "__main__":
         "health_check": health_check,
         "build-llamacpp": build_llamacpp,
         "build_llamacpp": build_llamacpp,
+        "logs": logs,
         "deploy": deploy,
     }
     func = task_map.get(task_name)

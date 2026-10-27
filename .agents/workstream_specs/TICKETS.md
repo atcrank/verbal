@@ -54,6 +54,10 @@
 - [ ] [Architecture/Discussion] Dynamic Heterogeneous Hardware Allocation & Multi-PC Task Routing (Status: pending) -> [Link to note](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20261026_dynamic_heterogeneous_hardware_allocation.md)
   *Summary*: Deep grill-me architecture session to design dynamic multi-node capability advertisement, transient node failover, and hardware-aware task routing across fluctuating home network machines (e.g., 16GB VRAM laptop, 1660 Ti, and multi-core high-RAM CPU workstation).
 
-- [ ] [Feature/Inference] WS21: Native llama.cpp CPU-First Inference Support & GGUF Integration (Status: in-progress) -> [ws21_native_llamacpp_inference_support.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/ws21_native_llamacpp_inference_support.md)
+- [ ] [Feature/Inference] WS21: Native llama.cpp CPU-First Inference Support & GGUF Integration (Status: completed) -> [ws21_native_llamacpp_inference_support.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/ws21_native_llamacpp_inference_support.md)
   *Summary*: Implement first-class support for llama.cpp as a dedicated CPU-first hosting backend in llm_api. Adds LLAMACPP hosting backend choice, GGUF quantization formats, client routing, CPU hardware inspection & thread advisor, and Docker/systemd deployment templates.
+
+- [ ] [Operations/Resilience] WS22: Service Logging Accessibility, Traceback Visibility & Dual Output Architecture (Status: in-progress) -> [ws22_service_logging_accessibility.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/ws22_service_logging_accessibility.md)
+  *Summary*: Eliminate restart churn obscuring Python tracebacks, set PYTHONUNBUFFERED=1, configure systemd restart rate limiting, add RotatingFileHandler dual logging to /srv/reason/logs/ (and /var/log/reason symlink), and implement first-class `fab logs` CLI tooling.
+
 

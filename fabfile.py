@@ -48,6 +48,7 @@ if __name__ == "__main__":
         "health_check": fabric_deploy.health_check,
         "build-llamacpp": fabric_deploy.build_llamacpp,
         "build_llamacpp": fabric_deploy.build_llamacpp,
+        "logs": fabric_deploy.logs,
         "deploy": fabric_deploy.deploy,
     }
     func = task_map.get(task_name)
