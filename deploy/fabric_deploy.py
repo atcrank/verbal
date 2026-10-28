@@ -135,7 +135,7 @@ def reload_deploy_config(deploy_env_file=None, base_env_file=None):
     global STATIC_DIR, MEDIA_DIR, BACKUP_DIR, LOG_DIR, HF_CACHE_DIR, DEPLOY_USER
     global DJANGO_USER, WEB_GROUP, DOMAIN, GRANIAN_PORT, INFERENCE_PORT, SSL_DIR
     global SSL_CERT_PATH, SSL_KEY_PATH, DB_CONTAINER, DB_NAME, DB_USER, DB_PORT, DB_PASSWORD
-    global BIN_DIR, MODELS_DIR, LLAMACPP_PORT
+    global BIN_DIR, MODELS_DIR, LLAMACPP_PORT, EMBEDDING_MODEL
     global LOADED_ENV_FILE
 
     LOADED_ENV_FILE = loaded
@@ -152,6 +152,7 @@ def reload_deploy_config(deploy_env_file=None, base_env_file=None):
     LOG_DIR = os.environ.get("REASON_LOG_DIR", f"{BASE_DIR}/logs")
     BIN_DIR = os.environ.get("REASON_BIN_DIR", f"{BASE_DIR}/bin")
     MODELS_DIR = os.environ.get("REASON_MODELS_DIR", f"{BASE_DIR}/models")
+    EMBEDDING_MODEL = os.environ.get("REASON_EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
 
     HF_CACHE_DIR = os.environ.get("REASON_HF_CACHE", "/var/lib/hf_home")
     DEPLOY_USER = os.environ.get("REASON_DEPLOY_USER", "verbal_deploy")
@@ -520,6 +521,7 @@ def generate_systemd_units(
     bin_dir=BIN_DIR,
     models_dir=MODELS_DIR,
     hf_cache_dir=HF_CACHE_DIR,
+    embedding_model=None,
     django_user=DJANGO_USER,
     web_group=WEB_GROUP,
     granian_port=GRANIAN_PORT,
@@ -544,7 +546,10 @@ def generate_systemd_units(
         True
         >>> "Environment=PYTHONUNBUFFERED=1" in units["reason-web.service"]
         True
+        >>> "Environment=REASON_EMBEDDING_MODEL=" in units["reason-web.service"]
+        True
     """
+    embedding_model = embedding_model or EMBEDDING_MODEL
     env_app_file = f"{app_dir}/.env"
     env_app_secrets = f"{app_dir}/.env.secrets"
     env_app_prod = f"{app_dir}/.env.production"
@@ -553,7 +558,8 @@ def generate_systemd_units(
 EnvironmentFile=-{env_app_secrets}
 EnvironmentFile=-{env_app_prod}
 Environment=PYTHONUNBUFFERED=1
-Environment=REASON_LOG_DIR={log_dir}"""
+Environment=REASON_LOG_DIR={log_dir}
+Environment=REASON_EMBEDDING_MODEL={embedding_model}"""
 
     sandboxing = f"""NoNewPrivileges=yes
 ProtectSystem=strict

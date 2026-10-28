@@ -125,12 +125,19 @@ class TestSystemdUnitsGeneration(SimpleTestCase):
         self.assertNotIn("reason.target", self.units)
 
     def test_unbuffered_python_and_logging_environment(self):
-        """Verifies PYTHONUNBUFFERED=1 and REASON_LOG_DIR are passed to managed services."""
+        """Verifies PYTHONUNBUFFERED=1, REASON_LOG_DIR, and REASON_EMBEDDING_MODEL are passed to managed services."""
         for name in ["reason-web.service", "reason-worker.service", "reason-scheduler.service", "reason-inference.service", "reason-llamacpp.service"]:
             unit = self.units[name]
             with self.subTest(unit=name):
                 self.assertIn("Environment=PYTHONUNBUFFERED=1", unit)
                 self.assertIn("Environment=REASON_LOG_DIR=/srv/reason/logs", unit)
+                self.assertIn("Environment=REASON_EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2", unit)
+
+    def test_custom_embedding_model_in_systemd_units(self):
+        """Verifies generate_systemd_units renders a custom embedding model when specified."""
+        custom_units = generate_systemd_units(embedding_model="/srv/reason/models/embeddings/custom-model")
+        for name in ["reason-web.service", "reason-worker.service", "reason-inference.service"]:
+            self.assertIn("Environment=REASON_EMBEDDING_MODEL=/srv/reason/models/embeddings/custom-model", custom_units[name])
 
     def test_systemd_restart_limits_and_failure_policy(self):
         """Verifies services use restart rate limiting (StartLimitBurst=5) and on-failure policy."""

@@ -60,4 +60,8 @@
 - [ ] [Operations/Resilience] WS22: Service Logging Accessibility, Traceback Visibility & Dual Output Architecture (Status: completed) -> [ws22_service_logging_accessibility.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/ws22_service_logging_accessibility.md)
   *Summary*: Eliminate restart churn obscuring Python tracebacks, set PYTHONUNBUFFERED=1, configure systemd restart rate limiting, add RotatingFileHandler dual logging to /srv/reason/logs/ (and /var/log/reason symlink), and implement first-class `fab logs` CLI tooling.
 
+- [x] [Operations/RAG] WS23: Configurable RAG Embedding Model & Offline Path Resolution (Status: completed) -> [ws23_configurable_rag_embeddings.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/ws23_configurable_rag_embeddings.md)
+  *Summary*: Decouple RAGService and semantic diversity metrics from hardcoded all-MiniLM-L6-v2. Introduce REASON_EMBEDDING_MODEL and settings.EMBEDDING_MODEL_NAME defaulting to sentence-transformers/all-MiniLM-L6-v2, support offline local directory loading with local_files_only=True, and propagate environment directives into Fabric deployment templates while preserving the 384-dimensional pgvector schema.
+
+
 

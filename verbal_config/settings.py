@@ -231,6 +231,16 @@ LLAMACPP_DEFAULT_CTX_SIZE = int(os.environ.get("LLAMACPP_DEFAULT_CTX_SIZE", "819
 LLAMACPP_DEFAULT_THREADS = int(os.environ.get("LLAMACPP_DEFAULT_THREADS", "0"))  # 0 = auto-detect
 
 # ------------------------------------------------------------------------
+# EMBEDDING & VECTOR SEARCH CONFIGURATION (WS23)
+# ------------------------------------------------------------------------
+# Canonical SentenceTransformer model ID or local directory path.
+# Must produce 384 dimensions matching pgvector VectorField(dimensions=384).
+EMBEDDING_MODEL_NAME = os.environ.get(
+    "REASON_EMBEDDING_MODEL",
+    os.environ.get("EMBEDDING_MODEL_NAME", "sentence-transformers/all-MiniLM-L6-v2")
+)
+
+# ------------------------------------------------------------------------
 # DJANGO TASKS CONFIGURATION (PostgreSQL DB Backend)
 # ------------------------------------------------------------------------
 
