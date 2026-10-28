@@ -57,7 +57,7 @@
 - [ ] [Feature/Inference] WS21: Native llama.cpp CPU-First Inference Support & GGUF Integration (Status: completed) -> [ws21_native_llamacpp_inference_support.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/ws21_native_llamacpp_inference_support.md)
   *Summary*: Implement first-class support for llama.cpp as a dedicated CPU-first hosting backend in llm_api. Adds LLAMACPP hosting backend choice, GGUF quantization formats, client routing, CPU hardware inspection & thread advisor, and Docker/systemd deployment templates.
 
-- [ ] [Operations/Resilience] WS22: Service Logging Accessibility, Traceback Visibility & Dual Output Architecture (Status: in-progress) -> [ws22_service_logging_accessibility.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/ws22_service_logging_accessibility.md)
+- [ ] [Operations/Resilience] WS22: Service Logging Accessibility, Traceback Visibility & Dual Output Architecture (Status: completed) -> [ws22_service_logging_accessibility.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/ws22_service_logging_accessibility.md)
   *Summary*: Eliminate restart churn obscuring Python tracebacks, set PYTHONUNBUFFERED=1, configure systemd restart rate limiting, add RotatingFileHandler dual logging to /srv/reason/logs/ (and /var/log/reason symlink), and implement first-class `fab logs` CLI tooling.
 
 
