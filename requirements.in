@@ -20,6 +20,8 @@ torch
 accelerate
 bitsandbytes
 pandas
+numpy<2.0.0
+pyarrow<21.0.0
 unsloth
 peft
 
@@ -45,8 +47,8 @@ python-pptx
 
 # --- NLP & Custom Vendored Resources ---
 spacy
-blis==1.3.3
-scispacy>=0.5.4
+blis
+scispacy
 pyspellchecker
 
 ./resources/wheels/en_core_web_sm-3.8.0-py3-none-any.whl
