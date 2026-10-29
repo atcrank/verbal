@@ -55,6 +55,7 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../deploy.html">Production Deployment &amp; Operations Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../using_ollama.html">Ollama as Local AI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../demo_ui_trials.html">Demo UI Empirical Trials &amp; Verification Reports</a></li>
@@ -166,6 +167,9 @@
     <span class="n">total_threads</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">total_ram_mb</span><span class="p">:</span> <span class="nb">float</span>
     <span class="n">available_ram_mb</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">has_avx</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">has_avx2</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">has_avx512</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">total_ram_gb</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
@@ -173,7 +177,23 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">available_ram_gb</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-        <span class="k">return</span> <span class="nb">round</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">available_ram_mb</span> <span class="o">/</span> <span class="mf">1024.0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="nb">round</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">available_ram_mb</span> <span class="o">/</span> <span class="mf">1024.0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">recommended_llamacpp_threads</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reserve 1 core for system / web tasks, or use 1 on single-core systems.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">physical_cores</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">vector_instructions_str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">instructions</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_avx512</span><span class="p">:</span>
+            <span class="n">instructions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;AVX-512&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_avx2</span><span class="p">:</span>
+            <span class="n">instructions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;AVX2&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_avx</span><span class="p">:</span>
+            <span class="n">instructions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;AVX&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">instructions</span><span class="p">)</span> <span class="k">if</span> <span class="n">instructions</span> <span class="k">else</span> <span class="s2">&quot;Standard x86_64&quot;</span></div>
 
 
 
@@ -191,8 +211,8 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">cuda_available</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_device</span><span class="p">:</span>
             <span class="k">return</span> <span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;CPU Mode: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">host_cpu</span><span class="o">.</span><span class="n">physical_cores</span><span class="si">}</span><span class="s2"> cores / </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">host_cpu</span><span class="o">.</span><span class="n">total_threads</span><span class="si">}</span><span class="s2"> threads, &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">host_cpu</span><span class="o">.</span><span class="n">available_ram_gb</span><span class="si">}</span><span class="s2"> GB RAM available.&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;CPU Mode: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">host_cpu</span><span class="o">.</span><span class="n">physical_cores</span><span class="si">}</span><span class="s2"> cores / </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">host_cpu</span><span class="o">.</span><span class="n">total_threads</span><span class="si">}</span><span class="s2"> threads &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">host_cpu</span><span class="o">.</span><span class="n">vector_instructions_str</span><span class="si">}</span><span class="s2">), </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">host_cpu</span><span class="o">.</span><span class="n">available_ram_gb</span><span class="si">}</span><span class="s2"> GB RAM available.&quot;</span>
             <span class="p">)</span>
         <span class="n">dev</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_device</span>
         <span class="k">return</span> <span class="p">(</span>
@@ -211,6 +231,9 @@
     <span class="n">vllm_max_model_len</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">vllm_dtype</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">recommended_quantization</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">llamacpp_threads</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span>
+    <span class="n">llamacpp_max_context</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8192</span>
+    <span class="n">llamacpp_recommended_quant</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;gguf_q4_k_m&quot;</span>
     <span class="n">advisory_notes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
 
 <div class="viewcode-block" id="BackendRecommendation.to_dict">
@@ -221,6 +244,9 @@
             <span class="s2">&quot;vllm_max_model_len&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">vllm_max_model_len</span><span class="p">,</span>
             <span class="s2">&quot;vllm_dtype&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">vllm_dtype</span><span class="p">,</span>
             <span class="s2">&quot;recommended_quantization&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">recommended_quantization</span><span class="p">,</span>
+            <span class="s2">&quot;llamacpp_threads&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">llamacpp_threads</span><span class="p">,</span>
+            <span class="s2">&quot;llamacpp_max_context&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">llamacpp_max_context</span><span class="p">,</span>
+            <span class="s2">&quot;llamacpp_recommended_quant&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">llamacpp_recommended_quant</span><span class="p">,</span>
             <span class="s2">&quot;advisory_notes&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">advisory_notes</span><span class="p">,</span>
         <span class="p">}</span></div>
 </div>
@@ -236,11 +262,32 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># 1. CPU &amp; System RAM</span>
     <span class="n">vm</span> <span class="o">=</span> <span class="n">psutil</span><span class="o">.</span><span class="n">virtual_memory</span><span class="p">()</span>
+
+    <span class="c1"># Detect CPU vectorization instruction flags on Linux</span>
+    <span class="n">has_avx</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">has_avx2</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">has_avx512</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="s2">&quot;/proc/cpuinfo&quot;</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;/proc/cpuinfo&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;flags&quot;</span><span class="p">):</span>
+                        <span class="n">cpu_flags</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+                        <span class="n">has_avx</span> <span class="o">=</span> <span class="s2">&quot;avx&quot;</span> <span class="ow">in</span> <span class="n">cpu_flags</span>
+                        <span class="n">has_avx2</span> <span class="o">=</span> <span class="s2">&quot;avx2&quot;</span> <span class="ow">in</span> <span class="n">cpu_flags</span>
+                        <span class="n">has_avx512</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="s2">&quot;avx512&quot;</span> <span class="ow">in</span> <span class="n">fl</span> <span class="k">for</span> <span class="n">fl</span> <span class="ow">in</span> <span class="n">cpu_flags</span><span class="p">)</span>
+                        <span class="k">break</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
     <span class="n">host_cpu</span> <span class="o">=</span> <span class="n">HostCPUInfo</span><span class="p">(</span>
         <span class="n">physical_cores</span><span class="o">=</span><span class="n">psutil</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">(</span><span class="n">logical</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="ow">or</span> <span class="mi">1</span><span class="p">,</span>
         <span class="n">total_threads</span><span class="o">=</span><span class="n">psutil</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">(</span><span class="n">logical</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="ow">or</span> <span class="mi">1</span><span class="p">,</span>
         <span class="n">total_ram_mb</span><span class="o">=</span><span class="nb">round</span><span class="p">(</span><span class="n">vm</span><span class="o">.</span><span class="n">total</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1024.0</span> <span class="o">*</span> <span class="mf">1024.0</span><span class="p">),</span> <span class="mi">2</span><span class="p">),</span>
         <span class="n">available_ram_mb</span><span class="o">=</span><span class="nb">round</span><span class="p">(</span><span class="n">vm</span><span class="o">.</span><span class="n">available</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1024.0</span> <span class="o">*</span> <span class="mf">1024.0</span><span class="p">),</span> <span class="mi">2</span><span class="p">),</span>
+        <span class="n">has_avx</span><span class="o">=</span><span class="n">has_avx</span><span class="p">,</span>
+        <span class="n">has_avx2</span><span class="o">=</span><span class="n">has_avx2</span><span class="p">,</span>
+        <span class="n">has_avx512</span><span class="o">=</span><span class="n">has_avx512</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="c1"># 2. CUDA GPU Inspection</span>
@@ -324,15 +371,34 @@
 
     <span class="n">notes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 
+    <span class="c1"># Calculate CPU llama.cpp threads and context recommendations</span>
+    <span class="n">llamacpp_threads</span> <span class="o">=</span> <span class="n">profile</span><span class="o">.</span><span class="n">host_cpu</span><span class="o">.</span><span class="n">recommended_llamacpp_threads</span>
+    <span class="n">usable_ram_gb</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">profile</span><span class="o">.</span><span class="n">host_cpu</span><span class="o">.</span><span class="n">available_ram_gb</span> <span class="o">-</span> <span class="mf">3.0</span><span class="p">)</span>  <span class="c1"># Reserve 3 GB for OS/Postgres</span>
+    <span class="k">if</span> <span class="n">usable_ram_gb</span> <span class="o">&gt;=</span> <span class="mf">16.0</span><span class="p">:</span>
+        <span class="n">llamacpp_ctx</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">requested_context</span><span class="p">,</span> <span class="mi">16384</span><span class="p">)</span>
+        <span class="n">llamacpp_quant</span> <span class="o">=</span> <span class="s2">&quot;gguf_q8_0&quot;</span> <span class="k">if</span> <span class="p">(</span><span class="n">model_param_size_b</span> <span class="ow">or</span> <span class="mf">3.0</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mf">8.0</span> <span class="k">else</span> <span class="s2">&quot;gguf_q4_k_m&quot;</span>
+    <span class="k">elif</span> <span class="n">usable_ram_gb</span> <span class="o">&gt;=</span> <span class="mf">8.0</span><span class="p">:</span>
+        <span class="n">llamacpp_ctx</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">requested_context</span><span class="p">,</span> <span class="mi">8192</span><span class="p">)</span>
+        <span class="n">llamacpp_quant</span> <span class="o">=</span> <span class="s2">&quot;gguf_q4_k_m&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">llamacpp_ctx</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">requested_context</span><span class="p">,</span> <span class="mi">4096</span><span class="p">)</span>
+        <span class="n">llamacpp_quant</span> <span class="o">=</span> <span class="s2">&quot;gguf_q4_k_m&quot;</span>
+
     <span class="c1"># CPU-only fallback</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">profile</span><span class="o">.</span><span class="n">cuda_available</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">profile</span><span class="o">.</span><span class="n">primary_device</span><span class="p">:</span>
         <span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;No CUDA GPU detected. Local inference will execute on the CPU.&quot;</span><span class="p">)</span>
-        <span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;For CPU execution, Ollama with GGUF quantized models is strongly recommended.&quot;</span><span class="p">)</span>
+        <span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;For CPU execution, llama.cpp with </span><span class="si">{</span><span class="n">profile</span><span class="o">.</span><span class="n">host_cpu</span><span class="o">.</span><span class="n">vector_instructions_str</span><span class="si">}</span><span class="s2"> instructions is recommended &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">llamacpp_threads</span><span class="si">}</span><span class="s2"> threads allocated, </span><span class="si">{</span><span class="n">usable_ram_gb</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> GB RAM available for GGUF weights).&quot;</span>
+        <span class="p">)</span>
         <span class="k">return</span> <span class="n">BackendRecommendation</span><span class="p">(</span>
             <span class="n">vllm_gpu_memory_utilization</span><span class="o">=</span><span class="mf">0.50</span><span class="p">,</span>
             <span class="n">vllm_max_model_len</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="n">requested_context</span><span class="p">,</span> <span class="mi">2048</span><span class="p">),</span>
             <span class="n">vllm_dtype</span><span class="o">=</span><span class="s2">&quot;float32&quot;</span><span class="p">,</span>
-            <span class="n">recommended_quantization</span><span class="o">=</span><span class="s2">&quot;nf4&quot;</span><span class="p">,</span>
+            <span class="n">recommended_quantization</span><span class="o">=</span><span class="s2">&quot;gguf_q4_k_m&quot;</span><span class="p">,</span>
+            <span class="n">llamacpp_threads</span><span class="o">=</span><span class="n">llamacpp_threads</span><span class="p">,</span>
+            <span class="n">llamacpp_max_context</span><span class="o">=</span><span class="n">llamacpp_ctx</span><span class="p">,</span>
+            <span class="n">llamacpp_recommended_quant</span><span class="o">=</span><span class="n">llamacpp_quant</span><span class="p">,</span>
             <span class="n">advisory_notes</span><span class="o">=</span><span class="n">notes</span><span class="p">,</span>
         <span class="p">)</span>
 
@@ -408,6 +474,9 @@
         <span class="n">vllm_max_model_len</span><span class="o">=</span><span class="n">max_context</span><span class="p">,</span>
         <span class="n">vllm_dtype</span><span class="o">=</span><span class="n">vllm_dtype</span><span class="p">,</span>
         <span class="n">recommended_quantization</span><span class="o">=</span><span class="n">rec_quant</span><span class="p">,</span>
+        <span class="n">llamacpp_threads</span><span class="o">=</span><span class="n">llamacpp_threads</span><span class="p">,</span>
+        <span class="n">llamacpp_max_context</span><span class="o">=</span><span class="n">llamacpp_ctx</span><span class="p">,</span>
+        <span class="n">llamacpp_recommended_quant</span><span class="o">=</span><span class="n">llamacpp_quant</span><span class="p">,</span>
         <span class="n">advisory_notes</span><span class="o">=</span><span class="n">notes</span><span class="p">,</span>
     <span class="p">)</span></div>
 

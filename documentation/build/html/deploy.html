@@ -76,6 +76,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#automated-deployment-with-fabric">3. Automated Deployment with Fabric</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#full-server-bootstrap-setup-all">Full Server Bootstrap (<code class="docutils literal notranslate"><span class="pre">setup-all</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#deploy-key-authorization-graceful-setup">Deploy Key Authorization &amp; Graceful Setup</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#routine-application-deployments-deploy">Routine Application Deployments (<code class="docutils literal notranslate"><span class="pre">deploy</span></code>)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#granular-fabric-task-reference">Granular Fabric Task Reference</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#air-gapped-custom-mirror-options">Air-Gapped &amp; Custom Mirror Options</a></li>
@@ -100,6 +101,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#nginx-502-bad-gateway">Nginx “502 Bad Gateway”</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemd-service-resilience-wants-vs-requires">Systemd Service Resilience: <code class="docutils literal notranslate"><span class="pre">Wants=</span></code> vs <code class="docutils literal notranslate"><span class="pre">Requires=</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#host-network-neutrality">Host Network Neutrality</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nginx-duplicate-default-server-port-80">Nginx Duplicate Default Server (Port 80)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemd-sandboxing-permission-denied">Systemd Sandboxing “Permission Denied”</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#django-improperlyconfigured-on-startup">Django <code class="docutils literal notranslate"><span class="pre">ImproperlyConfigured</span></code> on Startup</a></li>
 </ul>
@@ -159,35 +161,37 @@
 <ul>
 <li><p><a class="reference internal" href="#prerequisites" id="id9">Prerequisites</a></p></li>
 <li><p><a class="reference internal" href="#full-server-bootstrap-setup-all" id="id10">Full Server Bootstrap (<code class="docutils literal notranslate"><span class="pre">setup-all</span></code>)</a></p></li>
-<li><p><a class="reference internal" href="#routine-application-deployments-deploy" id="id11">Routine Application Deployments (<code class="docutils literal notranslate"><span class="pre">deploy</span></code>)</a></p></li>
-<li><p><a class="reference internal" href="#granular-fabric-task-reference" id="id12">Granular Fabric Task Reference</a></p></li>
-<li><p><a class="reference internal" href="#air-gapped-custom-mirror-options" id="id13">Air-Gapped &amp; Custom Mirror Options</a></p></li>
+<li><p><a class="reference internal" href="#deploy-key-authorization-graceful-setup" id="id11">Deploy Key Authorization &amp; Graceful Setup</a></p></li>
+<li><p><a class="reference internal" href="#routine-application-deployments-deploy" id="id12">Routine Application Deployments (<code class="docutils literal notranslate"><span class="pre">deploy</span></code>)</a></p></li>
+<li><p><a class="reference internal" href="#granular-fabric-task-reference" id="id13">Granular Fabric Task Reference</a></p></li>
+<li><p><a class="reference internal" href="#air-gapped-custom-mirror-options" id="id14">Air-Gapped &amp; Custom Mirror Options</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#configuration-bring-your-own-secrets" id="id14">4. Configuration &amp; “Bring Your Own Secrets”</a></p>
+<li><p><a class="reference internal" href="#configuration-bring-your-own-secrets" id="id15">4. Configuration &amp; “Bring Your Own Secrets”</a></p>
 <ul>
-<li><p><a class="reference internal" href="#application-environment-configuration-preservation" id="id15">Application Environment Configuration &amp; Preservation</a></p></li>
-<li><p><a class="reference internal" href="#required-environment-files" id="id16">Required Environment Files</a></p></li>
-<li><p><a class="reference internal" href="#enforced-production-invariants" id="id17">Enforced Production Invariants</a></p></li>
+<li><p><a class="reference internal" href="#application-environment-configuration-preservation" id="id16">Application Environment Configuration &amp; Preservation</a></p></li>
+<li><p><a class="reference internal" href="#required-environment-files" id="id17">Required Environment Files</a></p></li>
+<li><p><a class="reference internal" href="#enforced-production-invariants" id="id18">Enforced Production Invariants</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#tls-ssl-certificates-bring-your-own-certificates" id="id18">5. TLS/SSL Certificates: “Bring Your Own Certificates”</a></p>
+<li><p><a class="reference internal" href="#tls-ssl-certificates-bring-your-own-certificates" id="id19">5. TLS/SSL Certificates: “Bring Your Own Certificates”</a></p>
 <ul>
-<li><p><a class="reference internal" href="#certificate-file-locations" id="id19">Certificate File Locations</a></p></li>
-<li><p><a class="reference internal" href="#key-security-permissions" id="id20">Key Security &amp; Permissions</a></p></li>
-<li><p><a class="reference internal" href="#testing-internal-staging-certificates" id="id21">Testing / Internal Staging Certificates</a></p></li>
+<li><p><a class="reference internal" href="#certificate-file-locations" id="id20">Certificate File Locations</a></p></li>
+<li><p><a class="reference internal" href="#key-security-permissions" id="id21">Key Security &amp; Permissions</a></p></li>
+<li><p><a class="reference internal" href="#testing-internal-staging-certificates" id="id22">Testing / Internal Staging Certificates</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#troubleshooting-failure-modes" id="id22">6. Troubleshooting &amp; Failure Modes</a></p>
+<li><p><a class="reference internal" href="#troubleshooting-failure-modes" id="id23">6. Troubleshooting &amp; Failure Modes</a></p>
 <ul>
-<li><p><a class="reference internal" href="#postgresql-readiness-version-compatibility-port-collisions" id="id23">PostgreSQL Readiness, Version Compatibility &amp; Port Collisions</a></p></li>
-<li><p><a class="reference internal" href="#grobid-academic-pdf-parser-offline" id="id24">Grobid Academic PDF Parser Offline</a></p></li>
-<li><p><a class="reference internal" href="#code-execution-sandbox-architecture-troubleshooting" id="id25">Code Execution Sandbox Architecture &amp; Troubleshooting</a></p></li>
-<li><p><a class="reference internal" href="#nginx-502-bad-gateway" id="id26">Nginx “502 Bad Gateway”</a></p></li>
-<li><p><a class="reference internal" href="#systemd-service-resilience-wants-vs-requires" id="id27">Systemd Service Resilience: <code class="docutils literal notranslate"><span class="pre">Wants=</span></code> vs <code class="docutils literal notranslate"><span class="pre">Requires=</span></code></a></p></li>
-<li><p><a class="reference internal" href="#host-network-neutrality" id="id28">Host Network Neutrality</a></p></li>
-<li><p><a class="reference internal" href="#systemd-sandboxing-permission-denied" id="id29">Systemd Sandboxing “Permission Denied”</a></p></li>
-<li><p><a class="reference internal" href="#django-improperlyconfigured-on-startup" id="id30">Django <code class="docutils literal notranslate"><span class="pre">ImproperlyConfigured</span></code> on Startup</a></p></li>
+<li><p><a class="reference internal" href="#postgresql-readiness-version-compatibility-port-collisions" id="id24">PostgreSQL Readiness, Version Compatibility &amp; Port Collisions</a></p></li>
+<li><p><a class="reference internal" href="#grobid-academic-pdf-parser-offline" id="id25">Grobid Academic PDF Parser Offline</a></p></li>
+<li><p><a class="reference internal" href="#code-execution-sandbox-architecture-troubleshooting" id="id26">Code Execution Sandbox Architecture &amp; Troubleshooting</a></p></li>
+<li><p><a class="reference internal" href="#nginx-502-bad-gateway" id="id27">Nginx “502 Bad Gateway”</a></p></li>
+<li><p><a class="reference internal" href="#systemd-service-resilience-wants-vs-requires" id="id28">Systemd Service Resilience: <code class="docutils literal notranslate"><span class="pre">Wants=</span></code> vs <code class="docutils literal notranslate"><span class="pre">Requires=</span></code></a></p></li>
+<li><p><a class="reference internal" href="#host-network-neutrality" id="id29">Host Network Neutrality</a></p></li>
+<li><p><a class="reference internal" href="#nginx-duplicate-default-server-port-80" id="id30">Nginx Duplicate Default Server (Port 80)</a></p></li>
+<li><p><a class="reference internal" href="#systemd-sandboxing-permission-denied" id="id31">Systemd Sandboxing “Permission Denied”</a></p></li>
+<li><p><a class="reference internal" href="#django-improperlyconfigured-on-startup" id="id32">Django <code class="docutils literal notranslate"><span class="pre">ImproperlyConfigured</span></code> on Startup</a></p></li>
 </ul>
 </li>
 </ul>
@@ -278,7 +282,7 @@ fab<span class="w"> </span>backup-database
 ┌────────────────────────────────────────────────────────┐
 │    Systemd Master Umbrella: [reason.service]           │
 ├────────────────────────────────────────────────────────┤
-│  Application Tier (Hardened unprivileged user 'reason')│
+│  Application Tier (Hardened unprivileged user &#39;reason&#39;)│
 │  - [reason-web.service]       (Granian ASGI Server)    │
 │  - [reason-worker.service]    (Django Task Worker)     │
 │  - [reason-scheduler.service] (NightManager Beat)      │
@@ -401,14 +405,32 @@ python<span class="w"> </span>fabfile.py<span class="w"> </span>setup-all<span c
 </pre></div>
 </div>
 <p>What <code class="docutils literal notranslate"><span class="pre">setup-all</span></code> executes sequentially:
-1. <strong>``preflight_check``</strong>: Validates target OS architecture, disk space, and essential tooling.
-2. <strong>``provision_system``</strong>: Creates system user <code class="docutils literal notranslate"><span class="pre">reason</span></code>, group <code class="docutils literal notranslate"><span class="pre">www-data</span></code>, and provisions all <code class="docutils literal notranslate"><span class="pre">/srv/reason/</span></code> directory trees.
+1. <strong>``preflight_check``</strong>: Validates target OS architecture, disk space, and core dependencies (verifying and automatically installing <code class="docutils literal notranslate"><span class="pre">python3</span></code>, <code class="docutils literal notranslate"><span class="pre">python3-venv</span></code>, and <code class="docutils literal notranslate"><span class="pre">nginx</span></code> via <code class="docutils literal notranslate"><span class="pre">apt-get</span></code> if missing on Debian/Ubuntu).
+2. <strong>``provision_system``</strong>: Creates deployment user <code class="docutils literal notranslate"><span class="pre">verbal_deploy</span></code>, application user <code class="docutils literal notranslate"><span class="pre">verbal_run</span></code>, group <code class="docutils literal notranslate"><span class="pre">www-data</span></code>, provisions dedicated SSH keypairs for <code class="docutils literal notranslate"><span class="pre">verbal_deploy</span></code>, and provisions all <code class="docutils literal notranslate"><span class="pre">/srv/reason/</span></code> directory trees.
 3. <strong>``setup_nginx_and_ssl``</strong>: Generates hardened Nginx virtual host configurations, installs security headers, and binds TLS certificates.
 4. <strong>``setup_systemd``</strong>: Renders and writes the 6 systemd units (<code class="docutils literal notranslate"><span class="pre">reason.service</span></code>, <code class="docutils literal notranslate"><span class="pre">reason-docker.service</span></code>, and the 4 application services), runs <code class="docutils literal notranslate"><span class="pre">daemon-reload</span></code>, and enables them for boot startup.
 5. <strong>``deploy``</strong>: Triggers the initial code pull, container startup, migration run, and service activation.</p>
 </section>
+<section id="deploy-key-authorization-graceful-setup">
+<h3><a class="toc-backref" href="#id11" role="doc-backlink">Deploy Key Authorization &amp; Graceful Setup</a><a class="headerlink" href="#deploy-key-authorization-graceful-setup" title="Link to this heading"></a></h3>
+<p>During initial bootstrapping or code synchronization, the deployment user (<code class="docutils literal notranslate"><span class="pre">verbal_deploy</span></code>) must be authorized to pull from your remote Git repository (Bitbucket, GitHub, or GitLab):</p>
+<ul>
+<li><p><strong>Automated Keypair Generation</strong>:
+During <code class="docutils literal notranslate"><span class="pre">provision_system</span></code> (or upon first running <code class="docutils literal notranslate"><span class="pre">update_code</span></code>), Fabric automatically generates a dedicated <code class="docutils literal notranslate"><span class="pre">ed25519</span></code> SSH keypair in <code class="docutils literal notranslate"><span class="pre">/home/verbal_deploy/.ssh/</span></code> (with strict <code class="docutils literal notranslate"><span class="pre">0700</span></code>/<code class="docutils literal notranslate"><span class="pre">0600</span></code> permissions) if one does not already exist.</p></li>
+<li><p><strong>Graceful Banner &amp; Guidance</strong>:
+If the remote Git repository rejects SSH authentication (<code class="docutils literal notranslate"><span class="pre">Permission</span> <span class="pre">denied</span> <span class="pre">(publickey)</span></code>), Fabric intercepts the failure and presents an actionable banner displaying the server’s public key alongside step-by-step instructions for adding it as a read-only Deploy Key in your Git hosting provider.</p></li>
+<li><p><strong>Zero Stack Trace Exit</strong>:
+The task terminates cleanly without an unhandled Python traceback. Once the key is registered, re-running <code class="docutils literal notranslate"><span class="pre">fab</span> <span class="pre">deploy</span></code> (or <code class="docutils literal notranslate"><span class="pre">fab</span> <span class="pre">setup-all</span></code>) resumes immediately.</p></li>
+<li><p><strong>Local Source Alternative</strong>:
+If Git access is unavailable or undesirable on the target host, you can deploy directly from your local development repository without configuring deploy keys:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>fab<span class="w"> </span>deploy<span class="w"> </span>-H<span class="w"> </span>user@production.example.com<span class="w"> </span>--local-source<span class="o">=</span>.
+</pre></div>
+</div>
+</li>
+</ul>
+</section>
 <section id="routine-application-deployments-deploy">
-<h3><a class="toc-backref" href="#id11" role="doc-backlink">Routine Application Deployments (<code class="docutils literal notranslate"><span class="pre">deploy</span></code>)</a><a class="headerlink" href="#routine-application-deployments-deploy" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id12" role="doc-backlink">Routine Application Deployments (<code class="docutils literal notranslate"><span class="pre">deploy</span></code>)</a><a class="headerlink" href="#routine-application-deployments-deploy" title="Link to this heading"></a></h3>
 <p>For daily updates, code pushes, and routine releases, use the <code class="docutils literal notranslate"><span class="pre">deploy</span></code> task:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>fab<span class="w"> </span>deploy<span class="w"> </span>-H<span class="w"> </span>user@production.example.com<span class="w"> </span>--branch<span class="o">=</span>main
 </pre></div>
@@ -435,7 +457,7 @@ Polls <code class="docutils literal notranslate"><span class="pre">systemctl</sp
 </ol>
 </section>
 <section id="granular-fabric-task-reference">
-<h3><a class="toc-backref" href="#id12" role="doc-backlink">Granular Fabric Task Reference</a><a class="headerlink" href="#granular-fabric-task-reference" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id13" role="doc-backlink">Granular Fabric Task Reference</a><a class="headerlink" href="#granular-fabric-task-reference" title="Link to this heading"></a></h3>
 <p>Individual tasks can be called independently for targeted operations:</p>
 <table class="docutils align-default">
 <thead>
@@ -472,22 +494,22 @@ Polls <code class="docutils literal notranslate"><span class="pre">systemctl</sp
 </table>
 </section>
 <section id="air-gapped-custom-mirror-options">
-<h3><a class="toc-backref" href="#id13" role="doc-backlink">Air-Gapped &amp; Custom Mirror Options</a><a class="headerlink" href="#air-gapped-custom-mirror-options" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id14" role="doc-backlink">Air-Gapped &amp; Custom Mirror Options</a><a class="headerlink" href="#air-gapped-custom-mirror-options" title="Link to this heading"></a></h3>
 <p>When deploying into corporate or air-gapped environments, pass custom mirror flags to the deployment command:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>fab<span class="w"> </span>deploy<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--find-links<span class="o">=</span><span class="s2">"https://artifactory.local/artifactory/wheels"</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--index-url<span class="o">=</span><span class="s2">"https://artifactory.local/api/pypi/simple"</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--trusted-host<span class="o">=</span><span class="s2">"artifactory.local"</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--pytorch-index-url<span class="o">=</span><span class="s2">"https://artifactory.local/api/pypi/pytorch-wheels"</span>
+<span class="w">  </span>--find-links<span class="o">=</span><span class="s2">&quot;https://artifactory.local/artifactory/wheels&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--index-url<span class="o">=</span><span class="s2">&quot;https://artifactory.local/api/pypi/simple&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--trusted-host<span class="o">=</span><span class="s2">&quot;artifactory.local&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--pytorch-index-url<span class="o">=</span><span class="s2">&quot;https://artifactory.local/api/pypi/pytorch-wheels&quot;</span>
 </pre></div>
 </div>
 </section>
 </section>
 <section id="configuration-bring-your-own-secrets">
-<h2><a class="toc-backref" href="#id14" role="doc-backlink">4. Configuration &amp; “Bring Your Own Secrets”</a><a class="headerlink" href="#configuration-bring-your-own-secrets" title="Link to this heading"></a></h2>
+<h2><a class="toc-backref" href="#id15" role="doc-backlink">4. Configuration &amp; “Bring Your Own Secrets”</a><a class="headerlink" href="#configuration-bring-your-own-secrets" title="Link to this heading"></a></h2>
 <p>Reason enforces a strict separation of code and configuration. In production (<code class="docutils literal notranslate"><span class="pre">VERBAL_ENV=prod</span></code>), the system refuses to boot if default or insecure credentials are used.</p>
 <section id="application-environment-configuration-preservation">
-<h3><a class="toc-backref" href="#id15" role="doc-backlink">Application Environment Configuration &amp; Preservation</a><a class="headerlink" href="#application-environment-configuration-preservation" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id16" role="doc-backlink">Application Environment Configuration &amp; Preservation</a><a class="headerlink" href="#application-environment-configuration-preservation" title="Link to this heading"></a></h3>
 <p>Reason stores configuration files directly within the application directory (<code class="docutils literal notranslate"><span class="pre">/srv/reason/app/</span></code>).</p>
 <ul class="simple">
 <li><p><strong>Preservation Guarantee</strong>:
@@ -501,7 +523,7 @@ Later files override earlier ones, allowing production and local secrets overrid
 </ul>
 </section>
 <section id="required-environment-files">
-<h3><a class="toc-backref" href="#id16" role="doc-backlink">Required Environment Files</a><a class="headerlink" href="#required-environment-files" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id17" role="doc-backlink">Required Environment Files</a><a class="headerlink" href="#required-environment-files" title="Link to this heading"></a></h3>
 <p>Operators <strong>must supply their own production configuration files</strong> placed in <code class="docutils literal notranslate"><span class="pre">/srv/reason/shared/</span></code> or <code class="docutils literal notranslate"><span class="pre">/srv/reason/app/</span></code>:</p>
 <ol class="arabic">
 <li><p><strong>``/srv/reason/shared/.env`` or ``/srv/reason/app/.env``</strong>:
@@ -530,7 +552,7 @@ Optional environment files containing deployment overrides (such as <code class=
 </ol>
 </section>
 <section id="enforced-production-invariants">
-<h3><a class="toc-backref" href="#id17" role="doc-backlink">Enforced Production Invariants</a><a class="headerlink" href="#enforced-production-invariants" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id18" role="doc-backlink">Enforced Production Invariants</a><a class="headerlink" href="#enforced-production-invariants" title="Link to this heading"></a></h3>
 <p>When <code class="docutils literal notranslate"><span class="pre">VERBAL_ENV=prod</span></code> is set in <cite>verbal_config/settings.py</cite>:</p>
 <ul class="simple">
 <li><p><strong>Insecure Secret Key Rejection</strong>:
@@ -545,10 +567,10 @@ If <code class="docutils literal notranslate"><span class="pre">DB_PASSWORD</spa
 </section>
 </section>
 <section id="tls-ssl-certificates-bring-your-own-certificates">
-<h2><a class="toc-backref" href="#id18" role="doc-backlink">5. TLS/SSL Certificates: “Bring Your Own Certificates”</a><a class="headerlink" href="#tls-ssl-certificates-bring-your-own-certificates" title="Link to this heading"></a></h2>
+<h2><a class="toc-backref" href="#id19" role="doc-backlink">5. TLS/SSL Certificates: “Bring Your Own Certificates”</a><a class="headerlink" href="#tls-ssl-certificates-bring-your-own-certificates" title="Link to this heading"></a></h2>
 <p>Nginx acts as the TLS termination endpoint. In production, <strong>you must supply valid, trusted SSL/TLS certificates</strong>.</p>
 <section id="certificate-file-locations">
-<h3><a class="toc-backref" href="#id19" role="doc-backlink">Certificate File Locations</a><a class="headerlink" href="#certificate-file-locations" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id20" role="doc-backlink">Certificate File Locations</a><a class="headerlink" href="#certificate-file-locations" title="Link to this heading"></a></h3>
 <p>By default, Nginx looks for certificates matching your domain or the fallback application name:</p>
 <ul class="simple">
 <li><p><strong>Certificate / Full Chain</strong>: <code class="docutils literal notranslate"><span class="pre">/etc/ssl/certs/reason.crt</span></code> (or <code class="docutils literal notranslate"><span class="pre">/etc/ssl/certs/&lt;your_domain&gt;.crt</span></code>)</p></li>
@@ -556,7 +578,7 @@ If <code class="docutils literal notranslate"><span class="pre">DB_PASSWORD</spa
 </ul>
 </section>
 <section id="key-security-permissions">
-<h3><a class="toc-backref" href="#id20" role="doc-backlink">Key Security &amp; Permissions</a><a class="headerlink" href="#key-security-permissions" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id21" role="doc-backlink">Key Security &amp; Permissions</a><a class="headerlink" href="#key-security-permissions" title="Link to this heading"></a></h3>
 <p>Private keys must be strictly protected:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>chown<span class="w"> </span>root:ssl-cert<span class="w"> </span>/etc/ssl/private/reason.key
 sudo<span class="w"> </span>chmod<span class="w"> </span><span class="m">0600</span><span class="w"> </span>/etc/ssl/private/reason.key
@@ -565,7 +587,7 @@ sudo<span class="w"> </span>chmod<span class="w"> </span><span class="m">0644</s
 </div>
 </section>
 <section id="testing-internal-staging-certificates">
-<h3><a class="toc-backref" href="#id21" role="doc-backlink">Testing / Internal Staging Certificates</a><a class="headerlink" href="#testing-internal-staging-certificates" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id22" role="doc-backlink">Testing / Internal Staging Certificates</a><a class="headerlink" href="#testing-internal-staging-certificates" title="Link to this heading"></a></h3>
 <p>If deploying to an internal test or staging host where trusted CA certificates are not yet issued, Fabric can provision a temporary self-signed certificate:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>fab<span class="w"> </span>setup-nginx-and-ssl<span class="w"> </span>--domain<span class="o">=</span>reason.local
 </pre></div>
@@ -573,9 +595,9 @@ sudo<span class="w"> </span>chmod<span class="w"> </span><span class="m">0644</s
 </section>
 </section>
 <section id="troubleshooting-failure-modes">
-<h2><a class="toc-backref" href="#id22" role="doc-backlink">6. Troubleshooting &amp; Failure Modes</a><a class="headerlink" href="#troubleshooting-failure-modes" title="Link to this heading"></a></h2>
+<h2><a class="toc-backref" href="#id23" role="doc-backlink">6. Troubleshooting &amp; Failure Modes</a><a class="headerlink" href="#troubleshooting-failure-modes" title="Link to this heading"></a></h2>
 <section id="postgresql-readiness-version-compatibility-port-collisions">
-<h3><a class="toc-backref" href="#id23" role="doc-backlink">PostgreSQL Readiness, Version Compatibility &amp; Port Collisions</a><a class="headerlink" href="#postgresql-readiness-version-compatibility-port-collisions" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id24" role="doc-backlink">PostgreSQL Readiness, Version Compatibility &amp; Port Collisions</a><a class="headerlink" href="#postgresql-readiness-version-compatibility-port-collisions" title="Link to this heading"></a></h3>
 <ul>
 <li><p><strong>Symptom</strong>: Migrations fail with <code class="docutils literal notranslate"><span class="pre">connection</span> <span class="pre">to</span> <span class="pre">server</span> <span class="pre">at</span> <span class="pre">&quot;127.0.0.1&quot;,</span> <span class="pre">port</span> <span class="pre">5433</span> <span class="pre">failed:</span> <span class="pre">Connection</span> <span class="pre">refused</span></code>, or <code class="docutils literal notranslate"><span class="pre">verbal_db</span></code> container enters a crash loop restarting every 20 seconds.</p></li>
 <li><p><strong>Cause 1: Container Still Starting</strong>: The container is initializing. Inspect logs via <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">logs</span> <span class="pre">verbal_db</span></code>.</p></li>
@@ -583,7 +605,7 @@ sudo<span class="w"> </span>chmod<span class="w"> </span><span class="m">0644</s
 PostgreSQL data directories are strictly locked to the major version that initialized them. If the <code class="docutils literal notranslate"><span class="pre">postgres_data</span></code> volume was initialized by PostgreSQL 16 (<code class="docutils literal notranslate"><span class="pre">pgvector/pgvector:pg16</span></code>), running an image with a different major version (such as PostgreSQL 18) will trigger a fatal error:</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>FATAL: database files are incompatible with server
 DETAIL: The data directory was initialized by PostgreSQL version 16, which is not compatible with this version 18.
-HINT: You must either run "pg_upgrade" or dump/restore the data directory to upgrade...
+HINT: You must either run &quot;pg_upgrade&quot; or dump/restore the data directory to upgrade...
 </pre></div>
 </div>
 <p><strong>Resolution</strong>:
@@ -609,7 +631,7 @@ docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </spa
 </ul>
 </section>
 <section id="grobid-academic-pdf-parser-offline">
-<h3><a class="toc-backref" href="#id24" role="doc-backlink">Grobid Academic PDF Parser Offline</a><a class="headerlink" href="#grobid-academic-pdf-parser-offline" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id25" role="doc-backlink">Grobid Academic PDF Parser Offline</a><a class="headerlink" href="#grobid-academic-pdf-parser-offline" title="Link to this heading"></a></h3>
 <ul>
 <li><p><strong>Symptom</strong>: Uploaded PDFs extract raw unformatted text without citations or figure crops; logs warn <code class="docutils literal notranslate"><span class="pre">Grobid</span> <span class="pre">unavailable</span> <span class="pre">or</span> <span class="pre">blocked</span> <span class="pre">by</span> <span class="pre">security</span> <span class="pre">policies</span></code>.</p></li>
 <li><p><strong>Diagnostic</strong>:</p>
@@ -621,7 +643,7 @@ curl<span class="w"> </span>-s<span class="w"> </span>http://127.0.0.1:8070/api/
 <span class="c1"># Expected output: true</span>
 
 <span class="c1"># Test Python circuit breaker</span>
-/srv/reason/venv/bin/python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"from grobid_client.api import is_grobid_available; print(is_grobid_available())"</span>
+/srv/reason/venv/bin/python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;from grobid_client.api import is_grobid_available; print(is_grobid_available())&quot;</span>
 </pre></div>
 </div>
 </li>
@@ -634,7 +656,7 @@ Grobid requires approximately <strong>1.5 GB – 3 GB RAM</strong>. If the conta
 </ul>
 </section>
 <section id="code-execution-sandbox-architecture-troubleshooting">
-<h3><a class="toc-backref" href="#id25" role="doc-backlink">Code Execution Sandbox Architecture &amp; Troubleshooting</a><a class="headerlink" href="#code-execution-sandbox-architecture-troubleshooting" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id26" role="doc-backlink">Code Execution Sandbox Architecture &amp; Troubleshooting</a><a class="headerlink" href="#code-execution-sandbox-architecture-troubleshooting" title="Link to this heading"></a></h3>
 <ul>
 <li><p><strong>Symptom</strong>: Analyst script runs report <code class="docutils literal notranslate"><span class="pre">[EXECUTE_SCRIPT</span> <span class="pre">Error]</span> <span class="pre">Code</span> <span class="pre">execution</span> <span class="pre">sandbox</span> <span class="pre">is</span> <span class="pre">offline</span></code>, or the container logs <code class="docutils literal notranslate"><span class="pre">cannot</span> <span class="pre">start</span> <span class="pre">virtual</span> <span class="pre">environment</span></code> and restarts repeatedly.</p></li>
 <li><p><strong>Architecture &amp; Isolation Design</strong>:
@@ -660,7 +682,7 @@ Rebuild and restart the sandbox container:</p>
 </ul>
 </section>
 <section id="nginx-502-bad-gateway">
-<h3><a class="toc-backref" href="#id26" role="doc-backlink">Nginx “502 Bad Gateway”</a><a class="headerlink" href="#nginx-502-bad-gateway" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id27" role="doc-backlink">Nginx “502 Bad Gateway”</a><a class="headerlink" href="#nginx-502-bad-gateway" title="Link to this heading"></a></h3>
 <ul>
 <li><p><strong>Symptom</strong>: Navigating to the Reason web portal returns an Nginx <code class="docutils literal notranslate"><span class="pre">502</span> <span class="pre">Bad</span> <span class="pre">Gateway</span></code> error.</p></li>
 <li><p><strong>Cause</strong>: Nginx is active, but the backend ASGI application server (<code class="docutils literal notranslate"><span class="pre">reason-web.service</span></code> on <code class="docutils literal notranslate"><span class="pre">127.0.0.1:8008</span></code>) is stopped, crashing, or unable to connect to the database.</p></li>
@@ -686,7 +708,7 @@ Once the underlying issue in <code class="docutils literal notranslate"><span cl
 </ul>
 </section>
 <section id="systemd-service-resilience-wants-vs-requires">
-<h3><a class="toc-backref" href="#id27" role="doc-backlink">Systemd Service Resilience: <code class="docutils literal notranslate"><span class="pre">Wants=</span></code> vs <code class="docutils literal notranslate"><span class="pre">Requires=</span></code></a><a class="headerlink" href="#systemd-service-resilience-wants-vs-requires" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id28" role="doc-backlink">Systemd Service Resilience: <code class="docutils literal notranslate"><span class="pre">Wants=</span></code> vs <code class="docutils literal notranslate"><span class="pre">Requires=</span></code></a><a class="headerlink" href="#systemd-service-resilience-wants-vs-requires" title="Link to this heading"></a></h3>
 <ul>
 <li><p><strong>Resilience Invariant</strong>:
 All Reason application units declare <code class="docutils literal notranslate"><span class="pre">Wants=reason-docker.service</span></code> and <code class="docutils literal notranslate"><span class="pre">After=reason-docker.service</span></code> rather than <code class="docutils literal notranslate"><span class="pre">Requires=</span></code>. This ensures the services wait for Docker infrastructure on boot, while preventing cascading startup lockouts across web, worker, and scheduler units if an optional container (such as Grobid) exits or fails.</p></li>
@@ -713,7 +735,7 @@ sudo<span class="w"> </span>systemctl<span class="w"> </span>restart<span class=
 </ul>
 </section>
 <section id="host-network-neutrality">
-<h3><a class="toc-backref" href="#id28" role="doc-backlink">Host Network Neutrality</a><a class="headerlink" href="#host-network-neutrality" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id29" role="doc-backlink">Host Network Neutrality</a><a class="headerlink" href="#host-network-neutrality" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p><strong>Core Operational Rule</strong>:
 Deployment scripts and application tasks must <strong>never</strong> modify host network interfaces, <code class="docutils literal notranslate"><span class="pre">systemd-networkd</span></code>, UFW, or iptables rules, nor restart host network daemons.</p></li>
@@ -721,8 +743,24 @@ Deployment scripts and application tasks must <strong>never</strong> modify host
 When Docker spins up containers, host <code class="docutils literal notranslate"><span class="pre">veth*</span></code> interfaces are automatically created and bridged by Docker’s internal networking stack. Transient kernel log notices regarding virtual ethernet interfaces are normal and should not be addressed by tampering with host network configurations, which risks disconnecting operator SSH sessions.</p></li>
 </ul>
 </section>
+<section id="nginx-duplicate-default-server-port-80">
+<h3><a class="toc-backref" href="#id30" role="doc-backlink">Nginx Duplicate Default Server (Port 80)</a><a class="headerlink" href="#nginx-duplicate-default-server-port-80" title="Link to this heading"></a></h3>
+<ul>
+<li><p><strong>Symptom</strong>: <code class="docutils literal notranslate"><span class="pre">nginx</span> <span class="pre">-t</span></code> or <code class="docutils literal notranslate"><span class="pre">setup-nginx-and-ssl</span></code> fails with:
+<code class="docutils literal notranslate"><span class="pre">nginx:</span> <span class="pre">[emerg]</span> <span class="pre">a</span> <span class="pre">duplicate</span> <span class="pre">default</span> <span class="pre">server</span> <span class="pre">for</span> <span class="pre">0.0.0.0:80</span> <span class="pre">in</span> <span class="pre">/etc/nginx/sites-enabled/reason.conf</span></code>.</p></li>
+<li><p><strong>Cause</strong>: On Debian/Ubuntu systems, installing the <code class="docutils literal notranslate"><span class="pre">nginx</span></code> package automatically creates and enables <code class="docutils literal notranslate"><span class="pre">/etc/nginx/sites-enabled/default</span></code>, which reserves port 80 as <code class="docutils literal notranslate"><span class="pre">default_server</span></code>.</p></li>
+<li><p><strong>Remedy</strong>:
+The deployment pipeline unlinks <code class="docutils literal notranslate"><span class="pre">/etc/nginx/sites-enabled/default</span></code> by default during <code class="docutils literal notranslate"><span class="pre">setup_nginx_and_ssl</span></code> and <code class="docutils literal notranslate"><span class="pre">setup_all</span></code> (controlled via <code class="docutils literal notranslate"><span class="pre">REASON_REMOVE_DEFAULT_NGINX=true</span></code>). If encountered manually, unlink the default site and test/reload:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>rm<span class="w"> </span>-f<span class="w"> </span>/etc/nginx/sites-enabled/default
+sudo<span class="w"> </span>nginx<span class="w"> </span>-t
+sudo<span class="w"> </span>systemctl<span class="w"> </span>reload<span class="w"> </span>nginx
+</pre></div>
+</div>
+</li>
+</ul>
+</section>
 <section id="systemd-sandboxing-permission-denied">
-<h3><a class="toc-backref" href="#id29" role="doc-backlink">Systemd Sandboxing “Permission Denied”</a><a class="headerlink" href="#systemd-sandboxing-permission-denied" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id31" role="doc-backlink">Systemd Sandboxing “Permission Denied”</a><a class="headerlink" href="#systemd-sandboxing-permission-denied" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p><strong>Symptom</strong>: Application crashes with <code class="docutils literal notranslate"><span class="pre">PermissionError:</span> <span class="pre">[Errno</span> <span class="pre">13]</span> <span class="pre">Permission</span> <span class="pre">denied</span></code> when attempting to write to disk.</p></li>
 <li><p><strong>Cause</strong>: <code class="docutils literal notranslate"><span class="pre">ProtectSystem=strict</span></code> prevents systemd services from writing outside authorized directories.</p></li>
@@ -731,7 +769,7 @@ Ensure the process is attempting to write to <code class="docutils literal notra
 </ul>
 </section>
 <section id="django-improperlyconfigured-on-startup">
-<h3><a class="toc-backref" href="#id30" role="doc-backlink">Django <code class="docutils literal notranslate"><span class="pre">ImproperlyConfigured</span></code> on Startup</a><a class="headerlink" href="#django-improperlyconfigured-on-startup" title="Link to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id32" role="doc-backlink">Django <code class="docutils literal notranslate"><span class="pre">ImproperlyConfigured</span></code> on Startup</a><a class="headerlink" href="#django-improperlyconfigured-on-startup" title="Link to this heading"></a></h3>
 <ul>
 <li><p><strong>Symptom</strong>: <code class="docutils literal notranslate"><span class="pre">reason-web.service</span></code> fails to start; <code class="docutils literal notranslate"><span class="pre">journalctl</span> <span class="pre">-u</span> <span class="pre">reason-web</span></code> shows <code class="docutils literal notranslate"><span class="pre">ImproperlyConfigured:</span> <span class="pre">In</span> <span class="pre">production</span> <span class="pre">(VERBAL_ENV</span> <span class="pre">!=</span> <span class="pre">'dev'),</span> <span class="pre">a</span> <span class="pre">secure</span> <span class="pre">DJANGO_SECRET_KEY</span> <span class="pre">must</span> <span class="pre">be</span> <span class="pre">configured</span></code>.</p></li>
 <li><p><strong>Remedy</strong>:

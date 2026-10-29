@@ -145,9 +145,11 @@
 <li class="toctree-l4"><a class="reference internal" href="#llm_api.models.LocalAIModel.experiment_set"><code class="docutils literal notranslate"><span class="pre">LocalAIModel.experiment_set</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#llm_api.models.LocalAIModel.get_compute_dtype_display"><code class="docutils literal notranslate"><span class="pre">LocalAIModel.get_compute_dtype_display()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#llm_api.models.LocalAIModel.get_quantization_mode_display"><code class="docutils literal notranslate"><span class="pre">LocalAIModel.get_quantization_mode_display()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#llm_api.models.LocalAIModel.gguf_file_path"><code class="docutils literal notranslate"><span class="pre">LocalAIModel.gguf_file_path</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#llm_api.models.LocalAIModel.hf_model_id"><code class="docutils literal notranslate"><span class="pre">LocalAIModel.hf_model_id</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#llm_api.models.LocalAIModel.id"><code class="docutils literal notranslate"><span class="pre">LocalAIModel.id</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#llm_api.models.LocalAIModel.is_multimodal"><code class="docutils literal notranslate"><span class="pre">LocalAIModel.is_multimodal</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#llm_api.models.LocalAIModel.llamacpp_configurations"><code class="docutils literal notranslate"><span class="pre">LocalAIModel.llamacpp_configurations</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#llm_api.models.LocalAIModel.load_in_4bit"><code class="docutils literal notranslate"><span class="pre">LocalAIModel.load_in_4bit</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#llm_api.models.LocalAIModel.name"><code class="docutils literal notranslate"><span class="pre">LocalAIModel.name</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#llm_api.models.LocalAIModel.objects"><code class="docutils literal notranslate"><span class="pre">LocalAIModel.objects</span></code></a></li>
@@ -205,6 +207,8 @@
 <li class="toctree-l4"><a class="reference internal" href="#llm_api.models.SystemConfiguration.HostingBackend"><code class="docutils literal notranslate"><span class="pre">SystemConfiguration.HostingBackend</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#llm_api.models.SystemConfiguration.MultipleObjectsReturned"><code class="docutils literal notranslate"><span class="pre">SystemConfiguration.MultipleObjectsReturned</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#llm_api.models.SystemConfiguration.NotUpdated"><code class="docutils literal notranslate"><span class="pre">SystemConfiguration.NotUpdated</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#llm_api.models.SystemConfiguration.active_llamacpp_model"><code class="docutils literal notranslate"><span class="pre">SystemConfiguration.active_llamacpp_model</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#llm_api.models.SystemConfiguration.active_llamacpp_model_id"><code class="docutils literal notranslate"><span class="pre">SystemConfiguration.active_llamacpp_model_id</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#llm_api.models.SystemConfiguration.active_local_model"><code class="docutils literal notranslate"><span class="pre">SystemConfiguration.active_local_model</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#llm_api.models.SystemConfiguration.active_local_model_id"><code class="docutils literal notranslate"><span class="pre">SystemConfiguration.active_local_model_id</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#llm_api.models.SystemConfiguration.active_ollama_model"><code class="docutils literal notranslate"><span class="pre">SystemConfiguration.active_ollama_model</span></code></a></li>
@@ -251,6 +255,9 @@
 <li class="toctree-l3"><a class="reference internal" href="#llm_api.models.track_backend_model_changes"><code class="docutils literal notranslate"><span class="pre">track_backend_model_changes()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#llm_api.hardware.BackendRecommendation"><code class="docutils literal notranslate"><span class="pre">BackendRecommendation</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#llm_api.hardware.BackendRecommendation.advisory_notes"><code class="docutils literal notranslate"><span class="pre">BackendRecommendation.advisory_notes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#llm_api.hardware.BackendRecommendation.llamacpp_max_context"><code class="docutils literal notranslate"><span class="pre">BackendRecommendation.llamacpp_max_context</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#llm_api.hardware.BackendRecommendation.llamacpp_recommended_quant"><code class="docutils literal notranslate"><span class="pre">BackendRecommendation.llamacpp_recommended_quant</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#llm_api.hardware.BackendRecommendation.llamacpp_threads"><code class="docutils literal notranslate"><span class="pre">BackendRecommendation.llamacpp_threads</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#llm_api.hardware.BackendRecommendation.recommended_quantization"><code class="docutils literal notranslate"><span class="pre">BackendRecommendation.recommended_quantization</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#llm_api.hardware.BackendRecommendation.to_dict"><code class="docutils literal notranslate"><span class="pre">BackendRecommendation.to_dict()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#llm_api.hardware.BackendRecommendation.vllm_dtype"><code class="docutils literal notranslate"><span class="pre">BackendRecommendation.vllm_dtype</span></code></a></li>
@@ -284,10 +291,15 @@
 <li class="toctree-l3"><a class="reference internal" href="#llm_api.hardware.HostCPUInfo"><code class="docutils literal notranslate"><span class="pre">HostCPUInfo</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#llm_api.hardware.HostCPUInfo.available_ram_gb"><code class="docutils literal notranslate"><span class="pre">HostCPUInfo.available_ram_gb</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#llm_api.hardware.HostCPUInfo.available_ram_mb"><code class="docutils literal notranslate"><span class="pre">HostCPUInfo.available_ram_mb</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#llm_api.hardware.HostCPUInfo.has_avx"><code class="docutils literal notranslate"><span class="pre">HostCPUInfo.has_avx</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#llm_api.hardware.HostCPUInfo.has_avx2"><code class="docutils literal notranslate"><span class="pre">HostCPUInfo.has_avx2</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#llm_api.hardware.HostCPUInfo.has_avx512"><code class="docutils literal notranslate"><span class="pre">HostCPUInfo.has_avx512</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#llm_api.hardware.HostCPUInfo.physical_cores"><code class="docutils literal notranslate"><span class="pre">HostCPUInfo.physical_cores</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#llm_api.hardware.HostCPUInfo.recommended_llamacpp_threads"><code class="docutils literal notranslate"><span class="pre">HostCPUInfo.recommended_llamacpp_threads</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#llm_api.hardware.HostCPUInfo.total_ram_gb"><code class="docutils literal notranslate"><span class="pre">HostCPUInfo.total_ram_gb</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#llm_api.hardware.HostCPUInfo.total_ram_mb"><code class="docutils literal notranslate"><span class="pre">HostCPUInfo.total_ram_mb</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#llm_api.hardware.HostCPUInfo.total_threads"><code class="docutils literal notranslate"><span class="pre">HostCPUInfo.total_threads</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#llm_api.hardware.HostCPUInfo.vector_instructions_str"><code class="docutils literal notranslate"><span class="pre">HostCPUInfo.vector_instructions_str</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#llm_api.hardware.get_backend_recommendations"><code class="docutils literal notranslate"><span class="pre">get_backend_recommendations()</span></code></a></li>
@@ -755,7 +767,7 @@ object the first time, the query is executed.</p>
 many-to-one relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
@@ -770,7 +782,7 @@ class built by <code class="docutils literal notranslate"><span class="pre">crea
 many-to-one relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
@@ -811,7 +823,7 @@ object the first time, the query is executed.</p>
 one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
@@ -829,7 +841,7 @@ one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Restaurant</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">place</span> <span class="o">=</span> <span class="n">OneToOneField</span><span class="p">(</span><span class="n">Place</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'restaurant'</span><span class="p">)</span>
+    <span class="n">place</span> <span class="o">=</span> <span class="n">OneToOneField</span><span class="p">(</span><span class="n">Place</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;restaurant&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Place.restaurant</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseOneToOneDescriptor</span></code> instance.</p>
@@ -960,7 +972,7 @@ object the first time, the query is executed.</p>
 many-to-one relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
@@ -1000,7 +1012,7 @@ class built by <code class="docutils literal notranslate"><span class="pre">crea
 one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
@@ -1018,7 +1030,7 @@ one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
@@ -1075,7 +1087,7 @@ object the first time, the query is executed.</p>
 many-to-one relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
@@ -1123,6 +1135,26 @@ class built by <code class="docutils literal notranslate"><span class="pre">crea
 <dd></dd></dl>
 
 <dl class="py attribute">
+<dt class="sig sig-object py" id="llm_api.models.LocalAIModel.QuantizationMode.GGUF_OTHER">
+<span class="sig-name descname"><span class="pre">GGUF_OTHER</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'gguf_other'</span></em><a class="headerlink" href="#llm_api.models.LocalAIModel.QuantizationMode.GGUF_OTHER" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="llm_api.models.LocalAIModel.QuantizationMode.GGUF_Q4_K_M">
+<span class="sig-name descname"><span class="pre">GGUF_Q4_K_M</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'gguf_q4_k_m'</span></em><a class="headerlink" href="#llm_api.models.LocalAIModel.QuantizationMode.GGUF_Q4_K_M" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="llm_api.models.LocalAIModel.QuantizationMode.GGUF_Q5_K_M">
+<span class="sig-name descname"><span class="pre">GGUF_Q5_K_M</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'gguf_q5_k_m'</span></em><a class="headerlink" href="#llm_api.models.LocalAIModel.QuantizationMode.GGUF_Q5_K_M" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="llm_api.models.LocalAIModel.QuantizationMode.GGUF_Q8_0">
+<span class="sig-name descname"><span class="pre">GGUF_Q8_0</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'gguf_q8_0'</span></em><a class="headerlink" href="#llm_api.models.LocalAIModel.QuantizationMode.GGUF_Q8_0" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
 <dt class="sig sig-object py" id="llm_api.models.LocalAIModel.QuantizationMode.GPTQ">
 <span class="sig-name descname"><span class="pre">GPTQ</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'gptq'</span></em><a class="headerlink" href="#llm_api.models.LocalAIModel.QuantizationMode.GPTQ" title="Link to this definition"></a></dt>
 <dd></dd></dl>
@@ -1151,7 +1183,7 @@ class built by <code class="docutils literal notranslate"><span class="pre">crea
 many-to-one relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
@@ -1187,7 +1219,7 @@ object the first time, the query is executed.</p>
 many-to-one relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
@@ -1204,6 +1236,13 @@ class built by <code class="docutils literal notranslate"><span class="pre">crea
 <dt class="sig sig-object py" id="llm_api.models.LocalAIModel.get_quantization_mode_display">
 <span class="sig-name descname"><span class="pre">get_quantization_mode_display</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field=&lt;django.db.models.fields.CharField:</span> <span class="pre">quantization_mode&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#llm_api.models.LocalAIModel.get_quantization_mode_display" title="Link to this definition"></a></dt>
 <dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="llm_api.models.LocalAIModel.gguf_file_path">
+<span class="sig-name descname"><span class="pre">gguf_file_path</span></span><a class="headerlink" href="#llm_api.models.LocalAIModel.gguf_file_path" title="Link to this definition"></a></dt>
+<dd><p>A wrapper for a deferred-loading field. When the value is read from this
+object the first time, the query is executed.</p>
+</dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="llm_api.models.LocalAIModel.hf_model_id">
@@ -1223,6 +1262,21 @@ object the first time, the query is executed.</p>
 <dt class="sig sig-object py" id="llm_api.models.LocalAIModel.is_multimodal">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_multimodal</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#llm_api.models.LocalAIModel.is_multimodal" title="Link to this definition"></a></dt>
 <dd><p>Dynamically introspects whether this model architecture supports visual/multimodal inputs.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="llm_api.models.LocalAIModel.llamacpp_configurations">
+<span class="sig-name descname"><span class="pre">llamacpp_configurations</span></span><a class="headerlink" href="#llm_api.models.LocalAIModel.llamacpp_configurations" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related objects manager on the reverse side of a
+many-to-one relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
+<p>Most of the implementation is delegated to a dynamically defined manager
+class built by <code class="docutils literal notranslate"><span class="pre">create_reverse_many_to_one_manager()</span></code> defined below.</p>
 </dd></dl>
 
 <dl class="py attribute">
@@ -1251,7 +1305,7 @@ object the first time, the query is executed.</p>
 many-to-one relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
@@ -1283,7 +1337,7 @@ non-SQL backends), respectively. Normally, they should not be set.</p>
 many-to-one relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
@@ -1298,7 +1352,7 @@ class built by <code class="docutils literal notranslate"><span class="pre">crea
 many-to-one relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
@@ -1313,7 +1367,7 @@ class built by <code class="docutils literal notranslate"><span class="pre">crea
 many-to-one relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
@@ -1403,7 +1457,7 @@ object the first time, the query is executed.</p>
 one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
@@ -1421,7 +1475,7 @@ one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 many-to-one relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Parent.children</span></code> is a <code class="docutils literal notranslate"><span class="pre">ReverseManyToOneDescriptor</span></code> instance.</p>
@@ -1436,7 +1490,7 @@ class built by <code class="docutils literal notranslate"><span class="pre">crea
 one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
@@ -1535,7 +1589,7 @@ object the first time, the query is executed.</p>
 one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
@@ -1560,7 +1614,7 @@ object the first time, the query is executed.</p>
 one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
@@ -1606,7 +1660,7 @@ object the first time, the query is executed.</p>
 one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
@@ -1649,6 +1703,11 @@ object the first time, the query is executed.</p>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HostingBackend</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names=&lt;not</span> <span class="pre">given&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qualname=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start=1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary=None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/llm_api/models.html#SystemConfiguration.HostingBackend"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_api.models.SystemConfiguration.HostingBackend" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">TextChoices</span></code></p>
 <dl class="py attribute">
+<dt class="sig sig-object py" id="llm_api.models.SystemConfiguration.HostingBackend.LLAMACPP">
+<span class="sig-name descname"><span class="pre">LLAMACPP</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'llamacpp'</span></em><a class="headerlink" href="#llm_api.models.SystemConfiguration.HostingBackend.LLAMACPP" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
 <dt class="sig sig-object py" id="llm_api.models.SystemConfiguration.HostingBackend.OLLAMA">
 <span class="sig-name descname"><span class="pre">OLLAMA</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'ollama'</span></em><a class="headerlink" href="#llm_api.models.SystemConfiguration.HostingBackend.OLLAMA" title="Link to this definition"></a></dt>
 <dd></dd></dl>
@@ -1678,13 +1737,31 @@ object the first time, the query is executed.</p>
 </dd></dl>
 
 <dl class="py attribute">
+<dt class="sig sig-object py" id="llm_api.models.SystemConfiguration.active_llamacpp_model">
+<span class="sig-name descname"><span class="pre">active_llamacpp_model</span></span><a class="headerlink" href="#llm_api.models.SystemConfiguration.active_llamacpp_model" title="Link to this definition"></a></dt>
+<dd><p>Accessor to the related object on the forward side of a many-to-one or
+one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
+<p>In the example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="llm_api.models.SystemConfiguration.active_llamacpp_model_id">
+<span class="sig-name descname"><span class="pre">active_llamacpp_model_id</span></span><a class="headerlink" href="#llm_api.models.SystemConfiguration.active_llamacpp_model_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
 <dt class="sig sig-object py" id="llm_api.models.SystemConfiguration.active_local_model">
 <span class="sig-name descname"><span class="pre">active_local_model</span></span><a class="headerlink" href="#llm_api.models.SystemConfiguration.active_local_model" title="Link to this definition"></a></dt>
 <dd><p>Accessor to the related object on the forward side of a many-to-one or
 one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
@@ -1702,7 +1779,7 @@ one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
@@ -1720,7 +1797,7 @@ one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
@@ -1777,7 +1854,7 @@ non-SQL backends), respectively. Normally, they should not be set.</p>
 one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
@@ -1846,7 +1923,7 @@ object the first time, the query is executed.</p>
 one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
@@ -1889,7 +1966,7 @@ one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 one-to-one (via ForwardOneToOneDescriptor subclass) relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Child</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'children'</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">Parent</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Child.parent</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardManyToOneDescriptor</span></code> instance.</p>
@@ -1926,7 +2003,7 @@ object the first time, the query is executed.</p>
 relation.</p>
 <p>In the example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Restaurant</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">place</span> <span class="o">=</span> <span class="n">OneToOneField</span><span class="p">(</span><span class="n">Place</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'restaurant'</span><span class="p">)</span>
+    <span class="n">place</span> <span class="o">=</span> <span class="n">OneToOneField</span><span class="p">(</span><span class="n">Place</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;restaurant&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Restaurant.place</span></code> is a <code class="docutils literal notranslate"><span class="pre">ForwardOneToOneDescriptor</span></code> instance.</p>
@@ -1967,7 +2044,7 @@ internal PyTorch, vLLM, and Ollama backends.</p>
 <dt>Examples / Doctest:</dt><dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.hardware</span><span class="w"> </span><span class="kn">import</span> <span class="n">GPUDeviceInfo</span><span class="p">,</span> <span class="n">BackendRecommendation</span><span class="p">,</span> <span class="n">get_backend_recommendations</span><span class="p">,</span> <span class="n">HardwareProfile</span><span class="p">,</span> <span class="n">HostCPUInfo</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">mock_gpu</span> <span class="o">=</span> <span class="n">GPUDeviceInfo</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="n">name</span><span class="o">=</span><span class="s2">"NVIDIA GeForce GTX 1660 Ti"</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;NVIDIA GeForce GTX 1660 Ti&quot;</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">total_vram_mb</span><span class="o">=</span><span class="mf">6144.0</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">free_vram_mb</span><span class="o">=</span><span class="mf">5120.0</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">used_vram_mb</span><span class="o">=</span><span class="mf">1024.0</span><span class="p">,</span>
@@ -1980,23 +2057,38 @@ internal PyTorch, vLLM, and Ollama backends.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">mock_profile</span> <span class="o">=</span> <span class="n">HardwareProfile</span><span class="p">(</span><span class="n">cuda_available</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">devices</span><span class="o">=</span><span class="p">[</span><span class="n">mock_gpu</span><span class="p">],</span> <span class="n">primary_device</span><span class="o">=</span><span class="n">mock_gpu</span><span class="p">,</span> <span class="n">host_cpu</span><span class="o">=</span><span class="n">mock_cpu</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">rec</span> <span class="o">=</span> <span class="n">get_backend_recommendations</span><span class="p">(</span><span class="n">profile</span><span class="o">=</span><span class="n">mock_profile</span><span class="p">,</span> <span class="n">requested_context</span><span class="o">=</span><span class="mi">4096</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">rec</span><span class="o">.</span><span class="n">vllm_dtype</span>
-<span class="go">'float16'</span>
+<span class="go">&#39;float16&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="mf">0.70</span> <span class="o">&lt;=</span> <span class="n">rec</span><span class="o">.</span><span class="n">vllm_gpu_memory_utilization</span> <span class="o">&lt;=</span> <span class="mf">0.76</span>
 <span class="go">True</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">rec</span><span class="o">.</span><span class="n">recommended_quantization</span>
-<span class="go">'nf4'</span>
+<span class="go">&#39;nf4&#39;</span>
 </pre></div>
 </div>
 </dd>
 </dl>
 <dl class="py class">
 <dt class="sig sig-object py" id="llm_api.hardware.BackendRecommendation">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">llm_api.hardware.</span></span><span class="sig-name descname"><span class="pre">BackendRecommendation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vllm_gpu_memory_utilization:</span> <span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vllm_max_model_len:</span> <span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vllm_dtype:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recommended_quantization:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">advisory_notes:</span> <span class="pre">list[str]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/llm_api/hardware.html#BackendRecommendation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_api.hardware.BackendRecommendation" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">llm_api.hardware.</span></span><span class="sig-name descname"><span class="pre">BackendRecommendation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vllm_gpu_memory_utilization:</span> <span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vllm_max_model_len:</span> <span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vllm_dtype:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recommended_quantization:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">llamacpp_threads:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">llamacpp_max_context:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">8192</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">llamacpp_recommended_quant:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'gguf_q4_k_m'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">advisory_notes:</span> <span class="pre">list[str]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/llm_api/hardware.html#BackendRecommendation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_api.hardware.BackendRecommendation" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Recommended execution parameters for local AI engines.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="llm_api.hardware.BackendRecommendation.advisory_notes">
 <span class="sig-name descname"><span class="pre">advisory_notes</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#llm_api.hardware.BackendRecommendation.advisory_notes" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="llm_api.hardware.BackendRecommendation.llamacpp_max_context">
+<span class="sig-name descname"><span class="pre">llamacpp_max_context</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">8192</span></em><a class="headerlink" href="#llm_api.hardware.BackendRecommendation.llamacpp_max_context" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="llm_api.hardware.BackendRecommendation.llamacpp_recommended_quant">
+<span class="sig-name descname"><span class="pre">llamacpp_recommended_quant</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'gguf_q4_k_m'</span></em><a class="headerlink" href="#llm_api.hardware.BackendRecommendation.llamacpp_recommended_quant" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="llm_api.hardware.BackendRecommendation.llamacpp_threads">
+<span class="sig-name descname"><span class="pre">llamacpp_threads</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4</span></em><a class="headerlink" href="#llm_api.hardware.BackendRecommendation.llamacpp_threads" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -2127,7 +2219,7 @@ internal PyTorch, vLLM, and Ollama backends.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="llm_api.hardware.HostCPUInfo">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">llm_api.hardware.</span></span><span class="sig-name descname"><span class="pre">HostCPUInfo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">physical_cores</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_threads</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_ram_mb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">available_ram_mb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/llm_api/hardware.html#HostCPUInfo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_api.hardware.HostCPUInfo" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">llm_api.hardware.</span></span><span class="sig-name descname"><span class="pre">HostCPUInfo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">physical_cores</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_threads</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_ram_mb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">available_ram_mb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">has_avx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">has_avx2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">has_avx512</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/llm_api/hardware.html#HostCPUInfo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#llm_api.hardware.HostCPUInfo" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Host processor and memory metrics.</p>
 <dl class="py property">
@@ -2141,9 +2233,30 @@ internal PyTorch, vLLM, and Ollama backends.</p>
 <dd></dd></dl>
 
 <dl class="py attribute">
+<dt class="sig sig-object py" id="llm_api.hardware.HostCPUInfo.has_avx">
+<span class="sig-name descname"><span class="pre">has_avx</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#llm_api.hardware.HostCPUInfo.has_avx" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="llm_api.hardware.HostCPUInfo.has_avx2">
+<span class="sig-name descname"><span class="pre">has_avx2</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#llm_api.hardware.HostCPUInfo.has_avx2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="llm_api.hardware.HostCPUInfo.has_avx512">
+<span class="sig-name descname"><span class="pre">has_avx512</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#llm_api.hardware.HostCPUInfo.has_avx512" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
 <dt class="sig sig-object py" id="llm_api.hardware.HostCPUInfo.physical_cores">
 <span class="sig-name descname"><span class="pre">physical_cores</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#llm_api.hardware.HostCPUInfo.physical_cores" title="Link to this definition"></a></dt>
 <dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="llm_api.hardware.HostCPUInfo.recommended_llamacpp_threads">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">recommended_llamacpp_threads</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#llm_api.hardware.HostCPUInfo.recommended_llamacpp_threads" title="Link to this definition"></a></dt>
+<dd><p>Reserve 1 core for system / web tasks, or use 1 on single-core systems.</p>
+</dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="llm_api.hardware.HostCPUInfo.total_ram_gb">
@@ -2158,6 +2271,11 @@ internal PyTorch, vLLM, and Ollama backends.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="llm_api.hardware.HostCPUInfo.total_threads">
 <span class="sig-name descname"><span class="pre">total_threads</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#llm_api.hardware.HostCPUInfo.total_threads" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="llm_api.hardware.HostCPUInfo.vector_instructions_str">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">vector_instructions_str</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#llm_api.hardware.HostCPUInfo.vector_instructions_str" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
