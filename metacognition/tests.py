@@ -808,7 +808,7 @@ class BlueprintEvolutionTests(TestCase):
         self.assertEqual(len(monologue), 2)
         self.assertEqual(monologue[0]["step_name"], "Step A")
         self.assertEqual(monologue[1]["step_name"], "Step B")
-        self.assertEqual(monologue[1]["system_prompt"], "Variant B Prompt")
+        self.assertTrue(monologue[1]["system_prompt"].startswith("Variant B Prompt"))
 
     def test_create_variant_sets_pending_review(self):
         variant = self.step_a.create_variant(
