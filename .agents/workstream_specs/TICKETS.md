@@ -51,3 +51,17 @@
 - [ ] [Deployment/Resilience] Deployment Hardening & Cognitive Execution Lifecycle (Status: in-progress) -> [ws20_deployment_hardening_and_execution_lifecycle.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/ws20_deployment_hardening_and_execution_lifecycle.md)
   *Summary*: Resolve 11 operational items from multi-instance deployment testing: normalize sandbox Docker base image, add fail-fast sandbox error pathway, populate PromptResponseLog blueprint and parent_log ForeignKeys, update conversation titles from macro_objective, purge redundant TASK_COMPLETE tool, ensure synchronous SSE streaming, and add UI active model indicators and KaTeX math rendering.
 
+- [ ] [Architecture/Discussion] Dynamic Heterogeneous Hardware Allocation & Multi-PC Task Routing (Status: pending) -> [Link to note](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20261026_dynamic_heterogeneous_hardware_allocation.md)
+  *Summary*: Deep grill-me architecture session to design dynamic multi-node capability advertisement, transient node failover, and hardware-aware task routing across fluctuating home network machines (e.g., 16GB VRAM laptop, 1660 Ti, and multi-core high-RAM CPU workstation).
+
+- [ ] [Feature/Inference] WS21: Native llama.cpp CPU-First Inference Support & GGUF Integration (Status: completed) -> [ws21_native_llamacpp_inference_support.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/ws21_native_llamacpp_inference_support.md)
+  *Summary*: Implement first-class support for llama.cpp as a dedicated CPU-first hosting backend in llm_api. Adds LLAMACPP hosting backend choice, GGUF quantization formats, client routing, CPU hardware inspection & thread advisor, and Docker/systemd deployment templates.
+
+- [ ] [Operations/Resilience] WS22: Service Logging Accessibility, Traceback Visibility & Dual Output Architecture (Status: completed) -> [ws22_service_logging_accessibility.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/ws22_service_logging_accessibility.md)
+  *Summary*: Eliminate restart churn obscuring Python tracebacks, set PYTHONUNBUFFERED=1, configure systemd restart rate limiting, add RotatingFileHandler dual logging to /srv/reason/logs/ (and /var/log/reason symlink), and implement first-class `fab logs` CLI tooling.
+
+- [x] [Operations/RAG] WS23: Configurable RAG Embedding Model & Offline Path Resolution (Status: completed) -> [ws23_configurable_rag_embeddings.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/ws23_configurable_rag_embeddings.md)
+  *Summary*: Decouple RAGService and semantic diversity metrics from hardcoded all-MiniLM-L6-v2. Introduce REASON_EMBEDDING_MODEL and settings.EMBEDDING_MODEL_NAME defaulting to sentence-transformers/all-MiniLM-L6-v2, support offline local directory loading with local_files_only=True, and propagate environment directives into Fabric deployment templates while preserving the 384-dimensional pgvector schema.
+
+
+

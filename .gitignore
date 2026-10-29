@@ -209,4 +209,10 @@ view_actions.txt
 adapters/
 test_data_*/
 
+# Local vendored source bundles
+resources/sources/
+resource/sources/
+models/*.gguf
+*.gguf
+
 

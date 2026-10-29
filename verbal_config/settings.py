@@ -223,9 +223,22 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 INFERENCE_URL = os.environ.get("INFERENCE_URL", "http://127.0.0.1:8001/api/llm")
 LLM_REQUEST_TIMEOUT = int(os.environ.get("LLM_REQUEST_TIMEOUT", "3600"))
 
-# Base URLs for external containerized inference endpoints
+# Base URLs for external containerized or bare-metal inference endpoints
 OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
 VLLM_BASE_URL = os.environ.get("VLLM_BASE_URL", "http://127.0.0.1:8003")
+LLAMACPP_BASE_URL = os.environ.get("LLAMACPP_BASE_URL", "http://127.0.0.1:8080")
+LLAMACPP_DEFAULT_CTX_SIZE = int(os.environ.get("LLAMACPP_DEFAULT_CTX_SIZE", "8192"))
+LLAMACPP_DEFAULT_THREADS = int(os.environ.get("LLAMACPP_DEFAULT_THREADS", "0"))  # 0 = auto-detect
+
+# ------------------------------------------------------------------------
+# EMBEDDING & VECTOR SEARCH CONFIGURATION (WS23)
+# ------------------------------------------------------------------------
+# Canonical SentenceTransformer model ID or local directory path.
+# Must produce 384 dimensions matching pgvector VectorField(dimensions=384).
+EMBEDDING_MODEL_NAME = os.environ.get(
+    "REASON_EMBEDDING_MODEL",
+    os.environ.get("EMBEDDING_MODEL_NAME", "sentence-transformers/all-MiniLM-L6-v2")
+)
 
 # ------------------------------------------------------------------------
 # DJANGO TASKS CONFIGURATION (PostgreSQL DB Backend)
@@ -273,6 +286,31 @@ if "ALLOW_AGENT_SELF_MODIFICATION" in os.environ:
 else:
     ALLOW_AGENT_SELF_MODIFICATION = VERBAL_LOCKDOWN_LEVEL in ("DEVELOPMENT",)
 
+REASON_LOG_DIR = os.environ.get("REASON_LOG_DIR", "/srv/reason/logs")
+VERBAL_ROLE = os.environ.get("VERBAL_ROLE", "web")
+
+_active_handlers = ["console"]
+_handlers_config = {
+    "console": {
+        "class": "logging.StreamHandler",
+        "formatter": "verbose",
+    },
+}
+
+# Attach RotatingFileHandler if log directory exists and is writable
+if os.path.isdir(REASON_LOG_DIR) and os.access(REASON_LOG_DIR, os.W_OK):
+    _log_filename = f"reason-{VERBAL_ROLE}.log"
+    _log_filepath = os.path.join(REASON_LOG_DIR, _log_filename)
+    _handlers_config["file"] = {
+        "class": "logging.handlers.RotatingFileHandler",
+        "filename": _log_filepath,
+        "maxBytes": 10 * 1024 * 1024,  # 10 MB per file
+        "backupCount": 5,
+        "formatter": "verbose",
+        "encoding": "utf-8",
+    }
+    _active_handlers.append("file")
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -286,49 +324,44 @@ LOGGING = {
             "style": "{",
         },
     },
-    "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
-            "formatter": "verbose",
-        },
-    },
+    "handlers": _handlers_config,
     "root": {
-        "handlers": ["console"],
+        "handlers": _active_handlers,
         "level": "INFO",
     },
     "loggers": {
         "django": {
-            "handlers": ["console"],
+            "handlers": _active_handlers,
             "level": "INFO",
             "propagate": False,
         },
         "llm_api": {
-            "handlers": ["console"],
+            "handlers": _active_handlers,
             "level": "INFO",
             "propagate": False,
         },
         "metacognition": {
-            "handlers": ["console"],
+            "handlers": _active_handlers,
             "level": "INFO",
             "propagate": False,
         },
         "demo_ui": {
-            "handlers": ["console"],
+            "handlers": _active_handlers,
             "level": "INFO",
             "propagate": False,
         },
         "background_resources": {
-            "handlers": ["console"],
+            "handlers": _active_handlers,
             "level": "INFO",
             "propagate": False,
         },
         "benchmarking": {
-            "handlers": ["console"],
+            "handlers": _active_handlers,
             "level": "INFO",
             "propagate": False,
         },
         "grips": {
-            "handlers": ["console"],
+            "handlers": _active_handlers,
             "level": "INFO",
             "propagate": False,
         },

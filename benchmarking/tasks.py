@@ -114,9 +114,10 @@ def task_calculate_dataset_metrics(dataset_id):
             try:
                 from sentence_transformers import SentenceTransformer
                 from sklearn.metrics.pairwise import cosine_distances
+                from background_resources.rag_service import get_embedding_model_name
 
-                # Use a small fast model
-                model = SentenceTransformer('all-MiniLM-L6-v2')
+                # Use configured embedding model
+                model = SentenceTransformer(get_embedding_model_name())
                 # For very large datasets, cap the sample size to prevent OOM or extremely long execution
                 sample_questions = questions[:1000]
 

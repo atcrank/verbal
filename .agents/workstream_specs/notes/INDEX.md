@@ -21,6 +21,7 @@
 * [2026-09-29] [Architecture/Enduring] Datastar Architecture, SSE Protocols & Morphing Best Practices (Status: enduring) -> [20260929_datastar_architecture_and_morphing_practices.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260929_datastar_architecture_and_morphing_practices.md)
 * [2026-09-29] [Feature/UI] Gold Standards, Scenario Group Suites & 11/10 Candidate Promotion (Status: completed) -> [20260929_gold_standards_suite_inspection_and_promotion.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260929_gold_standards_suite_inspection_and_promotion.md)
 * [2026-10-06] [Deployment/Resilience] Deployment Hardening & Cognitive Execution Lifecycle (Status: in progress) -> [20261006_deployment_hardening_and_execution_lifecycle.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20261006_deployment_hardening_and_execution_lifecycle.md)
+* [2026-10-26] [Architecture/Discussion] Dynamic Heterogeneous Hardware Allocation & Multi-PC Task Routing (Status: pending) -> [20261026_dynamic_heterogeneous_hardware_allocation.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20261026_dynamic_heterogeneous_hardware_allocation.md)
 
 
 

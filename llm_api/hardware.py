@@ -73,6 +73,9 @@ class HostCPUInfo:
     total_threads: int
     total_ram_mb: float
     available_ram_mb: float
+    has_avx: bool = False
+    has_avx2: bool = False
+    has_avx512: bool = False
 
     @property
     def total_ram_gb(self) -> float:
@@ -81,6 +84,22 @@ class HostCPUInfo:
     @property
     def available_ram_gb(self) -> float:
         return round(self.available_ram_mb / 1024.0, 2)
+
+    @property
+    def recommended_llamacpp_threads(self) -> int:
+        """Reserve 1 core for system / web tasks, or use 1 on single-core systems."""
+        return max(1, self.physical_cores - 1)
+
+    @property
+    def vector_instructions_str(self) -> str:
+        instructions = []
+        if self.has_avx512:
+            instructions.append("AVX-512")
+        elif self.has_avx2:
+            instructions.append("AVX2")
+        elif self.has_avx:
+            instructions.append("AVX")
+        return ", ".join(instructions) if instructions else "Standard x86_64"
 
 
 @dataclass(frozen=True)
@@ -95,8 +114,8 @@ class HardwareProfile:
     def summary(self) -> str:
         if not self.cuda_available or not self.primary_device:
             return (
-                f"CPU Mode: {self.host_cpu.physical_cores} cores / {self.host_cpu.total_threads} threads, "
-                f"{self.host_cpu.available_ram_gb} GB RAM available."
+                f"CPU Mode: {self.host_cpu.physical_cores} cores / {self.host_cpu.total_threads} threads "
+                f"({self.host_cpu.vector_instructions_str}), {self.host_cpu.available_ram_gb} GB RAM available."
             )
         dev = self.primary_device
         return (
@@ -112,6 +131,9 @@ class BackendRecommendation:
     vllm_max_model_len: int
     vllm_dtype: str
     recommended_quantization: str
+    llamacpp_threads: int = 4
+    llamacpp_max_context: int = 8192
+    llamacpp_recommended_quant: str = "gguf_q4_k_m"
     advisory_notes: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
@@ -120,6 +142,9 @@ class BackendRecommendation:
             "vllm_max_model_len": self.vllm_max_model_len,
             "vllm_dtype": self.vllm_dtype,
             "recommended_quantization": self.recommended_quantization,
+            "llamacpp_threads": self.llamacpp_threads,
+            "llamacpp_max_context": self.llamacpp_max_context,
+            "llamacpp_recommended_quant": self.llamacpp_recommended_quant,
             "advisory_notes": self.advisory_notes,
         }
 
@@ -131,11 +156,32 @@ def get_hardware_profile() -> HardwareProfile:
     """
     # 1. CPU & System RAM
     vm = psutil.virtual_memory()
+
+    # Detect CPU vectorization instruction flags on Linux
+    has_avx = False
+    has_avx2 = False
+    has_avx512 = False
+    if os.path.exists("/proc/cpuinfo"):
+        try:
+            with open("/proc/cpuinfo", "r", encoding="utf-8") as f:
+                for line in f:
+                    if line.startswith("flags"):
+                        cpu_flags = set(line.split(":", 1)[1].split())
+                        has_avx = "avx" in cpu_flags
+                        has_avx2 = "avx2" in cpu_flags
+                        has_avx512 = any("avx512" in fl for fl in cpu_flags)
+                        break
+        except Exception:
+            pass
+
     host_cpu = HostCPUInfo(
         physical_cores=psutil.cpu_count(logical=False) or 1,
         total_threads=psutil.cpu_count(logical=True) or 1,
         total_ram_mb=round(vm.total / (1024.0 * 1024.0), 2),
         available_ram_mb=round(vm.available / (1024.0 * 1024.0), 2),
+        has_avx=has_avx,
+        has_avx2=has_avx2,
+        has_avx512=has_avx512,
     )
 
     # 2. CUDA GPU Inspection
@@ -216,15 +262,34 @@ def get_backend_recommendations(
 
     notes: list[str] = []
 
+    # Calculate CPU llama.cpp threads and context recommendations
+    llamacpp_threads = profile.host_cpu.recommended_llamacpp_threads
+    usable_ram_gb = max(1.0, profile.host_cpu.available_ram_gb - 3.0)  # Reserve 3 GB for OS/Postgres
+    if usable_ram_gb >= 16.0:
+        llamacpp_ctx = min(requested_context, 16384)
+        llamacpp_quant = "gguf_q8_0" if (model_param_size_b or 3.0) <= 8.0 else "gguf_q4_k_m"
+    elif usable_ram_gb >= 8.0:
+        llamacpp_ctx = min(requested_context, 8192)
+        llamacpp_quant = "gguf_q4_k_m"
+    else:
+        llamacpp_ctx = min(requested_context, 4096)
+        llamacpp_quant = "gguf_q4_k_m"
+
     # CPU-only fallback
     if not profile.cuda_available or not profile.primary_device:
         notes.append("No CUDA GPU detected. Local inference will execute on the CPU.")
-        notes.append("For CPU execution, Ollama with GGUF quantized models is strongly recommended.")
+        notes.append(
+            f"For CPU execution, llama.cpp with {profile.host_cpu.vector_instructions_str} instructions is recommended "
+            f"({llamacpp_threads} threads allocated, {usable_ram_gb:.1f} GB RAM available for GGUF weights)."
+        )
         return BackendRecommendation(
             vllm_gpu_memory_utilization=0.50,
             vllm_max_model_len=min(requested_context, 2048),
             vllm_dtype="float32",
-            recommended_quantization="nf4",
+            recommended_quantization="gguf_q4_k_m",
+            llamacpp_threads=llamacpp_threads,
+            llamacpp_max_context=llamacpp_ctx,
+            llamacpp_recommended_quant=llamacpp_quant,
             advisory_notes=notes,
         )
 
@@ -300,5 +365,8 @@ def get_backend_recommendations(
         vllm_max_model_len=max_context,
         vllm_dtype=vllm_dtype,
         recommended_quantization=rec_quant,
+        llamacpp_threads=llamacpp_threads,
+        llamacpp_max_context=llamacpp_ctx,
+        llamacpp_recommended_quant=llamacpp_quant,
         advisory_notes=notes,
     )

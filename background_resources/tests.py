@@ -1007,4 +1007,90 @@ class GrobidOptionalityAndResilienceTests(TestCase):
         self.assertEqual(strat.usages.count(), 0)
 
 
+class TestConfigurableEmbeddingsResolution(TestCase):
+    """Unit tests for WS23 configurable embedding model and local directory resolution."""
+
+    def test_get_embedding_model_name_default(self):
+        """When no setting or environment variable is set, default to sentence-transformers/all-MiniLM-L6-v2."""
+        from background_resources.rag_service import get_embedding_model_name
+
+        with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("REASON_EMBEDDING_MODEL", None)
+            os.environ.pop("EMBEDDING_MODEL_NAME", None)
+            with override_settings(EMBEDDING_MODEL_NAME=None):
+                model_name = get_embedding_model_name()
+                self.assertEqual(model_name, "sentence-transformers/all-MiniLM-L6-v2")
+
+    def test_get_embedding_model_name_respects_settings(self):
+        """EMBEDDING_MODEL_NAME from Django settings takes priority."""
+        from background_resources.rag_service import get_embedding_model_name
+
+        with override_settings(EMBEDDING_MODEL_NAME="custom-org/custom-embed-384"):
+            model_name = get_embedding_model_name()
+            self.assertEqual(model_name, "custom-org/custom-embed-384")
+
+    def test_get_embedding_model_name_respects_env_var(self):
+        """REASON_EMBEDDING_MODEL from environment is used when settings is not overriding."""
+        from background_resources.rag_service import get_embedding_model_name
+
+        with override_settings(EMBEDDING_MODEL_NAME=None):
+            with patch.dict(os.environ, {"REASON_EMBEDDING_MODEL": "/srv/reason/models/local-embed"}):
+                model_name = get_embedding_model_name()
+                self.assertEqual(model_name, "/srv/reason/models/local-embed")
+
+    @patch("background_resources.rag_service.HuggingFaceEmbeddings")
+    def test_rag_service_initialization_with_custom_model_parameter(self, mock_hf_embed):
+        """RAGService passes custom model_name argument to HuggingFaceEmbeddings."""
+        from background_resources.rag_service import RAGService
+
+        service = RAGService(model_name="custom/model-384")
+        self.assertEqual(service.model_name, "custom/model-384")
+        mock_hf_embed.assert_called_once()
+        self.assertEqual(mock_hf_embed.call_args[1]["model_name"], "custom/model-384")
+
+    @patch("background_resources.rag_service.os.path.isdir", return_value=True)
+    @patch("background_resources.rag_service.HuggingFaceEmbeddings")
+    def test_rag_service_local_directory_sets_local_files_only(self, mock_hf_embed, mock_isdir):
+        """When embedding path is an existing directory, local_files_only=True is passed in model_kwargs."""
+        from background_resources.rag_service import RAGService
+
+        service = RAGService(model_name="/local/weights/embed-384")
+        mock_isdir.assert_called_with("/local/weights/embed-384")
+        mock_hf_embed.assert_called_once()
+        model_kwargs = mock_hf_embed.call_args[1]["model_kwargs"]
+        self.assertTrue(model_kwargs.get("local_files_only"))
+
+    @patch("sentence_transformers.SentenceTransformer")
+    def test_benchmarking_tasks_uses_configured_model(self, mock_st):
+        """Semantic diversity metric task queries get_embedding_model_name."""
+        from benchmarking.tasks import task_calculate_dataset_metrics
+        from benchmarking.models import FineTuningDataset
+        import tempfile
+        import json
+
+        with tempfile.NamedTemporaryFile("w+", delete=False, suffix=".jsonl") as f:
+            f.write(json.dumps({"conversations": [{"from": "human", "value": "Question 1"}]}) + "\n")
+            f.write(json.dumps({"conversations": [{"from": "human", "value": "Question 2"}]}) + "\n")
+            temp_path = f.name
+
+        try:
+            dataset = FineTuningDataset.objects.create(
+                name="Diversity Dataset",
+                file_path=temp_path,
+                format="sharegpt"
+            )
+
+            mock_model = MagicMock()
+            mock_model.encode.return_value = [[0.1, 0.2], [0.3, 0.4]]
+            mock_st.return_value = mock_model
+
+            with override_settings(EMBEDDING_MODEL_NAME="custom-org/diversity-embed"):
+                task_calculate_dataset_metrics.func(dataset.id)
+                mock_st.assert_called_with("custom-org/diversity-embed")
+        finally:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+
+
+
 

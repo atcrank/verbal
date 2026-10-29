@@ -173,6 +173,10 @@
         <li><a href="metacognition_app.html#metacognition.models.ReasoningStepQuerySet.active_for_blueprint">(metacognition.models.ReasoningStepQuerySet method)</a>
 </li>
       </ul></li>
+      <li><a href="llm_api_app.html#llm_api.models.SystemConfiguration.active_llamacpp_model">active_llamacpp_model (llm_api.models.SystemConfiguration attribute)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.models.SystemConfiguration.active_llamacpp_model_id">active_llamacpp_model_id (llm_api.models.SystemConfiguration attribute)</a>
+</li>
       <li><a href="llm_api_app.html#llm_api.models.SystemConfiguration.active_local_model">active_local_model (llm_api.models.SystemConfiguration attribute)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.models.SystemConfiguration.active_local_model_id">active_local_model_id (llm_api.models.SystemConfiguration attribute)</a>
@@ -205,10 +209,10 @@
 </li>
       <li><a href="llm_api_app.html#llm_api.ai_service.AIService">AIService (class in llm_api.ai_service)</a>
 </li>
-      <li><a href="llm_api_app.html#llm_api.ai_service.AIService.DefaultOutlineResponse">AIService.DefaultOutlineResponse (class in llm_api.ai_service)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="llm_api_app.html#llm_api.ai_service.AIService.DefaultOutlineResponse">AIService.DefaultOutlineResponse (class in llm_api.ai_service)</a>
+</li>
       <li><a href="metacognition_app.html#metacognition.actions.ExecutionPlan.analysis">analysis (metacognition.actions.ExecutionPlan attribute)</a>
 </li>
       <li><a href="benchmarking_app.html#benchmarking.generators.SyntheticQA.answer">answer (benchmarking.generators.SyntheticQA attribute)</a>
@@ -1455,6 +1459,8 @@
 </li>
       <li><a href="background_resources_app.html#background_resources.models.Document.get_document_type_display">get_document_type_display() (background_resources.models.Document method)</a>
 </li>
+      <li><a href="background_resources_app.html#background_resources.rag_service.get_embedding_model_name">get_embedding_model_name() (in module background_resources.rag_service)</a>
+</li>
       <li><a href="metacognition_app.html#metacognition.models.ReasoningStep.get_execution_mode_display">get_execution_mode_display() (metacognition.models.ReasoningStep method)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.models.Conversation.get_file_at_commit">get_file_at_commit() (llm_api.models.Conversation method)</a>
@@ -1577,12 +1583,12 @@
         <li><a href="work_organisation_app.html#work_organisation.models.WorkshopSession.get_previous_by_created_at">(work_organisation.models.WorkshopSession method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="verbal_tasks_app.html#verbal_tasks.models.TaskRecord.get_previous_by_enqueued_at">get_previous_by_enqueued_at() (verbal_tasks.models.TaskRecord method)</a>
 </li>
       <li><a href="work_organisation_app.html#work_organisation.models.ConversationMember.get_previous_by_joined_at">get_previous_by_joined_at() (work_organisation.models.ConversationMember method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="background_resources_app.html#background_resources.models.RAGChunk.get_previous_by_last_accessed">get_previous_by_last_accessed() (background_resources.models.RAGChunk method)</a>
 </li>
       <li><a href="grobid_client_app.html#grobid_client.models.Reference.get_previous_by_parsed_at">get_previous_by_parsed_at() (grobid_client.models.Reference method)</a>
@@ -1686,6 +1692,16 @@
       <li><a href="llm_api_app.html#llm_api.models.Conversation.get_workspace_files">get_workspace_files() (llm_api.models.Conversation method)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.api.get_workspace_info">get_workspace_info() (in module llm_api.api)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.models.LocalAIModel.gguf_file_path">gguf_file_path (llm_api.models.LocalAIModel attribute)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.models.LocalAIModel.QuantizationMode.GGUF_OTHER">GGUF_OTHER (llm_api.models.LocalAIModel.QuantizationMode attribute)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.models.LocalAIModel.QuantizationMode.GGUF_Q4_K_M">GGUF_Q4_K_M (llm_api.models.LocalAIModel.QuantizationMode attribute)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.models.LocalAIModel.QuantizationMode.GGUF_Q5_K_M">GGUF_Q5_K_M (llm_api.models.LocalAIModel.QuantizationMode attribute)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.models.LocalAIModel.QuantizationMode.GGUF_Q8_0">GGUF_Q8_0 (llm_api.models.LocalAIModel.QuantizationMode attribute)</a>
 </li>
       <li><a href="llm_api_app.html#llm_api.models.PromptResponseLog.git_commit_hash">git_commit_hash (llm_api.models.PromptResponseLog attribute)</a>
 </li>
@@ -1830,11 +1846,17 @@
 </li>
       <li><a href="metacognition_app.html#metacognition.actions.handle_result_critique">handle_result_critique() (in module metacognition.actions)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="metacognition_app.html#metacognition.actions.handle_task_queue">handle_task_queue() (in module metacognition.actions)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="llm_api_app.html#llm_api.hardware.HardwareProfile">HardwareProfile (class in llm_api.hardware)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.hardware.HostCPUInfo.has_avx">has_avx (llm_api.hardware.HostCPUInfo attribute)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.hardware.HostCPUInfo.has_avx2">has_avx2 (llm_api.hardware.HostCPUInfo attribute)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.hardware.HostCPUInfo.has_avx512">has_avx512 (llm_api.hardware.HostCPUInfo attribute)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.rag_service.RAGService.hashes_indexed">hashes_indexed (background_resources.rag_service.RAGService attribute)</a>
 </li>
@@ -2230,6 +2252,16 @@
 </li>
       <li><a href="metacognition_app.html#metacognition.actions.ListFilesArgs">ListFilesArgs (class in metacognition.actions)</a>
 </li>
+      <li><a href="llm_api_app.html#llm_api.models.SystemConfiguration.HostingBackend.LLAMACPP">LLAMACPP (llm_api.models.SystemConfiguration.HostingBackend attribute)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.models.LocalAIModel.llamacpp_configurations">llamacpp_configurations (llm_api.models.LocalAIModel attribute)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.hardware.BackendRecommendation.llamacpp_max_context">llamacpp_max_context (llm_api.hardware.BackendRecommendation attribute)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.hardware.BackendRecommendation.llamacpp_recommended_quant">llamacpp_recommended_quant (llm_api.hardware.BackendRecommendation attribute)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.hardware.BackendRecommendation.llamacpp_threads">llamacpp_threads (llm_api.hardware.BackendRecommendation attribute)</a>
+</li>
       <li>
     llm_api.ai_service
 
@@ -2237,6 +2269,8 @@
         <li><a href="llm_api_app.html#module-llm_api.ai_service">module</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     llm_api.api
 
@@ -2251,8 +2285,6 @@
         <li><a href="llm_api_app.html#module-llm_api.hardware">module</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     llm_api.models
 
@@ -3378,6 +3410,8 @@
 </li>
       <li><a href="metacognition_app.html#metacognition.models.ReasoningStepQuerySet">ReasoningStepQuerySet (class in metacognition.models)</a>
 </li>
+      <li><a href="llm_api_app.html#llm_api.hardware.HostCPUInfo.recommended_llamacpp_threads">recommended_llamacpp_threads (llm_api.hardware.HostCPUInfo property)</a>
+</li>
       <li><a href="llm_api_app.html#llm_api.hardware.BackendRecommendation.recommended_quantization">recommended_quantization (llm_api.hardware.BackendRecommendation attribute)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.models.RAGChunk.reference">reference (background_resources.models.RAGChunk property)</a>
@@ -4292,6 +4326,8 @@
 </li>
       </ul></li>
       <li><a href="metacognition_app.html#metacognition.models.ReasoningStep.variants">variants (metacognition.models.ReasoningStep attribute)</a>
+</li>
+      <li><a href="llm_api_app.html#llm_api.hardware.HostCPUInfo.vector_instructions_str">vector_instructions_str (llm_api.hardware.HostCPUInfo property)</a>
 </li>
       <li><a href="background_resources_app.html#background_resources.models.VectorIndexExplorer">VectorIndexExplorer (class in background_resources.models)</a>
 </li>

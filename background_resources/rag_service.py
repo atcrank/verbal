@@ -91,6 +91,19 @@ class DjangoChunkStore:
     def yield_keys(self):
         return [str(i) for i in DjangoChunk.objects.filter(in_byte_store=True).values_list('chunk_id', flat=True)]
 
+def get_embedding_model_name() -> str:
+    """
+    Returns the configured embedding model name or local directory path.
+    Resolves from settings.EMBEDDING_MODEL_NAME, REASON_EMBEDDING_MODEL, or defaults
+    to 'sentence-transformers/all-MiniLM-L6-v2'.
+    """
+    from django.conf import settings
+    model_name = getattr(settings, "EMBEDDING_MODEL_NAME", None)
+    if not model_name:
+        model_name = os.environ.get("REASON_EMBEDDING_MODEL") or os.environ.get("EMBEDDING_MODEL_NAME")
+    return model_name or "sentence-transformers/all-MiniLM-L6-v2"
+
+
 class RAGService:
 
     embeddings = None
@@ -99,12 +112,18 @@ class RAGService:
     retriever = None
     chain = None
 
-    def __init__(self, collection_name="verbal_background_resources"):
+    def __init__(self, collection_name="verbal_background_resources", model_name=None):
         self.collection_name = collection_name
+        self.model_name = model_name or get_embedding_model_name()
         embed_kwargs = {}
         if os.environ.get("VERBAL_ROLE") == "web":
             embed_kwargs = {"device": "cpu"}
-        self.embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2", model_kwargs=embed_kwargs)
+        if os.path.isdir(self.model_name):
+            embed_kwargs["local_files_only"] = True
+            logger.info(f"RAG Service initializing embeddings from local directory: {self.model_name}")
+        else:
+            logger.info(f"RAG Service initializing embeddings with model identifier: {self.model_name}")
+        self.embeddings = HuggingFaceEmbeddings(model_name=self.model_name, model_kwargs=embed_kwargs)
         self.reading_ids = set()  # reading_ids
         self.store = DjangoChunkStore()
         self.id_key = "chunk_id"

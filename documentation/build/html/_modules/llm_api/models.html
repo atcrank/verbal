@@ -55,6 +55,7 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../deploy.html">Production Deployment &amp; Operations Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../using_ollama.html">Ollama as Local AI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../demo_ui_trials.html">Demo UI Empirical Trials &amp; Verification Reports</a></li>
@@ -524,7 +525,11 @@
         <span class="n">NF4</span> <span class="o">=</span> <span class="s1">&#39;nf4&#39;</span><span class="p">,</span> <span class="s1">&#39;4-bit NormalFloat (BitsAndBytes NF4 - High Precision)&#39;</span>
         <span class="n">FP4</span> <span class="o">=</span> <span class="s1">&#39;fp4&#39;</span><span class="p">,</span> <span class="s1">&#39;4-bit Float (BitsAndBytes FP4)&#39;</span>
         <span class="n">AWQ</span> <span class="o">=</span> <span class="s1">&#39;awq&#39;</span><span class="p">,</span> <span class="s1">&#39;AWQ (vLLM / Transformers)&#39;</span>
-        <span class="n">GPTQ</span> <span class="o">=</span> <span class="s1">&#39;gptq&#39;</span><span class="p">,</span> <span class="s1">&#39;GPTQ (vLLM / Transformers)&#39;</span></div>
+        <span class="n">GPTQ</span> <span class="o">=</span> <span class="s1">&#39;gptq&#39;</span><span class="p">,</span> <span class="s1">&#39;GPTQ (vLLM / Transformers)&#39;</span>
+        <span class="n">GGUF_Q4_K_M</span> <span class="o">=</span> <span class="s1">&#39;gguf_q4_k_m&#39;</span><span class="p">,</span> <span class="s1">&#39;GGUF 4-bit (Medium - Recommended for CPU)&#39;</span>
+        <span class="n">GGUF_Q5_K_M</span> <span class="o">=</span> <span class="s1">&#39;gguf_q5_k_m&#39;</span><span class="p">,</span> <span class="s1">&#39;GGUF 5-bit (High Precision)&#39;</span>
+        <span class="n">GGUF_Q8_0</span> <span class="o">=</span> <span class="s1">&#39;gguf_q8_0&#39;</span><span class="p">,</span> <span class="s1">&#39;GGUF 8-bit (Full Integer)&#39;</span>
+        <span class="n">GGUF_OTHER</span> <span class="o">=</span> <span class="s1">&#39;gguf_other&#39;</span><span class="p">,</span> <span class="s1">&#39;GGUF Other Quantization&#39;</span></div>
 
 
     <span class="n">name</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Friendly name (e.g. &#39;Gemma 4 E2B&#39;)&quot;</span><span class="p">)</span>
@@ -556,6 +561,10 @@
         <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Max model sequence length for vLLM KV-cache. Defaults to model context window.&quot;</span>
     <span class="p">)</span>
+    <span class="n">gguf_file_path</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span>
+        <span class="n">max_length</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Path to local .gguf file or filename in /srv/reason/models/.&quot;</span>
+    <span class="p">)</span>
     <span class="n">load_in_4bit</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Legacy flag: Use 4-bit quantization (synced with quantization_mode)&quot;</span><span class="p">)</span>
     <span class="n">context_window</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">4096</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Max tokens&quot;</span><span class="p">)</span>
 
@@ -563,6 +572,13 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">is_multimodal</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Dynamically introspects whether this model architecture supports visual/multimodal inputs.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">hf_model_id</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">quantization_mode</span> <span class="ow">in</span> <span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">QuantizationMode</span><span class="o">.</span><span class="n">GGUF_Q4_K_M</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">QuantizationMode</span><span class="o">.</span><span class="n">GGUF_Q5_K_M</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">QuantizationMode</span><span class="o">.</span><span class="n">GGUF_Q8_0</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">QuantizationMode</span><span class="o">.</span><span class="n">GGUF_OTHER</span><span class="p">,</span>
+        <span class="p">]</span> <span class="ow">or</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gguf_file_path</span><span class="p">):</span>
             <span class="k">return</span> <span class="kc">False</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">.modality_detector</span><span class="w"> </span><span class="kn">import</span> <span class="n">introspect_hf_modality</span>
         <span class="k">return</span> <span class="n">introspect_hf_modality</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hf_model_id</span><span class="p">)</span>
@@ -615,7 +631,8 @@
     <span class="k">class</span><span class="w"> </span><span class="nc">HostingBackend</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">TextChoices</span><span class="p">):</span>
         <span class="n">PYTORCH</span> <span class="o">=</span> <span class="s1">&#39;pytorch&#39;</span><span class="p">,</span> <span class="s1">&#39;Local PyTorch (CPU/GPU)&#39;</span>
         <span class="n">VLLM</span> <span class="o">=</span> <span class="s1">&#39;vllm&#39;</span><span class="p">,</span> <span class="s1">&#39;Local vLLM Container&#39;</span>
-        <span class="n">OLLAMA</span> <span class="o">=</span> <span class="s1">&#39;ollama&#39;</span><span class="p">,</span> <span class="s1">&#39;Local Ollama Container&#39;</span></div>
+        <span class="n">OLLAMA</span> <span class="o">=</span> <span class="s1">&#39;ollama&#39;</span><span class="p">,</span> <span class="s1">&#39;Local Ollama Container&#39;</span>
+        <span class="n">LLAMACPP</span> <span class="o">=</span> <span class="s1">&#39;llamacpp&#39;</span><span class="p">,</span> <span class="s1">&#39;Local llama.cpp Server (CPU/GGUF)&#39;</span></div>
 
 
     <span class="n">hosting_backend</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span>
@@ -639,6 +656,12 @@
         <span class="n">LocalAIModel</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">SET_NULL</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">related_name</span><span class="o">=</span><span class="s2">&quot;vllm_configurations&quot;</span><span class="p">,</span>
         <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Model loaded in the vLLM service. Used only when &#39;Local vLLM Container&#39; is the active hosting backend.&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">active_llamacpp_model</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span>
+        <span class="n">LocalAIModel</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">SET_NULL</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">related_name</span><span class="o">=</span><span class="s2">&quot;llamacpp_configurations&quot;</span><span class="p">,</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;The selected model running in the local llama.cpp server. Used only when &#39;Local llama.cpp Server&#39; is the active hosting backend.&quot;</span>
     <span class="p">)</span>
 
     <span class="n">system_tokenizer</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span>
