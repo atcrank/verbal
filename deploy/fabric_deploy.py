@@ -136,6 +136,7 @@ def reload_deploy_config(deploy_env_file=None, base_env_file=None):
     global DJANGO_USER, WEB_GROUP, DOMAIN, GRANIAN_PORT, INFERENCE_PORT, SSL_DIR
     global SSL_CERT_PATH, SSL_KEY_PATH, DB_CONTAINER, DB_NAME, DB_USER, DB_PORT, DB_PASSWORD
     global BIN_DIR, MODELS_DIR, LLAMACPP_PORT, EMBEDDING_MODEL
+    global PYTHON_VERSION, USE_UV, PYTHON_INSTALL_DIR, UV_CACHE_DIR, UV_PYTHON_MIRROR
     global LOADED_ENV_FILE
 
     LOADED_ENV_FILE = loaded
@@ -144,6 +145,14 @@ def reload_deploy_config(deploy_env_file=None, base_env_file=None):
     REPO_DIR = os.environ.get("REASON_REPO_DIR", f"{BASE_DIR}/repo")
     APP_DIR = os.environ.get("REASON_APP_DIR", f"{BASE_DIR}/app")
     VENV_DIR = os.environ.get("REASON_VENV", f"{BASE_DIR}/venv")
+    PYTHON_VERSION = os.environ.get("REASON_PYTHON_VERSION", "3.12")
+    USE_UV = os.environ.get("REASON_USE_UV", "true").lower() not in ("false", "0", "no", "off")
+    PYTHON_INSTALL_DIR = os.environ.get("REASON_PYTHON_INSTALL_DIR", f"{BASE_DIR}/python")
+    UV_CACHE_DIR = os.environ.get("REASON_UV_CACHE_DIR", f"{BASE_DIR}/.uv_cache")
+    UV_PYTHON_MIRROR = os.environ.get(
+        "UV_PYTHON_INSTALL_MIRROR",
+        os.environ.get("REASON_UV_PYTHON_MIRROR", ""),
+    )
     SHARED_DIR = os.environ.get("REASON_SHARED_DIR", f"{BASE_DIR}/shared")
     PUBLIC_DIR = os.environ.get("REASON_PUBLIC_DIR", f"{BASE_DIR}/public")
     STATIC_DIR = os.environ.get("REASON_STATIC_DIR", f"{PUBLIC_DIR}/static")
@@ -762,12 +771,94 @@ WantedBy=multi-user.target reason.service
 
 
 # ==============================================================================
-# PHASE 1: PREFLIGHT AUDIT & SYSTEM PROVISIONING
+# PHASE 1: PREFLIGHT AUDIT, UV BOOTSTRAP & SYSTEM PROVISIONING
 # ==============================================================================
+def get_logged_in_user(c):
+    """
+    Determines the username of the operator connected to the target host.
+    """
+    user = getattr(c, "user", None)
+    if isinstance(user, str) and user.strip():
+        return user.strip()
+    try:
+        res = c.run("whoami", hide=True, warn=True)
+        if res and res.ok and isinstance(getattr(res, "stdout", None), str) and res.stdout.strip():
+            return res.stdout.strip()
+    except Exception:
+        pass
+    return os.environ.get("REASON_SSH_USER") or os.environ.get("USER", "")
+
+
+def ensure_uv(c, remote_env=None):
+    """
+    Ensures the `uv` Python toolchain and package manager is installed system-wide
+    at /usr/local/bin/uv (or /usr/bin/uv) so both root and DEPLOY_USER can execute it.
+
+    Supports both Artifactory/PyPI mirrors (via temporary bootstrap venv) and the
+    official standalone installer script.
+    """
+    if c.sudo("test -x /usr/local/bin/uv || test -x /usr/bin/uv", warn=True, hide=True).ok:
+        return "/usr/local/bin/uv"
+
+    # If the operator already has uv in their user PATH (e.g. ~/.local/bin/uv), promote a copy to /usr/local/bin
+    user_uv = c.run("command -v uv", warn=True, hide=True)
+    if user_uv.ok and isinstance(getattr(user_uv, "stdout", None), str) and user_uv.stdout.strip():
+        uv_src = user_uv.stdout.strip()
+        if uv_src not in ("/usr/local/bin/uv", "/usr/bin/uv"):
+            c.sudo(f"install -m 0755 {shlex.quote(uv_src)} /usr/local/bin/uv", warn=True)
+            if c.sudo("test -x /usr/local/bin/uv", warn=True, hide=True).ok:
+                return "/usr/local/bin/uv"
+
+    print("⚡ Installing 'uv' Python package and toolchain manager to /usr/local/bin/uv...")
+    remote = remote_env or {}
+    iu = (os.environ.get("PIP_INDEX_URL") or remote.get("PIP_INDEX_URL", "")).strip()
+    fl = (os.environ.get("PIP_FIND_LINKS") or remote.get("PIP_FIND_LINKS", "")).strip()
+    th = (os.environ.get("PIP_TRUSTED_HOST") or remote.get("PIP_TRUSTED_HOST", "")).strip()
+    installer_url = (os.environ.get("UV_INSTALLER_URL") or remote.get("UV_INSTALLER_URL", "")).strip()
+
+    pip_flags = []
+    if fl:
+        pip_flags.append(f"--find-links {shlex.quote(fl)}")
+    if iu:
+        pip_flags.append(f"--index-url {shlex.quote(iu)}")
+    if th:
+        pip_flags.append(f"--trusted-host {shlex.quote(th)}")
+    pip_flags_str = " ".join(pip_flags)
+
+    bootstrap_cmd = (
+        f"rm -rf /tmp/uv-bootstrap && "
+        f"python3 -m venv /tmp/uv-bootstrap && "
+        f"/tmp/uv-bootstrap/bin/pip install --no-cache-dir {pip_flags_str} uv && "
+        f"install -m 0755 /tmp/uv-bootstrap/bin/uv /usr/local/bin/uv && "
+        f"rm -rf /tmp/uv-bootstrap"
+    )
+    standalone_url = installer_url or "https://astral.sh/uv/install.sh"
+    standalone_cmd = f"curl -LsSf {shlex.quote(standalone_url)} | env UV_INSTALL_DIR='/usr/local/bin' sh"
+
+    # Prefer Artifactory/PyPI wheel bootstrap if custom index/find-links is configured
+    if iu or fl:
+        res = sudo_bash(c, bootstrap_cmd, warn=True)
+        if not res.ok:
+            res = sudo_bash(c, standalone_cmd, warn=True)
+    else:
+        res = sudo_bash(c, standalone_cmd, warn=True)
+        if not res.ok:
+            res = sudo_bash(c, bootstrap_cmd, warn=True)
+
+    if c.sudo("test -x /usr/local/bin/uv || test -x /usr/bin/uv", warn=True, hide=True).ok:
+        print("✅ 'uv' installed at /usr/local/bin/uv.")
+        return "/usr/local/bin/uv"
+
+    print("⚠️ Could not automatically install 'uv'; operations will fall back to standard python3/pip.")
+    return None
+
+
 @task
 def preflight_check(c):
     """
-    Validates server environment, production .env configuration, and permissions.
+    Validates server environment, production .env configuration, permissions,
+    baseline apt packages (git, curl, rsync, nginx, build-essential, cmake, docker, python3.12),
+    docker group membership for the operator, and uv availability.
     """
     ensure_sudo(c)
     print("📋 [Preflight] Verifying server environment and production configuration...")
@@ -790,20 +881,79 @@ def preflight_check(c):
             print(f"🔒 Tightening permissions on {target_env} (was {perm})...")
             sudo_bash(c, f"chmod 0640 {target_env} && chown root:{WEB_GROUP} {target_env}")
 
-    # Verify core system dependencies (python3, python3-venv, nginx)
+    # Verify core system dependencies
     missing_packages = []
 
     py_check = c.run("python3 --version", warn=True, hide=True)
     if py_check.failed:
         missing_packages.append("python3")
 
-    venv_check = c.run("python3 -m venv -h", warn=True, hide=True)
+    venv_check = c.run("python3 -m venv -h && python3 -c 'import ensurepip'", warn=True, hide=True)
     if venv_check.failed:
         missing_packages.append("python3-venv")
 
     nginx_check = c.run("which nginx", warn=True, hide=True)
     if nginx_check.failed:
         missing_packages.append("nginx")
+
+    git_check = c.run("which git", warn=True, hide=True)
+    if git_check.failed:
+        missing_packages.append("git")
+
+    curl_check = c.run("which curl", warn=True, hide=True)
+    if curl_check.failed:
+        missing_packages.extend(["curl", "ca-certificates"])
+
+    rsync_check = c.run("which rsync", warn=True, hide=True)
+    if rsync_check.failed:
+        missing_packages.append("rsync")
+
+    openssl_check = c.run("which openssl", warn=True, hide=True)
+    if openssl_check.failed:
+        missing_packages.append("openssl")
+
+    acl_check = c.run("which setfacl", warn=True, hide=True)
+    if acl_check.failed:
+        missing_packages.append("acl")
+
+    gzip_check = c.run("which gzip", warn=True, hide=True)
+    if gzip_check.failed:
+        missing_packages.append("gzip")
+
+    tar_check = c.run("which tar", warn=True, hide=True)
+    if tar_check.failed:
+        missing_packages.append("tar")
+
+    unzip_check = c.run("which unzip", warn=True, hide=True)
+    if unzip_check.failed:
+        missing_packages.append("unzip")
+
+    build_check = c.run("which gcc && which g++ && which make", warn=True, hide=True)
+    if build_check.failed:
+        missing_packages.append("build-essential")
+
+    cmake_check = c.run("which cmake", warn=True, hide=True)
+    if cmake_check.failed:
+        missing_packages.append("cmake")
+
+    docker_check = c.run("which docker", warn=True, hide=True)
+    if docker_check.failed:
+        missing_packages.append("docker.io")
+
+    compose_check = c.run("docker compose version", warn=True, hide=True)
+    if compose_check.failed:
+        missing_packages.append("docker-compose-v2")
+
+    # Check if pinned target Python (e.g. python3.12) is available via core apt repository
+    target_py = f"python{PYTHON_VERSION}"
+    if c.run(f"which {target_py}", warn=True, hide=True).failed:
+        if c.run(f"apt-cache show {target_py}", warn=True, hide=True).ok:
+            missing_packages.append(target_py)
+            if c.run(f"apt-cache show {target_py}-venv", warn=True, hide=True).ok:
+                missing_packages.append(f"{target_py}-venv")
+    elif c.run(f"{target_py} -m venv -h && {target_py} -c 'import ensurepip'", warn=True, hide=True).failed:
+        if c.run(f"apt-cache show {target_py}-venv", warn=True, hide=True).ok:
+            missing_packages.append(f"{target_py}-venv")
 
     if missing_packages:
         pkgs_str = " ".join(missing_packages)
@@ -812,7 +962,7 @@ def preflight_check(c):
             print(f"📦 Target host missing required packages ({', '.join(missing_packages)}).")
             print(f"   Attempting auto-installation via apt-get...")
             install_res = c.sudo(f"apt-get update && apt-get install -y {pkgs_str}", warn=True)
-            if install_res.failed:
+            if not install_res.ok:
                 print(f"\n🚨 [PREFLIGHT ERROR] Could not automatically install: {pkgs_str}")
                 print(f"   Please run manually on target host: sudo apt update && sudo apt install -y {pkgs_str}\n")
                 raise Exit(f"Missing required packages: {pkgs_str}")
@@ -822,6 +972,16 @@ def preflight_check(c):
             print(f"   Please install them using your system package manager ({pkgs_str}).\n")
             raise Exit(f"Missing required packages: {pkgs_str}")
 
+    # Ensure Docker daemon is enabled and active, and add operator to docker group
+    c.sudo("systemctl enable --now docker", warn=True, hide=True)
+    connecting_user = get_logged_in_user(c)
+    if connecting_user and connecting_user != "root":
+        c.sudo(f"usermod -aG docker {connecting_user}", warn=True)
+
+    # Ensure uv is available when USE_UV is enabled
+    if USE_UV:
+        ensure_uv(c)
+
     print("✅ Preflight checks completed.")
 
 
@@ -829,7 +989,8 @@ def preflight_check(c):
 def provision_system(c):
     """
     Provisions system users, directories under /srv, shared caches, and
-    establishes the 3-tier ownership model.
+    establishes the 3-tier ownership model with a deterministic Python 3.12
+    virtual environment managed via uv.
     """
     ensure_sudo(c)
     print("🚀 [1/4] Provisioning system users, groups, and directory hierarchy...")
@@ -847,18 +1008,21 @@ def provision_system(c):
         print(f"👤 Creating system execution user '{DJANGO_USER}'...")
         c.sudo(f"useradd -r -s /bin/false {DJANGO_USER}")
 
-    # 2. Add deployer, daemon user, and connecting operator to web group for cooperative access
+    # 2. Add deployer, daemon user, and connecting operator to web group & docker group
     c.sudo(f"usermod -aG {WEB_GROUP} {DEPLOY_USER}")
     c.sudo(f"usermod -aG {WEB_GROUP} {DJANGO_USER}")
-    connecting_user = getattr(c, "user", None) or os.environ.get("USER", "")
+    connecting_user = get_logged_in_user(c)
     if connecting_user and connecting_user not in [DEPLOY_USER, DJANGO_USER, "root"]:
         c.sudo(f"usermod -aG {WEB_GROUP} {connecting_user}", warn=True)
+    if connecting_user and connecting_user != "root":
+        c.sudo(f"usermod -aG docker {connecting_user}", warn=True)
 
     # Ensure DEPLOY_USER has an SSH keypair for Git repository access
     ensure_deploy_ssh_key(c)
 
-    # 3. Create core directory structure
+    # 3. Create core directory structure (including PYTHON_INSTALL_DIR and UV_CACHE_DIR outside /home for ProtectHome=yes)
     c.sudo(f"mkdir -p {BASE_DIR} {REPO_DIR} {APP_DIR} {STATIC_DIR} {MEDIA_DIR} {BACKUP_DIR} {LOG_DIR} {SHARED_DIR} {BIN_DIR} {MODELS_DIR}")
+    c.sudo(f"mkdir -p {PYTHON_INSTALL_DIR} {UV_CACHE_DIR}")
     c.sudo(f"mkdir -p {SHARED_DIR}/workspaces {SHARED_DIR}/media {HF_CACHE_DIR}")
 
     # 4. Strict base directory lockdown (root owned)
@@ -904,19 +1068,41 @@ def provision_system(c):
     c.sudo("mkdir -p /var/log")
     c.sudo(f"ln -sfn {LOG_DIR} /var/log/reason")
 
-    # 9. Repo, App, Bin & Models directories
+    # 9. Repo, App, Bin, Models & Python toolchain directories
     c.sudo(f"chown -R {DEPLOY_USER}:{WEB_GROUP} {APP_DIR} {REPO_DIR} {BIN_DIR} {MODELS_DIR}")
     c.sudo(f"chmod 0750 {APP_DIR} {REPO_DIR}")
     sudo_bash(c, f"chmod 0755 {BIN_DIR} && chmod 0775 {MODELS_DIR}")
 
-    # 10. Python Virtual Environment
+    # 10. Python Virtual Environment (pinned to PYTHON_VERSION, managed via uv by default)
     venv_pip = c.sudo(f"test -f {VENV_DIR}/bin/pip", warn=True)
-    if venv_pip.failed:
-        print("🐍 Creating dedicated Python virtual environment...")
+    venv_ver_ok = c.sudo(
+        f"{VENV_DIR}/bin/python -c 'import sys; sys.exit(0 if f\"{{sys.version_info.major}}.{{sys.version_info.minor}}\" == \"{PYTHON_VERSION}\" else 1)'",
+        warn=True,
+        hide=True,
+    )
+    if not venv_pip.ok or not venv_ver_ok.ok:
+        print(f"🐍 Creating dedicated Python {PYTHON_VERSION} virtual environment at {VENV_DIR}...")
         c.sudo(f"rm -rf {VENV_DIR}")
-        c.sudo(f"python3 -m venv {VENV_DIR}")
+        if USE_UV and ensure_uv(c):
+            mirror_val = (os.environ.get("UV_PYTHON_INSTALL_MIRROR") or UV_PYTHON_MIRROR or "").strip()
+            mirror_env = f"UV_PYTHON_INSTALL_MIRROR={shlex.quote(mirror_val)} " if mirror_val else ""
+            th = os.environ.get("PIP_TRUSTED_HOST", "").strip()
+            insecure_flag = f"--allow-insecure-host {shlex.quote(th)}" if th else ""
+            uv_venv_cmd = (
+                f"UV_PYTHON_INSTALL_DIR={PYTHON_INSTALL_DIR} UV_CACHE_DIR={UV_CACHE_DIR} "
+                f"{mirror_env}uv venv {VENV_DIR} --python {PYTHON_VERSION} --seed {insecure_flag}".strip()
+            )
+            uv_res = sudo_bash(c, uv_venv_cmd, warn=True)
+            if not uv_res.ok:
+                print(f"⚠️ uv venv creation for Python {PYTHON_VERSION} failed; falling back to system python venv...")
+                sudo_bash(c, f"python{PYTHON_VERSION} -m venv {VENV_DIR} || python3 -m venv {VENV_DIR}")
+        else:
+            sudo_bash(c, f"python{PYTHON_VERSION} -m venv {VENV_DIR} || python3 -m venv {VENV_DIR}")
+
     c.sudo(f"chown -R {DEPLOY_USER}:{WEB_GROUP} {VENV_DIR}")
     sudo_bash(c, f"chmod -R 0755 {VENV_DIR}")
+    c.sudo(f"chown -R {DEPLOY_USER}:{WEB_GROUP} {PYTHON_INSTALL_DIR} {UV_CACHE_DIR}")
+    sudo_bash(c, f"chmod -R 0755 {PYTHON_INSTALL_DIR} && chmod -R 0775 {UV_CACHE_DIR}")
 
     print("✅ System paths, users, and ownership hierarchy established.")
 
@@ -1385,6 +1571,50 @@ def build_pip_install_cmd(
     return f"{venv_dir}/bin/pip install {flags_str} -r {app_dir}/requirements.txt"
 
 
+def build_uv_install_cmd(
+    find_links=None,
+    index_url=None,
+    trusted_host=None,
+    pytorch_index_url=None,
+    remote_env=None,
+    no_cache_dir=True,
+    app_dir=APP_DIR,
+    venv_dir=VENV_DIR,
+    python_install_dir=PYTHON_INSTALL_DIR,
+    uv_cache_dir=UV_CACHE_DIR,
+):
+    """
+    Constructs a clean, transparent `uv pip install` command targeting the deployment
+    virtual environment, resolving canonical Artifactory and index flags from CLI arguments,
+    local environment, and remote .env.
+    """
+    remote = remote_env or {}
+    fl = (find_links or os.environ.get("PIP_FIND_LINKS") or remote.get("PIP_FIND_LINKS", "")).strip()
+    iu = (index_url or os.environ.get("PIP_INDEX_URL") or remote.get("PIP_INDEX_URL", "")).strip()
+    th = (trusted_host or os.environ.get("PIP_TRUSTED_HOST") or remote.get("PIP_TRUSTED_HOST", "")).strip()
+    pt = (pytorch_index_url or os.environ.get("PYTORCH_INDEX_URL") or remote.get("PYTORCH_INDEX_URL", "")).strip()
+
+    flags = [
+        f"--python {venv_dir}/bin/python",
+        f"--find-links {app_dir}/resources/wheels",
+    ]
+    if fl:
+        flags.append(f"--find-links {fl}")
+    if iu:
+        flags.append(f"--index-url {iu}")
+    if th:
+        flags.append(f"--allow-insecure-host {th}")
+    if pt and pt.lower() not in ["none", "off", "false", "disabled", ""]:
+        flags.append(f"--extra-index-url {pt}")
+    if no_cache_dir:
+        flags.append("--no-cache")
+
+    flags_str = " ".join(flags)
+    env_prefix = f"UV_PYTHON_INSTALL_DIR={python_install_dir} UV_CACHE_DIR={uv_cache_dir}"
+    return f"{env_prefix} uv pip install {flags_str} -r {app_dir}/requirements.txt"
+
+
+
 # ==============================================================================
 # PHASE 4B: BARE-METAL LLAMA.CPP COMPILATION & INSTALLATION
 # ==============================================================================
@@ -1678,17 +1908,28 @@ def build_and_migrate(c, find_links=None, index_url=None, trusted_host=None, pyt
     # Read any persistent remote environment overrides if available
     remote_env = get_remote_env(c, env_file=env_file)
 
-    # Build pip installation command purely in Python for complete transparency
-    pip_install_cmd = build_pip_install_cmd(
-        find_links=find_links,
-        index_url=index_url,
-        trusted_host=trusted_host,
-        pytorch_index_url=pytorch_index_url,
-        remote_env=remote_env,
-    )
-    print(f"\n📦 [pip install] Executing command as {DEPLOY_USER}:")
-    print(f"   {pip_install_cmd}\n")
-    run_as_deploy_user(c, pip_install_cmd, cwd=APP_DIR)
+    # Build package installation command purely in Python for complete transparency
+    if USE_UV and ensure_uv(c, remote_env=remote_env):
+        install_cmd = build_uv_install_cmd(
+            find_links=find_links,
+            index_url=index_url,
+            trusted_host=trusted_host,
+            pytorch_index_url=pytorch_index_url,
+            remote_env=remote_env,
+        )
+        installer_label = "uv pip install"
+    else:
+        install_cmd = build_pip_install_cmd(
+            find_links=find_links,
+            index_url=index_url,
+            trusted_host=trusted_host,
+            pytorch_index_url=pytorch_index_url,
+            remote_env=remote_env,
+        )
+        installer_label = "pip install"
+    print(f"\n📦 [{installer_label}] Executing command as {DEPLOY_USER}:")
+    print(f"   {install_cmd}\n")
+    run_as_deploy_user(c, install_cmd, cwd=APP_DIR)
 
     # Run deployment verification checks
     print("🔍 Running Django deployment check...")

@@ -165,7 +165,9 @@ Path                       Purpose
 ``/srv/reason/app``        Active git clone / checkout of the Reason codebase.
 ``/srv/reason/shared``     Persistent shared data: ``.env``, ``.env.secrets``, ``media/``,
                            and user workspaces (persists across code deployments).
-``/srv/reason/venv``       Isolated Python 3.12+ virtual environment.
+``/srv/reason/venv``       Isolated Python 3.12 virtual environment (managed via ``uv``).
+``/srv/reason/python``     Shared ``uv``-managed Python toolchain directory (accessible under ``ProtectHome=yes``).
+``/srv/reason/.uv_cache``  Shared ``uv`` package and wheel cache directory.
 ``/srv/reason/static``     Consolidated static assets collected via ``collectstatic``
                            (read-only access granted to Nginx group ``www-data``).
 ``/srv/reason/logs``       Application log directory for access and error logs.
@@ -218,8 +220,8 @@ For a brand-new, freshly-installed Linux host (Ubuntu 22.04+ recommended), run t
    python fabfile.py setup-all production.example.com
 
 What ``setup-all`` executes sequentially:
-1. **``preflight_check``**: Validates target OS architecture, disk space, and core dependencies (verifying and automatically installing ``python3``, ``python3-venv``, and ``nginx`` via ``apt-get`` if missing on Debian/Ubuntu).
-2. **``provision_system``**: Creates deployment user ``verbal_deploy``, application user ``verbal_run``, group ``www-data``, provisions dedicated SSH keypairs for ``verbal_deploy``, and provisions all ``/srv/reason/`` directory trees.
+1. **``preflight_check``**: Validates target OS architecture, disk space, and baseline Ubuntu/Debian system packages—automatically batch-installing ``python3``, ``python3-venv`` (verified with ``ensurepip``), ``nginx``, ``git``, ``curl``, ``ca-certificates``, ``rsync``, ``openssl``, ``acl``, ``gzip``, ``tar``, ``unzip``, ``build-essential``, ``cmake``, ``docker.io``, and ``docker-compose-v2``, plus ``python3.12`` and ``python3.12-venv`` if present in ``apt``. It also enables ``docker.service``, adds the logged-in SSH operator user to the ``docker`` group, and ensures ``uv`` is installed at ``/usr/local/bin/uv``.
+2. **``provision_system``**: Creates deployment user ``verbal_deploy``, application user ``verbal_run``, group ``www-data``, ensures the logged-in SSH user belongs to ``docker``, provisions dedicated SSH keypairs for ``verbal_deploy``, establishes all ``/srv/reason/`` directory trees, and creates or upgrades ``/srv/reason/venv`` pinned to **Python 3.12** (``REASON_PYTHON_VERSION=3.12``) using ``uv venv --python 3.12 --seed``.
 3. **``setup_nginx_and_ssl``**: Generates hardened Nginx virtual host configurations, installs security headers, and binds TLS certificates.
 4. **``setup_systemd``**: Renders and writes the 6 systemd units (``reason.service``, ``reason-docker.service``, and the 4 application services), runs ``daemon-reload``, and enables them for boot startup.
 5. **``deploy``**: Triggers the initial code pull, container startup, migration run, and service activation.
@@ -289,10 +291,12 @@ Fabric Task                  Description
 ``fab setup-nginx-and-ssl``  Updates Nginx virtual host configuration and reloads Nginx.
 ===========================  ==============================================================
 
-Air-Gapped & Custom Mirror Options
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Air-Gapped, Artifactory & ``uv`` Mirror Options
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-When deploying into corporate or air-gapped environments, pass custom mirror flags to the deployment command:
+By default, Reason locks the production Python environment to **Python 3.12** (``REASON_PYTHON_VERSION=3.12``) and uses **``uv``** (``REASON_USE_UV=true``) for both virtual environment provisioning and dependency installation.
+
+When deploying into corporate or Artifactory-backed environments, pass custom mirror flags via CLI or ``.env.deploy``:
 
 .. code-block:: bash
 
@@ -301,6 +305,13 @@ When deploying into corporate or air-gapped environments, pass custom mirror fla
      --index-url="https://artifactory.local/api/pypi/simple" \
      --trusted-host="artifactory.local" \
      --pytorch-index-url="https://artifactory.local/api/pypi/pytorch-wheels"
+
+* **Artifactory Package Indices**:
+  ``build_uv_install_cmd`` automatically maps ``PIP_INDEX_URL`` to ``--index-url``, ``PYTORCH_INDEX_URL`` to ``--extra-index-url``, ``PIP_FIND_LINKS`` to ``--find-links``, and ``PIP_TRUSTED_HOST`` to ``--allow-insecure-host``.
+* **Bootstrapping ``uv`` via Artifactory**:
+  When ``PIP_INDEX_URL`` or ``PIP_FIND_LINKS`` is configured, ``ensure_uv`` bootstraps ``uv`` directly from your Artifactory PyPI mirror into ``/usr/local/bin/uv`` before falling back to the standalone installer script.
+* **Standalone Python Toolchain Mirror**:
+  If ``python3.12`` is not available in the target host's core ``apt`` repository and internet access to GitHub is restricted, set ``UV_PYTHON_INSTALL_MIRROR`` in ``.env.deploy`` to direct ``uv`` to an internal Artifactory mirror of ``python-build-standalone``. Managed Python installations are stored in ``/srv/reason/python`` (``REASON_PYTHON_INSTALL_DIR``) so they remain accessible to systemd services running with ``ProtectHome=yes``.
 
 
 4. Configuration & "Bring Your Own Secrets"
