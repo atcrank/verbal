@@ -1584,6 +1584,231 @@ class TestLoggingConfigurationAndFabricLogs(SimpleTestCase):
         self.assertTrue(any(f"chmod 2775 {LOG_DIR}" in cmd for cmd in bash_calls))
 
 
+class TestUbuntu26AndUvStandardization(SimpleTestCase):
+    """Verifies Ubuntu 26 baseline apt provisioning, Docker group membership, Python 3.12 pinning, and uv + Artifactory support."""
+
+    @patch("deploy.fabric_deploy.ensure_sudo")
+    @patch("deploy.fabric_deploy.ensure_uv")
+    def test_preflight_auto_installs_ubuntu26_baseline_packages_and_docker_and_python312(
+        self, mock_ensure_uv, mock_sudo
+    ):
+        """Verifies preflight_check batch-installs missing baseline packages, docker, build-essential, cmake, and python3.12."""
+        from deploy.fabric_deploy import preflight_check
+        c = create_mock_context()
+        c.user = "ubuntu_admin"
+
+        def mock_run(cmd, **kwargs):
+            if "test -f" in cmd:
+                return MagicMock(ok=False, failed=True)
+            if any(
+                missing in cmd
+                for missing in [
+                    "which git",
+                    "which rsync",
+                    "which gcc",
+                    "which cmake",
+                    "which docker",
+                    "docker compose version",
+                    "which python3.12",
+                    "python3.12 -m venv",
+                ]
+            ):
+                return MagicMock(ok=False, failed=True)
+            if "apt-cache show python3.12" in cmd:
+                return MagicMock(ok=True, failed=False)
+            if "groups ubuntu_admin" in cmd:
+                return MagicMock(ok=True, failed=False, stdout="ubuntu_admin : ubuntu_admin sudo")
+            return MagicMock(ok=True, failed=False, stdout="50000000")
+
+        c.run.side_effect = mock_run
+        c.sudo.return_value = MagicMock(ok=True, failed=False)
+        mock_ensure_uv.return_value = "/usr/local/bin/uv"
+
+        preflight_check(c)
+
+        sudo_cmds = [call[0][0] for call in c.sudo.call_args_list if call[0]]
+        apt_install_cmds = [cmd for cmd in sudo_cmds if "apt-get install -y" in cmd]
+        self.assertEqual(len(apt_install_cmds), 1)
+        install_cmd = apt_install_cmds[0]
+        for expected_pkg in [
+            "git",
+            "rsync",
+            "build-essential",
+            "cmake",
+            "docker.io",
+            "docker-compose-v2",
+            "python3.12",
+            "python3.12-venv",
+        ]:
+            self.assertIn(expected_pkg, install_cmd)
+
+        self.assertTrue(any("systemctl enable --now docker" in cmd for cmd in sudo_cmds))
+        self.assertTrue(any("usermod -aG docker ubuntu_admin" in cmd for cmd in sudo_cmds))
+        mock_ensure_uv.assert_called_once()
+
+    def test_ensure_uv_bootstraps_via_artifactory_when_pip_index_url_set(self):
+        """Verifies ensure_uv installs uv into /usr/local/bin using Artifactory PIP_INDEX_URL and PIP_TRUSTED_HOST."""
+        from deploy.fabric_deploy import ensure_uv
+        c = create_mock_context()
+        c.run.return_value = MagicMock(ok=False, failed=True, stdout="")
+
+        sudo_calls = []
+
+        def mock_sudo(cmd, **kwargs):
+            sudo_calls.append(cmd)
+            if "test -x /usr/local/bin/uv || test -x /usr/bin/uv" in cmd:
+                # First check fails (not installed yet), final check succeeds
+                is_installed = len(sudo_calls) > 1
+                return MagicMock(ok=is_installed, failed=not is_installed)
+            return MagicMock(ok=True, failed=False)
+
+        c.sudo.side_effect = mock_sudo
+
+        res = ensure_uv(
+            c,
+            remote_env={
+                "PIP_INDEX_URL": "https://artifactory.corp/api/pypi/simple",
+                "PIP_TRUSTED_HOST": "artifactory.corp",
+            },
+        )
+        self.assertEqual(res, "/usr/local/bin/uv")
+        bootstrap_cmds = [cmd for cmd in sudo_calls if "/tmp/uv-bootstrap" in cmd and "pip install" in cmd]
+        self.assertEqual(len(bootstrap_cmds), 1)
+        self.assertIn("--index-url https://artifactory.corp/api/pypi/simple", bootstrap_cmds[0])
+        self.assertIn("--trusted-host artifactory.corp", bootstrap_cmds[0])
+        self.assertIn("install -m 0755 /tmp/uv-bootstrap/bin/uv /usr/local/bin/uv", bootstrap_cmds[0])
+
+    def test_ensure_uv_falls_back_to_standalone_installer(self):
+        """Verifies ensure_uv falls back to https://astral.sh/uv/install.sh if pip bootstrap is skipped or fails."""
+        from deploy.fabric_deploy import ensure_uv
+        c = create_mock_context()
+        c.run.return_value = MagicMock(ok=False, failed=True, stdout="")
+
+        def mock_sudo(cmd, **kwargs):
+            if "test -x /usr/local/bin/uv || test -x /usr/bin/uv" in cmd:
+                return MagicMock(ok=False, failed=True)
+            if "/tmp/uv-bootstrap" in cmd:
+                return MagicMock(ok=False, failed=True)
+            if "https://astral.sh/uv/install.sh" in cmd:
+                return MagicMock(ok=True, failed=False)
+            return MagicMock(ok=True, failed=False)
+
+        c.sudo.side_effect = mock_sudo
+        with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("PIP_INDEX_URL", None)
+            os.environ.pop("PIP_FIND_LINKS", None)
+            ensure_uv(c, remote_env={})
+
+        sudo_cmds = [call[0][0] for call in c.sudo.call_args_list if call[0]]
+        self.assertTrue(any("https://astral.sh/uv/install.sh" in cmd for cmd in sudo_cmds))
+
+    @patch("deploy.fabric_deploy.ensure_sudo")
+    @patch("deploy.fabric_deploy.ensure_deploy_ssh_key")
+    @patch("deploy.fabric_deploy.ensure_uv")
+    @patch("deploy.fabric_deploy.sudo_bash")
+    def test_provision_system_creates_python312_venv_with_uv_and_artifactory_mirror(
+        self, mock_bash, mock_ensure_uv, mock_ensure_key, mock_sudo
+    ):
+        """Verifies provision_system creates a Python 3.12 venv via uv with UV_PYTHON_INSTALL_DIR and UV_PYTHON_INSTALL_MIRROR."""
+        import deploy.fabric_deploy as fd
+        from deploy.fabric_deploy import provision_system
+        c = create_mock_context()
+        c.user = "operator"
+        mock_ensure_uv.return_value = "/usr/local/bin/uv"
+        mock_bash.return_value = MagicMock(ok=True, failed=False)
+
+        def mock_c_run(cmd, **kwargs):
+            if "groups operator" in cmd:
+                return MagicMock(ok=True, failed=False, stdout="operator : operator sudo")
+            return MagicMock(ok=True, failed=False, stdout="operator")
+
+        c.run.side_effect = mock_c_run
+
+        def mock_c_sudo(cmd, **kwargs):
+            if f"test -f {fd.VENV_DIR}/bin/pip" in cmd:
+                return MagicMock(ok=False, failed=True)
+            return MagicMock(ok=True, failed=False)
+
+        c.sudo.side_effect = mock_c_sudo
+
+        with patch.dict(
+            os.environ,
+            {"UV_PYTHON_INSTALL_MIRROR": "https://artifactory.corp/python-build-standalone"},
+        ):
+            provision_system(c)
+
+        sudo_cmds = [call[0][0] for call in c.sudo.call_args_list if call[0]]
+        bash_cmds = [call[0][1] for call in mock_bash.call_args_list if len(call[0]) > 1]
+        self.assertTrue(any("usermod -aG docker operator" in cmd for cmd in sudo_cmds))
+        uv_venv_cmds = [cmd for cmd in bash_cmds if f"uv venv {fd.VENV_DIR}" in cmd]
+        self.assertEqual(len(uv_venv_cmds), 1)
+        self.assertIn("--python 3.12 --seed", uv_venv_cmds[0])
+        self.assertIn(f"UV_PYTHON_INSTALL_DIR={fd.PYTHON_INSTALL_DIR}", uv_venv_cmds[0])
+        self.assertIn(f"UV_CACHE_DIR={fd.UV_CACHE_DIR}", uv_venv_cmds[0])
+        self.assertIn(
+            "UV_PYTHON_INSTALL_MIRROR=https://artifactory.corp/python-build-standalone",
+            uv_venv_cmds[0],
+        )
+
+    @patch("deploy.fabric_deploy.ensure_sudo")
+    @patch("deploy.fabric_deploy.ensure_deploy_ssh_key")
+    @patch("deploy.fabric_deploy.ensure_uv")
+    @patch("deploy.fabric_deploy.sudo_bash")
+    def test_provision_system_rebuilds_venv_when_python_version_mismatches(
+        self, mock_bash, mock_ensure_uv, mock_ensure_key, mock_sudo
+    ):
+        """Verifies provision_system removes and rebuilds an existing venv if its Python version is 3.14 instead of 3.12."""
+        import deploy.fabric_deploy as fd
+        from deploy.fabric_deploy import provision_system
+        c = create_mock_context()
+        mock_ensure_uv.return_value = "/usr/local/bin/uv"
+        mock_bash.return_value = MagicMock(ok=True, failed=False)
+
+        def mock_c_sudo(cmd, **kwargs):
+            if f"test -f {fd.VENV_DIR}/bin/pip" in cmd:
+                return MagicMock(ok=True, failed=False)
+            if "sys.version_info.major" in cmd:
+                return MagicMock(ok=False, failed=True)
+            return MagicMock(ok=True, failed=False)
+
+        c.sudo.side_effect = mock_c_sudo
+
+        provision_system(c)
+
+        sudo_cmds = [call[0][0] for call in c.sudo.call_args_list if call[0]]
+        bash_cmds = [call[0][1] for call in mock_bash.call_args_list if len(call[0]) > 1]
+        self.assertTrue(any(f"rm -rf {fd.VENV_DIR}" in cmd for cmd in sudo_cmds))
+        self.assertTrue(any(f"uv venv {fd.VENV_DIR} --python 3.12 --seed" in cmd for cmd in bash_cmds))
+
+    def test_build_uv_install_cmd_pure_function(self):
+        """Ensures build_uv_install_cmd formats all Artifactory flags and uv environment paths cleanly."""
+        from deploy.fabric_deploy import build_uv_install_cmd
+        cmd = build_uv_install_cmd(
+            index_url="https://mirror.corp/pypi",
+            pytorch_index_url="https://mirror.corp/whl/cu124",
+            find_links="https://mirror.corp/wheels",
+            trusted_host="mirror.corp",
+            app_dir="/srv/reason/app",
+            venv_dir="/srv/reason/venv",
+            python_install_dir="/srv/reason/python",
+            uv_cache_dir="/srv/reason/.uv_cache",
+        )
+        self.assertEqual(
+            cmd,
+            "UV_PYTHON_INSTALL_DIR=/srv/reason/python UV_CACHE_DIR=/srv/reason/.uv_cache "
+            "uv pip install "
+            "--python /srv/reason/venv/bin/python "
+            "--find-links /srv/reason/app/resources/wheels "
+            "--find-links https://mirror.corp/wheels "
+            "--index-url https://mirror.corp/pypi "
+            "--allow-insecure-host mirror.corp "
+            "--extra-index-url https://mirror.corp/whl/cu124 "
+            "--no-cache "
+            "-r /srv/reason/app/requirements.txt",
+        )
+
+
+
 
 
 
