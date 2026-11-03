@@ -220,11 +220,39 @@ For a brand-new, freshly-installed Linux host (Ubuntu 22.04+ recommended), run t
    python fabfile.py setup-all production.example.com
 
 What ``setup-all`` executes sequentially:
-1. **``preflight_check``**: Validates target OS architecture, disk space, and baseline Ubuntu/Debian system packages—automatically batch-installing ``python3``, ``python3-venv`` (verified with ``ensurepip``), ``nginx``, ``git``, ``curl``, ``ca-certificates``, ``rsync``, ``openssl``, ``acl``, ``gzip``, ``tar``, ``unzip``, ``build-essential``, ``cmake``, ``docker.io``, and ``docker-compose-v2``, plus ``python3.12`` and ``python3.12-venv`` if present in ``apt``. It also enables ``docker.service``, adds the logged-in SSH operator user to the ``docker`` group, and ensures ``uv`` is installed at ``/usr/local/bin/uv``.
+1. **``preflight_check``**: Validates target OS architecture, disk space, and baseline Ubuntu/Debian system packages—automatically batch-installing ``python3``, ``python3-venv`` (verified with ``ensurepip``), ``nginx``, ``git``, ``curl``, ``ca-certificates``, ``rsync``, ``openssl``, ``acl``, ``gzip``, ``tar``, ``unzip``, ``build-essential``, ``cmake``, and the official Docker CE stack (``docker-ce``, ``docker-ce-cli``, ``containerd.io``, ``docker-buildx-plugin``, ``docker-compose-plugin``—falling back to ``docker.io`` / ``docker-compose-v2`` only on air-gapped systems where Docker CE is unavailable), plus ``python3.12`` and ``python3.12-venv`` if present in ``apt``. It also enables ``docker.service``, adds the logged-in SSH operator user to the ``docker`` group, and ensures ``uv`` is installed at ``/usr/local/bin/uv``.
 2. **``provision_system``**: Creates deployment user ``verbal_deploy``, application user ``verbal_run``, group ``www-data``, ensures the logged-in SSH user belongs to ``docker``, provisions dedicated SSH keypairs for ``verbal_deploy``, establishes all ``/srv/reason/`` directory trees, and creates or upgrades ``/srv/reason/venv`` pinned to **Python 3.12** (``REASON_PYTHON_VERSION=3.12``) using ``uv venv --python 3.12 --seed``.
 3. **``setup_nginx_and_ssl``**: Generates hardened Nginx virtual host configurations, installs security headers, and binds TLS certificates.
 4. **``setup_systemd``**: Renders and writes the 6 systemd units (``reason.service``, ``reason-docker.service``, and the 4 application services), runs ``daemon-reload``, and enables them for boot startup.
 5. **``deploy``**: Triggers the initial code pull, container startup, migration run, and service activation.
+
+Skipping, Resuming, or Deferring Steps During ``setup-all`` & ``deploy``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If a step in ``setup-all`` or ``deploy`` needs to be skipped, deferred, or resumed after manual intervention:
+
+* **Interactive Deferral Prompt**:
+  When running interactively in a terminal, if any step triggers a stop (``Exit``), Fabric prompts whether to ``[s]kip/defer`` the step and continue with the rest of the pipeline or ``[a]bort`` immediately. Deferred steps are listed with their exact follow-up commands in a **Deferred Steps Summary** at the end of the run.
+* **Non-Interactive Deferral (``--continue-on-error``)**:
+  Pass ``--continue-on-error`` (or set ``REASON_CONTINUE_ON_ERROR=true``) to automatically defer any failing step and continue executing remaining steps.
+* **Skip Specific Steps (``--skip``)**:
+  Pass a comma-separated list of step names or short aliases (``preflight``, ``apt``, ``provision``, ``nginx``, ``systemd``, ``deploy``, ``code``, ``containers``, ``build``, ``restart``, ``health``):
+
+  .. code-block:: bash
+
+     # Skip apt package installation during preflight, or skip nginx setup:
+     fab setup-all -H user@production.example.com --skip=apt,nginx
+
+* **Resume at a Specific Step (``--start-at``)**:
+  Fast-forward past already-completed bootstrap steps and resume directly from a target step (including sub-steps inside ``deploy``):
+
+  .. code-block:: bash
+
+     # Resume setup-all starting at systemd unit setup:
+     fab setup-all -H user@production.example.com --start-at=systemd
+
+     # Or resume setup-all directly at build_and_migrate:
+     fab setup-all -H user@production.example.com --start-at=build
 
 Deploy Key Authorization & Graceful Setup
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

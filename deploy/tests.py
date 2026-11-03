@@ -1627,24 +1627,98 @@ class TestUbuntu26AndUvStandardization(SimpleTestCase):
         preflight_check(c)
 
         sudo_cmds = [call[0][0] for call in c.sudo.call_args_list if call[0]]
-        apt_install_cmds = [cmd for cmd in sudo_cmds if "apt-get install -y" in cmd]
+        apt_install_cmds = [cmd for cmd in sudo_cmds if "apt-get install -y" in cmd and "cmake" in cmd]
         self.assertEqual(len(apt_install_cmds), 1)
         install_cmd = apt_install_cmds[0]
+        # Must be wrapped in bash -c so compound operators never drop sudo privileges
+        self.assertIn("bash -c", install_cmd)
         for expected_pkg in [
             "git",
             "rsync",
             "build-essential",
             "cmake",
-            "docker.io",
-            "docker-compose-v2",
+            "docker-ce",
+            "docker-ce-cli",
+            "containerd.io",
+            "docker-compose-plugin",
             "python3.12",
             "python3.12-venv",
         ]:
             self.assertIn(expected_pkg, install_cmd)
+        self.assertNotIn("docker-compose-v2", install_cmd)
 
         self.assertTrue(any("systemctl enable --now docker" in cmd for cmd in sudo_cmds))
         self.assertTrue(any("usermod -aG docker ubuntu_admin" in cmd for cmd in sudo_cmds))
         mock_ensure_uv.assert_called_once()
+
+    @patch("deploy.fabric_deploy.ensure_sudo")
+    @patch("deploy.fabric_deploy.ensure_uv")
+    def test_preflight_respects_existing_docker_ce_and_compose_plugin(
+        self, mock_ensure_uv, mock_sudo
+    ):
+        """Verifies preflight_check never installs docker-compose-v2 when docker-ce and docker-compose-plugin are present."""
+        from deploy.fabric_deploy import preflight_check
+        c = create_mock_context()
+        c.user = "operator"
+
+        def mock_run(cmd, **kwargs):
+            if "which cmake" in cmd:
+                return MagicMock(ok=False, failed=True)
+            # docker and docker-compose-plugin are installed
+            return MagicMock(ok=True, failed=False, stdout="operator : operator docker")
+
+        c.run.side_effect = mock_run
+        c.sudo.return_value = MagicMock(ok=True, failed=False)
+        mock_ensure_uv.return_value = "/usr/local/bin/uv"
+
+        preflight_check(c)
+
+        sudo_cmds = [call[0][0] for call in c.sudo.call_args_list if call[0]]
+        apt_install_cmds = [cmd for cmd in sudo_cmds if "apt-get install -y" in cmd]
+        self.assertEqual(len(apt_install_cmds), 1)
+        self.assertIn("cmake", apt_install_cmds[0])
+        self.assertNotIn("docker", apt_install_cmds[0])
+
+    @patch("deploy.fabric_deploy.ensure_sudo")
+    @patch("deploy.fabric_deploy.preflight_check")
+    @patch("deploy.fabric_deploy.provision_system")
+    @patch("deploy.fabric_deploy.setup_nginx_and_ssl")
+    @patch("deploy.fabric_deploy.setup_systemd")
+    @patch("deploy.fabric_deploy.deploy")
+    def test_setup_all_supports_skip_start_at_and_continue_on_error(
+        self, mock_deploy, mock_systemd, mock_nginx, mock_provision, mock_preflight, mock_sudo
+    ):
+        """Verifies setup_all can skip steps, start at a specific step, or defer a failing step via continue_on_error."""
+        from deploy.fabric_deploy import setup_all, Exit
+        c = create_mock_context()
+
+        # 1. Skip preflight and nginx
+        setup_all(c, skip="preflight,nginx")
+        mock_preflight.assert_not_called()
+        mock_nginx.assert_not_called()
+        mock_provision.assert_called_once()
+        mock_systemd.assert_called_once()
+        mock_deploy.assert_called_once()
+
+        # 2. Resume at systemd (--start-at=systemd)
+        mock_provision.reset_mock()
+        mock_systemd.reset_mock()
+        mock_deploy.reset_mock()
+        setup_all(c, start_at="systemd")
+        mock_preflight.assert_not_called()
+        mock_provision.assert_not_called()
+        mock_nginx.assert_not_called()
+        mock_systemd.assert_called_once()
+        mock_deploy.assert_called_once()
+
+        # 3. Defer a step that raises Exit when continue_on_error=True
+        mock_systemd.reset_mock()
+        mock_deploy.reset_mock()
+        mock_nginx.side_effect = Exit("Nginx syntax error")
+        setup_all(c, continue_on_error=True)
+        # Should continue past nginx failure and still run setup_systemd and deploy
+        mock_systemd.assert_called_once()
+        mock_deploy.assert_called_once()
 
     def test_ensure_uv_bootstraps_via_artifactory_when_pip_index_url_set(self):
         """Verifies ensure_uv installs uv into /usr/local/bin using Artifactory PIP_INDEX_URL and PIP_TRUSTED_HOST."""

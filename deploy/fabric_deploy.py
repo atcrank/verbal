@@ -853,12 +853,167 @@ def ensure_uv(c, remote_env=None):
     return None
 
 
+STEP_ALIASES = {
+    "preflight": "preflight_check",
+    "preflight_check": "preflight_check",
+    "preflight-check": "preflight_check",
+    "apt": "apt",
+    "provision": "provision_system",
+    "provision_system": "provision_system",
+    "provision-system": "provision_system",
+    "users": "provision_system",
+    "venv": "provision_system",
+    "nginx": "setup_nginx_and_ssl",
+    "ssl": "setup_nginx_and_ssl",
+    "setup_nginx_and_ssl": "setup_nginx_and_ssl",
+    "setup-nginx-and-ssl": "setup_nginx_and_ssl",
+    "systemd": "setup_systemd",
+    "setup_systemd": "setup_systemd",
+    "setup-systemd": "setup_systemd",
+    "units": "setup_systemd",
+    "deploy": "deploy",
+    "code": "update_code",
+    "git": "update_code",
+    "update_code": "update_code",
+    "update-code": "update_code",
+    "containers": "start_backend_containers",
+    "docker": "start_backend_containers",
+    "start_backend_containers": "start_backend_containers",
+    "start-backend-containers": "start_backend_containers",
+    "build": "build_and_migrate",
+    "migrate": "build_and_migrate",
+    "build_and_migrate": "build_and_migrate",
+    "build-and-migrate": "build_and_migrate",
+    "restart": "restart_services",
+    "restart_services": "restart_services",
+    "restart-services": "restart_services",
+    "health": "health_check",
+    "health_check": "health_check",
+    "health-check": "health_check",
+}
+
+
+def normalize_step_name(name):
+    """Maps a step name or shorthand alias to its canonical pipeline step name."""
+    if not name:
+        return ""
+    cleaned = str(name).strip().lower()
+    return STEP_ALIASES.get(cleaned, cleaned.replace("-", "_"))
+
+
+def parse_step_set(skip_arg):
+    """Parses a comma-separated string or iterable of step names/aliases into a normalized set."""
+    if not skip_arg:
+        env_skip = os.environ.get("REASON_SKIP_STEPS", "").strip()
+        if not env_skip:
+            return set()
+        skip_arg = env_skip
+    if isinstance(skip_arg, str):
+        items = [part.strip() for part in skip_arg.split(",") if part.strip()]
+    else:
+        items = [str(part).strip() for part in skip_arg if str(part).strip()]
+    return {normalize_step_name(item) for item in items}
+
+
+def is_continue_on_error_enabled(flag=False):
+    """Returns True if --continue-on-error or REASON_CONTINUE_ON_ERROR is active."""
+    if str(flag).lower() in ("true", "1", "yes"):
+        return True
+    if flag is True:
+        return True
+    return os.environ.get("REASON_CONTINUE_ON_ERROR", "").strip().lower() in ("true", "1", "yes")
+
+
+def prompt_or_defer_step(step_name, exc, deferred_list=None, continue_on_error=False, remediation_cmd=None):
+    """
+    Handles a step that triggered an Exit stop:
+    - If continue_on_error is enabled, logs and records the step as deferred without aborting.
+    - If running in an interactive terminal (outside automated test suites), prompts the
+      operator whether to [s]kip/defer the step and continue or [a]bort immediately.
+    - Otherwise re-raises the Exit exception.
+    """
+    import sys
+
+    should_defer = is_continue_on_error_enabled(continue_on_error)
+    if not should_defer:
+        is_tty = (
+            getattr(sys, "stdin", None) is not None
+            and hasattr(sys.stdin, "isatty")
+            and sys.stdin.isatty()
+            and "test" not in sys.argv
+        )
+        if is_tty:
+            print(f"\n⏸️  Step '{step_name}' triggered a stop: {exc}")
+            try:
+                ans = input("   Would you like to [s]kip/defer this step and continue, or [a]bort now? [s/A]: ").strip().lower()
+                if ans in ("s", "skip", "d", "defer", "y", "yes"):
+                    should_defer = True
+            except (EOFError, KeyboardInterrupt):
+                should_defer = False
+
+    if should_defer:
+        print(f"⚠️ [DEFERRED] Step '{step_name}' deferred ({exc}). Continuing with remaining steps...")
+        if deferred_list is not None:
+            deferred_list.append((step_name, str(exc), remediation_cmd))
+        return True
+
+    print(
+        f"💡 Tip: To skip or defer this step on re-run, pass "
+        f"--skip={step_name} or --continue-on-error."
+    )
+    raise exc
+
+
+def print_deferred_summary(deferred_list):
+    """Prints a consolidated summary banner of any steps that were deferred during execution."""
+    if not deferred_list:
+        return
+    print("\n" + "=" * 75)
+    print("📋 [DEFERRED STEPS SUMMARY] The following steps were skipped/deferred:")
+    print("=" * 75)
+    for step_name, reason, remediation in deferred_list:
+        print(f"  • {step_name}: {reason}")
+        if remediation:
+            print(f"    ↳ Run later: {remediation}")
+    print("=" * 75 + "\n")
+
+
+def ensure_docker_ce_apt_repo(c):
+    """
+    Ensures Docker's official apt repository (providing docker-ce, docker-ce-cli,
+    containerd.io, and docker-compose-plugin) is configured on Ubuntu/Debian hosts.
+    Returns True if docker-compose-plugin is available in apt-cache afterward.
+    """
+    if c.run("apt-cache show docker-compose-plugin", warn=True, hide=True).ok:
+        return True
+
+    print("🐳 Configuring official Docker CE apt repository (download.docker.com)...")
+    setup_repo_cmd = (
+        "DEBIAN_FRONTEND=noninteractive apt-get update -y && "
+        "DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates curl && "
+        "install -m 0755 -d /etc/apt/keyrings && "
+        "curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc && "
+        "chmod a+r /etc/apt/keyrings/docker.asc && "
+        'ARCH=$(dpkg --print-architecture) && '
+        'CODENAME=$(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") && '
+        'if ! curl -fsSL "https://download.docker.com/linux/ubuntu/dists/$CODENAME/Release" >/dev/null 2>&1; then '
+        'CODENAME="noble"; '
+        'fi && '
+        'echo "deb [arch=$ARCH signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $CODENAME stable" '
+        '> /etc/apt/sources.list.d/docker.list && '
+        "DEBIAN_FRONTEND=noninteractive apt-get update -y"
+    )
+    sudo_bash(c, setup_repo_cmd, warn=True)
+    return c.run("apt-cache show docker-compose-plugin", warn=True, hide=True).ok
+
+
 @task
-def preflight_check(c):
+def preflight_check(c, skip_apt=False, continue_on_error=False):
     """
     Validates server environment, production .env configuration, permissions,
-    baseline apt packages (git, curl, rsync, nginx, build-essential, cmake, docker, python3.12),
-    docker group membership for the operator, and uv availability.
+    baseline apt packages (git, curl, rsync, nginx, build-essential, cmake,
+    docker-ce/docker-compose-plugin, python3.12), docker group membership
+    for the operator, and uv availability.
     """
     ensure_sudo(c)
     print("📋 [Preflight] Verifying server environment and production configuration...")
@@ -881,96 +1036,143 @@ def preflight_check(c):
             print(f"🔒 Tightening permissions on {target_env} (was {perm})...")
             sudo_bash(c, f"chmod 0640 {target_env} && chown root:{WEB_GROUP} {target_env}")
 
-    # Verify core system dependencies
-    missing_packages = []
+    should_skip_apt = (
+        str(skip_apt).lower() in ("true", "1", "yes")
+        or os.environ.get("REASON_SKIP_APT", "").strip().lower() in ("true", "1", "yes")
+    )
+    if should_skip_apt:
+        print("⏭️  [Preflight] Skipping apt package checks (--skip-apt).")
+    else:
+        # Verify core system dependencies
+        missing_packages = []
 
-    py_check = c.run("python3 --version", warn=True, hide=True)
-    if py_check.failed:
-        missing_packages.append("python3")
+        py_check = c.run("python3 --version", warn=True, hide=True)
+        if py_check.failed:
+            missing_packages.append("python3")
 
-    venv_check = c.run("python3 -m venv -h && python3 -c 'import ensurepip'", warn=True, hide=True)
-    if venv_check.failed:
-        missing_packages.append("python3-venv")
+        venv_check = c.run("python3 -m venv -h && python3 -c 'import ensurepip'", warn=True, hide=True)
+        if venv_check.failed:
+            missing_packages.append("python3-venv")
 
-    nginx_check = c.run("which nginx", warn=True, hide=True)
-    if nginx_check.failed:
-        missing_packages.append("nginx")
+        nginx_check = c.run("which nginx", warn=True, hide=True)
+        if nginx_check.failed:
+            missing_packages.append("nginx")
 
-    git_check = c.run("which git", warn=True, hide=True)
-    if git_check.failed:
-        missing_packages.append("git")
+        git_check = c.run("which git", warn=True, hide=True)
+        if git_check.failed:
+            missing_packages.append("git")
 
-    curl_check = c.run("which curl", warn=True, hide=True)
-    if curl_check.failed:
-        missing_packages.extend(["curl", "ca-certificates"])
+        curl_check = c.run("which curl", warn=True, hide=True)
+        if curl_check.failed:
+            missing_packages.extend(["curl", "ca-certificates"])
 
-    rsync_check = c.run("which rsync", warn=True, hide=True)
-    if rsync_check.failed:
-        missing_packages.append("rsync")
+        rsync_check = c.run("which rsync", warn=True, hide=True)
+        if rsync_check.failed:
+            missing_packages.append("rsync")
 
-    openssl_check = c.run("which openssl", warn=True, hide=True)
-    if openssl_check.failed:
-        missing_packages.append("openssl")
+        openssl_check = c.run("which openssl", warn=True, hide=True)
+        if openssl_check.failed:
+            missing_packages.append("openssl")
 
-    acl_check = c.run("which setfacl", warn=True, hide=True)
-    if acl_check.failed:
-        missing_packages.append("acl")
+        acl_check = c.run("which setfacl", warn=True, hide=True)
+        if acl_check.failed:
+            missing_packages.append("acl")
 
-    gzip_check = c.run("which gzip", warn=True, hide=True)
-    if gzip_check.failed:
-        missing_packages.append("gzip")
+        gzip_check = c.run("which gzip", warn=True, hide=True)
+        if gzip_check.failed:
+            missing_packages.append("gzip")
 
-    tar_check = c.run("which tar", warn=True, hide=True)
-    if tar_check.failed:
-        missing_packages.append("tar")
+        tar_check = c.run("which tar", warn=True, hide=True)
+        if tar_check.failed:
+            missing_packages.append("tar")
 
-    unzip_check = c.run("which unzip", warn=True, hide=True)
-    if unzip_check.failed:
-        missing_packages.append("unzip")
+        unzip_check = c.run("which unzip", warn=True, hide=True)
+        if unzip_check.failed:
+            missing_packages.append("unzip")
 
-    build_check = c.run("which gcc && which g++ && which make", warn=True, hide=True)
-    if build_check.failed:
-        missing_packages.append("build-essential")
+        build_check = c.run("which gcc && which g++ && which make", warn=True, hide=True)
+        if build_check.failed:
+            missing_packages.append("build-essential")
 
-    cmake_check = c.run("which cmake", warn=True, hide=True)
-    if cmake_check.failed:
-        missing_packages.append("cmake")
+        cmake_check = c.run("which cmake", warn=True, hide=True)
+        if cmake_check.failed:
+            missing_packages.append("cmake")
 
-    docker_check = c.run("which docker", warn=True, hide=True)
-    if docker_check.failed:
-        missing_packages.append("docker.io")
+        docker_check = c.run("which docker || test -x /usr/bin/docker", warn=True, hide=True)
+        compose_check = c.run(
+            "docker compose version || "
+            "test -x /usr/libexec/docker/cli-plugins/docker-compose || "
+            "test -x /usr/lib/docker/cli-plugins/docker-compose || "
+            "which docker-compose || "
+            "dpkg -s docker-compose-plugin",
+            warn=True,
+            hide=True,
+        )
+        if docker_check.failed or compose_check.failed:
+            has_docker_ce = (
+                ensure_docker_ce_apt_repo(c)
+                or c.run("dpkg -s docker-ce || dpkg -s docker-ce-cli", warn=True, hide=True).ok
+            )
+            if has_docker_ce:
+                if docker_check.failed:
+                    missing_packages.extend([
+                        "docker-ce",
+                        "docker-ce-cli",
+                        "containerd.io",
+                        "docker-buildx-plugin",
+                        "docker-compose-plugin",
+                    ])
+                elif compose_check.failed:
+                    missing_packages.append("docker-compose-plugin")
+            else:
+                if docker_check.failed:
+                    missing_packages.append("docker.io")
+                if compose_check.failed:
+                    missing_packages.append("docker-compose-v2")
 
-    compose_check = c.run("docker compose version", warn=True, hide=True)
-    if compose_check.failed:
-        missing_packages.append("docker-compose-v2")
-
-    # Check if pinned target Python (e.g. python3.12) is available via core apt repository
-    target_py = f"python{PYTHON_VERSION}"
-    if c.run(f"which {target_py}", warn=True, hide=True).failed:
-        if c.run(f"apt-cache show {target_py}", warn=True, hide=True).ok:
-            missing_packages.append(target_py)
+        # Check if pinned target Python (e.g. python3.12) is available via core apt repository
+        target_py = f"python{PYTHON_VERSION}"
+        if c.run(f"which {target_py}", warn=True, hide=True).failed:
+            if c.run(f"apt-cache show {target_py}", warn=True, hide=True).ok:
+                missing_packages.append(target_py)
+                if c.run(f"apt-cache show {target_py}-venv", warn=True, hide=True).ok:
+                    missing_packages.append(f"{target_py}-venv")
+        elif c.run(f"{target_py} -m venv -h && {target_py} -c 'import ensurepip'", warn=True, hide=True).failed:
             if c.run(f"apt-cache show {target_py}-venv", warn=True, hide=True).ok:
                 missing_packages.append(f"{target_py}-venv")
-    elif c.run(f"{target_py} -m venv -h && {target_py} -c 'import ensurepip'", warn=True, hide=True).failed:
-        if c.run(f"apt-cache show {target_py}-venv", warn=True, hide=True).ok:
-            missing_packages.append(f"{target_py}-venv")
 
-    if missing_packages:
-        pkgs_str = " ".join(missing_packages)
-        has_apt = c.run("command -v apt-get", warn=True, hide=True).ok
-        if has_apt:
-            print(f"📦 Target host missing required packages ({', '.join(missing_packages)}).")
-            print(f"   Attempting auto-installation via apt-get...")
-            install_res = c.sudo(f"apt-get update && apt-get install -y {pkgs_str}", warn=True)
-            if not install_res.ok:
-                print(f"\n🚨 [PREFLIGHT ERROR] Could not automatically install: {pkgs_str}")
-                print(f"   Please run manually on target host: sudo apt update && sudo apt install -y {pkgs_str}\n")
-                raise Exit(f"Missing required packages: {pkgs_str}")
-            print(f"✅ Successfully installed {pkgs_str}.")
-        else:
-            print(f"\n🚨 [PREFLIGHT ERROR] Missing required packages: {', '.join(missing_packages)}")
-            print(f"   Please install them using your system package manager ({pkgs_str}).\n")
-            raise Exit(f"Missing required packages: {pkgs_str}")
+        if missing_packages:
+            pkgs_str = " ".join(missing_packages)
+            has_apt = c.run("command -v apt-get", warn=True, hide=True).ok
+            if has_apt:
+                print(f"📦 Target host missing required packages ({', '.join(missing_packages)}).")
+                print("   Attempting auto-installation via apt-get...")
+                sudo_bash(c, "DEBIAN_FRONTEND=noninteractive apt-get update -y || true", warn=True)
+                install_res = sudo_bash(
+                    c,
+                    f"DEBIAN_FRONTEND=noninteractive apt-get install -y {pkgs_str}",
+                    warn=True,
+                )
+                if not install_res.ok:
+                    print(f"\n🚨 [PREFLIGHT ERROR] Could not automatically install: {pkgs_str}")
+                    print(f"   Please run manually on target host: sudo apt update && sudo apt install -y {pkgs_str}\n")
+                    prompt_or_defer_step(
+                        "preflight_check (apt)",
+                        Exit(f"Missing required packages: {pkgs_str}"),
+                        continue_on_error=continue_on_error,
+                        remediation_cmd=f"sudo apt update && sudo apt install -y {pkgs_str}",
+                    )
+                else:
+                    print(f"✅ Successfully installed {pkgs_str}.")
+            else:
+                print(f"\n🚨 [PREFLIGHT ERROR] Missing required packages: {', '.join(missing_packages)}")
+                print(f"   Please install them using your system package manager ({pkgs_str}).\n")
+                prompt_or_defer_step(
+                    "preflight_check (apt)",
+                    Exit(f"Missing required packages: {pkgs_str}"),
+                    continue_on_error=continue_on_error,
+                    remediation_cmd=f"Install packages: {pkgs_str}",
+                )
 
     # Ensure Docker daemon is enabled and active, and add operator to docker group
     c.sudo("systemctl enable --now docker", warn=True, hide=True)
@@ -2196,8 +2398,51 @@ def logs(c, service="all", lines=50, follow=False, errors_only=False):
 # ==============================================================================
 # HIGH-LEVEL ORCHESTRATION PIPELINES
 # ==============================================================================
+def execute_pipeline_steps(steps, skip_set, start_at_step, continue_on_error, deferred_list):
+    """
+    Executes an ordered sequence of (step_id, fn, remediation_cmd) tuples,
+    applying --skip, --start-at, and --continue-on-error / interactive deferral.
+    """
+    started = not bool(start_at_step)
+    for step_id, fn, remediation_cmd in steps:
+        if not started:
+            if step_id == start_at_step:
+                started = True
+            else:
+                print(f"⏭️  Skipping '{step_id}' (before --start-at={start_at_step})...")
+                continue
+
+        if step_id in skip_set:
+            print(f"⏭️  Skipping '{step_id}' (--skip)...")
+            deferred_list.append((step_id, "Explicitly skipped via --skip", remediation_cmd))
+            continue
+
+        try:
+            fn()
+        except Exit as exc:
+            prompt_or_defer_step(
+                step_id,
+                exc,
+                deferred_list=deferred_list,
+                continue_on_error=continue_on_error,
+                remediation_cmd=remediation_cmd,
+            )
+
+
 @task
-def deploy(c, branch="main", git_url=None, local_source=None, find_links=None, index_url=None, trusted_host=None, pytorch_index_url=None):
+def deploy(
+    c,
+    branch="main",
+    git_url=None,
+    local_source=None,
+    find_links=None,
+    index_url=None,
+    trusted_host=None,
+    pytorch_index_url=None,
+    skip=None,
+    start_at=None,
+    continue_on_error=False,
+):
     """
     Standard zero-downtime deployment pipeline:
     1. Preflight check
@@ -2206,26 +2451,75 @@ def deploy(c, branch="main", git_url=None, local_source=None, find_links=None, i
     4. Update dependencies, backup database & run migrations
     5. Restart systemd services
     6. Validate system health
+
+    Supports --skip="preflight,health", --start-at="build", and --continue-on-error.
     """
     ensure_sudo(c)
     print(f"🚀 Commencing deployment for {APP_NAME}...")
-    preflight_check(c)
-    update_code(c, git_url=git_url, branch=branch, local_source=local_source)
-    start_backend_containers(c)
-    build_and_migrate(
-        c,
-        find_links=find_links,
-        index_url=index_url,
-        trusted_host=trusted_host,
-        pytorch_index_url=pytorch_index_url,
+    skip_set = parse_step_set(skip)
+    start_step = normalize_step_name(start_at) if start_at else ""
+    deferred = []
+
+    def _run_preflight():
+        if "apt" in skip_set or is_continue_on_error_enabled(continue_on_error):
+            preflight_check(c, skip_apt=("apt" in skip_set), continue_on_error=continue_on_error)
+        else:
+            preflight_check(c)
+
+    steps = [
+        ("preflight_check", _run_preflight, "fab preflight-check"),
+        (
+            "update_code",
+            lambda: update_code(c, git_url=git_url, branch=branch, local_source=local_source),
+            f"fab update-code --branch={branch}",
+        ),
+        (
+            "start_backend_containers",
+            lambda: start_backend_containers(c),
+            "fab start-backend-containers",
+        ),
+        (
+            "build_and_migrate",
+            lambda: build_and_migrate(
+                c,
+                find_links=find_links,
+                index_url=index_url,
+                trusted_host=trusted_host,
+                pytorch_index_url=pytorch_index_url,
+            ),
+            "fab build-and-migrate",
+        ),
+        ("restart_services", lambda: restart_services(c), "fab restart-services"),
+        ("health_check", lambda: health_check(c), "fab health-check"),
+    ]
+
+    execute_pipeline_steps(
+        steps,
+        skip_set=skip_set,
+        start_at_step=start_step,
+        continue_on_error=continue_on_error,
+        deferred_list=deferred,
     )
-    restart_services(c)
-    health_check(c)
+    print_deferred_summary(deferred)
     print("🌟 Deployment completed successfully!")
 
 
 @task
-def setup_all(c, branch="main", git_url=None, local_source=None, find_links=None, index_url=None, trusted_host=None, pytorch_index_url=None, remove_default_site=True, domain=None):
+def setup_all(
+    c,
+    branch="main",
+    git_url=None,
+    local_source=None,
+    find_links=None,
+    index_url=None,
+    trusted_host=None,
+    pytorch_index_url=None,
+    remove_default_site=True,
+    domain=None,
+    skip=None,
+    start_at=None,
+    continue_on_error=False,
+):
     """
     Full from-scratch server bootstrap:
     1. Preflight check
@@ -2233,23 +2527,80 @@ def setup_all(c, branch="main", git_url=None, local_source=None, find_links=None
     3. Configure SSL certs and Nginx
     4. Install systemd process units
     5. Run initial deployment
+
+    Supports --skip="apt,nginx", --start-at="systemd" (or any deploy sub-step such as "build"),
+    and --continue-on-error to defer steps that trigger a stop.
     """
     ensure_sudo(c)
     print(f"🌟 Starting complete server bootstrap and deployment for {APP_NAME}...")
-    preflight_check(c)
-    provision_system(c)
-    setup_nginx_and_ssl(c, domain=domain, remove_default_site=remove_default_site)
-    setup_systemd(c)
-    deploy(
-        c,
-        branch=branch,
-        git_url=git_url,
-        local_source=local_source,
-        find_links=find_links,
-        index_url=index_url,
-        trusted_host=trusted_host,
-        pytorch_index_url=pytorch_index_url,
+    skip_set = parse_step_set(skip)
+    start_step = normalize_step_name(start_at) if start_at else ""
+    deferred = []
+
+    deploy_substeps = {
+        "update_code",
+        "start_backend_containers",
+        "build_and_migrate",
+        "restart_services",
+        "health_check",
+    }
+    bootstrap_start = "deploy" if start_step in deploy_substeps else start_step
+    deploy_start = start_step if start_step in deploy_substeps else None
+
+    def _run_preflight():
+        if "apt" in skip_set or is_continue_on_error_enabled(continue_on_error):
+            preflight_check(c, skip_apt=("apt" in skip_set), continue_on_error=continue_on_error)
+        else:
+            preflight_check(c)
+
+    def _run_deploy():
+        if not skip and not start_at and not is_continue_on_error_enabled(continue_on_error):
+            deploy(
+                c,
+                branch=branch,
+                git_url=git_url,
+                local_source=local_source,
+                find_links=find_links,
+                index_url=index_url,
+                trusted_host=trusted_host,
+                pytorch_index_url=pytorch_index_url,
+            )
+        else:
+            deploy_skip = set(skip_set) | {"preflight_check"}
+            deploy(
+                c,
+                branch=branch,
+                git_url=git_url,
+                local_source=local_source,
+                find_links=find_links,
+                index_url=index_url,
+                trusted_host=trusted_host,
+                pytorch_index_url=pytorch_index_url,
+                skip=",".join(sorted(deploy_skip)),
+                start_at=deploy_start,
+                continue_on_error=continue_on_error,
+            )
+
+    steps = [
+        ("preflight_check", _run_preflight, "fab preflight-check"),
+        ("provision_system", lambda: provision_system(c), "fab provision-system"),
+        (
+            "setup_nginx_and_ssl",
+            lambda: setup_nginx_and_ssl(c, domain=domain, remove_default_site=remove_default_site),
+            "fab setup-nginx-and-ssl",
+        ),
+        ("setup_systemd", lambda: setup_systemd(c), "fab setup-systemd"),
+        ("deploy", _run_deploy, "fab deploy"),
+    ]
+
+    execute_pipeline_steps(
+        steps,
+        skip_set=skip_set,
+        start_at_step=bootstrap_start,
+        continue_on_error=continue_on_error,
+        deferred_list=deferred,
     )
+    print_deferred_summary(deferred)
     print("🏁 Complete server bootstrap finished!")
 
 
