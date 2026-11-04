@@ -187,6 +187,14 @@ class TestSystemdUnitsGeneration(SimpleTestCase):
         self.assertIn("--noreload", inference)
         self.assertIn("manage.py runserver --noreload 127.0.0.1:8001", inference)
 
+    def test_llamacpp_service_resolves_gguf_model_from_models_dir(self):
+        """Verifies reason-llamacpp.service resolves -m from .active_minimodel or /srv/reason/models/*.gguf."""
+        llamacpp = self.units["reason-llamacpp.service"]
+        self.assertIn("Environment=REASON_MODELS_DIR=/srv/reason/models", llamacpp)
+        self.assertIn(".active_minimodel", llamacpp)
+        self.assertIn("*.gguf", llamacpp)
+        self.assertIn('llama-server -m "$MODEL_PATH" --host 127.0.0.1 --port 8080', llamacpp)
+
     def test_systemd_sandboxing_and_privilege_isolation(self):
         """Verifies modern systemd security directives are present in all application service units."""
         app_services = [

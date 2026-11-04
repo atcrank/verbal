@@ -229,6 +229,7 @@ VLLM_BASE_URL = os.environ.get("VLLM_BASE_URL", "http://127.0.0.1:8003")
 LLAMACPP_BASE_URL = os.environ.get("LLAMACPP_BASE_URL", "http://127.0.0.1:8080")
 LLAMACPP_DEFAULT_CTX_SIZE = int(os.environ.get("LLAMACPP_DEFAULT_CTX_SIZE", "8192"))
 LLAMACPP_DEFAULT_THREADS = int(os.environ.get("LLAMACPP_DEFAULT_THREADS", "0"))  # 0 = auto-detect
+REASON_MODELS_DIR = os.environ.get("REASON_MODELS_DIR", "/srv/reason/models")
 
 # ------------------------------------------------------------------------
 # EMBEDDING & VECTOR SEARCH CONFIGURATION (WS23)

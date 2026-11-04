@@ -156,13 +156,22 @@ class AIService:
             tokenizer_id = self.model_id
 
         logger.info(f'⚙️ Loading CPU tokenizer: {tokenizer_id}')
-        self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_id, token=token)
-        # Load your main LLM
-        if self.tokenizer.pad_token_id is None:
-            self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
-        if getattr(self.tokenizer, 'chat_template', None) is None:
-            logger.info(f"Tokenizer '{tokenizer_id}' has no chat_template defined; injecting default fallback ChatML template.")
-            self.tokenizer.chat_template = DEFAULT_CHAT_TEMPLATE
+        try:
+            try:
+                self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_id, token=token, local_files_only=True)
+            except Exception:
+                self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_id, token=token)
+            if self.tokenizer.pad_token_id is None:
+                self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
+            if getattr(self.tokenizer, 'chat_template', None) is None:
+                logger.info(f"Tokenizer '{tokenizer_id}' has no chat_template defined; injecting default fallback ChatML template.")
+                self.tokenizer.chat_template = DEFAULT_CHAT_TEMPLATE
+        except Exception as e:
+            logger.warning(
+                f"⚠️ Could not load Hugging Face tokenizer '{tokenizer_id}' ({e}). "
+                "Token counting will use the CPU Mini-Model (llama.cpp) or fast character estimation."
+            )
+            self.tokenizer = None
         if self.role in ["web", "worker"]:
             logger.info(f'💻 Running in proxy mode (Role: {self.role}). Tokenizer loaded, bypassing heavy LLM load.')
             
@@ -403,8 +412,11 @@ class AIService:
                                 model_name = config.active_vllm_model.name
                             elif config.hosting_backend == 'ollama' and config.active_ollama_model:
                                 model_name = config.active_ollama_model.name
-                            elif config.hosting_backend == 'llamacpp' and config.active_llamacpp_model:
-                                model_name = config.active_llamacpp_model.name
+                            elif config.hosting_backend == 'llamacpp':
+                                if getattr(config, 'active_mini_model', None):
+                                    model_name = config.active_mini_model.name
+                                elif config.active_llamacpp_model:
+                                    model_name = config.active_llamacpp_model.name
                             elif config.hosting_backend == 'pytorch' and config.active_local_model:
                                 model_name = config.active_local_model.name
                     except Exception:
@@ -523,7 +535,9 @@ class AIService:
                     api_url = f"{llamacpp_url.rstrip('/')}/v1/chat/completions"
                     if lora_adapter:
                         logger.warning("Dynamic LoRA swapping is not supported on the llama.cpp backend. Falling back to base model.")
-                    if config.active_llamacpp_model:
+                    if getattr(config, 'active_mini_model', None):
+                        target_model = config.active_mini_model.name or config.active_mini_model.gguf_filename
+                    elif config.active_llamacpp_model:
                         target_model = config.active_llamacpp_model.gguf_file_path or config.active_llamacpp_model.hf_model_id or config.active_llamacpp_model.name
         except Exception:
             pass
@@ -865,7 +879,7 @@ class AIService:
                 needs_proxy = True
                 
             if config and config.hosting_backend in ['ollama', 'llamacpp'] and lora_adapter:
-                active_mod = config.active_llamacpp_model if config.hosting_backend == 'llamacpp' else config.active_ollama_model
+                active_mod = (getattr(config, 'active_mini_model', None) or config.active_llamacpp_model) if config.hosting_backend == 'llamacpp' else config.active_ollama_model
                 base_model = getattr(active_mod, 'name', 'unknown')
                 backend_name = "llama.cpp" if config.hosting_backend == 'llamacpp' else "Ollama"
                 sys_prompt, _ = self._extract_prompts(messages)
@@ -996,7 +1010,7 @@ class AIService:
                 needs_proxy = True
                 
             if config and config.hosting_backend in ['ollama', 'llamacpp'] and lora_adapter:
-                active_mod = config.active_llamacpp_model if config.hosting_backend == 'llamacpp' else config.active_ollama_model
+                active_mod = (getattr(config, 'active_mini_model', None) or config.active_llamacpp_model) if config.hosting_backend == 'llamacpp' else config.active_ollama_model
                 base_model = getattr(active_mod, 'name', 'unknown')
                 backend_name = "llama.cpp" if config.hosting_backend == 'llamacpp' else "Ollama"
                 sys_prompt, _ = self._extract_prompts(messages)
@@ -1124,8 +1138,52 @@ class AIService:
         return assistant_response
 
     def count_conversation_tokens(self, messages: list) -> int:
+        # 1. Extract plain text representation for llama.cpp / fallback estimation
+        parts = []
+        for msg in (messages if isinstance(messages, list) else [{"role": "user", "content": str(messages)}]):
+            content = msg.get("content", "") if isinstance(msg, dict) else getattr(msg, "content", str(msg))
+            if isinstance(content, list):
+                content = " ".join(
+                    item.get("text", "") if isinstance(item, dict) else str(item)
+                    for item in content
+                )
+            parts.append(str(content or ""))
+        combined_text = "\n".join(parts)
+
+        # 2. If CPU Mini-Model utilities are enabled (or hosting_backend is llamacpp)
+        #    and no explicit Hugging Face system_tokenizer is loaded, try llama-server /tokenize first.
+        try:
+            from .models import SystemConfiguration
+            from .llamacpp_client import tokenize_with_llamacpp
+            config = SystemConfiguration.get_solo()
+            prefer_minimodel_tokenizer = bool(
+                config
+                and getattr(config, "use_mini_model_for_utilities", True)
+                and (
+                    getattr(config, "active_mini_model_id", None)
+                    or config.hosting_backend == "llamacpp"
+                )
+                and not getattr(config, "system_tokenizer_id", None)
+            )
+            if prefer_minimodel_tokenizer or self.tokenizer is None:
+                llama_tokens = tokenize_with_llamacpp(combined_text)
+                if llama_tokens is not None:
+                    return llama_tokens
+        except Exception:
+            pass
+
         if not self.tokenizer:
-            self.load_models()
+            try:
+                self.load_models()
+            except Exception:
+                pass
+
+        if not self.tokenizer:
+            # Fail-safe non-blocking heuristic (~4 chars per token) when both
+            # HF tokenizer and llama-server are offline/unavailable.
+            if not combined_text.strip():
+                return 0
+            return max(1, len(combined_text) // 4)
 
         if getattr(self.tokenizer, 'chat_template', None) is None:
             self.tokenizer.chat_template = DEFAULT_CHAT_TEMPLATE
@@ -1168,7 +1226,9 @@ class AIService:
         try:
             from llm_api.models import SystemConfiguration
             config = SystemConfiguration.get_solo()
-            if config and config.active_local_model:
+            if config and config.hosting_backend == 'llamacpp' and getattr(config, 'active_mini_model', None):
+                context_limit = int(config.active_mini_model.context_window * 0.7)
+            elif config and config.active_local_model:
                 context_limit = int(config.active_local_model.context_window * 0.7)
             else:
                 context_limit = 3000  # Conservative fallback

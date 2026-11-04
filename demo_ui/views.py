@@ -285,12 +285,15 @@ def send_message(request):
         return HttpResponse("")
         
     # 1. Resolve or Create Conversation
+    is_new_conversation = False
     if conversation_id:
         conversation = get_object_or_404(Conversation, id=conversation_id, user=request.user)
     else:
+        from llm_api.llamacpp_client import fallback_conversation_title
+        is_new_conversation = True
         conversation = Conversation.objects.create(
             user=request.user, 
-            title=user_prompt[:50] + ("..." if len(user_prompt) > 50 else "")
+            title=fallback_conversation_title(user_prompt)
         )
 
     # 2. Execute Generation (Blueprint or Native)

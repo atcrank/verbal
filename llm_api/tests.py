@@ -1100,3 +1100,232 @@ class LlamaCppInferenceTests(TestCase):
         self.assertEqual(rec.llamacpp_recommended_quant, "gguf_q8_0")
         self.assertEqual(rec.recommended_quantization, "gguf_q4_k_m")
         self.assertTrue(any("llama.cpp" in note for note in rec.advisory_notes))
+
+
+class CPUMiniModelAndResilienceTests(TestCase):
+    """
+    Tests for WS26:
+    1. Dedicated MiniModel class, GGUF directory discovery, and Admin dropdown selector.
+    2. Non-blocking Conversation Title maintenance and fast tokenization with fail-safe
+       resilience when llama.cpp is offline or shut down.
+    3. Independent 'Local:' and 'Mini:' header-bar indicators.
+    """
+
+    def setUp(self):
+        import tempfile
+        from llm_api.llamacpp_client import clear_llamacpp_health_cache
+        clear_llamacpp_health_cache()
+        self.user = User.objects.create_user(username="mini_tester", password="password123")
+        self.temp_models_dir = tempfile.TemporaryDirectory()
+
+    def tearDown(self):
+        from llm_api.llamacpp_client import clear_llamacpp_health_cache
+        clear_llamacpp_health_cache()
+        self.temp_models_dir.cleanup()
+
+    def test_discover_gguf_files_and_minimodel_form_dropdown(self):
+        from django.test import override_settings
+        from django import forms
+        from llm_api.models import MiniModel, discover_gguf_files
+        from llm_api.admin import MiniModelForm
+
+        models_path = self.temp_models_dir.name
+        # Initially empty directory -> TextInput fallback
+        with override_settings(REASON_MODELS_DIR=models_path):
+            self.assertEqual(discover_gguf_files(), [])
+            empty_form = MiniModelForm()
+            self.assertNotIsInstance(empty_form.fields["gguf_filename"].widget, forms.Select)
+
+            # Place two .gguf files and one non-gguf file in REASON_MODELS_DIR
+            for fname in ["Gemma-4-e4B-it-Q5_K_M.gguf", "SmolLM2-1.7B-Instruct-Q4_K_M.gguf", "readme.txt"]:
+                with open(os.path.join(models_path, fname), "wb") as fh:
+                    fh.write(b"GGUF")
+
+            discovered = discover_gguf_files()
+            self.assertEqual(
+                discovered,
+                ["Gemma-4-e4B-it-Q5_K_M.gguf", "SmolLM2-1.7B-Instruct-Q4_K_M.gguf"],
+            )
+
+            # Form now renders a Select dropdown populated with the discovered .gguf files
+            populated_form = MiniModelForm()
+            self.assertIsInstance(populated_form.fields["gguf_filename"].widget, forms.Select)
+            choice_values = [c[0] for c in populated_form.fields["gguf_filename"].widget.choices]
+            self.assertIn("Gemma-4-e4B-it-Q5_K_M.gguf", choice_values)
+            self.assertIn("SmolLM2-1.7B-Instruct-Q4_K_M.gguf", choice_values)
+
+            # Saving MiniModel without explicit name auto-derives friendly name from filename
+            mini = MiniModel.objects.create(gguf_filename="Gemma-4-e4B-it-Q5_K_M.gguf")
+            self.assertEqual(mini.name, "Gemma-4-e4B-it-Q5_K_M")
+            self.assertEqual(mini.gguf_path, os.path.join(models_path, "Gemma-4-e4B-it-Q5_K_M.gguf"))
+            self.assertTrue(mini.file_exists)
+
+    def test_system_configuration_syncs_active_minimodel_marker_file(self):
+        from django.test import override_settings
+        from llm_api.models import MiniModel, SystemConfiguration
+
+        models_path = self.temp_models_dir.name
+        with override_settings(REASON_MODELS_DIR=models_path):
+            mini = MiniModel.objects.create(
+                name="Gemma 4 E4B",
+                gguf_filename="Gemma-4-e4B-it-Q5_K_M.gguf",
+            )
+            config = SystemConfiguration.get_solo()
+            config.active_mini_model = mini
+            config.save()
+
+            marker_file = os.path.join(models_path, ".active_minimodel")
+            self.assertTrue(os.path.isfile(marker_file))
+            with open(marker_file, "r", encoding="utf-8") as fh:
+                self.assertEqual(fh.read().strip(), mini.gguf_path)
+
+    def test_non_blocking_resilience_when_llamacpp_is_offline(self):
+        """
+        Ensures that when llama-server is shut down or unreachable, token counting
+        and conversation title generation fail open instantaneously without raising
+        or blocking the process.
+        """
+        import requests
+        from unittest.mock import patch
+        from llm_api.models import MiniModel, SystemConfiguration, Conversation
+        from llm_api.llamacpp_client import (
+            tokenize_with_llamacpp,
+            generate_title_with_minimodel,
+            maybe_refine_conversation_title,
+            fallback_conversation_title,
+            clear_llamacpp_health_cache,
+        )
+        from llm_api.ai_service import AIService
+
+        mini = MiniModel.objects.create(
+            name="Gemma 4 E4B",
+            gguf_filename="Gemma-4-e4B-it-Q5_K_M.gguf",
+        )
+        config = SystemConfiguration.get_solo()
+        config.active_mini_model = mini
+        config.use_mini_model_for_utilities = True
+        config.save()
+
+        conv = Conversation.objects.create(
+            user=self.user,
+            title=fallback_conversation_title("Design a factorial study on autonomous drone wind resistance. Include 3 wind speeds."),
+        )
+        self.assertEqual(conv.title, "Design a factorial study on autonomous drone wind resistance.")
+
+        with patch("requests.get", side_effect=requests.exceptions.ConnectionError("Connection refused")), \
+             patch("requests.post", side_effect=requests.exceptions.ConnectionError("Connection refused")):
+            clear_llamacpp_health_cache()
+            # 1. Tokenize returns None gracefully
+            self.assertIsNone(tokenize_with_llamacpp("Test prompt when server is down"))
+            # 2. Title generator returns None gracefully and keeps fallback title intact
+            self.assertIsNone(generate_title_with_minimodel("Test prompt"))
+            self.assertIsNone(maybe_refine_conversation_title(str(conv.id), "Test prompt"))
+            conv.refresh_from_db()
+            self.assertEqual(conv.title, "Design a factorial study on autonomous drone wind resistance.")
+
+            # 3. AIService.count_conversation_tokens falls back cleanly when both llama.cpp and HF tokenizer are unavailable
+            service = AIService()
+            service.tokenizer = None
+            with patch.object(service, "load_models", return_value=None):
+                tokens = service.count_conversation_tokens([{"role": "user", "content": "Hello world from CPU fallback!"}])
+                self.assertGreater(tokens, 0)
+
+    def test_online_minimodel_title_refinement_and_token_counting(self):
+        from unittest.mock import patch, MagicMock
+        from llm_api.models import MiniModel, SystemConfiguration, Conversation
+        from llm_api.llamacpp_client import (
+            tokenize_with_llamacpp,
+            maybe_refine_conversation_title,
+            clear_llamacpp_health_cache,
+        )
+
+        mini = MiniModel.objects.create(
+            name="Gemma 4 E4B",
+            gguf_filename="Gemma-4-e4B-it-Q5_K_M.gguf",
+        )
+        config = SystemConfiguration.get_solo()
+        config.active_mini_model = mini
+        config.use_mini_model_for_utilities = True
+        config.save()
+
+        conv = Conversation.objects.create(user=self.user, title="Initial Fallback Title")
+
+        mock_health = MagicMock(status_code=200)
+        mock_tokenize = MagicMock(status_code=200)
+        mock_tokenize.json.return_value = {"tokens": [101, 202, 303, 404, 505]}
+
+        mock_chat = MagicMock(status_code=200)
+        mock_chat.json.return_value = {
+            "choices": [{"message": {"content": "\"Drone Wind Resistance Study\""}}]
+        }
+
+        clear_llamacpp_health_cache()
+        with patch("requests.get", return_value=mock_health), \
+             patch("requests.post", side_effect=[mock_tokenize, mock_chat]):
+            tok_count = tokenize_with_llamacpp("Five tokens in this sentence")
+            self.assertEqual(tok_count, 5)
+
+            new_title = maybe_refine_conversation_title(
+                str(conv.id),
+                "We need a factorial experiment testing drone stability in high wind conditions.",
+            )
+            self.assertEqual(new_title, "Drone Wind Resistance Study")
+            conv.refresh_from_db()
+            self.assertEqual(conv.title, "Drone Wind Resistance Study")
+
+    def test_header_bar_shows_local_and_mini_independently(self):
+        from unittest.mock import patch
+        from django.test import RequestFactory
+        from django.template.loader import render_to_string
+        from llm_api.models import LocalAIModel, MiniModel, SystemConfiguration
+        from metacognition.context_processors import active_model_context
+
+        rf = RequestFactory()
+        request = rf.get("/demo/")
+        request.user = self.user
+
+        config = SystemConfiguration.get_solo()
+        config.hosting_backend = "pytorch"
+        config.active_local_model = None
+        config.active_mini_model = None
+        config.save()
+
+        # 1. Both unconfigured -> Local: None and Mini: None
+        ctx = active_model_context(request)
+        self.assertEqual(ctx["active_model_info"]["badge_label"], "Local: None")
+        self.assertEqual(ctx["mini_model_info"]["badge_label"], "Mini: None")
+        rendered = render_to_string("includes/active_model_pill.html", ctx)
+        self.assertIn("Local: None", rendered)
+        self.assertIn("Mini: None", rendered)
+
+        # 2. Mini configured while Local is None -> Local: None and Mini: Gemma 4 E4B
+        mini = MiniModel.objects.create(
+            name="Gemma 4 E4B",
+            gguf_filename="Gemma-4-e4B-it-Q5_K_M.gguf",
+        )
+        config.active_mini_model = mini
+        config.save()
+
+        with patch("llm_api.llamacpp_client.is_llamacpp_available_cached", return_value=True):
+            ctx = active_model_context(request)
+            self.assertEqual(ctx["active_model_info"]["badge_label"], "Local: None")
+            self.assertEqual(ctx["mini_model_info"]["badge_label"], "Mini: Gemma 4 E4B")
+            self.assertEqual(ctx["mini_model_info"]["badge_icon"], "🟢")
+            rendered = render_to_string("includes/active_model_pill.html", ctx)
+            self.assertIn("Local: None", rendered)
+            self.assertIn("Mini: Gemma 4 E4B", rendered)
+
+        # 3. Both Local and Mini configured -> shown independently
+        with patch("llm_api.modality_detector.introspect_hf_modality", return_value=False):
+            local_mod = LocalAIModel.objects.create(name="Mistral NeMo 12B", hf_model_id="mistralai/Mistral-Nemo-Instruct-2407")
+        config.active_local_model = local_mod
+        config.save()
+
+        with patch("llm_api.llamacpp_client.is_llamacpp_available_cached", return_value=False):
+            ctx = active_model_context(request)
+            self.assertEqual(ctx["active_model_info"]["badge_label"], "Local: Mistral NeMo 12B")
+            self.assertEqual(ctx["mini_model_info"]["badge_label"], "Mini: Gemma 4 E4B")
+            self.assertEqual(ctx["mini_model_info"]["badge_icon"], "🟡")
+            rendered = render_to_string("includes/active_model_pill.html", ctx)
+            self.assertIn("Local: Mistral NeMo 12B", rendered)
+            self.assertIn("Mini: Gemma 4 E4B", rendered)

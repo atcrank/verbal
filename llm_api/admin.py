@@ -1,10 +1,15 @@
 from django.contrib import admin, messages
 from django import forms
+from django.conf import settings
 from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.db.models import Count
-from .models import LocalAIModel, ExternalAIModel, UserActiveModel, UserAPIKey, SystemConfiguration, PromptResponseLog, Conversation, LoRAAdapter
+from .models import (
+    LocalAIModel, ExternalAIModel, UserActiveModel, UserAPIKey,
+    SystemConfiguration, PromptResponseLog, Conversation, LoRAAdapter,
+    MiniModel, discover_gguf_files,
+)
 
 @admin.action(description="Load this Model into Inference Server VRAM")
 def activate_local_model(modeladmin, request, queryset):
@@ -25,6 +30,110 @@ def unload_local_models(modeladmin, request, queryset):
     config.save()
     modeladmin.message_user(request, "System configured to bypass local VRAM loading.", level=messages.SUCCESS)
 
+
+class MiniModelForm(forms.ModelForm):
+    """
+    ModelForm for MiniModel that dynamically scans REASON_MODELS_DIR
+    (/srv/reason/models/) for .gguf files and presents a dropdown selector
+    when files are present on disk.
+    """
+    class Meta:
+        model = MiniModel
+        fields = "__all__"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        models_dir = getattr(settings, "REASON_MODELS_DIR", "/srv/reason/models")
+        discovered = discover_gguf_files(models_dir)
+        current_val = self.instance.gguf_filename if (self.instance and self.instance.pk) else ""
+
+        if discovered:
+            choices = [("", "--- Select a .gguf file from " + models_dir + " ---")]
+            for fname in discovered:
+                choices.append((fname, fname))
+            if current_val and current_val not in discovered:
+                choices.append((current_val, f"{current_val} (not currently found in {models_dir})"))
+            self.fields["gguf_filename"].widget = forms.Select(choices=choices)
+            self.fields["gguf_filename"].help_text = (
+                f"Select from the {len(discovered)} .gguf file(s) found in {models_dir}."
+            )
+        else:
+            self.fields["gguf_filename"].help_text = (
+                f"No .gguf files currently detected in {models_dir}. "
+                "Enter a .gguf filename (e.g. 'Gemma-4-e4B-it-Q5_K_M.gguf') or place .gguf files in that directory to select from a dropdown."
+            )
+
+
+@admin.action(description="Set as Active CPU Mini-Model (llama.cpp)")
+def activate_mini_model(modeladmin, request, queryset):
+    if queryset.count() != 1:
+        modeladmin.message_user(request, "Please select exactly one Mini-Model.", level=messages.WARNING)
+        return
+    chosen = queryset.first()
+    config = SystemConfiguration.get_solo()
+    config.active_mini_model = chosen
+    config.save()
+    modeladmin.message_user(
+        request,
+        f"Active CPU Mini-Model set to '{chosen.name}' ({chosen.gguf_filename}).",
+        level=messages.SUCCESS,
+    )
+
+
+@admin.action(description="Scan /srv/reason/models/ and register any new .gguf files")
+def sync_gguf_models_from_disk(modeladmin, request, queryset):
+    models_dir = getattr(settings, "REASON_MODELS_DIR", "/srv/reason/models")
+    discovered = discover_gguf_files(models_dir)
+    if not discovered:
+        modeladmin.message_user(
+            request,
+            f"No .gguf files found in {models_dir}.",
+            level=messages.WARNING,
+        )
+        return
+    created_count = 0
+    for fname in discovered:
+        _, created = MiniModel.objects.get_or_create(gguf_filename=fname)
+        if created:
+            created_count += 1
+    modeladmin.message_user(
+        request,
+        f"Scanned {models_dir}: found {len(discovered)} .gguf file(s), registered {created_count} new Mini-Model(s).",
+        level=messages.SUCCESS,
+    )
+
+
+@admin.register(MiniModel)
+class MiniModelAdmin(admin.ModelAdmin):
+    form = MiniModelForm
+    list_display = ("name", "gguf_filename", "context_window", "threads", "file_status", "is_system_active")
+    list_filter = ("is_active",)
+    search_fields = ("name", "gguf_filename")
+    actions = [activate_mini_model, sync_gguf_models_from_disk]
+
+    fieldsets = (
+        ("GGUF Model File", {
+            "fields": ("gguf_filename", "name", "is_active"),
+            "description": "Select a single-file .gguf model from /srv/reason/models/ (no Hugging Face repo ID required).",
+        }),
+        ("llama.cpp Runtime Parameters", {
+            "fields": ("context_window", "threads"),
+            "description": "Configure the context length (-c) and optional CPU thread count (-t) for llama-server.",
+        }),
+    )
+
+    @admin.display(description="On Disk")
+    def file_status(self, obj):
+        if obj.file_exists:
+            return format_html('<span style="color: #16a34a; font-weight: bold;">✓ Found</span>')
+        return format_html('<span style="color: #d97706;">⚠ Missing ({})</span>', obj.gguf_path)
+
+    @admin.display(description="Active Mini-Model", boolean=True)
+    def is_system_active(self, obj):
+        config = SystemConfiguration.get_solo()
+        return bool(config and config.active_mini_model_id == obj.pk)
+
+
 @admin.register(LocalAIModel)
 class LocalAIModelAdmin(admin.ModelAdmin):
     list_display = ('name', 'hf_model_id', 'quantization_mode', 'compute_dtype', 'context_window')
@@ -40,9 +149,9 @@ class LocalAIModelAdmin(admin.ModelAdmin):
             'fields': ('quantization_mode', 'compute_dtype', 'load_in_4bit'),
             'description': 'Choose the tensor quantization strategy (e.g. 4-bit NF4, 8-bit, or unquantized FP16/BF16).'
         }),
-        ('Container & vLLM Overrides', {
-            'fields': ('vllm_gpu_memory_utilization', 'vllm_max_model_len'),
-            'description': 'Optional custom tuning when served via containerized vLLM. Leave empty for automatic hardware-aware defaults.'
+        ('Container & vLLM / GGUF Overrides', {
+            'fields': ('vllm_gpu_memory_utilization', 'vllm_max_model_len', 'gguf_file_path'),
+            'description': 'Optional custom tuning when served via containerized vLLM or local GGUF file path.'
         }),
     )
     
@@ -145,6 +254,10 @@ class SystemConfigurationAdmin(admin.ModelAdmin):
         ('Ollama Integration', {
             'fields': ('active_ollama_model',),
             'description': 'Settings for using the Ollama Docker service as the backend.'
+        }),
+        ('CPU Mini-Model & llama.cpp (GGUF)', {
+            'fields': ('active_mini_model', 'use_mini_model_for_utilities', 'active_llamacpp_model'),
+            'description': 'Select a lightweight single-file GGUF CPU Mini-Model (in /srv/reason/models/) served by llama.cpp for non-blocking utility roles (Conversation Title maintenance, fast tokenization) and/or primary CPU inference when Hosting Backend is set to llama.cpp.'
         }),
     )
 
