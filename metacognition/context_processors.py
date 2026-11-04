@@ -58,6 +58,8 @@ def active_model_context(request):
             model = sys_config.active_vllm_model
         elif sys_config.hosting_backend == 'ollama':
             model = sys_config.active_ollama_model
+        elif sys_config.hosting_backend == 'llamacpp':
+            model = getattr(sys_config, 'active_mini_model', None) or sys_config.active_llamacpp_model
 
         if model:
             active_model_info = {
@@ -68,6 +70,32 @@ def active_model_context(request):
                 "status_color": "#10b981",
                 "badge_icon": "🟢",
                 "badge_label": f"Local: {model.name}"
+            }
+
+    mini_model_info = {
+        "is_configured": False,
+        "is_online": False,
+        "name": "No Mini-Model Selected",
+        "filename": "",
+        "badge_icon": "⚪",
+        "badge_label": "Mini: None",
+        "status_text": "Unconfigured",
+    }
+    if sys_config:
+        mini_obj = getattr(sys_config, "active_mini_model", None) or getattr(sys_config, "active_llamacpp_model", None)
+        if mini_obj:
+            from llm_api.llamacpp_client import is_llamacpp_available_cached
+            is_online = is_llamacpp_available_cached(ttl_seconds=5.0, timeout=0.25)
+            mini_name = mini_obj.name or getattr(mini_obj, "gguf_filename", "Mini-Model")
+            mini_file = getattr(mini_obj, "gguf_filename", "") or getattr(mini_obj, "gguf_file_path", "")
+            mini_model_info = {
+                "is_configured": True,
+                "is_online": is_online,
+                "name": mini_name,
+                "filename": mini_file,
+                "badge_icon": "🟢" if is_online else "🟡",
+                "badge_label": f"Mini: {mini_name}",
+                "status_text": "Online (llama.cpp)" if is_online else "Configured (llama.cpp offline)",
             }
 
     available_external_models = []
@@ -81,6 +109,7 @@ def active_model_context(request):
 
     return {
         "active_model_info": active_model_info,
+        "mini_model_info": mini_model_info,
         "available_external_models": available_external_models,
     }
 

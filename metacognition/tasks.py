@@ -81,6 +81,9 @@ def task_run_blueprint_async(blueprint_id: int,
                              parent_log_id: typing.Optional[str] = None,
                              initial_log_id: typing.Optional[str] = None):
     """Asynchronous wrapper for running a blueprint."""
+    if conversation_id and not parent_log_id and user_prompt:
+        from llm_api.llamacpp_client import maybe_refine_conversation_title
+        maybe_refine_conversation_title(str(conversation_id), user_prompt)
     return run_blueprint(blueprint_id, user_prompt, conversation_id, user_id, 
                          parent_log_id=parent_log_id, initial_log_id=initial_log_id,
                          max_steps=max_steps, run_id=run_id)

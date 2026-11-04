@@ -141,6 +141,12 @@ def task_generate_response(
             log.output_tokens = output_tokens
             log.save(update_fields=["generated_response", "output_tokens"])
 
+        if conversation_id and not parent_log_id:
+            from llm_api.llamacpp_client import maybe_refine_conversation_title
+            prompt_for_title = log.user_prompt if log else ""
+            if prompt_for_title:
+                maybe_refine_conversation_title(str(conversation_id), prompt_for_title)
+
         publish_pg_event(f"verbal_events_{run_id}", "completed", {
             "final_response": cleaned_response,
             "log_id": str(log_id),

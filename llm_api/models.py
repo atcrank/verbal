@@ -475,6 +475,93 @@ class LoRAAdapter(models.Model):
     def __str__(self):
         return f"{self.name} (LoRA for {self.base_model.name})"
 
+
+def discover_gguf_files(models_dir: str | None = None) -> list[str]:
+    """
+    Returns a sorted list of .gguf filenames present in REASON_MODELS_DIR
+    (default: /srv/reason/models). Returns an empty list if the directory
+    does not exist or is unreadable.
+    """
+    base_dir = models_dir or getattr(settings, "REASON_MODELS_DIR", "/srv/reason/models")
+    try:
+        if not os.path.isdir(base_dir):
+            return []
+        entries = []
+        for entry in os.scandir(base_dir):
+            if entry.is_file() and entry.name.lower().endswith(".gguf"):
+                entries.append(entry.name)
+        return sorted(entries)
+    except OSError:
+        return []
+
+
+class MiniModel(models.Model):
+    """
+    Lightweight single-file GGUF CPU model stored in /srv/reason/models/
+    and served by llama.cpp (llama-server). Used for non-blocking utility
+    tasks (Conversation Title generation, fast CPU tokenization) and/or
+    primary CPU inference when hosting_backend == 'llamacpp'.
+    """
+    name = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Friendly display name (e.g. 'Gemma 4 E4B'). Auto-derived from filename if left blank.",
+    )
+    gguf_filename = models.CharField(
+        max_length=255,
+        unique=True,
+        help_text="GGUF filename in /srv/reason/models/ (e.g. 'Gemma-4-e4B-it-Q5_K_M.gguf') or absolute path.",
+    )
+    context_window = models.IntegerField(
+        default=4096,
+        help_text="Context window size (-c flag for llama-server).",
+    )
+    threads = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Optional CPU thread limit (-t flag for llama-server). Leave blank for automatic.",
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Whether this GGUF model is available for selection.",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "CPU Mini-Model (GGUF)"
+        verbose_name_plural = "CPU Mini-Models (GGUF)"
+        ordering = ["name", "gguf_filename"]
+
+    @property
+    def gguf_path(self) -> str:
+        if os.path.isabs(self.gguf_filename):
+            return self.gguf_filename
+        base_dir = getattr(settings, "REASON_MODELS_DIR", "/srv/reason/models")
+        return os.path.join(base_dir, self.gguf_filename)
+
+    @property
+    def file_exists(self) -> bool:
+        try:
+            return os.path.isfile(self.gguf_path)
+        except OSError:
+            return False
+
+    @property
+    def is_multimodal(self) -> bool:
+        return False
+
+    def save(self, *args, **kwargs):
+        if not self.name and self.gguf_filename:
+            stem = os.path.splitext(os.path.basename(self.gguf_filename))[0]
+            self.name = stem
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        label = self.name or self.gguf_filename
+        return f"{label} ({os.path.basename(self.gguf_filename)})"
+
+
 class SystemConfiguration(models.Model):
     """Singleton model for global system settings and VRAM management."""
     
@@ -510,7 +597,18 @@ class SystemConfiguration(models.Model):
     active_llamacpp_model = models.ForeignKey(
         LocalAIModel, on_delete=models.SET_NULL, null=True, blank=True,
         related_name="llamacpp_configurations",
-        help_text="The selected model running in the local llama.cpp server. Used only when 'Local llama.cpp Server' is the active hosting backend."
+        help_text="Legacy LocalAIModel reference for llama.cpp. Prefer setting active_mini_model below."
+    )
+
+    active_mini_model = models.ForeignKey(
+        MiniModel, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="system_configurations",
+        help_text="Lightweight GGUF CPU mini-model in /srv/reason/models/ served by llama.cpp for utility tasks (conversation titles, token counting) and/or CPU inference."
+    )
+
+    use_mini_model_for_utilities = models.BooleanField(
+        default=True,
+        help_text="When enabled and llama.cpp is online, use the active Mini-Model for non-blocking conversation title generation and token counting."
     )
 
     system_tokenizer = models.ForeignKey(
@@ -522,6 +620,19 @@ class SystemConfiguration(models.Model):
     def save(self, *args, **kwargs):
         self.pk = 1  # Enforce singleton pattern
         super().save(*args, **kwargs)
+        # Best-effort sync of active Mini-Model path to REASON_MODELS_DIR/.active_minimodel
+        # so reason-llamacpp.service can resolve -m instantaneously on startup/restart.
+        try:
+            models_dir = getattr(settings, "REASON_MODELS_DIR", "/srv/reason/models")
+            marker_path = os.path.join(models_dir, ".active_minimodel")
+            if self.active_mini_model_id and self.active_mini_model:
+                if os.path.isdir(models_dir) and os.access(models_dir, os.W_OK):
+                    with open(marker_path, "w", encoding="utf-8") as fh:
+                        fh.write(self.active_mini_model.gguf_path + "\n")
+            elif os.path.isfile(marker_path) and os.access(models_dir, os.W_OK):
+                os.remove(marker_path)
+        except OSError:
+            pass
 
     @classmethod
     def get_solo(cls):

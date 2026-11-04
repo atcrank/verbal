@@ -64,15 +64,20 @@
 }
 </style>
 
-<div class="active-model-container" id="active-model-container">
+<div class="active-model-container" id="active-model-container" style="gap: 6px;">
     <button type="button" class="active-model-pill" id="active-model-pill" onclick="toggleModelSelectorDropdown(event)"
-        title="Active Model: {{ active_model_info.name }} ({{ active_model_info.backend }}). {% if available_external_models %}Click to switch provider.{% endif %}">
+        title="Active Primary Model: {{ active_model_info.name }} ({{ active_model_info.backend }}). {% if available_external_models %}Click to switch provider.{% endif %}">
         <span class="model-pill-icon" style="font-size: 0.8rem;">{{ active_model_info.badge_icon }}</span>
         <span class="model-pill-label" style="max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ active_model_info.badge_label }}</span>
         {% if available_external_models %}
         <span class="model-pill-caret" style="font-size: 0.65rem; color: #94a3b8; margin-left: 2px;">▾</span>
         {% endif %}
     </button>
+    <span class="active-model-pill mini-model-pill" id="mini-model-pill" style="cursor: default;"
+        title="CPU Mini-Model (llama.cpp): {{ mini_model_info.name|default:'No Mini-Model Selected' }}{% if mini_model_info.filename %} [{{ mini_model_info.filename }}]{% endif %} — {{ mini_model_info.status_text|default:'Unconfigured' }}">
+        <span class="model-pill-icon" style="font-size: 0.8rem;">{{ mini_model_info.badge_icon|default:"⚪" }}</span>
+        <span class="model-pill-label" style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ mini_model_info.badge_label|default:"Mini: None" }}</span>
+    </span>
     {% if available_external_models %}
     <div id="model-selector-dropdown" class="model-selector-dropdown">
         <div style="padding: 4px 12px 6px; font-size: 0.68rem; text-transform: uppercase; font-weight: 700; color: #94a3b8; letter-spacing: 0.05em; border-bottom: 1px solid #334155;">Active Inference Provider</div>

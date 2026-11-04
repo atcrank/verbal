@@ -568,13 +568,14 @@ EnvironmentFile=-{env_app_secrets}
 EnvironmentFile=-{env_app_prod}
 Environment=PYTHONUNBUFFERED=1
 Environment=REASON_LOG_DIR={log_dir}
+Environment=REASON_MODELS_DIR={models_dir}
 Environment=REASON_EMBEDDING_MODEL={embedding_model}"""
 
     sandboxing = f"""NoNewPrivileges=yes
 ProtectSystem=strict
 ProtectHome=yes
 PrivateTmp=yes
-ReadWritePaths={shared_dir} {hf_cache_dir} {log_dir}"""
+ReadWritePaths={shared_dir} {hf_cache_dir} {log_dir} {models_dir}"""
 
     master_service = f"""[Unit]
 Description=Reason Cognitive Platform Master Service
@@ -731,7 +732,7 @@ WantedBy=multi-user.target reason.service
 """
 
     llamacpp_unit = f"""[Unit]
-Description=Reason llama.cpp CPU-First Local Inference Service
+Description=Reason llama.cpp CPU-First Local Inference & Mini-Model Service
 After=network.target
 PartOf=reason.service
 StartLimitIntervalSec=60s
@@ -747,7 +748,7 @@ WorkingDirectory={app_dir}
 Environment=VERBAL_ENV=prod
 Environment=VERBAL_ROLE=inference
 Environment=LLAMACPP_PORT={llamacpp_port}
-ExecStart={bin_dir}/llama-server --host 127.0.0.1 --port {llamacpp_port}
+ExecStart=/bin/bash -c 'MODEL_PATH="${{LLAMACPP_MODEL:-}}"; if [ -z "$MODEL_PATH" ] && [ -f "{models_dir}/.active_minimodel" ]; then MODEL_PATH=$(head -n 1 "{models_dir}/.active_minimodel" | tr -d "\\r\\n"); fi; if [ -z "$MODEL_PATH" ] || [ ! -f "$MODEL_PATH" ]; then MODEL_PATH=$(ls -1 "{models_dir}"/*.gguf 2>/dev/null | head -n 1); fi; exec {bin_dir}/llama-server -m "$MODEL_PATH" --host 127.0.0.1 --port {llamacpp_port}'
 Restart=on-failure
 RestartSec=5s
 StandardOutput=journal

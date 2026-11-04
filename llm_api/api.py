@@ -39,14 +39,17 @@ def generate_response(request, payload: GenerateIn):
     # TODO: system prompt is supposed to appear only once and subsequent messages should not be system prompts
     conversation_id = payload.conversation_id
     messages = []
+    is_new_conversation = False
     if conversation_id:
         conversation = Conversation.objects.get(id=conversation_id)
         if conversation.user_id != request.auth.id:
             # I think I'd like to copy the conversation and allow the new user to take it over
             return JsonResponse({"error": "You are not authorized to access this conversation."})
     else:
+        from .llamacpp_client import fallback_conversation_title
+        is_new_conversation = True
         conversation = Conversation(user_id=request.auth.id)
-        conversation.title = payload.user_prompt.split(".")[0]  # first sentence only
+        conversation.title = fallback_conversation_title(payload.user_prompt)
         conversation.save()
         conversation_id = conversation.id
         system_prompt = payload.system_prompt or "You are an expert experiment architect. Your task is to design a clear and efficient experiment design based on a user's description of what they want to find out. Output suggested factors in a list format."
@@ -153,6 +156,10 @@ def generate_response(request, payload: GenerateIn):
                           generated_response=cleaned_response, user_id=request.auth.id,
                           parent_log=parent_log, input_tokens=input_tokens, output_tokens=output_tokens)
     p.save()
+
+    if is_new_conversation:
+        from .llamacpp_client import maybe_refine_conversation_title
+        maybe_refine_conversation_title(str(conversation_id), payload.user_prompt)
 
     return JsonResponse({"conversation_id": conversation_id, "cleaned_response": cleaned_response})
 
