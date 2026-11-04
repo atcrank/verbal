@@ -24,3 +24,4 @@
   - Verify `preflight_check` recognizes existing `docker-ce` + `docker-compose-plugin` (even when unprivileged `docker compose version` fails) and never installs `docker-compose-v2`.
   - Verify `preflight_check` installs `docker-ce`, `docker-ce-cli`, `containerd.io`, `docker-compose-plugin` when missing on a blank system.
   - Verify `setup_all` and `deploy` support `--skip`, `--start-at`, and `--continue-on-error` to skip or defer steps that raise `Exit`.
+
