@@ -77,6 +77,40 @@ class ResponseSchema(models.Model):
         max_length=255, blank=True, choices=get_schema_choices,
         help_text="Name of a registered model (e.g. 'Factor'). Sourced from registered OUTPUT_TYPES."
     )
+    display_field = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Attribute extracted for conversational display when output is structured JSON/Pydantic."
+    )
+
+    def format_for_display(self, raw_output) -> str:
+        """Extracts the display_field if set, or formats the raw output cleanly."""
+        import json
+        if not raw_output:
+            return ""
+
+        parsed = None
+        if isinstance(raw_output, dict):
+            parsed = raw_output
+        elif hasattr(raw_output, "model_dump"):
+            parsed = raw_output.model_dump()
+        elif hasattr(raw_output, "dict"):
+            parsed = raw_output.dict()
+        elif isinstance(raw_output, str):
+            try:
+                parsed = json.loads(raw_output)
+            except Exception:
+                pass
+
+        if self.display_field and isinstance(parsed, dict) and self.display_field in parsed:
+            val = parsed[self.display_field]
+            return str(val) if val is not None else ""
+
+        if isinstance(raw_output, str):
+            return raw_output
+        if parsed is not None:
+            return json.dumps(parsed, indent=2)
+        return str(raw_output)
 
     def __str__(self):
         return self.name
@@ -106,6 +140,20 @@ class CognitiveBlueprint(models.Model):
         default="REASONING",
         db_index=True,
         help_text="Discriminates user-facing conversational reasoning blueprints from Grips maintenance and background system routines."
+    )
+
+    OUTPUT_KIND_CHOICES = [
+        ("ANSWER", "Conversational Answer"),
+        ("CONTEXT", "Context / Retrieval Provider"),
+        ("ARTIFACT", "Synthesized Artifact"),
+        ("MAINTENANCE", "System / Graph Maintenance"),
+    ]
+    output_kind = models.CharField(
+        max_length=20,
+        choices=OUTPUT_KIND_CHOICES,
+        default="ANSWER",
+        db_index=True,
+        help_text="Discriminates user-facing conversational answers from intermediate context retrievers and maintenance routines."
     )
 
     @property

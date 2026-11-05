@@ -66,6 +66,51 @@ def parse_structured_response(raw_output, schema_def) -> str:
         
     return raw_output
 
+
+def derive_final_response(result_state: dict) -> str:
+    """
+    WS27: Resolves the human-facing final_response from the LangGraph execution state.
+    Prioritizes state['final_output'] from action nodes over intermediate evaluation entries.
+    When the graph halts on a failure, synthesizes the candidate output with the evaluator's critique.
+    """
+    candidate_output = result_state.get("final_output")
+    monologue = result_state.get("internal_monologue", [])
+
+    if not candidate_output and monologue:
+        # Walk backwards through monologue, skipping evaluation verdicts
+        for entry in reversed(monologue):
+            step_name = entry.get("step_name", "")
+            if not step_name.endswith("(Evaluation)"):
+                candidate_output = entry.get("output", entry.get("result", ""))
+                if candidate_output:
+                    break
+
+    route_to = result_state.get("route_to")
+    eval_feedback = result_state.get("evaluator_feedback")
+    last_step_failed = monologue[-1].get("failed") if monologue else False
+
+    if (route_to == "FAILURE" or last_step_failed) and eval_feedback:
+        prefix = candidate_output or "The requested reasoning task could not be completed."
+        return (
+            f"{prefix}\n\n---\n"
+            f"> ⚠️ **Evaluation Notice**: The proposed response did not satisfy all verification criteria.\n"
+            f"> **Evaluator Critique**: {eval_feedback}"
+        )
+
+    if candidate_output:
+        return candidate_output
+
+    if monologue:
+        # If all steps were evaluation steps or no explicit output was set, return latest non-eval monologue
+        for entry in reversed(monologue):
+            step_name = entry.get("step_name", "")
+            if not step_name.endswith("(Evaluation)"):
+                return entry.get("output", "No output.")
+        return monologue[-1].get("output", "No output.")
+
+    return "No output."
+
+
 # --- CORE EXECUTION ---
 
 from uuid import uuid4
@@ -118,7 +163,7 @@ def task_resume_blueprint_async(blueprint_id: int, thread_id: str, run_id: str, 
         return {"error": f"Resumption failed: {str(e)}", "status": 500}
 
     monologue = result_state.get("internal_monologue", [])
-    final_response = monologue[-1].get("output", monologue[-1].get("result", "No output.")) if monologue else "No output."
+    final_response = derive_final_response(result_state)
 
     if result_state.get("route_to") == "USER_INPUT_REQUIRED" and result_state.get("pending_approval"):
         publish_blueprint_event(run_id, "approval_required", result_state["pending_approval"])
@@ -334,7 +379,44 @@ def run_blueprint(blueprint_id: int,
 
 
     monologue = result_state.get("internal_monologue", [])
-    final_response = monologue[-1].get("output", monologue[-1].get("result", "No output.")) if monologue else "No output."
+    final_response = derive_final_response(result_state)
+
+    # WS27: Ensure exactly one public TURN record exists with the final response
+    turn_log = None
+    if initial_log_id:
+        turn_log = PromptResponseLog.objects.filter(id=initial_log_id).first()
+    if not turn_log and conversation:
+        turn_log = PromptResponseLog.objects.create(
+            conversation=conversation,
+            parent_log_id=parent_log_id,
+            user_id=user_id,
+            user_prompt=user_prompt,
+            blueprint_id=blueprint.id,
+            log_kind=PromptResponseLog.LogKind.TURN,
+            generated_response=final_response,
+            system_prompt=blueprint.description or blueprint.name,
+        )
+    elif turn_log:
+        turn_log.generated_response = final_response
+        turn_log.log_kind = PromptResponseLog.LogKind.TURN
+        turn_log.blueprint_id = blueprint.id
+        if not turn_log.user_prompt and user_prompt:
+            turn_log.user_prompt = user_prompt
+        # Collect and aggregate any rag_selections from intermediate trace logs
+        trace_logs = PromptResponseLog.objects.filter(
+            conversation=conversation,
+            log_kind=PromptResponseLog.LogKind.TRACE,
+            reasoning_step__blueprint=blueprint
+        )
+        collected_rag = list(turn_log.rag_selections or [])
+        for tl in trace_logs:
+            if tl.rag_selections and isinstance(tl.rag_selections, list):
+                for r in tl.rag_selections:
+                    if r not in collected_rag:
+                        collected_rag.append(r)
+        if collected_rag:
+            turn_log.rag_selections = collected_rag
+        turn_log.save(update_fields=['generated_response', 'log_kind', 'blueprint_id', 'user_prompt', 'rag_selections'])
     
     if result_state.get("route_to") == "USER_INPUT_REQUIRED" and result_state.get("pending_approval"):
         publish_blueprint_event(run_id, "approval_required", result_state["pending_approval"])

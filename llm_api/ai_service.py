@@ -441,6 +441,10 @@ class AIService:
                     state_tree_snapshot = {}
 
                 target_log_id = log_kwargs.get("initial_log_id")
+                log_kind = log_kwargs.get("log_kind")
+                if not log_kind:
+                    log_kind = PromptResponseLog.LogKind.TRACE if log_kwargs.get("reasoning_step_id") else PromptResponseLog.LogKind.TURN
+
                 log = None
                 if target_log_id:
                     log = PromptResponseLog.objects.filter(id=target_log_id).first()
@@ -465,6 +469,7 @@ class AIService:
                     log.reasoning_step_id = log_kwargs.get("reasoning_step_id")
                     if log_kwargs.get("blueprint_id"):
                         log.blueprint_id = log_kwargs.get("blueprint_id")
+                    log.log_kind = log_kind
                     log.save()
                     log_kwargs["initial_log_id"] = None
                 else:
@@ -483,7 +488,8 @@ class AIService:
                         tokens_per_second=tps,
                         model_name=model_name,
                         reasoning_step_id=log_kwargs.get("reasoning_step_id"),
-                        blueprint_id=log_kwargs.get("blueprint_id")
+                        blueprint_id=log_kwargs.get("blueprint_id"),
+                        log_kind=log_kind
                     )
                 if "log_ids" in log_kwargs:
                     log_kwargs["log_ids"].append(log.id)

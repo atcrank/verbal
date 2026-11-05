@@ -3524,6 +3524,289 @@ class DeploymentHardeningPhase2Tests(TestCase):
         self.assertIn('"isStreaming": false', content)
 
 
+class MetacognitionOutputContractAndIsolationTests(TestCase):
+    """
+    Contract tests for WS27: Output Contract, Transcript Isolation, and Leaf Log Resolution.
+    Verifies that:
+    1. Multi-step blueprints with evaluation nodes do not return evaluation judge output as final_response.
+    2. Deep_Reader returns distilled text rather than raw JSON or judge verdicts.
+    3. Intermediate execution traces (TRACE) do not pollute Conversation.as_messages() (TURN only).
+    4. Conversation.as_messages(leaf_log_id=str(uuid)) resolves string UUIDs correctly without falling back to chronological tail.
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_user(username='ws27_contract_user', password='password123')
+
+    def test_as_messages_uuid_leaf_resolution(self):
+        """
+        Ticket WS27-1: Conversation.as_messages(leaf_log_id=str(uuid)) must resolve
+        string UUID representations against UUID primary keys rather than failing
+        the dict lookup and falling back to the chronological tail log.
+        """
+        from llm_api.models import Conversation, PromptResponseLog
+
+        conv = Conversation.objects.create(user=self.user, title="Branching Conv")
+        log1 = PromptResponseLog.objects.create(
+            conversation=conv, user=self.user,
+            user_prompt="Question 1", generated_response="Answer 1",
+            input_tokens=10, output_tokens=10
+        )
+        log2 = PromptResponseLog.objects.create(
+            conversation=conv, user=self.user, parent_log=log1,
+            user_prompt="Question 2", generated_response="Answer 2",
+            input_tokens=10, output_tokens=10
+        )
+        # Branch/Tail: log3 is a subsequent turn or an intermediate judge log
+        log3 = PromptResponseLog.objects.create(
+            conversation=conv, user=self.user, parent_log=log2,
+            user_prompt="Question 3", generated_response="Evaluation Result: SUCCESS",
+            input_tokens=10, output_tokens=10
+        )
+
+        # Querying specifically for leaf log2 using its string UUID (as passed from HTTP/views)
+        messages = conv.as_messages(leaf_log_id=str(log2.id), include_state_tree=False)
+
+        # The message path must terminate at log2, containing Answer 1 and Answer 2.
+        # It must NOT include log3 ("Evaluation Result: SUCCESS").
+        assistant_contents = [m["content"] for m in messages if m["role"] == "assistant"]
+        self.assertIn("Answer 2", assistant_contents)
+        self.assertNotIn("Evaluation Result: SUCCESS", assistant_contents)
+        self.assertEqual(len(assistant_contents), 2)
+
+    @patch('metacognition.tasks.service_registry.ai_service.generate_outline')
+    @patch('metacognition.tasks.service_registry.ai_service.generate_response2')
+    @patch('metacognition.tasks.service_registry.ai_service.clean_response')
+    def test_evaluator_judge_output_not_final_response(self, mock_clean, mock_gen, mock_outline):
+        """
+        Ticket WS27-2: A blueprint whose final executed step has evaluation_criteria
+        must return the action step's synthesized output as final_response, NOT
+        the evaluator's internal verdict ('Evaluation Result: SUCCESS...').
+        """
+        from metacognition.models import CognitiveBlueprint, ReasoningStep
+        from metacognition.tasks import run_blueprint
+        from llm_api.models import Conversation
+
+        bp = CognitiveBlueprint.objects.create(
+            name="Analysis with Judge",
+            description="Testing evaluation judge vs final response separation"
+        )
+        step = ReasoningStep.objects.create(
+            blueprint=bp,
+            name="Synthesize Analysis",
+            is_start_node=True,
+            system_prompt="Analyze the query",
+            evaluation_criteria="Response must provide rigorous empirical detail."
+        )
+
+        mock_gen.return_value = ["The synthesized study design specifies 4 factorial groups."]
+        mock_clean.return_value = "The synthesized study design specifies 4 factorial groups."
+
+        # Mock the outline response for the EvaluationResult
+        from pydantic import BaseModel
+        class MockEvalResult:
+            passed = True
+            reasoning = "All criteria thoroughly met."
+        mock_outline.return_value = MockEvalResult()
+
+        conv = Conversation.objects.create(user=self.user, title="Analysis Conv")
+
+        result = run_blueprint(
+            blueprint_id=bp.id,
+            user_prompt="Provide the study design",
+            conversation_id=str(conv.id),
+            user_id=self.user.id
+        )
+
+        self.assertNotIn("Evaluation Result:", result.get("final_response", ""))
+        self.assertIn("The synthesized study design specifies 4 factorial groups.", result.get("final_response", ""))
+
+    @patch('metacognition.tasks.service_registry.ai_service.generate_outline')
+    @patch('metacognition.tasks.service_registry.ai_service.generate_response2')
+    @patch('metacognition.tasks.service_registry.ai_service.clean_response')
+    def test_evaluation_failure_pairs_candidate_with_evaluator_critique(self, mock_clean, mock_gen, mock_outline):
+        """
+        Ticket WS27-3: If an evaluation fails and the graph halts, final_response
+        must synthesize the candidate answer with the evaluator's critique rather
+        than returning a cold error, silent abort, or raw 'evaluation: failed'.
+        """
+        from metacognition.models import CognitiveBlueprint, ReasoningStep
+        from metacognition.tasks import run_blueprint
+        from llm_api.models import Conversation
+
+        bp = CognitiveBlueprint.objects.create(
+            name="Strict Critique BP",
+            description="Testing evaluation failure explanation pairing"
+        )
+        step = ReasoningStep.objects.create(
+            blueprint=bp,
+            name="Draft Proposal",
+            is_start_node=True,
+            system_prompt="Draft a statistical hypothesis",
+            evaluation_criteria="Must specify power calculation alpha and beta."
+        )
+
+        mock_gen.return_value = ["Draft: We hypothesize drug A outperforms drug B."]
+        mock_clean.return_value = "Draft: We hypothesize drug A outperforms drug B."
+
+        class MockFailingEval:
+            passed = False
+            reasoning = "The draft fails because it completely omits power calculation alpha and beta thresholds."
+        mock_outline.return_value = MockFailingEval()
+
+        conv = Conversation.objects.create(user=self.user, title="Critique Conv")
+
+        result = run_blueprint(
+            blueprint_id=bp.id,
+            user_prompt="Propose the hypothesis",
+            conversation_id=str(conv.id),
+            user_id=self.user.id
+        )
+
+        resp = result.get("final_response", "")
+        # Must contain candidate output
+        self.assertIn("We hypothesize drug A outperforms drug B.", resp)
+        # Must contain evaluator critique explaining why it failed
+        self.assertIn("omits power calculation alpha and beta thresholds", resp)
+        self.assertIn("Evaluation Notice", resp)
+
+    @patch('metacognition.tasks.service_registry.ai_service.generate_outline')
+    def test_deep_reader_output_contract_distilled_context(self, mock_outline):
+        """
+        Ticket WS27-4: Deep_Reader (marked output_kind='CONTEXT') must return
+        its distilled_context field as final_response, not raw JSON or judge verdicts.
+        """
+        from metacognition.models import CognitiveBlueprint, ReasoningStep, ToolDefinition, ResponseSchema, bypass_canonical_lock
+        from metacognition.seed import seed_deep_reader
+        from metacognition.tasks import run_blueprint
+        from llm_api.models import Conversation
+
+        with bypass_canonical_lock():
+            seed_deep_reader(CognitiveBlueprint, ReasoningStep, ToolDefinition, ResponseSchema)
+
+        bp = CognitiveBlueprint.objects.get(name="Deep_Reader")
+        self.assertEqual(bp.output_kind, "CONTEXT")
+
+        # Step 2 generates DeepReaderEvaluation_Schema structured JSON
+        distilled_text = "Factorial designs test interaction effects across several factors jointly [ID: doc_42]."
+        class MockDeepReaderEval:
+            status = "SUFFICIENT"
+            missing_terms = ""
+            distilled_context = distilled_text
+            def model_dump(self):
+                return {
+                    "status": "SUFFICIENT",
+                    "missing_terms": "",
+                    "distilled_context": distilled_text
+                }
+        mock_outline.return_value = MockDeepReaderEval()
+
+        conv = Conversation.objects.create(user=self.user, title="Deep Reader Conv")
+        step2 = bp.steps.get(name="Distill Context")
+
+        from metacognition.compiler import _make_action_node, resolve_active_steps
+        resolved, roots = resolve_active_steps(bp)
+        node_fn = _make_action_node(step2, roots)
+
+        from metacognition.state import AgentState
+        state = AgentState(
+            working_memory=[],
+            state_tree={},
+            rag_context="",
+            route_to=None,
+            resume_to=None,
+            conversation_id=str(conv.id),
+            user_id=self.user.id,
+            step_count=1,
+            max_steps=10,
+            retries_remaining={},
+            internal_monologue=[],
+            scratch={},
+            token_budget_remaining=8000,
+            run_id="test_dr_run",
+            pending_approval=None,
+            approved_tools=[],
+            last_log_id=None,
+            initial_log_id=None,
+            final_output=None,
+            evaluator_feedback=None,
+        )
+
+        out = node_fn(state)
+        # In step 2, final_output must be extracted from distilled_context
+        self.assertEqual(out.get("final_output"), distilled_text)
+
+    def test_trace_logs_isolated_from_as_messages(self):
+        """
+        Ticket WS27-5: Intermediate TRACE logs produced during blueprint execution
+        must not pollute Conversation.as_messages(), while exactly one TURN log is saved.
+        """
+        from metacognition.models import CognitiveBlueprint, ReasoningStep
+        from metacognition.tasks import run_blueprint
+        from llm_api.models import Conversation, PromptResponseLog
+        from llm_api.apps import service_registry
+
+        bp = CognitiveBlueprint.objects.create(
+            name="Two Step Blueprint",
+            description="Testing TRACE vs TURN isolation"
+        )
+        step1 = ReasoningStep.objects.create(
+            blueprint=bp,
+            name="First Step",
+            is_start_node=True,
+            system_prompt="Intermediate step"
+        )
+        step2 = ReasoningStep.objects.create(
+            blueprint=bp,
+            name="Second Step",
+            system_prompt="Final step"
+        )
+        step1.on_success_step = step2
+        step1.save()
+
+        conv = Conversation.objects.create(user=self.user, title="Two Step Conv")
+
+        call_idx = 0
+        def mock_request(messages, max_new_tokens, temperature, n, response_schema=None, **kwargs):
+            nonlocal call_idx
+            call_idx += 1
+            content = "Step 1 intermediate reasoning." if call_idx == 1 else "Step 2 final synthesized answer."
+            res = [content] * n if n > 1 else content
+            if kwargs.get("return_usage"):
+                return res, {"completion_tokens": 10}, "test-model"
+            return res
+
+        ai = service_registry.ai_service
+        ai.role = "web"
+        with patch.object(type(ai), '_execute_openai_standard_request', side_effect=mock_request), \
+             patch.object(type(ai), 'supports_native_tools', return_value=False):
+            result = run_blueprint(
+                blueprint_id=bp.id,
+                user_prompt="Run both steps",
+                conversation_id=str(conv.id),
+                user_id=self.user.id
+            )
+
+        self.assertEqual(result.get("final_response"), "Step 2 final synthesized answer.")
+
+        # Exactly ONE TURN log must exist for the completed conversation turn
+        turn_logs = PromptResponseLog.objects.filter(conversation=conv, log_kind=PromptResponseLog.LogKind.TURN)
+        self.assertEqual(turn_logs.count(), 1)
+        self.assertEqual(turn_logs.first().generated_response, "Step 2 final synthesized answer.")
+
+        # Intermediate TRACE logs must exist for auditability/thinking-trace
+        trace_logs = PromptResponseLog.objects.filter(conversation=conv, log_kind=PromptResponseLog.LogKind.TRACE)
+        self.assertGreaterEqual(trace_logs.count(), 1)
+
+        # Conversation.as_messages() must only contain the user prompt and the single final TURN assistant reply
+        msgs = conv.as_messages(include_state_tree=False)
+        assistant_msgs = [m for m in msgs if m["role"] == "assistant"]
+        self.assertEqual(len(assistant_msgs), 1)
+        self.assertEqual(assistant_msgs[0]["content"], "Step 2 final synthesized answer.")
+
+
+
+
+
 
 
 

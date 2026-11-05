@@ -158,7 +158,7 @@ def index(request):
     conversations = Conversation.objects.filter(user=request.user).exclude(user__username="NightManager")
     try:
         blueprints = list(
-            CognitiveBlueprint.objects.filter(category="REASONING")
+            CognitiveBlueprint.objects.filter(category="REASONING", output_kind="ANSWER")
             .exclude(name__startswith="NightManager")
             .exclude(name="The Architect")
             .exclude(name__startswith=":")
@@ -168,7 +168,8 @@ def index(request):
         )
     except Exception:
         blueprints = list(
-            CognitiveBlueprint.objects.exclude(name__startswith="NightManager")
+            CognitiveBlueprint.objects.filter(output_kind="ANSWER")
+            .exclude(name__startswith="NightManager")
             .exclude(name="The Architect")
             .exclude(name__icontains="Grips")
             .exclude(name__startswith="LintGrips")
@@ -957,9 +958,9 @@ def fill_grips_stub(request, concept_id):
 
         bp = CognitiveBlueprint.objects.filter(name__icontains="Stub Filler").first()
         if not bp:
-            from metacognition.seed import seed_cognitive_blueprints
+            from metacognition.seed import seed_all
             with bypass_canonical_lock():
-                seed_cognitive_blueprints()
+                seed_all()
             bp = CognitiveBlueprint.objects.filter(name="Grips Stub Filler").first()
 
         if not bp:
