@@ -104,16 +104,21 @@ class Conversation(models.Model):
 
         path = []
         if is_linked:
+            # Map both UUID and string representations to handle leaf_log_id / parent_log_id lookups
             log_dict = {log.id: log for log in logs}
-            if leaf_log_id and leaf_log_id in log_dict:
-                current_log = log_dict[leaf_log_id]
+            log_dict.update({str(log.id): log for log in logs})
+
+            if leaf_log_id:
+                current_log = log_dict.get(leaf_log_id) or log_dict.get(str(leaf_log_id))
             else:
-                # Default to the most recent log as the active leaf
-                current_log = logs[-1]
+                # Default to the most recent turn log if available, else latest log
+                turn_logs = [l for l in logs if getattr(l, 'log_kind', 'TURN') == 'TURN']
+                current_log = turn_logs[-1] if turn_logs else logs[-1]
 
             while current_log:
                 path.append(current_log)
-                current_log = log_dict.get(current_log.parent_log_id)
+                parent_id = current_log.parent_log_id
+                current_log = log_dict.get(parent_id) or log_dict.get(str(parent_id)) if parent_id else None
             path.reverse()
         else:
             path = logs  # Fallback to chronological order
@@ -151,8 +156,10 @@ class Conversation(models.Model):
                 "content": content
             })
 
-        # Reconstruct chat history turn-by-turn along the path
+        # Reconstruct chat history turn-by-turn along the path (excluding internal execution traces)
         for log in path:
+            if getattr(log, 'log_kind', 'TURN') == 'TRACE':
+                continue
             if log.user_prompt:
                 messages.append({
                     "role": "user",
@@ -322,7 +329,18 @@ class PromptResponseLog(models.Model):
         THUMB_UP = 1, 'Thumb Up'
         THUMB_DOWN = -1, 'Thumb Down'
 
+    class LogKind(models.TextChoices):
+        TURN = 'TURN', 'Conversation Turn'
+        TRACE = 'TRACE', 'Intermediate Execution Trace'
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    log_kind = models.CharField(
+        max_length=10,
+        choices=LogKind.choices,
+        default=LogKind.TURN,
+        db_index=True,
+        help_text="Discriminates top-level conversational turns from internal node/tool execution traces."
+    )
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     system_prompt = models.TextField()

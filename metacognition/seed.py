@@ -1358,7 +1358,12 @@ def seed_visual_evidence_investigator(CognitiveBlueprint, ReasoningStep, ToolDef
 def seed_deep_reader(CognitiveBlueprint, ReasoningStep, ToolDefinition, ResponseSchema):
     bp, _ = CognitiveBlueprint.objects.update_or_create(
         name="Deep_Reader",
-        defaults={'description': "Super retriever and synthesizer for augmenting RAG.", 'is_canonical': True, 'category': 'REASONING'}
+        defaults={
+            'description': "Super retriever and synthesizer for augmenting RAG.",
+            'is_canonical': True,
+            'category': 'REASONING',
+            'output_kind': 'CONTEXT',
+        }
     )
     
     ReasoningStep.objects.filter(blueprint=bp).delete()
@@ -1384,6 +1389,7 @@ def seed_deep_reader(CognitiveBlueprint, ReasoningStep, ToolDefinition, Response
     schema_eval, _ = ResponseSchema.objects.get_or_create(
         name="DeepReaderEvaluation_Schema", defaults={
             'schema_type': 'json',
+            'display_field': 'distilled_context',
             'json_schema': json.dumps({
                 "type": "object",
                 "properties": {
@@ -1405,6 +1411,9 @@ def seed_deep_reader(CognitiveBlueprint, ReasoningStep, ToolDefinition, Response
             })
         }
     )
+    if schema_eval.display_field != 'distilled_context':
+        schema_eval.display_field = 'distilled_context'
+        schema_eval.save(update_fields=['display_field'])
     
     step2 = ReasoningStep.objects.create(
         blueprint=bp,
@@ -1435,7 +1444,6 @@ def seed_deep_reader(CognitiveBlueprint, ReasoningStep, ToolDefinition, Response
     tool_complete, _ = ToolDefinition.objects.get_or_create(name="TASK_COMPLETE")
     
     step1.available_tools.add(tool_rag, tool_grips, tool_past, tool_complete)
-    step2.available_tools.add(tool_complete)
 
 def seed_research_evaluation(CognitiveBlueprint, ReasoningStep, ResponseSchema):
     bp_eval, _ = CognitiveBlueprint.objects.update_or_create(

@@ -69,3 +69,8 @@ class AgentState(TypedDict):
     last_log_id: Annotated[Optional[str], override_last]
     initial_log_id: Annotated[Optional[str], override_last]
 
+    # WS27 Explicit Output & Evaluation Feedback Contract
+    final_output: Annotated[Optional[str], override_last]
+    evaluator_feedback: Annotated[Optional[str], override_last]
+
+

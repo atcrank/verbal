@@ -63,5 +63,9 @@
 - [x] [Operations/RAG] WS23: Configurable RAG Embedding Model & Offline Path Resolution (Status: completed) -> [ws23_configurable_rag_embeddings.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/ws23_configurable_rag_embeddings.md)
   *Summary*: Decouple RAGService and semantic diversity metrics from hardcoded all-MiniLM-L6-v2. Introduce REASON_EMBEDDING_MODEL and settings.EMBEDDING_MODEL_NAME defaulting to sentence-transformers/all-MiniLM-L6-v2, support offline local directory loading with local_files_only=True, and propagate environment directives into Fabric deployment templates while preserving the 384-dimensional pgvector schema.
 
+- [ ] [Architecture/Harness] WS27: Metacognition Architecture, Output Contract & Transcript Isolation (Status: in-progress) -> [ws27_metacognition_harness_architecture.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/ws27_metacognition_harness_architecture.md)
+  *Summary*: Resolve blueprint response corruption and transcript pollution across the metacognition execution harness. Establish explicit `output_kind` and `final_output` contracts, decouple public conversation turns (`TURN`) from intermediate execution traces (`TRACE`), fix UUID leaf lookups in `as_messages()`, prevent evaluation judge output hijacking, and restrict chat dropdown to user-facing answer blueprints.
+
+
 
 

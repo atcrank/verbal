@@ -399,7 +399,8 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                     "internal_monologue": [monologue_entry],
                     "scratch": scratch_merged,
                     "state_tree": merged_tree,
-                    "token_budget_remaining": current_budget
+                    "token_budget_remaining": current_budget,
+                    "final_output": final_response if not sub_failed else None
                 }
 
                 
@@ -570,7 +571,8 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                 "internal_monologue": [monologue_entry],
                 "scratch": scratch_updates,
                 "state_tree": state_tree_updates,
-                "token_budget_remaining": current_budget
+                "token_budget_remaining": current_budget,
+                "final_output": tool_output_str if not tool_failed else None
             }
 
         system_prompt = step.system_prompt
@@ -635,7 +637,8 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
             "reasoning_step_id": step.id,
             "blueprint_id": step.blueprint_id,
             "parent_log_id": state.get("last_log_id"),
-            "initial_log_id": state.get("initial_log_id"),
+            "initial_log_id": None,
+            "log_kind": "TRACE",
             "log_ids": []
         }
 
@@ -821,6 +824,13 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
         state_tree_updates = dict(state.get("state_tree") or {})
         additional_messages = []
         
+        # Determine candidate conversational output for this step
+        candidate_output = None
+        if step.output_schema:
+            candidate_output = step.output_schema.format_for_display(result)
+        elif isinstance(result, str) and not (isinstance(result, dict) and "error" in result):
+            candidate_output = result
+
         if llm_result_message and hasattr(llm_result_message, "tool_calls") and llm_result_message.tool_calls:
             formatted_output = json.dumps(llm_result_message.tool_calls, indent=4)
         elif hasattr(result, "model_dump_json"):
@@ -864,6 +874,8 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                         monologue_entry["output"] += f"\n{msg}"
                         additional_messages.append(SystemMessage(content=msg))
                         tool_results_str.append(msg)
+                        if final_ans:
+                            candidate_output = final_ans
                         continue
 
                     try:
@@ -1050,6 +1062,8 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
             "scratch": scratch_updates,
             "token_budget_remaining": final_budget
         }
+        if candidate_output is not None:
+            action_ret["final_output"] = candidate_output
         if log_kwargs.get("log_ids"):
             action_ret["last_log_id"] = str(log_kwargs["log_ids"][-1])
             action_ret["initial_log_id"] = None
@@ -1117,6 +1131,7 @@ def _make_eval_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                         "reasoning_step_id": step.id,
                         "blueprint_id": step.blueprint_id,
                         "parent_log_id": state.get("last_log_id"),
+                        "log_kind": "TRACE",
                     }
 
                 )
@@ -1133,7 +1148,7 @@ def _make_eval_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                 if state.get("internal_monologue"):
                     last_entry = dict(state["internal_monologue"][-1])
                     last_entry["evaluator_reasoning"] = eval_result.reasoning
-                    return _intercept_failure(route_to, resume_to, state, step, root_mapping, updated_monologue=last_entry)
+                    return _intercept_failure(route_to, resume_to, state, step, root_mapping, updated_monologue=last_entry, evaluator_feedback=eval_result.reasoning)
                     
             except Exception as e:
                 logger.error(f"Evaluation failed for '{step.name}': {e}")
@@ -1141,7 +1156,7 @@ def _make_eval_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                 
         return _intercept_failure(route_to, resume_to, state, step, root_mapping)
 
-    def _intercept_failure(route_to, resume_to, state, step, root_mapping, updated_monologue=None):
+    def _intercept_failure(route_to, resume_to, state, step, root_mapping, updated_monologue=None, evaluator_feedback=None):
         # Intercept FAILURE if it loops back to itself, change to USER_INPUT_REQUIRED unless autonomous
         if route_to == "FAILURE" and step.on_failure_step and root_mapping.get(step.on_failure_step.id) == root_mapping.get(step.id):
             if not step.blueprint.is_autonomous:
@@ -1149,6 +1164,8 @@ def _make_eval_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                 resume_to = f"step_{root_mapping.get(step.id)}"
         
         updates = {"route_to": route_to, "resume_to": resume_to}
+        if evaluator_feedback:
+            updates["evaluator_feedback"] = evaluator_feedback
         if updated_monologue:
             eval_entry = {
                 "step_name": f"{step.name} (Evaluation)",
