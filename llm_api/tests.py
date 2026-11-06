@@ -1348,3 +1348,20 @@ class CPUMiniModelAndResilienceTests(TestCase):
         html_missing = admin.file_status(obj_missing)
         self.assertIn("⚠ Missing (/srv/reason/models/missing.gguf)", str(html_missing))
         self.assertIn("#d97706", str(html_missing))
+
+    def test_torch_compatibility_shims_polyfilled(self):
+        import torch
+        import torch.nn.functional as F
+        from llm_api.torch_compat import apply_torch_compatibility_shims
+
+        apply_torch_compatibility_shims()
+
+        self.assertTrue(hasattr(torch, "float8_e8m0fnu"))
+        self.assertTrue(hasattr(F, "ScalingType"))
+        self.assertTrue(hasattr(F, "_ScalingType"))
+
+        # Verify from-import works seamlessly as expected by torchao/transformers
+        from torch.nn.functional import ScalingType, _ScalingType
+        self.assertEqual(ScalingType.TensorWise.value, 0)
+        self.assertEqual(ScalingType.RowWise.value, 1)
+        self.assertEqual(ScalingType.BlockWise1x16.value, 2)

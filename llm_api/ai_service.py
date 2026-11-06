@@ -14,9 +14,8 @@ import re
 from django.conf import settings
 
 import torch
-# Hotfix for transformers/torch compatibility bug with missing fp8 dtypes
-if not hasattr(torch, "float8_e8m0fnu"):
-    setattr(torch, "float8_e8m0fnu", None)
+from .torch_compat import apply_torch_compatibility_shims
+apply_torch_compatibility_shims()
 
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline, BitsAndBytesConfig, GenerationConfig
 import outlines

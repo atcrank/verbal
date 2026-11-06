@@ -3,8 +3,8 @@ logger = logging.getLogger(__name__)
 
 import os
 import torch
-if not hasattr(torch, "float8_e8m0fnu"):
-    setattr(torch, "float8_e8m0fnu", None)
+from llm_api.torch_compat import apply_torch_compatibility_shims
+apply_torch_compatibility_shims()
 
 from uuid import uuid4
 import json
