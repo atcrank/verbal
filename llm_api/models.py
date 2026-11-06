@@ -482,7 +482,8 @@ class LoRAAdapter(models.Model):
     description = models.TextField(blank=True, help_text="What this adapter specializes in.")
     base_model = models.ForeignKey(LocalAIModel, on_delete=models.CASCADE, related_name="adapters", help_text="The base model this adapter was trained for.")
     dataset = models.ForeignKey('benchmarking.FineTuningDataset', on_delete=models.SET_NULL, null=True, blank=True, help_text="The dataset this LoRA was trained on.")
-
+    verbose_name = "Low Rank Adaptation Model"
+    
     @property
     def is_stale(self):
         """Returns True if the underlying dataset is stale."""
@@ -634,7 +635,9 @@ class SystemConfiguration(models.Model):
         related_name="system_tokenizer_configurations",
         help_text="Loaded into CPU RAM to count tokens, even if local VRAM model is disabled."
     )
-
+    verbose_name = "System Configuration"
+    verbose_name_plural = "System Configuration"
+    
     def save(self, *args, **kwargs):
         self.pk = 1  # Enforce singleton pattern
         super().save(*args, **kwargs)
