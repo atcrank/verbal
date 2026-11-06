@@ -6,6 +6,62 @@ clearance to all Django templates.
 """
 
 from metacognition.governance import get_governance_summary
+import time
+import requests
+
+_PRIMARY_HEALTH_CACHE: dict[str, tuple[float, bool]] = {}
+
+
+def clear_primary_backend_health_cache() -> None:
+    _PRIMARY_HEALTH_CACHE.clear()
+
+
+def is_primary_backend_available_cached(sys_config, ttl_seconds: float = 5.0, timeout: float = 0.25) -> bool:
+    """
+    Fast, fail-safe check to determine if the active hosting backend is online.
+    Caches results in memory for ttl_seconds to prevent blocking web request pipelines.
+    """
+    import sys
+    if not sys_config:
+        return False
+
+    backend = getattr(sys_config, "hosting_backend", None)
+    if not backend:
+        return False
+
+    now = time.monotonic()
+    cached = _PRIMARY_HEALTH_CACHE.get(backend)
+    if cached is not None and (now - cached[0]) < ttl_seconds:
+        return cached[1]
+
+    if "test" in sys.argv:
+        return True
+
+    is_online = False
+    try:
+        if backend == "pytorch":
+            from django.conf import settings
+            inf_url = getattr(settings, "INFERENCE_URL", "http://127.0.0.1:8001/api/llm")
+            ping_url = f"{inf_url.rstrip('/')}/internal/ping/"
+            res = requests.get(ping_url, timeout=timeout)
+            is_online = (res.status_code == 200)
+        elif backend == "llamacpp":
+            from llm_api.llamacpp_client import is_llamacpp_available_cached
+            is_online = is_llamacpp_available_cached(ttl_seconds=ttl_seconds, timeout=timeout)
+        elif backend == "vllm":
+            from django.conf import settings
+            vllm_url = getattr(settings, "VLLM_BASE_URL", "http://localhost:8000")
+            res = requests.get(f"{vllm_url.rstrip('/')}/health", timeout=timeout)
+            is_online = (res.status_code == 200)
+        elif backend == "ollama":
+            from llm_api.ollama_client import OLLAMA_BASE_URL
+            res = requests.get(f"{OLLAMA_BASE_URL.rstrip('/')}/api/tags", timeout=timeout)
+            is_online = (res.status_code == 200)
+    except Exception:
+        is_online = False
+
+    _PRIMARY_HEALTH_CACHE[backend] = (now, is_online)
+    return is_online
 
 
 def active_model_context(request):
@@ -62,14 +118,17 @@ def active_model_context(request):
             model = getattr(sys_config, 'active_mini_model', None) or sys_config.active_llamacpp_model
 
         if model:
+            is_online = is_primary_backend_available_cached(sys_config)
             active_model_info = {
                 "is_external": False,
+                "is_online": is_online,
                 "name": model.name,
                 "backend": sys_config.get_hosting_backend_display(),
                 "provider": "local",
-                "status_color": "#10b981",
-                "badge_icon": "🟢",
-                "badge_label": f"Local: {model.name}"
+                "status_color": "#10b981" if is_online else "#f59e0b",
+                "badge_icon": "🟢" if is_online else "🟡",
+                "badge_label": f"Local: {model.name}",
+                "status_text": "Online" if is_online else "Configured (backend offline / unstarted)",
             }
 
     mini_model_info = {

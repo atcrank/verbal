@@ -1467,7 +1467,7 @@ def setup_systemd(c):
     sudo_bash(c, "systemctl disable --now reason.target 2>/dev/null || true")
     c.sudo("rm -f /etc/systemd/system/reason.target")
 
-    sudo_bash(c, "systemctl daemon-reload && systemctl enable reason.service reason-docker reason-web reason-worker reason-scheduler reason-inference")
+    sudo_bash(c, "systemctl daemon-reload && systemctl enable reason.service reason-docker reason-web reason-worker reason-scheduler reason-inference reason-llamacpp")
     print("✅ Systemd services installed and registered for automatic boot startup.")
 
 
@@ -2294,6 +2294,7 @@ def restart_services(c):
     print("🔄 Restarting Reason systemd services...")
     sudo_bash(c, "systemctl restart reason-docker.service", warn=True)
     sudo_bash(c, "systemctl restart reason-web reason-worker reason-scheduler reason-inference")
+    sudo_bash(c, "systemctl restart reason-llamacpp", warn=True)
     print("✅ Services restarted.")
 
 

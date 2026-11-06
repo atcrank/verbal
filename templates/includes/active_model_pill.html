@@ -66,7 +66,7 @@
 
 <div class="active-model-container" id="active-model-container" style="gap: 6px;">
     <button type="button" class="active-model-pill" id="active-model-pill" onclick="toggleModelSelectorDropdown(event)"
-        title="Active Primary Model: {{ active_model_info.name }} ({{ active_model_info.backend }}). {% if available_external_models %}Click to switch provider.{% endif %}">
+        title="Active Primary Model: {{ active_model_info.name }} ({{ active_model_info.backend }}{% if active_model_info.status_text %} — {{ active_model_info.status_text }}{% endif %}). {% if available_external_models %}Click to switch provider.{% endif %}">
         <span class="model-pill-icon" style="font-size: 0.8rem;">{{ active_model_info.badge_icon }}</span>
         <span class="model-pill-label" style="max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ active_model_info.badge_label }}</span>
         {% if available_external_models %}
