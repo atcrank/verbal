@@ -1329,3 +1329,22 @@ class CPUMiniModelAndResilienceTests(TestCase):
             rendered = render_to_string("includes/active_model_pill.html", ctx)
             self.assertIn("Local: Mistral NeMo 12B", rendered)
             self.assertIn("Mini: Gemma 4 E4B", rendered)
+
+    def test_minimodel_admin_file_status_formatting(self):
+        from unittest.mock import MagicMock
+        from llm_api.admin import MiniModelAdmin
+        from llm_api.models import MiniModel
+
+        admin = MiniModelAdmin(MiniModel, MagicMock())
+
+        # When file exists -> returns mark_safe Found badge without format_html error
+        obj_found = MagicMock(file_exists=True)
+        html_found = admin.file_status(obj_found)
+        self.assertIn("✓ Found", str(html_found))
+        self.assertIn("#16a34a", str(html_found))
+
+        # When file is missing -> returns formatted Missing badge with path
+        obj_missing = MagicMock(file_exists=False, gguf_path="/srv/reason/models/missing.gguf")
+        html_missing = admin.file_status(obj_missing)
+        self.assertIn("⚠ Missing (/srv/reason/models/missing.gguf)", str(html_missing))
+        self.assertIn("#d97706", str(html_missing))

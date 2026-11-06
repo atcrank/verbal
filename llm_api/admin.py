@@ -125,7 +125,7 @@ class MiniModelAdmin(admin.ModelAdmin):
     @admin.display(description="On Disk")
     def file_status(self, obj):
         if obj.file_exists:
-            return format_html('<span style="color: #16a34a; font-weight: bold;">✓ Found</span>')
+            return mark_safe('<span style="color: #16a34a; font-weight: bold;">✓ Found</span>')
         return format_html('<span style="color: #d97706;">⚠ Missing ({})</span>', obj.gguf_path)
 
     @admin.display(description="Active Mini-Model", boolean=True)
