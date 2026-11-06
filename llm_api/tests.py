@@ -1359,9 +1359,13 @@ class CPUMiniModelAndResilienceTests(TestCase):
         self.assertTrue(hasattr(torch, "float8_e8m0fnu"))
         self.assertTrue(hasattr(F, "ScalingType"))
         self.assertTrue(hasattr(F, "_ScalingType"))
+        self.assertTrue(hasattr(F, "scaled_group_mm"))
+        self.assertTrue(hasattr(F, "scaled_grouped_mm"))
 
         # Verify from-import works seamlessly as expected by torchao/transformers
-        from torch.nn.functional import ScalingType, _ScalingType
+        from torch.nn.functional import ScalingType, _ScalingType, scaled_group_mm, scaled_grouped_mm
         self.assertEqual(ScalingType.TensorWise.value, 0)
         self.assertEqual(ScalingType.RowWise.value, 1)
         self.assertEqual(ScalingType.BlockWise1x16.value, 2)
+        self.assertIsNone(scaled_group_mm)
+        self.assertIsNone(scaled_grouped_mm)

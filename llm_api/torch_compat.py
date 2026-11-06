@@ -37,6 +37,31 @@ def apply_torch_compatibility_shims() -> None:
 
             setattr(F, "ScalingType", ScalingType)
             setattr(F, "_ScalingType", ScalingType)
+
+        # 3. Polyfill scaled_group_mm and scaled_grouped_mm stubs if missing
+        if not hasattr(F, "scaled_group_mm"):
+            setattr(F, "scaled_group_mm", None)
+        if not hasattr(F, "scaled_grouped_mm"):
+            setattr(F, "scaled_grouped_mm", None)
+
+        # 4. Defensive Quarantine: If torchao is in site-packages but broken
+        # (incompatible PyTorch ABI), quarantine it so transformers treats it as unavailable
+        # rather than crashing with cascading ImportErrors on missing internal C++ kernels.
+        try:
+            import importlib.util
+            if importlib.util.find_spec("torchao") is not None:
+                try:
+                    import torchao  # Test if clean import works
+                except Exception as err:
+                    logger.warning(
+                        "torchao found in environment but failed to import (%s). "
+                        "Quarantining torchao from Hugging Face transformers to allow standard model loading.",
+                        err,
+                    )
+                    import transformers.utils.import_utils as tu
+                    tu.is_torchao_available = lambda *args, **kwargs: False
+        except Exception:
+            pass
     except ImportError:
         pass
 
