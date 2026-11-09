@@ -180,7 +180,7 @@ class LlmApiConfig(AppConfig):
                     _ = service_registry.ai_service
                     logger.info("✅ Background AI model loading complete.")
                 except Exception as e:
-                    logger.error(f"❌ Failed to eagerly load AI models: {e}")
+                    logger.exception(f"❌ Failed to eagerly load AI models: {e}")
             
             t = threading.Thread(target=load_models, daemon=True)
             t.start()

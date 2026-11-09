@@ -318,7 +318,37 @@ OUTPUT_TYPES = {
 @csrf_exempt
 def internal_ping(request):
     from django.conf import settings
-    return JsonResponse({"status": "ok", "role": getattr(settings, "VERBAL_ROLE", "unknown")})
+    role = getattr(settings, "VERBAL_ROLE", "unknown")
+
+    # If PyTorch hosting backend is configured with an active local model,
+    # report whether the model is loaded in VRAM or encountered a load error.
+    try:
+        from .models import SystemConfiguration
+        config = SystemConfiguration.get_solo()
+        if config and config.hosting_backend == SystemConfiguration.HostingBackend.PYTORCH and config.active_local_model:
+            ai = service_registry.ai_service
+            model_loaded = (ai is not None and getattr(ai, "model", None) is not None)
+            load_error = getattr(ai, "load_error", None) if ai else None
+
+            if not model_loaded:
+                return JsonResponse({
+                    "status": "error",
+                    "role": role,
+                    "model_loaded": False,
+                    "model_name": config.active_local_model.name,
+                    "error": load_error or "Model not loaded in PyTorch VRAM"
+                }, status=503)
+
+            return JsonResponse({
+                "status": "ok",
+                "role": role,
+                "model_loaded": True,
+                "model_name": config.active_local_model.name
+            }, status=200)
+    except Exception as e:
+        logger.warning(f"Error checking backend status in internal_ping: {e}")
+
+    return JsonResponse({"status": "ok", "role": role})
 
 @router.post("/internal/unload-vram/", auth=None)
 @csrf_exempt
@@ -367,85 +397,95 @@ def get_hardware_diagnostics(request):
 @router.post("/v1/chat/completions", auth=None)
 @csrf_exempt
 def openai_chat_completions(request, payload: OpenAIChatCompletionIn):
-    messages = [{"role": m.role, "content": m.content} for m in payload.messages]
-    max_tokens = payload.max_tokens or 1500
-    
-    # Route structured output vs standard generation
-    if payload.response_format and payload.response_format.type == "json_schema":
-        schema_obj = payload.response_format.json_schema_format
-        schema_dict = schema_obj.schema_dict if schema_obj else {}
-        schema_name = schema_obj.name if schema_obj else ""
+    try:
+        messages = [{"role": m.role, "content": m.content} for m in payload.messages]
+        max_tokens = payload.max_tokens or 1500
+        
+        # Route structured output vs standard generation
+        if payload.response_format and payload.response_format.type == "json_schema":
+            schema_obj = payload.response_format.json_schema_format
+            schema_dict = schema_obj.schema_dict if schema_obj else {}
+            schema_name = schema_obj.name if schema_obj else ""
 
-        
-        response_schema = schema_dict
-        
-        # Attempt to resolve the Pydantic class by name to enable native validation & FSM setup
-        if schema_name in OUTPUT_TYPES:
-            response_schema = OUTPUT_TYPES[schema_name]
-        else:
-            try:
-                from background_resources.rag_service import OUTPUT_TYPES as RAG_OUTPUT_TYPES
-                if schema_name in RAG_OUTPUT_TYPES:
-                    response_schema = RAG_OUTPUT_TYPES[schema_name]
-            except ImportError:
-                pass
             
-            if response_schema == schema_dict:
-                try:
-                    import benchmarking.generators as bg
-                    if hasattr(bg, schema_name):
-                        response_schema = getattr(bg, schema_name)
-                except ImportError:
-                    pass
+            response_schema = schema_dict
             
-            if response_schema == schema_dict:
-                try:
-                    import metacognition.actions as ma
-                    if hasattr(ma, schema_name):
-                        response_schema = getattr(ma, schema_name)
-                except ImportError:
-                    pass
-
-            if response_schema == schema_dict:
-                try:
-                    import grips.tasks as gt
-                    if hasattr(gt, schema_name):
-                        response_schema = getattr(gt, schema_name)
-                except ImportError:
-                    pass
-        
-        result = service_registry.ai_service.generate_outline(
-            messages=messages,
-            response_schema=response_schema,
-            max_new_tokens=max_tokens,
-            temperature=payload.temperature,
-            num_return_sequences=payload.n,
-            log_kwargs={"skip_log": True}
-        )
-        
-        results_list = result if isinstance(result, list) else [result]
-        choices = []
-        for r in results_list:
-            if hasattr(r, 'model_dump'):
-                content = json.dumps(r.model_dump())
-            elif isinstance(r, dict):
-                content = json.dumps(r)
+            # Attempt to resolve the Pydantic class by name to enable native validation & FSM setup
+            if schema_name in OUTPUT_TYPES:
+                response_schema = OUTPUT_TYPES[schema_name]
             else:
-                # JsonSchema generations return strings directly
-                content = str(r)
-            choices.append({"message": {"role": "assistant", "content": content}})
+                try:
+                    from background_resources.rag_service import OUTPUT_TYPES as RAG_OUTPUT_TYPES
+                    if schema_name in RAG_OUTPUT_TYPES:
+                        response_schema = RAG_OUTPUT_TYPES[schema_name]
+                except ImportError:
+                    pass
+                
+                if response_schema == schema_dict:
+                    try:
+                        import benchmarking.generators as bg
+                        if hasattr(bg, schema_name):
+                            response_schema = getattr(bg, schema_name)
+                    except ImportError:
+                        pass
+                
+                if response_schema == schema_dict:
+                    try:
+                        import metacognition.actions as ma
+                        if hasattr(ma, schema_name):
+                            response_schema = getattr(ma, schema_name)
+                    except ImportError:
+                        pass
+
+                if response_schema == schema_dict:
+                    try:
+                        import grips.tasks as gt
+                        if hasattr(gt, schema_name):
+                            response_schema = getattr(gt, schema_name)
+                    except ImportError:
+                        pass
             
-        return JsonResponse({"choices": choices})
-    else:
-        results = service_registry.ai_service.generate_response2(
-            messages=messages,
-            max_new_tokens=max_tokens,
-            temperature=payload.temperature,
-            num_return_sequences=payload.n,
-            log_kwargs={"skip_log": True}
-        )
-        choices = [{"message": {"role": "assistant", "content": str(r)}} for r in results]
-        return JsonResponse({"choices": choices})
+            result = service_registry.ai_service.generate_outline(
+                messages=messages,
+                response_schema=response_schema,
+                max_new_tokens=max_tokens,
+                temperature=payload.temperature,
+                num_return_sequences=payload.n,
+                log_kwargs={"skip_log": True}
+            )
+            
+            results_list = result if isinstance(result, list) else [result]
+            choices = []
+            for r in results_list:
+                if hasattr(r, 'model_dump'):
+                    content = json.dumps(r.model_dump())
+                elif isinstance(r, dict):
+                    content = json.dumps(r)
+                else:
+                    # JsonSchema generations return strings directly
+                    content = str(r)
+                choices.append({"message": {"role": "assistant", "content": content}})
+                
+            return JsonResponse({"choices": choices})
+        else:
+            results = service_registry.ai_service.generate_response2(
+                messages=messages,
+                max_new_tokens=max_tokens,
+                temperature=payload.temperature,
+                num_return_sequences=payload.n,
+                log_kwargs={"skip_log": True}
+            )
+            choices = [{"message": {"role": "assistant", "content": str(r)}} for r in results]
+            return JsonResponse({"choices": choices})
+    except Exception as e:
+        logger.exception(f"❌ Error handling /v1/chat/completions: {e}")
+        return JsonResponse({
+            "error": {
+                "message": str(e),
+                "type": type(e).__name__,
+                "code": 500
+            }
+        }, status=500)
 
 # --- PDF Viewer Endpoint ---
 

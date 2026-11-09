@@ -1369,3 +1369,188 @@ class CPUMiniModelAndResilienceTests(TestCase):
         self.assertEqual(ScalingType.BlockWise1x16.value, 2)
         self.assertIsNone(scaled_group_mm)
         self.assertIsNone(scaled_grouped_mm)
+
+    def test_load_models_prioritizes_local_files_only(self):
+        from unittest.mock import patch, MagicMock
+        from llm_api.ai_service import AIService
+        from llm_api.models import SystemConfiguration, LocalAIModel
+
+        local_mod = LocalAIModel.objects.create(name="Gemma 4B Test", hf_model_id="google/gemma-4-E2B-it")
+        config = SystemConfiguration.get_solo()
+        config.hosting_backend = "pytorch"
+        config.active_local_model = local_mod
+        config.save()
+
+        service = AIService()
+        service.role = "inference"
+
+        mock_model = MagicMock()
+        mock_model.config.eos_token_id = 1
+        mock_model.config.pad_token_id = 1
+
+        with patch("transformers.AutoModelForCausalLM.from_pretrained", return_value=mock_model) as mock_from_pretrained, \
+             patch("outlines.models.transformers.Transformers", return_value=MagicMock()):
+            service.load_models()
+
+            # Ensure from_pretrained was called with local_files_only=True
+            self.assertTrue(mock_from_pretrained.called)
+            first_call_kwargs = mock_from_pretrained.call_args[1]
+            self.assertTrue(first_call_kwargs.get("local_files_only"))
+            self.assertIsNone(service.load_error)
+            self.assertIsNotNone(service.model)
+
+    def test_load_models_records_load_error_on_failure(self):
+        from unittest.mock import patch
+        from llm_api.ai_service import AIService
+        from llm_api.models import SystemConfiguration, LocalAIModel
+
+        local_mod = LocalAIModel.objects.create(name="Failing Model", hf_model_id="nonexistent/fail-model")
+        config = SystemConfiguration.get_solo()
+        config.hosting_backend = "pytorch"
+        config.active_local_model = local_mod
+        config.save()
+
+        service = AIService()
+        service.role = "inference"
+
+        with patch("transformers.AutoModelForCausalLM.from_pretrained", side_effect=OSError("Disk read failure or 404")):
+            with self.assertRaises(OSError):
+                service.load_models()
+
+            self.assertIsNotNone(service.load_error)
+            self.assertIn("Disk read failure", service.load_error)
+            self.assertIsNone(service.model)
+
+    def test_internal_ping_returns_503_when_pytorch_model_not_loaded(self):
+        from unittest.mock import patch, MagicMock
+        from django.test import RequestFactory
+        from llm_api.api import internal_ping
+        from llm_api.models import SystemConfiguration, LocalAIModel
+
+        local_mod = LocalAIModel.objects.create(name="Gemma Test", hf_model_id="google/gemma-test")
+        config = SystemConfiguration.get_solo()
+        config.hosting_backend = "pytorch"
+        config.active_local_model = local_mod
+        config.save()
+
+        mock_ai = MagicMock()
+        mock_ai.model = None
+        mock_ai.load_error = "CUDA out of memory"
+
+        rf = RequestFactory()
+        req = rf.get("/api/llm/internal/ping/")
+
+        with patch("llm_api.api.service_registry") as mock_registry:
+            mock_registry.ai_service = mock_ai
+            response = internal_ping(req)
+
+            self.assertEqual(response.status_code, 503)
+            import json
+            data = json.loads(response.content.decode("utf-8"))
+            self.assertEqual(data["status"], "error")
+            self.assertFalse(data["model_loaded"])
+            self.assertIn("CUDA out of memory", data["error"])
+
+    def test_internal_ping_returns_200_when_pytorch_model_loaded(self):
+        from unittest.mock import patch, MagicMock
+        from django.test import RequestFactory
+        from llm_api.api import internal_ping
+        from llm_api.models import SystemConfiguration, LocalAIModel
+
+        local_mod = LocalAIModel.objects.create(name="Gemma Test", hf_model_id="google/gemma-test")
+        config = SystemConfiguration.get_solo()
+        config.hosting_backend = "pytorch"
+        config.active_local_model = local_mod
+        config.save()
+
+        mock_ai = MagicMock()
+        mock_ai.model = MagicMock()
+        mock_ai.load_error = None
+
+        rf = RequestFactory()
+        req = rf.get("/api/llm/internal/ping/")
+
+        with patch("llm_api.api.service_registry") as mock_registry:
+            mock_registry.ai_service = mock_ai
+            response = internal_ping(req)
+
+            self.assertEqual(response.status_code, 200)
+            import json
+            data = json.loads(response.content.decode("utf-8"))
+            self.assertEqual(data["status"], "ok")
+            self.assertTrue(data["model_loaded"])
+
+    def test_openai_chat_completions_returns_500_json_on_unhandled_error(self):
+        from unittest.mock import patch
+        from django.test import RequestFactory
+        from llm_api.api import openai_chat_completions, OpenAIChatCompletionIn, OpenAIChatMessage
+
+        payload = OpenAIChatCompletionIn(
+            messages=[OpenAIChatMessage(role="user", content="Hello")],
+            max_tokens=50
+        )
+        rf = RequestFactory()
+        req = rf.post("/api/llm/v1/chat/completions")
+
+        with patch("llm_api.api.service_registry.ai_service.generate_response2", side_effect=RuntimeError("Model crashed")):
+            response = openai_chat_completions(req, payload)
+            self.assertEqual(response.status_code, 500)
+            import json
+            data = json.loads(response.content.decode("utf-8"))
+            self.assertIn("error", data)
+            self.assertEqual(data["error"]["type"], "RuntimeError")
+            self.assertIn("Model crashed", data["error"]["message"])
+
+    def test_context_processor_surfaces_red_badge_on_load_error(self):
+        from unittest.mock import MagicMock
+        from django.test import RequestFactory
+        from metacognition.context_processors import active_model_context, _PRIMARY_HEALTH_CACHE
+        from llm_api.models import SystemConfiguration, LocalAIModel
+
+        local_mod = LocalAIModel.objects.create(name="Gemma Error Model", hf_model_id="google/gemma-err")
+        config = SystemConfiguration.get_solo()
+        config.hosting_backend = "pytorch"
+        config.active_local_model = local_mod
+        config.save()
+
+        rf = RequestFactory()
+        req = rf.get("/demo/")
+        req.user = MagicMock(is_authenticated=False)
+
+        import time
+        _PRIMARY_HEALTH_CACHE.clear()
+        _PRIMARY_HEALTH_CACHE["pytorch"] = (time.monotonic(), False)
+        _PRIMARY_HEALTH_CACHE["pytorch_error"] = (time.monotonic(), "CUDA out of memory")
+
+        ctx = active_model_context(req)
+        self.assertEqual(ctx["active_model_info"]["badge_icon"], "🔴")
+        self.assertEqual(ctx["active_model_info"]["status_color"], "#ef4444")
+        self.assertIn("CUDA out of memory", ctx["active_model_info"]["status_text"])
+
+    def test_system_configuration_admin_backend_status_display_and_fieldsets(self):
+        from unittest.mock import MagicMock
+        from llm_api.admin import SystemConfigurationAdmin
+        from llm_api.models import SystemConfiguration, MiniModel
+
+        admin = SystemConfigurationAdmin(SystemConfiguration, MagicMock())
+
+        # Verify fieldsets: system_tokenizer must not be in Hosting Strategy
+        strategy_fieldset = None
+        for name, opts in admin.fieldsets:
+            if name == "Hosting Strategy":
+                strategy_fieldset = opts
+                break
+
+        self.assertIsNotNone(strategy_fieldset)
+        self.assertNotIn("system_tokenizer", strategy_fieldset["fields"])
+        self.assertIn("hosting_backend", strategy_fieldset["fields"])
+
+        # Verify backend_status_display exists and renders HTML
+        config = SystemConfiguration.get_solo()
+        mini = MiniModel.objects.create(name="Gemma CPU Mini", gguf_filename="gemma_cpu.gguf")
+        config.active_mini_model = mini
+        config.save()
+
+        html = admin.backend_status_display(config)
+        self.assertIn("Active Runtime Backend & Model Health", str(html))
+        self.assertIn("Gemma CPU Mini", str(html))

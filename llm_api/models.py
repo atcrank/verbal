@@ -633,7 +633,8 @@ class SystemConfiguration(models.Model):
     system_tokenizer = models.ForeignKey(
         'LocalAIModel', on_delete=models.SET_NULL, null=True, blank=True,
         related_name="system_tokenizer_configurations",
-        help_text="Loaded into CPU RAM to count tokens, even if local VRAM model is disabled."
+        verbose_name="Legacy Fallback Tokenizer",
+        help_text="Optional Hugging Face tokenizer reference loaded into CPU RAM only if no CPU Mini-Model (GGUF) is configured."
     )
     verbose_name = "System Configuration"
     verbose_name_plural = "System Configuration"

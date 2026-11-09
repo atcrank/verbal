@@ -233,15 +233,15 @@ class PromptResponseLogAdmin(admin.ModelAdmin):
 
 @admin.register(SystemConfiguration)
 class SystemConfigurationAdmin(admin.ModelAdmin):
-    readonly_fields = ('hardware_advisor_display',)
+    readonly_fields = ('backend_status_display', 'hardware_advisor_display')
     fieldsets = (
-        ('Host Hardware & Resource Advisor', {
-            'fields': ('hardware_advisor_display',),
-            'description': 'Real-time detection of host compute capability, VRAM headroom, and recommended settings.'
+        ('Active Runtime Health', {
+            'fields': ('backend_status_display',),
+            'description': 'Live operational status of the primary inference host and CPU Mini-Model.'
         }),
         ('Hosting Strategy', {
-            'fields': ('hosting_backend', 'system_tokenizer'),
-            'description': 'Select which internal engine acts as your primary AI host. The tokenizer is always loaded to CPU RAM for local proxy validation.'
+            'fields': ('hosting_backend',),
+            'description': 'Select which internal engine acts as your primary AI host.'
         }),
         ('Local PyTorch Inference', {
             'fields': ('active_local_model',),
@@ -259,7 +259,78 @@ class SystemConfigurationAdmin(admin.ModelAdmin):
             'fields': ('active_mini_model', 'use_mini_model_for_utilities', 'active_llamacpp_model'),
             'description': 'Select a lightweight single-file GGUF CPU Mini-Model (in /srv/reason/models/) served by llama.cpp for non-blocking utility roles (Conversation Title maintenance, fast tokenization) and/or primary CPU inference when Hosting Backend is set to llama.cpp.'
         }),
+        ('Advanced / Fallback Tokenizer', {
+            'classes': ('collapse',),
+            'fields': ('system_tokenizer',),
+            'description': 'Legacy Hugging Face tokenizer reference. Only loaded when no CPU Mini-Model is configured.'
+        }),
+        ('Host Hardware & Resource Advisor', {
+            'fields': ('hardware_advisor_display',),
+            'description': 'Real-time detection of host compute capability, VRAM headroom, and recommended settings.'
+        }),
     )
+
+    def backend_status_display(self, obj):
+        if not obj:
+            return "—"
+
+        from metacognition.context_processors import is_primary_backend_available_cached, _PRIMARY_HEALTH_CACHE
+        from .llamacpp_client import is_llamacpp_available_cached
+
+        backend_name = obj.get_hosting_backend_display()
+        is_online = is_primary_backend_available_cached(obj, ttl_seconds=1.0, timeout=0.5)
+
+        if obj.hosting_backend == SystemConfiguration.HostingBackend.PYTORCH:
+            if not obj.active_local_model:
+                primary_badge = '<span style="color: #94a3b8; font-weight: bold;">⚪ No PyTorch model selected</span>'
+            elif is_online:
+                primary_badge = f'<span style="color: #10b981; font-weight: bold;">🟢 Online & Loaded:</span> {obj.active_local_model.name} (<code style="color: #a5f3fc;">{obj.active_local_model.hf_model_id}</code>)'
+            else:
+                err = _PRIMARY_HEALTH_CACHE.get("pytorch_error")
+                err_text = err[1] if err else "Inference service unreachable or unstarted"
+                primary_badge = f'<span style="color: #ef4444; font-weight: bold;">🔴 Load Error / Offline:</span> {err_text} (Selected: {obj.active_local_model.name})'
+        elif obj.hosting_backend == SystemConfiguration.HostingBackend.LLAMACPP:
+            mini_obj = obj.active_mini_model or obj.active_llamacpp_model
+            mini_name = getattr(mini_obj, "name", "None")
+            if is_online:
+                primary_badge = f'<span style="color: #10b981; font-weight: bold;">🟢 llama.cpp Online (Port 8080):</span> {mini_name}'
+            else:
+                primary_badge = '<span style="color: #f59e0b; font-weight: bold;">🟡 llama.cpp Offline / Unstarted (Port 8080)</span>'
+        elif obj.hosting_backend == SystemConfiguration.HostingBackend.VLLM:
+            mod_name = obj.active_vllm_model.name if obj.active_vllm_model else "None"
+            primary_badge = f'<span style="color: {"#10b981" if is_online else "#f59e0b"}; font-weight: bold;">{"🟢 vLLM Online" if is_online else "🟡 vLLM Offline"}</span> ({mod_name})'
+        elif obj.hosting_backend == SystemConfiguration.HostingBackend.OLLAMA:
+            mod_name = obj.active_ollama_model.name if obj.active_ollama_model else "None"
+            primary_badge = f'<span style="color: {"#10b981" if is_online else "#f59e0b"}; font-weight: bold;">{"🟢 Ollama Online" if is_online else "🟡 Ollama Offline"}</span> ({mod_name})'
+        else:
+            primary_badge = f'<span style="color: #94a3b8;">{backend_name}</span>'
+
+        # CPU Mini-Model Status
+        mini_online = is_llamacpp_available_cached(ttl_seconds=1.0, timeout=0.5)
+        if obj.active_mini_model:
+            if mini_online:
+                mini_badge = f'<span style="color: #10b981; font-weight: bold;">🟢 Online:</span> {obj.active_mini_model.name} (<code style="color: #a5f3fc;">{obj.active_mini_model.gguf_filename}</code>)'
+            else:
+                mini_badge = f'<span style="color: #f59e0b; font-weight: bold;">🟡 Configured but llama.cpp is offline / unstarted</span> ({obj.active_mini_model.name})'
+        else:
+            mini_badge = '<span style="color: #94a3b8; font-weight: bold;">⚪ No CPU Mini-Model selected (utility acceleration disabled)</span>'
+
+        html = f"""
+        <div style="background: #0f172a; color: #f8fafc; padding: 14px 18px; border-radius: 8px; font-family: monospace; line-height: 1.6; border: 1px solid #334155;">
+            <div style="font-size: 1.1em; font-weight: bold; margin-bottom: 8px; color: #38bdf8;">
+                📡 Active Runtime Backend & Model Health
+            </div>
+            <div style="margin-bottom: 6px;">
+                <strong>Primary Host ({backend_name}):</strong> {primary_badge}
+            </div>
+            <div>
+                <strong>CPU Mini-Model (llama.cpp):</strong> {mini_badge}
+            </div>
+        </div>
+        """
+        return mark_safe(html)
+
+    backend_status_display.short_description = "Live Backend & Model Status"
 
     def hardware_advisor_display(self, obj):
         from .hardware import get_hardware_profile, get_backend_recommendations

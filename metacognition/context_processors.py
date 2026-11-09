@@ -34,7 +34,7 @@ def is_primary_backend_available_cached(sys_config, ttl_seconds: float = 5.0, ti
     if cached is not None and (now - cached[0]) < ttl_seconds:
         return cached[1]
 
-    if "test" in sys.argv:
+    if "test" in sys.argv and not getattr(sys_config, "_test_force_ping", False):
         return True
 
     is_online = False
@@ -45,6 +45,14 @@ def is_primary_backend_available_cached(sys_config, ttl_seconds: float = 5.0, ti
             ping_url = f"{inf_url.rstrip('/')}/internal/ping/"
             res = requests.get(ping_url, timeout=timeout)
             is_online = (res.status_code == 200)
+            if res.status_code == 503:
+                try:
+                    data = res.json()
+                    _PRIMARY_HEALTH_CACHE[f"{backend}_error"] = (now, data.get("error", "Model load error"))
+                except Exception:
+                    _PRIMARY_HEALTH_CACHE[f"{backend}_error"] = (now, "Model load error (HTTP 503)")
+            else:
+                _PRIMARY_HEALTH_CACHE.pop(f"{backend}_error", None)
         elif backend == "llamacpp":
             from llm_api.llamacpp_client import is_llamacpp_available_cached
             is_online = is_llamacpp_available_cached(ttl_seconds=ttl_seconds, timeout=timeout)
@@ -119,16 +127,26 @@ def active_model_context(request):
 
         if model:
             is_online = is_primary_backend_available_cached(sys_config)
+            err_msg = None
+            cached_err = _PRIMARY_HEALTH_CACHE.get(f"{sys_config.hosting_backend}_error")
+            if cached_err and (time.monotonic() - cached_err[0]) < 15.0:
+                err_msg = cached_err[1]
+
+            status_color = "#10b981" if is_online else ("#ef4444" if err_msg else "#f59e0b")
+            badge_icon = "🟢" if is_online else ("🔴" if err_msg else "🟡")
+            status_text = "Online" if is_online else (f"Load Error: {err_msg}" if err_msg else "Configured (backend offline / unstarted)")
+
             active_model_info = {
                 "is_external": False,
                 "is_online": is_online,
                 "name": model.name,
                 "backend": sys_config.get_hosting_backend_display(),
                 "provider": "local",
-                "status_color": "#10b981" if is_online else "#f59e0b",
-                "badge_icon": "🟢" if is_online else "🟡",
+                "status_color": status_color,
+                "badge_icon": badge_icon,
                 "badge_label": f"Local: {model.name}",
-                "status_text": "Online" if is_online else "Configured (backend offline / unstarted)",
+                "status_text": status_text,
+                "error": err_msg,
             }
 
     mini_model_info = {

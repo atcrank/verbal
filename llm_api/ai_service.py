@@ -113,6 +113,7 @@ class AIService:
     inference_url = getattr(settings, "INFERENCE_URL", "http://127.0.0.1:8001/api/llm")
     model_id = None
     model = None
+    load_error = None
     classifier = None
     outline_pipeline = None
     terminators = None
@@ -134,8 +135,10 @@ class AIService:
             from .models import SystemConfiguration
             config = SystemConfiguration.get_solo()
             if config:
+                if config.active_mini_model:
+                    logger.info(f"CPU Mini-Model configured: {config.active_mini_model.name} ({config.active_mini_model.gguf_filename})")
                 tokenizer_id = config.system_tokenizer.hf_model_id if config.system_tokenizer else "google/gemma-4-E2B-it"
-                logger.info(f"Loading system tokenizer: {tokenizer_id}")
+                logger.info(f"Loading CPU fallback tokenizer: {tokenizer_id}")
                 
                 if config.hosting_backend == 'vllm':
                     logger.info('📂 System Config: vLLM is enabled. Bypassing PyTorch load.')
@@ -254,10 +257,31 @@ class AIService:
         else:
             load_kwargs["torch_dtype"] = torch_dtype
 
-        self.model = AutoModelForCausalLM.from_pretrained(
-            self.model_id,
-            **load_kwargs
-        )
+        self.load_error = None
+        try:
+            # First attempt loading with local_files_only=True to prevent uncommanded Artifactory / Hugging Face queries
+            # (which causes 404 errors on adapter_config.json on mirrors).
+            local_kwargs = dict(load_kwargs)
+            local_kwargs["local_files_only"] = True
+            logger.info(f"Attempting to load PyTorch model '{self.model_id}' with local_files_only=True...")
+            self.model = AutoModelForCausalLM.from_pretrained(
+                self.model_id,
+                **local_kwargs
+            )
+            logger.info(f"✅ Loaded '{self.model_id}' from local cache.")
+        except Exception as local_err:
+            logger.info(f"Local cache load for '{self.model_id}' failed ({local_err}); attempting remote/mirror fetch...")
+            try:
+                self.model = AutoModelForCausalLM.from_pretrained(
+                    self.model_id,
+                    **load_kwargs
+                )
+            except Exception as remote_err:
+                self.load_error = f"{type(remote_err).__name__}: {str(remote_err)}"
+                logger.exception(f"❌ Failed to load PyTorch model '{self.model_id}': {self.load_error}")
+                self.model = None
+                self.outline_pipeline = None
+                raise
 
         self.model.config.pad_token_id = getattr(self.tokenizer, 'pad_token_id', self.tokenizer.eos_token_id)
         logger.info(" ".join([str(x) for x in ['✅ LLM model loaded successfully.', type(self.model)]]))
@@ -278,6 +302,7 @@ class AIService:
     def unload_models(self):
         """Frees VRAM for model switching."""
         logger.info('🗑️ Unloading AI models...')
+        self.load_error = None
         if hasattr(self, 'model') and self.model is not None:
             del self.model
         if hasattr(self, 'outline_pipeline') and self.outline_pipeline is not None:
@@ -925,9 +950,13 @@ class AIService:
             def local_callable(msgs, max_tok, temp, n):
                 with self._lock:
                     if self.model is None:
-                        self.load_models()
+                        try:
+                            self.load_models()
+                        except Exception as e:
+                            logger.exception(f"Error loading models in generate_response2: {e}")
                     if self.model is None:
-                        raise RuntimeError("No Local AI Model is active in System Configuration, and no External API is configured for this user.")
+                        err_detail = getattr(self, "load_error", None) or "No Local AI Model is active in System Configuration, and no External API is configured for this user."
+                        raise RuntimeError(f"Local AI Model '{self.model_id}' failed to load: {err_detail}")
                         
                     # Load appropriate LoRA adapter if specified
                     if lora_adapter:
@@ -1051,10 +1080,14 @@ class AIService:
             def local_callable(msgs, max_tok, temp, n):
                 with self._lock:
                     if self.outline_pipeline is None:
-                        self.load_models()
+                        try:
+                            self.load_models()
+                        except Exception as e:
+                            logger.exception(f"Error loading models in generate_outline: {e}")
                         
                     if self.outline_pipeline is None:
-                        raise RuntimeError("No Local AI Model is active in System Configuration.")
+                        err_detail = getattr(self, "load_error", None) or "No Local AI Model is active in System Configuration."
+                        raise RuntimeError(f"Local AI Model '{self.model_id}' failed to load outline pipeline: {err_detail}")
                         
                     # Load appropriate LoRA adapter if specified
                     if lora_adapter:
