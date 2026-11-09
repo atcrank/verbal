@@ -1398,6 +1398,8 @@ class CPUMiniModelAndResilienceTests(TestCase):
             self.assertTrue(first_call_kwargs.get("local_files_only"))
             self.assertIsNone(service.load_error)
             self.assertIsNotNone(service.model)
+            # Verify Gemma turn terminator <turn|> (token 106) was registered in terminators
+            self.assertIn(106, service.terminators)
 
     def test_load_models_records_load_error_on_failure(self):
         from unittest.mock import patch

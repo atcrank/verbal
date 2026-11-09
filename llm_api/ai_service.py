@@ -290,12 +290,18 @@ class AIService:
         logger.info(" ".join([str(x) for x in ['✅ Outline llm wrapper loaded', type(self.outline_pipeline)]]))
 
         terminators = [self.tokenizer.eos_token_id]
-        for token_str in ["<|eot_id|>", "<|im_end|>"]:
+        candidate_terminators = ["<|eot_id|>", "<|im_end|>", "<turn|>", "<end_of_turn>", "</s>", "<|endoftext|>"]
+        for token_str in candidate_terminators:
             tok_id = self.tokenizer.convert_tokens_to_ids(token_str)
-            if tok_id is not None and tok_id != getattr(self.tokenizer, 'unk_token_id', None):
+            if (
+                tok_id is not None
+                and tok_id != getattr(self.tokenizer, 'unk_token_id', None)
+                and tok_id != getattr(self.tokenizer, 'pad_token_id', None)
+            ):
                 terminators.append(tok_id)
                 
         self.terminators = list(set(t for t in terminators if t is not None))
+        logger.info(f"Registered {len(self.terminators)} turn terminator token(s): {self.terminators}")
 
         logger.info('✅ AI models loaded successfully.')
 
@@ -980,6 +986,7 @@ class AIService:
                         max_new_tokens=max_tok,
                         temperature=temp if do_sample else None,
                         top_p=0.95 if do_sample else None,
+                        top_k=50 if do_sample else None,
                         do_sample=do_sample,
                         eos_token_id=self.terminators,
                         pad_token_id=self.tokenizer.pad_token_id,
