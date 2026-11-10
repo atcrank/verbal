@@ -60,14 +60,14 @@ KNOWN_EXTERNAL_VISION_PATTERNS = [
 _MODALITY_CACHE: Dict[str, bool] = {}
 
 
-def introspect_hf_modality(model_id_or_path: str) -> bool:
+def introspect_hf_modality(model_id_or_path: str, allow_remote: bool = False) -> bool:
     """
     Introspects a local directory or cached Hugging Face model repository to determine
     if it is a multimodal / vision-language model.
     
     PREFERS LOCAL DISK:
-    1. First attempts purely offline load (`local_files_only=True`) from local disk/HF cache.
-    2. Zero GPU VRAM, zero network polling when model is present locally.
+    1. Attempts purely offline load (`local_files_only=True`) from local disk/HF cache.
+    2. Only queries remote registries when ``allow_remote=True`` is explicitly requested.
     3. Caches result in memory to avoid repetitive disk I/O.
     """
     if not model_id_or_path:
@@ -80,13 +80,14 @@ def introspect_hf_modality(model_id_or_path: str) -> bool:
 
     try:
         from transformers import AutoConfig
+        from .diagnostics import load_hf_with_cache_first
 
-        # Priority 1: Check local disk / cache ONLY (no network polling)
-        try:
-            cfg = AutoConfig.from_pretrained(model_id_or_path, local_files_only=True, trust_remote_code=True)
-        except Exception:
-            # Priority 2: If not in local cache, fallback to standard lookup
-            cfg = AutoConfig.from_pretrained(model_id_or_path, trust_remote_code=True)
+        cfg = load_hf_with_cache_first(
+            AutoConfig.from_pretrained,
+            model_id_or_path,
+            allow_remote=allow_remote,
+            trust_remote_code=True,
+        )
 
         is_multi = False
         # 1. Check for explicit vision_config attribute

@@ -30,7 +30,13 @@ class LazyServiceRegistry:
     def _sync_hosting_backend_state(self):
         """Reads the system config and ensures the Docker containers and VRAM state match."""
         import sys
+        from django.conf import settings
         if 'test' in sys.argv:
+            return
+
+        role = getattr(settings, "VERBAL_ROLE", "standalone")
+        if role in ("web", "worker", "scheduler"):
+            logger.debug(f"SYNC: Skipping Docker backend container orchestration for client role '{role}'.")
             return
 
         try:
@@ -41,18 +47,18 @@ class LazyServiceRegistry:
             if config:
                 logger.info(f"SYNC: Syncing hosting backend state. Active backend is: {config.hosting_backend}")
                 if config.hosting_backend == 'vllm':
-                    logger.info("SYNC: Stopping Ollama and ensuring vLLM is running...")
+                    logger.info("SYNC: Stopping Ollama and ensuring vLLM is running (pull_policy=never)...")
                     ollama_client.stop_container()
                     if config.active_vllm_model:
-                        vllm_client.start_container(config.active_vllm_model)
+                        vllm_client.start_container(config.active_vllm_model, pull_policy="never")
                 elif config.hosting_backend == 'ollama':
-                    logger.info("SYNC: Stopping vLLM and ensuring Ollama is running...")
+                    logger.info("SYNC: Stopping vLLM and ensuring Ollama is running (pull_policy=never)...")
                     vllm_client.stop_container()
-                    ollama_client.start_container()
+                    ollama_client.start_container(pull_policy="never")
                     if config.active_ollama_model:
                         logger.info(f"SYNC: Loading Ollama model: {config.active_ollama_model.hf_model_id}")
                         ollama_client.set_ollama_model_state(config.active_ollama_model.hf_model_id, active=True)
-                elif config.hosting_backend == 'pytorch':
+                elif config.hosting_backend in ('pytorch', 'llamacpp'):
                     logger.info("SYNC: Stopping both Ollama and vLLM containers...")
                     vllm_client.stop_container()
                     ollama_client.stop_container()

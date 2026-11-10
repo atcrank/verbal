@@ -116,8 +116,12 @@ def task_calculate_dataset_metrics(dataset_id):
                 from sklearn.metrics.pairwise import cosine_distances
                 from background_resources.rag_service import get_embedding_model_name
 
-                # Use configured embedding model
-                model = SentenceTransformer(get_embedding_model_name())
+                # Use configured embedding model (cache-first to avoid uncommanded HF network checks)
+                emb_name = get_embedding_model_name()
+                try:
+                    model = SentenceTransformer(emb_name, local_files_only=True)
+                except Exception:
+                    model = SentenceTransformer(emb_name)
                 # For very large datasets, cap the sample size to prevent OOM or extremely long execution
                 sample_questions = questions[:1000]
 

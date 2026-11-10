@@ -1,25 +1,29 @@
 import logging
-import subprocess
 import os
 from typing import Any
 
-from django.conf import settings
+from .diagnostics import run_docker_compose_action
 from .hardware import get_backend_recommendations
 
 logger = logging.getLogger(__name__)
 
 
-def start_container(model_target: Any):
+def start_container(model_target: Any, pull_policy: str = "never") -> tuple[bool, str]:
     """
     Starts or re-creates the vLLM Docker container using docker compose,
     incorporating hardware recommendations and model-specific tuning.
 
+    Uses ``--no-build --pull never`` by default so runtime restarts never
+    hang or fail pulling container images from blocked registries.
+
     Args:
         model_target: Either a LocalAIModel instance or a string HuggingFace model ID.
+        pull_policy: Docker Compose pull policy (default: ``"never"``).
     """
     if not model_target:
-        logger.warning("No model or model ID provided for vLLM container startup.")
-        return
+        msg = "No model or model ID provided for vLLM container startup."
+        logger.warning(msg)
+        return False, msg
 
     model_id = getattr(model_target, "hf_model_id", None) or str(model_target)
 
@@ -60,37 +64,32 @@ def start_container(model_target: Any):
 
     extra_args = " ".join(extra_flags)
 
-    try:
-        logger.info(
-            f"🚀 Launching vLLM container: model={model_id}, "
-            f"utilization={util}, max_len={max_len}, dtype={vllm_dtype}, args={extra_args}"
-        )
-        env = os.environ.copy()
-        env["VLLM_MODEL"] = model_id
-        env["VLLM_GPU_MEMORY_UTILIZATION"] = str(util)
-        env["VLLM_MAX_MODEL_LEN"] = str(max_len)
-        env["VLLM_DTYPE"] = str(vllm_dtype)
-        env["VLLM_EXTRA_ARGS"] = extra_args
+    logger.info(
+        f"🚀 Launching vLLM container: model={model_id}, "
+        f"utilization={util}, max_len={max_len}, dtype={vllm_dtype}, args={extra_args}"
+    )
+    env = os.environ.copy()
+    env["VLLM_MODEL"] = model_id
+    env["VLLM_GPU_MEMORY_UTILIZATION"] = str(util)
+    env["VLLM_MAX_MODEL_LEN"] = str(max_len)
+    env["VLLM_DTYPE"] = str(vllm_dtype)
+    env["VLLM_EXTRA_ARGS"] = extra_args
 
-        compose_file = str(settings.BASE_DIR / "docker-compose.yml")
-        subprocess.run(
-            ["docker", "compose", "-f", compose_file, "up", "-d", "--force-recreate", "vllm"],
-            check=True, capture_output=True, text=True, env=env
-        )
+    args = ["up", "-d", "--no-build"]
+    if pull_policy:
+        args.extend(["--pull", pull_policy])
+    args.extend(["--force-recreate", "vllm"])
+
+    ok, detail = run_docker_compose_action(args, f"Start vLLM container for '{model_id}'", env=env)
+    if ok:
         logger.info(f"✅ vLLM container started successfully for model '{model_id}'.")
-    except subprocess.CalledProcessError as e:
-        logger.error(f"❌ Failed to start vLLM container: {e.stderr or e.stdout or e}")
+    return ok, detail
 
 
-def stop_container():
+def stop_container() -> tuple[bool, str]:
     """Stops the vLLM Docker container using docker compose."""
-    try:
-        logger.info("Stopping vLLM container via docker compose...")
-        compose_file = str(settings.BASE_DIR / "docker-compose.yml")
-        subprocess.run(
-            ["docker", "compose", "-f", compose_file, "stop", "vllm"],
-            check=True, capture_output=True, text=True
-        )
+    logger.info("Stopping vLLM container via docker compose...")
+    ok, detail = run_docker_compose_action(["stop", "vllm"], "Stop vLLM container")
+    if ok:
         logger.info("✅ vLLM container stopped.")
-    except subprocess.CalledProcessError as e:
-        logger.error(f"❌ Failed to stop vLLM container: {e.stderr or e.stdout or e}")
+    return ok, detail

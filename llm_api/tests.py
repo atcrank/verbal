@@ -1556,3 +1556,258 @@ class CPUMiniModelAndResilienceTests(TestCase):
         html = admin.backend_status_display(config)
         self.assertIn("Active Runtime Backend & Model Health", str(html))
         self.assertIn("Gemma CPU Mini", str(html))
+
+
+class OfflineRestartResilienceAndDiagnosticsTests(TestCase):
+    """Tests for WS30: Zero-update restarts, cache-first HF resolution, and SystemConfig Admin notifications."""
+
+    def setUp(self):
+        self.client = Client()
+        self.admin_user = User.objects.create_superuser(
+            username="ws30_admin", email="ws30@example.com", password="password123"
+        )
+        self.client.login(username="ws30_admin", password="password123")
+
+    def test_vllm_client_uses_pull_never_and_returns_diagnostic_tuple(self):
+        import subprocess
+        from unittest.mock import patch
+        from llm_api.models import LocalAIModel
+        from llm_api import vllm_client
+
+        model = LocalAIModel.objects.create(name="Gemma VLLM", hf_model_id="google/gemma-2-2b-it")
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value.returncode = 0
+            ok, msg = vllm_client.start_container(model)
+            self.assertTrue(ok)
+            cmd = mock_run.call_args[0][0]
+            self.assertIn("--no-build", cmd)
+            self.assertIn("--pull", cmd)
+            self.assertIn("never", cmd)
+
+        with patch(
+            "subprocess.run",
+            side_effect=subprocess.CalledProcessError(1, "docker", stderr="no such image: vllm/vllm-openai:latest"),
+        ):
+            ok, msg = vllm_client.start_container(model)
+            self.assertFalse(ok)
+            self.assertIn("vllm/vllm-openai:latest", msg)
+
+    def test_ollama_client_uses_pull_never_and_returns_diagnostic_tuple(self):
+        import subprocess
+        from unittest.mock import patch
+        from llm_api import ollama_client
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value.returncode = 0
+            ok, msg = ollama_client.start_container()
+            self.assertTrue(ok)
+            cmd = mock_run.call_args[0][0]
+            self.assertIn("--no-build", cmd)
+            self.assertIn("--pull", cmd)
+            self.assertIn("never", cmd)
+
+        with patch(
+            "subprocess.run",
+            side_effect=subprocess.CalledProcessError(1, "docker", stderr="image missing locally"),
+        ):
+            ok, msg = ollama_client.start_container()
+            self.assertFalse(ok)
+            self.assertIn("image missing locally", msg)
+
+    def test_sync_hosting_backend_state_skips_client_roles(self):
+        from unittest.mock import patch
+        from django.test import override_settings
+        from llm_api.apps import LazyServiceRegistry
+        from llm_api.models import SystemConfiguration, LocalAIModel
+
+        model = LocalAIModel.objects.create(name="VLLM Target", hf_model_id="google/gemma-2-2b-it")
+        cfg = SystemConfiguration.get_solo()
+        cfg.hosting_backend = SystemConfiguration.HostingBackend.VLLM
+        cfg.active_vllm_model = model
+        cfg.save()
+
+        registry = LazyServiceRegistry()
+        for client_role in ("web", "worker", "scheduler"):
+            with override_settings(VERBAL_ROLE=client_role), \
+                 patch("sys.argv", ["manage.py", "runserver"]), \
+                 patch("llm_api.vllm_client.start_container") as mock_vllm_start, \
+                 patch("llm_api.ollama_client.stop_container") as mock_ollama_stop:
+                registry._sync_hosting_backend_state()
+                mock_vllm_start.assert_not_called()
+                mock_ollama_stop.assert_not_called()
+
+    def test_ai_service_web_worker_skips_hf_tokenizer_when_minimodel_active(self):
+        from unittest.mock import patch
+        from llm_api.ai_service import AIService
+        from llm_api.models import MiniModel, SystemConfiguration
+
+        mini = MiniModel.objects.create(name="Local GGUF Mini", gguf_filename="mini.gguf")
+        cfg = SystemConfiguration.get_solo()
+        cfg.hosting_backend = SystemConfiguration.HostingBackend.PYTORCH
+        cfg.active_mini_model = mini
+        cfg.use_mini_model_for_utilities = True
+        cfg.system_tokenizer = None
+        cfg.save()
+
+        service = AIService()
+        service.role = "worker"
+
+        with patch("transformers.AutoTokenizer.from_pretrained") as mock_tok, \
+             patch("requests.get") as mock_ping:
+            mock_ping.return_value.status_code = 200
+            service.load_models()
+            mock_tok.assert_not_called()
+            self.assertIsNone(service.tokenizer)
+
+    def test_ai_service_never_fetches_unconfigured_default_tokenizer_remotely(self):
+        from unittest.mock import patch
+        from llm_api.ai_service import AIService
+        from llm_api.models import SystemConfiguration
+
+        cfg = SystemConfiguration.get_solo()
+        cfg.hosting_backend = SystemConfiguration.HostingBackend.PYTORCH
+        cfg.active_local_model = None
+        cfg.active_mini_model = None
+        cfg.system_tokenizer = None
+        cfg.save()
+
+        service = AIService()
+        service.role = "web"
+
+        with patch("transformers.AutoTokenizer.from_pretrained", side_effect=OSError("Not cached")) as mock_tok, \
+             patch("requests.get") as mock_ping:
+            mock_ping.return_value.status_code = 200
+            service.load_models()
+            mock_tok.assert_called_once()
+            self.assertTrue(mock_tok.call_args[1].get("local_files_only"))
+            self.assertIsNone(service.tokenizer)
+
+    def test_introspect_hf_modality_is_cache_only_by_default(self):
+        from unittest.mock import patch
+        from llm_api.modality_detector import introspect_hf_modality, _MODALITY_CACHE
+        from llm_api.models import LocalAIModel
+
+        _MODALITY_CACHE.pop("uncached-org/custom-text-model", None)
+        with patch("transformers.AutoConfig.from_pretrained", side_effect=OSError("Not cached")) as mock_cfg:
+            model = LocalAIModel.objects.create(
+                name="Custom Text Model",
+                hf_model_id="uncached-org/custom-text-model",
+            )
+            _ = str(model)
+            # Only the local_files_only=True attempt is permitted; never remote HTTP fallback
+            mock_cfg.assert_called_once()
+            self.assertTrue(mock_cfg.call_args[1].get("local_files_only"))
+            self.assertFalse(introspect_hf_modality("uncached-org/custom-text-model"))
+
+    def test_diagnostics_reports_unavailable_vllm_image_and_uncached_hf_model(self):
+        from unittest.mock import patch, MagicMock
+        from llm_api.diagnostics import (
+            DockerDaemonStatus,
+            inspect_docker_service_readiness,
+            check_hf_model_cached,
+        )
+
+        daemon_ok = DockerDaemonStatus(available=True, detail="Docker Engine v26.1.0")
+        with patch("llm_api.diagnostics.inspect_docker_image_local", return_value=(False, "No such image")), \
+             patch("llm_api.diagnostics.inspect_docker_container", return_value=(False, False, "")):
+            vllm_status = inspect_docker_service_readiness(
+                "vllm", "DOCKER_VLLM_IMAGE", "vllm/vllm-openai:latest", "verbal_vllm", daemon_status=daemon_ok
+            )
+            self.assertFalse(vllm_status.image_present)
+            self.assertFalse(vllm_status.container_running)
+            self.assertIn("Unavailable", vllm_status.detail)
+            self.assertIn("vllm/vllm-openai:latest", vllm_status.detail)
+
+        with patch("huggingface_hub.try_to_load_from_cache", return_value=None):
+            hf_status = check_hf_model_cached("google/gemma-4-12B-it")
+            self.assertFalse(hf_status.cached_on_disk)
+            self.assertIn("Not cached", hf_status.detail)
+
+    def test_system_config_admin_shows_inline_availability_and_warns_on_save(self):
+        from unittest.mock import patch
+        from django.contrib.messages import get_messages
+        from llm_api.diagnostics import (
+            DockerDaemonStatus,
+            DockerServiceReadiness,
+            BackendAvailabilitySummary,
+            HuggingFaceCacheStatus,
+        )
+        from llm_api.models import SystemConfiguration, LocalAIModel
+
+        local_mod = LocalAIModel.objects.create(name="Gemma 12B", hf_model_id="google/gemma-4-12B-it")
+        config = SystemConfiguration.get_solo()
+        config.hosting_backend = SystemConfiguration.HostingBackend.PYTORCH
+        config.active_local_model = local_mod
+        config.save()
+
+        mock_summary = BackendAvailabilitySummary(
+            docker_daemon=DockerDaemonStatus(available=True, detail="Docker Engine v26.1.0"),
+            vllm=DockerServiceReadiness(
+                service_name="vllm",
+                image_name="vllm/vllm-openai:latest",
+                container_name="verbal_vllm",
+                docker_accessible=True,
+                image_present=False,
+                container_exists=False,
+                container_running=False,
+                container_state="missing",
+                detail="Unavailable: Docker image 'vllm/vllm-openai:latest' not found locally",
+            ),
+            ollama=DockerServiceReadiness(
+                service_name="ollama",
+                image_name="ollama/ollama",
+                container_name="verbal_ollama",
+                docker_accessible=True,
+                image_present=False,
+                container_exists=False,
+                container_running=False,
+                container_state="missing",
+                detail="Unavailable: Docker image 'ollama/ollama' not found locally",
+            ),
+            llamacpp_binary_exists=True,
+            llamacpp_binary_path="/srv/reason/bin/llama-server",
+            llamacpp_gguf_files=("gemma_cpu.gguf",),
+            llamacpp_online=False,
+            pytorch_cuda_available=True,
+            pytorch_online=True,
+            pytorch_error=None,
+        )
+
+        with patch("llm_api.diagnostics.get_backend_availability_summary", return_value=mock_summary), \
+             patch(
+                 "llm_api.diagnostics.check_hf_model_cached",
+                 return_value=HuggingFaceCacheStatus(
+                     model_id="google/gemma-4-12B-it",
+                     cached_on_disk=False,
+                     cache_path=None,
+                     detail="Not cached in HF_HOME",
+                 ),
+             ):
+            # 1. Admin GET renders inline status badges & dropdown annotations cleanly without a separate matrix section
+            resp = self.client.get(f"/admin/llm_api/systemconfiguration/{config.id}/change/")
+            self.assertEqual(resp.status_code, 200)
+            self.assertContains(resp, "Unavailable: Docker image")
+            self.assertContains(resp, "vllm/vllm-openai:latest")
+            self.assertNotContains(resp, "Backend Infrastructure Readiness Matrix")
+
+            # 2. Admin POST allows validly saving 'vllm' preference in DB while emitting a WARNING notification
+            post_data = {
+                "hosting_backend": SystemConfiguration.HostingBackend.VLLM,
+                "active_local_model": str(local_mod.id),
+                "active_vllm_model": "",
+                "active_ollama_model": "",
+                "active_mini_model": "",
+                "use_mini_model_for_utilities": "on",
+                "active_llamacpp_model": "",
+                "system_tokenizer": "",
+            }
+            post_resp = self.client.post(f"/admin/llm_api/systemconfiguration/{config.id}/change/", post_data, follow=True)
+            self.assertEqual(post_resp.status_code, 200)
+            config.refresh_from_db()
+            self.assertEqual(config.hosting_backend, SystemConfiguration.HostingBackend.VLLM)
+
+            msgs = [str(m) for m in post_resp.context["messages"]]
+            self.assertTrue(
+                any("unavailable" in m.lower() and "vllm" in m.lower() for m in msgs),
+                f"Expected Admin warning notification for unavailable vLLM backend, got: {msgs}",
+            )

@@ -212,16 +212,21 @@
 
         <span class="n">path</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="n">is_linked</span><span class="p">:</span>
+            <span class="c1"># Map both UUID and string representations to handle leaf_log_id / parent_log_id lookups</span>
             <span class="n">log_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">log</span><span class="o">.</span><span class="n">id</span><span class="p">:</span> <span class="n">log</span> <span class="k">for</span> <span class="n">log</span> <span class="ow">in</span> <span class="n">logs</span><span class="p">}</span>
-            <span class="k">if</span> <span class="n">leaf_log_id</span> <span class="ow">and</span> <span class="n">leaf_log_id</span> <span class="ow">in</span> <span class="n">log_dict</span><span class="p">:</span>
-                <span class="n">current_log</span> <span class="o">=</span> <span class="n">log_dict</span><span class="p">[</span><span class="n">leaf_log_id</span><span class="p">]</span>
+            <span class="n">log_dict</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="nb">str</span><span class="p">(</span><span class="n">log</span><span class="o">.</span><span class="n">id</span><span class="p">):</span> <span class="n">log</span> <span class="k">for</span> <span class="n">log</span> <span class="ow">in</span> <span class="n">logs</span><span class="p">})</span>
+
+            <span class="k">if</span> <span class="n">leaf_log_id</span><span class="p">:</span>
+                <span class="n">current_log</span> <span class="o">=</span> <span class="n">log_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">leaf_log_id</span><span class="p">)</span> <span class="ow">or</span> <span class="n">log_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">leaf_log_id</span><span class="p">))</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># Default to the most recent log as the active leaf</span>
-                <span class="n">current_log</span> <span class="o">=</span> <span class="n">logs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="c1"># Default to the most recent turn log if available, else latest log</span>
+                <span class="n">turn_logs</span> <span class="o">=</span> <span class="p">[</span><span class="n">l</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">logs</span> <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="s1">&#39;log_kind&#39;</span><span class="p">,</span> <span class="s1">&#39;TURN&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;TURN&#39;</span><span class="p">]</span>
+                <span class="n">current_log</span> <span class="o">=</span> <span class="n">turn_logs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">turn_logs</span> <span class="k">else</span> <span class="n">logs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 
             <span class="k">while</span> <span class="n">current_log</span><span class="p">:</span>
                 <span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current_log</span><span class="p">)</span>
-                <span class="n">current_log</span> <span class="o">=</span> <span class="n">log_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">current_log</span><span class="o">.</span><span class="n">parent_log_id</span><span class="p">)</span>
+                <span class="n">parent_id</span> <span class="o">=</span> <span class="n">current_log</span><span class="o">.</span><span class="n">parent_log_id</span>
+                <span class="n">current_log</span> <span class="o">=</span> <span class="n">log_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">parent_id</span><span class="p">)</span> <span class="ow">or</span> <span class="n">log_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">parent_id</span><span class="p">))</span> <span class="k">if</span> <span class="n">parent_id</span> <span class="k">else</span> <span class="kc">None</span>
             <span class="n">path</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">path</span> <span class="o">=</span> <span class="n">logs</span>  <span class="c1"># Fallback to chronological order</span>
@@ -259,8 +264,10 @@
                 <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">content</span>
             <span class="p">})</span>
 
-        <span class="c1"># Reconstruct chat history turn-by-turn along the path</span>
+        <span class="c1"># Reconstruct chat history turn-by-turn along the path (excluding internal execution traces)</span>
         <span class="k">for</span> <span class="n">log</span> <span class="ow">in</span> <span class="n">path</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">log</span><span class="p">,</span> <span class="s1">&#39;log_kind&#39;</span><span class="p">,</span> <span class="s1">&#39;TURN&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;TRACE&#39;</span><span class="p">:</span>
+                <span class="k">continue</span>
             <span class="k">if</span> <span class="n">log</span><span class="o">.</span><span class="n">user_prompt</span><span class="p">:</span>
                 <span class="n">messages</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
                     <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span>
@@ -452,7 +459,21 @@
         <span class="n">THUMB_DOWN</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;Thumb Down&#39;</span></div>
 
 
+<div class="viewcode-block" id="PromptResponseLog.LogKind">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.PromptResponseLog.LogKind">[docs]</a>
+    <span class="k">class</span><span class="w"> </span><span class="nc">LogKind</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">TextChoices</span><span class="p">):</span>
+        <span class="n">TURN</span> <span class="o">=</span> <span class="s1">&#39;TURN&#39;</span><span class="p">,</span> <span class="s1">&#39;Conversation Turn&#39;</span>
+        <span class="n">TRACE</span> <span class="o">=</span> <span class="s1">&#39;TRACE&#39;</span><span class="p">,</span> <span class="s1">&#39;Intermediate Execution Trace&#39;</span></div>
+
+
     <span class="nb">id</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">UUIDField</span><span class="p">(</span><span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">,</span> <span class="n">editable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">log_kind</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span>
+        <span class="n">max_length</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+        <span class="n">choices</span><span class="o">=</span><span class="n">LogKind</span><span class="o">.</span><span class="n">choices</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="n">LogKind</span><span class="o">.</span><span class="n">TURN</span><span class="p">,</span>
+        <span class="n">db_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Discriminates top-level conversational turns from internal node/tool execution traces.&quot;</span>
+    <span class="p">)</span>
     <span class="n">user</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">User</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">CASCADE</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">created_at</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="n">auto_now_add</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">system_prompt</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">()</span>
@@ -609,7 +630,8 @@
     <span class="n">description</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;What this adapter specializes in.&quot;</span><span class="p">)</span>
     <span class="n">base_model</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">LocalAIModel</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">CASCADE</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s2">&quot;adapters&quot;</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;The base model this adapter was trained for.&quot;</span><span class="p">)</span>
     <span class="n">dataset</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;benchmarking.FineTuningDataset&#39;</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">SET_NULL</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;The dataset this LoRA was trained on.&quot;</span><span class="p">)</span>
-
+    <span class="n">verbose_name</span> <span class="o">=</span> <span class="s2">&quot;Low Rank Adaptation Model&quot;</span>
+    
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_stale</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns True if the underlying dataset is stale.&quot;&quot;&quot;</span>
@@ -619,6 +641,102 @@
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> (LoRA for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">base_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="discover_gguf_files">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.discover_gguf_files">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">discover_gguf_files</span><span class="p">(</span><span class="n">models_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns a sorted list of .gguf filenames present in REASON_MODELS_DIR</span>
+<span class="sd">    (default: /srv/reason/models). Returns an empty list if the directory</span>
+<span class="sd">    does not exist or is unreadable.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">base_dir</span> <span class="o">=</span> <span class="n">models_dir</span> <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="s2">&quot;REASON_MODELS_DIR&quot;</span><span class="p">,</span> <span class="s2">&quot;/srv/reason/models&quot;</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">base_dir</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="n">entries</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">scandir</span><span class="p">(</span><span class="n">base_dir</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">entry</span><span class="o">.</span><span class="n">is_file</span><span class="p">()</span> <span class="ow">and</span> <span class="n">entry</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.gguf&quot;</span><span class="p">):</span>
+                <span class="n">entries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">entries</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span></div>
+
+
+
+<div class="viewcode-block" id="MiniModel">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.MiniModel">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MiniModel</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Lightweight single-file GGUF CPU model stored in /srv/reason/models/</span>
+<span class="sd">    and served by llama.cpp (llama-server). Used for non-blocking utility</span>
+<span class="sd">    tasks (Conversation Title generation, fast CPU tokenization) and/or</span>
+<span class="sd">    primary CPU inference when hosting_backend == &#39;llamacpp&#39;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span>
+        <span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span>
+        <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Friendly display name (e.g. &#39;Gemma 4 E4B&#39;). Auto-derived from filename if left blank.&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">gguf_filename</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span>
+        <span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span>
+        <span class="n">unique</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;GGUF filename in /srv/reason/models/ (e.g. &#39;Gemma-4-e4B-it-Q5_K_M.gguf&#39;) or absolute path.&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">context_window</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="mi">4096</span><span class="p">,</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Context window size (-c flag for llama-server).&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">threads</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span>
+        <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Optional CPU thread limit (-t flag for llama-server). Leave blank for automatic.&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">is_active</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Whether this GGUF model is available for selection.&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">created_at</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="n">auto_now_add</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">updated_at</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="n">auto_now</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">verbose_name</span> <span class="o">=</span> <span class="s2">&quot;CPU Mini-Model (GGUF)&quot;</span>
+        <span class="n">verbose_name_plural</span> <span class="o">=</span> <span class="s2">&quot;CPU Mini-Models (GGUF)&quot;</span>
+        <span class="n">ordering</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;gguf_filename&quot;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">gguf_path</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isabs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gguf_filename</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">gguf_filename</span>
+        <span class="n">base_dir</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="s2">&quot;REASON_MODELS_DIR&quot;</span><span class="p">,</span> <span class="s2">&quot;/srv/reason/models&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_dir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gguf_filename</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">file_exists</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gguf_path</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_multimodal</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="MiniModel.save">
+<a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.MiniModel.save">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">gguf_filename</span><span class="p">:</span>
+            <span class="n">stem</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gguf_filename</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">stem</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">gguf_filename</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gguf_filename</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+
 
 
 <div class="viewcode-block" id="SystemConfiguration">
@@ -661,20 +779,48 @@
     <span class="n">active_llamacpp_model</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span>
         <span class="n">LocalAIModel</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">SET_NULL</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">related_name</span><span class="o">=</span><span class="s2">&quot;llamacpp_configurations&quot;</span><span class="p">,</span>
-        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;The selected model running in the local llama.cpp server. Used only when &#39;Local llama.cpp Server&#39; is the active hosting backend.&quot;</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Legacy LocalAIModel reference for llama.cpp. Prefer setting active_mini_model below.&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">active_mini_model</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span>
+        <span class="n">MiniModel</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">SET_NULL</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">related_name</span><span class="o">=</span><span class="s2">&quot;system_configurations&quot;</span><span class="p">,</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Lightweight GGUF CPU mini-model in /srv/reason/models/ served by llama.cpp for utility tasks (conversation titles, token counting) and/or CPU inference.&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">use_mini_model_for_utilities</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;When enabled and llama.cpp is online, use the active Mini-Model for non-blocking conversation title generation and token counting.&quot;</span>
     <span class="p">)</span>
 
     <span class="n">system_tokenizer</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span>
         <span class="s1">&#39;LocalAIModel&#39;</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">SET_NULL</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">related_name</span><span class="o">=</span><span class="s2">&quot;system_tokenizer_configurations&quot;</span><span class="p">,</span>
-        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Loaded into CPU RAM to count tokens, even if local VRAM model is disabled.&quot;</span>
+        <span class="n">verbose_name</span><span class="o">=</span><span class="s2">&quot;Legacy Fallback Tokenizer&quot;</span><span class="p">,</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Optional Hugging Face tokenizer reference loaded into CPU RAM only if no CPU Mini-Model (GGUF) is configured.&quot;</span>
     <span class="p">)</span>
-
+    <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">verbose_name</span> <span class="o">=</span> <span class="s2">&quot;System Configuration&quot;</span>
+        <span class="n">verbose_name_plural</span> <span class="o">=</span> <span class="s2">&quot;System Configuration&quot;</span>
+    
 <div class="viewcode-block" id="SystemConfiguration.save">
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.SystemConfiguration.save">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pk</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># Enforce singleton pattern</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="c1"># Best-effort sync of active Mini-Model path to REASON_MODELS_DIR/.active_minimodel</span>
+        <span class="c1"># so reason-llamacpp.service can resolve -m instantaneously on startup/restart.</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">models_dir</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="s2">&quot;REASON_MODELS_DIR&quot;</span><span class="p">,</span> <span class="s2">&quot;/srv/reason/models&quot;</span><span class="p">)</span>
+            <span class="n">marker_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">models_dir</span><span class="p">,</span> <span class="s2">&quot;.active_minimodel&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_mini_model_id</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_mini_model</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">models_dir</span><span class="p">)</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="n">models_dir</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">W_OK</span><span class="p">):</span>
+                    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">marker_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fh</span><span class="p">:</span>
+                        <span class="n">fh</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">active_mini_model</span><span class="o">.</span><span class="n">gguf_path</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">marker_path</span><span class="p">)</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="n">models_dir</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">W_OK</span><span class="p">):</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">marker_path</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+            <span class="k">pass</span></div>
 
 
 <div class="viewcode-block" id="SystemConfiguration.get_solo">
@@ -806,19 +952,24 @@
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not signal inference server to unload VRAM: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="c1"># 3. Manage Docker Containers if backend changed</span>
+    <span class="n">sync_warning</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">if</span> <span class="n">old_backend</span> <span class="o">!=</span> <span class="n">new_backend</span><span class="p">:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Switching hosting backend from &#39;</span><span class="si">{</span><span class="n">old_backend</span><span class="si">}</span><span class="s2">&#39; to &#39;</span><span class="si">{</span><span class="n">new_backend</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">new_backend</span> <span class="o">==</span> <span class="s1">&#39;vllm&#39;</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Stopping Ollama and starting vLLM container...&quot;</span><span class="p">)</span>
             <span class="n">ollama_client</span><span class="o">.</span><span class="n">stop_container</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">new_vllm</span><span class="p">:</span>
-                <span class="n">vllm_client</span><span class="o">.</span><span class="n">start_container</span><span class="p">(</span><span class="n">new_vllm</span><span class="p">)</span>
+                <span class="n">ok</span><span class="p">,</span> <span class="n">detail</span> <span class="o">=</span> <span class="n">vllm_client</span><span class="o">.</span><span class="n">start_container</span><span class="p">(</span><span class="n">new_vllm</span><span class="p">,</span> <span class="n">pull_policy</span><span class="o">=</span><span class="s2">&quot;never&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">ok</span><span class="p">:</span>
+                    <span class="n">sync_warning</span> <span class="o">=</span> <span class="n">detail</span>
         <span class="k">elif</span> <span class="n">new_backend</span> <span class="o">==</span> <span class="s1">&#39;ollama&#39;</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Stopping vLLM and starting Ollama container...&quot;</span><span class="p">)</span>
             <span class="n">vllm_client</span><span class="o">.</span><span class="n">stop_container</span><span class="p">()</span>
-            <span class="n">ollama_client</span><span class="o">.</span><span class="n">start_container</span><span class="p">()</span>
-        <span class="k">elif</span> <span class="n">new_backend</span> <span class="o">==</span> <span class="s1">&#39;pytorch&#39;</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Stopping both Ollama and vLLM containers (switching to local PyTorch)...&quot;</span><span class="p">)</span>
+            <span class="n">ok</span><span class="p">,</span> <span class="n">detail</span> <span class="o">=</span> <span class="n">ollama_client</span><span class="o">.</span><span class="n">start_container</span><span class="p">(</span><span class="n">pull_policy</span><span class="o">=</span><span class="s2">&quot;never&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">ok</span><span class="p">:</span>
+                <span class="n">sync_warning</span> <span class="o">=</span> <span class="n">detail</span>
+        <span class="k">elif</span> <span class="n">new_backend</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;pytorch&#39;</span><span class="p">,</span> <span class="s1">&#39;llamacpp&#39;</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Stopping both Ollama and vLLM containers (switching to </span><span class="si">{</span><span class="n">new_backend</span><span class="si">}</span><span class="s2">)...&quot;</span><span class="p">)</span>
             <span class="n">ollama_client</span><span class="o">.</span><span class="n">stop_container</span><span class="p">()</span>
             <span class="n">vllm_client</span><span class="o">.</span><span class="n">stop_container</span><span class="p">()</span>
 
@@ -826,7 +977,18 @@
     <span class="k">elif</span> <span class="n">new_backend</span> <span class="o">==</span> <span class="s1">&#39;vllm&#39;</span> <span class="ow">and</span> <span class="n">old_backend</span> <span class="o">==</span> <span class="s1">&#39;vllm&#39;</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">old_vllm</span> <span class="o">!=</span> <span class="n">new_vllm</span> <span class="ow">and</span> <span class="n">new_vllm</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;vLLM model changed to </span><span class="si">{</span><span class="n">new_vllm</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">. Restarting vLLM container...&quot;</span><span class="p">)</span>
-            <span class="n">vllm_client</span><span class="o">.</span><span class="n">start_container</span><span class="p">(</span><span class="n">new_vllm</span><span class="p">)</span>
+            <span class="n">ok</span><span class="p">,</span> <span class="n">detail</span> <span class="o">=</span> <span class="n">vllm_client</span><span class="o">.</span><span class="n">start_container</span><span class="p">(</span><span class="n">new_vllm</span><span class="p">,</span> <span class="n">pull_policy</span><span class="o">=</span><span class="s2">&quot;never&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">ok</span><span class="p">:</span>
+                <span class="n">sync_warning</span> <span class="o">=</span> <span class="n">detail</span>
+
+    <span class="k">if</span> <span class="n">sync_warning</span><span class="p">:</span>
+        <span class="n">instance</span><span class="o">.</span><span class="n">_backend_sync_warning</span> <span class="o">=</span> <span class="n">sync_warning</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">metacognition.context_processors</span><span class="w"> </span><span class="kn">import</span> <span class="n">clear_primary_backend_health_cache</span>
+        <span class="n">clear_primary_backend_health_cache</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">pass</span>
 
     <span class="c1"># 5. If active backend is Ollama, and either just switched to it OR changed model</span>
     <span class="k">if</span> <span class="n">new_backend</span> <span class="o">==</span> <span class="s1">&#39;ollama&#39;</span> <span class="ow">and</span> <span class="n">new_ollama</span><span class="p">:</span>

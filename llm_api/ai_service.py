@@ -125,21 +125,49 @@ class AIService:
 
 
 
-    def load_models(self):
-        token = os.getenv("HF_TOKEN")
+    def _resolve_tokenizer_source(self, config) -> tuple[str | None, bool]:
+        """
+        Determines ``(tokenizer_id, allow_remote)`` for CPU/inference tokenization.
 
+        Never initiates remote Hugging Face downloads for unconfigured default
+        fallbacks or when a GGUF CPU Mini-Model is handling utility tokenization.
+        """
+        client_roles = ("web", "worker", "scheduler")
+        if self.model_id and self.role not in client_roles:
+            return self.model_id, True
+
+        if config and getattr(config, "system_tokenizer", None):
+            return config.system_tokenizer.hf_model_id, True
+
+        if (
+            config
+            and getattr(config, "use_mini_model_for_utilities", True)
+            and (getattr(config, "active_mini_model_id", None) or config.hosting_backend == "llamacpp")
+        ):
+            return None, False
+
+        if config and config.hosting_backend == "pytorch" and config.active_local_model:
+            return config.active_local_model.hf_model_id, False
+
+        if config and config.hosting_backend == "vllm" and config.active_vllm_model:
+            return config.active_vllm_model.hf_model_id, False
+
+        return "google/gemma-4-E2B-it", False
+
+    def load_models(self):
+        from .diagnostics import load_hf_with_cache_first
+
+        token = os.getenv("HF_TOKEN")
         self.model_id = None
-        tokenizer_id = "google/gemma-4-E2B-it"
-        
+        config = None
+
         try:
             from .models import SystemConfiguration
             config = SystemConfiguration.get_solo()
             if config:
                 if config.active_mini_model:
                     logger.info(f"CPU Mini-Model configured: {config.active_mini_model.name} ({config.active_mini_model.gguf_filename})")
-                tokenizer_id = config.system_tokenizer.hf_model_id if config.system_tokenizer else "google/gemma-4-E2B-it"
-                logger.info(f"Loading CPU fallback tokenizer: {tokenizer_id}")
-                
+
                 if config.hosting_backend == 'vllm':
                     logger.info('📂 System Config: vLLM is enabled. Bypassing PyTorch load.')
                 elif config.hosting_backend == 'ollama':
@@ -152,30 +180,33 @@ class AIService:
         except Exception as e:
             logger.info(f'Warning: Could not fetch SystemConfiguration from DB: {e}')
 
-        # If a local model is active and we're not just a web worker, we MUST use its tokenizer
-        # Otherwise the generated token IDs will decode to garbage.
-        if self.model_id and self.role not in ["web", "worker"]:
-            tokenizer_id = self.model_id
-
-        logger.info(f'⚙️ Loading CPU tokenizer: {tokenizer_id}')
-        try:
-            try:
-                self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_id, token=token, local_files_only=True)
-            except Exception:
-                self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_id, token=token)
-            if self.tokenizer.pad_token_id is None:
-                self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
-            if getattr(self.tokenizer, 'chat_template', None) is None:
-                logger.info(f"Tokenizer '{tokenizer_id}' has no chat_template defined; injecting default fallback ChatML template.")
-                self.tokenizer.chat_template = DEFAULT_CHAT_TEMPLATE
-        except Exception as e:
-            logger.warning(
-                f"⚠️ Could not load Hugging Face tokenizer '{tokenizer_id}' ({e}). "
-                "Token counting will use the CPU Mini-Model (llama.cpp) or fast character estimation."
-            )
+        tokenizer_id, allow_remote_tok = self._resolve_tokenizer_source(config)
+        if tokenizer_id is None:
+            logger.info("⏭️ Bypassing Hugging Face tokenizer load (CPU Mini-Model active for utilities).")
             self.tokenizer = None
-        if self.role in ["web", "worker"]:
-            logger.info(f'💻 Running in proxy mode (Role: {self.role}). Tokenizer loaded, bypassing heavy LLM load.')
+        else:
+            logger.info(f'⚙️ Loading CPU tokenizer: {tokenizer_id} (allow_remote={allow_remote_tok})')
+            try:
+                self.tokenizer = load_hf_with_cache_first(
+                    AutoTokenizer.from_pretrained,
+                    tokenizer_id,
+                    allow_remote=allow_remote_tok,
+                    token=token,
+                )
+                if self.tokenizer.pad_token_id is None:
+                    self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
+                if getattr(self.tokenizer, 'chat_template', None) is None:
+                    logger.info(f"Tokenizer '{tokenizer_id}' has no chat_template defined; injecting default fallback ChatML template.")
+                    self.tokenizer.chat_template = DEFAULT_CHAT_TEMPLATE
+            except Exception as e:
+                logger.warning(
+                    f"⚠️ Could not load Hugging Face tokenizer '{tokenizer_id}' ({e}). "
+                    "Token counting will use the CPU Mini-Model (llama.cpp) or fast character estimation."
+                )
+                self.tokenizer = None
+
+        if self.role in ("web", "worker", "scheduler"):
+            logger.info(f'💻 Running in proxy mode (Role: {self.role}). Tokenizer step complete, bypassing heavy LLM load.')
             
             # Verify HTTP connection
             try:
@@ -326,7 +357,7 @@ class AIService:
 
     def set_active_adapter(self, adapter_path: str = None, adapter_name: str = None):
         """Swaps the active LoRA adapter on the loaded PyTorch model."""
-        if not self.model or self.role in ["web", "worker"]:
+        if not self.model or self.role in ("web", "worker", "scheduler"):
             return
             
         if not adapter_path and not adapter_name:
@@ -871,7 +902,7 @@ class AIService:
 
     def supports_native_tools(self, user=None) -> bool:
         """Returns True if the current configuration supports native tool calling (e.g. OpenAI/Ollama proxy)."""
-        needs_proxy = self.role in ["web", "worker"]
+        needs_proxy = self.role in ("web", "worker", "scheduler")
         try:
             from .models import SystemConfiguration
             config = SystemConfiguration.get_solo()
@@ -907,7 +938,7 @@ class AIService:
         if log_kwargs is None:
             log_kwargs = {}
 
-        needs_proxy = self.role in ["web", "worker"]
+        needs_proxy = self.role in ("web", "worker", "scheduler")
         try:
             from .models import SystemConfiguration
             config = SystemConfiguration.get_solo()
@@ -1043,7 +1074,7 @@ class AIService:
         if log_kwargs is None:
             log_kwargs = {}
 
-        needs_proxy = self.role in ["web", "worker"]
+        needs_proxy = self.role in ("web", "worker", "scheduler")
         try:
             from .models import SystemConfiguration
             config = SystemConfiguration.get_solo()
@@ -1144,20 +1175,23 @@ class AIService:
         )
 
     def label_single(self, text, labels):
-        # lazy load
+        # lazy load (cache-first)
         if self.classifier is None:
+            from .diagnostics import load_hf_with_cache_first
             try:
-                self.classifier = pipeline(
+                self.classifier = load_hf_with_cache_first(
+                    pipeline,
                     "zero-shot-classification",
                     model="facebook/bart-large-mnli",
-                    device=0
+                    device=0,
                 )
             except Exception:
                 logger.info('GPU not found, falling back to CPU. This will be slow.')
-                self.classifier = pipeline(
+                self.classifier = load_hf_with_cache_first(
+                    pipeline,
                     "zero-shot-classification",
                     model="facebook/bart-large-mnli",
-                    device=-1  # Use -1 for CPU
+                    device=-1,  # Use -1 for CPU
                 )
 
 

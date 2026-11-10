@@ -20,6 +20,7 @@ llm_api, architecture, performance, huggingface, networking, bug, improvement
 
 ## Progress & Resolution
 - [2026-10-04] Fixed `llm_api/modality_detector.py`: Updated `introspect_hf_modality` to prioritize local disk cache (`local_files_only=True`) and in-memory boolean caching (`_MODALITY_CACHE`). Introspecting cached models (e.g. `gemma-4-E2B-it`, `Qwen2-VL`, `gemma-2-2b-it`) now performs zero outbound network requests and executes in sub-milliseconds without network latency or external dependencies.
+- [2026-11-11] Implemented WS30 cache-first & offline-safe startup protections: `background_resources/rag_service.py` (`load_huggingface_embeddings`), `benchmarking/tasks.py`, `benchmarking/training.py`, and `llm_api/ai_service.py` (`label_single`) now try `local_files_only=True` first; `introspect_hf_modality` defaults to `allow_remote=False` so Django Admin renders make zero HF HTTP requests; `AIService._resolve_tokenizer_source` skips unconfigured HF tokenizer downloads when a GGUF `MiniModel` is active; and `LazyServiceRegistry._sync_hosting_backend_state` no longer triggers Docker container orchestration in `web`/`worker`/`scheduler` client roles.
 
 ## Status
 in progress

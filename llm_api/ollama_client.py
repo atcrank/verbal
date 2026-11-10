@@ -44,28 +44,26 @@ def set_ollama_model_state(model_name: str, active: bool):
     except requests.exceptions.RequestException as e:
         logger.info(f'⚠️ Failed to manage Ollama model {model_name}: {e}')
 
-import subprocess
+from .diagnostics import run_docker_compose_action
 
-def start_container():
-    """Starts the Ollama Docker container using docker compose."""
-    try:
-        logger.info("Starting Ollama container via docker compose...")
-        subprocess.run(
-            ["docker", "compose", "-f", str(settings.BASE_DIR / "docker-compose.yml"), "up", "-d", "ollama"],
-            check=True, capture_output=True, text=True
-        )
+
+def start_container(pull_policy: str = "never") -> tuple[bool, str]:
+    """Starts the Ollama Docker container using docker compose without pulling or rebuilding."""
+    logger.info("Starting Ollama container via docker compose...")
+    args = ["up", "-d", "--no-build"]
+    if pull_policy:
+        args.extend(["--pull", pull_policy])
+    args.append("ollama")
+    ok, detail = run_docker_compose_action(args, "Start Ollama container")
+    if ok:
         logger.info("✅ Ollama container started.")
-    except subprocess.CalledProcessError as e:
-        logger.error(f"❌ Failed to start Ollama container: {e.stderr}")
+    return ok, detail
 
-def stop_container():
+
+def stop_container() -> tuple[bool, str]:
     """Stops the Ollama Docker container using docker compose."""
-    try:
-        logger.info("Stopping Ollama container via docker compose...")
-        subprocess.run(
-            ["docker", "compose", "-f", str(settings.BASE_DIR / "docker-compose.yml"), "stop", "ollama"],
-            check=True, capture_output=True, text=True
-        )
+    logger.info("Stopping Ollama container via docker compose...")
+    ok, detail = run_docker_compose_action(["stop", "ollama"], "Stop Ollama container")
+    if ok:
         logger.info("✅ Ollama container stopped.")
-    except subprocess.CalledProcessError as e:
-        logger.error(f"❌ Failed to stop Ollama container: {e.stderr}")
+    return ok, detail

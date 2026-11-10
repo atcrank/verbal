@@ -66,6 +66,9 @@
 - [ ] [Architecture/Harness] WS27: Metacognition Architecture, Output Contract & Transcript Isolation (Status: in-progress) -> [ws27_metacognition_harness_architecture.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/ws27_metacognition_harness_architecture.md)
   *Summary*: Resolve blueprint response corruption and transcript pollution across the metacognition execution harness. Establish explicit `output_kind` and `final_output` contracts, decouple public conversation turns (`TURN`) from intermediate execution traces (`TRACE`), fix UUID leaf lookups in `as_messages()`, prevent evaluation judge output hijacking, and restrict chat dropdown to user-facing answer blueprints.
 
+- [x] [Operations/Diagnostics] WS30: Offline Restart Resilience & SystemConfiguration Admin Diagnostics (Status: completed) -> [ws30_offline_restart_resilience_and_admin_diagnostics.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/ws30_offline_restart_resilience_and_admin_diagnostics.md)
+  *Summary*: Prevent Docker and Hugging Face update checks or rebuilds during systemctl restarts and runtime startup (using `--no-build --pull never` and cache-first `local_files_only=True` resolution across RAG, embeddings, modality detection, and AI tokenization), while exposing clear inline availability status and Admin save warnings on `SystemConfiguration` without blocking database preference saves.
+
 
 
 
