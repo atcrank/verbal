@@ -69,6 +69,9 @@
 - [x] [Operations/Diagnostics] WS30: Offline Restart Resilience & SystemConfiguration Admin Diagnostics (Status: completed) -> [ws30_offline_restart_resilience_and_admin_diagnostics.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/ws30_offline_restart_resilience_and_admin_diagnostics.md)
   *Summary*: Prevent Docker and Hugging Face update checks or rebuilds during systemctl restarts and runtime startup (using `--no-build --pull never` and cache-first `local_files_only=True` resolution across RAG, embeddings, modality detection, and AI tokenization), while exposing clear inline availability status and Admin save warnings on `SystemConfiguration` without blocking database preference saves.
 
+- [x] [Testing/Doctests] WS31: E2E Test & Doctest Alignment with Current Harness Architecture (Status: completed) -> [ws31_e2e_and_doctest_alignment.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/ws31_e2e_and_doctest_alignment.md)
+  *Summary*: Align `@tag('e2e')` tests, WS27 log-lineage tests, metacognition doctest trials (1–13, updating #8 statically without running), Demo UI Playwright trials, module doctests, and Sphinx documentation with current harness/governance contracts; prevent pytest fixture loads from managing host containers; return model identifiers on `/v1/chat/completions`; and retire stale `demo_ui/tests_ui.py` in favor of `demo_ui_trials`.
+
 
 
 

@@ -22,6 +22,10 @@ These files contain the actual user prompts, retrieved context, and the expected
 * :doc:`7. Iterative Planning <metacognition_trials/7. iterative_planning>`
 * :doc:`8. Proactive Nightmanager <metacognition_trials/8. proactive_nightmanager>`
 * :doc:`9. Deep RAG Retrieval <metacognition_trials/9. deep_rag_retrieval>`
+* :doc:`10. Evidence Extractor <metacognition_trials/10. evidence_extractor>`
+* :doc:`11. Compound Evidence Investigation <metacognition_trials/11. compound_evidence_investigation>`
+* :doc:`12. Wild Corpus Evidence Extraction <metacognition_trials/12. wild_corpus_evidence_extraction>`
+* :doc:`13. Multimodal Chart Reasoning <metacognition_trials/13. multimodal_chart_reasoning>`
 
 Generated Execution Reports
 ---------------------------
@@ -35,7 +39,11 @@ These generated reports capture the complete cognitive loop of the agent attempt
 * :doc:`6. Large Output (Report) <metacognition_trials/6. large_output_report>`
 * :doc:`7. Iterative Planning (Report) <metacognition_trials/7. iterative_planning_report>`
 * :doc:`8. Proactive Nightmanager (Report) <metacognition_trials/8. proactive_nightmanager_report>` 
-* :doc:`9. Deep RAG Retrieval (Report) <metacognition_trials/9. deep_rag_retrieval_report>` 
+* :doc:`9. Deep RAG Retrieval (Report) <metacognition_trials/9. deep_rag_retrieval_report>`
+* :doc:`10. Evidence Extractor (Report) <metacognition_trials/10. evidence_extractor_report>`
+* :doc:`11. Compound Evidence Investigation (Report) <metacognition_trials/11. compound_evidence_investigation_report>`
+* :doc:`12. Wild Corpus Evidence Extraction (Report) <metacognition_trials/12. wild_corpus_evidence_extraction_report>`
+* :doc:`13. Multimodal Chart Reasoning (Report) <metacognition_trials/13. multimodal_chart_reasoning_report>`
 
 
 Running the trials as doctests

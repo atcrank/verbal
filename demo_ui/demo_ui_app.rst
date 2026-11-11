@@ -61,48 +61,50 @@ Core Functional Components
 Visual Interface Walkthrough
 ----------------------------
 
-1. Main Chat Interface
-~~~~~~~~~~~~~~~~~~~~~~
+The screenshots below are captured dynamically by the Playwright-driven trials in ``demo_ui/demo_ui_trials/``.
 
-The main workspace presents conversation history on the left and contextual tooling on the right:
+1. Context Chip Formulation & Prompt Submission
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. image:: ../../documents/walkthroughs/screenshots/01_main_ui_empty.png
+Attach retrieved literature chunks or Grips nodes as context chips alongside a targeted study-design inquiry:
+
+.. image:: _images/demo_ui/trial_1_prompt_with_chips.png
    :width: 800
-   :alt: Main UI Shell
+   :alt: Context Chip Formulation and Prompt Submission
 
-2. Prompt Submission & Blueprint Selection
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+2. Live Local Inference & Streaming Response
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Select an active cognitive blueprint, configure context attachments, and submit an experimental prompt:
+Active deliberation streams status updates and delivers context-grounded synthesis directly into the chat thread:
 
-.. image:: ../../documents/walkthroughs/screenshots/02_chat_filled.png
+.. image:: _images/demo_ui/trial_1_grounded_response.png
    :width: 800
-   :alt: Prompt Submission
+   :alt: Context-Grounded Response
 
-3. Real-Time Streaming & Intermediate Deliberation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+3. Multi-Step Cognitive Blueprint & Docker Sandbox Execution
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Asynchronous tasks stream token-by-token output, reasoning monologues, and tool outputs directly into the conversational card:
+Select a canonical blueprint and inspect intermediate steps, tool calls, and sandboxed outputs inline:
 
-.. image:: ../../documents/walkthroughs/screenshots/03_chat_response.png
+.. image:: _images/demo_ui/trial_3_tool_output.png
    :width: 800
-   :alt: Streaming Response
+   :alt: Blueprint Thinking Trace and Sandbox Tool Output
 
-4. Knowledge Base & Document Curation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+4. Counterfactual Conversation Branching
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Upload, monitor, and inspect background documents and their vector ingestion status:
+Fork an isolated DAG child branch from any turn to test counterfactual assumptions without mutating the parent thread:
 
-.. image:: ../../documents/walkthroughs/screenshots/04_documents_view.png
+.. image:: _images/demo_ui/trial_4_branched_conversation.png
    :width: 800
-   :alt: Documents View
+   :alt: Branched Conversation Thread
 
-5. Grips Conceptual Explorer
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+5. Grips Conceptual Explorer & Autonomous Elaboration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Navigate conceptual domains, expand sub-concepts, and trigger recursive stub-filling:
+Browse domain ontologies, expand child concepts, and trigger stub elaboration inside the Grips Explorer tab:
 
-.. image:: ../../documents/walkthroughs/screenshots/05_grips_explorer.png
+.. image:: _images/demo_ui/trial_4_grips_explorer.png
    :width: 800
    :alt: Grips Explorer
 

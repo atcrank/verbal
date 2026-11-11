@@ -284,7 +284,7 @@ fab<span class="w"> </span>backup-database
 ┌────────────────────────────────────────────────────────┐
 │    Systemd Master Umbrella: [reason.service]           │
 ├────────────────────────────────────────────────────────┤
-│  Application Tier (Hardened unprivileged user &#39;reason&#39;)│
+│  Application Tier (Hardened unprivileged user 'reason')│
 │  - [reason-web.service]       (Granian ASGI Server)    │
 │  - [reason-worker.service]    (Django Task Worker)     │
 │  - [reason-scheduler.service] (NightManager Beat)      │
@@ -533,10 +533,10 @@ Polls <code class="docutils literal notranslate"><span class="pre">systemctl</sp
 <p>By default, Reason locks the production Python environment to <strong>Python 3.12</strong> (<code class="docutils literal notranslate"><span class="pre">REASON_PYTHON_VERSION=3.12</span></code>) and uses <strong>``uv``</strong> (<code class="docutils literal notranslate"><span class="pre">REASON_USE_UV=true</span></code>) for both virtual environment provisioning and dependency installation.</p>
 <p>When deploying into corporate or Artifactory-backed environments, pass custom mirror flags via CLI or <code class="docutils literal notranslate"><span class="pre">.env.deploy</span></code>:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>fab<span class="w"> </span>deploy<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--find-links<span class="o">=</span><span class="s2">&quot;https://artifactory.local/artifactory/wheels&quot;</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--index-url<span class="o">=</span><span class="s2">&quot;https://artifactory.local/api/pypi/simple&quot;</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--trusted-host<span class="o">=</span><span class="s2">&quot;artifactory.local&quot;</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--pytorch-index-url<span class="o">=</span><span class="s2">&quot;https://artifactory.local/api/pypi/pytorch-wheels&quot;</span>
+<span class="w">  </span>--find-links<span class="o">=</span><span class="s2">"https://artifactory.local/artifactory/wheels"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--index-url<span class="o">=</span><span class="s2">"https://artifactory.local/api/pypi/simple"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--trusted-host<span class="o">=</span><span class="s2">"artifactory.local"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--pytorch-index-url<span class="o">=</span><span class="s2">"https://artifactory.local/api/pypi/pytorch-wheels"</span>
 </pre></div>
 </div>
 <ul class="simple">
@@ -649,7 +649,7 @@ sudo<span class="w"> </span>chmod<span class="w"> </span><span class="m">0644</s
 PostgreSQL data directories are strictly locked to the major version that initialized them. If the <code class="docutils literal notranslate"><span class="pre">postgres_data</span></code> volume was initialized by PostgreSQL 16 (<code class="docutils literal notranslate"><span class="pre">pgvector/pgvector:pg16</span></code>), running an image with a different major version (such as PostgreSQL 18) will trigger a fatal error:</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>FATAL: database files are incompatible with server
 DETAIL: The data directory was initialized by PostgreSQL version 16, which is not compatible with this version 18.
-HINT: You must either run &quot;pg_upgrade&quot; or dump/restore the data directory to upgrade...
+HINT: You must either run "pg_upgrade" or dump/restore the data directory to upgrade...
 </pre></div>
 </div>
 <p><strong>Resolution</strong>:
@@ -687,7 +687,7 @@ curl<span class="w"> </span>-s<span class="w"> </span>http://127.0.0.1:8070/api/
 <span class="c1"># Expected output: true</span>
 
 <span class="c1"># Test Python circuit breaker</span>
-/srv/reason/venv/bin/python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;from grobid_client.api import is_grobid_available; print(is_grobid_available())&quot;</span>
+/srv/reason/venv/bin/python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"from grobid_client.api import is_grobid_available; print(is_grobid_available())"</span>
 </pre></div>
 </div>
 </li>

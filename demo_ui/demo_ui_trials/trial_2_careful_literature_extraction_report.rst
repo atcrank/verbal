@@ -2,13 +2,13 @@
 Doctest Report: Trial 2: Careful Literature Extraction & Parametric Factor Construction
 =========================================================================================
 
-**Date**: 2026-09-09 10:32:22
+**Date**: 2026-11-11 14:53:15
 
 **Local Model**: google/gemma-2-2b-it
 
 **Status**: PASSED
 
-**Total Execution Time**: 243.9s
+**Total Execution Time**: 93.6s
 
 Scenario & Research Task
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -23,13 +23,12 @@ Animated Walkthrough
 
 .. image:: ../_images/demo_ui/trial_2_careful_literature_extraction_animated.gif
    :width: 780
-   :alt: Animated Walkthrough: Trial 2: Careful Literature Extraction & Parametric Factor
-Construction
+   :alt: Animated Walkthrough: Trial 2: Careful Literature Extraction & Parametric Factor Construction
 
 Interaction Trace: Researcher & Verbal / Reason
 -----------------------------------------------
 
-Step 1: Context Chip Formulation & Extraction Inquiry (1.6s)
+Step 1: Context Chip Formulation & Extraction Inquiry (1.7s)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **The Researcher (Thinking & Formulation)**:
@@ -48,150 +47,77 @@ Table 2 and Section 3.
 
 **Retrieved Literature Context (RAG Recall)**:
 
-- **Talavera et al. (2023) — Section: An autonomous ground robot to support firefighters'
-  interventions in indoor emergencies - | ARCHITECTURE (DOI: 10.1002/rob.22150)** [Chunk
-  `4a937ae2-ae3e-4bc4-b767-964b50bee5ba`]: "We designed the robot's architecture
-  considering two main requirements: the accurate localization and navigation indoors and
-  the realtime measurement of relevant variables. Indoor localization and nav"
+- **Talavera et al. (2023) — Section: An autonomous ground robot to support firefighters' interventions in indoor emergencies - | ARCHITECTURE (DOI: 10.1002/rob.22150)** [Chunk `4a937ae2-ae3e-4bc4-b767-964b50bee5ba`]: "We designed the robot's architecture considering two main requirements: the accurate localization and navigation indoors and the realtime measurement of relevant variables. Indoor localization and nav"
 
 .. image:: ../_images/demo_ui/trial_2_prompt_with_chips.png
    :width: 750
    :alt: Context Chip Formulation & Extraction Inquiry
 
-Step 2: Live Inference & Specification Extraction (209.8s)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Step 2: Live Inference & Specification Extraction (89.6s)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Local LLM (google/gemma-2-2b-it) extracted 3868 characters of hardware specifications.
+Local LLM (google/gemma-2-2b-it) extracted 1993 characters of hardware specifications.
 
 **Retrieved Literature Context (RAG Recall)**:
 
-- **Talavera et al. (2023) — Section: An autonomous ground robot to support firefighters'
-  interventions in indoor emergencies - | ARCHITECTURE (DOI: 10.1002/rob.22150)** [Chunk
-  `4a937ae2-ae3e-4bc4-b767-964b50bee5ba`]: "We designed the robot's architecture
-  considering two main requirements: the accurate localization and navigation indoors and
-  the realtime measurement ..."
+- **Talavera et al. (2023) — Section: An autonomous ground robot to support firefighters' interventions in indoor emergencies - | ARCHITECTURE (DOI: 10.1002/rob.22150)** [Chunk `4a937ae2-ae3e-4bc4-b767-964b50bee5ba`]: "We designed the robot's architecture considering two main requirements: the accurate localization and navigation indoors and the realtime measurement ..."
 
 **Verbal / Reason Response (Synthesized by: google/gemma-2-2b-it)**:
 
 ::
 
-    Here is the extracted information regarding the physical power architecture, battery
-    capacities, and sensor payloads for the autonomous firefighting ground robot, along with
-    the key power parameters formulated for simulation, based on the provided literature
-    excerpt:
-    Extracted Physical Parameters
-    1. Physical Power Architecture (Components and Power Flow)
-    The power supply is divided into two main parts to separate the power for the physical
-    movement from the power for the sensing and control electronics:
-
-    Motor Power Supply: Powers the motors of the autonomous agent through the motor
-    controller.
-    Sensing/Control Electronics Power Supply: Powers the sensing and control electronics
-    (Level 1 components).
-
-    Hardware Components Associated with Power:
-    * Motors: Two DC motors (GM25-370).
-    * Motor Driver: SKU DRI0002.
-    * Power Source 1 (Motors): Three rechargeable lithium-ion batteries.
-    * Power Source 2 (Electronics): A portable lithium power bank.
-    2. Battery Capacities
-    The description specifies the following battery types and capacities:
-
-    For Motors (Rechargeable Lithium-Ion Batteries):
-    Voltage: $5 \text{ V}$
-    Capacity: $10,800 \text{ mAh}$ (Note: The text states "a lithium battery with 5 V and
-    10.800 mAh for the payload," but later, the power division section mentions three
-    batteries for the motors.)
-    Correction/Clarification based on the division section: Three rechargeable lithium-ion
-    batteries ($\text{3.7 V}$ and $12,800 \text{ mAh}$ capacity) power the motors.
-
-
-    For Sensing/Control Electronics (Portable Lithium Power Bank):
-    Capacity: $10,800 \text{ mAh}$
-
-
-
-    3. Sensor Payloads
-    The robot is equipped with several types of sensors:
-
-    Localization Sensors:
-    Ultra-Wideband (UWB) System: Used for real-time communication to determine robot location
-    via time-of-flight measurement between modules/beacons.
-    Simultaneous Localization And Mapping (SLAM) Sensors: Used to create a global map of the
-    environment.
-
-
-    Environmental Sensors:
-    Temperature
-    Relative Humidity
-    Air Quality (measuring concentrations of Carbon Dioxide ($\text{CO}_2$), Volatile Organic
-    Compounds (VOCs), Hydrogen ($\text{H}_2$), and Ethanol).
-
-
-    Additional/Potential Sensors (Expandable):
-    Thermal camera
-    Beacons (e.g., Pycom, Deep Beacon)
-
-
-
-
-    Key Power Parameters for Simulation
-    To effectively simulate the robot's operation, the following parameters derived from the
-    text should be prioritized:
-
-
-
-    Parameter Category
-    Parameter
-    Value / Description
-    Relevance for Simulation
-
-
-
-
-    Mechanical Power (Motion)
-    Motor Voltage ($\text{V}_{\text{motor}}$)
-    $5 \text{ V}$ (for motor power) and $3.7 \text{ V}$ (for battery packs)
-    Required for calculating motor torque, current draw, and battery life during movement.
-
-
-    Mechanical Power (Motion)
-    Motor Current Draw ($I_{\text{motor}}$)
-    Requires external data (not provided)
-    Essential for calculating energy consumption over time.
-
-
-    Mechanical Power (Motion)
-    Motor Battery Capacity ($C_{\text{motor}}$)
-    $10,800 \text{ mAh}$ (or $12,800 \text{ mAh}$ depending on which battery is used for
-    motors)
-    Determines the operational endurance (time) of the locomotion system.
-
-
-    Electronic Power (Sensing/Control)
-    Electronics Voltage ($\text{V}_{\text{elec}}$)
-    $3.7 \text{ V}$ (Implied by Li-ion batteries)
-    Needed to model the power consumption of the $\text{Raspberry Pi}$, $\text{Arduino}$, and
-    UWB transceiver.
-
-
-    Electronic Power (Sensing/Control)
-    Electronics Battery Capacity ($C_{\text{elec}}$)
-    $10,800 \text{ mAh}$ (for the portable power bank)
-    Determines the operational endurance of the computational and communication systems.
-
-
-    System Dynamics
-    Communication Latency
-    Milliseconds (Targeted for data transfer)
-    Important for modeling the real-time constraints of the SLAM/control loop.
-
-
-    Physical Dimensions
-    Maximum Size
-    $280.96 \times 220.50 \times 230.00 \text{ mm}$
-    Relevant for modeling physical constraints and potential energy dissipation during
-    movement.
+    Here are the key power parameters extracted from the provided literature review for
+    simulation purposes:
+    1. Motor Power:
+    
+    Voltage (DCM): 5 V (for DC motors)
+    Battery Capacity (Li-ion): 3.7 V and 12,800 mAh  (for Motors)
+    
+    2. Sensor and Control Electronics:
+    
+    Power Source: Portable lithium power bank (10,800 mAh) as secondary source for sensors and
+    control electronics
+    This provides a backup in case the primary motor battery is drained. 
+    
+    
+    Battery Type: Rechargeable Lithium-ion batteries (3.7 V and 12,800 mAh)
+    
+    3. Communication System:
+    
+    UWB (Ultra-Wideband): For location data communication.  
+    Detailed power considerations for UWB modules are not explicitly outlined in the excerpt
+    but can be found on the Pozyx Academy website (linked in the text).
+    
+    
+    
+    4. Robot Dimensions and Weight:
+    
+    Maximum size: 280.96 × 220.50 × 230.00 mm
+    This information is for reference when designing simulation environments, especially
+    related to collision detection or clearance between obstacles.
+    
+    
+    
+    Key Simulation Parameters:
+    
+    Simulation Environment: A detailed environment model (including relevant details like the
+    room's shape and layout) to simulate the robot navigating through the building
+    Power System Model:  A power system model to accurately calculate and manage battery
+    consumption, charging behavior, and potential overloads
+    Sensor Simulators: A robust sensor simulator to test accuracy and robustness of the
+    different sensor types
+    
+    Additional Notes:
+    
+    The excerpt doesn't give detailed information about the specific sensors used. To provide
+    more accurate power parameters for simulation, please specify the type of sensors you wish
+    to include (e.g., thermal camera, proximity sensor).
+    It's crucial to understand that this is a preliminary analysis based on the provided
+    excerpts.  Additional research or consultation with experts can further refine these
+    details.
+    
+    Let me know if you would like to explore any specific aspects of the power architecture or
+    simulation parameters in more detail!
 
 **The Researcher (Evaluation & Decision)**:
 
@@ -208,7 +134,8 @@ space for Trial 3:
 - Factor A (Sensor Payload): Baseline (25W), Standard Multi-spectral (75W), Heavy
   LiDAR+Compute (110W).
 - Factor B (Terrain Profile): Smooth Concrete (280W), Heavy Rubble/Debris (460W).
-- Power Constraint: 960Wh usable energy (80% usable from 1200Wh pack, 20% emergency reserve).
+- Power Constraint: 960Wh usable energy (80% usable from 1200Wh pack, 20% emergency
+  reserve).
 
 .. image:: ../_images/demo_ui/trial_2_extracted_parameters.png
    :width: 750

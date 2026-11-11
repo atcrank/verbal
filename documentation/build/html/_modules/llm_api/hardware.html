@@ -87,7 +87,7 @@
            <div itemprop="articleBody">
              
   <h1>Source code for llm_api.hardware</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Hardware introspection and resource advisor module for local AI hosting.</span>
 
 <span class="sd">Provides runtime detection of host CPU/GPU capabilities, available VRAM,</span>
@@ -98,7 +98,7 @@
 <span class="sd">    &gt;&gt;&gt; from llm_api.hardware import GPUDeviceInfo, BackendRecommendation, get_backend_recommendations, HardwareProfile, HostCPUInfo</span>
 <span class="sd">    &gt;&gt;&gt; mock_gpu = GPUDeviceInfo(</span>
 <span class="sd">    ...     index=0,</span>
-<span class="sd">    ...     name=&quot;NVIDIA GeForce GTX 1660 Ti&quot;,</span>
+<span class="sd">    ...     name="NVIDIA GeForce GTX 1660 Ti",</span>
 <span class="sd">    ...     total_vram_mb=6144.0,</span>
 <span class="sd">    ...     free_vram_mb=5120.0,</span>
 <span class="sd">    ...     used_vram_mb=1024.0,</span>
@@ -111,12 +111,12 @@
 <span class="sd">    &gt;&gt;&gt; mock_profile = HardwareProfile(cuda_available=True, devices=[mock_gpu], primary_device=mock_gpu, host_cpu=mock_cpu)</span>
 <span class="sd">    &gt;&gt;&gt; rec = get_backend_recommendations(profile=mock_profile, requested_context=4096)</span>
 <span class="sd">    &gt;&gt;&gt; rec.vllm_dtype</span>
-<span class="sd">    &#39;float16&#39;</span>
+<span class="sd">    'float16'</span>
 <span class="sd">    &gt;&gt;&gt; 0.70 &lt;= rec.vllm_gpu_memory_utilization &lt;= 0.76</span>
 <span class="sd">    True</span>
 <span class="sd">    &gt;&gt;&gt; rec.recommended_quantization</span>
-<span class="sd">    &#39;nf4&#39;</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    'nf4'</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
@@ -133,7 +133,7 @@
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.hardware.GPUDeviceInfo">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">GPUDeviceInfo</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Detailed hardware metadata for an NVIDIA/CUDA device.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Detailed hardware metadata for an NVIDIA/CUDA device."""</span>
     <span class="n">index</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">total_vram_mb</span><span class="p">:</span> <span class="nb">float</span>
@@ -154,7 +154,7 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_capability_str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">compute_capability</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">compute_capability</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span></div>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">compute_capability</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">compute_capability</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span></div>
 
 
 
@@ -162,7 +162,7 @@
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.hardware.HostCPUInfo">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">HostCPUInfo</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Host processor and memory metrics.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Host processor and memory metrics."""</span>
     <span class="n">physical_cores</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">total_threads</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">total_ram_mb</span><span class="p">:</span> <span class="nb">float</span>
@@ -181,19 +181,19 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">recommended_llamacpp_threads</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reserve 1 core for system / web tasks, or use 1 on single-core systems.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Reserve 1 core for system / web tasks, or use 1 on single-core systems."""</span>
         <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">physical_cores</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">vector_instructions_str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="n">instructions</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_avx512</span><span class="p">:</span>
-            <span class="n">instructions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;AVX-512&quot;</span><span class="p">)</span>
+            <span class="n">instructions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"AVX-512"</span><span class="p">)</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_avx2</span><span class="p">:</span>
-            <span class="n">instructions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;AVX2&quot;</span><span class="p">)</span>
+            <span class="n">instructions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"AVX2"</span><span class="p">)</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_avx</span><span class="p">:</span>
-            <span class="n">instructions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;AVX&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">instructions</span><span class="p">)</span> <span class="k">if</span> <span class="n">instructions</span> <span class="k">else</span> <span class="s2">&quot;Standard x86_64&quot;</span></div>
+            <span class="n">instructions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"AVX"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">instructions</span><span class="p">)</span> <span class="k">if</span> <span class="n">instructions</span> <span class="k">else</span> <span class="s2">"Standard x86_64"</span></div>
 
 
 
@@ -201,7 +201,7 @@
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.hardware.HardwareProfile">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">HardwareProfile</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Full host compute profile.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Full host compute profile."""</span>
     <span class="n">cuda_available</span><span class="p">:</span> <span class="nb">bool</span>
     <span class="n">devices</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">GPUDeviceInfo</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
     <span class="n">primary_device</span><span class="p">:</span> <span class="n">GPUDeviceInfo</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
@@ -211,13 +211,13 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">cuda_available</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_device</span><span class="p">:</span>
             <span class="k">return</span> <span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;CPU Mode: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">host_cpu</span><span class="o">.</span><span class="n">physical_cores</span><span class="si">}</span><span class="s2"> cores / </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">host_cpu</span><span class="o">.</span><span class="n">total_threads</span><span class="si">}</span><span class="s2"> threads &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">host_cpu</span><span class="o">.</span><span class="n">vector_instructions_str</span><span class="si">}</span><span class="s2">), </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">host_cpu</span><span class="o">.</span><span class="n">available_ram_gb</span><span class="si">}</span><span class="s2"> GB RAM available.&quot;</span>
+                <span class="sa">f</span><span class="s2">"CPU Mode: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">host_cpu</span><span class="o">.</span><span class="n">physical_cores</span><span class="si">}</span><span class="s2"> cores / </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">host_cpu</span><span class="o">.</span><span class="n">total_threads</span><span class="si">}</span><span class="s2"> threads "</span>
+                <span class="sa">f</span><span class="s2">"(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">host_cpu</span><span class="o">.</span><span class="n">vector_instructions_str</span><span class="si">}</span><span class="s2">), </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">host_cpu</span><span class="o">.</span><span class="n">available_ram_gb</span><span class="si">}</span><span class="s2"> GB RAM available."</span>
             <span class="p">)</span>
         <span class="n">dev</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_device</span>
         <span class="k">return</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;GPU: </span><span class="si">{</span><span class="n">dev</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">dev</span><span class="o">.</span><span class="n">free_vram_gb</span><span class="si">}</span><span class="s2"> GB free / </span><span class="si">{</span><span class="n">dev</span><span class="o">.</span><span class="n">total_vram_gb</span><span class="si">}</span><span class="s2"> GB total, &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;Compute </span><span class="si">{</span><span class="n">dev</span><span class="o">.</span><span class="n">compute_capability_str</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="sa">f</span><span class="s2">"GPU: </span><span class="si">{</span><span class="n">dev</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">dev</span><span class="o">.</span><span class="n">free_vram_gb</span><span class="si">}</span><span class="s2"> GB free / </span><span class="si">{</span><span class="n">dev</span><span class="o">.</span><span class="n">total_vram_gb</span><span class="si">}</span><span class="s2"> GB total, "</span>
+            <span class="sa">f</span><span class="s2">"Compute </span><span class="si">{</span><span class="n">dev</span><span class="o">.</span><span class="n">compute_capability_str</span><span class="si">}</span><span class="s2">)"</span>
         <span class="p">)</span></div>
 
 
@@ -226,28 +226,28 @@
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.hardware.BackendRecommendation">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">BackendRecommendation</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Recommended execution parameters for local AI engines.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Recommended execution parameters for local AI engines."""</span>
     <span class="n">vllm_gpu_memory_utilization</span><span class="p">:</span> <span class="nb">float</span>
     <span class="n">vllm_max_model_len</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">vllm_dtype</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">recommended_quantization</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">llamacpp_threads</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span>
     <span class="n">llamacpp_max_context</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8192</span>
-    <span class="n">llamacpp_recommended_quant</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;gguf_q4_k_m&quot;</span>
+    <span class="n">llamacpp_recommended_quant</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"gguf_q4_k_m"</span>
     <span class="n">advisory_notes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
 
 <div class="viewcode-block" id="BackendRecommendation.to_dict">
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.hardware.BackendRecommendation.to_dict">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;vllm_gpu_memory_utilization&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">vllm_gpu_memory_utilization</span><span class="p">,</span>
-            <span class="s2">&quot;vllm_max_model_len&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">vllm_max_model_len</span><span class="p">,</span>
-            <span class="s2">&quot;vllm_dtype&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">vllm_dtype</span><span class="p">,</span>
-            <span class="s2">&quot;recommended_quantization&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">recommended_quantization</span><span class="p">,</span>
-            <span class="s2">&quot;llamacpp_threads&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">llamacpp_threads</span><span class="p">,</span>
-            <span class="s2">&quot;llamacpp_max_context&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">llamacpp_max_context</span><span class="p">,</span>
-            <span class="s2">&quot;llamacpp_recommended_quant&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">llamacpp_recommended_quant</span><span class="p">,</span>
-            <span class="s2">&quot;advisory_notes&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">advisory_notes</span><span class="p">,</span>
+            <span class="s2">"vllm_gpu_memory_utilization"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">vllm_gpu_memory_utilization</span><span class="p">,</span>
+            <span class="s2">"vllm_max_model_len"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">vllm_max_model_len</span><span class="p">,</span>
+            <span class="s2">"vllm_dtype"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">vllm_dtype</span><span class="p">,</span>
+            <span class="s2">"recommended_quantization"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">recommended_quantization</span><span class="p">,</span>
+            <span class="s2">"llamacpp_threads"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">llamacpp_threads</span><span class="p">,</span>
+            <span class="s2">"llamacpp_max_context"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">llamacpp_max_context</span><span class="p">,</span>
+            <span class="s2">"llamacpp_recommended_quant"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">llamacpp_recommended_quant</span><span class="p">,</span>
+            <span class="s2">"advisory_notes"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">advisory_notes</span><span class="p">,</span>
         <span class="p">}</span></div>
 </div>
 
@@ -256,10 +256,10 @@
 <div class="viewcode-block" id="get_hardware_profile">
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.hardware.get_hardware_profile">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_hardware_profile</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">HardwareProfile</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Inspects host system hardware using PyTorch CUDA and psutil.</span>
 <span class="sd">    Safe against environments where CUDA is not present or drivers are missing.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># 1. CPU &amp; System RAM</span>
     <span class="n">vm</span> <span class="o">=</span> <span class="n">psutil</span><span class="o">.</span><span class="n">virtual_memory</span><span class="p">()</span>
 
@@ -267,15 +267,15 @@
     <span class="n">has_avx</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="n">has_avx2</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="n">has_avx512</span> <span class="o">=</span> <span class="kc">False</span>
-    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="s2">&quot;/proc/cpuinfo&quot;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="s2">"/proc/cpuinfo"</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;/proc/cpuinfo&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">"/proc/cpuinfo"</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;flags&quot;</span><span class="p">):</span>
-                        <span class="n">cpu_flags</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
-                        <span class="n">has_avx</span> <span class="o">=</span> <span class="s2">&quot;avx&quot;</span> <span class="ow">in</span> <span class="n">cpu_flags</span>
-                        <span class="n">has_avx2</span> <span class="o">=</span> <span class="s2">&quot;avx2&quot;</span> <span class="ow">in</span> <span class="n">cpu_flags</span>
-                        <span class="n">has_avx512</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="s2">&quot;avx512&quot;</span> <span class="ow">in</span> <span class="n">fl</span> <span class="k">for</span> <span class="n">fl</span> <span class="ow">in</span> <span class="n">cpu_flags</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"flags"</span><span class="p">):</span>
+                        <span class="n">cpu_flags</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">":"</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+                        <span class="n">has_avx</span> <span class="o">=</span> <span class="s2">"avx"</span> <span class="ow">in</span> <span class="n">cpu_flags</span>
+                        <span class="n">has_avx2</span> <span class="o">=</span> <span class="s2">"avx2"</span> <span class="ow">in</span> <span class="n">cpu_flags</span>
+                        <span class="n">has_avx512</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="s2">"avx512"</span> <span class="ow">in</span> <span class="n">fl</span> <span class="k">for</span> <span class="n">fl</span> <span class="ow">in</span> <span class="n">cpu_flags</span><span class="p">)</span>
                         <span class="k">break</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">pass</span>
@@ -308,7 +308,7 @@
                 <span class="k">try</span><span class="p">:</span>
                     <span class="n">free_b</span><span class="p">,</span> <span class="n">total_b</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">mem_get_info</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
                 <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">mem_err</span><span class="p">:</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not query mem_get_info for CUDA device </span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">mem_err</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not query mem_get_info for CUDA device </span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">mem_err</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
                     <span class="n">free_b</span><span class="p">,</span> <span class="n">total_b</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 
                 <span class="n">total_mb</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">total_b</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1024.0</span> <span class="o">*</span> <span class="mf">1024.0</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span>
@@ -318,7 +318,7 @@
                 <span class="c1"># Precision feature support</span>
                 <span class="n">supports_bf16</span> <span class="o">=</span> <span class="kc">False</span>
                 <span class="k">try</span><span class="p">:</span>
-                    <span class="n">supports_bf16</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_bf16_supported</span><span class="p">()</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="p">,</span> <span class="s2">&quot;is_bf16_supported&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="p">(</span><span class="n">major</span> <span class="o">&gt;=</span> <span class="mi">8</span><span class="p">)</span>
+                    <span class="n">supports_bf16</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_bf16_supported</span><span class="p">()</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="p">,</span> <span class="s2">"is_bf16_supported"</span><span class="p">)</span> <span class="k">else</span> <span class="p">(</span><span class="n">major</span> <span class="o">&gt;=</span> <span class="mi">8</span><span class="p">)</span>
                 <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                     <span class="n">supports_bf16</span> <span class="o">=</span> <span class="p">(</span><span class="n">major</span> <span class="o">&gt;=</span> <span class="mi">8</span><span class="p">)</span>
 
@@ -339,7 +339,7 @@
                     <span class="p">)</span>
                 <span class="p">)</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Hardware inspection encountered an exception when probing CUDA: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Hardware inspection encountered an exception when probing CUDA: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="n">primary</span> <span class="o">=</span> <span class="n">devices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">devices</span> <span class="k">else</span> <span class="kc">None</span>
     <span class="k">return</span> <span class="n">HardwareProfile</span><span class="p">(</span>
@@ -358,14 +358,14 @@
     <span class="n">model_param_size_b</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">requested_context</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4096</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BackendRecommendation</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Computes tailored settings for local inference backends given the current hardware profile.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        profile: The HardwareProfile to evaluate (defaults to live detection).</span>
 <span class="sd">        model_param_size_b: Estimated model parameter count in billions (e.g. 2.0, 7.0, 14.0).</span>
 <span class="sd">        requested_context: Desired context length in tokens (default 4096).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">profile</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">profile</span> <span class="o">=</span> <span class="n">get_hardware_profile</span><span class="p">()</span>
 
@@ -376,26 +376,26 @@
     <span class="n">usable_ram_gb</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">profile</span><span class="o">.</span><span class="n">host_cpu</span><span class="o">.</span><span class="n">available_ram_gb</span> <span class="o">-</span> <span class="mf">3.0</span><span class="p">)</span>  <span class="c1"># Reserve 3 GB for OS/Postgres</span>
     <span class="k">if</span> <span class="n">usable_ram_gb</span> <span class="o">&gt;=</span> <span class="mf">16.0</span><span class="p">:</span>
         <span class="n">llamacpp_ctx</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">requested_context</span><span class="p">,</span> <span class="mi">16384</span><span class="p">)</span>
-        <span class="n">llamacpp_quant</span> <span class="o">=</span> <span class="s2">&quot;gguf_q8_0&quot;</span> <span class="k">if</span> <span class="p">(</span><span class="n">model_param_size_b</span> <span class="ow">or</span> <span class="mf">3.0</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mf">8.0</span> <span class="k">else</span> <span class="s2">&quot;gguf_q4_k_m&quot;</span>
+        <span class="n">llamacpp_quant</span> <span class="o">=</span> <span class="s2">"gguf_q8_0"</span> <span class="k">if</span> <span class="p">(</span><span class="n">model_param_size_b</span> <span class="ow">or</span> <span class="mf">3.0</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mf">8.0</span> <span class="k">else</span> <span class="s2">"gguf_q4_k_m"</span>
     <span class="k">elif</span> <span class="n">usable_ram_gb</span> <span class="o">&gt;=</span> <span class="mf">8.0</span><span class="p">:</span>
         <span class="n">llamacpp_ctx</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">requested_context</span><span class="p">,</span> <span class="mi">8192</span><span class="p">)</span>
-        <span class="n">llamacpp_quant</span> <span class="o">=</span> <span class="s2">&quot;gguf_q4_k_m&quot;</span>
+        <span class="n">llamacpp_quant</span> <span class="o">=</span> <span class="s2">"gguf_q4_k_m"</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">llamacpp_ctx</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">requested_context</span><span class="p">,</span> <span class="mi">4096</span><span class="p">)</span>
-        <span class="n">llamacpp_quant</span> <span class="o">=</span> <span class="s2">&quot;gguf_q4_k_m&quot;</span>
+        <span class="n">llamacpp_quant</span> <span class="o">=</span> <span class="s2">"gguf_q4_k_m"</span>
 
     <span class="c1"># CPU-only fallback</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">profile</span><span class="o">.</span><span class="n">cuda_available</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">profile</span><span class="o">.</span><span class="n">primary_device</span><span class="p">:</span>
-        <span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;No CUDA GPU detected. Local inference will execute on the CPU.&quot;</span><span class="p">)</span>
+        <span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"No CUDA GPU detected. Local inference will execute on the CPU."</span><span class="p">)</span>
         <span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;For CPU execution, llama.cpp with </span><span class="si">{</span><span class="n">profile</span><span class="o">.</span><span class="n">host_cpu</span><span class="o">.</span><span class="n">vector_instructions_str</span><span class="si">}</span><span class="s2"> instructions is recommended &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">llamacpp_threads</span><span class="si">}</span><span class="s2"> threads allocated, </span><span class="si">{</span><span class="n">usable_ram_gb</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> GB RAM available for GGUF weights).&quot;</span>
+            <span class="sa">f</span><span class="s2">"For CPU execution, llama.cpp with </span><span class="si">{</span><span class="n">profile</span><span class="o">.</span><span class="n">host_cpu</span><span class="o">.</span><span class="n">vector_instructions_str</span><span class="si">}</span><span class="s2"> instructions is recommended "</span>
+            <span class="sa">f</span><span class="s2">"(</span><span class="si">{</span><span class="n">llamacpp_threads</span><span class="si">}</span><span class="s2"> threads allocated, </span><span class="si">{</span><span class="n">usable_ram_gb</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> GB RAM available for GGUF weights)."</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">BackendRecommendation</span><span class="p">(</span>
             <span class="n">vllm_gpu_memory_utilization</span><span class="o">=</span><span class="mf">0.50</span><span class="p">,</span>
             <span class="n">vllm_max_model_len</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="n">requested_context</span><span class="p">,</span> <span class="mi">2048</span><span class="p">),</span>
-            <span class="n">vllm_dtype</span><span class="o">=</span><span class="s2">&quot;float32&quot;</span><span class="p">,</span>
-            <span class="n">recommended_quantization</span><span class="o">=</span><span class="s2">&quot;gguf_q4_k_m&quot;</span><span class="p">,</span>
+            <span class="n">vllm_dtype</span><span class="o">=</span><span class="s2">"float32"</span><span class="p">,</span>
+            <span class="n">recommended_quantization</span><span class="o">=</span><span class="s2">"gguf_q4_k_m"</span><span class="p">,</span>
             <span class="n">llamacpp_threads</span><span class="o">=</span><span class="n">llamacpp_threads</span><span class="p">,</span>
             <span class="n">llamacpp_max_context</span><span class="o">=</span><span class="n">llamacpp_ctx</span><span class="p">,</span>
             <span class="n">llamacpp_recommended_quant</span><span class="o">=</span><span class="n">llamacpp_quant</span><span class="p">,</span>
@@ -419,8 +419,8 @@
 
     <span class="k">if</span> <span class="n">dev</span><span class="o">.</span><span class="n">total_vram_gb</span> <span class="o">&lt;=</span> <span class="mf">8.0</span><span class="p">:</span>
         <span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Detected consumer/mobile GPU with </span><span class="si">{</span><span class="n">dev</span><span class="o">.</span><span class="n">total_vram_gb</span><span class="si">}</span><span class="s2"> GB VRAM (</span><span class="si">{</span><span class="n">dev</span><span class="o">.</span><span class="n">free_vram_gb</span><span class="si">}</span><span class="s2"> GB currently free). &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;vLLM memory utilization capped to </span><span class="si">{</span><span class="n">vllm_util</span><span class="si">}</span><span class="s2"> to avoid startup allocation crashes.&quot;</span>
+            <span class="sa">f</span><span class="s2">"Detected consumer/mobile GPU with </span><span class="si">{</span><span class="n">dev</span><span class="o">.</span><span class="n">total_vram_gb</span><span class="si">}</span><span class="s2"> GB VRAM (</span><span class="si">{</span><span class="n">dev</span><span class="o">.</span><span class="n">free_vram_gb</span><span class="si">}</span><span class="s2"> GB currently free). "</span>
+            <span class="sa">f</span><span class="s2">"vLLM memory utilization capped to </span><span class="si">{</span><span class="n">vllm_util</span><span class="si">}</span><span class="s2"> to avoid startup allocation crashes."</span>
         <span class="p">)</span>
 
     <span class="c1"># 2. Context Window Sizing</span>
@@ -429,45 +429,45 @@
         <span class="n">max_context</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">requested_context</span><span class="p">,</span> <span class="mi">4096</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">requested_context</span> <span class="o">&gt;</span> <span class="mi">4096</span><span class="p">:</span>
             <span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Requested context length </span><span class="si">{</span><span class="n">requested_context</span><span class="si">}</span><span class="s2"> clamped to 4096 for 6 GB VRAM KV-cache preservation.&quot;</span>
+                <span class="sa">f</span><span class="s2">"Requested context length </span><span class="si">{</span><span class="n">requested_context</span><span class="si">}</span><span class="s2"> clamped to 4096 for 6 GB VRAM KV-cache preservation."</span>
             <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">max_context</span> <span class="o">=</span> <span class="n">requested_context</span>
 
     <span class="c1"># 3. Precision / Dtype Selection</span>
     <span class="k">if</span> <span class="n">major</span> <span class="o">&lt;</span> <span class="mi">8</span><span class="p">:</span>
-        <span class="n">vllm_dtype</span> <span class="o">=</span> <span class="s2">&quot;float16&quot;</span>
+        <span class="n">vllm_dtype</span> <span class="o">=</span> <span class="s2">"float16"</span>
         <span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;GPU Compute Capability </span><span class="si">{</span><span class="n">dev</span><span class="o">.</span><span class="n">compute_capability_str</span><span class="si">}</span><span class="s2"> (Turing/Pascal) lacks native BF16 instructions. &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;Configured float16 precision for compatibility and speed.&quot;</span>
+            <span class="sa">f</span><span class="s2">"GPU Compute Capability </span><span class="si">{</span><span class="n">dev</span><span class="o">.</span><span class="n">compute_capability_str</span><span class="si">}</span><span class="s2"> (Turing/Pascal) lacks native BF16 instructions. "</span>
+            <span class="sa">f</span><span class="s2">"Configured float16 precision for compatibility and speed."</span>
         <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">vllm_dtype</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span>
+        <span class="n">vllm_dtype</span> <span class="o">=</span> <span class="s2">"auto"</span>
         <span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;GPU Compute Capability </span><span class="si">{</span><span class="n">dev</span><span class="o">.</span><span class="n">compute_capability_str</span><span class="si">}</span><span class="s2"> (Ampere or newer) supports native BF16.&quot;</span>
+            <span class="sa">f</span><span class="s2">"GPU Compute Capability </span><span class="si">{</span><span class="n">dev</span><span class="o">.</span><span class="n">compute_capability_str</span><span class="si">}</span><span class="s2"> (Ampere or newer) supports native BF16."</span>
         <span class="p">)</span>
 
     <span class="c1"># 4. Model Quantization Recommendation</span>
     <span class="n">param_size</span> <span class="o">=</span> <span class="n">model_param_size_b</span> <span class="k">if</span> <span class="n">model_param_size_b</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mf">3.0</span>
     <span class="k">if</span> <span class="n">dev</span><span class="o">.</span><span class="n">total_vram_gb</span> <span class="o">&lt;=</span> <span class="mf">8.0</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">param_size</span> <span class="o">&gt;=</span> <span class="mf">2.5</span><span class="p">:</span>
-            <span class="n">rec_quant</span> <span class="o">=</span> <span class="s2">&quot;nf4&quot;</span>
+            <span class="n">rec_quant</span> <span class="o">=</span> <span class="s2">"nf4"</span>
             <span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;For models with ~</span><span class="si">{</span><span class="n">param_size</span><span class="si">}</span><span class="s2">B+ parameters on </span><span class="si">{</span><span class="n">dev</span><span class="o">.</span><span class="n">total_vram_gb</span><span class="si">}</span><span class="s2"> GB VRAM, 4-bit NormalFloat (NF4) &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;or Ollama GGUF Q4_K_M is required to fit into VRAM.&quot;</span>
+                <span class="sa">f</span><span class="s2">"For models with ~</span><span class="si">{</span><span class="n">param_size</span><span class="si">}</span><span class="s2">B+ parameters on </span><span class="si">{</span><span class="n">dev</span><span class="o">.</span><span class="n">total_vram_gb</span><span class="si">}</span><span class="s2"> GB VRAM, 4-bit NormalFloat (NF4) "</span>
+                <span class="sa">f</span><span class="s2">"or Ollama GGUF Q4_K_M is required to fit into VRAM."</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">rec_quant</span> <span class="o">=</span> <span class="s2">&quot;int8&quot;</span>
-            <span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Small model (~</span><span class="si">{</span><span class="n">param_size</span><span class="si">}</span><span class="s2">B) fits comfortably in 8-bit quantization.&quot;</span><span class="p">)</span>
+            <span class="n">rec_quant</span> <span class="o">=</span> <span class="s2">"int8"</span>
+            <span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Small model (~</span><span class="si">{</span><span class="n">param_size</span><span class="si">}</span><span class="s2">B) fits comfortably in 8-bit quantization."</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">dev</span><span class="o">.</span><span class="n">total_vram_gb</span> <span class="o">&lt;=</span> <span class="mf">16.0</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">param_size</span> <span class="o">&gt;</span> <span class="mf">8.0</span><span class="p">:</span>
-            <span class="n">rec_quant</span> <span class="o">=</span> <span class="s2">&quot;nf4&quot;</span>
-            <span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Models &gt; 8B parameters require 4-bit quantization on </span><span class="si">{</span><span class="n">dev</span><span class="o">.</span><span class="n">total_vram_gb</span><span class="si">}</span><span class="s2"> GB VRAM.&quot;</span><span class="p">)</span>
+            <span class="n">rec_quant</span> <span class="o">=</span> <span class="s2">"nf4"</span>
+            <span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Models &gt; 8B parameters require 4-bit quantization on </span><span class="si">{</span><span class="n">dev</span><span class="o">.</span><span class="n">total_vram_gb</span><span class="si">}</span><span class="s2"> GB VRAM."</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">rec_quant</span> <span class="o">=</span> <span class="s2">&quot;int8&quot;</span>
+            <span class="n">rec_quant</span> <span class="o">=</span> <span class="s2">"int8"</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">rec_quant</span> <span class="o">=</span> <span class="s2">&quot;none&quot;</span>
-        <span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;High-capacity GPU (</span><span class="si">{</span><span class="n">dev</span><span class="o">.</span><span class="n">total_vram_gb</span><span class="si">}</span><span class="s2"> GB VRAM). Unquantized FP16/BF16 is fully viable.&quot;</span><span class="p">)</span>
+        <span class="n">rec_quant</span> <span class="o">=</span> <span class="s2">"none"</span>
+        <span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"High-capacity GPU (</span><span class="si">{</span><span class="n">dev</span><span class="o">.</span><span class="n">total_vram_gb</span><span class="si">}</span><span class="s2"> GB VRAM). Unquantized FP16/BF16 is fully viable."</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">BackendRecommendation</span><span class="p">(</span>
         <span class="n">vllm_gpu_memory_utilization</span><span class="o">=</span><span class="n">vllm_util</span><span class="p">,</span>

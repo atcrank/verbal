@@ -21,7 +21,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Metacognition Trials &amp; Reports" href="metacognition_trials.html" />
-    <link rel="prev" title="Demo UI" href="demo_ui_app.html" /> 
+    <link rel="prev" title="Production Deployment &amp; Operations Guide" href="deploy.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -45,16 +45,20 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="llm_api_app.html">LLM API</a></li>
-<li class="toctree-l1"><a class="reference internal" href="background_resources_app.html">Background Resources - context documents</a></li>
-<li class="toctree-l1"><a class="reference internal" href="benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="grips_app.html">Grips - wiki knowledge banks</a></li>
-<li class="toctree-l1"><a class="reference internal" href="metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="llm_api_app.html">LLM API - Local Inference, Proxy Routing &amp; Hardware-Aware Serving</a></li>
+<li class="toctree-l1"><a class="reference internal" href="verbal_tasks_app.html">Verbal Tasks - Database-Backed Asynchronous Execution &amp; Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sandbox_manager_app.html">Sandbox Manager - Isolated Python Execution Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grobid_client_app.html">Grobid Client - Deterministic Scientific PDF Parsing &amp; Citation Extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="background_resources_app.html">Background Resources - Retrieval-Augmented Generation &amp; Document Ingestion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grips_app.html">Grips - Structured Knowledge Graph &amp; Propositional Claims</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metacognition_app.html">Metacognition - Cognitive Blueprints, Agentic Workflows &amp; Self-Evaluation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
-<li class="toctree-l1"><a class="reference internal" href="demo_ui_app.html">Demo UI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmarking_app.html">Benchmarking - Automated Evaluation, Synthetic Generation &amp; LoRA Flywheels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo_ui_app.html">Demo UI - Empirical Research &amp; Cognitive Workbench</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
 <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="deploy.html">Production Deployment &amp; Operations Guide</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Ollama as Local AI</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#step-1-start-ollama-and-pull-a-model">Step 1: Start Ollama and Pull a Model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#step-2-configure-the-external-model-in-django-admin">Step 2: Configure the External Model in Django Admin</a></li>
@@ -148,12 +152,12 @@
 <section id="a-quick-note-on-structured-json-outlines-vs-ollama">
 <h2>A Quick Note on Structured JSON (Outlines vs Ollama)<a class="headerlink" href="#a-quick-note-on-structured-json-outlines-vs-ollama" title="Link to this heading"></a></h2>
 <p>Your <code class="docutils literal notranslate"><span class="pre">ai_service.py</span></code> is formatting the structured output exactly to the bleeding-edge OpenAI standard:</p>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="nt">&quot;response_format&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;json_schema&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;json_schema&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;json_schema&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="nt">&quot;schema&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;schemaObject&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;schemaObject&quot;</span><span class="w"> </span><span class="p">},</span>
-<span class="w">        </span><span class="nt">&quot;strict&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="nt">"response_format"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"json_schema"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"json_schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"json_schema"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"schemaObject"</span><span class="p">:</span><span class="w"> </span><span class="s2">"schemaObject"</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="nt">"strict"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
@@ -170,7 +174,7 @@
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="demo_ui_app.html" class="btn btn-neutral float-left" title="Demo UI" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="deploy.html" class="btn btn-neutral float-left" title="Production Deployment &amp; Operations Guide" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="metacognition_trials.html" class="btn btn-neutral float-right" title="Metacognition Trials &amp; Reports" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

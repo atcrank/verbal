@@ -739,7 +739,7 @@ def track_backend_model_changes(sender, instance, **kwargs):
 def manage_hosting_backend(sender, instance, **kwargs):
     """Unload old models, clear VRAM, and manage Docker containers for the backend."""
     import sys
-    if 'test' in sys.argv:
+    if kwargs.get("raw") or 'test' in sys.argv or 'pytest' in sys.modules:
         return
 
     old_backend = getattr(instance, '_old_hosting_backend', None)

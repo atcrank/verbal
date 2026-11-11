@@ -16,6 +16,7 @@ Other modes of evaluative safe running exist: benchmarking and doctest trials. S
 
 * :doc:`Running benchmarks <benchmarking_app>`
 * :doc:`Metacognition doctest trials <metacognition_trials>` 
+* :doc:`Demo UI doctest trials <demo_ui_trials>`
 * :doc:`Using doctests <metacognition_trials/using_doctest>`
 
 Running tests
@@ -29,7 +30,7 @@ To test only end-to-end tests that exercise connection to all the services:
 
 make sure the inference server and worker server are running locally in separate terminals:
 > . start_inference.sh
-> . toggle_background_task_service.sh (ensuring this leaves the worker instance and the redis container "on")
+> . toggle_background_task_service.sh (ensuring Docker containers and the Django Tasks worker/scheduler are "on")
 
 Then test in a third terminal:
 > python manage.py test --tag=e2e

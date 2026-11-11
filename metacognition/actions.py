@@ -753,7 +753,16 @@ def python_sandbox(state: dict, params: dict) -> dict:
     import os
     from django.conf import settings
     
-    code = params.get("code", "")
+    code = str(params.get("code", "")).strip()
+    if code.startswith("```"):
+        lines = code.splitlines()
+        if lines and lines[0].lstrip().startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].strip() == "```":
+            lines = lines[:-1]
+        code = "\n".join(lines).strip()
+    if code and not code.endswith("\n"):
+        code += "\n"
     
     conversation_id = state.get("conversation_id")
     workspace_dir = _get_workspace_dir(conversation_id)

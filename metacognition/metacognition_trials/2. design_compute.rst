@@ -6,12 +6,16 @@ and multi-step reasoning. It requires the AI to first draft a strategy before wr
 
 Execution
 ---------
-We target the auto-generated pipeline that links the ``StrategicPlan`` node directly to the ``ExecutionPlan``.
+We target the canonical ``ResearchEvaluation`` pipeline (Research, StrategicPlan, ExecutionPlan, and ResultCritique).
 
     >>> from metacognition.tasks import run_blueprint
     >>> from metacognition.models import CognitiveBlueprint
     >>> from django.contrib.auth.models import User
-    >>> user, _ = User.objects.get_or_create(username="test_user")
+    >>> user, _ = User.objects.get_or_create(username="test_user", defaults={"is_staff": True, "is_superuser": True})
+    >>> if not (user.is_staff and user.is_superuser):
+    ...     user.is_staff = True
+    ...     user.is_superuser = True
+    ...     user.save(update_fields=["is_staff", "is_superuser"])
     >>> bp = CognitiveBlueprint.objects.filter(name__startswith="ResearchEvaluation").first()
     
     >>> prompt = (

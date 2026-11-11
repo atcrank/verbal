@@ -40,14 +40,10 @@ class LlmApiIntegrationTests(TestCase):
         os.makedirs(TEST_CHUNK_STORE, exist_ok=True)
         os.makedirs(TEST_FILES_DIR, exist_ok=True)
 
-        # 3. Initialize Real Services
+        # 3. Initialize Real Services (defer heavy model load until setUp configures SystemConfiguration)
         print("\n>>> 🚀 INITIALIZING REAL SERVICES FOR API TEST <<<")
         cls.ai_service = service_registry['ai_service']
         cls.rag_service = service_registry['rag_service']
-        
-        # Force load models (Lazy loading would happen on first request, but we do it here for clarity)
-        if cls.ai_service.model is None:
-            cls.ai_service.load_models()
             
         # 4. Ingest Test Data for RAG
         # We create a document so the RAG service has something to find.
@@ -123,7 +119,7 @@ class LlmApiIntegrationTests(TestCase):
         """
         payload = {
             "system_prompt": "You are a helpful assistant. Use the provided context to answer the question.",
-            "user_prompt": "What are the specific details mentioned in the internal company France document regarding its capital?",
+            "user_prompt": "Search the knowledge base for the internal company France document and state its capital.",
             "max_new_tokens": 50
         }
 
@@ -141,8 +137,16 @@ class LlmApiIntegrationTests(TestCase):
         self.assertTrue(len(ai_response) > 0)
 
         # 2. Verify RAG Usage via Logs
-        # We check the database log to ensure the RAG service actually injected the context
-        log = PromptResponseLog.objects.last()
+        # PromptResponseLog defaults to ['-created_at'], so filter by the endpoint's conversation TURN log.
+        log = (
+            PromptResponseLog.objects.filter(
+                conversation_id=data["conversation_id"],
+                log_kind=PromptResponseLog.LogKind.TURN,
+            )
+            .order_by("-created_at")
+            .first()
+        )
+        self.assertIsNotNone(log)
         self.assertEqual(log.user, self.user)
         
         # The log should contain the text from our ingested file
@@ -1811,3 +1815,113 @@ class OfflineRestartResilienceAndDiagnosticsTests(TestCase):
                 any("unavailable" in m.lower() and "vllm" in m.lower() for m in msgs),
                 f"Expected Admin warning notification for unavailable vLLM backend, got: {msgs}",
             )
+
+
+class WS31TestIsolationAndProxyModelTests(TestCase):
+    """WS31 tests verifying fixture-load container isolation and proxy model reporting."""
+
+    def test_manage_hosting_backend_skips_container_sync_on_raw_load(self):
+        from unittest.mock import patch
+        from llm_api.models import SystemConfiguration, manage_hosting_backend
+
+        config = SystemConfiguration.get_solo()
+        config._old_hosting_backend = "ollama"
+        config.hosting_backend = "pytorch"
+
+        with patch("llm_api.ollama_client.stop_container") as mock_stop_ollama, \
+             patch("llm_api.vllm_client.stop_container") as mock_stop_vllm:
+            manage_hosting_backend(SystemConfiguration, config, created=False, raw=True)
+
+        mock_stop_ollama.assert_not_called()
+        mock_stop_vllm.assert_not_called()
+
+    def test_openai_chat_completions_includes_resolved_model(self):
+        from unittest.mock import patch
+        from django.test import RequestFactory
+        from llm_api.api import OpenAIChatCompletionIn, openai_chat_completions
+        from llm_api.models import LocalAIModel, SystemConfiguration
+
+        model_obj, _ = LocalAIModel.objects.get_or_create(
+            hf_model_id="google/gemma-2-2b-it",
+            defaults={"name": "Gemma 2 2B"},
+        )
+        config = SystemConfiguration.get_solo()
+        config.hosting_backend = SystemConfiguration.HostingBackend.OLLAMA
+        config.active_ollama_model = model_obj
+        config.save()
+
+        rf = RequestFactory()
+        req = rf.post("/api/llm/v1/chat/completions", data="{}", content_type="application/json")
+        payload = OpenAIChatCompletionIn(
+            model="local-model",
+            messages=[{"role": "user", "content": "Hello"}],
+            max_tokens=16,
+        )
+
+        with patch("llm_api.api.service_registry") as mock_reg:
+            mock_reg.ai_service.generate_response2.return_value = ["Hi there"]
+            resp = openai_chat_completions(req, payload)
+
+        self.assertEqual(resp.status_code, 200)
+        body = json.loads(resp.content)
+        self.assertEqual(body.get("model"), "Gemma 2 2B")
+        self.assertEqual(body["choices"][0]["message"]["content"], "Hi there")
+
+    def test_sanitize_messages_preserves_mid_conversation_system_observations(self):
+        from llm_api.ai_service import _sanitize_messages
+
+        msgs = [
+            {"role": "system", "content": "Gather context using tools."},
+            {"role": "user", "content": "Search France document."},
+            {"role": "assistant", "content": '{"tool_calls": [{"name": "search_rag_chunks"}]}'},
+            {"role": "system", "content": "[Tool 'search_rag_chunks' Result]: The capital of France is Paris."},
+        ]
+        sanitized = _sanitize_messages(msgs)
+
+        self.assertEqual(len(sanitized), 3)
+        self.assertEqual(sanitized[0]["role"], "user")
+        self.assertIn("Gather context using tools.", sanitized[0]["content"])
+        self.assertIn("Search France document.", sanitized[0]["content"])
+        self.assertEqual(sanitized[1]["role"], "assistant")
+        self.assertEqual(sanitized[2]["role"], "user")
+        self.assertIn("The capital of France is Paris.", sanitized[2]["content"])
+
+    def test_outlines_json_schema_forwarded_and_validated_in_proxy_requests(self):
+        from unittest.mock import MagicMock, patch
+        from outlines.types import JsonSchema
+        from llm_api.ai_service import AIService
+
+        svc = AIService()
+        raw_schema = {
+            "type": "object",
+            "properties": {"status": {"type": "string"}},
+            "required": ["status"],
+        }
+        wrapped = JsonSchema(raw_schema)
+
+        extracted = svc._extract_json_schema_dict(wrapped)
+        self.assertEqual(extracted, raw_schema)
+
+        validated = svc._get_valid_structured_result(['{"status": "SUFFICIENT"}'], wrapped)
+        self.assertEqual(validated, {"status": "SUFFICIENT"})
+
+        with patch("requests.post") as mock_post:
+            mock_resp = MagicMock()
+            mock_resp.json.return_value = {
+                "choices": [{"message": {"content": '{"status": "SUFFICIENT"}'}}],
+                "usage": {"completion_tokens": 5},
+                "model": "Gemma 2 2B",
+            }
+            mock_resp.raise_for_status.return_value = None
+            mock_post.return_value = mock_resp
+
+            svc._execute_openai_standard_request(
+                [{"role": "user", "content": "Evaluate context"}],
+                max_new_tokens=64,
+                temperature=0.0,
+                num_return_sequences=1,
+                response_schema=wrapped,
+            )
+
+        sent_payload = mock_post.call_args.kwargs["json"]
+        self.assertEqual(sent_payload["response_format"]["json_schema"]["schema"], raw_schema)

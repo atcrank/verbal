@@ -8,7 +8,7 @@ Deep Context Report Output
 
     === SEMANTIC RAG & GRIPS RESULTS ===
     
-    [Grips: Deep Sea Mining (ID: grips_1)]
+    [Grips: Deep Sea Mining (ID: grips_73)]
     Extracts battery minerals from ocean floor.
     
     
@@ -23,14 +23,15 @@ Deep Context Report Output
     
     === PAST CONVERSATIONS (USER PRIVATE) ===
     
-    [Past Log ID: a2860304-4df8-4804-90e3-10fb7d95c0c5]
+    [Past Log ID: 7eb7a586-f1d4-4f47-bd1e-16695dd57f1b]
     User: What about deep sea mining?
     Agent: It extracts rare minerals but disrupts ecosystems.
 
 
-Distilled Final Context (NM_Deep_Reader)
-----------------------------------------
+Distilled Final Context (Deep_Reader)
+-------------------------------------
 
 ::
 
-    Deep sea mining involves extracting battery minerals like cobalt and manganese from the ocean floor [ID: grips_1, test-chunk-rag-99].
+    [Grips: Deep Sea Mining (ID: grips_73)]
+    Extracts battery minerals from ocean floor.

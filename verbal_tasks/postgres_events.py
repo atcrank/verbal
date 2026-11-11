@@ -12,9 +12,11 @@ import asyncio
 import threading
 from typing import Dict, Any, Optional, Generator, AsyncGenerator
 from django.conf import settings
-from django.db import connection
+from django.db import connection, transaction
 
 logger = logging.getLogger(__name__)
+
+_PG_NOTIFY_MAX_BYTES = 7800
 
 # Fallback in-memory event queues for test environments (e.g. SQLite / mock tests)
 _in_memory_subscribers: Dict[str, list] = {}
@@ -50,6 +52,116 @@ def get_pg_connection_params() -> dict:
     return params
 
 
+def _truncate_pg_text(value: str, limit: int) -> str:
+    """Truncates a string for pg_notify while marking omitted content."""
+    if len(value) <= limit:
+        return value
+    return value[:limit] + "... [truncated in stream notification]"
+
+
+def _compact_monologue_entries(entries: list, text_limit: int = 300) -> list:
+    """Builds compact summaries of internal_monologue entries for pg_notify."""
+    compact = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            compact.append(_truncate_pg_text(str(entry), text_limit))
+            continue
+        slim = {}
+        for k, v in entry.items():
+            if k in ("state_tree", "scratch"):
+                continue
+            if isinstance(v, str):
+                slim[k] = _truncate_pg_text(v, text_limit)
+            elif isinstance(v, (int, float, bool)) or v is None:
+                slim[k] = v
+            else:
+                slim[k] = _truncate_pg_text(str(v), text_limit)
+        compact.append(slim)
+    return compact
+
+
+def _serialize_pg_envelope(
+    channel_name: str,
+    event_type: str,
+    envelope: dict,
+    max_bytes: int = _PG_NOTIFY_MAX_BYTES,
+) -> str:
+    """
+    Serializes a pg_notify JSON envelope while guaranteeing its UTF-8 byte length
+    stays within PostgreSQL's 8000-byte payload limit.
+    """
+    payload_str = json.dumps(envelope)
+    if len(payload_str.encode("utf-8")) <= max_bytes:
+        return payload_str
+
+    payload = envelope.get("data") or {}
+    logger.warning(
+        f"Event payload exceeds {max_bytes} bytes on channel '{channel_name}'. Truncating detailed fields."
+    )
+
+    if isinstance(payload, dict):
+        safe_payload = dict(payload)
+        if isinstance(safe_payload.get("internal_monologue"), list):
+            safe_payload["internal_monologue"] = _compact_monologue_entries(
+                safe_payload["internal_monologue"], text_limit=300
+            )
+        for k, v in list(safe_payload.items()):
+            if isinstance(v, str) and len(v) > 1000:
+                safe_payload[k] = _truncate_pg_text(v, 1000)
+
+        candidate = dict(envelope, data=safe_payload)
+        payload_str = json.dumps(candidate)
+        if len(payload_str.encode("utf-8")) <= max_bytes:
+            return payload_str
+
+        # Drop full monologue and progressively shrink remaining strings/containers
+        if "internal_monologue" in safe_payload:
+            monologue_val = safe_payload.pop("internal_monologue")
+            safe_payload["internal_monologue_count"] = len(monologue_val) if isinstance(monologue_val, list) else 1
+            safe_payload["internal_monologue_truncated"] = True
+
+        for limit in (500, 200, 80):
+            trimmed = {}
+            for k, v in safe_payload.items():
+                if isinstance(v, str):
+                    trimmed[k] = _truncate_pg_text(v, limit)
+                elif isinstance(v, (int, float, bool)) or v is None:
+                    trimmed[k] = v
+                else:
+                    trimmed[k] = _truncate_pg_text(str(v), limit)
+            candidate = dict(envelope, data=trimmed)
+            payload_str = json.dumps(candidate)
+            if len(payload_str.encode("utf-8")) <= max_bytes:
+                return payload_str
+
+        minimal_data = {
+            k: payload[k]
+            for k in (
+                "blueprint_name",
+                "conversation_id",
+                "run_id",
+                "thread_id",
+                "step_id",
+                "step_name",
+                "step_count",
+                "route_to",
+            )
+            if k in payload and isinstance(payload[k], (str, int, float, bool)) and len(str(payload[k])) <= 128
+        }
+        minimal_data["truncated"] = True
+        payload_str = json.dumps(dict(envelope, data=minimal_data))
+        if len(payload_str.encode("utf-8")) <= max_bytes:
+            return payload_str
+
+    bare_envelope = {
+        "event": event_type,
+        "channel": channel_name,
+        "timestamp": envelope.get("timestamp", time.time()),
+        "data": {"truncated": True},
+    }
+    return json.dumps(bare_envelope)
+
+
 def publish_pg_event(channel: str, event_type: str, payload: dict) -> bool:
     """
     Publishes an event to a PostgreSQL channel using pg_notify.
@@ -64,7 +176,6 @@ def publish_pg_event(channel: str, event_type: str, payload: dict) -> bool:
         "timestamp": time.time(),
         "data": payload
     }
-    payload_str = json.dumps(envelope)
 
     # 1. Dispatch to in-memory fallback subscribers
     with _in_memory_lock:
@@ -84,28 +195,35 @@ def publish_pg_event(channel: str, event_type: str, payload: dict) -> bool:
         logger.debug(f"Non-Postgres DB ({getattr(connection, 'vendor', 'unknown')}). Dispatched in-memory.")
         return True
 
-    # 3. Handle PostgreSQL 8000-byte limit by truncating oversized previews if necessary
-    if len(payload_str.encode('utf-8')) > 7800:
-        logger.warning(f"Event payload exceeds 7800 bytes on channel '{channel_name}'. Truncating detailed fields.")
-        safe_payload = dict(payload)
-        for k in ('output', 'final_response', 'data', 'text'):
-            if k in safe_payload and isinstance(safe_payload[k], str) and len(safe_payload[k]) > 2000:
-                safe_payload[k] = safe_payload[k][:2000] + "... [truncated in stream notification]"
-        envelope["data"] = safe_payload
-        payload_str = json.dumps(envelope)
+    # 3. Guarantee payload stays within PostgreSQL 8000-byte limit before pg_notify
+    payload_str = _serialize_pg_envelope(channel_name, event_type, envelope)
 
     def _execute_notify():
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT pg_notify(%s, %s);", [channel_name, payload_str])
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_notify(%s, %s);", [channel_name, payload_str])
 
     try:
         _execute_notify()
         return True
     except SynchronousOnlyOperation:
         # When called from an async loop/thread, execute notify in a background thread
-        thread = threading.Thread(target=_execute_notify)
+        thread_errors = []
+
+        def _run_threaded():
+            try:
+                _execute_notify()
+            except Exception as thread_exc:
+                thread_errors.append(thread_exc)
+            finally:
+                connection.close()
+
+        thread = threading.Thread(target=_run_threaded)
         thread.start()
         thread.join(timeout=1.0)
+        if thread_errors:
+            logger.warning(f"Failed to execute pg_notify on channel '{channel_name}': {thread_errors[0]}")
+            return False
         return True
     except Exception as e:
         logger.warning(f"Failed to execute pg_notify on channel '{channel_name}': {e}")

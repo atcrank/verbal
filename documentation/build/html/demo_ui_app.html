@@ -61,11 +61,11 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#visual-interface-walkthrough">Visual Interface Walkthrough</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#main-chat-interface">1. Main Chat Interface</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#prompt-submission-blueprint-selection">2. Prompt Submission &amp; Blueprint Selection</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#real-time-streaming-intermediate-deliberation">3. Real-Time Streaming &amp; Intermediate Deliberation</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#knowledge-base-document-curation">4. Knowledge Base &amp; Document Curation</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#grips-conceptual-explorer">5. Grips Conceptual Explorer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#context-chip-formulation-prompt-submission">1. Context Chip Formulation &amp; Prompt Submission</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#live-local-inference-streaming-response">2. Live Local Inference &amp; Streaming Response</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#multi-step-cognitive-blueprint-docker-sandbox-execution">3. Multi-Step Cognitive Blueprint &amp; Docker Sandbox Execution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#counterfactual-conversation-branching">4. Counterfactual Conversation Branching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#grips-conceptual-explorer-autonomous-elaboration">5. Grips Conceptual Explorer &amp; Autonomous Elaboration</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#empirical-rigor-trials">Empirical Rigor Trials</a></li>
@@ -142,11 +142,11 @@
 </li>
 <li><p><a class="reference internal" href="#visual-interface-walkthrough" id="id4">Visual Interface Walkthrough</a></p>
 <ul>
-<li><p><a class="reference internal" href="#main-chat-interface" id="id5">1. Main Chat Interface</a></p></li>
-<li><p><a class="reference internal" href="#prompt-submission-blueprint-selection" id="id6">2. Prompt Submission &amp; Blueprint Selection</a></p></li>
-<li><p><a class="reference internal" href="#real-time-streaming-intermediate-deliberation" id="id7">3. Real-Time Streaming &amp; Intermediate Deliberation</a></p></li>
-<li><p><a class="reference internal" href="#knowledge-base-document-curation" id="id8">4. Knowledge Base &amp; Document Curation</a></p></li>
-<li><p><a class="reference internal" href="#grips-conceptual-explorer" id="id9">5. Grips Conceptual Explorer</a></p></li>
+<li><p><a class="reference internal" href="#context-chip-formulation-prompt-submission" id="id5">1. Context Chip Formulation &amp; Prompt Submission</a></p></li>
+<li><p><a class="reference internal" href="#live-local-inference-streaming-response" id="id6">2. Live Local Inference &amp; Streaming Response</a></p></li>
+<li><p><a class="reference internal" href="#multi-step-cognitive-blueprint-docker-sandbox-execution" id="id7">3. Multi-Step Cognitive Blueprint &amp; Docker Sandbox Execution</a></p></li>
+<li><p><a class="reference internal" href="#counterfactual-conversation-branching" id="id8">4. Counterfactual Conversation Branching</a></p></li>
+<li><p><a class="reference internal" href="#grips-conceptual-explorer-autonomous-elaboration" id="id9">5. Grips Conceptual Explorer &amp; Autonomous Elaboration</a></p></li>
 </ul>
 </li>
 <li><p><a class="reference internal" href="#empirical-rigor-trials" id="id10">Empirical Rigor Trials</a></p></li>
@@ -204,34 +204,35 @@ The Demo UI is intentionally designed as an experimental workbench and evaluatio
 </section>
 <section id="visual-interface-walkthrough">
 <h2><a class="toc-backref" href="#id4" role="doc-backlink">Visual Interface Walkthrough</a><a class="headerlink" href="#visual-interface-walkthrough" title="Link to this heading"></a></h2>
-<section id="main-chat-interface">
-<h3><a class="toc-backref" href="#id5" role="doc-backlink">1. Main Chat Interface</a><a class="headerlink" href="#main-chat-interface" title="Link to this heading"></a></h3>
-<p>The main workspace presents conversation history on the left and contextual tooling on the right:</p>
-<a class="reference internal image-reference" href="_images/01_main_ui_empty.png"><img alt="Main UI Shell" src="_images/01_main_ui_empty.png" style="width: 800px;" />
+<p>The screenshots below are captured dynamically by the Playwright-driven trials in <code class="docutils literal notranslate"><span class="pre">demo_ui/demo_ui_trials/</span></code>.</p>
+<section id="context-chip-formulation-prompt-submission">
+<h3><a class="toc-backref" href="#id5" role="doc-backlink">1. Context Chip Formulation &amp; Prompt Submission</a><a class="headerlink" href="#context-chip-formulation-prompt-submission" title="Link to this heading"></a></h3>
+<p>Attach retrieved literature chunks or Grips nodes as context chips alongside a targeted study-design inquiry:</p>
+<a class="reference internal image-reference" href="_images/trial_1_prompt_with_chips.png"><img alt="Context Chip Formulation and Prompt Submission" src="_images/trial_1_prompt_with_chips.png" style="width: 800px;" />
 </a>
 </section>
-<section id="prompt-submission-blueprint-selection">
-<h3><a class="toc-backref" href="#id6" role="doc-backlink">2. Prompt Submission &amp; Blueprint Selection</a><a class="headerlink" href="#prompt-submission-blueprint-selection" title="Link to this heading"></a></h3>
-<p>Select an active cognitive blueprint, configure context attachments, and submit an experimental prompt:</p>
-<a class="reference internal image-reference" href="_images/02_chat_filled.png"><img alt="Prompt Submission" src="_images/02_chat_filled.png" style="width: 800px;" />
+<section id="live-local-inference-streaming-response">
+<h3><a class="toc-backref" href="#id6" role="doc-backlink">2. Live Local Inference &amp; Streaming Response</a><a class="headerlink" href="#live-local-inference-streaming-response" title="Link to this heading"></a></h3>
+<p>Active deliberation streams status updates and delivers context-grounded synthesis directly into the chat thread:</p>
+<a class="reference internal image-reference" href="_images/trial_1_grounded_response.png"><img alt="Context-Grounded Response" src="_images/trial_1_grounded_response.png" style="width: 800px;" />
 </a>
 </section>
-<section id="real-time-streaming-intermediate-deliberation">
-<h3><a class="toc-backref" href="#id7" role="doc-backlink">3. Real-Time Streaming &amp; Intermediate Deliberation</a><a class="headerlink" href="#real-time-streaming-intermediate-deliberation" title="Link to this heading"></a></h3>
-<p>Asynchronous tasks stream token-by-token output, reasoning monologues, and tool outputs directly into the conversational card:</p>
-<a class="reference internal image-reference" href="_images/03_chat_response.png"><img alt="Streaming Response" src="_images/03_chat_response.png" style="width: 800px;" />
+<section id="multi-step-cognitive-blueprint-docker-sandbox-execution">
+<h3><a class="toc-backref" href="#id7" role="doc-backlink">3. Multi-Step Cognitive Blueprint &amp; Docker Sandbox Execution</a><a class="headerlink" href="#multi-step-cognitive-blueprint-docker-sandbox-execution" title="Link to this heading"></a></h3>
+<p>Select a canonical blueprint and inspect intermediate steps, tool calls, and sandboxed outputs inline:</p>
+<a class="reference internal image-reference" href="_images/trial_3_tool_output.png"><img alt="Blueprint Thinking Trace and Sandbox Tool Output" src="_images/trial_3_tool_output.png" style="width: 800px;" />
 </a>
 </section>
-<section id="knowledge-base-document-curation">
-<h3><a class="toc-backref" href="#id8" role="doc-backlink">4. Knowledge Base &amp; Document Curation</a><a class="headerlink" href="#knowledge-base-document-curation" title="Link to this heading"></a></h3>
-<p>Upload, monitor, and inspect background documents and their vector ingestion status:</p>
-<a class="reference internal image-reference" href="_images/04_documents_view.png"><img alt="Documents View" src="_images/04_documents_view.png" style="width: 800px;" />
+<section id="counterfactual-conversation-branching">
+<h3><a class="toc-backref" href="#id8" role="doc-backlink">4. Counterfactual Conversation Branching</a><a class="headerlink" href="#counterfactual-conversation-branching" title="Link to this heading"></a></h3>
+<p>Fork an isolated DAG child branch from any turn to test counterfactual assumptions without mutating the parent thread:</p>
+<a class="reference internal image-reference" href="_images/trial_4_branched_conversation.png"><img alt="Branched Conversation Thread" src="_images/trial_4_branched_conversation.png" style="width: 800px;" />
 </a>
 </section>
-<section id="grips-conceptual-explorer">
-<h3><a class="toc-backref" href="#id9" role="doc-backlink">5. Grips Conceptual Explorer</a><a class="headerlink" href="#grips-conceptual-explorer" title="Link to this heading"></a></h3>
-<p>Navigate conceptual domains, expand sub-concepts, and trigger recursive stub-filling:</p>
-<a class="reference internal image-reference" href="_images/05_grips_explorer.png"><img alt="Grips Explorer" src="_images/05_grips_explorer.png" style="width: 800px;" />
+<section id="grips-conceptual-explorer-autonomous-elaboration">
+<h3><a class="toc-backref" href="#id9" role="doc-backlink">5. Grips Conceptual Explorer &amp; Autonomous Elaboration</a><a class="headerlink" href="#grips-conceptual-explorer-autonomous-elaboration" title="Link to this heading"></a></h3>
+<p>Browse domain ontologies, expand child concepts, and trigger stub elaboration inside the Grips Explorer tab:</p>
+<a class="reference internal image-reference" href="_images/trial_4_grips_explorer.png"><img alt="Grips Explorer" src="_images/trial_4_grips_explorer.png" style="width: 800px;" />
 </a>
 </section>
 </section>

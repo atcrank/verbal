@@ -683,3 +683,42 @@ class PostgresEventsTests(TestCase):
         self.assertEqual(received[0]["event"], "step_started")
         self.assertEqual(received[1]["event"], "completed")
 
+    def test_publish_oversized_monologue_stays_within_limit_and_preserves_transaction(self):
+        from django.contrib.auth import get_user_model
+        from verbal_tasks.postgres_events import (
+            _PG_NOTIFY_MAX_BYTES,
+            _serialize_pg_envelope,
+            publish_pg_event,
+        )
+
+        huge_monologue = [
+            {
+                "step_name": f"Step {i}",
+                "output": "A" * 3500,
+                "tool_result": "B" * 3500,
+                "state_tree": {"tasks": {str(i): {"blob": "C" * 3000}}},
+            }
+            for i in range(4)
+        ]
+        payload = {
+            "blueprint_name": "Deep_Reader",
+            "conversation_id": "conv-1234",
+            "final_response": "Z" * 5000,
+            "internal_monologue": huge_monologue,
+            "run_id": "run-5678",
+        }
+
+        serialized = _serialize_pg_envelope(
+            "verbal_events_test",
+            "completed",
+            {"event": "completed", "channel": "verbal_events_test", "timestamp": 1.0, "data": payload},
+        )
+        self.assertLessEqual(len(serialized.encode("utf-8")), _PG_NOTIFY_MAX_BYTES)
+
+        res = publish_pg_event("verbal_events_test", "completed", payload)
+        self.assertTrue(res)
+
+        # Ensure PostgreSQL transaction was not poisoned by pg_notify
+        self.assertGreaterEqual(get_user_model().objects.count(), 0)
+
+

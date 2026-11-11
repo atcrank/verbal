@@ -10,9 +10,12 @@ specifically verifying that it processes each task sequentially without trailing
     >>> from llm_api.models import User
     >>> from metacognition.models import CognitiveBlueprint
     >>> from metacognition.tasks import run_blueprint
-    >>> from conftest import _report_doctest_run
-    
-    >>> user, _ = User.objects.get_or_create(username="test_user")
+    >>>
+    >>> user, _ = User.objects.get_or_create(username="test_user", defaults={"is_staff": True, "is_superuser": True})
+    >>> if not (user.is_staff and user.is_superuser):
+    ...     user.is_staff = True
+    ...     user.is_superuser = True
+    ...     user.save(update_fields=["is_staff", "is_superuser"])
     >>> from metacognition.seed import seed_task_decomposer
     >>> from metacognition.models import ReasoningStep, ResponseSchema, ToolDefinition
     >>> seed_task_decomposer(CognitiveBlueprint, ReasoningStep, ResponseSchema, ToolDefinition)
@@ -32,7 +35,7 @@ specifically verifying that it processes each task sequentially without trailing
     
     >>> if result:
     ...     result["stdout"] = captured_out.getvalue()
-    ...     _report_doctest_run("7. iterative_planning", [prompt], result)
+    ...     report_doctest_run("7. iterative_planning", [prompt], result)
     
     >>> assert "error" not in result, f"Execution failed: {result.get('error')}"
     >>> assert result.get("final_response") != "No output.", "No response generated."

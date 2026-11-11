@@ -438,6 +438,7 @@ class MetacognitionE2EExternalProxyTests(TestCase):
             cls.ai_service.generate_outline = cls.original_outline
             cls.ai_service.generate_response2 = cls.original_resp
         super().tearDownClass()
+        cls.settings_override.disable()
 
 
     def setUp(self):
@@ -512,15 +513,6 @@ class MetacognitionE2ELocalProxyTests(TestCase):
         cls.settings_override.enable()
         super().setUpClass()
 
-    @classmethod
-    def tearDownClass(cls):
-        from llm_api.apps import service_registry
-        if getattr(service_registry, '_rag_service', None):
-            service_registry._rag_service.disconnect()
-        if getattr(service_registry, '_grips_service', None):
-            service_registry._grips_service.disconnect()
-        super().tearDownClass()
-
     def setUp(self):
         # We can just re-use the setup from the mocked tests to create the DB objects
         self.mocked_tests = MetacognitionTraversalTests()
@@ -593,13 +585,19 @@ class MetacognitionE2ELocalProxyTests(TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        from llm_api.apps import service_registry
         from llm_api.models import SystemConfiguration
+        if getattr(service_registry, '_rag_service', None):
+            service_registry._rag_service.disconnect()
+        if getattr(service_registry, '_grips_service', None):
+            service_registry._grips_service.disconnect()
         config = SystemConfiguration.get_solo()
         config.active_local_model = None
         config.active_ollama_model = None
         config.active_vllm_model = None
         config.save()
         super().tearDownClass()
+        cls.settings_override.disable()
 
 
 class NightManagerToolTests(TestCase):
@@ -3314,14 +3312,26 @@ class DeploymentHardeningPhase1Tests(TestCase):
         )
 
 
-        # 1. Initial log claimed by Step 1
+        # 1. Initial log preserved as the single public TURN record with the final response
         initial_log.refresh_from_db()
         self.assertEqual(initial_log.blueprint_id, self.bp.id)
-        self.assertEqual(initial_log.reasoning_step_id, self.step1.id)
-        self.assertEqual(initial_log.generated_response, "Step 1 Plan Output")
+        self.assertEqual(initial_log.log_kind, PromptResponseLog.LogKind.TURN)
+        self.assertIsNone(initial_log.reasoning_step_id)
+        self.assertEqual(initial_log.generated_response, "Step 2 Final Advice")
 
-        # 2. Step 2 created a child log chained via parent_log
-        child_logs = PromptResponseLog.objects.filter(parent_log=initial_log)
+        # 2. Step 1 and Step 2 emit TRACE logs chained via parent_log
+        step1_log = PromptResponseLog.objects.get(
+            conversation=conv,
+            log_kind=PromptResponseLog.LogKind.TRACE,
+            reasoning_step_id=self.step1.id,
+        )
+        self.assertIsNone(step1_log.parent_log)
+        self.assertEqual(step1_log.generated_response, "Step 1 Plan Output")
+
+        child_logs = PromptResponseLog.objects.filter(
+            parent_log=step1_log,
+            log_kind=PromptResponseLog.LogKind.TRACE,
+        )
         self.assertEqual(child_logs.count(), 1)
         step2_log = child_logs.first()
         self.assertEqual(step2_log.blueprint_id, self.bp.id)
@@ -3685,6 +3695,13 @@ class MetacognitionOutputContractAndIsolationTests(TestCase):
 
         bp = CognitiveBlueprint.objects.get(name="Deep_Reader")
         self.assertEqual(bp.output_kind, "CONTEXT")
+        self.assertTrue(bp.is_autonomous)
+        step1 = bp.steps.get(name="Gather Context")
+        step2 = bp.steps.get(name="Distill Context")
+        self.assertEqual(step1.evaluation_criteria, "")
+        self.assertEqual(step1.on_success_step_id, step2.id)
+        self.assertEqual(step2.on_failure_step_id, step1.id)
+        self.assertGreaterEqual(step2.max_retries, 2)
 
         # Step 2 generates DeepReaderEvaluation_Schema structured JSON
         distilled_text = "Factorial designs test interaction effects across several factors jointly [ID: doc_42]."
@@ -3802,6 +3819,120 @@ class MetacognitionOutputContractAndIsolationTests(TestCase):
         assistant_msgs = [m for m in msgs if m["role"] == "assistant"]
         self.assertEqual(len(assistant_msgs), 1)
         self.assertEqual(assistant_msgs[0]["content"], "Step 2 final synthesized answer.")
+
+
+class WS31CompilerToolLoopTests(TestCase):
+    """Tests tool-loop guards and strict alternation formatting in metacognition.compiler."""
+
+    @patch('metacognition.compiler.execute_tool')
+    @patch('llm_api.apps.service_registry')
+    def test_duplicate_tool_calls_advance_without_max_retries_abort(self, mock_registry, mock_execute_tool):
+        import json as _json
+        from langchain_core.messages import HumanMessage
+        from metacognition.compiler import _make_action_node, resolve_active_steps
+        from metacognition.models import CognitiveBlueprint, ReasoningStep, ToolDefinition
+        from metacognition.state import AgentState
+
+        tool, _ = ToolDefinition.objects.get_or_create(
+            name="search_rag_chunks",
+            defaults={
+                "description": "Search RAG chunks",
+                "tool_type": "builtin",
+                "python_path": "metacognition.meta_tools.search_rag_chunks",
+                "input_schema": _json.dumps({
+                    "type": "object",
+                    "properties": {"query": {"type": "string"}, "k": {"type": "integer"}},
+                    "required": ["query"],
+                }),
+            },
+        )
+        bp = CognitiveBlueprint.objects.create(name="WS31_Loop_BP", is_autonomous=True)
+        step2 = ReasoningStep.objects.create(
+            blueprint=bp,
+            name="Distill Context",
+            system_prompt="Synthesize evidence.",
+        )
+        step = ReasoningStep.objects.create(
+            blueprint=bp,
+            name="Gather Context",
+            is_start_node=True,
+            on_success_step=step2,
+            system_prompt="Search evidence.",
+            evaluation_criteria="",
+            max_retries=3,
+        )
+        step.available_tools.add(tool)
+
+        mock_registry.ai_service.supports_native_tools.return_value = False
+        mock_registry.ai_service.generate_outline.return_value = _json.dumps({
+            "tool_calls": [{"name": "search_rag_chunks", "args": {"query": "deep sea mining", "k": 5}}]
+        })
+        mock_execute_tool.return_value = "Cobalt is used in EV batteries."
+
+        _, roots = resolve_active_steps(bp)
+        action_fn = _make_action_node(step, roots)
+
+        base_state = AgentState(
+            working_memory=[HumanMessage(content="Deep sea mining impact?")],
+            state_tree={},
+            rag_context="",
+            route_to=None,
+            resume_to=None,
+            conversation_id="",
+            user_id=None,
+            step_count=0,
+            max_steps=10,
+            retries_remaining={},
+            internal_monologue=[],
+            scratch={},
+            token_budget_remaining=8000,
+            run_id="ws31_dup_guard",
+            pending_approval=None,
+            approved_tools=[],
+            last_log_id=None,
+            initial_log_id=None,
+            final_output=None,
+            evaluator_feedback=None,
+        )
+
+        # Visit 1: executes tool once and collapses tool outputs into a single HumanMessage
+        out1 = action_fn(base_state)
+        self.assertEqual(out1["route_to"], "SELF")
+        self.assertEqual(mock_execute_tool.call_count, 1)
+        seen_key = f"_seen_tool_calls_{step.id}"
+        self.assertIn(seen_key, out1["scratch"])
+        self.assertEqual(len([m for m in out1["working_memory"] if isinstance(m, HumanMessage)]), 1)
+
+        # Visit 2: repeating identical tool call skips re-execution and advances via SUCCESS
+        state2 = dict(base_state)
+        state2["working_memory"] = list(base_state["working_memory"]) + list(out1["working_memory"])
+        state2["scratch"] = dict(out1["scratch"])
+        state2["retries_remaining"] = dict(out1["retries_remaining"])
+        state2["step_count"] = out1["step_count"]
+
+        out2 = action_fn(state2)
+        self.assertEqual(out2["route_to"], "SUCCESS")
+        self.assertEqual(mock_execute_tool.call_count, 1)
+        self.assertNotIn(seen_key, out2["scratch"])
+        self.assertEqual(out2["working_memory"], [])
+
+    @patch('requests.post')
+    def test_python_sandbox_strips_markdown_code_fences(self, mock_post):
+        import os
+        import tempfile
+        from metacognition.actions import python_sandbox
+
+        mock_post.return_value.status_code = 200
+        mock_post.return_value.json.return_value = {"stdout": "42\n", "stderr": "", "returncode": 0}
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with patch('metacognition.actions._get_workspace_dir', return_value=tmpdir):
+                out = python_sandbox({}, {"code": "```python\nprint(42)\n```"})
+            self.assertEqual(out["route_to"], "SUCCESS")
+            with open(os.path.join(tmpdir, "sandbox_script.py"), "r") as f:
+                written = f.read()
+        self.assertEqual(written, "print(42)\n")
+
 
 
 

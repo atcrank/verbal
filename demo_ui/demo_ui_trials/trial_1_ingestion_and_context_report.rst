@@ -2,13 +2,13 @@
 Doctest Report: Trial 1: Document Ingestion and Context-Grounded Reasoning
 ============================================================================
 
-**Date**: 2026-09-09 10:27:30
+**Date**: 2026-11-11 14:51:36
 
 **Local Model**: google/gemma-2-2b-it
 
 **Status**: PASSED
 
-**Total Execution Time**: 216.2s
+**Total Execution Time**: 58.6s
 
 Scenario & Research Task
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -30,8 +30,8 @@ Animated Walkthrough
 Interaction Trace: Researcher & Verbal / Reason
 -----------------------------------------------
 
-Step 1: Literature Ingestion & Vector Indexing (31.8s)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Step 1: Literature Ingestion & Vector Indexing (1.4s)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **The Researcher (Thinking & Formulation)**:
 
@@ -41,10 +41,10 @@ anchors for sensor attenuation curves, locomotion power draws, and mission failu
 
 **The Researcher (Evaluation & Decision)**:
 
-Vector database populated with 1432 semantic chunks across 17 research papers. The
-literature corpus is ready for semantic retrieval in the Reason UI.
+Vector database populated with 51 semantic chunks across 3 research papers. The literature
+corpus is ready for semantic retrieval in the Reason UI.
 
-Step 2: Context Chip Formulation & Prompt Submission (1.8s)
+Step 2: Context Chip Formulation & Prompt Submission (3.0s)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **The Researcher (Thinking & Formulation)**:
@@ -64,123 +64,80 @@ Reason to synthesize the exact trade-off boundaries.
 
 **Retrieved Literature Context (RAG Recall)**:
 
-- **Sen Li et al. (2023) — Section: An Indoor Autonomous Inspection and Firefighting Robot
-  Based on SLAM and Flame Image Recognition - Un-headered Section (DOI:
-  10.3390/fire6030093)** [Chunk `d1a842af-5c41-4faa-9340-1a2210c559de`]: "Indoor fire
-  accidents have become increasingly common in recent years. More and more firefighting
-  robots have been designed to solve the problem of fires. However, the indoor environment
-  is very compl"
+- **Sen Li et al. (2023) — Section: An Indoor Autonomous Inspection and Firefighting Robot Based on SLAM and Flame Image Recognition - Un-headered Section (DOI: 10.3390/fire6030093)** [Chunk `d1a842af-5c41-4faa-9340-1a2210c559de`]: "Indoor fire accidents have become increasingly common in recent years. More and more firefighting robots have been designed to solve the problem of fires. However, the indoor environment is very compl"
 
 .. image:: ../_images/demo_ui/trial_1_prompt_with_chips.png
    :width: 750
    :alt: Context Chip Formulation & Prompt Submission
 
-Step 3: Live Inference & Response Capture (180.9s)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Step 3: Live Inference & Response Capture (49.9s)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Local LLM (google/gemma-2-2b-it) generated 4395 characters of context-grounded synthesis.
+Local LLM (google/gemma-2-2b-it) generated 3046 characters of context-grounded synthesis.
 
 **Retrieved Literature Context (RAG Recall)**:
 
-- **Sen Li et al. (2023) — Section: An Indoor Autonomous Inspection and Firefighting Robot
-  Based on SLAM and Flame Image Recognition - Un-headered Section (DOI:
-  10.3390/fire6030093)** [Chunk `d1a842af-5c41-4faa-9340-1a2210c559de`]: "Indoor fire
-  accidents have become increasingly common in recent years. More and more firefighting
-  robots have been designed to solve the problem of fi..."
+- **Sen Li et al. (2023) — Section: An Indoor Autonomous Inspection and Firefighting Robot Based on SLAM and Flame Image Recognition - Un-headered Section (DOI: 10.3390/fire6030093)** [Chunk `d1a842af-5c41-4faa-9340-1a2210c559de`]: "Indoor fire accidents have become increasingly common in recent years. More and more firefighting robots have been designed to solve the problem of fi..."
 
 **Verbal / Reason Response (Synthesized by: google/gemma-2-2b-it)**:
 
 ::
 
-    As a study design assistant, I can help you analyze the primary perception and
-    localization trade-offs between 3D LiDAR point clouds and Long-Wave Infrared (LWIR)
-    thermography when used for autonomous ground robots in multi-story building fires,
-    specifically considering the challenging environment of dense, aerosolized smoke.
-    Based on the provided literature context, here is an analysis of the trade-offs:
-    Perception Trade-Offs in Dense Smoke
-    1. 3D LiDAR Point Clouds (Geometric Perception):
-
-    Strength: LiDAR excels at providing geometric and structural information. In a stable or
-    moderately smoky environment, it can generate precise 3D maps of the environment, crucial
-    for Simultaneous Localization and Mapping (SLAM) systems (as referenced in the
-    literature). This geometric data is essential for navigation, obstacle avoidance, and
-    understanding the physical layout of the building structure (e.g., identifying stairwells,
-    room boundaries, and vertical structure).
-    Weakness in Smoke: Dense, aerosolized smoke severely degrades LiDAR performance. Smoke
-    particles scatter the laser beams, leading to signal attenuation, false returns, and
-    significant noise/occlusion. This directly impacts the accuracy of the point cloud,
-    potentially leading to poor localization (SLAM failure) and inaccurate environmental
-    modeling.
-    Relevance to Context: The reference mentions that a map-building system using LiDAR was
-    built for navigation. Therefore, the primary trade-off here is accuracy vs. robustness:
-    High geometric accuracy when clear, but low robustness under adverse smoke conditions.
-
-    2. Long-Wave Infrared (LWIR) Thermography (Semantic/Target Perception):
-
-    Strength: LWIR is excellent for detecting the fire source itself. Since fire produces a
-    distinct thermal signature (high temperature), LWIR allows the robot to perform target
-    detection—identifying where the fire is, even when visual features are obscured by smoke.
-    This is critical for the function of the robot (identifying the flame for extinguishing).
-    Weakness in Perception: LWIR provides low-resolution semantic information regarding the
-    surrounding environment structure. It cannot inherently provide the precise geometry
-    needed for detailed SLAM or path planning (i.e., it doesn't map walls or corridors well).
-    Furthermore, smoke can interfere with the thermal gradient, potentially masking or
-    confusing the heat signature, requiring advanced filtering.
-    Relevance to Context: The reference explicitly states that the fire source identification
-    was achieved using an infrared thermal imager (LWIR) combined with deep learning (YOLOv4).
-    This suggests that LWIR's strength lies in fire localization, which is a more immediate,
-    mission-critical task than full environmental mapping.
-
-    Localization Trade-Offs in Dense Smoke
-    The core trade-off revolves around where each sensor excels:
-
-
-
-    Feature
-    3D LiDAR
-    LWIR Thermography
-
-
-
-
-    Primary Role
-    Localization & Mapping (Where am I? What is the structure?)
-    Target Detection (Where is the fire?)
-
-
-    Performance in Smoke
-    High risk of localization drift/failure due to scattering and occlusion.
-    Potential for robust target detection if the thermal contrast remains high, even if
-    surrounding structure perception is lost.
-
-
-    Data Type
-    Geometric (3D coordinates)
-    Radiometric (Temperature intensity)
-
-
-    Dependency
-    Requires clear geometric features for successful SLAM.
-    Relies on the presence of a strong thermal anomaly (the fire).
-
-
-
-    Conclusion for Study Design:
-    For an autonomous robot operating in a dynamic, smoke-filled environment:
-
-    If the primary requirement is robust Navigation and SLAM (knowing the map): LiDAR is
-    necessary, but the system must be designed with heavy filtering or fusion techniques to
-    handle the severe noise introduced by smoke.
-    If the primary requirement is reliable Fire Detection (knowing the threat location): LWIR
-    is superior because its function (detecting the heat) is less dependent on the geometric
-    integrity of the scene, provided the smoke does not completely overwhelm the thermal
-    signal.
-
-    Recommendation for a comprehensive system: A successful design would likely involve sensor
-    fusion, leveraging the strengths of both: using LWIR for high-confidence fire detection,
-    and using LiDAR (perhaps processed through techniques robust to sparse data) to maintain
-    positional awareness for navigation, compensating for the weaknesses of each modality in
-    the smoke.
+    Based on the provided excerpt, here are some key trade-offs between 3D LiDAR point clouds
+    and long-wave infrared (LWIR) thermography for autonomous ground robots in multi-story
+    building fires:
+    Trade-off #1: Perception & Smoke Visibility
+    
+    LiDAR:  Provides detailed 3D information about the environment, including object size,
+    shape, and distance. This is crucial for navigating complex environments and identifying
+    obstacles in dense smoke conditions. The excerpt mentions LiDAR as a component of SLAM
+    (SLAM uses sensor data like LiDAR to map the environment).
+    LWIR:  Excellent at detecting heat signatures within smoke. This can help identify hot
+    spots, potential fire sources, or even indicate locations where thermal plumes might
+    obscure visual views for LiDAR.
+    
+    Trade-off #2: Localization Accuracy in Smoke & 3D Understanding
+    
+    LiDAR: While it provides a dense cloud of points, its accuracy is often degraded by smoke
+    and dust particles.  This can lead to difficulties in precisely identifying fire source
+    locations or even mapping the environment accurately. The excerpt states that sensors are
+    used for SLAM, but this process could be hampered by smoke.
+    LWIR: Provides more direct information on heat signatures, potentially enabling faster
+    identification of fire sources. However, LWIR alone might not provide complete 3D context
+    necessary for accurate localization in dense smoke scenarios.
+    
+    Trade-off #3:  Integration & Operational Challenges
+    
+    The excerpt focuses on the robot's autonomous inspection and fire extinguishing functions.
+    Integrating these features with both LiDAR and LWIR sensors likely presents unique
+    challenges. For example, how do you combine sensor data to identify objects and infer
+    their temperature?
+    Also, real-world operational constraints like battery life, mobility limitations, and
+    dust/smoke handling could influence the selection of sensor payloads for specific
+    environments.
+    
+    Key Takeaways:
+    
+    Both LiDAR and LWIR offer distinct advantages in multi-story building fires. 
+    LiDAR is crucial for navigating through smoke, but its accuracy can be challenged. 
+    LWIR excels at heat detection, potentially aiding localization even when visibility is
+    poor.
+    The choice between these sensors depends on the specific fire scenarios, robot design
+    considerations, and operational goals.
+    
+    Recommendations:
+    
+    Sensor Fusion: Combining both LiDAR and LWIR data through sensor fusion techniques can
+    provide a more complete understanding of the environment and potentially enhance
+    localization accuracy in smoke-filled environments.
+    Offline/Real-Time Processing: Depending on the level of autonomy, offline processing of
+    both sensors' raw data to create accurate fire maps is important. This could help with
+    early detection, location identification, and even automated decision-making about the
+    robot’s actions.
+    
+    Finally, further research into optimized sensor algorithms and robust fusion techniques
+    for smoke-filled environments will be crucial for improving the reliability and efficiency
+    of autonomous firefighting robots.
 
 **The Researcher (Evaluation & Decision)**:
 

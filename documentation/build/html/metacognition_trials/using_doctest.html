@@ -43,16 +43,20 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Application Modules:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../llm_api_app.html">LLM API</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../background_resources_app.html">Background Resources - context documents</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../benchmarking_app.html">Benchmarking - model and strategy evaluations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../grips_app.html">Grips - wiki knowledge banks</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../metacognition_app.html">Metacognition - plans and self-evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../llm_api_app.html">LLM API - Local Inference, Proxy Routing &amp; Hardware-Aware Serving</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../verbal_tasks_app.html">Verbal Tasks - Database-Backed Asynchronous Execution &amp; Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../sandbox_manager_app.html">Sandbox Manager - Isolated Python Execution Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../grobid_client_app.html">Grobid Client - Deterministic Scientific PDF Parsing &amp; Citation Extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../background_resources_app.html">Background Resources - Retrieval-Augmented Generation &amp; Document Ingestion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../grips_app.html">Grips - Structured Knowledge Graph &amp; Propositional Claims</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metacognition_app.html">Metacognition - Cognitive Blueprints, Agentic Workflows &amp; Self-Evaluation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../work_organisation_app.html">Work Organisation - Collaborative Whiteboards &amp; Assisted Study Design</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../demo_ui_app.html">Demo UI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmarking_app.html">Benchmarking - Automated Evaluation, Synthetic Generation &amp; LoRA Flywheels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../demo_ui_app.html">Demo UI - Empirical Research &amp; Cognitive Workbench</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="../deploy.html">Production Deployment &amp; Operations Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../using_ollama.html">Ollama as Local AI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../demo_ui_trials.html">Demo UI Empirical Trials &amp; Verification Reports</a></li>
@@ -105,12 +109,12 @@ We seed the <cite>ResearchEvaluation</cite> and <cite>StrategicPlan</cite> bluep
 <p>Given that some models (especially local ones like Gemm4-2B-it) might struggle with advanced cognitive reasoning, our doctests use a “Report Card” style of assertion. Instead of strict boolean matches for “ACCEPT”, we simply assert whether the model made a complete attempt by returning a structured JSON response.</p>
 <dl>
 <dt>Example assertion::</dt><dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">final_str</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;final_response&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">final_str</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"final_response"</span><span class="p">,</span> <span class="s2">"</span><span class="si">{}</span><span class="s2">"</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">try</span><span class="p">:</span>
-<span class="gp">... </span>    <span class="n">resp</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">final_str</span><span class="p">)</span> <span class="k">if</span> <span class="s2">&quot;{&quot;</span> <span class="ow">in</span> <span class="n">final_str</span> <span class="k">else</span> <span class="p">{}</span>
+<span class="gp">... </span>    <span class="n">resp</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">final_str</span><span class="p">)</span> <span class="k">if</span> <span class="s2">"{"</span> <span class="ow">in</span> <span class="n">final_str</span> <span class="k">else</span> <span class="p">{}</span>
 <span class="gp">... </span><span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">:</span>
 <span class="gp">... </span>    <span class="k">pass</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;- complete attempt: </span><span class="si">{</span><span class="mi">1</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">final_str</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="mi">0</span><span class="si">}</span><span class="s2">/1&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"- complete attempt: </span><span class="si">{</span><span class="mi">1</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">final_str</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="mi">0</span><span class="si">}</span><span class="s2">/1"</span><span class="p">)</span>
 <span class="go">- complete attempt: 1/1</span>
 </pre></div>
 </div>

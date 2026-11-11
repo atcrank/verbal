@@ -12,12 +12,20 @@ The NightManager's instructions execute a 4-phase autonomous pipeline:
 
 ::
 
+    >>> from django.contrib.auth import get_user_model
     >>> from metacognition.models import CognitiveBlueprint
     >>> from metacognition.tasks import run_blueprint
     >>> import contextlib
     >>> import io
     >>> import json
     >>>
+    >>> # Ensure an admin operator user runs NightManager so TRUSTED/ADMIN housekeeping tools pass WS17 governance
+    >>> User = get_user_model()
+    >>> user, _ = User.objects.get_or_create(username="nightmanager_admin", defaults={"is_staff": True, "is_superuser": True})
+    >>> if not (user.is_staff and user.is_superuser):
+    ...     user.is_staff = True
+    ...     user.is_superuser = True
+    ...     user.save(update_fields=["is_staff", "is_superuser"])
     >>> # Find the NightManager blueprint
     >>> bp = CognitiveBlueprint.objects.get(name="NightManager")
     >>> 
@@ -35,14 +43,14 @@ The NightManager's instructions execute a 4-phase autonomous pipeline:
     ...     "5) Perform meta-self reflection and report your findings."
     ... )
     >>> 
-    >>> # Mock database_backup to prevent dumpdata inside test transactions
+    >>> # Mock database_backup so dumpdata does not run or leave backup artifacts inside test transactions
     >>> from unittest.mock import patch
-    >>> with patch('django.core.management.call_command') as mock_call:
-    ...     mock_call.return_value = None
+    >>> with patch('metacognition.meta_tools.database_backup', return_value="Database backup mocked cleanly during doctest."):
     ...     with contextlib.redirect_stdout(f):
     ...         result = run_blueprint(
     ...             blueprint_id=bp.id,
-    ...             user_prompt=prompt
+    ...             user_prompt=prompt,
+    ...             user_id=user.id,
     ...         )
     >>> report_doctest_run("8. proactive_nightmanager", prompt, result)
     >>> 

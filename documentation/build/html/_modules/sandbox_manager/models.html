@@ -55,6 +55,7 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../deploy.html">Production Deployment &amp; Operations Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../using_ollama.html">Ollama as Local AI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../demo_ui_trials.html">Demo UI Empirical Trials &amp; Verification Reports</a></li>
@@ -97,38 +98,38 @@
 <div class="viewcode-block" id="SandboxConfiguration">
 <a class="viewcode-back" href="../../sandbox_manager_app.html#sandbox_manager.models.SandboxConfiguration">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SandboxConfiguration</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Singleton model managing the Docker Sandbox environment.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">requirements_txt</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">(</span>
-        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;fastapi&gt;=0.110.0</span><span class="se">\n</span><span class="s2">uvicorn&gt;=0.28.0</span><span class="se">\n</span><span class="s2">numpy</span><span class="se">\n</span><span class="s2">pandas</span><span class="se">\n</span><span class="s2">scipy</span><span class="se">\n</span><span class="s2">sympy</span><span class="se">\n</span><span class="s2">pint</span><span class="se">\n</span><span class="s2">networkx</span><span class="se">\n</span><span class="s2">pgmpy</span><span class="se">\n</span><span class="s2">pyAgrum&quot;</span><span class="p">,</span>
-        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Python packages to install in the sandbox. One per line.&quot;</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">"fastapi&gt;=0.110.0</span><span class="se">\n</span><span class="s2">uvicorn&gt;=0.28.0</span><span class="se">\n</span><span class="s2">numpy</span><span class="se">\n</span><span class="s2">pandas</span><span class="se">\n</span><span class="s2">scipy</span><span class="se">\n</span><span class="s2">sympy</span><span class="se">\n</span><span class="s2">pint</span><span class="se">\n</span><span class="s2">networkx</span><span class="se">\n</span><span class="s2">pgmpy</span><span class="se">\n</span><span class="s2">pyAgrum"</span><span class="p">,</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">"Python packages to install in the sandbox. One per line."</span>
     <span class="p">)</span>
     <span class="n">execution_timeout</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span>
         <span class="n">default</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
-        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Maximum seconds a script can run before being killed.&quot;</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">"Maximum seconds a script can run before being killed."</span>
     <span class="p">)</span>
     <span class="n">last_rebuilt</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
-        <span class="n">verbose_name</span> <span class="o">=</span> <span class="s2">&quot;Sandbox Environment Configuration&quot;</span>
-        <span class="n">verbose_name_plural</span> <span class="o">=</span> <span class="s2">&quot;Sandbox Environment Configuration&quot;</span>
+        <span class="n">verbose_name</span> <span class="o">=</span> <span class="s2">"Sandbox Environment Configuration"</span>
+        <span class="n">verbose_name_plural</span> <span class="o">=</span> <span class="s2">"Sandbox Environment Configuration"</span>
 
 <div class="viewcode-block" id="SandboxConfiguration.clean">
 <a class="viewcode-back" href="../../sandbox_manager_app.html#sandbox_manager.models.SandboxConfiguration.clean">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">clean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validates the PEP-508 syntax of the requirements before saving.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Validates the PEP-508 syntax of the requirements before saving."""</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">packaging.requirements</span><span class="w"> </span><span class="kn">import</span> <span class="n">Requirement</span><span class="p">,</span> <span class="n">InvalidRequirement</span>
             
             <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">requirements_txt</span><span class="o">.</span><span class="n">splitlines</span><span class="p">():</span>
                 <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
                 <span class="c1"># Skip empty lines, comments, and pip flags (e.g., --extra-index-url)</span>
-                <span class="k">if</span> <span class="n">line</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;#&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">line</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">'#'</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">'-'</span><span class="p">):</span>
                     <span class="k">try</span><span class="p">:</span>
                         <span class="n">Requirement</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
                     <span class="k">except</span> <span class="n">InvalidRequirement</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                        <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">({</span><span class="s1">&#39;requirements_txt&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Invalid package requirement &#39;</span><span class="si">{</span><span class="n">line</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">})</span>
+                        <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">({</span><span class="s1">'requirements_txt'</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"Invalid package requirement '</span><span class="si">{</span><span class="n">line</span><span class="si">}</span><span class="s2">': </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">})</span>
         <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
             <span class="k">pass</span>  <span class="c1"># Fallback if packaging library is missing</span></div>
 
@@ -136,10 +137,10 @@
 <div class="viewcode-block" id="SandboxConfiguration.sync_requirements_file">
 <a class="viewcode-back" href="../../sandbox_manager_app.html#sandbox_manager.models.SandboxConfiguration.sync_requirements_file">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">sync_requirements_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Explicitly synchronizes the database requirements to sandbox/requirements.txt.&quot;&quot;&quot;</span>
-        <span class="n">req_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">BASE_DIR</span><span class="p">,</span> <span class="s1">&#39;sandbox&#39;</span><span class="p">,</span> <span class="s1">&#39;requirements.txt&#39;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">"""Explicitly synchronizes the database requirements to sandbox/requirements.txt."""</span>
+        <span class="n">req_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">BASE_DIR</span><span class="p">,</span> <span class="s1">'sandbox'</span><span class="p">,</span> <span class="s1">'requirements.txt'</span><span class="p">)</span>
         <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">req_path</span><span class="p">),</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">req_path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">req_path</span><span class="p">,</span> <span class="s1">'w'</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">'utf-8'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">requirements_txt</span><span class="p">)</span></div>
 
 
@@ -161,27 +162,27 @@
 
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;Sandbox Configuration&quot;</span></div>
+        <span class="k">return</span> <span class="s2">"Sandbox Configuration"</span></div>
 
 
 
 <div class="viewcode-block" id="SandboxExecutionLog">
 <a class="viewcode-back" href="../../sandbox_manager_app.html#sandbox_manager.models.SandboxExecutionLog">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SandboxExecutionLog</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Tracks individual code execution requests to identify missing packages or runaway loops.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="nb">id</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">UUIDField</span><span class="p">(</span><span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">,</span> <span class="n">editable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="n">timestamp</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="n">auto_now_add</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">conversation_id</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">filepath</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">)</span>
 
-    <span class="n">return_code</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;0 is success, &gt;0 is error, 124 is timeout.&quot;</span><span class="p">)</span>
+    <span class="n">return_code</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">"0 is success, &gt;0 is error, 124 is timeout."</span><span class="p">)</span>
     <span class="n">stdout</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">stderr</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
-        <span class="n">ordering</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;-timestamp&#39;</span><span class="p">]</span></div>
+        <span class="n">ordering</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'-timestamp'</span><span class="p">]</span></div>
 
 </pre></div>
 

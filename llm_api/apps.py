@@ -31,7 +31,7 @@ class LazyServiceRegistry:
         """Reads the system config and ensures the Docker containers and VRAM state match."""
         import sys
         from django.conf import settings
-        if 'test' in sys.argv:
+        if 'test' in sys.argv or 'pytest' in sys.modules:
             return
 
         role = getattr(settings, "VERBAL_ROLE", "standalone")

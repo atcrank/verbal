@@ -39,6 +39,7 @@ First, we set up credentials and seed the ``Reasoning with Code Sandbox`` cognit
     ...     seed_tools(ToolDefinition)
     ...     seed_reasoning_with_code_sandbox(CognitiveBlueprint, ReasoningStep, ToolDefinition)
     >>> bp = CognitiveBlueprint.objects.get(name="Reasoning with Code Sandbox")
+    >>> orig_max_tokens = {s.id: s.max_new_tokens for s in bp.steps.all()}
     >>> with bypass_canonical_lock():
     ...     for s in bp.steps.all():
     ...         s.max_new_tokens = 1500
@@ -97,15 +98,25 @@ The researcher dispatches the problem. Verbal / Reason (Gemma4) composes the Pyt
     ...     captured_stdout = io.StringIO()
     ...     with contextlib.redirect_stdout(captured_stdout):
     ...         result = run_blueprint(bp.id, prompt, user_id=user.id)
+    >>> with bypass_canonical_lock():
+    ...     for s in bp.steps.all():
+    ...         if s.id in orig_max_tokens:
+    ...             s.max_new_tokens = orig_max_tokens[s.id]
+    ...             s.save()
     ...     step["model_name"] = model_name
     ...     step["blueprint_name"] = bp.name
     ...     final_response = result.get("final_response", "No output.")
     ...     monologue = result.get("internal_monologue", [])
     ...     step["response_text"] = final_response
     ...     
-    ...     # Extract Python code composed by Gemma4 from workspace
+    ...     # Extract Python code composed by local model from conversation workspace
     ...     cid = result.get("conversation_id")
-    ...     workspace_dir = Path("workspaces") / str(cid) if cid else None
+    ...     workspace_dir = None
+    ...     if cid:
+    ...         try:
+    ...             workspace_dir = Path(Conversation.objects.get(id=cid).get_workspace_dir())
+    ...         except Exception:
+    ...             workspace_dir = Path("workspaces") / "conversations" / str(cid)
     ...     gen_code = ""
     ...     if workspace_dir and workspace_dir.exists():
     ...         for code_file in sorted(workspace_dir.glob("*.py")):

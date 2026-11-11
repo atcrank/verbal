@@ -93,17 +93,29 @@ def pytest_sessionstart(session):
     fallback_url = "http://127.0.0.1:8000/api/llm/internal/ping/"
     
     server_found = False
+    ping_503_detail = None
     for url in [ping_url, fallback_url]:
         try:
             resp = requests.get(url, timeout=2)
             if resp.status_code in [200, 400, 404, 405]:
                 server_found = True
                 break
+            if resp.status_code == 503:
+                try:
+                    payload = resp.json()
+                    ping_503_detail = payload.get("error") or resp.text
+                except Exception:
+                    ping_503_detail = resp.text
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
             continue
-            
+
     if not server_found:
-        logger.info(f'\n❌ CRITICAL: The local inference server is NOT running at {inf_url}. Please start it via start_inference.sh\n')
+        if ping_503_detail:
+            msg = f"\n❌ CRITICAL: Inference server at {inf_url} responded HTTP 503: {ping_503_detail}\n"
+        else:
+            msg = f"\n❌ CRITICAL: The local inference server is NOT running at {inf_url}. Please start it via start_inference.sh\n"
+        logger.error(msg)
+        print(msg, file=sys.stderr)
         sys.exit(1)
 
 def _report_doctest_run(test_name, prompt, result):

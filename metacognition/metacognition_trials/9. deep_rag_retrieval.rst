@@ -1,7 +1,7 @@
 Scenario 9: Deep RAG Retrieval and Lineage Deduplication
 ======================================================
 
-This test verifies the "Super Retriever" logic (`get_deep_context_report`) which acts as the source for the `NM_Deep_Reader` sub-blueprint. 
+This test verifies the "Super Retriever" logic (`get_deep_context_report`) which acts as the source for the `Deep_Reader` sub-blueprint. 
 It ensures that:
 1. Lexical (keyword) fallback works for exact term matching.
 2. Conversation Logs are privately searched and retrieved.
@@ -122,34 +122,34 @@ We invoke the Deep Context Report and inspect its contents to ensure the correct
     >>> print("- rag deduplication complete: 1/1")
     - rag deduplication complete: 1/1
 
-    >>> # 5. Evaluate the Distillation Blueprint (NM_Deep_Reader)
+    >>> # 5. Evaluate the Distillation Blueprint (Deep_Reader)
     >>> from metacognition.models import CognitiveBlueprint
-    >>> bp = CognitiveBlueprint.objects.get(name="NM_Deep_Reader")
-    >>> from metacognition.compiler import compile_graph_from_blueprint
-    >>> graph = compile_graph_from_blueprint(bp)
+    >>> from metacognition.tasks import run_blueprint
+    >>> bp = CognitiveBlueprint.objects.get(name="Deep_Reader")
     
     >>> prompt = f"User Request: What about deep sea mining?\n\nContext Report:\n{report}"
-    >>> from llm_api.apps import service_registry
     
     >>> import contextlib
     >>> import io
     >>> f_null = io.StringIO()
     >>> with contextlib.redirect_stdout(f_null):
-    ...     agent_run = graph.invoke({
-    ...         "working_memory": [{"role": "user", "content": prompt}],
-    ...         "conversation_id": str(active_conv.id)
-    ...     }, config={"configurable": {"thread_id": "test_1"}})
+    ...     agent_run = run_blueprint(
+    ...         blueprint_id=bp.id,
+    ...         user_prompt=prompt,
+    ...         conversation_id=str(active_conv.id),
+    ...         user_id=user.id,
+    ...     )
     
-    >>> final_msg = agent_run["working_memory"][-1].content
+    >>> final_msg = agent_run.get("final_response", "")
     >>> # Ensure the good stuff is kept
-    >>> assert "battery" in final_msg or "cobalt" in final_msg or "ecosystems" in final_msg, "Missing relevant context!"
+    >>> assert "battery" in final_msg or "cobalt" in final_msg or "ecosystems" in final_msg, f"Missing relevant context in: {final_msg}"
     >>> # Ensure the bad stuff is dropped
-    >>> assert "Minecraft" not in final_msg, "Distillation failed to drop irrelevant context!"
+    >>> assert "Minecraft" not in final_msg, f"Distillation failed to drop irrelevant context in: {final_msg}"
     
     >>> # Append the distillation result to the report
     >>> with open("metacognition/metacognition_trials/9. deep_rag_retrieval_report.rst", "a", encoding="utf-8") as f:
-    ...     _ = f.write("\n\nDistilled Final Context (NM_Deep_Reader)\n")
-    ...     _ = f.write("----------------------------------------\n\n::\n\n")
+    ...     _ = f.write("\n\nDistilled Final Context (Deep_Reader)\n")
+    ...     _ = f.write("-------------------------------------\n\n::\n\n")
     ...     for line in final_msg.splitlines():
     ...         _ = f.write(f"    {line}\n")
     

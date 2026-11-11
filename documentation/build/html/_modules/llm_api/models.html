@@ -106,23 +106,23 @@
 <div class="viewcode-block" id="ConversationQuerySet">
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.ConversationQuerySet">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ConversationQuerySet</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">QuerySet</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    A custom QuerySet for the Conversation model to add optimized queries.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="ConversationQuerySet.with_message_logs">
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.ConversationQuerySet.with_message_logs">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">with_message_logs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Returns a QuerySet that has pre-fetched all related logs</span>
-<span class="sd">        and the conversation&#39;s user, to prevent N+1 queries.</span>
+<span class="sd">        and the conversation's user, to prevent N+1 queries.</span>
 
-<span class="sd">        - select_related(&#39;user&#39;): Fetches the User with the Conversation</span>
+<span class="sd">        - select_related('user'): Fetches the User with the Conversation</span>
 <span class="sd">          in a single SQL JOIN.</span>
-<span class="sd">        - prefetch_related(&#39;logs&#39;): Fetches all PromptResponseLog entries</span>
+<span class="sd">        - prefetch_related('logs'): Fetches all PromptResponseLog entries</span>
 <span class="sd">          for the Conversation(s) in a separate, efficient query.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">select_related</span><span class="p">(</span><span class="s1">&#39;user&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">prefetch_related</span><span class="p">(</span><span class="s1">&#39;logs&#39;</span><span class="p">)</span></div>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">select_related</span><span class="p">(</span><span class="s1">'user'</span><span class="p">)</span><span class="o">.</span><span class="n">prefetch_related</span><span class="p">(</span><span class="s1">'logs'</span><span class="p">)</span></div>
 </div>
 
 
@@ -130,26 +130,26 @@
 <div class="viewcode-block" id="ConversationManager">
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.ConversationManager">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ConversationManager</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Manager</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    A custom Manager for the Conversation model.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="ConversationManager.get_queryset">
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.ConversationManager.get_queryset">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_queryset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Tells the manager to use our custom ConversationQuerySet.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="n">ConversationQuerySet</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">using</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_db</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="ConversationManager.with_message_logs">
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.ConversationManager.with_message_logs">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">with_message_logs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        A helper to easily call the QuerySet&#39;s method.</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        A helper to easily call the QuerySet's method.</span>
 <span class="sd">        Usage: Conversation.objects.with_message_logs().get(id=...)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_queryset</span><span class="p">()</span><span class="o">.</span><span class="n">with_message_logs</span><span class="p">()</span></div>
 </div>
 
@@ -158,30 +158,30 @@
 <div class="viewcode-block" id="Conversation">
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.Conversation">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Conversation</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    A single, continuous chat session.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="nb">id</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">UUIDField</span><span class="p">(</span><span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">,</span> <span class="n">editable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="n">user</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">User</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">CASCADE</span><span class="p">)</span>
     <span class="n">start_time</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="n">auto_now_add</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="c1"># You can auto-generate this title from the first user_prompt!</span>
-    <span class="n">title</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;New Conversation&quot;</span><span class="p">)</span>
-    <span class="n">state_tree</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">JSONField</span><span class="p">(</span><span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">dict</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Hierarchical task and topic tracking tree (WS7).&quot;</span><span class="p">)</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">"New Conversation"</span><span class="p">)</span>
+    <span class="n">state_tree</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">JSONField</span><span class="p">(</span><span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">dict</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">"Hierarchical task and topic tracking tree (WS7)."</span><span class="p">)</span>
     <span class="n">objects</span> <span class="o">=</span> <span class="n">ConversationManager</span><span class="p">()</span>
     
 
 
     <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
-        <span class="n">ordering</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;-start_time&#39;</span><span class="p">]</span>
+        <span class="n">ordering</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'-start_time'</span><span class="p">]</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Conversation with </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">username</span><span class="si">}</span><span class="s2"> (started </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">start_time</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"Conversation with </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">username</span><span class="si">}</span><span class="s2"> (started </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">start_time</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">'%Y-%m-</span><span class="si">%d</span><span class="s1">'</span><span class="p">)</span><span class="si">}</span><span class="s2">)"</span>
 
 <div class="viewcode-block" id="Conversation.as_messages">
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.Conversation.as_messages">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">as_messages</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">leaf_log_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_logs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">system_override</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">include_state_tree</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Reconstructs the conversation as a list of message dicts along the active DAG path.</span>
 
 <span class="sd">        Traces the path from the specified leaf_log_id back to the root via parent_log_id.</span>
@@ -195,12 +195,12 @@
 <span class="sd">        When max_logs is set, only the most recent N logs are included in the</span>
 <span class="sd">        returned messages, with a condensation note inserted. When include_state_tree</span>
 <span class="sd">        is enabled, the condensation note anchors the active focal state tree.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">messages</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">logs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">logs</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s1">&#39;created_at&#39;</span><span class="p">))</span>
+        <span class="n">logs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">logs</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s1">'created_at'</span><span class="p">))</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">logs</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">system_override</span><span class="p">:</span>
-                <span class="k">return</span> <span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;system&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">system_override</span><span class="p">}]</span>
+                <span class="k">return</span> <span class="p">[{</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"system"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">:</span> <span class="n">system_override</span><span class="p">}]</span>
             <span class="k">return</span> <span class="n">messages</span>
 
         <span class="c1"># Resolve max_logs default from model context window</span>
@@ -220,7 +220,7 @@
                 <span class="n">current_log</span> <span class="o">=</span> <span class="n">log_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">leaf_log_id</span><span class="p">)</span> <span class="ow">or</span> <span class="n">log_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">leaf_log_id</span><span class="p">))</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># Default to the most recent turn log if available, else latest log</span>
-                <span class="n">turn_logs</span> <span class="o">=</span> <span class="p">[</span><span class="n">l</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">logs</span> <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="s1">&#39;log_kind&#39;</span><span class="p">,</span> <span class="s1">&#39;TURN&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;TURN&#39;</span><span class="p">]</span>
+                <span class="n">turn_logs</span> <span class="o">=</span> <span class="p">[</span><span class="n">l</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">logs</span> <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="s1">'log_kind'</span><span class="p">,</span> <span class="s1">'TURN'</span><span class="p">)</span> <span class="o">==</span> <span class="s1">'TURN'</span><span class="p">]</span>
                 <span class="n">current_log</span> <span class="o">=</span> <span class="n">turn_logs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">turn_logs</span> <span class="k">else</span> <span class="n">logs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 
             <span class="k">while</span> <span class="n">current_log</span><span class="p">:</span>
@@ -233,7 +233,7 @@
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">system_override</span><span class="p">:</span>
-                <span class="k">return</span> <span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;system&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">system_override</span><span class="p">}]</span>
+                <span class="k">return</span> <span class="p">[{</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"system"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">:</span> <span class="n">system_override</span><span class="p">}]</span>
             <span class="k">return</span> <span class="n">messages</span>
 
         <span class="c1"># Determine master system prompt: system_override takes precedence, then root log prompt</span>
@@ -247,7 +247,7 @@
 
         <span class="c1"># Insert condensation note if logs were omitted</span>
         <span class="k">if</span> <span class="n">condensed_count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">content</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;[Context note: </span><span class="si">{</span><span class="n">condensed_count</span><span class="si">}</span><span class="s2"> earlier conversation turns were omitted to fit the context window. The conversation continues from this point.]&quot;</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"[Context note: </span><span class="si">{</span><span class="n">condensed_count</span><span class="si">}</span><span class="s2"> earlier conversation turns were omitted to fit the context window. The conversation continues from this point.]"</span>
             <span class="k">if</span> <span class="n">include_state_tree</span><span class="p">:</span>
                 <span class="c1"># Prioritize active leaf log snapshot for branch isolation, fallback to conv.state_tree</span>
                 <span class="n">active_snapshot</span> <span class="o">=</span> <span class="n">path</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">state_tree_snapshot</span> <span class="k">if</span> <span class="n">path</span> <span class="ow">and</span> <span class="n">path</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">state_tree_snapshot</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_tree</span>
@@ -256,48 +256,48 @@
                     <span class="n">focal_tree</span> <span class="o">=</span> <span class="n">format_focal_state_tree</span><span class="p">(</span><span class="n">active_snapshot</span><span class="p">)</span>
                     <span class="k">if</span> <span class="n">focal_tree</span><span class="p">:</span>
                         <span class="n">content</span> <span class="o">=</span> <span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;[Context note: </span><span class="si">{</span><span class="n">condensed_count</span><span class="si">}</span><span class="s2"> earlier conversation turns were omitted to fit the context window. &quot;</span>
-                            <span class="sa">f</span><span class="s2">&quot;The active working memory map is preserved below:]</span><span class="se">\n\n</span><span class="si">{</span><span class="n">focal_tree</span><span class="si">}</span><span class="s2">&quot;</span>
+                            <span class="sa">f</span><span class="s2">"[Context note: </span><span class="si">{</span><span class="n">condensed_count</span><span class="si">}</span><span class="s2"> earlier conversation turns were omitted to fit the context window. "</span>
+                            <span class="sa">f</span><span class="s2">"The active working memory map is preserved below:]</span><span class="se">\n\n</span><span class="si">{</span><span class="n">focal_tree</span><span class="si">}</span><span class="s2">"</span>
                         <span class="p">)</span>
             <span class="n">messages</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
-                <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;assistant&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">content</span>
+                <span class="s2">"role"</span><span class="p">:</span> <span class="s2">"assistant"</span><span class="p">,</span>
+                <span class="s2">"content"</span><span class="p">:</span> <span class="n">content</span>
             <span class="p">})</span>
 
         <span class="c1"># Reconstruct chat history turn-by-turn along the path (excluding internal execution traces)</span>
         <span class="k">for</span> <span class="n">log</span> <span class="ow">in</span> <span class="n">path</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">log</span><span class="p">,</span> <span class="s1">&#39;log_kind&#39;</span><span class="p">,</span> <span class="s1">&#39;TURN&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;TRACE&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">log</span><span class="p">,</span> <span class="s1">'log_kind'</span><span class="p">,</span> <span class="s1">'TURN'</span><span class="p">)</span> <span class="o">==</span> <span class="s1">'TRACE'</span><span class="p">:</span>
                 <span class="k">continue</span>
             <span class="k">if</span> <span class="n">log</span><span class="o">.</span><span class="n">user_prompt</span><span class="p">:</span>
                 <span class="n">messages</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
-                    <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">log</span><span class="o">.</span><span class="n">user_prompt</span>
+                    <span class="s2">"role"</span><span class="p">:</span> <span class="s2">"user"</span><span class="p">,</span>
+                    <span class="s2">"content"</span><span class="p">:</span> <span class="n">log</span><span class="o">.</span><span class="n">user_prompt</span>
                 <span class="p">})</span>
             <span class="k">if</span> <span class="n">log</span><span class="o">.</span><span class="n">generated_response</span><span class="p">:</span>
                 <span class="n">messages</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
-                    <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;assistant&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">log</span><span class="o">.</span><span class="n">generated_response</span>
+                    <span class="s2">"role"</span><span class="p">:</span> <span class="s2">"assistant"</span><span class="p">,</span>
+                    <span class="s2">"content"</span><span class="p">:</span> <span class="n">log</span><span class="o">.</span><span class="n">generated_response</span>
                 <span class="p">})</span>
 
         <span class="c1"># Prepend the single top-level system message</span>
         <span class="k">if</span> <span class="n">root_system_prompt</span><span class="p">:</span>
             <span class="n">messages</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">{</span>
-                <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;system&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">root_system_prompt</span>
+                <span class="s2">"role"</span><span class="p">:</span> <span class="s2">"system"</span><span class="p">,</span>
+                <span class="s2">"content"</span><span class="p">:</span> <span class="n">root_system_prompt</span>
             <span class="p">})</span>
 
         <span class="k">return</span> <span class="n">messages</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_default_max_logs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Derives a sensible max_logs from the active model&#39;s context_window.</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Derives a sensible max_logs from the active model's context_window.</span>
 
 <span class="sd">        Heuristic: each log pair (user + assistant) averages ~200 tokens.</span>
 <span class="sd">        We reserve 30% of the context window for the new prompt + generation,</span>
 <span class="sd">        so usable_tokens = context_window * 0.7, and max_logs ≈ usable / 200.</span>
 <span class="sd">        Clamped to [6, 50].</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemConfiguration</span>
             <span class="n">config</span> <span class="o">=</span> <span class="n">SystemConfiguration</span><span class="o">.</span><span class="n">get_solo</span><span class="p">()</span>
@@ -313,38 +313,38 @@
 <div class="viewcode-block" id="Conversation.get_workspace_dir">
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.Conversation.get_workspace_dir">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_workspace_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the absolute path to this conversation&#39;s dedicated workspace.</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Returns the absolute path to this conversation's dedicated workspace.</span>
 
 <span class="sd">        Resolution hierarchy:</span>
 <span class="sd">        1. In-memory override (_workspace_dir_override).</span>
-<span class="sd">        2. State tree metadata override (state_tree[&#39;_workspace_dir&#39;]).</span>
+<span class="sd">        2. State tree metadata override (state_tree['_workspace_dir']).</span>
 <span class="sd">        3. Doctest / trial detection (test_user, rag_test_user, or trial titles).</span>
 <span class="sd">        4. Standard conversation workspace under workspaces/conversations/&lt;uuid&gt;.</span>
 <span class="sd">        5. Legacy fallback to workspaces/&lt;uuid&gt; if the folder already exists.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># 1. In-memory override</span>
-        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_workspace_dir_override&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">'_workspace_dir_override'</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_workspace_dir_override</span>
 
         <span class="c1"># 2. State tree metadata override</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state_tree</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_tree</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;_workspace_dir&#39;</span><span class="p">):</span>
-            <span class="n">override</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_tree</span><span class="p">[</span><span class="s1">&#39;_workspace_dir&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state_tree</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_tree</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'_workspace_dir'</span><span class="p">):</span>
+            <span class="n">override</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_tree</span><span class="p">[</span><span class="s1">'_workspace_dir'</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isabs</span><span class="p">(</span><span class="n">override</span><span class="p">):</span>
                 <span class="k">return</span> <span class="n">override</span>
-            <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">BASE_DIR</span><span class="p">,</span> <span class="s1">&#39;workspaces&#39;</span><span class="p">,</span> <span class="n">override</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">BASE_DIR</span><span class="p">,</span> <span class="s1">'workspaces'</span><span class="p">,</span> <span class="n">override</span><span class="p">)</span>
 
         <span class="c1"># 3. Doctest / trial detection</span>
-        <span class="n">username</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="p">,</span> <span class="s1">&#39;username&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">user</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span>
-        <span class="n">title</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">title</span> <span class="ow">or</span> <span class="s1">&#39;&#39;</span>
-        <span class="k">if</span> <span class="n">username</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;test_user&#39;</span><span class="p">,</span> <span class="s1">&#39;rag_test_user&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">title</span><span class="o">.</span><span class="n">startswith</span><span class="p">((</span><span class="s1">&#39;Metacognition Trial:&#39;</span><span class="p">,</span> <span class="s1">&#39;Doctest:&#39;</span><span class="p">,</span> <span class="s1">&#39;Trial:&#39;</span><span class="p">)):</span>
-            <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">BASE_DIR</span><span class="p">,</span> <span class="s1">&#39;workspaces&#39;</span><span class="p">,</span> <span class="s1">&#39;doctests&#39;</span><span class="p">,</span> <span class="s1">&#39;metacognition&#39;</span><span class="p">)</span>
+        <span class="n">username</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="p">,</span> <span class="s1">'username'</span><span class="p">,</span> <span class="s1">''</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">user</span> <span class="k">else</span> <span class="s1">''</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">title</span> <span class="ow">or</span> <span class="s1">''</span>
+        <span class="k">if</span> <span class="n">username</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">'test_user'</span><span class="p">,</span> <span class="s1">'rag_test_user'</span><span class="p">)</span> <span class="ow">or</span> <span class="n">title</span><span class="o">.</span><span class="n">startswith</span><span class="p">((</span><span class="s1">'Metacognition Trial:'</span><span class="p">,</span> <span class="s1">'Doctest:'</span><span class="p">,</span> <span class="s1">'Trial:'</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">BASE_DIR</span><span class="p">,</span> <span class="s1">'workspaces'</span><span class="p">,</span> <span class="s1">'doctests'</span><span class="p">,</span> <span class="s1">'metacognition'</span><span class="p">)</span>
 
         <span class="c1"># 4. Standard conversation workspace under workspaces/conversations/&lt;uuid&gt;</span>
-        <span class="n">conv_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">BASE_DIR</span><span class="p">,</span> <span class="s1">&#39;workspaces&#39;</span><span class="p">,</span> <span class="s1">&#39;conversations&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
+        <span class="n">conv_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">BASE_DIR</span><span class="p">,</span> <span class="s1">'workspaces'</span><span class="p">,</span> <span class="s1">'conversations'</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
 
         <span class="c1"># 5. Backward compatibility with existing flat workspaces/&lt;uuid&gt;</span>
-        <span class="n">legacy_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">BASE_DIR</span><span class="p">,</span> <span class="s1">&#39;workspaces&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
+        <span class="n">legacy_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">BASE_DIR</span><span class="p">,</span> <span class="s1">'workspaces'</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
         <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">legacy_dir</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">conv_dir</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">legacy_dir</span>
 
@@ -354,16 +354,16 @@
 <div class="viewcode-block" id="Conversation.get_workspace_files">
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.Conversation.get_workspace_files">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_workspace_files</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Produces a directory listing of the workspace.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Produces a directory listing of the workspace."""</span>
         <span class="n">workspace_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_workspace_dir</span><span class="p">()</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">workspace_dir</span><span class="p">):</span>
-            <span class="k">return</span> <span class="s2">&quot;(workspace does not exist)&quot;</span>
+            <span class="k">return</span> <span class="s2">"(workspace does not exist)"</span>
             
         <span class="kn">import</span><span class="w"> </span><span class="nn">stat</span>
         <span class="n">entries</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">root</span><span class="p">,</span> <span class="n">dirs</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">workspace_dir</span><span class="p">):</span>
-            <span class="k">if</span> <span class="s1">&#39;.git&#39;</span> <span class="ow">in</span> <span class="n">dirs</span><span class="p">:</span>
-                <span class="n">dirs</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s1">&#39;.git&#39;</span><span class="p">)</span>  <span class="c1"># Hide version control internals</span>
+            <span class="k">if</span> <span class="s1">'.git'</span> <span class="ow">in</span> <span class="n">dirs</span><span class="p">:</span>
+                <span class="n">dirs</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s1">'.git'</span><span class="p">)</span>  <span class="c1"># Hide version control internals</span>
             <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
                 <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
                 <span class="n">rel_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">relpath</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">workspace_dir</span><span class="p">)</span>
@@ -371,40 +371,40 @@
                     <span class="n">info</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">stat</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
                     <span class="n">mode</span> <span class="o">=</span> <span class="n">stat</span><span class="o">.</span><span class="n">filemode</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">st_mode</span><span class="p">)</span>
                     <span class="n">size</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">st_size</span>
-                    <span class="n">entries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mode</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">size</span><span class="si">:</span><span class="s2">&gt;8</span><span class="si">}</span><span class="s2"> bytes  </span><span class="si">{</span><span class="n">rel_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">entries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">mode</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">size</span><span class="si">:</span><span class="s2">&gt;8</span><span class="si">}</span><span class="s2"> bytes  </span><span class="si">{</span><span class="n">rel_path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
                 <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
                     <span class="k">pass</span>
-        <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">entries</span><span class="p">)</span> <span class="k">if</span> <span class="n">entries</span> <span class="k">else</span> <span class="s2">&quot;(empty workspace)&quot;</span></div>
+        <span class="k">return</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">entries</span><span class="p">)</span> <span class="k">if</span> <span class="n">entries</span> <span class="k">else</span> <span class="s2">"(empty workspace)"</span></div>
 
 
 <div class="viewcode-block" id="Conversation.get_git_history">
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.Conversation.get_git_history">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_git_history</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Produces a summary of the Git commit history for this workspace.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Produces a summary of the Git commit history for this workspace."""</span>
         <span class="n">workspace_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_workspace_dir</span><span class="p">()</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">workspace_dir</span><span class="p">,</span> <span class="s1">&#39;.git&#39;</span><span class="p">)):</span>
-            <span class="k">return</span> <span class="s2">&quot;No git history.&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">workspace_dir</span><span class="p">,</span> <span class="s1">'.git'</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="s2">"No git history."</span>
             
         <span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">result</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s2">&quot;git&quot;</span><span class="p">,</span> <span class="s2">&quot;log&quot;</span><span class="p">,</span> <span class="s2">&quot;--oneline&quot;</span><span class="p">,</span> <span class="s2">&quot;--decorate&quot;</span><span class="p">,</span> <span class="s2">&quot;--all&quot;</span><span class="p">,</span> <span class="s2">&quot;-n&quot;</span><span class="p">,</span> <span class="s2">&quot;10&quot;</span><span class="p">],</span> <span class="n">cwd</span><span class="o">=</span><span class="n">workspace_dir</span><span class="p">,</span> <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="ow">or</span> <span class="s2">&quot;No commits yet.&quot;</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s2">"git"</span><span class="p">,</span> <span class="s2">"log"</span><span class="p">,</span> <span class="s2">"--oneline"</span><span class="p">,</span> <span class="s2">"--decorate"</span><span class="p">,</span> <span class="s2">"--all"</span><span class="p">,</span> <span class="s2">"-n"</span><span class="p">,</span> <span class="s2">"10"</span><span class="p">],</span> <span class="n">cwd</span><span class="o">=</span><span class="n">workspace_dir</span><span class="p">,</span> <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="ow">or</span> <span class="s2">"No commits yet."</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Git history error: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span></div>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">"Git history error: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span></div>
 
             
 <div class="viewcode-block" id="Conversation.get_file_at_commit">
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.Conversation.get_file_at_commit">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_file_at_commit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">commit_hash</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">typing</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extracts the file content from a specific git commit hash.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Extracts the file content from a specific git commit hash."""</span>
         <span class="n">workspace_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_workspace_dir</span><span class="p">()</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">workspace_dir</span><span class="p">):</span>
             <span class="k">return</span> <span class="kc">None</span>
             
         <span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">safe_filename</span> <span class="o">=</span> <span class="n">filename</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;/&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
-            <span class="n">result</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s2">&quot;git&quot;</span><span class="p">,</span> <span class="s2">&quot;show&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">commit_hash</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">safe_filename</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">],</span> <span class="n">cwd</span><span class="o">=</span><span class="n">workspace_dir</span><span class="p">,</span> <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">safe_filename</span> <span class="o">=</span> <span class="n">filename</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"</span><span class="se">\\</span><span class="s2">"</span><span class="p">,</span> <span class="s2">"/"</span><span class="p">)</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s2">"/"</span><span class="p">)</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s2">"git"</span><span class="p">,</span> <span class="s2">"show"</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">commit_hash</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">safe_filename</span><span class="si">}</span><span class="s2">"</span><span class="p">],</span> <span class="n">cwd</span><span class="o">=</span><span class="n">workspace_dir</span><span class="p">,</span> <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">stdout</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span></div>
@@ -416,20 +416,20 @@
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.delete_conversation_workspace">[docs]</a>
 <span class="nd">@receiver</span><span class="p">(</span><span class="n">post_delete</span><span class="p">,</span> <span class="n">sender</span><span class="o">=</span><span class="n">Conversation</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">delete_conversation_workspace</span><span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Automatically wipes the physical Git workspace folder when a Conversation </span>
 <span class="sd">    is deleted from the database to prevent disk space leaks.</span>
 <span class="sd">    Protects shared namespaces (doctests, agent_scripts, grips_okf, etc.).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">instance</span><span class="o">.</span><span class="n">id</span><span class="p">:</span>
         <span class="k">return</span>
 
     <span class="k">try</span><span class="p">:</span>
         <span class="n">workspace_dir</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="n">get_workspace_dir</span><span class="p">()</span>
     <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-        <span class="n">workspace_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">BASE_DIR</span><span class="p">,</span> <span class="s1">&#39;workspaces&#39;</span><span class="p">,</span> <span class="s1">&#39;conversations&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">instance</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
+        <span class="n">workspace_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">BASE_DIR</span><span class="p">,</span> <span class="s1">'workspaces'</span><span class="p">,</span> <span class="s1">'conversations'</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">instance</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
 
-    <span class="n">workspaces_root</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">BASE_DIR</span><span class="p">,</span> <span class="s1">&#39;workspaces&#39;</span><span class="p">))</span>
+    <span class="n">workspaces_root</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">BASE_DIR</span><span class="p">,</span> <span class="s1">'workspaces'</span><span class="p">))</span>
     <span class="n">abs_workspace</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">workspace_dir</span><span class="p">)</span>
     <span class="n">rel_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">relpath</span><span class="p">(</span><span class="n">abs_workspace</span><span class="p">,</span> <span class="n">workspaces_root</span><span class="p">)</span>
 
@@ -437,16 +437,16 @@
     <span class="c1"># (i.e. under workspaces/conversations/ or legacy workspaces/&lt;uuid&gt;),</span>
     <span class="c1"># NEVER delete shared directories like workspaces/doctests, agent_scripts, or grips_okf.</span>
     <span class="n">is_safe_to_delete</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">rel_path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;conversations&#39;</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="p">)</span> <span class="ow">or</span> 
+        <span class="n">rel_path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">'conversations'</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="p">)</span> <span class="ow">or</span> 
         <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">rel_path</span> <span class="ow">and</span> <span class="n">rel_path</span> <span class="o">==</span> <span class="nb">str</span><span class="p">(</span><span class="n">instance</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
     <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">is_safe_to_delete</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">abs_workspace</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">abs_workspace</span><span class="p">)</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;🗑️ Cleaned up workspace folder for deleted conversation </span><span class="si">{</span><span class="n">instance</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">'🗑️ Cleaned up workspace folder for deleted conversation </span><span class="si">{</span><span class="n">instance</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;⚠️ Failed to delete workspace </span><span class="si">{</span><span class="n">abs_workspace</span><span class="si">}</span><span class="s1">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span></div>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">'⚠️ Failed to delete workspace </span><span class="si">{</span><span class="n">abs_workspace</span><span class="si">}</span><span class="s1">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="PromptResponseLog">
@@ -455,15 +455,15 @@
 <div class="viewcode-block" id="PromptResponseLog.Feedback">
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.PromptResponseLog.Feedback">[docs]</a>
     <span class="k">class</span><span class="w"> </span><span class="nc">Feedback</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">IntegerChoices</span><span class="p">):</span>
-        <span class="n">THUMB_UP</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;Thumb Up&#39;</span>
-        <span class="n">THUMB_DOWN</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;Thumb Down&#39;</span></div>
+        <span class="n">THUMB_UP</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">'Thumb Up'</span>
+        <span class="n">THUMB_DOWN</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s1">'Thumb Down'</span></div>
 
 
 <div class="viewcode-block" id="PromptResponseLog.LogKind">
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.PromptResponseLog.LogKind">[docs]</a>
     <span class="k">class</span><span class="w"> </span><span class="nc">LogKind</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">TextChoices</span><span class="p">):</span>
-        <span class="n">TURN</span> <span class="o">=</span> <span class="s1">&#39;TURN&#39;</span><span class="p">,</span> <span class="s1">&#39;Conversation Turn&#39;</span>
-        <span class="n">TRACE</span> <span class="o">=</span> <span class="s1">&#39;TRACE&#39;</span><span class="p">,</span> <span class="s1">&#39;Intermediate Execution Trace&#39;</span></div>
+        <span class="n">TURN</span> <span class="o">=</span> <span class="s1">'TURN'</span><span class="p">,</span> <span class="s1">'Conversation Turn'</span>
+        <span class="n">TRACE</span> <span class="o">=</span> <span class="s1">'TRACE'</span><span class="p">,</span> <span class="s1">'Intermediate Execution Trace'</span></div>
 
 
     <span class="nb">id</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">UUIDField</span><span class="p">(</span><span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">,</span> <span class="n">editable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
@@ -472,7 +472,7 @@
         <span class="n">choices</span><span class="o">=</span><span class="n">LogKind</span><span class="o">.</span><span class="n">choices</span><span class="p">,</span>
         <span class="n">default</span><span class="o">=</span><span class="n">LogKind</span><span class="o">.</span><span class="n">TURN</span><span class="p">,</span>
         <span class="n">db_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Discriminates top-level conversational turns from internal node/tool execution traces.&quot;</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">"Discriminates top-level conversational turns from internal node/tool execution traces."</span>
     <span class="p">)</span>
     <span class="n">user</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">User</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">CASCADE</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">created_at</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="n">auto_now_add</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -480,118 +480,118 @@
     <span class="n">user_prompt</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">generated_response</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">()</span>
     <span class="n">rag_selections</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">JSONField</span><span class="p">(</span><span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
-    <span class="n">state_tree_snapshot</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">JSONField</span><span class="p">(</span><span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">dict</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Snapshot of the conversation state_tree at this turn.&quot;</span><span class="p">)</span>
+    <span class="n">state_tree_snapshot</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">JSONField</span><span class="p">(</span><span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">dict</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">"Snapshot of the conversation state_tree at this turn."</span><span class="p">)</span>
     <span class="n">git_commit_hash</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">parent_log</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;self&#39;</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">SET_NULL</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">&#39;child_logs&#39;</span><span class="p">)</span>
-    <span class="n">input_tokens</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Number of tokens in the prompt&quot;</span><span class="p">)</span>
-    <span class="n">output_tokens</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Number of tokens in the generated response&quot;</span><span class="p">)</span>
+    <span class="n">parent_log</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">'self'</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">SET_NULL</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s1">'child_logs'</span><span class="p">)</span>
+    <span class="n">input_tokens</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">"Number of tokens in the prompt"</span><span class="p">)</span>
+    <span class="n">output_tokens</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">"Number of tokens in the generated response"</span><span class="p">)</span>
     <span class="n">generation_duration_ms</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">FloatField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> 
-        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Total wall-clock duration of the generation call in milliseconds&quot;</span><span class="p">)</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">"Total wall-clock duration of the generation call in milliseconds"</span><span class="p">)</span>
     <span class="n">tokens_per_second</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">FloatField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Output tokens generated per second&quot;</span><span class="p">)</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">"Output tokens generated per second"</span><span class="p">)</span>
     <span class="n">model_name</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;The AI model used for this generation&quot;</span><span class="p">)</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">"The AI model used for this generation"</span><span class="p">)</span>
 
     <span class="c1"># Telemetry for NightManager Performance Tracking</span>
-    <span class="n">reasoning_step</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;metacognition.ReasoningStep&#39;</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">SET_NULL</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s2">&quot;prompt_logs&quot;</span><span class="p">)</span>
+    <span class="n">reasoning_step</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">'metacognition.ReasoningStep'</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">SET_NULL</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s2">"prompt_logs"</span><span class="p">)</span>
     
 <div class="viewcode-block" id="PromptResponseLog.StepStatus">
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.PromptResponseLog.StepStatus">[docs]</a>
     <span class="k">class</span><span class="w"> </span><span class="nc">StepStatus</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">TextChoices</span><span class="p">):</span>
-        <span class="n">SUCCESS</span> <span class="o">=</span> <span class="s1">&#39;SUCCESS&#39;</span><span class="p">,</span> <span class="s1">&#39;Success&#39;</span>
-        <span class="n">RETRY</span> <span class="o">=</span> <span class="s1">&#39;RETRY&#39;</span><span class="p">,</span> <span class="s1">&#39;Retry (Self)&#39;</span>
-        <span class="n">FAILURE</span> <span class="o">=</span> <span class="s1">&#39;FAILURE&#39;</span><span class="p">,</span> <span class="s1">&#39;Failure (Re-plan)&#39;</span></div>
+        <span class="n">SUCCESS</span> <span class="o">=</span> <span class="s1">'SUCCESS'</span><span class="p">,</span> <span class="s1">'Success'</span>
+        <span class="n">RETRY</span> <span class="o">=</span> <span class="s1">'RETRY'</span><span class="p">,</span> <span class="s1">'Retry (Self)'</span>
+        <span class="n">FAILURE</span> <span class="o">=</span> <span class="s1">'FAILURE'</span><span class="p">,</span> <span class="s1">'Failure (Re-plan)'</span></div>
 
         
     <span class="n">step_status</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">choices</span><span class="o">=</span><span class="n">StepStatus</span><span class="o">.</span><span class="n">choices</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="n">user_feedback</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">SmallIntegerField</span><span class="p">(</span>
         <span class="n">choices</span><span class="o">=</span><span class="n">Feedback</span><span class="o">.</span><span class="n">choices</span><span class="p">,</span>
-        <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># null=True means &#39;no feedback given&#39;</span>
+        <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># null=True means 'no feedback given'</span>
         <span class="n">blank</span><span class="o">=</span><span class="kc">True</span>
     <span class="p">)</span>
     <span class="n">conversation</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span>
         <span class="n">Conversation</span><span class="p">,</span>
         <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">CASCADE</span><span class="p">,</span>
-        <span class="n">related_name</span><span class="o">=</span><span class="s2">&quot;logs&quot;</span>  <span class="c1"># Lets you do conversation.logs.all()</span>
+        <span class="n">related_name</span><span class="o">=</span><span class="s2">"logs"</span>  <span class="c1"># Lets you do conversation.logs.all()</span>
     <span class="p">)</span>
     <span class="n">blueprint</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span>
-        <span class="s1">&#39;metacognition.CognitiveBlueprint&#39;</span><span class="p">,</span>
+        <span class="s1">'metacognition.CognitiveBlueprint'</span><span class="p">,</span>
         <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">SET_NULL</span><span class="p">,</span>
         <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">related_name</span><span class="o">=</span><span class="s2">&quot;conversations&quot;</span><span class="p">,</span>
-        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;The cognitive blueprint driving this conversation, if any.&quot;</span>
+        <span class="n">related_name</span><span class="o">=</span><span class="s2">"conversations"</span><span class="p">,</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">"The cognitive blueprint driving this conversation, if any."</span>
     <span class="p">)</span>
     <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
-        <span class="n">ordering</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;-created_at&#39;</span><span class="p">]</span>
+        <span class="n">ordering</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'-created_at'</span><span class="p">]</span>
         <span class="n">indexes</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">models</span><span class="o">.</span><span class="n">Index</span><span class="p">(</span><span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;conversation&#39;</span><span class="p">]),</span>
-            <span class="c1"># A GinIndex speeds up JSON containment queries e.g., contains &#39;[{&quot;id&quot;: &quot;xxx&quot;}]&#39;</span>
+            <span class="n">models</span><span class="o">.</span><span class="n">Index</span><span class="p">(</span><span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s1">'conversation'</span><span class="p">]),</span>
+            <span class="c1"># A GinIndex speeds up JSON containment queries e.g., contains '[{"id": "xxx"}]'</span>
             <span class="c1"># Note: Requires django.contrib.postgres in INSTALLED_APPS</span>
-            <span class="c1"># GinIndex(fields=[&#39;rag_selections&#39;])</span>
+            <span class="c1"># GinIndex(fields=['rag_selections'])</span>
         <span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="LocalAIModel">
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.LocalAIModel">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">LocalAIModel</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Configuration for an LLM loaded natively into VRAM or served via local containers.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Configuration for an LLM loaded natively into VRAM or served via local containers."""</span>
 
 <div class="viewcode-block" id="LocalAIModel.QuantizationMode">
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.LocalAIModel.QuantizationMode">[docs]</a>
     <span class="k">class</span><span class="w"> </span><span class="nc">QuantizationMode</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">TextChoices</span><span class="p">):</span>
-        <span class="n">NONE</span> <span class="o">=</span> <span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="s1">&#39;Unquantized (16-bit FP16 / BF16)&#39;</span>
-        <span class="n">INT8</span> <span class="o">=</span> <span class="s1">&#39;int8&#39;</span><span class="p">,</span> <span class="s1">&#39;8-bit Integer (BitsAndBytes)&#39;</span>
-        <span class="n">NF4</span> <span class="o">=</span> <span class="s1">&#39;nf4&#39;</span><span class="p">,</span> <span class="s1">&#39;4-bit NormalFloat (BitsAndBytes NF4 - High Precision)&#39;</span>
-        <span class="n">FP4</span> <span class="o">=</span> <span class="s1">&#39;fp4&#39;</span><span class="p">,</span> <span class="s1">&#39;4-bit Float (BitsAndBytes FP4)&#39;</span>
-        <span class="n">AWQ</span> <span class="o">=</span> <span class="s1">&#39;awq&#39;</span><span class="p">,</span> <span class="s1">&#39;AWQ (vLLM / Transformers)&#39;</span>
-        <span class="n">GPTQ</span> <span class="o">=</span> <span class="s1">&#39;gptq&#39;</span><span class="p">,</span> <span class="s1">&#39;GPTQ (vLLM / Transformers)&#39;</span>
-        <span class="n">GGUF_Q4_K_M</span> <span class="o">=</span> <span class="s1">&#39;gguf_q4_k_m&#39;</span><span class="p">,</span> <span class="s1">&#39;GGUF 4-bit (Medium - Recommended for CPU)&#39;</span>
-        <span class="n">GGUF_Q5_K_M</span> <span class="o">=</span> <span class="s1">&#39;gguf_q5_k_m&#39;</span><span class="p">,</span> <span class="s1">&#39;GGUF 5-bit (High Precision)&#39;</span>
-        <span class="n">GGUF_Q8_0</span> <span class="o">=</span> <span class="s1">&#39;gguf_q8_0&#39;</span><span class="p">,</span> <span class="s1">&#39;GGUF 8-bit (Full Integer)&#39;</span>
-        <span class="n">GGUF_OTHER</span> <span class="o">=</span> <span class="s1">&#39;gguf_other&#39;</span><span class="p">,</span> <span class="s1">&#39;GGUF Other Quantization&#39;</span></div>
+        <span class="n">NONE</span> <span class="o">=</span> <span class="s1">'none'</span><span class="p">,</span> <span class="s1">'Unquantized (16-bit FP16 / BF16)'</span>
+        <span class="n">INT8</span> <span class="o">=</span> <span class="s1">'int8'</span><span class="p">,</span> <span class="s1">'8-bit Integer (BitsAndBytes)'</span>
+        <span class="n">NF4</span> <span class="o">=</span> <span class="s1">'nf4'</span><span class="p">,</span> <span class="s1">'4-bit NormalFloat (BitsAndBytes NF4 - High Precision)'</span>
+        <span class="n">FP4</span> <span class="o">=</span> <span class="s1">'fp4'</span><span class="p">,</span> <span class="s1">'4-bit Float (BitsAndBytes FP4)'</span>
+        <span class="n">AWQ</span> <span class="o">=</span> <span class="s1">'awq'</span><span class="p">,</span> <span class="s1">'AWQ (vLLM / Transformers)'</span>
+        <span class="n">GPTQ</span> <span class="o">=</span> <span class="s1">'gptq'</span><span class="p">,</span> <span class="s1">'GPTQ (vLLM / Transformers)'</span>
+        <span class="n">GGUF_Q4_K_M</span> <span class="o">=</span> <span class="s1">'gguf_q4_k_m'</span><span class="p">,</span> <span class="s1">'GGUF 4-bit (Medium - Recommended for CPU)'</span>
+        <span class="n">GGUF_Q5_K_M</span> <span class="o">=</span> <span class="s1">'gguf_q5_k_m'</span><span class="p">,</span> <span class="s1">'GGUF 5-bit (High Precision)'</span>
+        <span class="n">GGUF_Q8_0</span> <span class="o">=</span> <span class="s1">'gguf_q8_0'</span><span class="p">,</span> <span class="s1">'GGUF 8-bit (Full Integer)'</span>
+        <span class="n">GGUF_OTHER</span> <span class="o">=</span> <span class="s1">'gguf_other'</span><span class="p">,</span> <span class="s1">'GGUF Other Quantization'</span></div>
 
 
-    <span class="n">name</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Friendly name (e.g. &#39;Gemma 4 E2B&#39;)&quot;</span><span class="p">)</span>
-    <span class="n">hf_model_id</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;HuggingFace ID&quot;</span><span class="p">)</span>
-    <span class="n">description</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Notes on capabilities, VRAM usage, etc.&quot;</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">"Friendly name (e.g. 'Gemma 4 E2B')"</span><span class="p">)</span>
+    <span class="n">hf_model_id</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">"HuggingFace ID"</span><span class="p">)</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">"Notes on capabilities, VRAM usage, etc."</span><span class="p">)</span>
     
     <span class="n">quantization_mode</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span>
         <span class="n">max_length</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
         <span class="n">choices</span><span class="o">=</span><span class="n">QuantizationMode</span><span class="o">.</span><span class="n">choices</span><span class="p">,</span>
         <span class="n">default</span><span class="o">=</span><span class="n">QuantizationMode</span><span class="o">.</span><span class="n">NF4</span><span class="p">,</span>
-        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Quantization method to apply when loading model into memory or container.&quot;</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">"Quantization method to apply when loading model into memory or container."</span>
     <span class="p">)</span>
     <span class="n">compute_dtype</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span>
         <span class="n">max_length</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
         <span class="n">choices</span><span class="o">=</span><span class="p">[</span>
-            <span class="p">(</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span> <span class="s1">&#39;Auto-detect (Recommended based on GPU capability)&#39;</span><span class="p">),</span>
-            <span class="p">(</span><span class="s1">&#39;float16&#39;</span><span class="p">,</span> <span class="s1">&#39;Float16 (FP16)&#39;</span><span class="p">),</span>
-            <span class="p">(</span><span class="s1">&#39;bfloat16&#39;</span><span class="p">,</span> <span class="s1">&#39;BFloat16 (BF16 - requires Ampere / CC 8.0+)&#39;</span><span class="p">),</span>
-            <span class="p">(</span><span class="s1">&#39;float32&#39;</span><span class="p">,</span> <span class="s1">&#39;Float32 (FP32 - CPU fallback)&#39;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s1">'auto'</span><span class="p">,</span> <span class="s1">'Auto-detect (Recommended based on GPU capability)'</span><span class="p">),</span>
+            <span class="p">(</span><span class="s1">'float16'</span><span class="p">,</span> <span class="s1">'Float16 (FP16)'</span><span class="p">),</span>
+            <span class="p">(</span><span class="s1">'bfloat16'</span><span class="p">,</span> <span class="s1">'BFloat16 (BF16 - requires Ampere / CC 8.0+)'</span><span class="p">),</span>
+            <span class="p">(</span><span class="s1">'float32'</span><span class="p">,</span> <span class="s1">'Float32 (FP32 - CPU fallback)'</span><span class="p">),</span>
         <span class="p">],</span>
-        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span>
-        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Precision used for tensor computations.&quot;</span>
+        <span class="n">default</span><span class="o">=</span><span class="s1">'auto'</span><span class="p">,</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">"Precision used for tensor computations."</span>
     <span class="p">)</span>
     <span class="n">vllm_gpu_memory_utilization</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">FloatField</span><span class="p">(</span>
         <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;vLLM GPU memory utilization fraction (0.1 - 1.0). Leave blank to auto-calculate from free VRAM.&quot;</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">"vLLM GPU memory utilization fraction (0.1 - 1.0). Leave blank to auto-calculate from free VRAM."</span>
     <span class="p">)</span>
     <span class="n">vllm_max_model_len</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span>
         <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Max model sequence length for vLLM KV-cache. Defaults to model context window.&quot;</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">"Max model sequence length for vLLM KV-cache. Defaults to model context window."</span>
     <span class="p">)</span>
     <span class="n">gguf_file_path</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span>
         <span class="n">max_length</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Path to local .gguf file or filename in /srv/reason/models/.&quot;</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">"Path to local .gguf file or filename in /srv/reason/models/."</span>
     <span class="p">)</span>
-    <span class="n">load_in_4bit</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Legacy flag: Use 4-bit quantization (synced with quantization_mode)&quot;</span><span class="p">)</span>
-    <span class="n">context_window</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">4096</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Max tokens&quot;</span><span class="p">)</span>
+    <span class="n">load_in_4bit</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">"Legacy flag: Use 4-bit quantization (synced with quantization_mode)"</span><span class="p">)</span>
+    <span class="n">context_window</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">4096</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">"Max tokens"</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_multimodal</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Dynamically introspects whether this model architecture supports visual/multimodal inputs.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Dynamically introspects whether this model architecture supports visual/multimodal inputs."""</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">hf_model_id</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">quantization_mode</span> <span class="ow">in</span> <span class="p">[</span>
@@ -616,49 +616,49 @@
 
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">modality_label</span> <span class="o">=</span> <span class="s2">&quot; [Vision]&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_multimodal</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}{</span><span class="n">modality_label</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">get_quantization_mode_display</span><span class="p">()</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+        <span class="n">modality_label</span> <span class="o">=</span> <span class="s2">" [Vision]"</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_multimodal</span> <span class="k">else</span> <span class="s2">""</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}{</span><span class="n">modality_label</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">get_quantization_mode_display</span><span class="p">()</span><span class="si">}</span><span class="s2">)"</span></div>
 
 
 
 <div class="viewcode-block" id="LoRAAdapter">
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.LoRAAdapter">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">LoRAAdapter</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Configuration for a LoRA adapter that can be dynamically loaded over the base model.&quot;&quot;&quot;</span>
-    <span class="n">name</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Adapter short name (e.g., &#39;python_coder&#39;)&quot;</span><span class="p">)</span>
-    <span class="n">file_path</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Absolute path to the adapter directory on disk or HF hub ID&quot;</span><span class="p">)</span>
-    <span class="n">description</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;What this adapter specializes in.&quot;</span><span class="p">)</span>
-    <span class="n">base_model</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">LocalAIModel</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">CASCADE</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s2">&quot;adapters&quot;</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;The base model this adapter was trained for.&quot;</span><span class="p">)</span>
-    <span class="n">dataset</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;benchmarking.FineTuningDataset&#39;</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">SET_NULL</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;The dataset this LoRA was trained on.&quot;</span><span class="p">)</span>
-    <span class="n">verbose_name</span> <span class="o">=</span> <span class="s2">&quot;Low Rank Adaptation Model&quot;</span>
+<span class="w">    </span><span class="sd">"""Configuration for a LoRA adapter that can be dynamically loaded over the base model."""</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">"Adapter short name (e.g., 'python_coder')"</span><span class="p">)</span>
+    <span class="n">file_path</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">"Absolute path to the adapter directory on disk or HF hub ID"</span><span class="p">)</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">"What this adapter specializes in."</span><span class="p">)</span>
+    <span class="n">base_model</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">LocalAIModel</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">CASCADE</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s2">"adapters"</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">"The base model this adapter was trained for."</span><span class="p">)</span>
+    <span class="n">dataset</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">'benchmarking.FineTuningDataset'</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">SET_NULL</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">"The dataset this LoRA was trained on."</span><span class="p">)</span>
+    <span class="n">verbose_name</span> <span class="o">=</span> <span class="s2">"Low Rank Adaptation Model"</span>
     
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_stale</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns True if the underlying dataset is stale.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Returns True if the underlying dataset is stale."""</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">is_stale</span>
         <span class="k">return</span> <span class="kc">False</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> (LoRA for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">base_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> (LoRA for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">base_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">)"</span></div>
 
 
 
 <div class="viewcode-block" id="discover_gguf_files">
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.discover_gguf_files">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">discover_gguf_files</span><span class="p">(</span><span class="n">models_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Returns a sorted list of .gguf filenames present in REASON_MODELS_DIR</span>
 <span class="sd">    (default: /srv/reason/models). Returns an empty list if the directory</span>
 <span class="sd">    does not exist or is unreadable.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">base_dir</span> <span class="o">=</span> <span class="n">models_dir</span> <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="s2">&quot;REASON_MODELS_DIR&quot;</span><span class="p">,</span> <span class="s2">&quot;/srv/reason/models&quot;</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="n">base_dir</span> <span class="o">=</span> <span class="n">models_dir</span> <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="s2">"REASON_MODELS_DIR"</span><span class="p">,</span> <span class="s2">"/srv/reason/models"</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">base_dir</span><span class="p">):</span>
             <span class="k">return</span> <span class="p">[]</span>
         <span class="n">entries</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">scandir</span><span class="p">(</span><span class="n">base_dir</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">entry</span><span class="o">.</span><span class="n">is_file</span><span class="p">()</span> <span class="ow">and</span> <span class="n">entry</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.gguf&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">entry</span><span class="o">.</span><span class="n">is_file</span><span class="p">()</span> <span class="ow">and</span> <span class="n">entry</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">".gguf"</span><span class="p">):</span>
                 <span class="n">entries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">entries</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
@@ -669,48 +669,48 @@
 <div class="viewcode-block" id="MiniModel">
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.MiniModel">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">MiniModel</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Lightweight single-file GGUF CPU model stored in /srv/reason/models/</span>
 <span class="sd">    and served by llama.cpp (llama-server). Used for non-blocking utility</span>
 <span class="sd">    tasks (Conversation Title generation, fast CPU tokenization) and/or</span>
-<span class="sd">    primary CPU inference when hosting_backend == &#39;llamacpp&#39;.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    primary CPU inference when hosting_backend == 'llamacpp'.</span>
+<span class="sd">    """</span>
     <span class="n">name</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span>
         <span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span>
         <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Friendly display name (e.g. &#39;Gemma 4 E4B&#39;). Auto-derived from filename if left blank.&quot;</span><span class="p">,</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">"Friendly display name (e.g. 'Gemma 4 E4B'). Auto-derived from filename if left blank."</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">gguf_filename</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span>
         <span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span>
         <span class="n">unique</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;GGUF filename in /srv/reason/models/ (e.g. &#39;Gemma-4-e4B-it-Q5_K_M.gguf&#39;) or absolute path.&quot;</span><span class="p">,</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">"GGUF filename in /srv/reason/models/ (e.g. 'Gemma-4-e4B-it-Q5_K_M.gguf') or absolute path."</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">context_window</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span>
         <span class="n">default</span><span class="o">=</span><span class="mi">4096</span><span class="p">,</span>
-        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Context window size (-c flag for llama-server).&quot;</span><span class="p">,</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">"Context window size (-c flag for llama-server)."</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">threads</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span>
         <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Optional CPU thread limit (-t flag for llama-server). Leave blank for automatic.&quot;</span><span class="p">,</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">"Optional CPU thread limit (-t flag for llama-server). Leave blank for automatic."</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">is_active</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span>
         <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Whether this GGUF model is available for selection.&quot;</span><span class="p">,</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">"Whether this GGUF model is available for selection."</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">created_at</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="n">auto_now_add</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">updated_at</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="n">auto_now</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
-        <span class="n">verbose_name</span> <span class="o">=</span> <span class="s2">&quot;CPU Mini-Model (GGUF)&quot;</span>
-        <span class="n">verbose_name_plural</span> <span class="o">=</span> <span class="s2">&quot;CPU Mini-Models (GGUF)&quot;</span>
-        <span class="n">ordering</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;gguf_filename&quot;</span><span class="p">]</span>
+        <span class="n">verbose_name</span> <span class="o">=</span> <span class="s2">"CPU Mini-Model (GGUF)"</span>
+        <span class="n">verbose_name_plural</span> <span class="o">=</span> <span class="s2">"CPU Mini-Models (GGUF)"</span>
+        <span class="n">ordering</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"name"</span><span class="p">,</span> <span class="s2">"gguf_filename"</span><span class="p">]</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">gguf_path</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isabs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gguf_filename</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">gguf_filename</span>
-        <span class="n">base_dir</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="s2">&quot;REASON_MODELS_DIR&quot;</span><span class="p">,</span> <span class="s2">&quot;/srv/reason/models&quot;</span><span class="p">)</span>
+        <span class="n">base_dir</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="s2">"REASON_MODELS_DIR"</span><span class="p">,</span> <span class="s2">"/srv/reason/models"</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_dir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gguf_filename</span><span class="p">)</span>
 
     <span class="nd">@property</span>
@@ -735,73 +735,73 @@
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">label</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">gguf_filename</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gguf_filename</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gguf_filename</span><span class="p">)</span><span class="si">}</span><span class="s2">)"</span></div>
 
 
 
 <div class="viewcode-block" id="SystemConfiguration">
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.SystemConfiguration">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SystemConfiguration</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Singleton model for global system settings and VRAM management.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Singleton model for global system settings and VRAM management."""</span>
     
 <div class="viewcode-block" id="SystemConfiguration.HostingBackend">
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.SystemConfiguration.HostingBackend">[docs]</a>
     <span class="k">class</span><span class="w"> </span><span class="nc">HostingBackend</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">TextChoices</span><span class="p">):</span>
-        <span class="n">PYTORCH</span> <span class="o">=</span> <span class="s1">&#39;pytorch&#39;</span><span class="p">,</span> <span class="s1">&#39;Local PyTorch (CPU/GPU)&#39;</span>
-        <span class="n">VLLM</span> <span class="o">=</span> <span class="s1">&#39;vllm&#39;</span><span class="p">,</span> <span class="s1">&#39;Local vLLM Container&#39;</span>
-        <span class="n">OLLAMA</span> <span class="o">=</span> <span class="s1">&#39;ollama&#39;</span><span class="p">,</span> <span class="s1">&#39;Local Ollama Container&#39;</span>
-        <span class="n">LLAMACPP</span> <span class="o">=</span> <span class="s1">&#39;llamacpp&#39;</span><span class="p">,</span> <span class="s1">&#39;Local llama.cpp Server (CPU/GGUF)&#39;</span></div>
+        <span class="n">PYTORCH</span> <span class="o">=</span> <span class="s1">'pytorch'</span><span class="p">,</span> <span class="s1">'Local PyTorch (CPU/GPU)'</span>
+        <span class="n">VLLM</span> <span class="o">=</span> <span class="s1">'vllm'</span><span class="p">,</span> <span class="s1">'Local vLLM Container'</span>
+        <span class="n">OLLAMA</span> <span class="o">=</span> <span class="s1">'ollama'</span><span class="p">,</span> <span class="s1">'Local Ollama Container'</span>
+        <span class="n">LLAMACPP</span> <span class="o">=</span> <span class="s1">'llamacpp'</span><span class="p">,</span> <span class="s1">'Local llama.cpp Server (CPU/GGUF)'</span></div>
 
 
     <span class="n">hosting_backend</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span>
         <span class="n">max_length</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
         <span class="n">choices</span><span class="o">=</span><span class="n">HostingBackend</span><span class="o">.</span><span class="n">choices</span><span class="p">,</span>
         <span class="n">default</span><span class="o">=</span><span class="n">HostingBackend</span><span class="o">.</span><span class="n">PYTORCH</span><span class="p">,</span>
-        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Select the primary inference engine used by the local proxy server.&quot;</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">"Select the primary inference engine used by the local proxy server."</span>
     <span class="p">)</span>
 
     <span class="n">active_local_model</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span>
         <span class="n">LocalAIModel</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">SET_NULL</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;The PyTorch model loaded into VRAM. Used only when &#39;Local PyTorch&#39; is the active hosting backend.&quot;</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">"The PyTorch model loaded into VRAM. Used only when 'Local PyTorch' is the active hosting backend."</span>
     <span class="p">)</span>
     <span class="n">active_ollama_model</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span>
         <span class="n">LocalAIModel</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">SET_NULL</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">related_name</span><span class="o">=</span><span class="s2">&quot;ollama_configurations&quot;</span><span class="p">,</span>
-        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;The selected model running in the local Ollama container. Used only when &#39;Ollama Container&#39; is the active hosting backend.&quot;</span>
+        <span class="n">related_name</span><span class="o">=</span><span class="s2">"ollama_configurations"</span><span class="p">,</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">"The selected model running in the local Ollama container. Used only when 'Ollama Container' is the active hosting backend."</span>
     <span class="p">)</span>
 
     <span class="n">active_vllm_model</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span>
         <span class="n">LocalAIModel</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">SET_NULL</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">related_name</span><span class="o">=</span><span class="s2">&quot;vllm_configurations&quot;</span><span class="p">,</span>
-        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Model loaded in the vLLM service. Used only when &#39;Local vLLM Container&#39; is the active hosting backend.&quot;</span>
+        <span class="n">related_name</span><span class="o">=</span><span class="s2">"vllm_configurations"</span><span class="p">,</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">"Model loaded in the vLLM service. Used only when 'Local vLLM Container' is the active hosting backend."</span>
     <span class="p">)</span>
 
     <span class="n">active_llamacpp_model</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span>
         <span class="n">LocalAIModel</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">SET_NULL</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">related_name</span><span class="o">=</span><span class="s2">&quot;llamacpp_configurations&quot;</span><span class="p">,</span>
-        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Legacy LocalAIModel reference for llama.cpp. Prefer setting active_mini_model below.&quot;</span>
+        <span class="n">related_name</span><span class="o">=</span><span class="s2">"llamacpp_configurations"</span><span class="p">,</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">"Legacy LocalAIModel reference for llama.cpp. Prefer setting active_mini_model below."</span>
     <span class="p">)</span>
 
     <span class="n">active_mini_model</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span>
         <span class="n">MiniModel</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">SET_NULL</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">related_name</span><span class="o">=</span><span class="s2">&quot;system_configurations&quot;</span><span class="p">,</span>
-        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Lightweight GGUF CPU mini-model in /srv/reason/models/ served by llama.cpp for utility tasks (conversation titles, token counting) and/or CPU inference.&quot;</span>
+        <span class="n">related_name</span><span class="o">=</span><span class="s2">"system_configurations"</span><span class="p">,</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">"Lightweight GGUF CPU mini-model in /srv/reason/models/ served by llama.cpp for utility tasks (conversation titles, token counting) and/or CPU inference."</span>
     <span class="p">)</span>
 
     <span class="n">use_mini_model_for_utilities</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span>
         <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;When enabled and llama.cpp is online, use the active Mini-Model for non-blocking conversation title generation and token counting.&quot;</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">"When enabled and llama.cpp is online, use the active Mini-Model for non-blocking conversation title generation and token counting."</span>
     <span class="p">)</span>
 
     <span class="n">system_tokenizer</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span>
-        <span class="s1">&#39;LocalAIModel&#39;</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">SET_NULL</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">related_name</span><span class="o">=</span><span class="s2">&quot;system_tokenizer_configurations&quot;</span><span class="p">,</span>
-        <span class="n">verbose_name</span><span class="o">=</span><span class="s2">&quot;Legacy Fallback Tokenizer&quot;</span><span class="p">,</span>
-        <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Optional Hugging Face tokenizer reference loaded into CPU RAM only if no CPU Mini-Model (GGUF) is configured.&quot;</span>
+        <span class="s1">'LocalAIModel'</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">SET_NULL</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">related_name</span><span class="o">=</span><span class="s2">"system_tokenizer_configurations"</span><span class="p">,</span>
+        <span class="n">verbose_name</span><span class="o">=</span><span class="s2">"Legacy Fallback Tokenizer"</span><span class="p">,</span>
+        <span class="n">help_text</span><span class="o">=</span><span class="s2">"Optional Hugging Face tokenizer reference loaded into CPU RAM only if no CPU Mini-Model (GGUF) is configured."</span>
     <span class="p">)</span>
     <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
-        <span class="n">verbose_name</span> <span class="o">=</span> <span class="s2">&quot;System Configuration&quot;</span>
-        <span class="n">verbose_name_plural</span> <span class="o">=</span> <span class="s2">&quot;System Configuration&quot;</span>
+        <span class="n">verbose_name</span> <span class="o">=</span> <span class="s2">"System Configuration"</span>
+        <span class="n">verbose_name_plural</span> <span class="o">=</span> <span class="s2">"System Configuration"</span>
     
 <div class="viewcode-block" id="SystemConfiguration.save">
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.SystemConfiguration.save">[docs]</a>
@@ -811,12 +811,12 @@
         <span class="c1"># Best-effort sync of active Mini-Model path to REASON_MODELS_DIR/.active_minimodel</span>
         <span class="c1"># so reason-llamacpp.service can resolve -m instantaneously on startup/restart.</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">models_dir</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="s2">&quot;REASON_MODELS_DIR&quot;</span><span class="p">,</span> <span class="s2">&quot;/srv/reason/models&quot;</span><span class="p">)</span>
-            <span class="n">marker_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">models_dir</span><span class="p">,</span> <span class="s2">&quot;.active_minimodel&quot;</span><span class="p">)</span>
+            <span class="n">models_dir</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="s2">"REASON_MODELS_DIR"</span><span class="p">,</span> <span class="s2">"/srv/reason/models"</span><span class="p">)</span>
+            <span class="n">marker_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">models_dir</span><span class="p">,</span> <span class="s2">".active_minimodel"</span><span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_mini_model_id</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_mini_model</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">models_dir</span><span class="p">)</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="n">models_dir</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">W_OK</span><span class="p">):</span>
-                    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">marker_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fh</span><span class="p">:</span>
-                        <span class="n">fh</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">active_mini_model</span><span class="o">.</span><span class="n">gguf_path</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">marker_path</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">)</span> <span class="k">as</span> <span class="n">fh</span><span class="p">:</span>
+                        <span class="n">fh</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">active_mini_model</span><span class="o">.</span><span class="n">gguf_path</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">marker_path</span><span class="p">)</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="n">models_dir</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">W_OK</span><span class="p">):</span>
                 <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">marker_path</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
@@ -832,57 +832,57 @@
             <span class="k">return</span> <span class="n">obj</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="c1"># Fails gracefully during initial DB migrations</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Warning: SystemConfiguration.get_solo() failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Warning: SystemConfiguration.get_solo() failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
             <span class="k">return</span> <span class="kc">None</span></div>
 
         
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;Global System Configuration&quot;</span></div>
+        <span class="k">return</span> <span class="s2">"Global System Configuration"</span></div>
 
 
 
 <div class="viewcode-block" id="ExternalAIModel">
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.ExternalAIModel">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ExternalAIModel</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Configuration for an external API like OpenAI or Anthropic.&quot;&quot;&quot;</span>
-    <span class="n">name</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;e.g. &#39;OpenAI GPT-4o&#39;&quot;</span><span class="p">)</span>
-    <span class="n">provider</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;openai&quot;</span><span class="p">)</span>
-    <span class="n">api_url</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">URLField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s2">&quot;https://api.openai.com/v1/chat/completions&quot;</span><span class="p">)</span>
-    <span class="n">api_model_name</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;e.g. &#39;gpt-4o&#39;&quot;</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">"""Configuration for an external API like OpenAI or Anthropic."""</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">"e.g. 'OpenAI GPT-4o'"</span><span class="p">)</span>
+    <span class="n">provider</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">"openai"</span><span class="p">)</span>
+    <span class="n">api_url</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">URLField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s2">"https://api.openai.com/v1/chat/completions"</span><span class="p">)</span>
+    <span class="n">api_model_name</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">"e.g. 'gpt-4o'"</span><span class="p">)</span>
     <span class="n">context_window</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">128000</span><span class="p">)</span>
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_multimodal</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Dynamically introspects whether this external API endpoint supports visual/multimodal inputs.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Dynamically introspects whether this external API endpoint supports visual/multimodal inputs."""</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">.modality_detector</span><span class="w"> </span><span class="kn">import</span> <span class="n">introspect_external_modality</span>
         <span class="k">return</span> <span class="n">introspect_external_modality</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">api_model_name</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">modality_label</span> <span class="o">=</span> <span class="s2">&quot; [Vision]&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_multimodal</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}{</span><span class="n">modality_label</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">provider</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+        <span class="n">modality_label</span> <span class="o">=</span> <span class="s2">" [Vision]"</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_multimodal</span> <span class="k">else</span> <span class="s2">""</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}{</span><span class="n">modality_label</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">provider</span><span class="si">}</span><span class="s2">)"</span></div>
 
 
 <div class="viewcode-block" id="UserAPIKey">
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.UserAPIKey">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">UserAPIKey</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Secure storage for user API keys. (Prototype: Plaintext).&quot;&quot;&quot;</span>
-    <span class="n">user</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">User</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">CASCADE</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s2">&quot;api_keys&quot;</span><span class="p">)</span>
-    <span class="n">provider</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Must match ExternalAIModel provider (e.g., &#39;openai&#39;)&quot;</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">"""Secure storage for user API keys. (Prototype: Plaintext)."""</span>
+    <span class="n">user</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">User</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">CASCADE</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s2">"api_keys"</span><span class="p">)</span>
+    <span class="n">provider</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">"Must match ExternalAIModel provider (e.g., 'openai')"</span><span class="p">)</span>
     <span class="n">api_key</span> <span class="o">=</span> <span class="n">encrypt</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">))</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">provider</span><span class="si">}</span><span class="s2"> key for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">username</span><span class="si">}</span><span class="s2">&quot;</span></div>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">provider</span><span class="si">}</span><span class="s2"> key for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">username</span><span class="si">}</span><span class="s2">"</span></div>
 
 
 <div class="viewcode-block" id="UserActiveModel">
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.UserActiveModel">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">UserActiveModel</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;User preference: Route generation to local GPU or external API.&quot;&quot;&quot;</span>
-    <span class="n">user</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">OneToOneField</span><span class="p">(</span><span class="n">User</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">CASCADE</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s2">&quot;ai_settings&quot;</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">"""User preference: Route generation to local GPU or external API."""</span>
+    <span class="n">user</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">OneToOneField</span><span class="p">(</span><span class="n">User</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">CASCADE</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s2">"ai_settings"</span><span class="p">)</span>
     <span class="n">active_external</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">ExternalAIModel</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">SET_NULL</span><span class="p">)</span>
-    <span class="n">use_external</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">&quot;Route requests to external API instead of local GPU.&quot;</span><span class="p">)</span>
+    <span class="n">use_external</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">help_text</span><span class="o">=</span><span class="s2">"Route requests to external API instead of local GPU."</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;AI Settings for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">username</span><span class="si">}</span><span class="s2">&quot;</span></div>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"AI Settings for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">username</span><span class="si">}</span><span class="s2">"</span></div>
 
 
 
@@ -896,7 +896,7 @@
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.track_backend_model_changes">[docs]</a>
 <span class="nd">@receiver</span><span class="p">(</span><span class="n">pre_save</span><span class="p">,</span> <span class="n">sender</span><span class="o">=</span><span class="n">SystemConfiguration</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">track_backend_model_changes</span><span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Track the old model and backend so we know what to unload, restart, or clear.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Track the old model and backend so we know what to unload, restart, or clear."""</span>
     <span class="k">if</span> <span class="n">instance</span><span class="o">.</span><span class="n">pk</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">old_instance</span> <span class="o">=</span> <span class="n">SystemConfiguration</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">pk</span><span class="o">=</span><span class="n">instance</span><span class="o">.</span><span class="n">pk</span><span class="p">)</span>
@@ -921,63 +921,63 @@
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.models.manage_hosting_backend">[docs]</a>
 <span class="nd">@receiver</span><span class="p">(</span><span class="n">post_save</span><span class="p">,</span> <span class="n">sender</span><span class="o">=</span><span class="n">SystemConfiguration</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">manage_hosting_backend</span><span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unload old models, clear VRAM, and manage Docker containers for the backend.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Unload old models, clear VRAM, and manage Docker containers for the backend."""</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
-    <span class="k">if</span> <span class="s1">&#39;test&#39;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"raw"</span><span class="p">)</span> <span class="ow">or</span> <span class="s1">'test'</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="ow">or</span> <span class="s1">'pytest'</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
         <span class="k">return</span>
 
-    <span class="n">old_backend</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span> <span class="s1">&#39;_old_hosting_backend&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">old_backend</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span> <span class="s1">'_old_hosting_backend'</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
     <span class="n">new_backend</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="n">hosting_backend</span>
 
-    <span class="n">old_ollama</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span> <span class="s1">&#39;_old_ollama_model&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">old_ollama</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span> <span class="s1">'_old_ollama_model'</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
     <span class="n">new_ollama</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="n">active_ollama_model</span>
 
-    <span class="n">old_vllm</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span> <span class="s1">&#39;_old_vllm_model&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">old_vllm</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span> <span class="s1">'_old_vllm_model'</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
     <span class="n">new_vllm</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="n">active_vllm_model</span>
 
     <span class="c1"># 1. Unload old Ollama model if switching away or changing models</span>
-    <span class="k">if</span> <span class="n">old_backend</span> <span class="o">==</span> <span class="s1">&#39;ollama&#39;</span> <span class="ow">and</span> <span class="n">old_ollama</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">new_backend</span> <span class="o">!=</span> <span class="s1">&#39;ollama&#39;</span> <span class="ow">or</span> <span class="n">old_ollama</span> <span class="o">!=</span> <span class="n">new_ollama</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unloading Ollama model: </span><span class="si">{</span><span class="n">old_ollama</span><span class="o">.</span><span class="n">hf_model_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">old_backend</span> <span class="o">==</span> <span class="s1">'ollama'</span> <span class="ow">and</span> <span class="n">old_ollama</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">new_backend</span> <span class="o">!=</span> <span class="s1">'ollama'</span> <span class="ow">or</span> <span class="n">old_ollama</span> <span class="o">!=</span> <span class="n">new_ollama</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unloading Ollama model: </span><span class="si">{</span><span class="n">old_ollama</span><span class="o">.</span><span class="n">hf_model_id</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="n">ollama_client</span><span class="o">.</span><span class="n">set_ollama_model_state</span><span class="p">(</span><span class="n">old_ollama</span><span class="o">.</span><span class="n">hf_model_id</span><span class="p">,</span> <span class="n">active</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
     <span class="c1"># 2. Release PyTorch VRAM if switching away from in-process PyTorch to container backends</span>
-    <span class="k">if</span> <span class="n">old_backend</span> <span class="o">==</span> <span class="s1">&#39;pytorch&#39;</span> <span class="ow">and</span> <span class="n">new_backend</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;vllm&#39;</span><span class="p">,</span> <span class="s1">&#39;ollama&#39;</span><span class="p">]:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Switching from PyTorch to containerized backend. Prompting inference server to release VRAM...&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">old_backend</span> <span class="o">==</span> <span class="s1">'pytorch'</span> <span class="ow">and</span> <span class="n">new_backend</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">'vllm'</span><span class="p">,</span> <span class="s1">'ollama'</span><span class="p">]:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Switching from PyTorch to containerized backend. Prompting inference server to release VRAM..."</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
-            <span class="n">inf_url</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="s1">&#39;INFERENCE_URL&#39;</span><span class="p">,</span> <span class="s1">&#39;http://127.0.0.1:8001/api/llm&#39;</span><span class="p">)</span>
-            <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">inf_url</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">/internal/unload-vram/&quot;</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+            <span class="n">inf_url</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="s1">'INFERENCE_URL'</span><span class="p">,</span> <span class="s1">'http://127.0.0.1:8001/api/llm'</span><span class="p">)</span>
+            <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">inf_url</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">'/'</span><span class="p">)</span><span class="si">}</span><span class="s2">/internal/unload-vram/"</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not signal inference server to unload VRAM: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not signal inference server to unload VRAM: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="c1"># 3. Manage Docker Containers if backend changed</span>
     <span class="n">sync_warning</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">if</span> <span class="n">old_backend</span> <span class="o">!=</span> <span class="n">new_backend</span><span class="p">:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Switching hosting backend from &#39;</span><span class="si">{</span><span class="n">old_backend</span><span class="si">}</span><span class="s2">&#39; to &#39;</span><span class="si">{</span><span class="n">new_backend</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">new_backend</span> <span class="o">==</span> <span class="s1">&#39;vllm&#39;</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Stopping Ollama and starting vLLM container...&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Switching hosting backend from '</span><span class="si">{</span><span class="n">old_backend</span><span class="si">}</span><span class="s2">' to '</span><span class="si">{</span><span class="n">new_backend</span><span class="si">}</span><span class="s2">'"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">new_backend</span> <span class="o">==</span> <span class="s1">'vllm'</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Stopping Ollama and starting vLLM container..."</span><span class="p">)</span>
             <span class="n">ollama_client</span><span class="o">.</span><span class="n">stop_container</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">new_vllm</span><span class="p">:</span>
-                <span class="n">ok</span><span class="p">,</span> <span class="n">detail</span> <span class="o">=</span> <span class="n">vllm_client</span><span class="o">.</span><span class="n">start_container</span><span class="p">(</span><span class="n">new_vllm</span><span class="p">,</span> <span class="n">pull_policy</span><span class="o">=</span><span class="s2">&quot;never&quot;</span><span class="p">)</span>
+                <span class="n">ok</span><span class="p">,</span> <span class="n">detail</span> <span class="o">=</span> <span class="n">vllm_client</span><span class="o">.</span><span class="n">start_container</span><span class="p">(</span><span class="n">new_vllm</span><span class="p">,</span> <span class="n">pull_policy</span><span class="o">=</span><span class="s2">"never"</span><span class="p">)</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">ok</span><span class="p">:</span>
                     <span class="n">sync_warning</span> <span class="o">=</span> <span class="n">detail</span>
-        <span class="k">elif</span> <span class="n">new_backend</span> <span class="o">==</span> <span class="s1">&#39;ollama&#39;</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Stopping vLLM and starting Ollama container...&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">new_backend</span> <span class="o">==</span> <span class="s1">'ollama'</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Stopping vLLM and starting Ollama container..."</span><span class="p">)</span>
             <span class="n">vllm_client</span><span class="o">.</span><span class="n">stop_container</span><span class="p">()</span>
-            <span class="n">ok</span><span class="p">,</span> <span class="n">detail</span> <span class="o">=</span> <span class="n">ollama_client</span><span class="o">.</span><span class="n">start_container</span><span class="p">(</span><span class="n">pull_policy</span><span class="o">=</span><span class="s2">&quot;never&quot;</span><span class="p">)</span>
+            <span class="n">ok</span><span class="p">,</span> <span class="n">detail</span> <span class="o">=</span> <span class="n">ollama_client</span><span class="o">.</span><span class="n">start_container</span><span class="p">(</span><span class="n">pull_policy</span><span class="o">=</span><span class="s2">"never"</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">ok</span><span class="p">:</span>
                 <span class="n">sync_warning</span> <span class="o">=</span> <span class="n">detail</span>
-        <span class="k">elif</span> <span class="n">new_backend</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;pytorch&#39;</span><span class="p">,</span> <span class="s1">&#39;llamacpp&#39;</span><span class="p">):</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Stopping both Ollama and vLLM containers (switching to </span><span class="si">{</span><span class="n">new_backend</span><span class="si">}</span><span class="s2">)...&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">new_backend</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">'pytorch'</span><span class="p">,</span> <span class="s1">'llamacpp'</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Stopping both Ollama and vLLM containers (switching to </span><span class="si">{</span><span class="n">new_backend</span><span class="si">}</span><span class="s2">)..."</span><span class="p">)</span>
             <span class="n">ollama_client</span><span class="o">.</span><span class="n">stop_container</span><span class="p">()</span>
             <span class="n">vllm_client</span><span class="o">.</span><span class="n">stop_container</span><span class="p">()</span>
 
     <span class="c1"># 4. If active backend is vLLM and model changed while backend stayed vllm</span>
-    <span class="k">elif</span> <span class="n">new_backend</span> <span class="o">==</span> <span class="s1">&#39;vllm&#39;</span> <span class="ow">and</span> <span class="n">old_backend</span> <span class="o">==</span> <span class="s1">&#39;vllm&#39;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">new_backend</span> <span class="o">==</span> <span class="s1">'vllm'</span> <span class="ow">and</span> <span class="n">old_backend</span> <span class="o">==</span> <span class="s1">'vllm'</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">old_vllm</span> <span class="o">!=</span> <span class="n">new_vllm</span> <span class="ow">and</span> <span class="n">new_vllm</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;vLLM model changed to </span><span class="si">{</span><span class="n">new_vllm</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">. Restarting vLLM container...&quot;</span><span class="p">)</span>
-            <span class="n">ok</span><span class="p">,</span> <span class="n">detail</span> <span class="o">=</span> <span class="n">vllm_client</span><span class="o">.</span><span class="n">start_container</span><span class="p">(</span><span class="n">new_vllm</span><span class="p">,</span> <span class="n">pull_policy</span><span class="o">=</span><span class="s2">&quot;never&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"vLLM model changed to </span><span class="si">{</span><span class="n">new_vllm</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">. Restarting vLLM container..."</span><span class="p">)</span>
+            <span class="n">ok</span><span class="p">,</span> <span class="n">detail</span> <span class="o">=</span> <span class="n">vllm_client</span><span class="o">.</span><span class="n">start_container</span><span class="p">(</span><span class="n">new_vllm</span><span class="p">,</span> <span class="n">pull_policy</span><span class="o">=</span><span class="s2">"never"</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">ok</span><span class="p">:</span>
                 <span class="n">sync_warning</span> <span class="o">=</span> <span class="n">detail</span>
 
@@ -991,9 +991,9 @@
         <span class="k">pass</span>
 
     <span class="c1"># 5. If active backend is Ollama, and either just switched to it OR changed model</span>
-    <span class="k">if</span> <span class="n">new_backend</span> <span class="o">==</span> <span class="s1">&#39;ollama&#39;</span> <span class="ow">and</span> <span class="n">new_ollama</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">old_backend</span> <span class="o">!=</span> <span class="s1">&#39;ollama&#39;</span> <span class="ow">or</span> <span class="n">old_ollama</span> <span class="o">!=</span> <span class="n">new_ollama</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loading Ollama model: </span><span class="si">{</span><span class="n">new_ollama</span><span class="o">.</span><span class="n">hf_model_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">new_backend</span> <span class="o">==</span> <span class="s1">'ollama'</span> <span class="ow">and</span> <span class="n">new_ollama</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">old_backend</span> <span class="o">!=</span> <span class="s1">'ollama'</span> <span class="ow">or</span> <span class="n">old_ollama</span> <span class="o">!=</span> <span class="n">new_ollama</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Loading Ollama model: </span><span class="si">{</span><span class="n">new_ollama</span><span class="o">.</span><span class="n">hf_model_id</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="n">ollama_client</span><span class="o">.</span><span class="n">set_ollama_model_state</span><span class="p">(</span><span class="n">new_ollama</span><span class="o">.</span><span class="n">hf_model_id</span><span class="p">,</span> <span class="n">active</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
 
 </pre></div>

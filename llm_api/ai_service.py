@@ -53,21 +53,28 @@ def _sanitize_messages(msgs):
         return msgs
     sanitized = []
     sys_parts = []
+    seen_non_system = False
     for m in msgs:
-        if m.get('role') == 'system':
+        role = m.get('role')
+        if role == 'system':
             content = m.get('content', '').strip()
-            if content and content not in sys_parts:
-                sys_parts.append(content)
+            if not seen_non_system:
+                if content and content not in sys_parts:
+                    sys_parts.append(content)
+            elif content:
+                # Preserve mid-conversation system observations (e.g. tool outputs, summaries) in chronological order
+                sanitized.append({'role': 'user', 'content': content})
         else:
+            seen_non_system = True
             sanitized.append(dict(m))
-            
+
     sys_prompt = "\n\n---\n\n".join(sys_parts).strip()
     if sys_prompt:
         if sanitized and sanitized[0].get('role') == 'user':
             sanitized[0]['content'] = f"{sys_prompt}\n\n" + sanitized[0].get('content', '')
         else:
             sanitized.insert(0, {'role': 'user', 'content': sys_prompt})
-            
+
     # Merge consecutive roles for strict alternating templates like Gemma
     merged = []
     for m in sanitized:
@@ -636,12 +643,7 @@ class AIService:
             payload["tools"] = tools
 
         if response_schema:
-            schema_json = None
-            if hasattr(response_schema, "model_json_schema"):
-                schema_json = response_schema.model_json_schema()
-            elif isinstance(response_schema, dict):
-                schema_json = response_schema
-            
+            schema_json = self._extract_json_schema_dict(response_schema)
             if schema_json:
                 payload["response_format"] = {
                     "type": "json_schema",
@@ -698,14 +700,32 @@ class AIService:
         except requests.exceptions.RequestException as e:
             raise ConnectionError(f"Failed to communicate with API at {api_url}: {e}")
 
+    @staticmethod
+    def _extract_json_schema_dict(response_schema):
+        """Extracts a JSON-Schema dict from Pydantic models, raw dicts, or outlines JsonSchema wrappers."""
+        if response_schema is None:
+            return None
+        if hasattr(response_schema, "model_json_schema"):
+            return response_schema.model_json_schema()
+        if isinstance(response_schema, dict):
+            return response_schema
+        raw_schema = getattr(response_schema, "schema", None)
+        if isinstance(raw_schema, dict):
+            return raw_schema
+        if isinstance(raw_schema, str):
+            try:
+                return json.loads(raw_schema)
+            except json.JSONDecodeError:
+                return None
+        return None
+
     def _get_schema_cache_key(self, response_schema):
         """Helper to create a deterministic cache key for outline schemas."""
         if response_schema is None:
             return "default_outline_response"
-        if hasattr(response_schema, "model_json_schema"):
-            return json.dumps(response_schema.model_json_schema(), sort_keys=True)
-        if isinstance(response_schema, dict):
-            return json.dumps(response_schema, sort_keys=True)
+        schema_dict = self._extract_json_schema_dict(response_schema)
+        if schema_dict is not None:
+            return json.dumps(schema_dict, sort_keys=True)
         return str(response_schema)
 
     def _perform_active_rag_search(self, term, searched_terms, working_messages):
@@ -785,7 +805,7 @@ class AIService:
                             return response_schema.model_validate(res.model_dump())
                         else:
                             return response_schema.model_validate(res)
-                elif isinstance(response_schema, dict) or response_schema is None:
+                elif self._extract_json_schema_dict(response_schema) is not None or response_schema is None:
                     if isinstance(res, str) and response_schema is not None:
                         return json.loads(res)
                         
@@ -1267,6 +1287,16 @@ class AIService:
         if getattr(self.tokenizer, 'chat_template', None) is None:
             self.tokenizer.chat_template = DEFAULT_CHAT_TEMPLATE
 
+        # Single non-user snippets (e.g. counting assistant output tokens) cannot satisfy
+        # strict alternating chat templates; encode their text content directly.
+        if (
+            isinstance(messages, list)
+            and len(messages) == 1
+            and isinstance(messages[0], dict)
+            and messages[0].get("role") not in (None, "user")
+        ):
+            return len(self.tokenizer.encode(str(messages[0].get("content", ""))))
+
         try:
             # apply_chat_template is the only way to be 100% accurate
             # as it includes all special role tokens.
@@ -1279,15 +1309,27 @@ class AIService:
             elif isinstance(token_list, dict) and 'input_ids' in token_list:
                 return len(token_list['input_ids'])
             return len(token_list)
-        except Exception as e:
-            # A fallback for older models without a chat template.
-            # This is a *rough estimate* and will be inaccurate.
-            logger.info(f'Warning: apply_chat_template failed in count_conversation_tokens ({e}); falling back to naive token count.')
-            total_tokens = 0
-            for msg in messages:
-                content = msg.get('content', '') if isinstance(msg, dict) else getattr(msg, 'content', str(msg))
-                total_tokens += len(self.tokenizer.encode(content))
-            return total_tokens
+        except Exception:
+            try:
+                sanitized_msgs = _sanitize_messages(messages)
+                token_list = self.tokenizer.apply_chat_template(
+                    sanitized_msgs,
+                    add_generation_prompt=True
+                )
+                if hasattr(token_list, 'input_ids'):
+                    return len(token_list.input_ids)
+                elif isinstance(token_list, dict) and 'input_ids' in token_list:
+                    return len(token_list['input_ids'])
+                return len(token_list)
+            except Exception as e:
+                # A fallback for older models without a chat template.
+                # This is a *rough estimate* and will be inaccurate.
+                logger.info(f'Warning: apply_chat_template failed in count_conversation_tokens ({e}); falling back to naive token count.')
+                total_tokens = 0
+                for msg in messages:
+                    content = msg.get('content', '') if isinstance(msg, dict) else getattr(msg, 'content', str(msg))
+                    total_tokens += len(self.tokenizer.encode(content))
+                return total_tokens
 
     def summarize_conversation(self, messages: list) -> list:
         """

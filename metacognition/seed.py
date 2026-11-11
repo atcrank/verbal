@@ -1361,6 +1361,7 @@ def seed_deep_reader(CognitiveBlueprint, ReasoningStep, ToolDefinition, Response
         defaults={
             'description': "Super retriever and synthesizer for augmenting RAG.",
             'is_canonical': True,
+            'is_autonomous': True,
             'category': 'REASONING',
             'output_kind': 'CONTEXT',
         }
@@ -1376,13 +1377,12 @@ def seed_deep_reader(CognitiveBlueprint, ReasoningStep, ToolDefinition, Response
         system_prompt=(
             "You are an intelligent knowledge gatherer. Use the available tools to search RAG chunks, "
             "Grips nodes, and past conversations to find information relevant to the user's prompt. "
-            "Do not stop until you have gathered sufficient context, or you have exhausted search variations. "
-            "If the query is trivial and requires no context, just output TASK_COMPLETE immediately. "
+            "Once you have observed sufficient tool results—or if the query is trivial or already includes a Context Report—call `TASK_COMPLETE` immediately so the Distill Context step can synthesize the evidence. "
             "CRITICAL: If you are repeating this step because a previous evaluation marked the context as INCOMPLETE, "
             "you MUST look at the previous 'missing_terms' and execute new tool queries specifically to find them."
         ),
-        evaluation_criteria="Did the agent gather sufficient context using the tools?",
-        max_retries=3,
+        evaluation_criteria="",
+        max_retries=6,
     )
     
     import json
@@ -1420,20 +1420,22 @@ def seed_deep_reader(CognitiveBlueprint, ReasoningStep, ToolDefinition, Response
         name="Distill Context",
         is_canonical=True,
         system_prompt=(
-            "You are an intelligent knowledge filter. Review the context you gathered in previous steps. "
+            "You are an intelligent knowledge filter. Review ALL evidence across the conversation, including both "
+            "any pre-retrieved Context Report sections (Semantic RAG, Grips, Lexical Search, Past Conversations) in the prompt "
+            "and any tool outputs gathered in previous steps.\n"
             "1. Evaluate this material against the user's prompt.\n"
-            "2. If the context is trivially known to a large language model or completely irrelevant, "
-            "set status to IRRELEVANT.\n"
-            "3. If the context is promising but explicitly missing definitions for new terms it introduced, "
-            "set status to INCOMPLETE and list the terms in missing_terms.\n"
-            "4. If the context provides valuable, novel information, set status to SUFFICIENT and distill it into a dense summary with verifiable citations (e.g., [ID: xxx])."
+            "2. Even if one search tool returned no hits, treat the context as SUFFICIENT whenever any provided section or tool result contains relevant, novel facts.\n"
+            "3. Only set status to IRRELEVANT if ALL sources are completely off-topic or trivially known.\n"
+            "4. If promising evidence explicitly lacks definitions for new terms it introduced, set status to INCOMPLETE and list them in missing_terms.\n"
+            "5. If SUFFICIENT, discard noisy/unrelated distractors and synthesize the relevant facts into `distilled_context` as a dense summary with verifiable citations (e.g., [ID: xxx])."
         ),
         output_schema=schema_eval,
         evaluation_criteria="Check the JSON status field. If status is SUFFICIENT or IRRELEVANT, pass (True). If status is INCOMPLETE, fail (False).",
-        max_retries=1,
+        max_retries=3,
     )
     
     step2.on_failure_step = step1
+    step2.save()
     
     step1.on_success_step = step2
     step1.save()

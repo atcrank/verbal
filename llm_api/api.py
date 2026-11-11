@@ -394,12 +394,43 @@ def get_hardware_diagnostics(request):
         "recommendations": rec.to_dict(),
     })
 
+def _resolve_active_model_identifier(fallback_model: str = "local-model") -> str:
+    """Resolve the active serving model name for OpenAI chat completion payloads."""
+    try:
+        from .models import SystemConfiguration
+
+        config = SystemConfiguration.get_solo()
+        if config:
+            backend_attr_map = {
+                SystemConfiguration.HostingBackend.OLLAMA: ("active_ollama_model",),
+                SystemConfiguration.HostingBackend.VLLM: ("active_vllm_model",),
+                SystemConfiguration.HostingBackend.LLAMACPP: ("active_mini_model", "active_llamacpp_model"),
+                SystemConfiguration.HostingBackend.PYTORCH: ("active_local_model",),
+            }
+            for attr in backend_attr_map.get(config.hosting_backend, ()):
+                model_obj = getattr(config, attr, None)
+                if model_obj:
+                    return (
+                        getattr(model_obj, "name", None)
+                        or getattr(model_obj, "hf_model_id", None)
+                        or getattr(model_obj, "gguf_filename", None)
+                    )
+    except Exception as e:
+        logger.debug(f"Could not resolve active model identifier from SystemConfiguration: {e}")
+
+    ai_serv = service_registry._ai_service
+    if ai_serv and getattr(ai_serv, "model_id", None):
+        return ai_serv.model_id
+    return fallback_model or "local-model"
+
+
 @router.post("/v1/chat/completions", auth=None)
 @csrf_exempt
 def openai_chat_completions(request, payload: OpenAIChatCompletionIn):
     try:
         messages = [{"role": m.role, "content": m.content} for m in payload.messages]
         max_tokens = payload.max_tokens or 1500
+        resolved_model = _resolve_active_model_identifier(payload.model)
         
         # Route structured output vs standard generation
         if payload.response_format and payload.response_format.type == "json_schema":
@@ -466,7 +497,7 @@ def openai_chat_completions(request, payload: OpenAIChatCompletionIn):
                     content = str(r)
                 choices.append({"message": {"role": "assistant", "content": content}})
                 
-            return JsonResponse({"choices": choices})
+            return JsonResponse({"model": resolved_model, "choices": choices})
         else:
             results = service_registry.ai_service.generate_response2(
                 messages=messages,
@@ -476,7 +507,7 @@ def openai_chat_completions(request, payload: OpenAIChatCompletionIn):
                 log_kwargs={"skip_log": True}
             )
             choices = [{"message": {"role": "assistant", "content": str(r)}} for r in results]
-            return JsonResponse({"choices": choices})
+            return JsonResponse({"model": resolved_model, "choices": choices})
     except Exception as e:
         logger.exception(f"❌ Error handling /v1/chat/completions: {e}")
         return JsonResponse({
