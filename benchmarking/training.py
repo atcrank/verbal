@@ -199,13 +199,18 @@ def train_lora_adapter(
                     bnb_4bit_compute_dtype=compute_dtype,
                 )
 
-            # Load Tokenizer
-            tokenizer = AutoTokenizer.from_pretrained(base_model_id, trust_remote_code=True)
+            from llm_api.diagnostics import load_hf_with_cache_first
+
+            # Load Tokenizer (cache-first)
+            tokenizer = load_hf_with_cache_first(
+                AutoTokenizer.from_pretrained, base_model_id, trust_remote_code=True
+            )
             if tokenizer.pad_token is None:
                 tokenizer.pad_token = tokenizer.eos_token
 
-            # Load Base Model
-            model = AutoModelForCausalLM.from_pretrained(
+            # Load Base Model (cache-first)
+            model = load_hf_with_cache_first(
+                AutoModelForCausalLM.from_pretrained,
                 base_model_id,
                 quantization_config=bnb_config,
                 device_map="auto",

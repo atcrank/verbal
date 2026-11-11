@@ -174,8 +174,8 @@ class TestSystemdUnitsGeneration(SimpleTestCase):
         self.assertIn("Wants=reason-docker.service", service)
         self.assertIn("WantedBy=multi-user.target", service)
 
-        self.assertIn("ExecStart=/usr/bin/docker compose up -d db sandbox", docker)
-        self.assertIn("ExecStart=-/usr/bin/docker compose --profile academic up -d grobid", docker)
+        self.assertIn("ExecStart=/usr/bin/docker compose up -d --no-build --pull never db sandbox", docker)
+        self.assertIn("ExecStart=-/usr/bin/docker compose --profile academic up -d --no-build --pull never grobid", docker)
         self.assertIn("ExecStop=/usr/bin/docker compose stop", docker)
         self.assertIn("RemainAfterExit=yes", docker)
         self.assertIn("PartOf=reason.service", docker)

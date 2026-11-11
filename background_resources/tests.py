@@ -1086,10 +1086,36 @@ class TestConfigurableEmbeddingsResolution(TestCase):
 
             with override_settings(EMBEDDING_MODEL_NAME="custom-org/diversity-embed"):
                 task_calculate_dataset_metrics.func(dataset.id)
-                mock_st.assert_called_with("custom-org/diversity-embed")
+                mock_st.assert_called_with("custom-org/diversity-embed", local_files_only=True)
         finally:
             if os.path.exists(temp_path):
                 os.remove(temp_path)
+
+    @patch("background_resources.rag_service.HuggingFaceEmbeddings")
+    def test_rag_service_hub_id_prioritizes_local_files_only(self, mock_hf_embed):
+        """Standard Hub repo IDs (like all-MiniLM-L6-v2) try local_files_only=True first."""
+        from background_resources.rag_service import RAGService
+
+        RAGService(model_name="sentence-transformers/all-MiniLM-L6-v2")
+        mock_hf_embed.assert_called_once()
+        model_kwargs = mock_hf_embed.call_args[1]["model_kwargs"]
+        self.assertTrue(model_kwargs.get("local_files_only"))
+
+    @patch("background_resources.rag_service.HuggingFaceEmbeddings")
+    def test_rag_service_hub_id_falls_back_when_local_cache_absent(self, mock_hf_embed):
+        """If a Hub repo ID is not cached locally, load falls back cleanly without local_files_only."""
+        from background_resources.rag_service import RAGService
+
+        mock_instance = MagicMock()
+        mock_hf_embed.side_effect = [OSError("LocalEntryNotFoundError"), mock_instance]
+
+        service = RAGService(model_name="sentence-transformers/all-MiniLM-L6-v2")
+        self.assertEqual(service.embeddings, mock_instance)
+        self.assertEqual(mock_hf_embed.call_count, 2)
+        first_kwargs = mock_hf_embed.call_args_list[0][1]["model_kwargs"]
+        second_kwargs = mock_hf_embed.call_args_list[1][1]["model_kwargs"]
+        self.assertTrue(first_kwargs.get("local_files_only"))
+        self.assertNotIn("local_files_only", second_kwargs)
 
 
 

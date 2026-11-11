@@ -103,9 +103,8 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">django.conf</span><span class="w"> </span><span class="kn">import</span> <span class="n">settings</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
-<span class="c1"># Hotfix for transformers/torch compatibility bug with missing fp8 dtypes</span>
-<span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">torch</span><span class="p">,</span> <span class="s2">&quot;float8_e8m0fnu&quot;</span><span class="p">):</span>
-    <span class="nb">setattr</span><span class="p">(</span><span class="n">torch</span><span class="p">,</span> <span class="s2">&quot;float8_e8m0fnu&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.torch_compat</span><span class="w"> </span><span class="kn">import</span> <span class="n">apply_torch_compatibility_shims</span>
+<span class="n">apply_torch_compatibility_shims</span><span class="p">()</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">transformers</span><span class="w"> </span><span class="kn">import</span> <span class="n">AutoTokenizer</span><span class="p">,</span> <span class="n">AutoModelForCausalLM</span><span class="p">,</span> <span class="n">pipeline</span><span class="p">,</span> <span class="n">BitsAndBytesConfig</span><span class="p">,</span> <span class="n">GenerationConfig</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">outlines</span>
@@ -214,6 +213,7 @@
     <span class="n">inference_url</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="s2">&quot;INFERENCE_URL&quot;</span><span class="p">,</span> <span class="s2">&quot;http://127.0.0.1:8001/api/llm&quot;</span><span class="p">)</span>
     <span class="n">model_id</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">model</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">load_error</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">classifier</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">outline_pipeline</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">terminators</span> <span class="o">=</span> <span class="kc">None</span>
@@ -225,21 +225,51 @@
 
 
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">_resolve_tokenizer_source</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Determines ``(tokenizer_id, allow_remote)`` for CPU/inference tokenization.</span>
+
+<span class="sd">        Never initiates remote Hugging Face downloads for unconfigured default</span>
+<span class="sd">        fallbacks or when a GGUF CPU Mini-Model is handling utility tokenization.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">client_roles</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;web&quot;</span><span class="p">,</span> <span class="s2">&quot;worker&quot;</span><span class="p">,</span> <span class="s2">&quot;scheduler&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_id</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">role</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">client_roles</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_id</span><span class="p">,</span> <span class="kc">True</span>
+
+        <span class="k">if</span> <span class="n">config</span> <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;system_tokenizer&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">config</span><span class="o">.</span><span class="n">system_tokenizer</span><span class="o">.</span><span class="n">hf_model_id</span><span class="p">,</span> <span class="kc">True</span>
+
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">config</span>
+            <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;use_mini_model_for_utilities&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;active_mini_model_id&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="o">==</span> <span class="s2">&quot;llamacpp&quot;</span><span class="p">)</span>
+        <span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">False</span>
+
+        <span class="k">if</span> <span class="n">config</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="o">==</span> <span class="s2">&quot;pytorch&quot;</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">active_local_model</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">config</span><span class="o">.</span><span class="n">active_local_model</span><span class="o">.</span><span class="n">hf_model_id</span><span class="p">,</span> <span class="kc">False</span>
+
+        <span class="k">if</span> <span class="n">config</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="o">==</span> <span class="s2">&quot;vllm&quot;</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">active_vllm_model</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">config</span><span class="o">.</span><span class="n">active_vllm_model</span><span class="o">.</span><span class="n">hf_model_id</span><span class="p">,</span> <span class="kc">False</span>
+
+        <span class="k">return</span> <span class="s2">&quot;google/gemma-4-E2B-it&quot;</span><span class="p">,</span> <span class="kc">False</span>
+
 <div class="viewcode-block" id="AIService.load_models">
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.ai_service.AIService.load_models">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">load_models</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">token</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;HF_TOKEN&quot;</span><span class="p">)</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">.diagnostics</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_hf_with_cache_first</span>
 
+        <span class="n">token</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;HF_TOKEN&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model_id</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="n">tokenizer_id</span> <span class="o">=</span> <span class="s2">&quot;google/gemma-4-E2B-it&quot;</span>
-        
+        <span class="n">config</span> <span class="o">=</span> <span class="kc">None</span>
+
         <span class="k">try</span><span class="p">:</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemConfiguration</span>
             <span class="n">config</span> <span class="o">=</span> <span class="n">SystemConfiguration</span><span class="o">.</span><span class="n">get_solo</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">config</span><span class="p">:</span>
-                <span class="n">tokenizer_id</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">system_tokenizer</span><span class="o">.</span><span class="n">hf_model_id</span> <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">system_tokenizer</span> <span class="k">else</span> <span class="s2">&quot;google/gemma-4-E2B-it&quot;</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loading system tokenizer: </span><span class="si">{</span><span class="n">tokenizer_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                
+                <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">active_mini_model</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CPU Mini-Model configured: </span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">active_mini_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">active_mini_model</span><span class="o">.</span><span class="n">gguf_filename</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
                 <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="o">==</span> <span class="s1">&#39;vllm&#39;</span><span class="p">:</span>
                     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;📂 System Config: vLLM is enabled. Bypassing PyTorch load.&#39;</span><span class="p">)</span>
                 <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="o">==</span> <span class="s1">&#39;ollama&#39;</span><span class="p">:</span>
@@ -252,21 +282,33 @@
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Warning: Could not fetch SystemConfiguration from DB: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
-        <span class="c1"># If a local model is active and we&#39;re not just a web worker, we MUST use its tokenizer</span>
-        <span class="c1"># Otherwise the generated token IDs will decode to garbage.</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_id</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">role</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;web&quot;</span><span class="p">,</span> <span class="s2">&quot;worker&quot;</span><span class="p">]:</span>
-            <span class="n">tokenizer_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_id</span>
+        <span class="n">tokenizer_id</span><span class="p">,</span> <span class="n">allow_remote_tok</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolve_tokenizer_source</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">tokenizer_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;⏭️ Bypassing Hugging Face tokenizer load (CPU Mini-Model active for utilities).&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;⚙️ Loading CPU tokenizer: </span><span class="si">{</span><span class="n">tokenizer_id</span><span class="si">}</span><span class="s1"> (allow_remote=</span><span class="si">{</span><span class="n">allow_remote_tok</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span> <span class="o">=</span> <span class="n">load_hf_with_cache_first</span><span class="p">(</span>
+                    <span class="n">AutoTokenizer</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">,</span>
+                    <span class="n">tokenizer_id</span><span class="p">,</span>
+                    <span class="n">allow_remote</span><span class="o">=</span><span class="n">allow_remote_tok</span><span class="p">,</span>
+                    <span class="n">token</span><span class="o">=</span><span class="n">token</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">pad_token_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">pad_token_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">eos_token_id</span>
+                <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">,</span> <span class="s1">&#39;chat_template&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Tokenizer &#39;</span><span class="si">{</span><span class="n">tokenizer_id</span><span class="si">}</span><span class="s2">&#39; has no chat_template defined; injecting default fallback ChatML template.&quot;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">chat_template</span> <span class="o">=</span> <span class="n">DEFAULT_CHAT_TEMPLATE</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;⚠️ Could not load Hugging Face tokenizer &#39;</span><span class="si">{</span><span class="n">tokenizer_id</span><span class="si">}</span><span class="s2">&#39; (</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">). &quot;</span>
+                    <span class="s2">&quot;Token counting will use the CPU Mini-Model (llama.cpp) or fast character estimation.&quot;</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;⚙️ Loading CPU tokenizer: </span><span class="si">{</span><span class="n">tokenizer_id</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span> <span class="o">=</span> <span class="n">AutoTokenizer</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">tokenizer_id</span><span class="p">,</span> <span class="n">token</span><span class="o">=</span><span class="n">token</span><span class="p">)</span>
-        <span class="c1"># Load your main LLM</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">pad_token_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">pad_token_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">eos_token_id</span>
-        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">,</span> <span class="s1">&#39;chat_template&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Tokenizer &#39;</span><span class="si">{</span><span class="n">tokenizer_id</span><span class="si">}</span><span class="s2">&#39; has no chat_template defined; injecting default fallback ChatML template.&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">chat_template</span> <span class="o">=</span> <span class="n">DEFAULT_CHAT_TEMPLATE</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">role</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;web&quot;</span><span class="p">,</span> <span class="s2">&quot;worker&quot;</span><span class="p">]:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;💻 Running in proxy mode (Role: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">role</span><span class="si">}</span><span class="s1">). Tokenizer loaded, bypassing heavy LLM load.&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">role</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;web&quot;</span><span class="p">,</span> <span class="s2">&quot;worker&quot;</span><span class="p">,</span> <span class="s2">&quot;scheduler&quot;</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;💻 Running in proxy mode (Role: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">role</span><span class="si">}</span><span class="s1">). Tokenizer step complete, bypassing heavy LLM load.&#39;</span><span class="p">)</span>
             
             <span class="c1"># Verify HTTP connection</span>
             <span class="k">try</span><span class="p">:</span>
@@ -348,10 +390,31 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">load_kwargs</span><span class="p">[</span><span class="s2">&quot;torch_dtype&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch_dtype</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">AutoModelForCausalLM</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">model_id</span><span class="p">,</span>
-            <span class="o">**</span><span class="n">load_kwargs</span>
-        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">load_error</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># First attempt loading with local_files_only=True to prevent uncommanded Artifactory / Hugging Face queries</span>
+            <span class="c1"># (which causes 404 errors on adapter_config.json on mirrors).</span>
+            <span class="n">local_kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">load_kwargs</span><span class="p">)</span>
+            <span class="n">local_kwargs</span><span class="p">[</span><span class="s2">&quot;local_files_only&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Attempting to load PyTorch model &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">model_id</span><span class="si">}</span><span class="s2">&#39; with local_files_only=True...&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">AutoModelForCausalLM</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model_id</span><span class="p">,</span>
+                <span class="o">**</span><span class="n">local_kwargs</span>
+            <span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Loaded &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">model_id</span><span class="si">}</span><span class="s2">&#39; from local cache.&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">local_err</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Local cache load for &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">model_id</span><span class="si">}</span><span class="s2">&#39; failed (</span><span class="si">{</span><span class="n">local_err</span><span class="si">}</span><span class="s2">); attempting remote/mirror fetch...&quot;</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">AutoModelForCausalLM</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">model_id</span><span class="p">,</span>
+                    <span class="o">**</span><span class="n">load_kwargs</span>
+                <span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">remote_err</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">load_error</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">remote_err</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">remote_err</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Failed to load PyTorch model &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">model_id</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">load_error</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">outline_pipeline</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">raise</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">pad_token_id</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">,</span> <span class="s1">&#39;pad_token_id&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">eos_token_id</span><span class="p">)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;✅ LLM model loaded successfully.&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)]]))</span>
@@ -360,12 +423,18 @@
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;✅ Outline llm wrapper loaded&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outline_pipeline</span><span class="p">)]]))</span>
 
         <span class="n">terminators</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">eos_token_id</span><span class="p">]</span>
-        <span class="k">for</span> <span class="n">token_str</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;&lt;|eot_id|&gt;&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;|im_end|&gt;&quot;</span><span class="p">]:</span>
+        <span class="n">candidate_terminators</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;&lt;|eot_id|&gt;&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;|im_end|&gt;&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;turn|&gt;&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;end_of_turn&gt;&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;/s&gt;&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;|endoftext|&gt;&quot;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">token_str</span> <span class="ow">in</span> <span class="n">candidate_terminators</span><span class="p">:</span>
             <span class="n">tok_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">convert_tokens_to_ids</span><span class="p">(</span><span class="n">token_str</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">tok_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">tok_id</span> <span class="o">!=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">,</span> <span class="s1">&#39;unk_token_id&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">tok_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="ow">and</span> <span class="n">tok_id</span> <span class="o">!=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">,</span> <span class="s1">&#39;unk_token_id&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="n">tok_id</span> <span class="o">!=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">,</span> <span class="s1">&#39;pad_token_id&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="p">):</span>
                 <span class="n">terminators</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tok_id</span><span class="p">)</span>
                 
         <span class="bp">self</span><span class="o">.</span><span class="n">terminators</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">terminators</span> <span class="k">if</span> <span class="n">t</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">))</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Registered </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">terminators</span><span class="p">)</span><span class="si">}</span><span class="s2"> turn terminator token(s): </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">terminators</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;✅ AI models loaded successfully.&#39;</span><span class="p">)</span></div>
 
@@ -375,6 +444,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">unload_models</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Frees VRAM for model switching.&quot;&quot;&quot;</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;🗑️ Unloading AI models...&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">load_error</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;model&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;outline_pipeline&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">outline_pipeline</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -395,7 +465,7 @@
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.ai_service.AIService.set_active_adapter">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">set_active_adapter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adapter_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">adapter_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Swaps the active LoRA adapter on the loaded PyTorch model.&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">role</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;web&quot;</span><span class="p">,</span> <span class="s2">&quot;worker&quot;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">role</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;web&quot;</span><span class="p">,</span> <span class="s2">&quot;worker&quot;</span><span class="p">,</span> <span class="s2">&quot;scheduler&quot;</span><span class="p">):</span>
             <span class="k">return</span>
             
         <span class="k">if</span> <span class="ow">not</span> <span class="n">adapter_path</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">adapter_name</span><span class="p">:</span>
@@ -515,8 +585,11 @@
                                 <span class="n">model_name</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">active_vllm_model</span><span class="o">.</span><span class="n">name</span>
                             <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="o">==</span> <span class="s1">&#39;ollama&#39;</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">active_ollama_model</span><span class="p">:</span>
                                 <span class="n">model_name</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">active_ollama_model</span><span class="o">.</span><span class="n">name</span>
-                            <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="o">==</span> <span class="s1">&#39;llamacpp&#39;</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">active_llamacpp_model</span><span class="p">:</span>
-                                <span class="n">model_name</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">active_llamacpp_model</span><span class="o">.</span><span class="n">name</span>
+                            <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="o">==</span> <span class="s1">&#39;llamacpp&#39;</span><span class="p">:</span>
+                                <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s1">&#39;active_mini_model&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+                                    <span class="n">model_name</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">active_mini_model</span><span class="o">.</span><span class="n">name</span>
+                                <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">active_llamacpp_model</span><span class="p">:</span>
+                                    <span class="n">model_name</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">active_llamacpp_model</span><span class="o">.</span><span class="n">name</span>
                             <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="o">==</span> <span class="s1">&#39;pytorch&#39;</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">active_local_model</span><span class="p">:</span>
                                 <span class="n">model_name</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">active_local_model</span><span class="o">.</span><span class="n">name</span>
                     <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
@@ -541,6 +614,10 @@
                     <span class="n">state_tree_snapshot</span> <span class="o">=</span> <span class="p">{}</span>
 
                 <span class="n">target_log_id</span> <span class="o">=</span> <span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;initial_log_id&quot;</span><span class="p">)</span>
+                <span class="n">log_kind</span> <span class="o">=</span> <span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;log_kind&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">log_kind</span><span class="p">:</span>
+                    <span class="n">log_kind</span> <span class="o">=</span> <span class="n">PromptResponseLog</span><span class="o">.</span><span class="n">LogKind</span><span class="o">.</span><span class="n">TRACE</span> <span class="k">if</span> <span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reasoning_step_id&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="n">PromptResponseLog</span><span class="o">.</span><span class="n">LogKind</span><span class="o">.</span><span class="n">TURN</span>
+
                 <span class="n">log</span> <span class="o">=</span> <span class="kc">None</span>
                 <span class="k">if</span> <span class="n">target_log_id</span><span class="p">:</span>
                     <span class="n">log</span> <span class="o">=</span> <span class="n">PromptResponseLog</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">target_log_id</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
@@ -565,6 +642,7 @@
                     <span class="n">log</span><span class="o">.</span><span class="n">reasoning_step_id</span> <span class="o">=</span> <span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reasoning_step_id&quot;</span><span class="p">)</span>
                     <span class="k">if</span> <span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;blueprint_id&quot;</span><span class="p">):</span>
                         <span class="n">log</span><span class="o">.</span><span class="n">blueprint_id</span> <span class="o">=</span> <span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;blueprint_id&quot;</span><span class="p">)</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">log_kind</span> <span class="o">=</span> <span class="n">log_kind</span>
                     <span class="n">log</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
                     <span class="n">log_kwargs</span><span class="p">[</span><span class="s2">&quot;initial_log_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
                 <span class="k">else</span><span class="p">:</span>
@@ -583,7 +661,8 @@
                         <span class="n">tokens_per_second</span><span class="o">=</span><span class="n">tps</span><span class="p">,</span>
                         <span class="n">model_name</span><span class="o">=</span><span class="n">model_name</span><span class="p">,</span>
                         <span class="n">reasoning_step_id</span><span class="o">=</span><span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reasoning_step_id&quot;</span><span class="p">),</span>
-                        <span class="n">blueprint_id</span><span class="o">=</span><span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;blueprint_id&quot;</span><span class="p">)</span>
+                        <span class="n">blueprint_id</span><span class="o">=</span><span class="n">log_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;blueprint_id&quot;</span><span class="p">),</span>
+                        <span class="n">log_kind</span><span class="o">=</span><span class="n">log_kind</span>
                     <span class="p">)</span>
                 <span class="k">if</span> <span class="s2">&quot;log_ids&quot;</span> <span class="ow">in</span> <span class="n">log_kwargs</span><span class="p">:</span>
                     <span class="n">log_kwargs</span><span class="p">[</span><span class="s2">&quot;log_ids&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">log</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
@@ -635,7 +714,9 @@
                     <span class="n">api_url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">llamacpp_url</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">/v1/chat/completions&quot;</span>
                     <span class="k">if</span> <span class="n">lora_adapter</span><span class="p">:</span>
                         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Dynamic LoRA swapping is not supported on the llama.cpp backend. Falling back to base model.&quot;</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">active_llamacpp_model</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s1">&#39;active_mini_model&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+                        <span class="n">target_model</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">active_mini_model</span><span class="o">.</span><span class="n">name</span> <span class="ow">or</span> <span class="n">config</span><span class="o">.</span><span class="n">active_mini_model</span><span class="o">.</span><span class="n">gguf_filename</span>
+                    <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">active_llamacpp_model</span><span class="p">:</span>
                         <span class="n">target_model</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">active_llamacpp_model</span><span class="o">.</span><span class="n">gguf_file_path</span> <span class="ow">or</span> <span class="n">config</span><span class="o">.</span><span class="n">active_llamacpp_model</span><span class="o">.</span><span class="n">hf_model_id</span> <span class="ow">or</span> <span class="n">config</span><span class="o">.</span><span class="n">active_llamacpp_model</span><span class="o">.</span><span class="n">name</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">pass</span>
@@ -935,7 +1016,7 @@
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.ai_service.AIService.supports_native_tools">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">supports_native_tools</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns True if the current configuration supports native tool calling (e.g. OpenAI/Ollama proxy).&quot;&quot;&quot;</span>
-        <span class="n">needs_proxy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">role</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;web&quot;</span><span class="p">,</span> <span class="s2">&quot;worker&quot;</span><span class="p">]</span>
+        <span class="n">needs_proxy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">role</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;web&quot;</span><span class="p">,</span> <span class="s2">&quot;worker&quot;</span><span class="p">,</span> <span class="s2">&quot;scheduler&quot;</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemConfiguration</span>
             <span class="n">config</span> <span class="o">=</span> <span class="n">SystemConfiguration</span><span class="o">.</span><span class="n">get_solo</span><span class="p">()</span>
@@ -974,7 +1055,7 @@
         <span class="k">if</span> <span class="n">log_kwargs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">log_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
 
-        <span class="n">needs_proxy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">role</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;web&quot;</span><span class="p">,</span> <span class="s2">&quot;worker&quot;</span><span class="p">]</span>
+        <span class="n">needs_proxy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">role</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;web&quot;</span><span class="p">,</span> <span class="s2">&quot;worker&quot;</span><span class="p">,</span> <span class="s2">&quot;scheduler&quot;</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemConfiguration</span>
             <span class="n">config</span> <span class="o">=</span> <span class="n">SystemConfiguration</span><span class="o">.</span><span class="n">get_solo</span><span class="p">()</span>
@@ -982,7 +1063,7 @@
                 <span class="n">needs_proxy</span> <span class="o">=</span> <span class="kc">True</span>
                 
             <span class="k">if</span> <span class="n">config</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;ollama&#39;</span><span class="p">,</span> <span class="s1">&#39;llamacpp&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">lora_adapter</span><span class="p">:</span>
-                <span class="n">active_mod</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">active_llamacpp_model</span> <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="o">==</span> <span class="s1">&#39;llamacpp&#39;</span> <span class="k">else</span> <span class="n">config</span><span class="o">.</span><span class="n">active_ollama_model</span>
+                <span class="n">active_mod</span> <span class="o">=</span> <span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s1">&#39;active_mini_model&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">config</span><span class="o">.</span><span class="n">active_llamacpp_model</span><span class="p">)</span> <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="o">==</span> <span class="s1">&#39;llamacpp&#39;</span> <span class="k">else</span> <span class="n">config</span><span class="o">.</span><span class="n">active_ollama_model</span>
                 <span class="n">base_model</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">active_mod</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;unknown&#39;</span><span class="p">)</span>
                 <span class="n">backend_name</span> <span class="o">=</span> <span class="s2">&quot;llama.cpp&quot;</span> <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="o">==</span> <span class="s1">&#39;llamacpp&#39;</span> <span class="k">else</span> <span class="s2">&quot;Ollama&quot;</span>
                 <span class="n">sys_prompt</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_prompts</span><span class="p">(</span><span class="n">messages</span><span class="p">)</span>
@@ -1023,9 +1104,13 @@
             <span class="k">def</span><span class="w"> </span><span class="nf">local_callable</span><span class="p">(</span><span class="n">msgs</span><span class="p">,</span> <span class="n">max_tok</span><span class="p">,</span> <span class="n">temp</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
                 <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">load_models</span><span class="p">()</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">load_models</span><span class="p">()</span>
+                        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                            <span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error loading models in generate_response2: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;No Local AI Model is active in System Configuration, and no External API is configured for this user.&quot;</span><span class="p">)</span>
+                        <span class="n">err_detail</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;load_error&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;No Local AI Model is active in System Configuration, and no External API is configured for this user.&quot;</span>
+                        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Local AI Model &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">model_id</span><span class="si">}</span><span class="s2">&#39; failed to load: </span><span class="si">{</span><span class="n">err_detail</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                         
                     <span class="c1"># Load appropriate LoRA adapter if specified</span>
                     <span class="k">if</span> <span class="n">lora_adapter</span><span class="p">:</span>
@@ -1049,6 +1134,7 @@
                         <span class="n">max_new_tokens</span><span class="o">=</span><span class="n">max_tok</span><span class="p">,</span>
                         <span class="n">temperature</span><span class="o">=</span><span class="n">temp</span> <span class="k">if</span> <span class="n">do_sample</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
                         <span class="n">top_p</span><span class="o">=</span><span class="mf">0.95</span> <span class="k">if</span> <span class="n">do_sample</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                        <span class="n">top_k</span><span class="o">=</span><span class="mi">50</span> <span class="k">if</span> <span class="n">do_sample</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
                         <span class="n">do_sample</span><span class="o">=</span><span class="n">do_sample</span><span class="p">,</span>
                         <span class="n">eos_token_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">terminators</span><span class="p">,</span>
                         <span class="n">pad_token_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">pad_token_id</span><span class="p">,</span>
@@ -1108,7 +1194,7 @@
         <span class="k">if</span> <span class="n">log_kwargs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">log_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
 
-        <span class="n">needs_proxy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">role</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;web&quot;</span><span class="p">,</span> <span class="s2">&quot;worker&quot;</span><span class="p">]</span>
+        <span class="n">needs_proxy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">role</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;web&quot;</span><span class="p">,</span> <span class="s2">&quot;worker&quot;</span><span class="p">,</span> <span class="s2">&quot;scheduler&quot;</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemConfiguration</span>
             <span class="n">config</span> <span class="o">=</span> <span class="n">SystemConfiguration</span><span class="o">.</span><span class="n">get_solo</span><span class="p">()</span>
@@ -1116,7 +1202,7 @@
                 <span class="n">needs_proxy</span> <span class="o">=</span> <span class="kc">True</span>
                 
             <span class="k">if</span> <span class="n">config</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;ollama&#39;</span><span class="p">,</span> <span class="s1">&#39;llamacpp&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">lora_adapter</span><span class="p">:</span>
-                <span class="n">active_mod</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">active_llamacpp_model</span> <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="o">==</span> <span class="s1">&#39;llamacpp&#39;</span> <span class="k">else</span> <span class="n">config</span><span class="o">.</span><span class="n">active_ollama_model</span>
+                <span class="n">active_mod</span> <span class="o">=</span> <span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s1">&#39;active_mini_model&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">config</span><span class="o">.</span><span class="n">active_llamacpp_model</span><span class="p">)</span> <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="o">==</span> <span class="s1">&#39;llamacpp&#39;</span> <span class="k">else</span> <span class="n">config</span><span class="o">.</span><span class="n">active_ollama_model</span>
                 <span class="n">base_model</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">active_mod</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;unknown&#39;</span><span class="p">)</span>
                 <span class="n">backend_name</span> <span class="o">=</span> <span class="s2">&quot;llama.cpp&quot;</span> <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="o">==</span> <span class="s1">&#39;llamacpp&#39;</span> <span class="k">else</span> <span class="s2">&quot;Ollama&quot;</span>
                 <span class="n">sys_prompt</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_prompts</span><span class="p">(</span><span class="n">messages</span><span class="p">)</span>
@@ -1152,10 +1238,14 @@
             <span class="k">def</span><span class="w"> </span><span class="nf">local_callable</span><span class="p">(</span><span class="n">msgs</span><span class="p">,</span> <span class="n">max_tok</span><span class="p">,</span> <span class="n">temp</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
                 <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">outline_pipeline</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">load_models</span><span class="p">()</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">load_models</span><span class="p">()</span>
+                        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                            <span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error loading models in generate_outline: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                         
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">outline_pipeline</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;No Local AI Model is active in System Configuration.&quot;</span><span class="p">)</span>
+                        <span class="n">err_detail</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;load_error&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;No Local AI Model is active in System Configuration.&quot;</span>
+                        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Local AI Model &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">model_id</span><span class="si">}</span><span class="s2">&#39; failed to load outline pipeline: </span><span class="si">{</span><span class="n">err_detail</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                         
                     <span class="c1"># Load appropriate LoRA adapter if specified</span>
                     <span class="k">if</span> <span class="n">lora_adapter</span><span class="p">:</span>
@@ -1208,20 +1298,23 @@
 <div class="viewcode-block" id="AIService.label_single">
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.ai_service.AIService.label_single">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">label_single</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">labels</span><span class="p">):</span>
-        <span class="c1"># lazy load</span>
+        <span class="c1"># lazy load (cache-first)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">.diagnostics</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_hf_with_cache_first</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span> <span class="o">=</span> <span class="n">pipeline</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span> <span class="o">=</span> <span class="n">load_hf_with_cache_first</span><span class="p">(</span>
+                    <span class="n">pipeline</span><span class="p">,</span>
                     <span class="s2">&quot;zero-shot-classification&quot;</span><span class="p">,</span>
                     <span class="n">model</span><span class="o">=</span><span class="s2">&quot;facebook/bart-large-mnli&quot;</span><span class="p">,</span>
-                    <span class="n">device</span><span class="o">=</span><span class="mi">0</span>
+                    <span class="n">device</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;GPU not found, falling back to CPU. This will be slow.&#39;</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span> <span class="o">=</span> <span class="n">pipeline</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span> <span class="o">=</span> <span class="n">load_hf_with_cache_first</span><span class="p">(</span>
+                    <span class="n">pipeline</span><span class="p">,</span>
                     <span class="s2">&quot;zero-shot-classification&quot;</span><span class="p">,</span>
                     <span class="n">model</span><span class="o">=</span><span class="s2">&quot;facebook/bart-large-mnli&quot;</span><span class="p">,</span>
-                    <span class="n">device</span><span class="o">=-</span><span class="mi">1</span>  <span class="c1"># Use -1 for CPU</span>
+                    <span class="n">device</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>  <span class="c1"># Use -1 for CPU</span>
                 <span class="p">)</span></div>
 
 
@@ -1253,8 +1346,52 @@
 <div class="viewcode-block" id="AIService.count_conversation_tokens">
 <a class="viewcode-back" href="../../llm_api_app.html#llm_api.ai_service.AIService.count_conversation_tokens">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">count_conversation_tokens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">messages</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="c1"># 1. Extract plain text representation for llama.cpp / fallback estimation</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">msg</span> <span class="ow">in</span> <span class="p">(</span><span class="n">messages</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">messages</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">messages</span><span class="p">)}]):</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="n">msg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;content&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">msg</span><span class="p">))</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="n">content</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                    <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">content</span>
+                <span class="p">)</span>
+            <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">content</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+        <span class="n">combined_text</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span>
+
+        <span class="c1"># 2. If CPU Mini-Model utilities are enabled (or hosting_backend is llamacpp)</span>
+        <span class="c1">#    and no explicit Hugging Face system_tokenizer is loaded, try llama-server /tokenize first.</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemConfiguration</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">.llamacpp_client</span><span class="w"> </span><span class="kn">import</span> <span class="n">tokenize_with_llamacpp</span>
+            <span class="n">config</span> <span class="o">=</span> <span class="n">SystemConfiguration</span><span class="o">.</span><span class="n">get_solo</span><span class="p">()</span>
+            <span class="n">prefer_minimodel_tokenizer</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span>
+                <span class="n">config</span>
+                <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;use_mini_model_for_utilities&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="p">(</span>
+                    <span class="nb">getattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;active_mini_model_id&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                    <span class="ow">or</span> <span class="n">config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="o">==</span> <span class="s2">&quot;llamacpp&quot;</span>
+                <span class="p">)</span>
+                <span class="ow">and</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;system_tokenizer_id&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">prefer_minimodel_tokenizer</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">llama_tokens</span> <span class="o">=</span> <span class="n">tokenize_with_llamacpp</span><span class="p">(</span><span class="n">combined_text</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">llama_tokens</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">llama_tokens</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">load_models</span><span class="p">()</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">load_models</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">:</span>
+            <span class="c1"># Fail-safe non-blocking heuristic (~4 chars per token) when both</span>
+            <span class="c1"># HF tokenizer and llama-server are offline/unavailable.</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">combined_text</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+                <span class="k">return</span> <span class="mi">0</span>
+            <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">combined_text</span><span class="p">)</span> <span class="o">//</span> <span class="mi">4</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">,</span> <span class="s1">&#39;chat_template&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">chat_template</span> <span class="o">=</span> <span class="n">DEFAULT_CHAT_TEMPLATE</span>
@@ -1300,7 +1437,9 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemConfiguration</span>
             <span class="n">config</span> <span class="o">=</span> <span class="n">SystemConfiguration</span><span class="o">.</span><span class="n">get_solo</span><span class="p">()</span>
-            <span class="k">if</span> <span class="n">config</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">active_local_model</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">config</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">hosting_backend</span> <span class="o">==</span> <span class="s1">&#39;llamacpp&#39;</span> <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s1">&#39;active_mini_model&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="n">context_limit</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">active_mini_model</span><span class="o">.</span><span class="n">context_window</span> <span class="o">*</span> <span class="mf">0.7</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">config</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">active_local_model</span><span class="p">:</span>
                 <span class="n">context_limit</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">active_local_model</span><span class="o">.</span><span class="n">context_window</span> <span class="o">*</span> <span class="mf">0.7</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">context_limit</span> <span class="o">=</span> <span class="mi">3000</span>  <span class="c1"># Conservative fallback</span>

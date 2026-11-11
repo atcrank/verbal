@@ -55,6 +55,7 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Guides &amp; Testing:</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../deploy.html">Production Deployment &amp; Operations Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../using_ollama.html">Ollama as Local AI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../metacognition_trials.html">Metacognition Trials &amp; Reports</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../demo_ui_trials.html">Demo UI Empirical Trials &amp; Verification Reports</a></li>
@@ -163,6 +164,54 @@
     <span class="k">return</span> <span class="n">raw_output</span></div>
 
 
+
+<div class="viewcode-block" id="derive_final_response">
+<a class="viewcode-back" href="../../metacognition_app.html#metacognition.tasks.derive_final_response">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">derive_final_response</span><span class="p">(</span><span class="n">result_state</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    WS27: Resolves the human-facing final_response from the LangGraph execution state.</span>
+<span class="sd">    Prioritizes state[&#39;final_output&#39;] from action nodes over intermediate evaluation entries.</span>
+<span class="sd">    When the graph halts on a failure, synthesizes the candidate output with the evaluator&#39;s critique.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">candidate_output</span> <span class="o">=</span> <span class="n">result_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;final_output&quot;</span><span class="p">)</span>
+    <span class="n">monologue</span> <span class="o">=</span> <span class="n">result_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;internal_monologue&quot;</span><span class="p">,</span> <span class="p">[])</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">candidate_output</span> <span class="ow">and</span> <span class="n">monologue</span><span class="p">:</span>
+        <span class="c1"># Walk backwards through monologue, skipping evaluation verdicts</span>
+        <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">monologue</span><span class="p">):</span>
+            <span class="n">step_name</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;step_name&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">step_name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;(Evaluation)&quot;</span><span class="p">):</span>
+                <span class="n">candidate_output</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;output&quot;</span><span class="p">,</span> <span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;result&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+                <span class="k">if</span> <span class="n">candidate_output</span><span class="p">:</span>
+                    <span class="k">break</span>
+
+    <span class="n">route_to</span> <span class="o">=</span> <span class="n">result_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;route_to&quot;</span><span class="p">)</span>
+    <span class="n">eval_feedback</span> <span class="o">=</span> <span class="n">result_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;evaluator_feedback&quot;</span><span class="p">)</span>
+    <span class="n">last_step_failed</span> <span class="o">=</span> <span class="n">monologue</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;failed&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">monologue</span> <span class="k">else</span> <span class="kc">False</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">route_to</span> <span class="o">==</span> <span class="s2">&quot;FAILURE&quot;</span> <span class="ow">or</span> <span class="n">last_step_failed</span><span class="p">)</span> <span class="ow">and</span> <span class="n">eval_feedback</span><span class="p">:</span>
+        <span class="n">prefix</span> <span class="o">=</span> <span class="n">candidate_output</span> <span class="ow">or</span> <span class="s2">&quot;The requested reasoning task could not be completed.&quot;</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">---</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;&gt; ⚠️ **Evaluation Notice**: The proposed response did not satisfy all verification criteria.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;&gt; **Evaluator Critique**: </span><span class="si">{</span><span class="n">eval_feedback</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">candidate_output</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">candidate_output</span>
+
+    <span class="k">if</span> <span class="n">monologue</span><span class="p">:</span>
+        <span class="c1"># If all steps were evaluation steps or no explicit output was set, return latest non-eval monologue</span>
+        <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">monologue</span><span class="p">):</span>
+            <span class="n">step_name</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;step_name&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">step_name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;(Evaluation)&quot;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;output&quot;</span><span class="p">,</span> <span class="s2">&quot;No output.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">monologue</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;output&quot;</span><span class="p">,</span> <span class="s2">&quot;No output.&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="s2">&quot;No output.&quot;</span></div>
+
+
+
 <span class="c1"># --- CORE EXECUTION ---</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">uuid</span><span class="w"> </span><span class="kn">import</span> <span class="n">uuid4</span>
@@ -178,6 +227,9 @@
                              <span class="n">parent_log_id</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                              <span class="n">initial_log_id</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Asynchronous wrapper for running a blueprint.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">conversation_id</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">parent_log_id</span> <span class="ow">and</span> <span class="n">user_prompt</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">llm_api.llamacpp_client</span><span class="w"> </span><span class="kn">import</span> <span class="n">maybe_refine_conversation_title</span>
+        <span class="n">maybe_refine_conversation_title</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">conversation_id</span><span class="p">),</span> <span class="n">user_prompt</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">run_blueprint</span><span class="p">(</span><span class="n">blueprint_id</span><span class="p">,</span> <span class="n">user_prompt</span><span class="p">,</span> <span class="n">conversation_id</span><span class="p">,</span> <span class="n">user_id</span><span class="p">,</span> 
                          <span class="n">parent_log_id</span><span class="o">=</span><span class="n">parent_log_id</span><span class="p">,</span> <span class="n">initial_log_id</span><span class="o">=</span><span class="n">initial_log_id</span><span class="p">,</span>
                          <span class="n">max_steps</span><span class="o">=</span><span class="n">max_steps</span><span class="p">,</span> <span class="n">run_id</span><span class="o">=</span><span class="n">run_id</span><span class="p">)</span>
@@ -212,7 +264,7 @@
         <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Resumption failed: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="mi">500</span><span class="p">}</span>
 
     <span class="n">monologue</span> <span class="o">=</span> <span class="n">result_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;internal_monologue&quot;</span><span class="p">,</span> <span class="p">[])</span>
-    <span class="n">final_response</span> <span class="o">=</span> <span class="n">monologue</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;output&quot;</span><span class="p">,</span> <span class="n">monologue</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;result&quot;</span><span class="p">,</span> <span class="s2">&quot;No output.&quot;</span><span class="p">))</span> <span class="k">if</span> <span class="n">monologue</span> <span class="k">else</span> <span class="s2">&quot;No output.&quot;</span>
+    <span class="n">final_response</span> <span class="o">=</span> <span class="n">derive_final_response</span><span class="p">(</span><span class="n">result_state</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">result_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;route_to&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;USER_INPUT_REQUIRED&quot;</span> <span class="ow">and</span> <span class="n">result_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pending_approval&quot;</span><span class="p">):</span>
         <span class="n">publish_blueprint_event</span><span class="p">(</span><span class="n">run_id</span><span class="p">,</span> <span class="s2">&quot;approval_required&quot;</span><span class="p">,</span> <span class="n">result_state</span><span class="p">[</span><span class="s2">&quot;pending_approval&quot;</span><span class="p">])</span>
@@ -430,7 +482,44 @@
 
 
     <span class="n">monologue</span> <span class="o">=</span> <span class="n">result_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;internal_monologue&quot;</span><span class="p">,</span> <span class="p">[])</span>
-    <span class="n">final_response</span> <span class="o">=</span> <span class="n">monologue</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;output&quot;</span><span class="p">,</span> <span class="n">monologue</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;result&quot;</span><span class="p">,</span> <span class="s2">&quot;No output.&quot;</span><span class="p">))</span> <span class="k">if</span> <span class="n">monologue</span> <span class="k">else</span> <span class="s2">&quot;No output.&quot;</span>
+    <span class="n">final_response</span> <span class="o">=</span> <span class="n">derive_final_response</span><span class="p">(</span><span class="n">result_state</span><span class="p">)</span>
+
+    <span class="c1"># WS27: Ensure exactly one public TURN record exists with the final response</span>
+    <span class="n">turn_log</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">initial_log_id</span><span class="p">:</span>
+        <span class="n">turn_log</span> <span class="o">=</span> <span class="n">PromptResponseLog</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">initial_log_id</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">turn_log</span> <span class="ow">and</span> <span class="n">conversation</span><span class="p">:</span>
+        <span class="n">turn_log</span> <span class="o">=</span> <span class="n">PromptResponseLog</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="n">conversation</span><span class="o">=</span><span class="n">conversation</span><span class="p">,</span>
+            <span class="n">parent_log_id</span><span class="o">=</span><span class="n">parent_log_id</span><span class="p">,</span>
+            <span class="n">user_id</span><span class="o">=</span><span class="n">user_id</span><span class="p">,</span>
+            <span class="n">user_prompt</span><span class="o">=</span><span class="n">user_prompt</span><span class="p">,</span>
+            <span class="n">blueprint_id</span><span class="o">=</span><span class="n">blueprint</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="n">log_kind</span><span class="o">=</span><span class="n">PromptResponseLog</span><span class="o">.</span><span class="n">LogKind</span><span class="o">.</span><span class="n">TURN</span><span class="p">,</span>
+            <span class="n">generated_response</span><span class="o">=</span><span class="n">final_response</span><span class="p">,</span>
+            <span class="n">system_prompt</span><span class="o">=</span><span class="n">blueprint</span><span class="o">.</span><span class="n">description</span> <span class="ow">or</span> <span class="n">blueprint</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">turn_log</span><span class="p">:</span>
+        <span class="n">turn_log</span><span class="o">.</span><span class="n">generated_response</span> <span class="o">=</span> <span class="n">final_response</span>
+        <span class="n">turn_log</span><span class="o">.</span><span class="n">log_kind</span> <span class="o">=</span> <span class="n">PromptResponseLog</span><span class="o">.</span><span class="n">LogKind</span><span class="o">.</span><span class="n">TURN</span>
+        <span class="n">turn_log</span><span class="o">.</span><span class="n">blueprint_id</span> <span class="o">=</span> <span class="n">blueprint</span><span class="o">.</span><span class="n">id</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">turn_log</span><span class="o">.</span><span class="n">user_prompt</span> <span class="ow">and</span> <span class="n">user_prompt</span><span class="p">:</span>
+            <span class="n">turn_log</span><span class="o">.</span><span class="n">user_prompt</span> <span class="o">=</span> <span class="n">user_prompt</span>
+        <span class="c1"># Collect and aggregate any rag_selections from intermediate trace logs</span>
+        <span class="n">trace_logs</span> <span class="o">=</span> <span class="n">PromptResponseLog</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+            <span class="n">conversation</span><span class="o">=</span><span class="n">conversation</span><span class="p">,</span>
+            <span class="n">log_kind</span><span class="o">=</span><span class="n">PromptResponseLog</span><span class="o">.</span><span class="n">LogKind</span><span class="o">.</span><span class="n">TRACE</span><span class="p">,</span>
+            <span class="n">reasoning_step__blueprint</span><span class="o">=</span><span class="n">blueprint</span>
+        <span class="p">)</span>
+        <span class="n">collected_rag</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">turn_log</span><span class="o">.</span><span class="n">rag_selections</span> <span class="ow">or</span> <span class="p">[])</span>
+        <span class="k">for</span> <span class="n">tl</span> <span class="ow">in</span> <span class="n">trace_logs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">tl</span><span class="o">.</span><span class="n">rag_selections</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tl</span><span class="o">.</span><span class="n">rag_selections</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">tl</span><span class="o">.</span><span class="n">rag_selections</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">r</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">collected_rag</span><span class="p">:</span>
+                        <span class="n">collected_rag</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">collected_rag</span><span class="p">:</span>
+            <span class="n">turn_log</span><span class="o">.</span><span class="n">rag_selections</span> <span class="o">=</span> <span class="n">collected_rag</span>
+        <span class="n">turn_log</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">update_fields</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;generated_response&#39;</span><span class="p">,</span> <span class="s1">&#39;log_kind&#39;</span><span class="p">,</span> <span class="s1">&#39;blueprint_id&#39;</span><span class="p">,</span> <span class="s1">&#39;user_prompt&#39;</span><span class="p">,</span> <span class="s1">&#39;rag_selections&#39;</span><span class="p">])</span>
     
     <span class="k">if</span> <span class="n">result_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;route_to&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;USER_INPUT_REQUIRED&quot;</span> <span class="ow">and</span> <span class="n">result_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pending_approval&quot;</span><span class="p">):</span>
         <span class="n">publish_blueprint_event</span><span class="p">(</span><span class="n">run_id</span><span class="p">,</span> <span class="s2">&quot;approval_required&quot;</span><span class="p">,</span> <span class="n">result_state</span><span class="p">[</span><span class="s2">&quot;pending_approval&quot;</span><span class="p">])</span>

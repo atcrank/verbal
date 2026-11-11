@@ -104,6 +104,32 @@ def get_embedding_model_name() -> str:
     return model_name or "sentence-transformers/all-MiniLM-L6-v2"
 
 
+def load_huggingface_embeddings(model_name: str, device: str | None = None) -> HuggingFaceEmbeddings:
+    """
+    Loads HuggingFaceEmbeddings with strict local-cache-first resolution.
+    Attempts ``local_files_only=True`` first for both local directories and Hub IDs
+    to eliminate uncommanded network polling on service restarts. Falls back to remote
+    download only when the snapshot is absent from disk and ``model_name`` is not a local path.
+    """
+    base_kwargs = {"device": device} if device else {}
+    is_local_dir = os.path.isdir(model_name)
+    if is_local_dir:
+        logger.info(f"RAG Service initializing embeddings from local directory: {model_name}")
+    else:
+        logger.info(f"RAG Service initializing embeddings with model identifier (cache-first): {model_name}")
+
+    try:
+        return HuggingFaceEmbeddings(
+            model_name=model_name,
+            model_kwargs={**base_kwargs, "local_files_only": True},
+        )
+    except Exception as local_err:
+        if is_local_dir:
+            raise
+        logger.info(f"Embedding model '{model_name}' not cached locally ({local_err}); attempting remote fetch...")
+        return HuggingFaceEmbeddings(model_name=model_name, model_kwargs=base_kwargs)
+
+
 class RAGService:
 
     embeddings = None
@@ -115,15 +141,8 @@ class RAGService:
     def __init__(self, collection_name="verbal_background_resources", model_name=None):
         self.collection_name = collection_name
         self.model_name = model_name or get_embedding_model_name()
-        embed_kwargs = {}
-        if os.environ.get("VERBAL_ROLE") == "web":
-            embed_kwargs = {"device": "cpu"}
-        if os.path.isdir(self.model_name):
-            embed_kwargs["local_files_only"] = True
-            logger.info(f"RAG Service initializing embeddings from local directory: {self.model_name}")
-        else:
-            logger.info(f"RAG Service initializing embeddings with model identifier: {self.model_name}")
-        self.embeddings = HuggingFaceEmbeddings(model_name=self.model_name, model_kwargs=embed_kwargs)
+        embed_device = "cpu" if os.environ.get("VERBAL_ROLE") == "web" else None
+        self.embeddings = load_huggingface_embeddings(self.model_name, device=embed_device)
         self.reading_ids = set()  # reading_ids
         self.store = DjangoChunkStore()
         self.id_key = "chunk_id"

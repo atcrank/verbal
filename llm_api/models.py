@@ -636,8 +636,9 @@ class SystemConfiguration(models.Model):
         verbose_name="Legacy Fallback Tokenizer",
         help_text="Optional Hugging Face tokenizer reference loaded into CPU RAM only if no CPU Mini-Model (GGUF) is configured."
     )
-    verbose_name = "System Configuration"
-    verbose_name_plural = "System Configuration"
+    class Meta:
+        verbose_name = "System Configuration"
+        verbose_name_plural = "System Configuration"
     
     def save(self, *args, **kwargs):
         self.pk = 1  # Enforce singleton pattern
@@ -767,19 +768,24 @@ def manage_hosting_backend(sender, instance, **kwargs):
             logger.debug(f"Could not signal inference server to unload VRAM: {e}")
 
     # 3. Manage Docker Containers if backend changed
+    sync_warning = None
     if old_backend != new_backend:
         logger.info(f"Switching hosting backend from '{old_backend}' to '{new_backend}'")
         if new_backend == 'vllm':
             logger.info("Stopping Ollama and starting vLLM container...")
             ollama_client.stop_container()
             if new_vllm:
-                vllm_client.start_container(new_vllm)
+                ok, detail = vllm_client.start_container(new_vllm, pull_policy="never")
+                if not ok:
+                    sync_warning = detail
         elif new_backend == 'ollama':
             logger.info("Stopping vLLM and starting Ollama container...")
             vllm_client.stop_container()
-            ollama_client.start_container()
-        elif new_backend == 'pytorch':
-            logger.info("Stopping both Ollama and vLLM containers (switching to local PyTorch)...")
+            ok, detail = ollama_client.start_container(pull_policy="never")
+            if not ok:
+                sync_warning = detail
+        elif new_backend in ('pytorch', 'llamacpp'):
+            logger.info(f"Stopping both Ollama and vLLM containers (switching to {new_backend})...")
             ollama_client.stop_container()
             vllm_client.stop_container()
 
@@ -787,7 +793,18 @@ def manage_hosting_backend(sender, instance, **kwargs):
     elif new_backend == 'vllm' and old_backend == 'vllm':
         if old_vllm != new_vllm and new_vllm:
             logger.info(f"vLLM model changed to {new_vllm.name}. Restarting vLLM container...")
-            vllm_client.start_container(new_vllm)
+            ok, detail = vllm_client.start_container(new_vllm, pull_policy="never")
+            if not ok:
+                sync_warning = detail
+
+    if sync_warning:
+        instance._backend_sync_warning = sync_warning
+
+    try:
+        from metacognition.context_processors import clear_primary_backend_health_cache
+        clear_primary_backend_health_cache()
+    except Exception:
+        pass
 
     # 5. If active backend is Ollama, and either just switched to it OR changed model
     if new_backend == 'ollama' and new_ollama:

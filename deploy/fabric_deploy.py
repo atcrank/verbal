@@ -601,8 +601,8 @@ PartOf=reason.service
 Type=oneshot
 RemainAfterExit=yes
 WorkingDirectory={app_dir}
-ExecStart=/usr/bin/docker compose up -d db sandbox
-ExecStart=-/usr/bin/docker compose --profile academic up -d grobid
+ExecStart=/usr/bin/docker compose up -d --no-build --pull never db sandbox
+ExecStart=-/usr/bin/docker compose --profile academic up -d --no-build --pull never grobid
 ExecStop=/usr/bin/docker compose stop
 
 [Install]
