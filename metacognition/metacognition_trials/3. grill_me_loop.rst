@@ -26,17 +26,31 @@ We initialize the ``Grill Me`` blueprint and pass an array of simulated user rep
     >>> import contextlib, io, sys
     >>> cid = None
     >>> last_result = None
+    >>> all_monologues = []
+    >>> turn_responses = []
     
     >>> # We redirect stdout to capture any background prints from the tools
     >>> with contextlib.redirect_stdout(io.StringIO()) as captured_out:
     ...     for prompt in prompts:
     ...         last_result = run_blueprint(bp.id, prompt, conversation_id=cid, user_id=user.id)
     ...         cid = last_result.get("conversation_id")
-    ...         # LangGraph preserves state automatically in the DjangoCheckpointer!
+    ...         all_monologues.extend(last_result.get("internal_monologue", []))
+    ...         turn_responses.append(last_result.get("final_response", ""))
     
     >>> if last_result:
-    ...     last_result["stdout"] = captured_out.getvalue()
-    ...     report_doctest_run("3. grill_me_loop", prompts, last_result)
+    ...     combined_result = dict(last_result)
+    ...     combined_result["internal_monologue"] = all_monologues
+    ...     combined_result["turn_responses"] = turn_responses
+    ...     combined_result["stdout"] = captured_out.getvalue()
+    ...     expected_outcome = (
+    ...         "Across 3 turns: ask clarifying questions in Turns 1-2 to scope the economic simulation, "
+    ...         "and recognize 'That\\'s enough' in Turn 3 to terminate clarification gracefully."
+    ...     )
+    ...     checks = [
+    ...         {"label": "all 3 turns executed", "passed": len(turn_responses) == 3, "detail": f"turns={len(turn_responses)}"},
+    ...         {"label": "final turn concluded cleanly", "passed": combined_result.get("route_to") != "FAILURE", "detail": str(combined_result.get("route_to"))},
+    ...     ]
+    ...     report_doctest_run("3. grill_me_loop", prompts, combined_result, expected_outcome=expected_outcome, checks=checks)
     
     >>> assert "error" not in last_result, f"Execution failed: {last_result.get('error')}"
     >>> assert len(last_result.get("internal_monologue", [])) > 0, "Monologue was empty!"

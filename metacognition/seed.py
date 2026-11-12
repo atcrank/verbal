@@ -197,12 +197,6 @@ TOOL_SCHEMAS = {
         },
         "required": ["blueprint_name", "task_prompt"],
     },
-    "TASK_COMPLETE": {
-        "type": "object",
-        "properties": {
-            "final_answer": {"type": "string", "description": "Summary of what was accomplished. Signals the agent is done."},
-        },
-    },
     "discover_django_models": {
         "type": "object",
         "properties": {
@@ -260,7 +254,6 @@ def seed_tools(ToolDefinition):
         "discover_django_models": ("READ_ONLY", "STANDARD"),
         "write_django_model": ("STATE_MUTATION", "STANDARD"),
         "inspect_nightmanager_performance": ("READ_ONLY", "STANDARD"),
-        "TASK_COMPLETE": ("STATE_MUTATION", "STANDARD"),
         "search_rag_chunks": ("READ_ONLY", "STANDARD"),
         "search_grips_nodes": ("READ_ONLY", "STANDARD"),
         "search_past_conversations": ("READ_ONLY", "STANDARD"),
@@ -326,8 +319,6 @@ def seed_tools(ToolDefinition):
         ("discover_django_models", "Inspects the schema of Django models to discover fields and relationships.", "builtin", "metacognition.meta_tools.discover_django_models"),
         ("write_django_model", "Safely creates, updates, or variants a Django model instance.", "builtin", "metacognition.meta_tools.write_django_model"),
         ("inspect_nightmanager_performance", "Fetches aggregated diagnostic and quantitative health metrics for the NightManager.", "builtin", "metacognition.meta_tools.inspect_nightmanager_performance"),
-        # Finding 2.2: TASK_COMPLETE must be a real registered tool with python_path
-        ("TASK_COMPLETE", "Signals that the agent has finished all planned work. Use this when done.", "builtin", "metacognition.meta_tools.TASK_COMPLETE"),
         ("search_rag_chunks", "Searches knowledge base chunks for relevant context.", "builtin", "metacognition.meta_tools.search_rag_chunks"),
         ("search_grips_nodes", "Searches GRIPS knowledge graph for concept nodes.", "builtin", "metacognition.meta_tools.search_grips_nodes"),
         ("search_past_conversations", "Searches previous conversation logs for context.", "builtin", "metacognition.meta_tools.search_past_conversations"),
@@ -354,6 +345,9 @@ def seed_tools(ToolDefinition):
                 'required_clearance': clear,
             }
         )
+
+    # Purge deprecated TASK_COMPLETE from database if lingering from earlier seeds
+    ToolDefinition.objects.filter(name="TASK_COMPLETE").delete()
 
 def seed_architect(CognitiveBlueprint, ReasoningStep):
     bp, _ = CognitiveBlueprint.objects.update_or_create(
@@ -534,7 +528,7 @@ def seed_nm_deep_system_evaluation(CognitiveBlueprint, ReasoningStep, ToolDefini
     )
     step_conv_record = ReasoningStep.objects.create(
         blueprint=bp, name="Record Conversation Findings", is_canonical=True,
-        system_prompt="Goal: Queue identified modification tasks based on conversation analysis.\nAction: Use `update_conversation_state` (action: 'add_task', task_path: 'NM_Ideas_for_System_Modifications > conversation_metrics_optimization').\nNote: Do NOT output TASK_COMPLETE. Transition to the next phase will happen automatically.",
+        system_prompt="Goal: Queue identified modification tasks based on conversation analysis.\nAction: Use `update_conversation_state` (action: 'add_task', task_path: 'NM_Ideas_for_System_Modifications > conversation_metrics_optimization').\nTransition to the next phase happens automatically.",
         evaluation_criteria="Did the LLM queue modification tasks or confirm nothing to queue?", max_retries=3, max_new_tokens=400
     )
 
@@ -551,7 +545,7 @@ def seed_nm_deep_system_evaluation(CognitiveBlueprint, ReasoningStep, ToolDefini
     )
     step_bench_record = ReasoningStep.objects.create(
         blueprint=bp, name="Record Benchmark Findings", is_canonical=True,
-        system_prompt="Goal: Queue identified modification tasks based on benchmark analysis.\nAction: Use `update_conversation_state` (action: 'add_task', task_path: 'NM_Ideas_for_System_Modifications > benchmark_coverage_audit').\nNote: Do NOT output TASK_COMPLETE. Transition to the next phase will happen automatically.",
+        system_prompt="Goal: Queue identified modification tasks based on benchmark analysis.\nAction: Use `update_conversation_state` (action: 'add_task', task_path: 'NM_Ideas_for_System_Modifications > benchmark_coverage_audit').\nTransition to the next phase happens automatically.",
         evaluation_criteria="Did the LLM queue modification tasks or confirm nothing to queue?", max_retries=3, max_new_tokens=400
     )
 
@@ -568,7 +562,7 @@ def seed_nm_deep_system_evaluation(CognitiveBlueprint, ReasoningStep, ToolDefini
     )
     step_rag_record = ReasoningStep.objects.create(
         blueprint=bp, name="Record RAG Findings", is_canonical=True,
-        system_prompt="Goal: Queue identified modification tasks based on RAG analysis.\nAction: Use `update_conversation_state` (action: 'add_task', task_path: 'NM_Ideas_for_System_Modifications > rag_retrieval_refinement').\nNote: Do NOT output TASK_COMPLETE. Transition to the next phase will happen automatically.",
+        system_prompt="Goal: Queue identified modification tasks based on RAG analysis.\nAction: Use `update_conversation_state` (action: 'add_task', task_path: 'NM_Ideas_for_System_Modifications > rag_retrieval_refinement').\nTransition to the next phase happens automatically.",
         evaluation_criteria="Did the LLM queue modification tasks or confirm nothing to queue?", max_retries=3, max_new_tokens=400
     )
 
@@ -585,7 +579,7 @@ def seed_nm_deep_system_evaluation(CognitiveBlueprint, ReasoningStep, ToolDefini
     )
     step_grips_record = ReasoningStep.objects.create(
         blueprint=bp, name="Record Grips Findings", is_canonical=True,
-        system_prompt="Goal: Queue identified modification tasks based on Grips analysis.\nAction: Use `update_conversation_state` (action: 'add_task', task_path: 'NM_Ideas_for_System_Modifications > grips_knowledge_expansion').\nNote: Output TASK_COMPLETE when done.",
+        system_prompt="Goal: Queue identified modification tasks based on Grips analysis.\nAction: Use `update_conversation_state` (action: 'add_task', task_path: 'NM_Ideas_for_System_Modifications > grips_knowledge_expansion').\nWhen done calling tools, output an empty `tool_calls: []` list.",
         evaluation_criteria="Did the LLM queue modification tasks or confirm nothing to queue?", max_retries=3, max_new_tokens=400
     )
 
@@ -611,7 +605,6 @@ def seed_nm_deep_system_evaluation(CognitiveBlueprint, ReasoningStep, ToolDefini
     tool_rag, _ = ToolDefinition.objects.get_or_create(name="get_rag_efficiency_metrics")
     tool_grips, _ = ToolDefinition.objects.get_or_create(name="get_grips_metrics")
     tool_update, _ = ToolDefinition.objects.get_or_create(name="update_conversation_state")
-    tool_complete, _ = ToolDefinition.objects.get_or_create(name="TASK_COMPLETE")
     tool_fetch_log, _ = ToolDefinition.objects.get_or_create(name="fetch_log_details")
     
     step_conv_fetch.available_tools.add(tool_conv)
@@ -628,7 +621,7 @@ def seed_nm_deep_system_evaluation(CognitiveBlueprint, ReasoningStep, ToolDefini
     
     step_grips_fetch.available_tools.add(tool_grips)
     step_grips_analyze.available_tools.clear()
-    step_grips_record.available_tools.add(tool_update, tool_complete)
+    step_grips_record.available_tools.add(tool_update)
 
 def seed_nm_optimize_reasoning(CognitiveBlueprint, ReasoningStep, ToolDefinition, ResponseSchema=None):
     bp, _ = CognitiveBlueprint.objects.update_or_create(
@@ -734,7 +727,6 @@ def seed_nm_refine_rag_grips(CognitiveBlueprint, ReasoningStep, ToolDefinition, 
     step4.save()
     
     tool_update, _ = ToolDefinition.objects.get_or_create(name="update_conversation_state")
-    tool_complete, _ = ToolDefinition.objects.get_or_create(name="TASK_COMPLETE")
     tool_discover, _ = ToolDefinition.objects.get_or_create(name="discover_django_models")
     tool_read, _ = ToolDefinition.objects.get_or_create(name="read_django_models")
     
@@ -786,12 +778,11 @@ def seed_nm_formulate_benchmarks(CognitiveBlueprint, ReasoningStep, ToolDefiniti
     step4.save()
     
     tool_update, _ = ToolDefinition.objects.get_or_create(name="update_conversation_state")
-    tool_complete, _ = ToolDefinition.objects.get_or_create(name="TASK_COMPLETE")
     tool_create_scenario, _ = ToolDefinition.objects.get_or_create(name="create_benchmark_scenario")
     tool_write, _ = ToolDefinition.objects.get_or_create(name="write_django_model")
     tool_read, _ = ToolDefinition.objects.get_or_create(name="document_reader")
     
-    step3.available_tools.add(tool_update, tool_complete, tool_create_scenario, tool_write)
+    step3.available_tools.add(tool_update, tool_create_scenario, tool_write)
     step1.available_tools.add(tool_read)
     step2.available_tools.clear()
     step4.available_tools.clear()
@@ -840,9 +831,8 @@ def seed_nm_system_modifications(CognitiveBlueprint, ReasoningStep, ToolDefiniti
     step4.save()
     
     tool_update, _ = ToolDefinition.objects.get_or_create(name="update_conversation_state")
-    tool_complete, _ = ToolDefinition.objects.get_or_create(name="TASK_COMPLETE")
     tool_stubs, _ = ToolDefinition.objects.get_or_create(name="get_empty_grips_stubs")
-    step1.available_tools.add(tool_update, tool_complete, tool_stubs)
+    step1.available_tools.add(tool_update, tool_stubs)
     step2.available_tools.clear()
     step3.available_tools.clear()
     step4.available_tools.clear()
@@ -888,7 +878,6 @@ def seed_nm_self_improvement(CognitiveBlueprint, ReasoningStep, ToolDefinition, 
     step3.save()
     
     tool_update, _ = ToolDefinition.objects.get_or_create(name="update_conversation_state")
-    tool_complete, _ = ToolDefinition.objects.get_or_create(name="TASK_COMPLETE")
     tool_inspect_nm, _ = ToolDefinition.objects.get_or_create(
         name="inspect_nightmanager_performance",
         defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.inspect_nightmanager_performance"}
@@ -995,9 +984,8 @@ def seed_nightmanager(CognitiveBlueprint, ReasoningStep, ResponseSchema, ToolDef
     step4.save()
 
     tool_update, _ = ToolDefinition.objects.get_or_create(name="update_conversation_state")
-    tool_complete, _ = ToolDefinition.objects.get_or_create(name="TASK_COMPLETE")
     for s in [step1, step2, step3, step4]:
-        s.available_tools.add(tool_update, tool_complete)
+        s.available_tools.add(tool_update)
 
     from django.apps import apps
     if apps.is_installed('verbal_tasks'):
@@ -1104,7 +1092,6 @@ def seed_reasoning_with_code_sandbox(CognitiveBlueprint, ReasoningStep, ToolDefi
     )
     ReasoningStep.objects.filter(blueprint=bp).delete()
     python_sandbox_tool = ToolDefinition.objects.filter(name="python_sandbox").first()
-    tool_complete, _ = ToolDefinition.objects.get_or_create(name="TASK_COMPLETE")
 
     step1 = ReasoningStep.objects.create(
         blueprint=bp,
@@ -1114,14 +1101,13 @@ def seed_reasoning_with_code_sandbox(CognitiveBlueprint, ReasoningStep, ToolDefi
             "Formulate the analytical equations for the user's problem. "
             "Write and execute a clean, concise Python script using the `python_sandbox` tool to calculate exact numerical values, "
             "trade-off curves, or parameter grids. Use simple print() statements to display the calculated results clearly. "
-            "Once the calculation is executed and verified, use the `TASK_COMPLETE` tool to conclude."
+            "When finished executing scripts, output an empty `tool_calls: []` list to advance to synthesis."
         ),
         is_start_node=True,
         max_new_tokens=1500,
     )
     if python_sandbox_tool:
         step1.available_tools.add(python_sandbox_tool)
-    step1.available_tools.add(tool_complete)
 
     step2 = ReasoningStep.objects.create(
         blueprint=bp,
@@ -1250,7 +1236,7 @@ def seed_evidence_extractor(CognitiveBlueprint, ReasoningStep, ToolDefinition):
             is_start_node=True,
             execution_mode="pure_tool",
             deterministic_tool=doc_tool,
-            tool_args_mapping={"action": "search", "query": "$user_prompt", "k": 3},
+            tool_args_mapping={"action": "search_document", "query": "$user_prompt", "k": 3},
             system_prompt="Deterministic tool execution: Queries the corpus index for top-matching literature passages.",
         )
 
@@ -1308,7 +1294,7 @@ def seed_visual_evidence_investigator(CognitiveBlueprint, ReasoningStep, ToolDef
             is_start_node=True,
             execution_mode="pure_tool",
             deterministic_tool=doc_tool,
-            tool_args_mapping={"action": "search", "query": "$user_prompt", "k": 3},
+            tool_args_mapping={"action": "search_document", "query": "$user_prompt", "k": 3},
             system_prompt="Deterministic tool execution: Queries the corpus index for top-matching literature passages and figure chunks.",
         )
 
@@ -1377,7 +1363,7 @@ def seed_deep_reader(CognitiveBlueprint, ReasoningStep, ToolDefinition, Response
         system_prompt=(
             "You are an intelligent knowledge gatherer. Use the available tools to search RAG chunks, "
             "Grips nodes, and past conversations to find information relevant to the user's prompt. "
-            "Once you have observed sufficient tool results—or if the query is trivial or already includes a Context Report—call `TASK_COMPLETE` immediately so the Distill Context step can synthesize the evidence. "
+            "Once you have observed sufficient tool results—or if the query is trivial or already includes a Context Report—output an empty `tool_calls: []` list immediately so the Distill Context step can synthesize the evidence. "
             "CRITICAL: If you are repeating this step because a previous evaluation marked the context as INCOMPLETE, "
             "you MUST look at the previous 'missing_terms' and execute new tool queries specifically to find them."
         ),
@@ -1386,13 +1372,18 @@ def seed_deep_reader(CognitiveBlueprint, ReasoningStep, ToolDefinition, Response
     )
     
     import json
-    schema_eval, _ = ResponseSchema.objects.get_or_create(
-        name="DeepReaderEvaluation_Schema", defaults={
+    schema_eval, _ = ResponseSchema.objects.update_or_create(
+        name="DeepReaderEvaluation_Schema",
+        defaults={
             'schema_type': 'json',
             'display_field': 'distilled_context',
             'json_schema': json.dumps({
                 "type": "object",
                 "properties": {
+                    "reasoning": {
+                        "type": "string",
+                        "description": "Briefly evaluate which context items directly answer the user request and explicitly identify unrelated distractions to discard."
+                    },
                     "status": {
                         "type": "string",
                         "enum": ["SUFFICIENT", "INCOMPLETE", "IRRELEVANT"],
@@ -1404,10 +1395,10 @@ def seed_deep_reader(CognitiveBlueprint, ReasoningStep, ToolDefinition, Response
                     },
                     "distilled_context": {
                         "type": "string",
-                        "description": "If SUFFICIENT, output the dense, token-efficient summary here with verifiable citations."
+                        "description": "If SUFFICIENT, output the dense, token-efficient summary here preserving only relevant facts with verifiable citations, omitting off-topic distractors."
                     }
                 },
-                "required": ["status"]
+                "required": ["reasoning", "status"]
             })
         }
     )
@@ -1443,15 +1434,16 @@ def seed_deep_reader(CognitiveBlueprint, ReasoningStep, ToolDefinition, Response
     tool_rag, _ = ToolDefinition.objects.get_or_create(name="search_rag_chunks", defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.search_rag_chunks"})
     tool_grips, _ = ToolDefinition.objects.get_or_create(name="search_grips_nodes", defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.search_grips_nodes"})
     tool_past, _ = ToolDefinition.objects.get_or_create(name="search_past_conversations", defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.search_past_conversations"})
-    tool_complete, _ = ToolDefinition.objects.get_or_create(name="TASK_COMPLETE")
     
-    step1.available_tools.add(tool_rag, tool_grips, tool_past, tool_complete)
+    step1.available_tools.add(tool_rag, tool_grips, tool_past)
 
-def seed_research_evaluation(CognitiveBlueprint, ReasoningStep, ResponseSchema):
+def seed_research_evaluation(CognitiveBlueprint, ReasoningStep, ResponseSchema, ToolDefinition=None):
     bp_eval, _ = CognitiveBlueprint.objects.update_or_create(
         name="ResearchEvaluation",
-        defaults={'description': "Full end-to-end pipeline for doctests.", 'is_canonical': True, 'category': 'REASONING'}
+        defaults={'description': "Full end-to-end double-node research, planning, sandbox execution, and verification pipeline.", 'is_canonical': True, 'is_autonomous': True, 'category': 'REASONING'}
     )
+    if ToolDefinition is None:
+        ToolDefinition = apps.get_model('metacognition', 'ToolDefinition')
     
     schema_research, _ = ResponseSchema.objects.get_or_create(
         name="ResearchEvaluation_Schema", defaults={'schema_type': 'pydantic', 'pydantic_model_name': 'ResearchEvaluation'}
@@ -1459,40 +1451,75 @@ def seed_research_evaluation(CognitiveBlueprint, ReasoningStep, ResponseSchema):
     schema_plan, _ = ResponseSchema.objects.get_or_create(
         name="StrategicPlan_Schema", defaults={'schema_type': 'pydantic', 'pydantic_model_name': 'StrategicPlan'}
     )
-    schema_execute, _ = ResponseSchema.objects.get_or_create(
-        name="ExecutionPlan_Schema", defaults={'schema_type': 'pydantic', 'pydantic_model_name': 'ExecutionPlan'}
-    )
-    schema_critique, _ = ResponseSchema.objects.get_or_create(
-        name="ResultCritique_Schema", defaults={'schema_type': 'pydantic', 'pydantic_model_name': 'ResultCritique'}
+    python_sandbox_tool, _ = ToolDefinition.objects.get_or_create(
+        name="python_sandbox",
+        defaults={
+            "description": "Action hook: python_sandbox",
+            "tool_type": "builtin",
+            "python_path": "metacognition.actions.python_sandbox",
+            "capability_category": "CODE_EXECUTION",
+            "required_clearance": "TRUSTED",
+            "input_schema": '{"type": "object", "properties": {"code": {"type": "string", "description": "Python code string to execute"}}, "required": ["code"]}',
+            "is_active": True,
+            "is_promoted": True,
+        },
     )
     
     ReasoningStep.objects.filter(blueprint=bp_eval).delete()
     
     step1 = ReasoningStep.objects.create(
         blueprint=bp_eval, name="Research",
-        system_prompt="You are a meticulous researcher. Analyze the current working context. If you lack information, formulate queries for our RAG (document) and Grips (concept) databases. CRITICAL: Do NOT guess API syntaxes or mathematical formulas. If the user asks for a specific library (e.g., pycid, numpy) or complex model, you MUST search the databases for documentation first. If the current information is SUFFICIENT to answer the user's overarching goal, output SUFFICIENT.", is_start_node=True, output_schema=schema_research
+        system_prompt=(
+            "You are a meticulous researcher. Analyze the user's request. If repository-specific library APIs "
+            "or internal corpus documents are needed, set status='SEARCHING' with targeted RAG/Grips queries. "
+            "For self-contained algorithmic, counting, math, or standard numpy simulation requests, output "
+            "status='SUFFICIENT' immediately so planning can begin."
+        ),
+        is_start_node=True, output_schema=schema_research, max_retries=2
     )
     
     step2 = ReasoningStep.objects.create(
         blueprint=bp_eval, name="Plan",
-        system_prompt="Review the user request and gathered research. Formulate a highly specific, step-by-step strategy for how to solve the problem using code execution. Do not write the code yet; just write the logical plan.", output_schema=schema_plan
+        system_prompt=(
+            "Review the user request and gathered research. Formulate a concise, step-by-step computational "
+            "strategy to solve the problem via complete, self-contained Python execution."
+        ),
+        output_schema=schema_plan
     )
     
     step3 = ReasoningStep.objects.create(
         blueprint=bp_eval, name="Execute",
-        system_prompt="CRITICAL INSTRUCTIONS: 1. The sandbox can only execute files that you have already written using WRITE_FILE. 2. Scripts must use simple print() statements to output results. Avoid multi-line strings or escaped newlines (\\n). 3. Do NOT repeat actions that have already succeeded. 4. If the results of a previous EXECUTE_SCRIPT give you the answer to the user's request, your NEXT queue MUST contain ONLY the `TASK_COMPLETE` tool with the final answer. 5. If a script fails due to memory limits, reduce array sizes or iterations, or avoid heavy libraries like numpy for simple tasks. You are a code execution agent. Your goal is to use a sequence of tools to accomplish the user's request. Review the user's goal and the results of previous tool executions. Formulate a plan by creating a queue of tool actions. CRITICAL: If the user's request has been fully satisfied by the execution results, your response MUST be a single `TASK_COMPLETE` action to terminate the loop.", max_retries=10, output_schema=schema_execute
+        system_prompt=(
+            "You are a computational engineer. Write a complete, self-contained Python script using simple `print()` "
+            "statements and execute it with the `python_sandbox` tool to compute the exact answer. "
+            "Do NOT guess or approximate numbers without running Python. If the sandbox reports a syntax or runtime error, "
+            "fix the script and re-run `python_sandbox`."
+        ),
+        max_retries=4
     )
+    step3.available_tools.add(python_sandbox_tool)
     
     step4 = ReasoningStep.objects.create(
         blueprint=bp_eval, name="Critique",
-        system_prompt="You are a senior data scientist. Review the final results provided by the execution agent. Does the data logically align with the theoretical expectations? Are the statistics robust? If the output is flawed, naive, or missing critical precision, REJECT it and provide feedback. If it is solid, ACCEPT it.", output_schema=schema_critique
+        system_prompt=(
+            "You are a senior data scientist. Inspect the actual `[SYSTEM: Sandbox Execution ...]` stdout and results "
+            "above against the user's original question. Do NOT invent or copy numbers that were not printed by Python execution. "
+            "State the verified quantitative result clearly, or state plainly what failed or remains uncomputed."
+        ),
+        evaluation_criteria=(
+            "Pass ONLY if `python_sandbox` executed successfully (RC=0) with concrete non-empty stdout addressing "
+            "all parts of the user prompt, and the response strictly matches those observed sandbox outputs."
+        ),
+        max_retries=2
     )
     
     step1.on_success_step = step2
+    step1.on_failure_step = step2
     step1.save()
     step2.on_success_step = step3
     step2.save()
     step3.on_success_step = step4
+    step3.on_failure_step = step4
     step3.save()
     step4.on_failure_step = step2
     step4.save()

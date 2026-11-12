@@ -286,7 +286,7 @@ def get_outline(request, payload: OutlineIn):
 
 class OpenAIChatMessage(Schema):
     role: str
-    content: str
+    content: typing.Union[str, typing.List[typing.Dict[str, typing.Any]]]
 
 class OpenAIJsonSchema(Schema):
     name: str

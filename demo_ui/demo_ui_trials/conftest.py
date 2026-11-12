@@ -39,15 +39,23 @@ def setup_demo_ui_trials_env(doctest_namespace, live_server):
 
     # Inject model name helper
     def get_active_model_name():
-        """Returns the name of the currently active inference model, or 'unknown'."""
+        """Returns the identifier of the currently active inference model, or 'unknown'."""
+        try:
+            from llm_api.modality_detector import get_active_modality_status
+            status = get_active_modality_status()
+            name = status.get("model_name")
+            if name and name not in ("none", "unknown"):
+                return name
+        except Exception:
+            pass
         try:
             ai = service_registry.ai_service
-            if ai and hasattr(ai, "model_name"):
+            if ai and getattr(ai, "model_name", None):
                 return ai.model_name
-            if ai and hasattr(ai, "model_id"):
+            if ai and getattr(ai, "model_id", None):
                 return ai.model_id
-            return "unknown"
         except Exception:
-            return "unknown"
+            pass
+        return "unknown"
 
     doctest_namespace["get_active_model_name"] = get_active_model_name

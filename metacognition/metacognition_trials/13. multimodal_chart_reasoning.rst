@@ -9,13 +9,16 @@ It highlights:
 
 Setup & Database Seeding
 ------------------------
-We initialize the canonical blueprint via ``seed_visual_evidence_investigator`` and create a real image asset on disk for testing.
+We initialize the canonical blueprint via ``seed_visual_evidence_investigator``, render a real plotted chart image, and seed a real visual figure ``RAGChunk``.
 
-    >>> import os, json, contextlib, io
+    >>> import os, json, contextlib, io, contextlib as _ctx
     >>> from unittest.mock import patch
-    >>> from PIL import Image
+    >>> from PIL import Image, ImageDraw, ImageFont
     >>> from django.conf import settings
     >>> from django.contrib.auth.models import User
+    >>> from background_resources.models import RAGChunk
+    >>> from llm_api.apps import service_registry
+    >>> from llm_api.modality_detector import get_active_modality_status
     >>> from metacognition.models import CognitiveBlueprint, ReasoningStep, ToolDefinition
     >>> from metacognition.seed import seed_tools, seed_visual_evidence_investigator
     >>> from metacognition.tasks import run_blueprint
@@ -25,34 +28,62 @@ We initialize the canonical blueprint via ``seed_visual_evidence_investigator`` 
     >>> seed_visual_evidence_investigator(CognitiveBlueprint, ReasoningStep, ToolDefinition)
     >>> bp = CognitiveBlueprint.objects.get(name="Visual Evidence Investigator")
 
-Creating Test Figure Asset
---------------------------
-We create a test chart image in the media directory.
+Creating Test Figure Asset & Figure Chunk
+-----------------------------------------
+We render a labeled PNG line plot contrasting 77-GHz FMCW Radar vs. 3D LiDAR ranging error and register its ``RAGChunk``.
 
     >>> fig_rel_path = "documents/figures/trial13_fig4.png"
     >>> fig_full_path = os.path.join(settings.MEDIA_ROOT, fig_rel_path)
     >>> os.makedirs(os.path.dirname(fig_full_path), exist_ok=True)
-    >>> test_img = Image.new("RGB", (400, 300), color=(240, 240, 240))
+    >>> test_img = Image.new("RGB", (640, 380), color=(252, 252, 252))
+    >>> draw = ImageDraw.Draw(test_img)
+    >>> font_sm = ImageFont.load_default(size=13)
+    >>> font_title = ImageFont.load_default(size=15)
+    >>> draw.line([(80, 55), (80, 320), (580, 320)], fill=(30, 30, 30), width=2)
+    >>> for y_val, y_px in [(0, 320), (10, 270), (20, 220), (30, 170), (40, 120), (50, 70)]:
+    ...     draw.line([(75, y_px), (580, y_px)], fill=(230, 230, 230), width=1)
+    ...     draw.text((22, y_px - 7), f"{y_val} cm", fill=(40, 40, 40), font=font_sm)
+    >>> for x_val, x_px in [(100, 150), (150, 270), (200, 390), (250, 510)]:
+    ...     draw.line([(x_px, 315), (x_px, 325)], fill=(30, 30, 30), width=2)
+    ...     draw.text((x_px - 16, 332), f"{x_val}C", fill=(40, 40, 40), font=font_sm)
+    >>> radar_pts = [(150, 314), (270, 309), (390, 304), (510, 301)]
+    >>> lidar_pts = [(150, 298), (270, 180), (355, 80)]
+    >>> draw.line(radar_pts, fill=(20, 90, 200), width=3)
+    >>> draw.line(lidar_pts, fill=(200, 40, 40), width=3)
+    >>> draw.text((350, 282), "200C: 3.2 cm", fill=(20, 90, 200), font=font_sm)
+    >>> draw.text((485, 258), "250C: 3.8 cm", fill=(20, 90, 200), font=font_sm)
+    >>> draw.text((175, 162), "150C: 28.0 cm", fill=(200, 40, 40), font=font_sm)
+    >>> draw.text((310, 62), ">150C: Lost Track", fill=(200, 40, 40), font=font_sm)
+    >>> draw.text((70, 14), "Figure 4: FMCW Radar vs 3D LiDAR Ranging Error (Talavera et al., 2023)", fill=(0, 0, 0), font=font_title)
+    >>> draw.text((70, 35), "Legend: Blue = 77-GHz FMCW Radar | Red = 3D LiDAR", fill=(40, 40, 40), font=font_sm)
     >>> test_img.save(fig_full_path)
 
-Mocking Candidate Retrieval
----------------------------
-We mock ``document_reader`` to return a visual figure chunk referencing our generated image asset.
-
-    >>> figure_chunk_content = (
-    ...     "- [Chunk ID: fig_42] [Citation: Talavera et al. (2023) — Figure 4: FMCW Radar vs 3D LiDAR Ranging Error] Source: talavera2023.pdf\n"
-    ...     "  Type: Visual Figure\n"
-    ...     f"  Asset: {fig_rel_path}\n"
-    ...     "  [Figure 4] Ranging error of 77-GHz FMCW radar and 3D LiDAR in dense particulate smoke aerosol as a function of temperature.\n"
-    ...     "  Discussion Context: As demonstrated in Figure 4, optical backscatter degrades LiDAR ranging beyond 150C, whereas radar maintains sub-4cm accuracy up to 250C."
+    >>> _ = RAGChunk.objects.filter(chunk_id="trial13-fig4").delete()
+    >>> c_fig = RAGChunk.objects.create(
+    ...     chunk_id="trial13-fig4",
+    ...     chunk_type="FIGURE",
+    ...     text_content=(
+    ...         "[Figure 4] Ranging error of 77-GHz FMCW radar and 3D LiDAR in dense particulate smoke aerosol as a function of temperature. "
+    ...         "Optical backscatter degrades LiDAR ranging beyond 150C, whereas radar maintains sub-4cm accuracy up to 250C."
+    ...     ),
+    ...     metadata={
+    ...         "authors": "Talavera et al.",
+    ...         "year": "2023",
+    ...         "section_title": "Figure 4: FMCW Radar vs 3D LiDAR Ranging Error",
+    ...         "filename": "documents/talavera2023.pdf",
+    ...         "chunk_type": "figure",
+    ...         "image_path": fig_rel_path,
+    ...     },
     ... )
+    >>> rag = getattr(service_registry, "rag_service", None)
+    >>> if rag and getattr(rag, "embeddings", None):
+    ...     vecs = rag.embeddings.embed_documents([c_fig.text_content])
+    ...     c_fig.embedding, c_fig.in_vector_index = vecs[0], True
+    ...     c_fig.save(update_fields=["embedding", "in_vector_index"])
 
-    >>> def mock_doc_reader_call(state, params):
-    ...     return f"Candidate Chunks:\n{figure_chunk_content}"
-
-Execution
----------
-We invoke the Visual Evidence Investigator blueprint with a query requiring exact plot coordinates.
+Execution (Hybrid Live / Conditional VLM Mock)
+----------------------------------------------
+All blueprint reasoning steps run **live** against the active model; only ``inspect_chart_image`` VLM coordinate extraction is conditionally mocked if the active model is strictly text-only.
 
     >>> prompt = (
     ...     "What is the exact ranging error of the 77-GHz FMCW radar and 3D LiDAR at 200C and 250C "
@@ -70,45 +101,41 @@ We invoke the Visual Evidence Investigator blueprint with a query requiring exac
     ...     "observations": "Radar error remains under 4cm up to 250C; LiDAR loses track above 150C."
     ... })
 
-    >>> mock_final_synthesis = (
-    ...     "- Finding: According to Figure 4, 77-GHz FMCW radar maintains ranging errors of 3.2 cm at 200C and 3.8 cm at 250C under dense particulate smoke aerosol. In contrast, 3D LiDAR error escalates to 28.0 cm at 150C and completely loses tracking above 150C.\n"
-    ...     "- Citation: [Talavera et al. (2023) — Figure 4: FMCW Radar vs 3D LiDAR Ranging Error]\n"
-    ...     "- Visual Evidence: Confirmed from line plot series comparing 77-GHz FMCW Radar curve against 3D LiDAR curve."
+    >>> modality_info = get_active_modality_status()
+    >>> is_vlm = bool(modality_info.get("is_multimodal", False))
+    >>> vlm_ctx = (
+    ...     _ctx.nullcontext()
+    ...     if is_vlm
+    ...     else patch("metacognition.meta_tools.inspect_chart_image", return_value=mock_vlm_tool_response)
     ... )
+    >>> with vlm_ctx, contextlib.redirect_stdout(io.StringIO()) as captured_out:
+    ...     result = run_blueprint(bp.id, prompt, user_id=user.id)
+    >>> result["stdout"] = f"Active Multimodal VLM: {is_vlm} ({modality_info.get('model_name')})\n" + captured_out.getvalue()
 
-    >>> with patch("metacognition.meta_tools.document_reader", side_effect=mock_doc_reader_call), \
-    ...      patch("llm_api.modality_detector.get_active_modality_status", return_value={"is_multimodal": True, "model_name": "mock-vlm"}), \
-    ...      patch("llm_api.ai_service.AIService.supports_native_tools", return_value=True), \
-    ...      patch("llm_api.ai_service.AIService.generate_response2", side_effect=[
-    ...          # Step 2 Turn 1: LLM calls inspect_chart_image tool
-    ...          [{"name": "inspect_chart_image", "args": {"image_path": fig_rel_path, "query": "Extract curve coordinates at 200C and 250C"}}],
-    ...          # inspect_chart_image tool internal VLM call
-    ...          [mock_vlm_tool_response],
-    ...          # Step 2 Turn 2: LLM completes visual inspection phase
-    ...          [[]],
-    ...          # Step 3: LLM generates final empirical synthesis with citations
-    ...          [mock_final_synthesis]
-    ...      ]):
-    ...     with contextlib.redirect_stdout(io.StringIO()):
-    ...         result = run_blueprint(bp.id, prompt, user_id=user.id)
-
-    >>> report_doctest_run("13. multimodal_chart_reasoning", prompt, result)
+    >>> monologue = result.get("internal_monologue", [])
+    >>> final_resp = str(result.get("final_response", ""))
+    >>> no_tool_call_missing = "ToolCallMissing" not in str(monologue)
+    >>> expected_outcome = (
+    ...     "Retrieve Figure 4 deterministically, optionally inspect visual plot via inspect_chart_image and "
+    ...     "terminate Step 2 cleanly with [] (no ToolCallMissing), then synthesize 77-GHz radar error "
+    ...     "(3.2 cm at 200C, 3.8 cm at 250C) vs 3D LiDAR failure >150C citing Talavera et al. (2023)."
+    ... )
+    >>> checks = [
+    ...     {"label": "Step 2 finished cleanly without ToolCallMissing", "passed": no_tool_call_missing, "detail": ""},
+    ...     {"label": "synthesized exact numeric coordinates (3.2 & 3.8)", "passed": "3.2" in final_resp and "3.8" in final_resp, "detail": ""},
+    ...     {"label": "cited Talavera et al. (2023) / Figure 4", "passed": "talavera" in final_resp.lower() or "figure 4" in final_resp.lower(), "detail": ""},
+    ... ]
+    >>> report_doctest_run("13. multimodal_chart_reasoning", prompt, result, expected_outcome=expected_outcome, checks=checks, is_mocked=False)
 
 Verification & Report Card
 --------------------------
-We verify deterministic retrieval, tool invocation, and cited empirical synthesis.
+We verify deterministic retrieval, clean Step 2 exit without ToolCallMissing, and live synthesis.
 
-    >>> monologue = result.get("internal_monologue", [])
+    >>> assert "error" not in result, f"Execution failed: {result.get('error')}"
     >>> step1 = monologue[0] if len(monologue) > 0 else {}
     >>> is_step1_pure = "Deterministic Tool Executor" in step1.get("system_prompt", "")
+    >>> assert no_tool_call_missing, f"Unexpected ToolCallMissing in monologue: {monologue}"
     >>> print(f"- deterministic pure_tool retrieval: {1 if is_step1_pure else 0}/1")
     - deterministic pure_tool retrieval: 1/1
-
-    >>> final_resp = result.get("final_response", "")
-    >>> has_citation = "Talavera et al." in final_resp or "Figure 4" in final_resp
-    >>> print(f"- cited empirical finding: {1 if has_citation else 0}/1")
-    - cited empirical finding: 1/1
-
-    >>> has_numeric_data = "3.2" in final_resp and "3.8" in final_resp
-    >>> print(f"- exact numeric plot extraction: {1 if has_numeric_data else 0}/1")
-    - exact numeric plot extraction: 1/1
+    >>> print(f"- clean tool-loop exit without ToolCallMissing: {1 if no_tool_call_missing else 0}/1")
+    - clean tool-loop exit without ToolCallMissing: 1/1

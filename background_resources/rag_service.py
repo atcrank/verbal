@@ -852,7 +852,7 @@ class RAGService:
                 base_overlap = len(intersection) / len(query_lemmas)
 
                 # Concept Concentration / Bounded Length Factor:
-                # To prevent small local models (e.g. Gemma-2-2b-it) from being overwhelmed by massive
+                # To prevent small local models (e.g. Gemma-4-E2B-it) from being overwhelmed by massive
                 # text blocks, we apply a gentle density curve. Chunks under 300 lemmas incur no penalty.
                 # Longer research sections receive a soft bounded scaling (not the severe 100/len penalty
                 # that previously slashed 500-lemma empirical papers by 80%).

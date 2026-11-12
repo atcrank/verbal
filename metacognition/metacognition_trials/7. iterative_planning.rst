@@ -33,13 +33,27 @@ specifically verifying that it processes each task sequentially without trailing
     >>> with contextlib.redirect_stdout(io.StringIO()) as captured_out:
     ...     result = run_blueprint(bp.id, prompt, conversation_id=cid, user_id=user.id)
     
+    >>> conv = Conversation.objects.get(id=cid)
+    >>> state_tree = conv.state_tree or {}
     >>> if result:
     ...     result["stdout"] = captured_out.getvalue()
-    ...     report_doctest_run("7. iterative_planning", [prompt], result)
+    ...     tasks_map = state_tree.get("tasks", {}) if isinstance(state_tree, dict) else {}
+    ...     bad_completed = [tid for tid, info in tasks_map.items() if isinstance(info, dict) and info.get("status") == "COMPLETED" and ("not found" in str(info.get("resolution", "")).lower() or "error" in str(info.get("resolution", "")).lower())]
+    ...     final_str = str(result.get("final_response", ""))
+    ...     expected_outcome = (
+    ...         "Decompose into >= 3 tasks (models in metacognition/models.py, functions in metacognition/actions.py, "
+    ...         "and relationship summary), execute sub-blueprints without falsely marking errored or skipped tasks COMPLETED, "
+    ...         "and compile a factual project overview."
+    ...     )
+    ...     completed_cnt = sum(1 for info in tasks_map.values() if isinstance(info, dict) and info.get("status") == "COMPLETED")
+    ...     checks = [
+    ...         {"label": "decomposed into >= 3 tasks", "passed": len(tasks_map) >= 3, "detail": f"tasks={len(tasks_map)}"},
+    ...         {"label": "no failed/errored task falsely marked COMPLETED", "passed": len(bad_completed) == 0, "detail": f"bad_completed={bad_completed}"},
+    ...         {"label": "all 3 tasks actually executed & COMPLETED without asking user for code", "passed": completed_cnt >= 3 and "please share" not in final_str.lower() and "provide the contents" not in final_str.lower() and "not available" not in final_str.lower(), "detail": f"completed={completed_cnt}/{len(tasks_map)}"},
+    ...     ]
+    ...     report_doctest_run("7. iterative_planning", [prompt], result, expected_outcome=expected_outcome, checks=checks)
     
     >>> assert "error" not in result, f"Execution failed: {result.get('error')}"
     >>> assert result.get("final_response") != "No output.", "No response generated."
-    >>> conv = Conversation.objects.get(id=cid)
-    >>> state_tree = conv.state_tree or {}
     >>> assert state_tree.get("macro_objective"), "Missing macro_objective in state_tree"
     >>> assert len(state_tree.get("tasks", {})) >= 1, f"State tree has no tasks: {state_tree}"

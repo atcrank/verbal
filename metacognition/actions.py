@@ -211,9 +211,6 @@ class ListFilesArgs(BaseModel):
 class ExecuteScriptArgs(BaseModel):
     filepath: str = Field(description="A simple filename of the Python script to run.")
 
-class TaskCompleteArgs(BaseModel):
-    final_answer: str = Field(description="The final output, code, or result to return to the parent cognitive process.")
-
 class CheckParsingAction(BaseModel):
     tool: Literal["CHECK_PARSING"]
     parameters: CheckParsingArgs
@@ -244,11 +241,6 @@ class ExecuteScriptAction(BaseModel):
     parameters: ExecuteScriptArgs
     expected_outcome: str = Field(description="What this tool MUST achieve.")
 
-class TaskCompleteAction(BaseModel):
-    tool: Literal["TASK_COMPLETE"]
-    parameters: TaskCompleteArgs
-    expected_outcome: str = Field(default="Terminate the planning loop.")
-
 ActionItemType = Annotated[
     Union[
         CheckParsingAction,
@@ -257,7 +249,6 @@ ActionItemType = Annotated[
         ReadFileAction,
         ListFilesAction,
         ExecuteScriptAction,
-        TaskCompleteAction
     ],
     Field(discriminator="tool")
 ]
@@ -269,14 +260,13 @@ class ExecutionPlan(BaseModel):
     Step Prompt: You are a code execution agent. Your goal is to use a sequence of tools to accomplish the user's request.
     Review the user's goal and the results of previous tool executions.
     Formulate a plan by creating a queue of tool actions.
-    CRITICAL: If the user's request has been fully satisfied by the execution results, your response MUST be a single `TASK_COMPLETE` action to terminate the loop.
     Evaluation Prompt: Returns an ExecutionPlan containing a valid queue of ActionItems.
     Prior Nodes: None
     Following Nodes: ResultCritique
     Failure Nodes: None
     """
-    analysis: str = Field(description="System 2 reasoning: Analyze the situation. If the final answer is already in the previous execution output, explicitly state that it's time to terminate using TASK_COMPLETE.")
-    queue: List[ActionItemType] = Field(min_length=1, description="The sequential list of actions to execute. If you know the final answer, this MUST contain exactly one action: TASK_COMPLETE.")
+    analysis: str = Field(description="System 2 reasoning: Analyze the situation and explain the planned sequence of tool actions.")
+    queue: List[ActionItemType] = Field(min_length=1, description="The sequential list of actions to execute.")
 
 def _tool_check_parsing(params: CheckParsingArgs) -> str:
     import ast
@@ -349,6 +339,9 @@ def _tool_write_file(params: WriteFileArgs, workspace_dir: str, conversation_id:
         return f"""error: Action Failed: The directory '{target_dir}' does not exist. 
                 You must use the CREATE_FOLDER action to build the directory structure 
                 before attempting to write files into it."""
+
+    if not (params.content or "").strip():
+        return "\n\n[WRITE_FILE Error]\nRefusing to write empty file content. Provide complete Python code or text."
 
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
     with open(file_path, "w", encoding="utf-8") as f:
@@ -457,17 +450,19 @@ def _tool_execute_script(params, workspace_dir: str) -> str:
         return f"\n\n[EXECUTE_SCRIPT Alert]\nFailed to execute script. Sandbox error: {str(e)}"
 
 
-def handle_execution_plan(state: dict, params: dict) -> dict:
+def handle_execution_plan(state: dict, params) -> dict:
+    if hasattr(params, "model_dump"):
+        params = params.model_dump()
+    elif hasattr(params, "dict"):
+        params = params.dict()
     queue = params.get("queue", [])
     analysis = params.get("analysis", "")
     logger.info(f'🪝 Received Execution Plan with {len(queue)} steps.')
     logger.info(f'DEBUG QUEUE: {repr(queue)}')
     
     plan_results = ""
+    had_error = False
     workspace_dir = _get_workspace_dir(state.get("conversation_id"))
-    
-    from collections import namedtuple
-    ActionParam = namedtuple('ActionParam', ['tool', 'parameters', 'expected_outcome'])
     
     # Parse queue elements if they are dicts
     parsed_queue = []
@@ -489,26 +484,29 @@ def handle_execution_plan(state: dict, params: dict) -> dict:
     for action in parsed_queue:
         logger.info(f'  -> Executing tool: {action.tool}')
         try:
-            if action.tool == "TASK_COMPLETE":
-                final_ans = getattr(action.parameters, "final_answer", None) or getattr(action.parameters, "answer", "") or ""
-                state["working_prompt"] = state.get("working_prompt", "") + f"\n\n[TASK COMPLETE]\n{final_ans}\n"
-                state["route_to"] = "SUCCESS"
-                return state
-                
-            elif action.tool == "CHECK_PARSING":
+            if action.tool == "CHECK_PARSING":
                 plan_results += _tool_check_parsing(action.parameters)
             elif action.tool == "CREATE_FOLDER":
                 plan_results += _tool_create_folder(action.parameters, workspace_dir, state.get("conversation_id"))
             elif action.tool == "WRITE_FILE":
-                plan_results += _tool_write_file(action.parameters, workspace_dir, state.get("conversation_id"))
+                res = _tool_write_file(action.parameters, workspace_dir, state.get("conversation_id"))
+                plan_results += res
+                if "Error]" in res or res.lower().startswith("error"):
+                    had_error = True
+                    break
             elif action.tool == "READ_FILE":
                 plan_results += _tool_read_file(action.parameters, workspace_dir)
             elif action.tool == "LIST_FILES":
                 plan_results += _tool_list_files(action.parameters, workspace_dir)
             elif action.tool == "EXECUTE_SCRIPT":
-                plan_results += _tool_execute_script(action.parameters, workspace_dir)
+                res = _tool_execute_script(action.parameters, workspace_dir)
+                plan_results += res
+                if "Error]" in res or "Alert]" in res:
+                    had_error = True
+                    break
             else:
                 plan_results += f"\n\n[TOOL FAILURE: '{action.tool}' is not a recognized tool.]\n"
+                had_error = True
                 break
                 
         except Exception as e:
@@ -516,11 +514,15 @@ def handle_execution_plan(state: dict, params: dict) -> dict:
             error_msg += f"Expected Outcome: {action.expected_outcome}\n"
             error_msg += "Please analyze this failure and re-plan your next steps."
             plan_results += error_msg
+            had_error = True
             break
             
-    state["working_prompt"] += f"\n\n--- EXECUTION PLAN RESULTS ---\n{plan_results}\n"
-    state["working_prompt"] += "\n[SYSTEM INSTRUCTION]: Read the results above. If the execution succeeded and you have the final answer, your NEXT action MUST be TASK_COMPLETE. Do NOT repeat previous actions. If you encountered an error, write a corrected script and try again."
-    state["route_to"] = "SELF" # Loop back to LLM to re-evaluate or execute more steps
+    state["working_prompt"] = state.get("working_prompt", "") + f"\n\n--- EXECUTION PLAN RESULTS ---\n{plan_results}\n"
+    if had_error:
+        state["working_prompt"] += "\n[SYSTEM INSTRUCTION]: One or more planned actions failed. Review the error above and correct the plan."
+        state["route_to"] = "SELF"
+    else:
+        state["route_to"] = "SUCCESS"
     return state
 
 
@@ -761,7 +763,12 @@ def python_sandbox(state: dict, params: dict) -> dict:
         if lines and lines[-1].strip() == "```":
             lines = lines[:-1]
         code = "\n".join(lines).strip()
-    if code and not code.endswith("\n"):
+    if not code:
+        return {
+            "working_prompt": "\n\n[SYSTEM: Refusing to execute empty Python script. Write non-empty Python code and re-run `python_sandbox`.]\n",
+            "route_to": "SELF",
+        }
+    if not code.endswith("\n"):
         code += "\n"
     
     conversation_id = state.get("conversation_id")
@@ -1053,6 +1060,10 @@ OUTPUT_TYPES = {
 }
 
 SCHEMA_ACTION_HANDLERS = {
+    "ResearchEvaluation": handle_research,
+    "DifficultPromptEvaluation": handle_difficult_prompt,
+    "ExecutionPlan": handle_execution_plan,
+    "ResultCritique": handle_result_critique,
     "PromptVariant": create_prompt_variant,
     "GripsExpansionProposal": handle_grips_expansion,
     "CognitiveBlueprintProposal": handle_blueprint_proposal,
@@ -1067,7 +1078,6 @@ enhanced_prompt = (
     "1. The sandbox can only execute files that you have already written using WRITE_FILE.\n"
     "2. Scripts must use simple print() statements to output results. Avoid multi-line strings or escaped newlines (\\n).\n"
     "3. Do NOT repeat actions that have already succeeded.\n"
-    "4. If the results of a previous EXECUTE_SCRIPT give you the answer to the user's request, your NEXT queue MUST contain ONLY the `TASK_COMPLETE` tool with the final answer.\n"
-    "5. If a script fails due to memory limits, reduce array sizes or iterations, or avoid heavy libraries like numpy for simple tasks."
+    "4. If a script fails due to memory limits, reduce array sizes or iterations, or avoid heavy libraries like numpy for simple tasks."
 )
 ExecutionPlan.__doc__ = ExecutionPlan.__doc__.replace("Step Prompt:", enhanced_prompt)

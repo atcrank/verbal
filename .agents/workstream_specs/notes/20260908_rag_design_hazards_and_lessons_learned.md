@@ -14,7 +14,7 @@ During the shakedown and empirical rigor trials (Workstream 16), Trial 1 retriev
 2. Chunks > 100 lemmas suffered a blunt length penalty (`min(1.0, 100.0 / len(chunk_lemmas))`).
 
 ## What needs to be done
-Document the foundational design history, failure modes, and hazards of RAG when pairing small local language models (SLMs like `gemma-2-2b-it`) with scientific retrieval, and define the architectural synthesis that resolves both failure modes without swinging the pendulum back.
+Document the foundational design history, failure modes, and hazards of RAG when pairing small local language models (SLMs like `google/gemma-4-E2B-it`) with scientific retrieval, and define the architectural synthesis that resolves both failure modes without swinging the pendulum back.
 
 ### The Two Opposite Failure Modes (Hazards)
 1. **Hazard 1: Prompt Hijacking & Context Overload ("Chunk Captivity")**:

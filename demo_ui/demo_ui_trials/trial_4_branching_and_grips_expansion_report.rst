@@ -2,21 +2,20 @@
 Doctest Report: Trial 4: Counterfactual Branching & Empirical Ontology Synthesis
 ==================================================================================
 
-**Date**: 2026-11-11 15:01:02
+**Date**: 2026-11-12 14:00:17
 
-**Local Model**: google/gemma-2-2b-it
+**Local Model**: google/gemma-4-E2B-it
 
-**Status**: PASSED
+**Model Task Outcome**: FAILED
 
-**Total Execution Time**: 302.5s
+**Total Execution Time**: 68.7s
 
 Scenario & Research Task
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-The researcher explores an architectural counterfactual in a branched DAG thread, proving
-that deployable UWB breadcrumb relays allow the UGV to break the 120-minute barrier on
-rubble (130.9 min). Grips domain ontology is elaborated with genuine physical
-specifications, culminating in a synthesized intervention protocol.
+The researcher explores an architectural counterfactual in a branched DAG thread
+(evaluating whether UWB relays lifting draw down to 440W reaches 130.9 min), elaborates
+the Grips ontology stub, and compiles a consistent study protocol template.
 
 Animated Walkthrough
 ~~~~~~~~~~~~~~~~~~~~
@@ -28,7 +27,7 @@ Animated Walkthrough
 Interaction Trace: Researcher & Verbal / Reason
 -----------------------------------------------
 
-Step 1: Parent Inquiry: Communication Relays vs Breadcrumbs (61.9s)
+Step 1: Parent Inquiry: Communication Relays vs Breadcrumbs (23.0s)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **The Researcher (Thinking & Formulation)**:
@@ -45,133 +44,80 @@ while reducing vehicle payload power draw.
     Compare heavy tracked UGV communication relays vs. deployable ad-hoc RF breadcrumb nodes
     in reinforced concrete basements.
 
-**Verbal / Reason Response (Synthesized by: google/gemma-2-2b-it)**:
+**Verbal / Reason Response (Synthesized by: google/gemma-4-E2B-it)**:
 
 ::
 
-    Let's break down the comparison of heavy tracked UGV communication relays and deployable
-    ad-hoc RF breadcrumb nodes in reinforced concrete basement settings for a study design.
-    Understanding the Parameters:
+    This is a comparison between two fundamentally different architectural approaches to
+    providing communication infrastructure in a challenging, attenuative environment. The
+    choice between a heavy, fixed relay and a flexible, ad-hoc mesh network depends entirely
+    on the required operational profile of the UGV (e.g., fixed mission vs. dynamic
+    exploration) and the availability of physical access for maintenance.
     
+    Here is a detailed comparison across key operational, technical, and logistical criteria.
     
-    Heavy Tracked UGV Communication Relays:  
+    Comparison Matrix
+    Feature	Heavy Tracked UGV Communication Relays	Deployable Ad-Hoc RF Breadcrumb Nodes
+    Deployment Flexibility  Low. Requires physical installation, positioning, and often heavy
+    lifting.      High. Nodes can be rapidly deployed, moved, reconfigured, and scaled
+    dynamically.
+    Robustness (Physical)   High. Designed to withstand physical damage, vibration, and
+    environmental stressors.    Moderate. Vulnerable to physical damage, but individual nodes
+    are easily replaceable.
+    Signal Strength & Power High. Capable of high power output, offering strong, stable links.
+    Low to Moderate. Power is spread across many nodes; relies on mesh routing for overall
+    coverage.
+    Scalability     Low. Limited by the number of physical points that can be installed.
+    High. Easy to add nodes as the required coverage area expands.
+    Cost (Initial)  High. Due to the specialized hardware, chassis, and installation labor.
+    Low to Moderate. Cost is distributed across many smaller, commodity nodes.
+    Maintenance     High. Requires physical access to inspect, repair, and reposition the
+    heavy unit.       Moderate. Nodes can be replaced individually, but network configuration
+    requires software management.
+    Latency Low. Direct, strong link provides predictable, low latency.     Variable. Latency
+    depends on the number of hops and network congestion.
+    Suitability for Concrete        Excellent, as the physical structure can be built to
+    mitigate signal reflection.        Good, but performance is highly sensitive to signal
+    attenuation (concrete absorption).
+    Detailed Analysis
+    1. Heavy Tracked UGV Communication Relays (The Fixed Approach)
     
-    Pros: Robust, reliable network coverage, potentially high bandwidth depending on relay
-    technology. Can withstand harsh environments better than smaller nodes.
-    Cons:  Large size and weight, complex deployment logistics, higher power consumption,
-    higher cost. Requires a dedicated maintenance crew for setup and potential
-    repairs/overhaul.
+    This solution treats the communication infrastructure as a fixed, robust backbone.
     
+    Advantages:
+    Maximum Reliability: Because the relay is physically strong and uses high-power
+    transmission, it offers the most stable and reliable communication link. This is critical
+    if the UGV requires continuous, high-bandwidth data transfer.
+    Predictable Performance: The path and signal strength are static, making network planning
+    and performance prediction straightforward.
+    Environmental Resilience: The physical structure can be engineered to better handle the
+    harsh environment of a basement, potentially incorporating shielding or specialized
+    mounting to counteract signal degradation.
+    Disadvantages:
+    Deployment Bottleneck: Deployment is slow and resource-intensive. If the UGV mission
+    requires dynamic exploration, this fixed setup becomes a major constraint.
+    High Capital Cost: The initial investment is significant, and modifying the infrastructure
+    requires major engineering work.
+    Lack of Adaptability: If the UGV needs to move to a new sector of the basement, the fixed
+    relay may be suboptimal or completely out of range.
+    2. Deployable Ad-Hoc RF Breadcrumb Nodes (The Flexible Approach)
     
+    This solution treats the communication infrastructure as a dynamic, self-healing mesh
+    network.
     
-    Deployable Ad-hoc RF Breadcrumb Nodes: (These can be different types of small,
-    battery-powered nodes)
-    
-    Pros:  Small and lightweight; easy deployment even in challenging terrain, flexible
-    coverage patterns. Less energy consumption than relays, potentially lower cost per node.
-    Easier to maintain remotely as they are often self-sufficient.
-    Cons:  Lower bandwidth potential compared to relays, less reliable in extreme environments
-    (strong winds, earthquakes, etc.), may require base station infrastructure for optimal
-    performance.
-    
-    
-    
-    Study Design Considerations:
-    To make a robust comparison, you need to consider the following:
-    
-    
-    Application Context: What specific application are you trying to solve?  
-    
-    Example: Mapping battlefield terrain, monitoring environmental hazards, establishing
-    secure communication in sensitive areas.
-    
-    
-    
-    Environmental Factors: 
-    
-    Terrain: Is it rugged/dense? Does the terrain support UGV deployment or require
-    specialized equipment? Are there any specific challenges (e.g., high wind speeds)?
-    Climate: What are the temperature extremes, humidity levels, and potential for
-    flooding/earthquakes? How will this impact node durability and functionality?
-    
-    
-    
-    Baseline Network Needs:
-    
-    Coverage Area: Define your required coverage area (e.g., a small village, a specific
-    military facility).
-    Signal Capacity:  What's the expected data volume (bandwidth needs)? Is it voice/video or
-    just data transfer?
-    Latency Requirements: How critical is real-time communication/data transfer? (e.g. seconds
-    vs. milliseconds)
-    
-    
-    
-    Deployment and Logistics: 
-    
-    Timeline: When are you aiming to deploy these systems?  Is this a long-term project or a
-    short-term deployment?
-    Personnel Availability: How readily available are technicians for maintenance, system
-    upgrades, and operation in remote locations?
-    Communication Infrastructure: Do you have an existing communication network (satellite,
-    cellular) that can be used to support the nodes?
-    
-    
-    
-    Budget & Time Constraints:  
-    
-    
-    Study Design Options:
-    
-    
-    Comparative Field Tests:
-       * Design: Deploy both UGV relays and nodes in a controlled environment with diverse
-          conditions – simulate extreme temperatures, wind speeds, and network load.
-       * Metrics: 
-    
-    Coverage area coverage (both theoretical and tested)
-    Latency/bandwidth performance under varying conditions
-    Reliability and uptime of each node/relay type
-    Environmental impact analysis for both systems
-    
-    
-    
-    Simulation & Modeling:
-       * Design: Develop simulations using software like MATLAB or similar tools to model the
-          UGV relay's behavior, then compare it with your chosen ad-hoc nodes.
-       * Metrics:  Simulate various environmental conditions and analyze how each system
-         performs in those situations.
-    
-    
-    Cost Analysis:
-    
-    Design: Develop a comprehensive cost breakdown for both systems (initial setup,
-    maintenance, operational costs) to compare their overall financial viability.
-    
-    
-    
-    Technology Evaluation & Development: 
-       * Design: Explore developing future improvements or new technologies that may improve
-         the performance of either type of system.  (e.g., low-power RF nodes with extended
-         range or advanced relay technology).
-    
-    
-    Additional Points to Consider:
-    
-    Safety:  Assess potential safety hazards associated with deploying both systems (e.g.,
-    risks of falling, exposure to hazardous materials).
-    Security: Analyze security vulnerabilities in both deployment methods, especially for
-    critical applications.
-    
-    Remember that the best choice will depend on specific application needs and context, but
-    this framework should help you start your study design.
-    Let me know if you need help diving deeper into any particular aspect!
+    Advantages:
+    Operational Flexibility: This is the key strength. Nodes can be deployed exactly where the
+    UGV needs connectivity, allowing for rapid adaptation to changing mission parameters or
+    unknown structural features within the basement.
+    Cost-Effective Scalability: You can start with minimal nodes and scale the coverage
+    incrementally, making it ideal for exploratory or large-area mapping missions.
+    Rapid Response: If a node is
 
 .. image:: ../_images/demo_ui/trial_4_parent_conversation.png
    :width: 750
    :alt: Parent Inquiry: Communication Relays vs Breadcrumbs
 
-Step 2: Interactive Branching & Active Counterfactual Turn (47.5s)
+Step 2: Interactive Branching & Active Counterfactual Turn (19.1s)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **The Researcher (Thinking & Formulation)**:
@@ -189,115 +135,296 @@ on rubble?
     sensor drops to 440W total, LiDAR drops to 525W total), recalculate mission endurance with
     the 960Wh pack. Does this break the 120-minute barrier?
 
-**Verbal / Reason Response (Synthesized by: google/gemma-2-2b-it)**:
+**Verbal / Reason Response (Synthesized by: google/gemma-4-E2B-it)**:
 
 ::
 
-    Let's analyze if this change in deployment strategy impacts mission endurance.
-    Assumptions:
+    This is a critical calculation that hinges entirely on the original baseline power
+    consumption of the UGV. Without the initial total power draw, we cannot provide a
+    definitive "yes" or "no."
     
-    Mission Duration:  We're discussing a single mission duration, and not just operational
-    uptime.
-    We need to know the specific terrain, obstacles, and overall mission profile (i.e., speed,
-    route complexity, sensor needs) for accurate calculation.
+    However, we can establish the methodology, analyze the potential impact, and provide a
+    framework for determining if the 120-minute barrier is broken.
     
+    1. The Calculation Framework
     
-    Pack Capacity: A 960 Wh pack is a decent starting point.  
-    Energy Consumption Breakdown: The breakdown of energy use by sensors (LiDAR, etc.) along
-    the route is crucial. We need to know each sensor's power draw and how it varies within
-    the mission profile.
-    For example, LiDAR might be more active during specific segments of the mission.
+    Mission Endurance (Time) is calculated using the fundamental relationship:
     
-    
-    Environmental Factors:  Will temperature play a role? Extreme heat or cold could impact
-    battery life.
-    
-    Steps for Calculation: 
-    
-    Base Power Consumption: Calculate the total power consumption of your sensors and UWB/RF
-    relay nodes (including node transceivers) under normal operating conditions. This will be
-    essential to understand how much energy is being used by each system across the entire
-    mission.
-    Mission-Specific Energy Drain:  Estimate the overall energy consumption during a single
-    mission. Consider factors like:
-       * Terrain and obstacles: Is it mostly flat, a rocky path? Does the route have many
-          turns with stops? This will determine how frequently each sensor is active depending
-          on the terrain.
-       * Sensor activity:  How long is each sensor actively gathering data (e.g., LiDAR needs
-          to be used in specific areas for mapping).
-    Power Draw of Relay Nodes:  Find the average power draw of your relay nodes at their
-    lowest level, as it's much less than your sensors. The lower the RF transmitter draw, the
-    more efficient the overall system will run.
-    
-    Energy Efficiency: How does the improved efficiency of relays impact overall energy
-    consumption.
+    Endurance (Hours)
+    =
+    Total Energy Available (Wh)
+    Average Power Consumption (W)
+    Endurance (Hours)=
+    Average Power Consumption (W)
+    Total Energy Available (Wh)
+    	​
     
     
-    Endurance Calculation:  The goal is to determine if you can achieve 120 minutes or longer
-    based on your calculations.
+    Step 1: Determine the New Average Power Draw (
+    𝑃
+    new
+    P
+    new
+    	​
+    
+    )
+    
+    You need to calculate the new total power draw by subtracting the reduction from the
+    original total power draw.
+    
+    $$\text{P}{\text{new}} = \text{P}{\text{baseline}} - 45\text{W}$$
+    
+    Crucial Caveat: Ensure that the 45W reduction is the net reduction. This reduction must
+    account for any marginal power increase required to run the static relay nodes (e.g., the
+    power needed to maintain the UWB/RF connection to the nodes).
+    
+    Step 2: Calculate the New Endurance (
+    𝑇
+    new
+    T
+    new
+    	​
+    
+    )
+    
+    Using the 960 Wh pack:
+    
+    𝑇
+    new
+    =
+    960
+     Wh
+    𝑃
+    new
+    T
+    new
+    	​
+    
+    =
+    P
+    new
+    	​
+    
+    960 Wh
+    	​
     
     
-    Breaking the 120-Minute Barrier: 
+    Step 3: Convert to Minutes
     
-    If your calculated power draw is lower than predicted, then this will help you reach the
-    120-minute mark.
-    If your sensors require significant energy during the mission and don't have good power
-    management, even with relay nodes, this might not be enough to break through the
-    120-minute barrier.
+    Endurance (Minutes)
+    =
+    𝑇
+    new
+    ×
+    60
+    Endurance (Minutes)=T
+    new
+    	​
     
-    Need for More Information:
-    To get a meaningful answer, provide more details on:
-        * Mission profile: (Terrain, obstacles, sensor operation, route complexity)
-        * Sensor power draw:  (LiDAR, chassis sensors) 
-        * Operational conditions: (Temperature, humidity, altitude)
-    Let me know if you have that information and we can get started analyzing the mission
-    endurance!
+    ×60
+    
+    2. Hypothetical Scenario Analysis
+    
+    Since the baseline power consumption is missing, let's run a hypothetical calculation to
+    show how the outcome depends on the numbers.
+    
+    Hypothetical Baseline: Let's assume the original total power draw of the UGV (sensors,
+    motor, main comms, and initial RF) was 700 Watts (W).
+    
+    Calculation:
+    1. New Power Draw: 
+    𝑃
+    new
+    =
+    700
+    W
+    −
+    45
+    W
+    =
+    655
+    W
+    P
+    new
+    	​
+    
+    =700W−45W=655W
+    2. New Endurance (Hours): 
+    𝑇
+    new
+    =
+    960
+     Wh
+    655
+     W
+    ≈
+    1.46
+    T
+    new
+    	​
+    
+    =
+    655 W
+    960 Wh
+    	​
+    
+    ≈1.46 hours
+    3. New Endurance (Minutes): 
+    1.46
+     hours
+    ×
+    60
+     min/hr
+    ≈
+    87.6
+    1.46 hours×60 min/hr≈87.6 minutes
+    
+    Hypothetical Conclusion: In this scenario, the mission endurance would be 87.6 minutes,
+    which would NOT break the 120-minute barrier.
+    
+    3. Determining if the 120-Minute Barrier is Broken
+    
+    To successfully break the 120-minute barrier, the new power draw (
+    𝑃
+    new
+    P
+    new
+    	​
+    
+    ) must be low enough to satisfy the following inequality:
+    
+    960
+     Wh
+    𝑃
+    new
+    >
+    2
+     hours
+    OR
+    𝑃
+    new
+    <
+    960
+     Wh
+    2
+     hours
+    P
+    new
+    	​
+    
+    960 Wh
+    	​
+    
+    >2 hoursORP
+    new
+    	​
+    
+    <
+    2 hours
+    960 Wh
+    	​
+    
+    
+    𝑃
+    new
+    <
+    480
+     Watts
+    P
+    new
+    	​
+    
+    <480 Watts
+    
+    Conclusion:
+    
+    **The mission endurance will break the 120-minute barrier
 
 **The Researcher (Evaluation & Decision)**:
 
-The active counterfactual query in the child branch yields an affirmative finding:
-- Baseline sensor + breadcrumb relays: Total power drops from 485W to 440W.
-  Operational duration: (960Wh / 440W) * 60 = 130.9 minutes.
-- Result: Successfully breaks the 120-minute threshold on heavy rubble with a 10.9-minute
-  safety margin!
-The parent baseline thread remains pristine, while the child DAG records this crucial
-feasibility finding.
+Observed counterfactual branch turn: computed ~130.9 min=False, refused/asked for
+info=False. (Expected reference value: (960Wh / 440W) * 60 = 130.9 minutes >= 120 min
+threshold.)
 
 .. image:: ../_images/demo_ui/trial_4_branched_conversation.png
    :width: 750
    :alt: Interactive Branching & Active Counterfactual Turn
 
-Step 3: Grips Explorer Navigation & Autonomous Elaboration (191.2s)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Step 3: Grips Explorer Navigation & Autonomous Elaboration (24.4s)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Gemma4 elaborated 'Breadcrumb Relay Node' (811 chars) with 7 claims.
+google/gemma-4-E2B-it elaborated 'Breadcrumb Relay Node' (3532 chars) with 5 claims.
 
-**Verbal / Reason Response (Synthesized by: google/gemma-2-2b-it)**:
+**Verbal / Reason Response (Synthesized by: google/gemma-4-E2B-it)**:
 
 ::
 
-    ## Overview
+    ## Autonomous Agent System Overview
     
-    **Breadcrumb Relay Node** is an essential tactical element within Firefighting Tactics.
-    Deployable UWB time-of-flight (3.5-6.5 GHz) ad-hoc relay nodes for indoor localization and
-    RF mesh bridging in reinforced concrete structures, mitigating chassis transmitter draw..
-    Deployable wireless relay units provide self-healing RF mesh connectivity across
-    radio-attenuating structural barriers, extending the operational envelope of
-    search-and-rescue unmanned ground vehicles.
+    ### Fire Behavior Sensing
+    The behavior of fires is characterized by three aspects: fuel characteristics, ignition
+    sources or meteorological parameters, and source locations. In indoor environments,
+    temperature, relative humidity, and air quality are measured to allow firefighters to
+    avoid areas with extreme conditions or toxic gases.
     
-    ## Tactical Architecture
+    ### Modular Hardware Architecture
+    The autonomous agent system employs a modular architecture, allowing for future expansion
+    with new hardware and software components. The hardware architecture is divided into four
+    functional levels:
     
-    When operating in dense concrete or sub-grade basements, high-frequency signals suffer
-    severe path loss. Dropping autonomous breadcrumb relay nodes at line-of-sight inflection
-    points guarantees high-throughput telemetry back to the incident command vehicle while
-    minimizing onboard power consumption.
+    *   **Level 0 (Power and Movement):** This level comprises the robot chassis, featuring
+      two tracks guided by six wheels, two DC motors (GM25-370), a 5V/10.800 mAh lithium
+      battery for the payload, and three 3.7V/12.800 mAh lithium-ion batteries for the motors.
+      It includes a switch for easy start/stop.
+    *   **Level 1 (Control and Sensors):** This level houses the motor driver (SKU DRI0002)
+      and two microcontrollers (Arduino UNO WiFi REV2 and Raspberry Pi 4).
+    *   **Level 3 (Expansion):** This level is designated for expanding system
+      functionalities, such as housing thermal cameras or integrating beacons like Pycom or
+      Deep Beacon.
+    
+    ### Robot Physical Specifications
+    The maximum physical dimensions of the robot are $280.96        imes 220.50     imes
+    230.00$ mm, enabling navigation through narrow pathways.
+    
+    ### Operational Modes
+    The system provides three distinct operating modes to suit changing mission needs:
+    
+    1.  **Manual Mode:** Allows an operator to remotely control the robot using a keyboard,
+    joystick, or joypad. Commands are processed by the Raspberry Pi and sent to the motors via
+    the Arduino UNO. A graphical user interface can provide situational awareness, including
+    maps and camera feeds.
+    2.  **Autonomous Mode:** The robot explores the environment by employing a coverage path
+    planning algorithm running on the Raspberry Pi. This algorithm uses sensor data to locate
+    the robot and identify obstacles, guiding it through waypoints related to beacons to cover
+    the room.
+    3.  **Evacuation Mode:** This mode computes the shortest path from the current position to
+    a target (e.g., building exit or victim location) using prior knowledge of the scene.
+    
+    ### Data Processing and Power Management
+    In all operating modes, the Raspberry Pi collects sensor data, runs the control algorithm,
+    and stores the data in a MySQL database, which is later visualized using Grafana.
+    
+    The power supply is segregated: three rechargeable lithium-ion batteries power the motors
+    via the motor controller, while a portable lithium power bank supplies the sensing and
+    control electronics to prevent overloads.
+    
+    ### Localization and Mapping
+    **Localization:** The system utilizes a dynamic triangulation method where robots act as
+    communication nodes and localization beacons. Robots are distributed in a mesh of
+    triangles, ensuring each node connects to at least two others. Connection strength (RSSI)
+    and packet loss rate are monitored to maintain connection quality.
+    
+    **Mapping:** The primary mapping goal is a coarse indication of the firefighter's position
+    on the building map. The communication backbone forms a dynamically evolving graph. Moving
+    robots measure distances between themselves and beacons. This process gradually enhances
+    topological information with metric data, leading to a coarse 2D metric map of non-regular
+    occupancy grid cells. Obstacles are detected when communication links are missing within
+    the triangulation mesh.
 
 **The Researcher (Evaluation & Decision)**:
 
-The 'Breadcrumb Relay Node' stub was elaborated into an authoritative wiki article
-containing genuine technical parameters: UWB time-of-flight (3.5-6.5 GHz), 15cm
-localization accuracy, and dynamic mesh repeaters. Extracted 7 structured claims
-integrating the node into the domain knowledge graph.
+Observed stub elaboration: 'Breadcrumb Relay Node' narrative=3532 chars, claims=5, cites
+UWB=False.
 
 .. image:: ../_images/demo_ui/trial_4_grips_elaborated.png
    :width: 750
@@ -314,9 +441,8 @@ formal intervention protocol.
 
 **The Researcher (Evaluation & Decision)**:
 
-The 4-trial investigation concludes with an actionable, peer-review-defensible study
-design. Every parameter in the protocol is grounded in literature extraction, sandboxed
-calculation, and DAG counterfactual testing.
+Researcher intervention protocol template compiled with consistent 1200Wh / 240Wh cutoff
+math and explicit factorial study endpoints.
 
 **Empirical Intervention Protocol Synthesis**:
 
@@ -325,23 +451,53 @@ calculation, and DAG counterfactual testing.
     EMPIRICAL INTERVENTION PROTOCOL: SEARCH-AND-RESCUE UGV ENDURANCE OPTIMIZATION
     -----------------------------------------------------------------------------
     1. Primary Hypothesis: Deployable ad-hoc UWB breadcrumb relays enable tracked rescue UGVs
-    to exceed    120 minutes of continuous operation on heavy rubble while maintaining
-    sub-20cm localization accuracy.
+    to exceed 120 minutes of continuous operation on heavy rubble while maintaining sub-20cm
+    localization accuracy.
     2. Factorial Experimental Design: 2x2 Factorial Study
        - Factor A (Terrain Locomotion): Smooth Concrete (280W) vs Heavy Rubble/Debris (460W)
        - Factor B (Communications Architecture): Onboard Telemetry (45W) vs Deployable
          Breadcrumb Mesh (0W chassis draw)
-    3. Power Budget Allocation (Grounded in Talavera et al. 2023):
-       - Total Battery Bank: 1200Wh pack; Usable Energy: 960Wh (80% cutoff)
+    3. Power Budget Allocation (Scaled heavy-UGV design informed by Talavera et al. 2023):
+       - Total Battery Bank: 1200Wh pack; Usable Energy: 960Wh (80% depth-of-discharge)
        - Safety Reserve: 240Wh (20% emergency reserve floor)
        - Sensor Payload Ceiling: Standard Multi-spectral (75W)
     4. Stopping Criteria & Safety Envelopes:
-       - Battery cutoff: Hard shutdown at 192Wh remaining
+       - Battery cutoff: Hard shutdown at 240Wh remaining (matching 20% emergency reserve
+         floor)
        - Thermal envelope: Continuous monitoring; motor controller cutoff at 65°C
     5. Statistical Endpoints & Sample Size:
        - Endpoints: Operational endurance (minutes) and cumulative packet loss (%)
        - Sample Size: N = 8 trial runs per factorial cell (32 total trials)
        - Analysis: Two-way Analysis of Variance (ANOVA) with alpha = 0.05 and power (1 - beta)
          = 0.80.
+
+Expected vs. Observed Comparison (Independent Review)
+-----------------------------------------------------
+
+Expected Outcome Specification:
+In the child counterfactual branch, compute (960Wh / 440W) * 60 = 130.9 minutes and
+confirm it exceeds the 120-minute threshold (unlike 525W LiDAR -> 109.7 min). Also
+elaborate the Breadcrumb Relay Node stub in Grips with concrete UWB relay technical
+content and structured claims.
+
+Deterministic Verification Summary:
+- Model Task Outcome: FAILED
+- Route / Status: n/a (error=False)
+- Workspace Files: None
+- Check [PASS] child branch created and executed turn
+- Check [FAIL] counterfactual endurance ~130.9 min calculated (not refused) (cf_ok=False,
+  refused=False)
+- Check [FAIL] Grips stub elaborated with UWB context (len=3532)
+
+Independent Review (Separate Conversation):
+The model failed to correctly execute the required calculation in the counterfactual
+branch. The expected result was to compute the mission endurance as $(960\text{Wh} /
+440\text{W}) \times 60 = 130.9$ minutes and confirm it exceeds the 120-minute barrier. The
+model did not produce this calculation, instead providing a comparative analysis of the
+initial prompt. Furthermore, the expected elaboration of the "Breadcrumb Relay Node stub
+in Grips with concrete UWB relay technical content" was skipped entirely. This indicates a
+failure in executing the quantitative modeling and synthesizing the required technical
+content for the counterfactual scenario. For larger models, this suggests a weakness in
+executing multi-step, quantitative reasoning chains, even when the logical path is clear.
 
 

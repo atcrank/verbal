@@ -48,6 +48,38 @@ _last_generation_metrics = threading.local()
 def get_last_generation_metrics() -> GenerationMetrics | None:
     return getattr(_last_generation_metrics, 'metrics', None)
 
+def _extract_text_from_content(content) -> str:
+    """Extracts plain text from either string or multimodal list message content."""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        return "\n".join(
+            part.get("text", "")
+            for part in content
+            if isinstance(part, dict) and part.get("type") == "text"
+        )
+    return str(content or "")
+
+
+def _merge_message_content(first, second):
+    """Merges string or OpenAI multimodal list message contents without type errors."""
+    if isinstance(first, list) or isinstance(second, list):
+        blocks = []
+        for item in (first, second):
+            if isinstance(item, list):
+                blocks.extend(item)
+            elif item:
+                text_val = str(item)
+                if text_val.strip():
+                    blocks.append({"type": "text", "text": text_val})
+        return blocks
+    first_str = str(first or "")
+    second_str = str(second or "")
+    if first_str and second_str:
+        return f"{first_str}\n\n{second_str}"
+    return first_str or second_str
+
+
 def _sanitize_messages(msgs):
     if not isinstance(msgs, list):
         return msgs
@@ -57,7 +89,7 @@ def _sanitize_messages(msgs):
     for m in msgs:
         role = m.get('role')
         if role == 'system':
-            content = m.get('content', '').strip()
+            content = _extract_text_from_content(m.get('content', '')).strip()
             if not seen_non_system:
                 if content and content not in sys_parts:
                     sys_parts.append(content)
@@ -71,7 +103,7 @@ def _sanitize_messages(msgs):
     sys_prompt = "\n\n---\n\n".join(sys_parts).strip()
     if sys_prompt:
         if sanitized and sanitized[0].get('role') == 'user':
-            sanitized[0]['content'] = f"{sys_prompt}\n\n" + sanitized[0].get('content', '')
+            sanitized[0]['content'] = _merge_message_content(sys_prompt, sanitized[0].get('content', ''))
         else:
             sanitized.insert(0, {'role': 'user', 'content': sys_prompt})
 
@@ -79,7 +111,7 @@ def _sanitize_messages(msgs):
     merged = []
     for m in sanitized:
         if merged and merged[-1].get('role') == m.get('role'):
-            merged[-1]['content'] += "\n\n" + m.get('content', '')
+            merged[-1]['content'] = _merge_message_content(merged[-1].get('content', ''), m.get('content', ''))
         else:
             merged.append(dict(m))
     return merged
@@ -395,18 +427,22 @@ class AIService:
             logger.error(f"Failed to load adapter {adapter_name} from {adapter_path}: {e}")
 
     def _extract_prompts(self, messages):
+        if isinstance(messages, str):
+            return "", messages
         system_prompt = ""
         user_prompt = ""
         for m in messages:
-            if getattr(m, 'role', '') == 'system' or getattr(m, 'type', '') == 'system':
-                system_prompt += getattr(m, 'content', '') + "\n"
-            elif getattr(m, 'role', '') == 'user' or getattr(m, 'type', '') == 'human':
-                user_prompt += getattr(m, 'content', '') + "\n"
-            elif isinstance(m, dict):
-                if m.get('role') == 'system':
-                    system_prompt += m.get('content', '') + "\n"
-                elif m.get('role') in ['user', 'human']:
-                    user_prompt += m.get('content', '') + "\n"
+            if isinstance(m, dict):
+                role = m.get('role')
+                raw_content = m.get('content', '')
+            else:
+                role = getattr(m, 'role', '') or getattr(m, 'type', '')
+                raw_content = getattr(m, 'content', '')
+            text_content = _extract_text_from_content(raw_content)
+            if role == 'system':
+                system_prompt += text_content + "\n"
+            elif role in ('user', 'human'):
+                user_prompt += text_content + "\n"
         return system_prompt.strip(), user_prompt.strip()
 
     def format_chat_prompt(self, messages, add_generation_prompt: bool = True) -> str:
@@ -582,6 +618,7 @@ class AIService:
         api_url = f"{self.inference_url.rstrip('/')}/v1/chat/completions"
         api_key = None
         target_model = "local-model"
+        is_ollama_target = False
         
         # 0. System Config Defaults (if no user override)
         try:
@@ -601,6 +638,7 @@ class AIService:
                 elif config.hosting_backend == 'ollama':
                     ollama_url = getattr(settings, 'OLLAMA_BASE_URL', 'http://ollama:11434')
                     api_url = f"{ollama_url.rstrip('/')}/v1/chat/completions"
+                    is_ollama_target = True
                     if lora_adapter:
                         logger.warning("Dynamic LoRA swapping is not supported on the Ollama backend. Falling back to base model.")
                     target_model = config.active_ollama_model.hf_model_id if config.active_ollama_model else target_model
@@ -624,6 +662,7 @@ class AIService:
                 if prefs.use_external and prefs.active_external:
                     api_url = prefs.active_external.api_url
                     target_model = prefs.active_external.api_model_name
+                    is_ollama_target = False
                     key_obj = UserAPIKey.objects.filter(user=user, provider=prefs.active_external.provider).first()
                     if key_obj:
                         api_key = key_obj.api_key
@@ -638,6 +677,10 @@ class AIService:
             "max_tokens": max_new_tokens,
             "n": num_return_sequences
         }
+
+        if is_ollama_target and (response_schema or max_new_tokens < 512):
+            # Prevent Ollama thinking models (e.g. Gemma 4) from exhausting short/JSON budgets in hidden reasoning traces.
+            payload["reasoning_effort"] = "none"
 
         if tools:
             payload["tools"] = tools
@@ -670,7 +713,10 @@ class AIService:
             for choice in data.get("choices", []):
                 msg = choice.get("message", {})
                 content = msg.get("content") or ""
-                if "tool_calls" in msg:
+                if not content and response_schema is None and msg.get("reasoning"):
+                    logger.warning("OpenAI-compatible response returned empty 'content' with non-empty 'reasoning'; using reasoning fallback.")
+                    content = str(msg.get("reasoning") or "")
+                if msg.get("tool_calls"):
                     import json
                     try:
                         tool_calls = []

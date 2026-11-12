@@ -63943,7 +63943,7 @@
         "pk": 3,
         "fields": {
             "name": "Gemma4-2B",
-            "hf_model_id": "google/gemma-2-2b-it",
+            "hf_model_id": "google/gemma-4-E2B-it",
             "description": "Per-layer embeddings: \r\nWhat Per-Layer Embeddings (PLE) Actually DoInstead of forcing one giant embedding table at the front door to do all the work, a PLE architecture gives every single layer its own small side-drawer embedding table.  For Gemma 4 E4B, there is a secondary embedding table containing a massive packed vector for every token in the vocabulary. This vector is sliced into individual pieces\u2014one for each decoder layer.  [Token ID] ---> [Input Embedding Table] ---> Core Hidden State\r\n     |\r\n     +--------> [PLE Table Layer 1] --------> (Gate) ---> Added to Layer 1\r\n     |\r\n     +--------> [PLE Table Layer 2] --------> (Gate) ---> Added to Layer 2\r\nThe model gives each layer a depth-dependent reminder of what the token is. The same token gets a completely different learned vector depending on how deep it is in the network.",
             "load_in_4bit": true,
             "context_window": 60000

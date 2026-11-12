@@ -106,10 +106,10 @@
              
   <section id="doctest-report-trial-1-document-ingestion-and-context-grounded-reasoning">
 <h1>Doctest Report: Trial 1: Document Ingestion and Context-Grounded Reasoning<a class="headerlink" href="#doctest-report-trial-1-document-ingestion-and-context-grounded-reasoning" title="Link to this heading"></a></h1>
-<p><strong>Date</strong>: 2026-11-11 14:51:36</p>
-<p><strong>Local Model</strong>: google/gemma-2-2b-it</p>
-<p><strong>Status</strong>: PASSED</p>
-<p><strong>Total Execution Time</strong>: 58.6s</p>
+<p><strong>Date</strong>: 2026-11-12 13:57:28</p>
+<p><strong>Local Model</strong>: google/gemma-4-E2B-it</p>
+<p><strong>Model Task Outcome</strong>: PASSED</p>
+<p><strong>Total Execution Time</strong>: 49.0s</p>
 <section id="scenario-research-task">
 <h2>Scenario &amp; Research Task<a class="headerlink" href="#scenario-research-task" title="Link to this heading"></a></h2>
 <p>We imagine a researcher who has the following task and resources: An autonomous robotics
@@ -125,18 +125,19 @@ domain knowledge graph.</p>
 </a>
 <section id="interaction-trace-researcher-verbal-reason">
 <h3>Interaction Trace: Researcher &amp; Verbal / Reason<a class="headerlink" href="#interaction-trace-researcher-verbal-reason" title="Link to this heading"></a></h3>
-<section id="step-1-literature-ingestion-vector-indexing-1-4s">
-<h4>Step 1: Literature Ingestion &amp; Vector Indexing (1.4s)<a class="headerlink" href="#step-1-literature-ingestion-vector-indexing-1-4s" title="Link to this heading"></a></h4>
+<section id="step-1-literature-ingestion-vector-indexing-2-0s">
+<h4>Step 1: Literature Ingestion &amp; Vector Indexing (2.0s)<a class="headerlink" href="#step-1-literature-ingestion-vector-indexing-2-0s" title="Link to this heading"></a></h4>
 <p><strong>The Researcher (Thinking &amp; Formulation)</strong>:</p>
 <p>Before designing our field intervention trial, we need an authoritative knowledge base
-grounded in empirical robotics literature. We index 17 domain papers to provide factual
-anchors for sensor attenuation curves, locomotion power draws, and mission failure modes.</p>
+grounded in empirical robotics literature. We load and index the firefighting robotics
+literature fixture to provide factual anchors for sensor capabilities and mobility
+constraints.</p>
 <p><strong>The Researcher (Evaluation &amp; Decision)</strong>:</p>
 <p>Vector database populated with 51 semantic chunks across 3 research papers. The literature
 corpus is ready for semantic retrieval in the Reason UI.</p>
 </section>
-<section id="step-2-context-chip-formulation-prompt-submission-3-0s">
-<h4>Step 2: Context Chip Formulation &amp; Prompt Submission (3.0s)<a class="headerlink" href="#step-2-context-chip-formulation-prompt-submission-3-0s" title="Link to this heading"></a></h4>
+<section id="step-2-context-chip-formulation-prompt-submission-2-1s">
+<h4>Step 2: Context Chip Formulation &amp; Prompt Submission (2.1s)<a class="headerlink" href="#step-2-context-chip-formulation-prompt-submission-2-1s" title="Link to this heading"></a></h4>
 <p><strong>The Researcher (Thinking &amp; Formulation)</strong>:</p>
 <p>We need to clearly isolate the causal factors governing sensor failure in structural
 fires. LiDAR provides metric geometry for SLAM but suffers backscatter in dense aerosols.
@@ -150,85 +151,129 @@ clouds and long-wave infrared (LWIR) thermography in dense, aerosolized smoke?
 </div>
 <p><strong>Retrieved Literature Context (RAG Recall)</strong>:</p>
 <ul class="simple">
-<li><p><strong>Sen Li et al. (2023) — Section: An Indoor Autonomous Inspection and Firefighting Robot Based on SLAM and Flame Image Recognition - Un-headered Section (DOI: 10.3390/fire6030093)</strong> [Chunk <cite>d1a842af-5c41-4faa-9340-1a2210c559de</cite>]: “Indoor fire accidents have become increasingly common in recent years. More and more firefighting robots have been designed to solve the problem of fires. However, the indoor environment is very compl”</p></li>
+<li><p><strong>Sen Li et al. (2023) — Section: An Indoor Autonomous Inspection and Firefighting Robot Based on SLAM and Flame Image Recognition - ‘ - (DOI: 10.3390/fire6030093)</strong> [Chunk <cite>cd86439c-b542-4fc3-97eb-d154f6f342a9</cite>]: “Firefighting robots mostly use visual sensors for flame detection and location, and they carry out firefighting and rescue according to the flame location information [30]. Thermal imaging cameras and”</p></li>
 </ul>
 <a class="reference internal image-reference" href="../_images/trial_1_prompt_with_chips.png"><img alt="Context Chip Formulation &amp; Prompt Submission" src="../_images/trial_1_prompt_with_chips.png" style="width: 750px;" />
 </a>
 </section>
-<section id="step-3-live-inference-response-capture-49-9s">
-<h4>Step 3: Live Inference &amp; Response Capture (49.9s)<a class="headerlink" href="#step-3-live-inference-response-capture-49-9s" title="Link to this heading"></a></h4>
-<p>Local LLM (google/gemma-2-2b-it) generated 3046 characters of context-grounded synthesis.</p>
+<section id="step-3-live-inference-response-capture-23-4s">
+<h4>Step 3: Live Inference &amp; Response Capture (23.4s)<a class="headerlink" href="#step-3-live-inference-response-capture-23-4s" title="Link to this heading"></a></h4>
+<p>Local LLM (google/gemma-4-E2B-it) generated 4064 characters of context-grounded synthesis.</p>
 <p><strong>Retrieved Literature Context (RAG Recall)</strong>:</p>
 <ul class="simple">
-<li><p><strong>Sen Li et al. (2023) — Section: An Indoor Autonomous Inspection and Firefighting Robot Based on SLAM and Flame Image Recognition - Un-headered Section (DOI: 10.3390/fire6030093)</strong> [Chunk <cite>d1a842af-5c41-4faa-9340-1a2210c559de</cite>]: “Indoor fire accidents have become increasingly common in recent years. More and more firefighting robots have been designed to solve the problem of fi…”</p></li>
+<li><p><strong>Sen Li et al. (2023) — Section: An Indoor Autonomous Inspection and Firefighting Robot Based on SLAM and Flame Image Recognition - ‘ - (DOI: 10.3390/fire6030093)</strong> [Chunk <cite>cd86439c-b542-4fc3-97eb-d154f6f342a9</cite>]: “Firefighting robots mostly use visual sensors for flame detection and location, and they carry out firefighting and rescue according to the flame loca…”</p></li>
 </ul>
-<p><strong>Verbal / Reason Response (Synthesized by: google/gemma-2-2b-it)</strong>:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Based on the provided excerpt, here are some key trade-offs between 3D LiDAR point clouds
-and long-wave infrared (LWIR) thermography for autonomous ground robots in multi-story
-building fires:
-Trade-off #1: Perception &amp; Smoke Visibility
+<p><strong>Verbal / Reason Response (Synthesized by: google/gemma-4-E2B-it)</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">The</span> <span class="n">evaluation</span> <span class="n">of</span> <span class="mi">3</span><span class="n">D</span> <span class="n">LiDAR</span> <span class="n">point</span> <span class="n">clouds</span> <span class="n">versus</span> <span class="n">Long</span><span class="o">-</span><span class="n">Wave</span> <span class="n">Infrared</span> <span class="p">(</span><span class="n">LWIR</span><span class="p">)</span> <span class="n">thermography</span> <span class="ow">in</span>
+<span class="n">dense</span><span class="p">,</span> <span class="n">aerosolized</span> <span class="n">smoke</span> <span class="n">environments</span> <span class="n">presents</span> <span class="n">a</span> <span class="n">fundamental</span> <span class="n">trade</span><span class="o">-</span><span class="n">off</span> <span class="n">between</span> <span class="n">geometric</span>
+<span class="n">perception</span> <span class="ow">and</span> <span class="n">thermal</span> <span class="n">detection</span><span class="o">.</span> <span class="n">The</span> <span class="n">choice</span> <span class="n">between</span> <span class="n">the</span> <span class="n">two</span> <span class="n">sensors</span> <span class="n">depends</span> <span class="n">entirely</span> <span class="n">on</span>
+<span class="n">whether</span> <span class="n">the</span> <span class="n">primary</span> <span class="n">mission</span> <span class="n">requires</span> <span class="n">mapping</span> <span class="n">the</span> <span class="n">physical</span> <span class="n">structure</span> <span class="p">(</span><span class="n">localization</span><span class="p">)</span> <span class="ow">or</span>
+<span class="n">identifying</span> <span class="n">the</span> <span class="n">active</span> <span class="n">threat</span> <span class="p">(</span><span class="n">perception</span><span class="p">)</span><span class="o">.</span>
 
-LiDAR:  Provides detailed 3D information about the environment, including object size,
-shape, and distance. This is crucial for navigating complex environments and identifying
-obstacles in dense smoke conditions. The excerpt mentions LiDAR as a component of SLAM
-(SLAM uses sensor data like LiDAR to map the environment).
-LWIR:  Excellent at detecting heat signatures within smoke. This can help identify hot
-spots, potential fire sources, or even indicate locations where thermal plumes might
-obscure visual views for LiDAR.
+<span class="n">Based</span> <span class="n">on</span> <span class="n">the</span> <span class="n">provided</span> <span class="n">context</span><span class="p">,</span> <span class="n">the</span> <span class="n">key</span> <span class="n">distinction</span> <span class="n">lies</span> <span class="ow">in</span> <span class="n">their</span> <span class="n">resilience</span> <span class="n">to</span> <span class="n">smoke</span> <span class="ow">and</span>
+<span class="n">their</span> <span class="n">functional</span> <span class="n">output</span><span class="o">.</span>
 
-Trade-off #2: Localization Accuracy in Smoke &amp; 3D Understanding
+<span class="mf">1.</span> <span class="mi">3</span><span class="n">D</span> <span class="n">LiDAR</span> <span class="n">Point</span> <span class="n">Clouds</span><span class="p">:</span> <span class="n">Geometric</span> <span class="n">Perception</span> <span class="ow">and</span> <span class="n">Localization</span>
 
-LiDAR: While it provides a dense cloud of points, its accuracy is often degraded by smoke
-and dust particles.  This can lead to difficulties in precisely identifying fire source
-locations or even mapping the environment accurately. The excerpt states that sensors are
-used for SLAM, but this process could be hampered by smoke.
-LWIR: Provides more direct information on heat signatures, potentially enabling faster
-identification of fire sources. However, LWIR alone might not provide complete 3D context
-necessary for accurate localization in dense smoke scenarios.
+<span class="n">Role</span><span class="p">:</span> <span class="n">LiDAR</span> <span class="ow">is</span> <span class="n">fundamentally</span> <span class="n">a</span> <span class="n">geometry</span><span class="o">-</span><span class="n">based</span> <span class="n">sensor</span><span class="p">,</span> <span class="n">providing</span> <span class="n">precise</span> <span class="n">spatial</span> <span class="n">data</span>
+<span class="n">necessary</span> <span class="k">for</span> <span class="n">Simultaneous</span> <span class="n">Localization</span> <span class="ow">and</span> <span class="n">Mapping</span> <span class="p">(</span><span class="n">SLAM</span><span class="p">)</span> <span class="ow">and</span> <span class="n">detailed</span> <span class="n">environmental</span>
+<span class="n">modeling</span><span class="o">.</span>
 
-Trade-off #3:  Integration &amp; Operational Challenges
+<span class="n">Aspect</span>      <span class="n">Advantage</span> <span class="ow">in</span> <span class="n">Smoke</span>      <span class="n">Trade</span><span class="o">-</span><span class="n">off</span> <span class="ow">in</span> <span class="n">Smoke</span>
+<span class="n">Perception</span>      <span class="n">Provides</span> <span class="n">detailed</span> <span class="mi">3</span><span class="n">D</span> <span class="n">structural</span> <span class="n">mapping</span><span class="p">,</span> <span class="n">identifying</span> <span class="n">obstacles</span><span class="p">,</span> <span class="n">fire</span>
+<span class="n">boundaries</span><span class="p">,</span> <span class="ow">and</span> <span class="n">debris</span> <span class="n">geometry</span><span class="o">.</span>   <span class="n">Severe</span> <span class="n">Attenuation</span> <span class="ow">and</span> <span class="n">Scattering</span><span class="p">:</span> <span class="n">Dense</span><span class="p">,</span> <span class="n">aerosolized</span>
+<span class="n">smoke</span> <span class="n">severely</span> <span class="n">scatters</span> <span class="ow">and</span> <span class="n">attenuates</span> <span class="n">the</span> <span class="n">laser</span> <span class="n">beams</span><span class="p">,</span> <span class="n">leading</span> <span class="n">to</span> <span class="n">noisy</span><span class="p">,</span> <span class="n">sparse</span><span class="p">,</span> <span class="ow">or</span>
+<span class="n">entirely</span> <span class="n">unreliable</span> <span class="n">point</span> <span class="n">clouds</span><span class="o">.</span>
+<span class="n">Localization</span>    <span class="n">Excellent</span> <span class="k">for</span> <span class="n">accurate</span> <span class="n">robot</span> <span class="n">localization</span> <span class="p">(</span><span class="n">SLAM</span><span class="p">)</span> <span class="n">by</span> <span class="n">matching</span> <span class="n">environmental</span>
+<span class="n">features</span><span class="o">.</span>    <span class="n">Reduced</span> <span class="n">Feature</span> <span class="n">Density</span><span class="p">:</span> <span class="n">The</span> <span class="n">loss</span> <span class="n">of</span> <span class="n">geometric</span> <span class="n">features</span> <span class="n">makes</span> <span class="n">robust</span> <span class="n">feature</span>
+<span class="n">matching</span> <span class="n">difficult</span><span class="p">,</span> <span class="n">compromising</span> <span class="n">the</span> <span class="n">robot</span><span class="s1">'s ability to maintain accurate position within</span>
+<span class="n">the</span> <span class="n">dynamic</span> <span class="n">environment</span><span class="o">.</span>
+<span class="n">Primary</span> <span class="n">Output</span>      <span class="n">High</span><span class="o">-</span><span class="n">resolution</span> <span class="n">spatial</span> <span class="n">coordinates</span>
+<span class="p">(</span>
+<span class="n">𝑥</span>
+<span class="p">,</span>
+<span class="n">𝑦</span>
+<span class="p">,</span>
+<span class="n">𝑧</span>
+<span class="p">)</span>
+<span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">)</span><span class="o">.</span>        <span class="n">Unreliable</span> <span class="n">Data</span><span class="p">:</span> <span class="n">The</span> <span class="n">output</span> <span class="n">data</span> <span class="n">quality</span> <span class="n">degrades</span> <span class="n">rapidly</span><span class="p">,</span> <span class="n">making</span> <span class="n">it</span>
+<span class="n">difficult</span> <span class="n">to</span> <span class="n">distinguish</span> <span class="n">structural</span> <span class="n">elements</span> <span class="kn">from</span><span class="w"> </span><span class="nn">smoke</span> <span class="n">artifacts</span><span class="o">.</span>
 
-The excerpt focuses on the robot's autonomous inspection and fire extinguishing functions.
-Integrating these features with both LiDAR and LWIR sensors likely presents unique
-challenges. For example, how do you combine sensor data to identify objects and infer
-their temperature?
-Also, real-world operational constraints like battery life, mobility limitations, and
-dust/smoke handling could influence the selection of sensor payloads for specific
-environments.
+<span class="n">Trade</span><span class="o">-</span><span class="n">off</span> <span class="n">Summary</span><span class="p">:</span> <span class="n">LiDAR</span> <span class="n">excels</span> <span class="n">at</span> <span class="n">localization</span> <span class="ow">and</span> <span class="n">mapping</span> <span class="n">but</span> <span class="n">suffers</span> <span class="n">a</span> <span class="n">critical</span> <span class="n">failure</span>
+<span class="ow">in</span> <span class="n">perceptual</span> <span class="n">accuracy</span> <span class="n">due</span> <span class="n">to</span> <span class="n">smoke</span> <span class="n">interference</span><span class="o">.</span> <span class="n">Its</span> <span class="n">utility</span> <span class="ow">is</span> <span class="n">limited</span> <span class="n">to</span> <span class="n">environments</span>
+<span class="n">where</span> <span class="n">smoke</span> <span class="n">density</span> <span class="ow">is</span> <span class="n">manageable</span> <span class="ow">or</span> <span class="n">where</span> <span class="n">the</span> <span class="n">robot</span> <span class="n">operates</span> <span class="ow">in</span> <span class="nb">open</span> <span class="n">areas</span><span class="o">.</span>
 
-Key Takeaways:
+<span class="mf">2.</span> <span class="n">Long</span><span class="o">-</span><span class="n">Wave</span> <span class="n">Infrared</span> <span class="p">(</span><span class="n">LWIR</span><span class="p">)</span> <span class="n">Thermography</span><span class="p">:</span> <span class="n">Thermal</span> <span class="n">Perception</span>
 
-Both LiDAR and LWIR offer distinct advantages in multi-story building fires.
-LiDAR is crucial for navigating through smoke, but its accuracy can be challenged.
-LWIR excels at heat detection, potentially aiding localization even when visibility is
-poor.
-The choice between these sensors depends on the specific fire scenarios, robot design
-considerations, and operational goals.
+<span class="n">Role</span><span class="p">:</span> <span class="n">LWIR</span> <span class="ow">is</span> <span class="n">a</span> <span class="n">passive</span> <span class="n">sensor</span> <span class="n">that</span> <span class="n">detects</span> <span class="n">thermal</span> <span class="n">radiation</span><span class="p">,</span> <span class="n">providing</span> <span class="n">information</span> <span class="n">about</span>
+<span class="n">the</span> <span class="n">heat</span> <span class="n">sources</span> <span class="n">present</span><span class="p">,</span> <span class="n">which</span> <span class="ow">is</span> <span class="n">critical</span> <span class="k">for</span> <span class="n">fire</span> <span class="n">detection</span> <span class="ow">and</span> <span class="n">firefighting</span> <span class="n">decisions</span><span class="o">.</span>
 
-Recommendations:
+<span class="n">Aspect</span>      <span class="n">Advantage</span> <span class="ow">in</span> <span class="n">Smoke</span>      <span class="n">Trade</span><span class="o">-</span><span class="n">off</span> <span class="ow">in</span> <span class="n">Smoke</span>
+<span class="n">Perception</span>      <span class="n">Smoke</span> <span class="n">Immunity</span><span class="p">:</span> <span class="n">As</span> <span class="n">noted</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">context</span><span class="p">,</span> <span class="n">thermal</span> <span class="n">imaging</span> <span class="n">cameras</span>
+<span class="s2">"passively pick up the object's thermal radiation"</span> <span class="ow">and</span> <span class="n">are</span> <span class="n">unaffected</span> <span class="n">by</span> <span class="n">the</span> <span class="n">smoke</span><span class="o">.</span> <span class="n">This</span>
+<span class="n">allows</span> <span class="k">for</span> <span class="n">reliable</span> <span class="n">flame</span> <span class="n">detection</span> <span class="ow">in</span> <span class="n">smoke</span><span class="o">-</span><span class="n">filled</span> <span class="n">atmospheres</span><span class="o">.</span>      <span class="n">Lack</span> <span class="n">of</span> <span class="n">Geometric</span>
+<span class="n">Data</span><span class="p">:</span> <span class="n">LWIR</span> <span class="n">provides</span> <span class="n">thermal</span> <span class="n">intensity</span> <span class="n">maps</span><span class="p">,</span> <span class="ow">not</span> <span class="n">precise</span> <span class="n">spatial</span> <span class="n">coordinates</span><span class="o">.</span> <span class="n">It</span> <span class="n">cannot</span>
+<span class="n">generate</span> <span class="n">a</span> <span class="n">detailed</span> <span class="mi">3</span><span class="n">D</span> <span class="nb">map</span> <span class="n">of</span> <span class="n">the</span> <span class="n">structure</span><span class="o">.</span>
+<span class="n">Localization</span>    <span class="n">Useful</span> <span class="k">for</span> <span class="n">identifying</span> <span class="n">the</span> <span class="n">precise</span> <span class="n">location</span> <span class="n">of</span> <span class="n">the</span> <span class="n">heat</span> <span class="n">source</span> <span class="p">(</span><span class="n">the</span>
+<span class="n">flame</span><span class="p">),</span> <span class="n">guiding</span> <span class="n">the</span> <span class="n">robot</span> <span class="n">to</span> <span class="n">the</span> <span class="n">threat</span><span class="o">.</span>    <span class="n">Ambiguity</span><span class="p">:</span> <span class="n">Localization</span> <span class="ow">is</span> <span class="n">limited</span> <span class="n">to</span> <span class="n">the</span>
+<span class="n">thermal</span> <span class="n">signature</span><span class="o">.</span> <span class="n">If</span> <span class="n">multiple</span> <span class="n">heat</span> <span class="n">sources</span> <span class="n">exist</span><span class="p">,</span> <span class="ow">or</span> <span class="k">if</span> <span class="n">the</span> <span class="n">thermal</span> <span class="n">signature</span> <span class="ow">is</span> <span class="n">diffuse</span>
+<span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">g</span><span class="o">.</span><span class="p">,</span> <span class="n">hot</span> <span class="n">smoke</span><span class="p">),</span> <span class="n">precise</span> <span class="n">localization</span> <span class="ow">is</span> <span class="n">challenging</span><span class="o">.</span>
+<span class="n">Primary</span> <span class="n">Output</span>  <span class="n">Thermal</span> <span class="n">intensity</span> <span class="n">maps</span> <span class="ow">and</span> <span class="n">flame</span> <span class="n">location</span> <span class="n">data</span><span class="o">.</span> <span class="n">Limited</span> <span class="n">Structural</span>
+<span class="n">Insight</span><span class="p">:</span> <span class="n">Cannot</span> <span class="n">provide</span> <span class="n">the</span> <span class="n">geometric</span> <span class="n">context</span> <span class="n">needed</span> <span class="k">for</span> <span class="nb">complex</span> <span class="n">navigation</span> <span class="ow">or</span> <span class="n">structural</span>
+<span class="n">assessment</span><span class="o">.</span>
 
-Sensor Fusion: Combining both LiDAR and LWIR data through sensor fusion techniques can
-provide a more complete understanding of the environment and potentially enhance
-localization accuracy in smoke-filled environments.
-Offline/Real-Time Processing: Depending on the level of autonomy, offline processing of
-both sensors' raw data to create accurate fire maps is important. This could help with
-early detection, location identification, and even automated decision-making about the
-robot’s actions.
+<span class="n">Trade</span><span class="o">-</span><span class="n">off</span> <span class="n">Summary</span><span class="p">:</span> <span class="n">LWIR</span> <span class="n">excels</span> <span class="n">at</span> <span class="n">thermal</span> <span class="n">perception</span> <span class="ow">and</span> <span class="n">threat</span> <span class="n">detection</span> <span class="ow">in</span> <span class="n">smoke</span><span class="p">,</span>
+<span class="n">offering</span> <span class="n">robust</span> <span class="n">detection</span> <span class="n">capabilities</span><span class="o">.</span> <span class="n">Its</span> <span class="n">limitation</span> <span class="ow">is</span> <span class="n">the</span> <span class="n">inability</span> <span class="n">to</span> <span class="n">provide</span> <span class="n">the</span>
+<span class="n">detailed</span> <span class="n">geometric</span> <span class="n">context</span> <span class="n">required</span> <span class="k">for</span> <span class="n">precise</span> <span class="n">localization</span> <span class="ow">and</span> <span class="n">mapping</span><span class="o">.</span>
 
-Finally, further research into optimized sensor algorithms and robust fusion techniques
-for smoke-filled environments will be crucial for improving the reliability and efficiency
-of autonomous firefighting robots.
+<span class="n">Primary</span> <span class="n">Perception</span> <span class="ow">and</span> <span class="n">Localization</span> <span class="n">Trade</span><span class="o">-</span><span class="n">Off</span>
+
+<span class="n">The</span> <span class="n">core</span> <span class="n">trade</span><span class="o">-</span><span class="n">off</span> <span class="ow">is</span><span class="p">:</span> <span class="n">Geometric</span> <span class="n">Fidelity</span> <span class="n">vs</span><span class="o">.</span> <span class="n">Thermal</span> <span class="n">Reliability</span><span class="o">.</span>
+
+<span class="n">If</span> <span class="n">the</span> <span class="n">priority</span> <span class="ow">is</span> <span class="n">accurate</span> <span class="n">navigation</span> <span class="ow">and</span> <span class="n">structural</span> <span class="n">assessment</span> <span class="p">(</span><span class="n">Localization</span><span class="p">):</span> <span class="mi">3</span><span class="n">D</span> <span class="n">LiDAR</span>
+<span class="ow">is</span> <span class="n">preferred</span><span class="p">,</span> <span class="n">but</span> <span class="n">the</span> <span class="n">design</span> <span class="n">must</span> <span class="n">account</span> <span class="k">for</span> <span class="n">the</span> <span class="n">inevitable</span> <span class="n">degradation</span> <span class="n">of</span> <span class="n">the</span> <span class="n">point</span>
+<span class="n">cloud</span> <span class="ow">in</span> <span class="n">smoke</span> <span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">g</span><span class="o">.</span><span class="p">,</span> <span class="n">utilizing</span> <span class="n">robust</span> <span class="n">filtering</span> <span class="n">techniques</span> <span class="ow">or</span> <span class="n">relying</span> <span class="n">on</span> <span class="n">complementary</span>
+<span class="n">sensors</span><span class="p">)</span><span class="o">.</span>
+<span class="n">If</span> <span class="n">the</span> <span class="n">priority</span> <span class="ow">is</span> <span class="n">immediate</span> <span class="n">threat</span> <span class="n">detection</span> <span class="ow">and</span> <span class="n">fire</span> <span class="n">location</span> <span class="p">(</span><span class="n">Perception</span><span class="p">):</span> <span class="n">LWIR</span>
+<span class="n">Thermography</span> <span class="ow">is</span> <span class="n">the</span> <span class="n">superior</span> <span class="n">choice</span><span class="p">,</span> <span class="k">as</span> <span class="n">the</span> <span class="n">provided</span> <span class="n">context</span> <span class="n">confirms</span> <span class="n">it</span> <span class="ow">is</span> <span class="n">effective</span> <span class="ow">in</span>
+<span class="n">smoke</span> <span class="n">environments</span><span class="o">.</span> <span class="n">The</span> <span class="n">robot</span> <span class="n">uses</span> <span class="n">the</span> <span class="n">thermal</span> <span class="n">data</span> <span class="n">to</span> <span class="n">guide</span> <span class="n">its</span> <span class="n">actions</span><span class="p">,</span> <span class="n">even</span> <span class="k">if</span> <span class="n">its</span>
+<span class="n">spatial</span> <span class="nb">map</span> <span class="ow">is</span> <span class="n">degraded</span><span class="o">.</span>
+
+<span class="n">In</span> <span class="n">a</span> <span class="n">multi</span><span class="o">-</span><span class="n">story</span> <span class="n">building</span> <span class="n">fire</span> <span class="n">scenario</span><span class="p">,</span> <span class="n">a</span> <span class="n">robust</span> <span class="n">autonomous</span> <span class="n">system</span> <span class="n">would</span> <span class="n">ideally</span> <span class="n">use</span>
+<span class="o">**</span><span class="n">LWIR</span> <span class="k">for</span> <span class="n">mission</span><span class="o">-</span><span class="n">critical</span> <span class="n">fire</span> <span class="n">detection</span>
 </pre></div>
 </div>
 <p><strong>The Researcher (Evaluation &amp; Decision)</strong>:</p>
-<p>Verbal / Reason identified three critical causal factors for our experiment: 1) Sensor
-payload power draw (LiDAR+Compute draws ~110W vs. 25W baseline), 2) Terrain locomotion
-resistance (heavy rubble demands ~460W vs. 280W on concrete), and 3) Battery capacity
-(1200Wh pack with 20% reserve = 960Wh usable). These factors interact in combinatory ways
-that require quantitative modeling in Trial 2.</p>
+<p>Observed live synthesis (4064 chars): addresses LiDAR=True, thermal/LWIR=True,
+smoke/obscurants=True. (Note: quantitative power/endurance modeling factors are
+constructed separately in Trials 2-3 rather than assumed here.)</p>
 <a class="reference internal image-reference" href="../_images/trial_1_grounded_response.png"><img alt="Live Inference &amp; Response Capture" src="../_images/trial_1_grounded_response.png" style="width: 750px;" />
 </a>
 </section>
+</section>
+<section id="expected-vs-observed-comparison-independent-review">
+<h3>Expected vs. Observed Comparison (Independent Review)<a class="headerlink" href="#expected-vs-observed-comparison-independent-review" title="Link to this heading"></a></h3>
+<p>Expected Outcome Specification:
+Contrast 3D LiDAR metric SLAM/point clouds (degraded by smoke scattering/backscatter)
+against LWIR/thermal imaging (penetrates smoke/obscurants without direct metric depth)
+based accurately on the attached literature context.</p>
+<p>Deterministic Verification Summary:
+- Model Task Outcome: PASSED
+- Route / Status: n/a (error=False)
+- Workspace Files: None
+- Check [PASS] covers 3D LiDAR characteristics
+- Check [PASS] covers thermal / LWIR imaging
+- Check [PASS] addresses smoke/aerosol attenuation trade-offs</p>
+<p>Independent Review (Separate Conversation):
+The model successfully achieved the expected result. It accurately contrasted the
+capabilities of 3D LiDAR (geometric perception/localization) against LWIR thermography
+(thermal perception) in smoke, correctly identifying that LiDAR suffers from severe
+scattering/attenuation while LWIR penetrates obscurants to detect heat. No factual errors,
+calculation failures, or hallucinations were detected in the response.</p>
+<p>For a larger model, this performance suggests strong grounding in technical domains,
+effectively synthesizing trade-off analysis based on the provided context. For a smaller
+model, this demonstrates a solid capacity for structured comparison when given sufficient
+context.</p>
 </section>
 </section>
 </section>

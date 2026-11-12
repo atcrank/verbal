@@ -22,7 +22,19 @@ def enable_db_access_for_doctests(transactional_db):
     Using transactional_db allows real database commits across requests,
     test Client calls, and headless Playwright browser rendering.
     """
-    pass
+    from llm_api.models import LocalAIModel, SystemConfiguration
+    model_obj, _ = LocalAIModel.objects.get_or_create(
+        hf_model_id="google/gemma-4-E2B-it",
+        defaults={"name": "Gemma4-2B", "load_in_4bit": True, "context_window": 60000},
+    )
+    cfg = SystemConfiguration.get_solo()
+    if not cfg.active_ollama_model_id or not cfg.active_local_model_id:
+        cfg.hosting_backend = SystemConfiguration.HostingBackend.OLLAMA
+        cfg.active_local_model = model_obj
+        cfg.active_ollama_model = model_obj
+        cfg.active_vllm_model = model_obj
+        cfg.system_tokenizer = model_obj
+        cfg.save()
 
 @pytest.fixture(scope='session')
 def django_db_setup(django_db_setup, django_db_blocker):
@@ -62,6 +74,27 @@ def force_test_db_disconnect(django_db_setup, django_db_blocker):
                 ''')
         except Exception as e:
             pass
+
+
+@pytest.fixture(autouse=True)
+def clean_doctest_workspace(request):
+    """Ensures stale files from prior trials never leak via the shared doctest workspace."""
+    if getattr(request.node, "fspath", None) and str(request.node.fspath).endswith(".rst"):
+        import shutil
+        from django.conf import settings
+        ws_dir = os.path.join(settings.BASE_DIR, "workspaces", "doctests", "metacognition")
+        if os.path.exists(ws_dir):
+            for item in os.listdir(ws_dir):
+                if item == ".git":
+                    continue
+                item_path = os.path.join(ws_dir, item)
+                try:
+                    if os.path.isdir(item_path):
+                        shutil.rmtree(item_path)
+                    else:
+                        os.remove(item_path)
+                except Exception as exc:
+                    logger.warning("Failed to clear stale doctest workspace item %s: %s", item_path, exc)
 
 
 @pytest.fixture(autouse=True)
@@ -118,29 +151,59 @@ def pytest_sessionstart(session):
         print(msg, file=sys.stderr)
         sys.exit(1)
 
-def _report_doctest_run(test_name, prompt, result):
-    """Helper function to document the agent's run."""
+def _report_doctest_run(
+    test_name,
+    prompt,
+    result,
+    expected_outcome: str = "",
+    checks=None,
+    is_mocked: bool = False,
+):
+    """Helper function to document the agent's run and compare expected vs observed results."""
+    from metacognition.trial_review import collect_runtime_facts, run_post_trial_comparison
+
     os.makedirs("doctest_reports", exist_ok=True)
     filename = f"metacognition/metacognition_trials/{test_name}_report.rst"
-    
+
+    prompts = prompt if isinstance(prompt, list) else [prompt]
+    monologue = result.get("internal_monologue", [])
+    cid = result.get("conversation_id")
+
+    workspace_dir = None
+    if cid:
+        try:
+            current_conv = Conversation.objects.get(id=cid)
+            superseded = Conversation.objects.filter(
+                user=current_conv.user,
+                title=current_conv.title
+            ).exclude(id=cid)
+            if superseded.exists():
+                superseded.delete()
+            workspace_dir = current_conv.get_workspace_dir()
+        except Exception as e:
+            logger.error(f"Failed to resolve/clean conversation workspace: {e}")
+            workspace_dir = os.path.join("workspaces", "conversations", str(cid))
+
+    facts = collect_runtime_facts(result=result, workspace_dir=workspace_dir, checks=checks)
+
     with open(filename, "w", encoding="utf-8") as f:
         report_title = f"Doctest Report: {test_name}\n"
         f.write(f"{"=" * len(report_title)}\n")
         f.write(report_title)
         f.write(f"{"=" * len(report_title)}\n\n")
         f.write(f"Date: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+        f.write(f"Model Task Outcome: {facts['model_outcome']}\n\n")
+        if is_mocked:
+            f.write("Execution Mode: MOCKED (deterministic fixture verification)\n\n")
         
         f.write("Conversation Prompts\n--------------------\n\n::\n\n")
-        
-        prompts = prompt if isinstance(prompt, list) else [prompt]
         for i, p in enumerate(prompts):
             f.write(f"    [Turn {i+1}]:\n")
             for line in p.splitlines():
                 f.write(f"    {line}\n")
             f.write("\n")
 
-
-        # 1. NEW: Print the captured stdout from the sandbox and actions
+        # 1. Print captured stdout from sandbox and actions
         stdout = result.get("stdout", "")
         if stdout:
             f.write("Standard Output (Prints & Logs)\n-------------------------------\n\n::\n\n")
@@ -148,23 +211,8 @@ def _report_doctest_run(test_name, prompt, result):
                 f.write(f"    {line}\n")
             f.write("\n")
 
-        # 2. Refactored: Reconstruct the execution trace purely from LangGraph's state
+        # 2. Reconstruct the execution trace cleanly from LangGraph's state
         f.write("Execution Trace\n---------------\n\n")
-        monologue = result.get("internal_monologue", [])
-        cid = result.get("conversation_id")
-
-        if cid:
-            try:
-                from llm_api.models import Conversation
-                current_conv = Conversation.objects.get(id=cid)
-                superseded = Conversation.objects.filter(
-                    user=current_conv.user,
-                    title=current_conv.title
-                ).exclude(id=cid)
-                if superseded.exists():
-                    superseded.delete()
-            except Exception as e:
-                logger.error(f"Failed to clean up superseded conversations: {e}")
 
         def write_steps(f, steps, prefix_str="Step", indent=""):
             for i, step_entry in enumerate(steps):
@@ -221,15 +269,25 @@ def _report_doctest_run(test_name, prompt, result):
         else:
             f.write("No granular steps recorded in result.\n\n")
 
-        f.write("Final Response\n--------------\n\n::\n\n")
-        for line in str(result.get("final_response", "")).splitlines():
-            f.write(f"    {line}\n")
-        f.write("\n")
+        turn_responses = result.get("turn_responses")
+        if turn_responses and isinstance(turn_responses, list):
+            observed_for_review = "\n\n".join(
+                f"[Turn {idx+1}]:\n{resp}" for idx, resp in enumerate(turn_responses)
+            )
+            f.write("Final Response\n--------------\n\n::\n\n")
+            for line in observed_for_review.splitlines():
+                f.write(f"    {line}\n")
+            f.write("\n")
+        else:
+            observed_for_review = str(result.get("final_response", ""))
+            f.write("Final Response\n--------------\n\n::\n\n")
+            for line in observed_for_review.splitlines():
+                f.write(f"    {line}\n")
+            f.write("\n")
 
         # Render Final Conversation State Tree
         if cid:
             try:
-                from llm_api.models import Conversation
                 conv = Conversation.objects.filter(id=cid).first()
                 if conv and conv.state_tree:
                     f.write("Conversation State Tree\n-----------------------\n\n::\n\n")
@@ -240,14 +298,6 @@ def _report_doctest_run(test_name, prompt, result):
                 logger.warning(f"Failed to write conversation state tree: {e}")
 
         f.write("Generated Workspace Files\n-------------------------\n\n")
-        workspace_dir = None
-        if cid:
-            try:
-                from llm_api.models import Conversation
-                conv = Conversation.objects.get(id=cid)
-                workspace_dir = conv.get_workspace_dir()
-            except Exception:
-                workspace_dir = os.path.join("workspaces", "conversations", str(cid))
         if workspace_dir and os.path.exists(workspace_dir):
             for root, dirs, files in os.walk(workspace_dir):
                 if ".git" in root: continue
@@ -262,6 +312,21 @@ def _report_doctest_run(test_name, prompt, result):
                     except Exception as e:
                         f.write(f"    [Error reading file: {e}]\n")
                     f.write("\n")
+
+        # 3. Independent Expected-vs-Observed Review in a Separate Conversation
+        comparison_text = run_post_trial_comparison(
+            trial_name=test_name,
+            prompts=[str(p) for p in prompts],
+            expected_outcome=expected_outcome,
+            observed_response=observed_for_review,
+            facts=facts,
+            is_mocked=is_mocked,
+        )
+        heading = "Expected vs. Observed Comparison (Independent Review)"
+        f.write(f"{heading}\n{'-' * len(heading)}\n\n")
+        for line in comparison_text.splitlines():
+            f.write(f"{line}\n")
+        f.write("\n")
 
 @pytest.fixture(autouse=True)
 def inject_helpers_into_doctests(doctest_namespace):

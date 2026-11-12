@@ -16,19 +16,20 @@ Instead, we can simply wrap the run_blueprint call in our .rst tutorials with Py
 
 Database Fixtures and Seeders
 -----------------------------
-Because `pytest` strictly isolates its test database, none of your development blueprints exist by default.
-We seed the `ResearchEvaluation` and `StrategicPlan` blueprints dynamically inside the `django_db_setup` fixture in `conftest.py`. We also inject necessary domain concepts (like PyCID for Grips). If you write a new trial that requires a new custom blueprint, define it in `conftest.py`.
+Because ``pytest`` strictly isolates its test database, none of your development blueprints exist by default.
+We initialize canonical blueprints (``ResearchEvaluation``, ``Escalation of Effort``, ``Deep_Reader``, etc.) via ``seed_all()`` inside the ``django_db_setup`` fixture in ``conftest.py``.
 
-Report Card Assertions
-----------------------
-Given that some models (especially local ones like Gemm4-2B-it) might struggle with advanced cognitive reasoning, our doctests use a "Report Card" style of assertion. Instead of strict boolean matches for "ACCEPT", we simply assert whether the model made a complete attempt by returning a structured JSON response.
+Report Card Assertions & Independent Review
+-------------------------------------------
+Given that small local models might struggle with complex multi-step coding or analytical tasks, our trials remain informative demonstrations rather than brittle capability gates:
+
+* Doctest assertions verify infrastructure soundness (no unhandled exceptions, non-empty trace, valid workspace/DB handling).
+* Each trial supplies an explicit ``expected_outcome`` specification and deterministic ``checks`` list to ``report_doctest_run(...)``.
+* After each live trial, an independent post-trial review runs in a separate ``Conversation``, writing an **Expected vs. Observed Comparison (Independent Review)** section and honest ``Model Task Outcome`` (``PASSED``, ``PARTIAL``, or ``FAILED``) at the bottom of the generated ``*_report.rst``.
 
 Example assertion::
-    >>> import json
-    >>> final_str = result.get("final_response", "{}")
-    >>> try:
-    ...     resp = json.loads(final_str) if "{" in final_str else {}
-    ... except json.JSONDecodeError:
-    ...     pass
+
+    >>> final_str = result.get("final_response", "")
+    >>> assert "error" not in result and bool(final_str)
     >>> print(f"- complete attempt: {1 if final_str else 0}/1")
     - complete attempt: 1/1

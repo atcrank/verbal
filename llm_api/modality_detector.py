@@ -125,7 +125,10 @@ def introspect_ollama_modality(model_name: str, host: str = "http://127.0.0.1:11
 
     name_lower = model_name.lower()
     # 1. Fast heuristic check for common Ollama vision model tags
-    vision_patterns = ["vision", "-vl", ":vl", "moondream", "llava", "minicpm-v", "bakllava"]
+    vision_patterns = [
+        "vision", "-vl", ":vl", "moondream", "llava",
+        "minicpm-v", "bakllava", "gemma4", "gemma-4",
+    ]
     if any(p in name_lower for p in vision_patterns):
         return True
 
@@ -136,9 +139,12 @@ def introspect_ollama_modality(model_name: str, host: str = "http://127.0.0.1:11
         resp = requests.post(url, json={"name": model_name}, timeout=timeout)
         if resp.status_code == 200:
             data = resp.json()
+            capabilities = [str(c).lower() for c in data.get("capabilities", [])]
+            if "vision" in capabilities:
+                return True
             details = data.get("details", {})
             families = details.get("families", [])
-            vision_families = {"clip", "mllama", "vision"}
+            vision_families = {"clip", "mllama", "vision", "gemma4"}
             for f in families:
                 if str(f).lower() in vision_families:
                     return True
@@ -212,8 +218,11 @@ def get_active_modality_status(user: Optional[Any] = None) -> Dict[str, Any]:
 
         if backend == "ollama":
             ollama_model = config.active_ollama_model
-            model_name = ollama_model.name if ollama_model else (config.custom_ollama_model_name or "unknown")
-            is_multi = introspect_ollama_modality(model_name)
+            if ollama_model:
+                model_name = ollama_model.hf_model_id or ollama_model.name
+            else:
+                model_name = config.custom_ollama_model_name or "unknown"
+            is_multi = getattr(ollama_model, "is_multimodal", False) or introspect_ollama_modality(model_name)
             return {
                 "is_multimodal": is_multi,
                 "backend": "ollama",

@@ -111,8 +111,8 @@ An autonomous robotics research team is designing an empirical intervention tria
 <ol class="arabic simple">
 <li><p><strong>Epistemological Lineage</strong>: Before any mathematical simulations are executed, every physical parameter (battery capacities, motor voltage, sensor draw) must be explicitly extracted from peer-reviewed literature.</p></li>
 <li><p><strong>Context Attachment</strong>: The researcher locates and attaches the primary hardware architecture section from Talavera et al. (2023) (<em>An autonomous ground robot to support firefighters’ interventions in indoor emergencies</em>).</p></li>
-<li><p><strong>Targeted Extraction Inquiry</strong>: The researcher submits an extraction prompt to Verbal / Reason (Gemma4) demanding exact physical specifications for chassis motors, compute boards, telemetry, and power supplies.</p></li>
-<li><p><strong>Parametric Factor Construction</strong>: Based strictly on the model’s extracted evidence, the researcher derives the $3 times 2$ factorial space (3 sensor payloads $times$ 2 terrain locomotion profiles with a 960Wh usable battery limit) to feed into the sandboxed simulation in Trial 3.</p></li>
+<li><p><strong>Targeted Extraction Inquiry</strong>: The researcher submits an extraction prompt to Verbal / Reason demanding exact physical specifications for chassis motors, compute boards, telemetry, and power supplies.</p></li>
+<li><p><strong>Parametric Factor Construction</strong>: Grounded in the extracted physical architecture (dual battery split and modular compute/sensor levels), the researcher explicitly defines scaled heavy-UGV scenario assumptions for Trial 3’s $3 times 2$ factorial matrix.</p></li>
 </ol>
 <section id="execution">
 <h2>Execution<a class="headerlink" href="#execution" title="Link to this heading"></a></h2>
@@ -155,14 +155,31 @@ An autonomous robotics research team is designing an empirical intervention tria
 <span class="gp">... </span>    <span class="n">_</span> <span class="o">=</span> <span class="n">rag_service</span><span class="o">.</span><span class="n">index_unindexed_chunks</span><span class="p">()</span>
 </pre></div>
 </div>
-<section id="step-1-inspect-and-pin-hardware-architecture-literature">
-<h3>Step 1: Inspect and Pin Hardware Architecture Literature<a class="headerlink" href="#step-1-inspect-and-pin-hardware-architecture-literature" title="Link to this heading"></a></h3>
-<p>The researcher identifies the hardware architecture chunk from Talavera et al. (2023) detailing Level 0 (power/locomotion) and Level 1 (compute/sensors).</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">hardware_chunk</span> <span class="o">=</span> <span class="p">(</span>
-<span class="gp">... </span>    <span class="n">RAGChunk</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">text_content__icontains</span><span class="o">=</span><span class="s2">"GM25-370"</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
-<span class="gp">... </span>    <span class="ow">or</span> <span class="n">RAGChunk</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">text_content__icontains</span><span class="o">=</span><span class="s2">"Level 0 powers the robot"</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
-<span class="gp">... </span>    <span class="ow">or</span> <span class="n">RAGChunk</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">text_content__icontains</span><span class="o">=</span><span class="s2">"Talavera"</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+<section id="step-1-inspect-and-pin-salient-hardware-architecture-literature">
+<h3>Step 1: Inspect and Pin Salient Hardware Architecture Literature<a class="headerlink" href="#step-1-inspect-and-pin-salient-hardware-architecture-literature" title="Link to this heading"></a></h3>
+<p>We seed a compact salient hardware excerpt extracted cleanly from Talavera et al. (2023) Table 2 / Section 3 (<cite>Level 0</cite> and <cite>Level 1</cite> specs) so small models are not overwhelmed by a 1,100-token full-section wall of text.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">_</span> <span class="o">=</span> <span class="n">RAGChunk</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">chunk_id</span><span class="o">=</span><span class="s2">"talavera-level0-hardware"</span><span class="p">)</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">hardware_chunk</span> <span class="o">=</span> <span class="n">RAGChunk</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">chunk_id</span><span class="o">=</span><span class="s2">"talavera-level0-hardware"</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">text_content</span><span class="o">=</span><span class="p">(</span>
+<span class="gp">... </span>        <span class="s2">"Level 0 powers the robot and executes its movements: two tracked belts guided by six wheels, "</span>
+<span class="gp">... </span>        <span class="s2">"two DC motors (GM25-370), a portable 5 V / 10,800 mAh lithium power bank (~54 Wh) for sensing and "</span>
+<span class="gp">... </span>        <span class="s2">"control electronics, and three rechargeable 3.7 V / 12,800 mAh lithium-ion cells (~142 Wh) for the motors. "</span>
+<span class="gp">... </span>        <span class="s2">"Level 1 handles control and sensors via an SKU DRI0002 motor driver, Arduino UNO WiFi REV2, "</span>
+<span class="gp">... </span>        <span class="s2">"Raspberry Pi 4, Pozyx UWB localization module, and environmental/air-quality sensors."</span>
+<span class="gp">... </span>    <span class="p">),</span>
+<span class="gp">... </span>    <span class="n">metadata</span><span class="o">=</span><span class="p">{</span>
+<span class="gp">... </span>        <span class="s2">"authors"</span><span class="p">:</span> <span class="s2">"Talavera et al."</span><span class="p">,</span>
+<span class="gp">... </span>        <span class="s2">"year"</span><span class="p">:</span> <span class="s2">"2023"</span><span class="p">,</span>
+<span class="gp">... </span>        <span class="s2">"section_title"</span><span class="p">:</span> <span class="s2">"Architecture Levels 0-1 (Compact Excerpt)"</span><span class="p">,</span>
+<span class="gp">... </span>        <span class="s2">"filename"</span><span class="p">:</span> <span class="s2">"documents/Journal_of_Field_Robotics_-_2023_-_Talavera_-_An_autonomous_ground_robot_to_su_hjXU4xB.pdf"</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="p">},</span>
 <span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">if</span> <span class="n">rag_service</span> <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">rag_service</span><span class="p">,</span> <span class="s2">"embeddings"</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">vec</span> <span class="o">=</span> <span class="n">rag_service</span><span class="o">.</span><span class="n">embeddings</span><span class="o">.</span><span class="n">embed_documents</span><span class="p">([</span><span class="n">hardware_chunk</span><span class="o">.</span><span class="n">text_content</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">... </span>    <span class="n">hardware_chunk</span><span class="o">.</span><span class="n">embedding</span> <span class="o">=</span> <span class="n">vec</span>
+<span class="gp">... </span>    <span class="n">hardware_chunk</span><span class="o">.</span><span class="n">in_vector_index</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="gp">... </span>    <span class="n">hardware_chunk</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">update_fields</span><span class="o">=</span><span class="p">[</span><span class="s2">"embedding"</span><span class="p">,</span> <span class="s2">"in_vector_index"</span><span class="p">])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Hardware architecture chunk available: </span><span class="si">{</span><span class="n">hardware_chunk</span><span class="w"> </span><span class="ow">is</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="kc">None</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 <span class="go">Hardware architecture chunk available: True</span>
 </pre></div>
@@ -216,7 +233,7 @@ An autonomous robotics research team is designing an empirical intervention tria
 </section>
 <section id="step-3-live-inference-dispatch-response-capture">
 <h3>Step 3: Live Inference Dispatch &amp; Response Capture<a class="headerlink" href="#step-3-live-inference-dispatch-response-capture" title="Link to this heading"></a></h3>
-<p>The researcher submits the extraction request to Verbal / Reason. Gemma4 reads the context chunk and synthesizes the physical power architecture.</p>
+<p>The researcher submits the extraction request to Verbal / Reason. The active model reads the compact context excerpt and synthesizes the physical power architecture.</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">timed_step</span><span class="p">(</span><span class="s2">"Live Inference &amp; Specification Extraction"</span><span class="p">,</span> <span class="n">steps_recorded</span><span class="p">)</span> <span class="k">as</span> <span class="n">step</span><span class="p">:</span>
 <span class="gp">... </span>    <span class="n">page</span><span class="o">.</span><span class="n">click</span><span class="p">(</span><span class="s2">"#send-btn"</span><span class="p">)</span>
 <span class="gp">... </span>    <span class="n">_</span> <span class="o">=</span> <span class="n">page</span><span class="o">.</span><span class="n">wait_for_selector</span><span class="p">(</span><span class="s2">"#active-thinking-bubble"</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">4000</span><span class="p">)</span>
@@ -234,15 +251,18 @@ An autonomous robotics research team is designing an empirical intervention tria
 <span class="gp">... </span>            <span class="s2">"citation"</span><span class="p">:</span> <span class="n">sel</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"citation"</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span>
 <span class="gp">... </span>            <span class="s2">"preview"</span><span class="p">:</span> <span class="n">sel</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"preview"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
 <span class="gp">... </span>        <span class="p">}</span> <span class="k">for</span> <span class="n">sel</span> <span class="ow">in</span> <span class="n">new_log</span><span class="o">.</span><span class="n">rag_selections</span><span class="p">]</span>
+<span class="gp">... </span>    <span class="n">low_resp</span> <span class="o">=</span> <span class="n">ai_response</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+<span class="gp">... </span>    <span class="n">has_motors</span> <span class="o">=</span> <span class="s2">"gm25-370"</span> <span class="ow">in</span> <span class="n">low_resp</span>
+<span class="gp">... </span>    <span class="n">has_motor_cells</span> <span class="o">=</span> <span class="s2">"12,800"</span> <span class="ow">in</span> <span class="n">ai_response</span> <span class="ow">or</span> <span class="s2">"12.800"</span> <span class="ow">in</span> <span class="n">ai_response</span> <span class="ow">or</span> <span class="s2">"142"</span> <span class="ow">in</span> <span class="n">ai_response</span>
+<span class="gp">... </span>    <span class="n">has_logic_bank</span> <span class="o">=</span> <span class="s2">"10,800"</span> <span class="ow">in</span> <span class="n">ai_response</span> <span class="ow">or</span> <span class="s2">"10.800"</span> <span class="ow">in</span> <span class="n">ai_response</span> <span class="ow">or</span> <span class="s2">"54"</span> <span class="ow">in</span> <span class="n">ai_response</span>
+<span class="gp">... </span>    <span class="n">has_mcus</span> <span class="o">=</span> <span class="s2">"arduino"</span> <span class="ow">in</span> <span class="n">low_resp</span> <span class="ow">and</span> <span class="s2">"raspberry pi"</span> <span class="ow">in</span> <span class="n">low_resp</span>
 <span class="gp">... </span>    <span class="n">step</span><span class="p">[</span><span class="s2">"researcher_evaluation"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-<span class="gp">... </span>        <span class="s2">"Verbal / Reason successfully extracted the physical hardware parameters documented in Talavera et al. (2023):</span><span class="se">\n</span><span class="s2">"</span>
-<span class="gp">... </span>        <span class="s2">"- Locomotion/Chassis: Two GM25-370 DC motors powered by 3x 3.7V 12,800mAh Li-ion cells (~142Wh raw motor bank).</span><span class="se">\n</span><span class="s2">"</span>
-<span class="gp">... </span>        <span class="s2">"- Compute/Electronics: 5V 10,800mAh portable power bank (~54Wh logic bank).</span><span class="se">\n</span><span class="s2">"</span>
-<span class="gp">... </span>        <span class="s2">"- Sensors: Arduino Uno WiFi REV2 + Raspberry Pi 4 + Pozyx UWB transceiver + air quality / thermal sensors.</span><span class="se">\n\n</span><span class="s2">"</span>
-<span class="gp">... </span>        <span class="s2">"Based strictly on this literature extraction, we construct the 3x2 factorial parameter space for Trial 3:</span><span class="se">\n</span><span class="s2">"</span>
-<span class="gp">... </span>        <span class="s2">"- Factor A (Sensor Payload): Baseline (25W), Standard Multi-spectral (75W), Heavy LiDAR+Compute (110W).</span><span class="se">\n</span><span class="s2">"</span>
-<span class="gp">... </span>        <span class="s2">"- Factor B (Terrain Profile): Smooth Concrete (280W), Heavy Rubble/Debris (460W).</span><span class="se">\n</span><span class="s2">"</span>
-<span class="gp">... </span>        <span class="s2">"- Power Constraint: 960Wh usable energy (80</span><span class="si">% u</span><span class="s2">sable from 1200Wh pack, 20</span><span class="si">% e</span><span class="s2">mergency reserve)."</span>
+<span class="gp">... </span>        <span class="sa">f</span><span class="s2">"Observed extraction checks — GM25-370 motors=</span><span class="si">{</span><span class="n">has_motors</span><span class="si">}</span><span class="s2">, motor cells (3.7V/12,800mAh)=</span><span class="si">{</span><span class="n">has_motor_cells</span><span class="si">}</span><span class="s2">, "</span>
+<span class="gp">... </span>        <span class="sa">f</span><span class="s2">"logic bank (5V/10,800mAh)=</span><span class="si">{</span><span class="n">has_logic_bank</span><span class="si">}</span><span class="s2">, microcontrollers (Arduino/RPi4)=</span><span class="si">{</span><span class="n">has_mcus</span><span class="si">}</span><span class="s2">.</span><span class="se">\n\n</span><span class="s2">"</span>
+<span class="gp">... </span>        <span class="s2">"Researcher Design Framing (Scenario Scaling for Trial 3, distinct from Talavera's micro-UGV cells):</span><span class="se">\n</span><span class="s2">"</span>
+<span class="gp">... </span>        <span class="s2">"Guided by Talavera's isolated power/logic split, the Researcher scales up a synthetic heavy search-and-rescue "</span>
+<span class="gp">... </span>        <span class="s2">"factorial parameter space for Trial 3: Sensor Payloads (25W / 75W / 110W), Terrains (280W / 460W), "</span>
+<span class="gp">... </span>        <span class="s2">"and a 1200Wh scaled battery bank (960Wh usable at 80</span><span class="si">% d</span><span class="s2">epth-of-discharge)."</span>
 <span class="gp">... </span>    <span class="p">)</span>
 </pre></div>
 </div>
@@ -254,7 +274,18 @@ An autonomous robotics research team is designing an empirical intervention tria
 </section>
 <section id="step-4-report-generation">
 <h3>Step 4: Report Generation<a class="headerlink" href="#step-4-report-generation" title="Link to this heading"></a></h3>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">total_duration</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">trial_t0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">expected_outcome</span> <span class="o">=</span> <span class="p">(</span>
+<span class="gp">... </span>    <span class="s2">"Accurately extract Talavera et al. (2023) physical components from the attached chunk: "</span>
+<span class="gp">... </span>    <span class="s2">"two GM25-370 DC motors, 3x 3.7V 12,800mAh cells (~142Wh) for motors, 5V 10,800mAh bank (~54Wh) for electronics, "</span>
+<span class="gp">... </span>    <span class="s2">"Arduino UNO WiFi REV2 + Raspberry Pi 4 + SKU DRI0002 + Pozyx UWB."</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">checks</span> <span class="o">=</span> <span class="p">[</span>
+<span class="gp">... </span>    <span class="p">{</span><span class="s2">"label"</span><span class="p">:</span> <span class="s2">"extracted GM25-370 motors"</span><span class="p">,</span> <span class="s2">"passed"</span><span class="p">:</span> <span class="n">has_motors</span><span class="p">,</span> <span class="s2">"detail"</span><span class="p">:</span> <span class="s2">""</span><span class="p">},</span>
+<span class="gp">... </span>    <span class="p">{</span><span class="s2">"label"</span><span class="p">:</span> <span class="s2">"extracted 3.7V 12,800mAh motor bank"</span><span class="p">,</span> <span class="s2">"passed"</span><span class="p">:</span> <span class="n">has_motor_cells</span><span class="p">,</span> <span class="s2">"detail"</span><span class="p">:</span> <span class="s2">""</span><span class="p">},</span>
+<span class="gp">... </span>    <span class="p">{</span><span class="s2">"label"</span><span class="p">:</span> <span class="s2">"extracted 5V 10,800mAh logic bank"</span><span class="p">,</span> <span class="s2">"passed"</span><span class="p">:</span> <span class="n">has_logic_bank</span><span class="p">,</span> <span class="s2">"detail"</span><span class="p">:</span> <span class="s2">""</span><span class="p">},</span>
+<span class="gp">... </span>    <span class="p">{</span><span class="s2">"label"</span><span class="p">:</span> <span class="s2">"extracted Arduino + Raspberry Pi 4"</span><span class="p">,</span> <span class="s2">"passed"</span><span class="p">:</span> <span class="n">has_mcus</span><span class="p">,</span> <span class="s2">"detail"</span><span class="p">:</span> <span class="s2">""</span><span class="p">},</span>
+<span class="gp">... </span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">total_duration</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">trial_t0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">report_path</span> <span class="o">=</span> <span class="n">record_ui_doctest_run</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="s2">"trial_2_careful_literature_extraction"</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="s2">"Trial 2: Careful Literature Extraction &amp; Parametric Factor Construction"</span><span class="p">,</span>
@@ -262,10 +293,11 @@ An autonomous robotics research team is designing an empirical intervention tria
 <span class="gp">... </span>    <span class="n">model_name</span><span class="o">=</span><span class="n">model_name</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">total_duration_s</span><span class="o">=</span><span class="n">total_duration</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">scenario_description</span><span class="o">=</span><span class="p">(</span>
-<span class="gp">... </span>        <span class="s2">"The researcher requires verified empirical parameters from peer-reviewed literature before designing "</span>
-<span class="gp">... </span>        <span class="s2">"computational simulations. Reason extracts physical motor specifications, power supply architectures, "</span>
-<span class="gp">... </span>        <span class="s2">"and sensor loads from Talavera et al. (2023), establishing the empirical 3x2 factorial simulation space."</span>
+<span class="gp">... </span>        <span class="s2">"The researcher extracts verified hardware specifications from Talavera et al. (2023) "</span>
+<span class="gp">... </span>        <span class="s2">"using Reason, separating extracted source facts from the Researcher's scaled 3x2 scenario inputs."</span>
 <span class="gp">... </span>    <span class="p">),</span>
+<span class="gp">... </span>    <span class="n">expected_outcome</span><span class="o">=</span><span class="n">expected_outcome</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">checks</span><span class="o">=</span><span class="n">checks</span><span class="p">,</span>
 <span class="gp">... </span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"- complete attempt: </span><span class="si">{</span><span class="mi">1</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">report_path</span><span class="p">)</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="mi">0</span><span class="si">}</span><span class="s2">/1"</span><span class="p">)</span>
 <span class="go">- complete attempt: 1/1</span>

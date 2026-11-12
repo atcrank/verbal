@@ -339,12 +339,6 @@
     <span class="n">filepath</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">"A simple filename of the Python script to run."</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="TaskCompleteArgs">
-<a class="viewcode-back" href="../../metacognition_app.html#metacognition.actions.TaskCompleteArgs">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">TaskCompleteArgs</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">final_answer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">"The final output, code, or result to return to the parent cognitive process."</span><span class="p">)</span></div>
-
-
 <div class="viewcode-block" id="CheckParsingAction">
 <a class="viewcode-back" href="../../metacognition_app.html#metacognition.actions.CheckParsingAction">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">CheckParsingAction</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -393,14 +387,6 @@
     <span class="n">expected_outcome</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">"What this tool MUST achieve."</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="TaskCompleteAction">
-<a class="viewcode-back" href="../../metacognition_app.html#metacognition.actions.TaskCompleteAction">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">TaskCompleteAction</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">tool</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"TASK_COMPLETE"</span><span class="p">]</span>
-    <span class="n">parameters</span><span class="p">:</span> <span class="n">TaskCompleteArgs</span>
-    <span class="n">expected_outcome</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s2">"Terminate the planning loop."</span><span class="p">)</span></div>
-
-
 <span class="n">ActionItemType</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span>
     <span class="n">Union</span><span class="p">[</span>
         <span class="n">CheckParsingAction</span><span class="p">,</span>
@@ -409,7 +395,6 @@
         <span class="n">ReadFileAction</span><span class="p">,</span>
         <span class="n">ListFilesAction</span><span class="p">,</span>
         <span class="n">ExecuteScriptAction</span><span class="p">,</span>
-        <span class="n">TaskCompleteAction</span>
     <span class="p">],</span>
     <span class="n">Field</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s2">"tool"</span><span class="p">)</span>
 <span class="p">]</span>
@@ -423,14 +408,13 @@
 <span class="sd">    Step Prompt: You are a code execution agent. Your goal is to use a sequence of tools to accomplish the user's request.</span>
 <span class="sd">    Review the user's goal and the results of previous tool executions.</span>
 <span class="sd">    Formulate a plan by creating a queue of tool actions.</span>
-<span class="sd">    CRITICAL: If the user's request has been fully satisfied by the execution results, your response MUST be a single `TASK_COMPLETE` action to terminate the loop.</span>
 <span class="sd">    Evaluation Prompt: Returns an ExecutionPlan containing a valid queue of ActionItems.</span>
 <span class="sd">    Prior Nodes: None</span>
 <span class="sd">    Following Nodes: ResultCritique</span>
 <span class="sd">    Failure Nodes: None</span>
 <span class="sd">    """</span>
-    <span class="n">analysis</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">"System 2 reasoning: Analyze the situation. If the final answer is already in the previous execution output, explicitly state that it's time to terminate using TASK_COMPLETE."</span><span class="p">)</span>
-    <span class="n">queue</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">ActionItemType</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">min_length</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">"The sequential list of actions to execute. If you know the final answer, this MUST contain exactly one action: TASK_COMPLETE."</span><span class="p">)</span></div>
+    <span class="n">analysis</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">"System 2 reasoning: Analyze the situation and explain the planned sequence of tool actions."</span><span class="p">)</span>
+    <span class="n">queue</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">ActionItemType</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">min_length</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">"The sequential list of actions to execute."</span><span class="p">)</span></div>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_tool_check_parsing</span><span class="p">(</span><span class="n">params</span><span class="p">:</span> <span class="n">CheckParsingArgs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -504,6 +488,9 @@
         <span class="k">return</span> <span class="sa">f</span><span class="s2">"""error: Action Failed: The directory '</span><span class="si">{</span><span class="n">target_dir</span><span class="si">}</span><span class="s2">' does not exist. </span>
 <span class="s2">                You must use the CREATE_FOLDER action to build the directory structure </span>
 <span class="s2">                before attempting to write files into it."""</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">content</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+        <span class="k">return</span> <span class="s2">"</span><span class="se">\n\n</span><span class="s2">[WRITE_FILE Error]</span><span class="se">\n</span><span class="s2">Refusing to write empty file content. Provide complete Python code or text."</span>
 
     <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">file_path</span><span class="p">),</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
@@ -614,17 +601,19 @@
 
 <div class="viewcode-block" id="handle_execution_plan">
 <a class="viewcode-back" href="../../metacognition_app.html#metacognition.actions.handle_execution_plan">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">handle_execution_plan</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">handle_execution_plan</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="s2">"model_dump"</span><span class="p">):</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="s2">"dict"</span><span class="p">):</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">dict</span><span class="p">()</span>
     <span class="n">queue</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"queue"</span><span class="p">,</span> <span class="p">[])</span>
     <span class="n">analysis</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"analysis"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">'🪝 Received Execution Plan with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">queue</span><span class="p">)</span><span class="si">}</span><span class="s1"> steps.'</span><span class="p">)</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">'DEBUG QUEUE: </span><span class="si">{</span><span class="nb">repr</span><span class="p">(</span><span class="n">queue</span><span class="p">)</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
     
     <span class="n">plan_results</span> <span class="o">=</span> <span class="s2">""</span>
+    <span class="n">had_error</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="n">workspace_dir</span> <span class="o">=</span> <span class="n">_get_workspace_dir</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"conversation_id"</span><span class="p">))</span>
-    
-    <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">namedtuple</span>
-    <span class="n">ActionParam</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">'ActionParam'</span><span class="p">,</span> <span class="p">[</span><span class="s1">'tool'</span><span class="p">,</span> <span class="s1">'parameters'</span><span class="p">,</span> <span class="s1">'expected_outcome'</span><span class="p">])</span>
     
     <span class="c1"># Parse queue elements if they are dicts</span>
     <span class="n">parsed_queue</span> <span class="o">=</span> <span class="p">[]</span>
@@ -646,26 +635,29 @@
     <span class="k">for</span> <span class="n">action</span> <span class="ow">in</span> <span class="n">parsed_queue</span><span class="p">:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">'  -&gt; Executing tool: </span><span class="si">{</span><span class="n">action</span><span class="o">.</span><span class="n">tool</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">action</span><span class="o">.</span><span class="n">tool</span> <span class="o">==</span> <span class="s2">"TASK_COMPLETE"</span><span class="p">:</span>
-                <span class="n">final_ans</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">action</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="s2">"final_answer"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">action</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="s2">"answer"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span>
-                <span class="n">state</span><span class="p">[</span><span class="s2">"working_prompt"</span><span class="p">]</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"working_prompt"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">"</span><span class="se">\n\n</span><span class="s2">[TASK COMPLETE]</span><span class="se">\n</span><span class="si">{</span><span class="n">final_ans</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
-                <span class="n">state</span><span class="p">[</span><span class="s2">"route_to"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"SUCCESS"</span>
-                <span class="k">return</span> <span class="n">state</span>
-                
-            <span class="k">elif</span> <span class="n">action</span><span class="o">.</span><span class="n">tool</span> <span class="o">==</span> <span class="s2">"CHECK_PARSING"</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">action</span><span class="o">.</span><span class="n">tool</span> <span class="o">==</span> <span class="s2">"CHECK_PARSING"</span><span class="p">:</span>
                 <span class="n">plan_results</span> <span class="o">+=</span> <span class="n">_tool_check_parsing</span><span class="p">(</span><span class="n">action</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">action</span><span class="o">.</span><span class="n">tool</span> <span class="o">==</span> <span class="s2">"CREATE_FOLDER"</span><span class="p">:</span>
                 <span class="n">plan_results</span> <span class="o">+=</span> <span class="n">_tool_create_folder</span><span class="p">(</span><span class="n">action</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="n">workspace_dir</span><span class="p">,</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"conversation_id"</span><span class="p">))</span>
             <span class="k">elif</span> <span class="n">action</span><span class="o">.</span><span class="n">tool</span> <span class="o">==</span> <span class="s2">"WRITE_FILE"</span><span class="p">:</span>
-                <span class="n">plan_results</span> <span class="o">+=</span> <span class="n">_tool_write_file</span><span class="p">(</span><span class="n">action</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="n">workspace_dir</span><span class="p">,</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"conversation_id"</span><span class="p">))</span>
+                <span class="n">res</span> <span class="o">=</span> <span class="n">_tool_write_file</span><span class="p">(</span><span class="n">action</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="n">workspace_dir</span><span class="p">,</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"conversation_id"</span><span class="p">))</span>
+                <span class="n">plan_results</span> <span class="o">+=</span> <span class="n">res</span>
+                <span class="k">if</span> <span class="s2">"Error]"</span> <span class="ow">in</span> <span class="n">res</span> <span class="ow">or</span> <span class="n">res</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"error"</span><span class="p">):</span>
+                    <span class="n">had_error</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">break</span>
             <span class="k">elif</span> <span class="n">action</span><span class="o">.</span><span class="n">tool</span> <span class="o">==</span> <span class="s2">"READ_FILE"</span><span class="p">:</span>
                 <span class="n">plan_results</span> <span class="o">+=</span> <span class="n">_tool_read_file</span><span class="p">(</span><span class="n">action</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="n">workspace_dir</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">action</span><span class="o">.</span><span class="n">tool</span> <span class="o">==</span> <span class="s2">"LIST_FILES"</span><span class="p">:</span>
                 <span class="n">plan_results</span> <span class="o">+=</span> <span class="n">_tool_list_files</span><span class="p">(</span><span class="n">action</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="n">workspace_dir</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">action</span><span class="o">.</span><span class="n">tool</span> <span class="o">==</span> <span class="s2">"EXECUTE_SCRIPT"</span><span class="p">:</span>
-                <span class="n">plan_results</span> <span class="o">+=</span> <span class="n">_tool_execute_script</span><span class="p">(</span><span class="n">action</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="n">workspace_dir</span><span class="p">)</span>
+                <span class="n">res</span> <span class="o">=</span> <span class="n">_tool_execute_script</span><span class="p">(</span><span class="n">action</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="n">workspace_dir</span><span class="p">)</span>
+                <span class="n">plan_results</span> <span class="o">+=</span> <span class="n">res</span>
+                <span class="k">if</span> <span class="s2">"Error]"</span> <span class="ow">in</span> <span class="n">res</span> <span class="ow">or</span> <span class="s2">"Alert]"</span> <span class="ow">in</span> <span class="n">res</span><span class="p">:</span>
+                    <span class="n">had_error</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">break</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">plan_results</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"</span><span class="se">\n\n</span><span class="s2">[TOOL FAILURE: '</span><span class="si">{</span><span class="n">action</span><span class="o">.</span><span class="n">tool</span><span class="si">}</span><span class="s2">' is not a recognized tool.]</span><span class="se">\n</span><span class="s2">"</span>
+                <span class="n">had_error</span> <span class="o">=</span> <span class="kc">True</span>
                 <span class="k">break</span>
                 
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
@@ -673,11 +665,15 @@
             <span class="n">error_msg</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"Expected Outcome: </span><span class="si">{</span><span class="n">action</span><span class="o">.</span><span class="n">expected_outcome</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
             <span class="n">error_msg</span> <span class="o">+=</span> <span class="s2">"Please analyze this failure and re-plan your next steps."</span>
             <span class="n">plan_results</span> <span class="o">+=</span> <span class="n">error_msg</span>
+            <span class="n">had_error</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="k">break</span>
             
-    <span class="n">state</span><span class="p">[</span><span class="s2">"working_prompt"</span><span class="p">]</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"</span><span class="se">\n\n</span><span class="s2">--- EXECUTION PLAN RESULTS ---</span><span class="se">\n</span><span class="si">{</span><span class="n">plan_results</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
-    <span class="n">state</span><span class="p">[</span><span class="s2">"working_prompt"</span><span class="p">]</span> <span class="o">+=</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">[SYSTEM INSTRUCTION]: Read the results above. If the execution succeeded and you have the final answer, your NEXT action MUST be TASK_COMPLETE. Do NOT repeat previous actions. If you encountered an error, write a corrected script and try again."</span>
-    <span class="n">state</span><span class="p">[</span><span class="s2">"route_to"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"SELF"</span> <span class="c1"># Loop back to LLM to re-evaluate or execute more steps</span>
+    <span class="n">state</span><span class="p">[</span><span class="s2">"working_prompt"</span><span class="p">]</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"working_prompt"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">"</span><span class="se">\n\n</span><span class="s2">--- EXECUTION PLAN RESULTS ---</span><span class="se">\n</span><span class="si">{</span><span class="n">plan_results</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+    <span class="k">if</span> <span class="n">had_error</span><span class="p">:</span>
+        <span class="n">state</span><span class="p">[</span><span class="s2">"working_prompt"</span><span class="p">]</span> <span class="o">+=</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">[SYSTEM INSTRUCTION]: One or more planned actions failed. Review the error above and correct the plan."</span>
+        <span class="n">state</span><span class="p">[</span><span class="s2">"route_to"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"SELF"</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">state</span><span class="p">[</span><span class="s2">"route_to"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"SUCCESS"</span>
     <span class="k">return</span> <span class="n">state</span></div>
 
 
@@ -951,7 +947,12 @@
         <span class="k">if</span> <span class="n">lines</span> <span class="ow">and</span> <span class="n">lines</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"```"</span><span class="p">:</span>
             <span class="n">lines</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">code</span> <span class="o">=</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
-    <span class="k">if</span> <span class="n">code</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">code</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">code</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">"working_prompt"</span><span class="p">:</span> <span class="s2">"</span><span class="se">\n\n</span><span class="s2">[SYSTEM: Refusing to execute empty Python script. Write non-empty Python code and re-run `python_sandbox`.]</span><span class="se">\n</span><span class="s2">"</span><span class="p">,</span>
+            <span class="s2">"route_to"</span><span class="p">:</span> <span class="s2">"SELF"</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">code</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">):</span>
         <span class="n">code</span> <span class="o">+=</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span>
     
     <span class="n">conversation_id</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"conversation_id"</span><span class="p">)</span>
@@ -1277,6 +1278,10 @@
 <span class="p">}</span>
 
 <span class="n">SCHEMA_ACTION_HANDLERS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"ResearchEvaluation"</span><span class="p">:</span> <span class="n">handle_research</span><span class="p">,</span>
+    <span class="s2">"DifficultPromptEvaluation"</span><span class="p">:</span> <span class="n">handle_difficult_prompt</span><span class="p">,</span>
+    <span class="s2">"ExecutionPlan"</span><span class="p">:</span> <span class="n">handle_execution_plan</span><span class="p">,</span>
+    <span class="s2">"ResultCritique"</span><span class="p">:</span> <span class="n">handle_result_critique</span><span class="p">,</span>
     <span class="s2">"PromptVariant"</span><span class="p">:</span> <span class="n">create_prompt_variant</span><span class="p">,</span>
     <span class="s2">"GripsExpansionProposal"</span><span class="p">:</span> <span class="n">handle_grips_expansion</span><span class="p">,</span>
     <span class="s2">"CognitiveBlueprintProposal"</span><span class="p">:</span> <span class="n">handle_blueprint_proposal</span><span class="p">,</span>
@@ -1291,8 +1296,7 @@
     <span class="s2">"1. The sandbox can only execute files that you have already written using WRITE_FILE.</span><span class="se">\n</span><span class="s2">"</span>
     <span class="s2">"2. Scripts must use simple print() statements to output results. Avoid multi-line strings or escaped newlines (</span><span class="se">\\</span><span class="s2">n).</span><span class="se">\n</span><span class="s2">"</span>
     <span class="s2">"3. Do NOT repeat actions that have already succeeded.</span><span class="se">\n</span><span class="s2">"</span>
-    <span class="s2">"4. If the results of a previous EXECUTE_SCRIPT give you the answer to the user's request, your NEXT queue MUST contain ONLY the `TASK_COMPLETE` tool with the final answer.</span><span class="se">\n</span><span class="s2">"</span>
-    <span class="s2">"5. If a script fails due to memory limits, reduce array sizes or iterations, or avoid heavy libraries like numpy for simple tasks."</span>
+    <span class="s2">"4. If a script fails due to memory limits, reduce array sizes or iterations, or avoid heavy libraries like numpy for simple tasks."</span>
 <span class="p">)</span>
 <span class="n">ExecutionPlan</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">ExecutionPlan</span><span class="o">.</span><span class="vm">__doc__</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"Step Prompt:"</span><span class="p">,</span> <span class="n">enhanced_prompt</span><span class="p">)</span>
 </pre></div>

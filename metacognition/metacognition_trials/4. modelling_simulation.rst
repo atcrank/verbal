@@ -28,18 +28,30 @@ We target the full agentic pipeline.
     ...     "Execute the script and return those two peak values."
     ... )
 
-    >>> import contextlib, io, json
-    >>> with contextlib.redirect_stdout(io.StringIO()):
+    >>> import contextlib, io, re
+    >>> with contextlib.redirect_stdout(io.StringIO()) as captured_out:
     ...     result = run_blueprint(bp.id, prompt, user_id=user.id)
-    >>> report_doctest_run("4. modelling_simulation", prompt, result)
-    >>> import json
-    >>> final_str = result.get("final_response", "{}")
-    >>> try:
-    ...     resp = json.loads(final_str) if "{" in final_str else {}
-    ...     has_decision = "decision" in resp
-    ...     has_reasoning = "reasoning" in resp
-    ... except json.JSONDecodeError:
-    ...     has_decision = False
-    ...     has_reasoning = False
+    >>> result["stdout"] = captured_out.getvalue()
+
+    >>> expected_outcome = (
+    ...     "Write and execute an Euler integration Python script (dt=1, 100 steps, R0=40, F0=9, "
+    ...     "alpha=0.1, beta=0.02, delta=0.01, gamma=0.1). True Euler peaks are Peak Rabbits ~67.07 "
+    ...     "and Peak Foxes ~37.73 (distinct from the initial t=0 counts of 40 and 9)."
+    ... )
+    >>> final_str = result.get("final_response", "")
+    >>> monologue = result.get("internal_monologue", [])
+    >>> ran_sandbox = any("Sandbox Execution Succeeded" in str(m.get("tool_result", "")) or "Sandbox Execution Succeeded" in str(m.get("output", "")) for m in monologue)
+    >>> nums = [float(x) for x in re.findall(r"\b\d+(?:\.\d+)?\b", final_str)]
+    >>> has_r_peak = any(65.0 <= n <= 69.0 for n in nums)
+    >>> has_f_peak = any(36.0 <= n <= 39.5 for n in nums)
+    >>> checks = [
+    ...     {"label": "sandbox Euler script executed (RC=0)", "passed": ran_sandbox, "detail": "python_sandbox output recorded"},
+    ...     {"label": "peak rabbits near 67.07 (not initial 40)", "passed": has_r_peak, "detail": f"numbers found: {nums[:10]}"},
+    ...     {"label": "peak foxes near 37.73 (not initial 9)", "passed": has_f_peak, "detail": f"numbers found: {nums[:10]}"},
+    ... ]
+    >>> report_doctest_run("4. modelling_simulation", prompt, result, expected_outcome=expected_outcome, checks=checks)
+
+    >>> assert "error" not in result, f"Execution failed: {result.get('error')}"
+    >>> assert len(monologue) > 0 and bool(final_str), "Blueprint produced empty output"
     >>> print(f"- complete attempt: {1 if final_str else 0}/1")
     - complete attempt: 1/1

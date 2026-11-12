@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 from .models import CognitiveBlueprint, ReasoningStep, ResponseSchema, ToolDefinition
 from .tasks import run_blueprint
 from .actions import (
-    ExecutionPlan, CheckParsingAction, CheckParsingArgs, TaskCompleteAction, TaskCompleteArgs,
+    ExecutionPlan, CheckParsingAction, CheckParsingArgs,
     python_sandbox, process_task_queue, TaskQueue, TaskItem
 )
 
@@ -61,8 +61,7 @@ class MetacognitionTraversalTests(TestCase):
             max_retries=2 # Allow 2 loops before failing
         )
         tool = ToolDefinition.objects.get_or_create(name="document_reader", defaults={"description": "Active reading tool", "python_path": "metacognition.meta_tools.document_reader"})[0]
-        task_complete_tool = ToolDefinition.objects.get_or_create(name="TASK_COMPLETE", defaults={"description": "Task complete", "python_path": "metacognition.meta_tools.TASK_COMPLETE"})[0]
-        self.active_step.available_tools.add(tool, task_complete_tool)
+        self.active_step.available_tools.add(tool)
         # Link to itself on failure
         self.active_step.on_failure_step = self.active_step
         self.active_step.save()
@@ -120,7 +119,7 @@ class MetacognitionTraversalTests(TestCase):
         }])
         mock_outline.side_effect = [
             {"tool_calls": [{"name": "document_reader", "args": {"action": "fetch_chunk", "target_id": "chunk_0"}}]},
-            {"tool_calls": [{"name": "TASK_COMPLETE", "args": {"final_answer": "success with final answer."}}]}
+            {"tool_calls": []}
         ]
         
         from llm_api.apps import service_registry
@@ -163,9 +162,8 @@ class MetacognitionTraversalTests(TestCase):
         print("MONOLOGUE LOOP:", json.dumps(monologue, indent=2))
         
         self.assertEqual(len(monologue), 2, "Should have looped exactly twice.")
-        
-        # Verify the Draft Answer was extracted correctly on the final success pass
-        self.assertIn("success with final answer.", monologue[-1]["output"])
+        self.assertFalse(monologue[-1].get("failed", False))
+        self.assertEqual(result.get("route_to"), "SUCCESS")
 
     @patch('llm_api.ai_service.AIService.supports_native_tools', return_value=True)
     @patch('metacognition.tasks.service_registry.rag_service.get_context')
@@ -263,20 +261,17 @@ class MetacognitionTraversalTests(TestCase):
 
         
         import json
-        call1_json = json.dumps([{"name": "handle_execution_plan", "args": {"analysis": "Need to syntax check code", "queue": [{"tool": "CHECK_PARSING", "parameters": {"code": "print('Hello World')"}, "expected_outcome": "Valid syntax"}]}, "id": "call_1"}])
-        call2_json = json.dumps([{"name": "handle_execution_plan", "args": {"analysis": "Parsed successfully", "queue": [{"tool": "TASK_COMPLETE", "parameters": {"final_answer": "The answer is test"}, "expected_outcome": "Done"}]}, "id": "call_2"}])
-
         mock_outline.side_effect = [
             {"tool_calls": [{"name": "handle_execution_plan", "args": {"analysis": "Need to syntax check code", "queue": [{"tool": "CHECK_PARSING", "parameters": {"code": "print('Hello World')"}, "expected_outcome": "Valid syntax"}]}}]},
-            {"tool_calls": [{"name": "handle_execution_plan", "args": {"analysis": "Parsed successfully", "queue": [{"tool": "TASK_COMPLETE", "parameters": {"final_answer": "The answer is test"}, "expected_outcome": "Done"}]}}]}
+            {"tool_calls": []}
         ]
 
         result = run_blueprint(plan_bp.id, "Do this plan", user_id=self.user.id)
 
         self.assertNotIn("error", result)
         monologue = result.get("internal_monologue", [])
-        print("MONOLOGUE PLAN:", json.dumps(monologue, indent=2))
-        self.assertIn("The answer is test", result.get("final_response", ""))
+        self.assertEqual(result.get("route_to"), "SUCCESS")
+        self.assertTrue(any("CHECK_PARSING" in str(m.get("output", "")) or "syntactically valid" in str(m.get("tool_result", "")) for m in monologue))
 
     def test_python_sandbox_extraction(self):
         state = {"working_prompt": "", "route_to": None}
@@ -988,7 +983,7 @@ class AsyncStreamingAndGovernanceTests(TransactionTestCase):
             name="restricted_tool",
             description="Restricted action",
             tool_type="builtin",
-            python_path="metacognition.meta_tools.TASK_COMPLETE",
+            python_path="metacognition.meta_tools.list_available_tools",
             requires_approval=True
         )
         self.step.available_tools.add(restricted_tool)
@@ -1924,7 +1919,7 @@ class ToolGovernancePolicyTests(TestCase):
             name="test_gov_code_tool",
             defaults={
                 "tool_type": "builtin",
-                "python_path": "metacognition.meta_tools.TASK_COMPLETE",
+                "python_path": "metacognition.meta_tools.list_available_tools",
                 "capability_category": "CODE_EXECUTION",
                 "required_clearance": "TRUSTED",
             }
@@ -1953,11 +1948,11 @@ class ToolGovernancePolicyTests(TestCase):
         )
         read_tool, _ = ToolDefinition.objects.get_or_create(
             name="test_gov_read",
-            defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.TASK_COMPLETE", "capability_category": "READ_ONLY"}
+            defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.list_available_tools", "capability_category": "READ_ONLY"}
         )
         code_tool, _ = ToolDefinition.objects.get_or_create(
             name="test_gov_code",
-            defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.TASK_COMPLETE", "capability_category": "CODE_EXECUTION", "required_clearance": "TRUSTED"}
+            defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.list_available_tools", "capability_category": "CODE_EXECUTION", "required_clearance": "TRUSTED"}
         )
         step.available_tools.add(read_tool, code_tool)
 
@@ -2011,7 +2006,7 @@ class ToolGovernancePolicyTests(TestCase):
         )
         read_tool, _ = ToolDefinition.objects.get_or_create(
             name="test_ready_read",
-            defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.TASK_COMPLETE", "capability_category": "READ_ONLY"}
+            defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.list_available_tools", "capability_category": "READ_ONLY"}
         )
         step.available_tools.add(read_tool)
 
@@ -2035,7 +2030,7 @@ class ToolGovernancePolicyTests(TestCase):
         )
         code_tool, _ = ToolDefinition.objects.get_or_create(
             name="test_locked_code",
-            defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.TASK_COMPLETE", "capability_category": "CODE_EXECUTION"}
+            defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.list_available_tools", "capability_category": "CODE_EXECUTION"}
         )
         step.available_tools.add(code_tool)
 
@@ -2059,11 +2054,11 @@ class ToolGovernancePolicyTests(TestCase):
         )
         read_tool, _ = ToolDefinition.objects.get_or_create(
             name="test_deg_read",
-            defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.TASK_COMPLETE", "capability_category": "READ_ONLY"}
+            defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.list_available_tools", "capability_category": "READ_ONLY"}
         )
         code_tool, _ = ToolDefinition.objects.get_or_create(
             name="test_deg_code",
-            defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.TASK_COMPLETE", "capability_category": "CODE_EXECUTION"}
+            defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.list_available_tools", "capability_category": "CODE_EXECUTION"}
         )
         step.available_tools.add(read_tool, code_tool)
 
@@ -2087,7 +2082,7 @@ class ToolGovernancePolicyTests(TestCase):
         )
         admin_tool, _ = ToolDefinition.objects.get_or_create(
             name="test_admin_clearance_tool",
-            defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.TASK_COMPLETE", "capability_category": "READ_ONLY", "required_clearance": "ADMIN"}
+            defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.list_available_tools", "capability_category": "READ_ONLY", "required_clearance": "ADMIN"}
         )
         step.available_tools.add(admin_tool)
 
@@ -2149,7 +2144,7 @@ class ToolGovernancePolicyTests(TestCase):
         )
         code_tool, _ = ToolDefinition.objects.get_or_create(
             name="test_post_locked_code",
-            defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.TASK_COMPLETE", "capability_category": "CODE_EXECUTION"}
+            defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.list_available_tools", "capability_category": "CODE_EXECUTION"}
         )
         step.available_tools.add(code_tool)
 
@@ -2178,7 +2173,7 @@ class ToolGovernancePolicyTests(TestCase):
         )
         code_tool, _ = ToolDefinition.objects.get_or_create(
             name="test_task_locked_code",
-            defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.TASK_COMPLETE", "capability_category": "CODE_EXECUTION"}
+            defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.list_available_tools", "capability_category": "CODE_EXECUTION"}
         )
         step.available_tools.add(code_tool)
 
@@ -2229,8 +2224,8 @@ class ToolGovernanceHostingBackendTests(TestCase):
         service_registry.ai_service.role = "web"
 
         self.pytorch_model, _ = LocalAIModel.objects.get_or_create(
-            hf_model_id="google/gemma-2-2b-it",
-            defaults={"name": "Gemma 2 2B (PyTorch)"}
+            hf_model_id="google/gemma-4-E2B-it",
+            defaults={"name": "Gemma 4 E2B (PyTorch)"}
         )
         self.vllm_model, _ = LocalAIModel.objects.get_or_create(
             hf_model_id="mistralai/Mistral-7B-Instruct-v0.2",
@@ -2250,7 +2245,7 @@ class ToolGovernanceHostingBackendTests(TestCase):
             name="test_backend_read_tool",
             defaults={
                 "tool_type": "builtin",
-                "python_path": "metacognition.meta_tools.TASK_COMPLETE",
+                "python_path": "metacognition.meta_tools.list_available_tools",
                 "capability_category": "READ_ONLY",
                 "required_clearance": "STANDARD",
                 "input_schema": json.dumps({
@@ -2264,7 +2259,7 @@ class ToolGovernanceHostingBackendTests(TestCase):
             name="test_backend_code_tool",
             defaults={
                 "tool_type": "builtin",
-                "python_path": "metacognition.meta_tools.TASK_COMPLETE",
+                "python_path": "metacognition.meta_tools.list_available_tools",
                 "capability_category": "CODE_EXECUTION",
                 "required_clearance": "TRUSTED",
                 "input_schema": json.dumps({
@@ -3002,7 +2997,7 @@ class PureToolExecutionAndEvidenceMergingTests(TestCase):
         self.assertEqual(start_step.name, "Retrieve Literature Chunks")
         self.assertEqual(start_step.execution_mode, "pure_tool")
         self.assertEqual(start_step.deterministic_tool.name, "document_reader")
-        self.assertEqual(start_step.tool_args_mapping.get("action"), "search")
+        self.assertEqual(start_step.tool_args_mapping.get("action"), "search_document")
         self.assertEqual(start_step.tool_args_mapping.get("query"), "$user_prompt")
 
         llm_step = start_step.on_success_step
@@ -3167,7 +3162,7 @@ class PureToolExecutionAndEvidenceMergingTests(TestCase):
                 "modality": "text_only_grounded",
                 "observations": "77-GHz radar maintains error under 4cm up to 250C."
             })
-            with patch("llm_api.modality_detector.get_active_modality_status", return_value={"is_multimodal": False, "model_name": "gemma-2-2b-it"}), \
+            with patch("llm_api.modality_detector.get_active_modality_status", return_value={"is_multimodal": False, "model_name": "qwen2.5:7b"}), \
                  patch.object(service_registry.ai_service, 'generate_response2', return_value=mock_synthesis):
                 res = inspect_chart_image({}, {"image_path": img_path, "query": "Extract radar error up to 250C"})
                 self.assertIn("text_only_grounded", res)
@@ -3370,8 +3365,8 @@ class DeploymentHardeningPhase1Tests(TestCase):
 
 class DeploymentHardeningPhase2Tests(TestCase):
     """
-    Tests for WS20 Phase 2:
-    - Purge / Deprecate TASK_COMPLETE tool (Defect 6)
+    Tests for WS20/WS32 Phase 2:
+    - Full purge of TASK_COMPLETE and empty tool_calls: [] exit contract
     - Reliable Synchronous SSE Streaming (Defect 7a)
     """
 
@@ -3389,68 +3384,56 @@ class DeploymentHardeningPhase2Tests(TestCase):
             evaluation_criteria="Response must satisfy the goal."
         )
 
-    def test_deprecated_task_complete_tool_function(self):
-        """Task 2.1: metacognition.meta_tools.TASK_COMPLETE returns route_to SUCCESS."""
-        from metacognition.meta_tools import TASK_COMPLETE
+    def test_seed_all_purges_task_complete(self):
+        """WS32: seed_all removes any legacy TASK_COMPLETE tool and canonical steps avoid it."""
+        from metacognition.seed import seed_all
 
-        # 1. With final_answer
-        res1 = TASK_COMPLETE({}, {"final_answer": "Analysis complete."})
-        self.assertEqual(res1.get("route_to"), "SUCCESS")
-        self.assertIn("Analysis complete.", res1.get("working_prompt", ""))
+        ToolDefinition.objects.get_or_create(
+            name="TASK_COMPLETE",
+            defaults={"description": "Legacy deprecated tool"}
+        )
+        seed_all()
 
-        # 2. Without final_answer
-        res2 = TASK_COMPLETE({}, {})
-        self.assertEqual(res2.get("route_to"), "SUCCESS")
-        self.assertIn("Task completed successfully.", res2.get("working_prompt", ""))
+        self.assertFalse(ToolDefinition.objects.filter(name="TASK_COMPLETE").exists())
+        for step in ReasoningStep.objects.filter(blueprint__is_canonical=True):
+            tool_names = set(step.available_tools.values_list("name", flat=True))
+            self.assertNotIn("TASK_COMPLETE", tool_names)
 
-    def test_actions_execute_execution_plan_task_complete(self):
-        """Task 2.1: handle_execution_plan handles TASK_COMPLETE even without final_answer."""
-        from metacognition.actions import handle_execution_plan
-
-        state = {"working_prompt": "", "conversation_id": "test_conv"}
-        plan_dict = {
-            "analysis": "Done",
-            "queue": [{
-                "tool": "TASK_COMPLETE",
-                "parameters": {"final_answer": ""},
-                "expected_outcome": "Terminate"
-            }]
-        }
-        ret = handle_execution_plan(state, plan_dict)
-        self.assertEqual(ret.get("route_to"), "SUCCESS")
-        self.assertIn("[TASK COMPLETE]", ret.get("working_prompt", ""))
-
-    @patch('metacognition.compiler.execute_tool')
     @patch('llm_api.ai_service.AIService.supports_native_tools')
     @patch('llm_api.ai_service.AIService.generate_response2')
-    def test_action_node_intercepts_unregistered_task_complete(self, mock_gen, mock_native, mock_exec):
-        """Task 2.1: Action node handles TASK_COMPLETE cleanly even if not in step.available_tools."""
+    @patch('llm_api.ai_service.AIService.generate_outline')
+    def test_empty_tool_calls_completes_step_without_task_complete(self, mock_outline, mock_gen, mock_native):
+        """WS32: Tool steps finish cleanly with route_to='SUCCESS' on empty [] instead of ToolCallMissing."""
         from metacognition.compiler import _make_action_node
         from langchain_core.messages import HumanMessage
 
-        mock_native.return_value = True
-        mock_gen.return_value = [[{"name": "TASK_COMPLETE", "args": {"final_answer": "All done!"}}]]
-
-        # Tool Definition for another tool, so step has tools but NOT TASK_COMPLETE
         tool_other = ToolDefinition.objects.create(
             name="other_tool",
             description="Other",
-            python_path="metacognition.meta_tools.TASK_COMPLETE"
+            python_path="metacognition.meta_tools.list_available_tools"
         )
         self.step.available_tools.add(tool_other)
-
         action_fn = _make_action_node(self.step, {self.step.id: self.step.id})
-        state = {
+        base_state = {
             "working_memory": [HumanMessage(content="Please do the task")],
             "user": self.user,
             "retries_remaining": {},
             "step_count": 0,
         }
 
-        result = action_fn(state)
-        self.assertEqual(result.get("route_to"), "SUCCESS")
-        monologue = result.get("internal_monologue", [{}])[0]
-        self.assertIn("Task completed: All done!", monologue.get("output", ""))
+        # 1. Native tool path returning []
+        mock_native.return_value = True
+        mock_gen.return_value = [[]]
+        res_native = action_fn(dict(base_state))
+        self.assertEqual(res_native.get("route_to"), "SUCCESS")
+        self.assertFalse(res_native["internal_monologue"][0].get("failed", False))
+
+        # 2. Outlines fallback path returning {"tool_calls": []}
+        mock_native.return_value = False
+        mock_outline.return_value = '{"tool_calls": []}'
+        res_outline = action_fn(dict(base_state))
+        self.assertEqual(res_outline.get("route_to"), "SUCCESS")
+        self.assertFalse(res_outline["internal_monologue"][0].get("failed", False))
 
     @patch('llm_api.ai_service.AIService.generate_outline')
     def test_eval_node_evaluates_without_task_complete(self, mock_outline):
@@ -3932,6 +3915,517 @@ class WS31CompilerToolLoopTests(TestCase):
             with open(os.path.join(tmpdir, "sandbox_script.py"), "r") as f:
                 written = f.read()
         self.assertEqual(written, "print(42)\n")
+
+
+class WS32HarnessHardeningTests(TestCase):
+    """
+    Tests for WS32 runtime hardening, double-node ResearchEvaluation,
+    state tree preservation, and offline mocked pipeline contracts.
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="ws32_user",
+            password="password123",
+            is_staff=True,
+            is_superuser=True,
+        )
+
+    @patch("requests.post")
+    def test_python_sandbox_rejects_empty_code(self, mock_post):
+        from metacognition.actions import python_sandbox
+
+        for blank in ("", "   \n  ", "```python\n\n```"):
+            out = python_sandbox({}, {"code": blank})
+            self.assertEqual(out["route_to"], "SELF")
+            self.assertIn("Refusing to execute empty", out["working_prompt"])
+            self.assertNotIn("Succeeded", out["working_prompt"])
+        mock_post.assert_not_called()
+
+    @patch("requests.post")
+    @patch("llm_api.apps.service_registry")
+    def test_python_sandbox_output_visible_in_subsequent_user_prompt(self, mock_registry, mock_post):
+        import json as _json
+        import tempfile
+        from langchain_core.messages import HumanMessage
+        from metacognition.compiler import compile_graph_from_blueprint
+        from llm_api.models import Conversation
+
+        bp = CognitiveBlueprint.objects.create(name="SandboxVisibilityBP", is_autonomous=True)
+        sandbox_tool, _ = ToolDefinition.objects.get_or_create(
+            name="python_sandbox",
+            defaults={
+                "description": "Execute code",
+                "python_path": "metacognition.actions.python_sandbox",
+                "capability_category": "CODE_EXECUTION",
+                "required_clearance": "TRUSTED",
+                "input_schema": _json.dumps({
+                    "type": "object",
+                    "properties": {"code": {"type": "string"}},
+                    "required": ["code"]
+                }),
+            },
+        )
+        step1 = ReasoningStep.objects.create(
+            blueprint=bp,
+            name="Execute Code",
+            is_start_node=True,
+            system_prompt="Write code.",
+            max_retries=3,
+        )
+        step1.available_tools.add(sandbox_tool)
+        step2 = ReasoningStep.objects.create(
+            blueprint=bp,
+            name="Review Output",
+            system_prompt="Summarize sandbox stdout.",
+        )
+        step1.on_success_step = step2
+        step1.save()
+
+        mock_post.return_value.status_code = 200
+        mock_post.return_value.json.side_effect = [
+            {"stdout": "", "stderr": "SyntaxError: bad syntax", "returncode": 1},
+            {"stdout": "r_count=3\n", "stderr": "", "returncode": 0},
+        ]
+        mock_registry.ai_service.supports_native_tools.return_value = True
+        mock_registry.ai_service.clean_response.side_effect = lambda x: x
+        mock_registry.ai_service.generate_response2.side_effect = [
+            [[{"name": "python_sandbox", "args": {"code": "print("}}]],
+            [[{"name": "python_sandbox", "args": {"code": "print('r_count=3')"}}]],
+            ["Verified count is 3."],
+        ]
+
+        conv = Conversation.objects.create(user=self.user, title="Visibility Conv")
+        graph = compile_graph_from_blueprint(bp)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with patch("metacognition.actions._get_workspace_dir", return_value=tmpdir):
+                res = graph.invoke(
+                    {
+                        "working_memory": [HumanMessage(content="Count r in strawberry.")],
+                        "rag_context": "",
+                        "route_to": None,
+                        "conversation_id": str(conv.id),
+                        "user_id": self.user.id,
+                        "step_count": 0,
+                        "max_steps": 10,
+                        "retries_remaining": {},
+                        "internal_monologue": [],
+                        "scratch": {},
+                        "token_budget_remaining": 8000,
+                    },
+                    {"configurable": {"thread_id": f"{conv.id}_vis"}},
+                )
+
+        monologue = res["internal_monologue"]
+        # Step 1 retry must see the prior RC=1 stderr in user_prompt, and Step 2 must see r_count=3
+        retry_user_msgs = str(monologue[1].get("user_prompt", ""))
+        self.assertIn("SyntaxError: bad syntax", retry_user_msgs)
+        review_user_msgs = str(monologue[-1].get("user_prompt", ""))
+        self.assertIn("r_count=3", review_user_msgs)
+
+    def test_schema_action_handlers_wired_and_critique_loops_back(self):
+        from metacognition.actions import (
+            SCHEMA_ACTION_HANDLERS, ResultCritique, handle_result_critique
+        )
+        self.assertIn("ResearchEvaluation", SCHEMA_ACTION_HANDLERS)
+        self.assertIn("DifficultPromptEvaluation", SCHEMA_ACTION_HANDLERS)
+        self.assertIn("ResultCritique", SCHEMA_ACTION_HANDLERS)
+
+        critique = ResultCritique(
+            quantitative_result="Count: 4",
+            reasoning="Off by one",
+            decision="REJECT",
+            feedback_for_planner="Re-run script cleanly.",
+        )
+        out = handle_result_critique({"working_prompt": ""}, critique)
+        self.assertEqual(out["route_to"], "FAILURE")
+
+    @patch("requests.post")
+    @patch("llm_api.apps.service_registry")
+    def test_seed_research_evaluation_executes_sandbox_and_critiques(self, mock_registry, mock_post):
+        from metacognition.seed import seed_all
+        from pydantic import BaseModel
+
+        seed_all()
+        bp = CognitiveBlueprint.objects.get(name="ResearchEvaluation")
+        steps = {s.name: s for s in bp.steps.all()}
+        self.assertIn("Execute", steps)
+        self.assertIn("Critique", steps)
+        self.assertTrue(steps["Execute"].available_tools.filter(name="python_sandbox").exists())
+        self.assertEqual(steps["Critique"].on_failure_step_id, steps["Plan"].id)
+
+        class _Research(BaseModel):
+            reasoning: str = "Self-contained arithmetic."
+            status: str = "SUFFICIENT"
+            rag_queries: list[str] = []
+            grips_queries: list[str] = []
+
+        class _Plan(BaseModel):
+            reasoning: str = "Plan"
+            strategy: str = "Run python"
+
+        class _EvalPass(BaseModel):
+            passed: bool = True
+            reasoning: str = "Matches stdout 3."
+
+        class _EvalFail(BaseModel):
+            passed: bool = False
+            reasoning: str = "Count does not match stdout."
+
+        mock_post.return_value.status_code = 200
+        mock_post.return_value.json.return_value = {"stdout": "3\n", "stderr": "", "returncode": 0}
+        mock_registry.ai_service.supports_native_tools.return_value = True
+        mock_registry.ai_service.clean_response.side_effect = lambda x: x
+        mock_registry.ai_service.generate_outline.side_effect = [
+            _Research(),  # Research
+            _Plan(),      # Plan pass 1
+            _EvalFail(),  # Critique eval rejects pass 1 -> loops to Plan
+            _Plan(),      # Plan pass 2
+            _EvalPass(),  # Critique eval accepts pass 2
+        ]
+        mock_registry.ai_service.generate_response2.side_effect = [
+            [[{"name": "python_sandbox", "args": {"code": "print('strawberry'.count('r'))"}}]],
+            ["The count is 4."],
+            [[{"name": "python_sandbox", "args": {"code": "print('strawberry'.count('r'))"}}]],
+            ["There are exactly 3 'r's in strawberry."],
+        ]
+
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with patch("metacognition.actions._get_workspace_dir", return_value=tmpdir):
+                res = run_blueprint(bp.id, "Count r in strawberry", user_id=self.user.id)
+
+        self.assertNotIn("error", res)
+        self.assertIn("3", res.get("final_response", ""))
+
+    @patch("metacognition.compiler.execute_tool")
+    @patch("llm_api.apps.service_registry")
+    def test_state_tree_auto_grounding_ignores_errors_and_admin_tools(self, mock_registry, mock_exec):
+        from langchain_core.messages import HumanMessage
+        from metacognition.compiler import _make_action_node
+        from metacognition.seed import seed_tools
+
+        seed_tools(ToolDefinition)
+        bp = CognitiveBlueprint.objects.create(name="TaskGuardBP", is_autonomous=True)
+        step = ReasoningStep.objects.create(
+            blueprint=bp,
+            name="Iterative Processor",
+            is_start_node=True,
+            system_prompt="Process tasks.",
+        )
+        t_update = ToolDefinition.objects.get(name="update_conversation_state")
+        t_sub = ToolDefinition.objects.get(name="run_sub_blueprint")
+        step.available_tools.add(t_update, t_sub)
+
+        mock_registry.ai_service.supports_native_tools.return_value = True
+        mock_registry.ai_service.generate_response2.return_value = [[
+            {"name": "update_conversation_state", "args": {"action": "update_task_status", "task_path": "Task1-Models", "status": "PENDING"}},
+            {"name": "run_sub_blueprint", "args": {"blueprint_name": "MissingBP", "task_prompt": "List models"}},
+        ]]
+        mock_exec.side_effect = [
+            "Error: Task 'Task1-Models' not found.",
+            "Error: Sub-blueprint 'MissingBP' not found.",
+        ]
+
+        action_fn = _make_action_node(step, {step.id: step.id})
+        state = {
+            "working_memory": [HumanMessage(content="Analyze project")],
+            "user": self.user,
+            "retries_remaining": {},
+            "step_count": 0,
+            "state_tree": {
+                "active_task": "task_1",
+                "tasks": {
+                    "task_1": {"title": "Models", "status": "IN_PROGRESS"},
+                    "task_2": {"title": "Actions", "status": "PENDING"},
+                },
+            },
+        }
+        out = action_fn(state)
+        tasks = out["state_tree"]["tasks"]
+        self.assertEqual(tasks["task_1"]["status"], "IN_PROGRESS")
+        self.assertEqual(tasks["task_2"]["status"], "PENDING")
+        self.assertEqual(out["state_tree"]["active_task"], "task_1")
+
+    def test_run_sub_blueprint_errors_explicitly_on_missing_or_failed_child(self):
+        from metacognition.meta_tools import run_sub_blueprint
+
+        missing_res = run_sub_blueprint(
+            {"user_id": self.user.id},
+            {"blueprint_name": "Does_Not_Exist_XYZ", "task_prompt": "Test"},
+        )
+        self.assertTrue(missing_res.startswith("Error:"))
+
+        failing_bp = CognitiveBlueprint.objects.create(name="FailingChildBP", is_autonomous=True)
+        ReasoningStep.objects.create(blueprint=failing_bp, name="Step1", is_start_node=True, system_prompt="Fail")
+        with patch("metacognition.tasks.run_blueprint", return_value={"route_to": "FAILURE", "final_response": "Child aborted"}):
+            failed_res = run_sub_blueprint(
+                {"user_id": self.user.id},
+                {"blueprint_name": "FailingChildBP", "task_prompt": "Run"},
+            )
+        self.assertTrue(failed_res.startswith("Error"))
+
+    def test_state_tree_compaction_preserves_long_established_facts(self):
+        from llm_api.state_tree import fast_compact_state_tree
+
+        long_fact = (
+            "[Li et al., 2023 - IEEE Sensors Letters, Sec IV-B] "
+            "Frequency-Modulated Continuous-Wave (FMCW) 77-GHz radar maintained 94.2% obstacle detection accuracy "
+            "through particulate smoke densities up to 120 mg/m3 at extreme thermal stress up to 250C, "
+            "with maximum ranging error of +-3.5 cm at 15 meters over extended continuous trials."
+        )
+        self.assertGreater(len(long_fact), 300)
+        compacted = fast_compact_state_tree({"established_facts": [long_fact], "tasks": {}})
+        self.assertEqual(compacted["established_facts"][0], long_fact)
+
+    @patch("llm_api.ai_service.AIService.generate_response2")
+    @patch("metacognition.meta_tools.document_reader")
+    def test_mocked_evidence_extractor_and_visual_contract(self, mock_doc, mock_gen):
+        """Offline mocked contract suite preserving Trials 10-13 workflow checks."""
+        from metacognition.seed import (
+            seed_tools, seed_evidence_extractor, seed_visual_evidence_investigator
+        )
+
+        seed_tools(ToolDefinition)
+        seed_evidence_extractor(CognitiveBlueprint, ReasoningStep, ToolDefinition)
+        seed_visual_evidence_investigator(CognitiveBlueprint, ReasoningStep, ToolDefinition)
+
+        bp_ev = CognitiveBlueprint.objects.get(name="Evidence Extractor")
+        mock_doc.return_value = "Candidate Chunks:\n1. [Li et al., 2023] 77-GHz radar 94.2% at 250C."
+        mock_gen.return_value = ["- Finding: 77-GHz radar maintained 94.2% accuracy at 250C.\n- Citation: [Li et al., 2023]"]
+        res_ev = run_blueprint(bp_ev.id, "Radar accuracy in smoke?", user_id=self.user.id)
+        self.assertIn("94.2%", res_ev.get("final_response", ""))
+
+        bp_vis = CognitiveBlueprint.objects.get(name="Visual Evidence Investigator")
+        with patch("llm_api.ai_service.AIService.supports_native_tools", return_value=True):
+            mock_gen.side_effect = [
+                [[]],
+                ["- Finding: Radar error 3.2 cm at 200C.\n- Citation: [Talavera et al. (2023) — Figure 4]"],
+            ]
+            res_vis = run_blueprint(bp_vis.id, "Chart coordinates?", user_id=self.user.id)
+        self.assertNotIn("ToolCallMissing", str(res_vis))
+        self.assertIn("3.2 cm", res_vis.get("final_response", ""))
+
+    def test_document_reader_supports_search_alias_and_lexical_fallback(self):
+        from unittest.mock import PropertyMock
+        from background_resources.models import RAGChunk
+        from metacognition.meta_tools import document_reader
+        from llm_api.apps import LazyServiceRegistry
+
+        RAGChunk.objects.filter(chunk_id="ws32-radar-1").delete()
+        RAGChunk.objects.create(
+            chunk_id="ws32-radar-1",
+            text_content="77-GHz FMCW radar maintained 94.2% detection accuracy in 120 mg/m3 smoke at 250C.",
+            metadata={"filename": "documents/Li_2023.pdf", "authors": "Li et al.", "year": "2023"},
+        )
+        with patch.object(LazyServiceRegistry, "rag_service", new_callable=PropertyMock, return_value=None):
+            out_search = document_reader({}, {"action": "search", "query": "FMCW radar smoke accuracy", "k": 2})
+            out_doc = document_reader({}, {"action": "search_document", "query": "FMCW radar smoke accuracy", "k": 2})
+
+        self.assertIn("94.2%", out_search)
+        self.assertIn("Li et al. (2023)", out_doc)
+
+    def test_trial_review_detects_failures_and_runs_isolated_conversation(self):
+        import tempfile
+        from unittest.mock import PropertyMock
+        from llm_api.models import Conversation
+        from llm_api.apps import LazyServiceRegistry
+        from metacognition.trial_review import collect_runtime_facts, run_post_trial_comparison
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            csv_path = os.path.join(tmpdir, "employees.csv")
+            with open(csv_path, "w", encoding="utf-8") as f:
+                f.write("Name,Salary\nEllipsis,Ellipsis\n")
+            facts = collect_runtime_facts(
+                result={
+                    "route_to": "SUCCESS",
+                    "internal_monologue": [
+                        {"step_name": "Exec", "output": "done", "tool_result": "SyntaxError: bad syntax", "failed": True}
+                    ],
+                },
+                workspace_dir=tmpdir,
+                checks=[{"label": "valid csv", "passed": False, "detail": "contains Ellipsis"}],
+            )
+            self.assertEqual(facts["model_outcome"], "FAILED")
+            self.assertEqual(facts["workspace"]["csv_ellipsis"], ["employees.csv"])
+
+        class _FakeReviewerAIService:
+            def generate_response2(self, messages, **kwargs):
+                return ["Expected 3 'r's, observed model claimed 4 without executing sandbox Python."]
+
+            def clean_response(self, text):
+                return text
+
+        with patch.object(LazyServiceRegistry, "ai_service", new_callable=PropertyMock, return_value=_FakeReviewerAIService()):
+            review = run_post_trial_comparison(
+                trial_name="trial_test",
+                prompts=["Count r in strawberry"],
+                expected_outcome="3",
+                observed_response="4",
+                facts=facts,
+                is_mocked=False,
+            )
+
+        self.assertIn("Expected 3 'r's", review)
+        self.assertTrue(
+            Conversation.objects.filter(user__username="doctest_reviewer", title__startswith="Post-Trial Review:").exists()
+        )
+
+    @patch("metacognition.compiler.execute_tool")
+    @patch("llm_api.ai_service.AIService.generate_outline")
+    def test_compiler_empty_tool_turn_private_scratch_and_failed_call_tracking(self, mock_outline, mock_exec):
+        from langchain_core.messages import HumanMessage
+        from metacognition.models import CognitiveBlueprint, ReasoningStep, ToolDefinition
+        from metacognition.compiler import _make_action_node
+        from metacognition.trial_review import collect_runtime_facts, format_facts_summary
+
+        bp = CognitiveBlueprint.objects.create(name="WS32 Compiler Cleanliness")
+        next_step = ReasoningStep.objects.create(blueprint=bp, name="Synthesize", system_prompt="Summarize.", is_start_node=False)
+        step = ReasoningStep.objects.create(
+            blueprint=bp,
+            name="Gather",
+            system_prompt="Call search.",
+            is_start_node=True,
+            on_success_step=next_step,
+        )
+        tool_def, _ = ToolDefinition.objects.get_or_create(name="ws32_dummy_tool", defaults={"description": "Dummy", "python_path": "metacognition.actions.python_sandbox"})
+        step.available_tools.add(tool_def)
+        action_fn = _make_action_node(step, {step.id: step.id, next_step.id: next_step.id})
+
+        base_state = {
+            "working_memory": [HumanMessage(content="Question?")],
+            "step_count": 0,
+            "retries_remaining": {},
+            "internal_monologue": [],
+            "scratch": {"visible_key": "keep_me", "_seen_tool_calls_99": ["x"], "_seen_failed_calls_99": ["y"]},
+            "token_budget_remaining": 8000,
+            "run_id": "ws32_clean_run",
+            "pending_approval": None,
+            "approved_tools": [],
+            "last_log_id": None,
+            "initial_log_id": None,
+            "final_output": None,
+            "evaluator_feedback": None,
+        }
+
+        # 1. Empty tool_calls: [] advances cleanly without polluting working_memory with AIMessage('[]'),
+        #    and hides internal _-prefixed scratchpad keys from the System prompt.
+        with patch("llm_api.ai_service.AIService.supports_native_tools", return_value=False):
+            mock_outline.return_value = ['{"tool_calls": []}']
+            out_empty = action_fn(base_state)
+        self.assertEqual(out_empty["route_to"], "SUCCESS")
+        self.assertEqual(out_empty["working_memory"], [])
+        sys_prompt_sent = mock_outline.call_args[0][0][0]["content"]
+        self.assertIn("visible_key", sys_prompt_sent)
+        self.assertNotIn("_seen_tool_calls_99", sys_prompt_sent)
+
+        # 2. Failed tool call is tracked separately from succeeded calls and never claims reused results
+        mock_exec.return_value = {"route_to": "SELF", "working_prompt": "[SYSTEM: Sandbox Execution Failed (RC=1).\nError: SyntaxError]"}
+        with patch("llm_api.ai_service.AIService.supports_native_tools", return_value=False):
+            mock_outline.return_value = ['{"tool_calls": [{"name": "ws32_dummy_tool", "args": {"code": "x="}}]}']
+            out_fail1 = action_fn(base_state)
+            state_retry = dict(base_state)
+            state_retry["scratch"] = dict(out_fail1["scratch"])
+            state_retry["working_memory"] = base_state["working_memory"] + out_fail1["working_memory"]
+            state_retry["retries_remaining"] = dict(out_fail1["retries_remaining"])
+            out_fail2 = action_fn(state_retry)
+
+        self.assertNotIn(f"_seen_tool_calls_{step.id}", out_fail1["scratch"])
+        self.assertIn(f"_seen_failed_calls_{step.id}", out_fail1["scratch"])
+        self.assertEqual(out_fail2["route_to"], "SUCCESS")
+        self.assertIn("Repeated identical failing tool call(s)", out_fail2["internal_monologue"][0]["output"])
+        self.assertNotIn("Reused previously gathered results", out_fail2["internal_monologue"][0]["output"])
+
+        # 3. Multi-call sandbox counting & omitting 0-sandbox noise on non-sandbox specs
+        facts_multi = collect_runtime_facts(
+            result={
+                "route_to": "SUCCESS",
+                "internal_monologue": [{
+                    "step_name": "Step",
+                    "output": "ran",
+                    "tool_result": (
+                        "[SYSTEM: Sandbox Execution Succeeded.\nOutput: 1]\n"
+                        "[SYSTEM: Sandbox Execution Succeeded.\nOutput: 2]\n"
+                        "[SYSTEM: Sandbox Execution Failed (RC=1).\nError: NameError]\n"
+                        "[SYSTEM: Refusing to execute empty Python script.]"
+                    ),
+                }],
+            }
+        )
+        self.assertEqual(facts_multi["sandbox_runs"], 4)
+        self.assertEqual(facts_multi["sandbox_successes"], 2)
+        self.assertEqual(facts_multi["sandbox_failures"], 2)
+
+        facts_chat = collect_runtime_facts(result={"route_to": "USER_INPUT_REQUIRED"})
+        self.assertNotIn("Sandbox Executions", format_facts_summary(facts_chat, expected_outcome="Ask clarifying questions"))
+        self.assertIn("Sandbox Executions", format_facts_summary(facts_chat, expected_outcome="Run script in python_sandbox"))
+
+        # 4. Prior evaluator_feedback forces minItems=1 on Outlines tool retry and clears feedback afterward
+        fb_state = dict(base_state)
+        fb_state["evaluator_feedback"] = "Status INCOMPLETE: run RAG search now."
+        with patch("llm_api.ai_service.AIService.supports_native_tools", return_value=False):
+            mock_outline.return_value = ['{"tool_calls": [{"name": "ws32_dummy_tool", "args": {"code": "print(1)"}}]}']
+            mock_exec.return_value = "Search hit: France capital Paris."
+            out_fb = action_fn(fb_state)
+        self.assertEqual(mock_outline.call_args.kwargs["response_schema"]["properties"]["tool_calls"]["minItems"], 1)
+        self.assertIn("Status INCOMPLETE", mock_outline.call_args[0][0][0]["content"])
+        self.assertIsNone(out_fb["evaluator_feedback"])
+
+    @patch("metacognition.compiler.execute_tool")
+    @patch("llm_api.ai_service.AIService.generate_outline")
+    def test_subblueprint_failure_markers_and_deep_reader_reasoning_schema(self, mock_outline, mock_exec):
+        import json
+        from langchain_core.messages import HumanMessage
+        from metacognition.models import CognitiveBlueprint, ReasoningStep, ResponseSchema, ToolDefinition, bypass_canonical_lock
+        from metacognition.compiler import _make_action_node
+        from metacognition.seed import seed_deep_reader
+
+        with bypass_canonical_lock():
+            seed_deep_reader(CognitiveBlueprint, ReasoningStep, ToolDefinition, ResponseSchema)
+        deep_schema = ResponseSchema.objects.get(name="DeepReaderEvaluation_Schema")
+        schema_data = json.loads(deep_schema.json_schema)
+        self.assertIn("reasoning", schema_data.get("properties", {}))
+        self.assertIn("reasoning", schema_data.get("required", []))
+
+        bp = CognitiveBlueprint.objects.create(name="WS32 Task Failure Marker BP")
+        step = ReasoningStep.objects.create(blueprint=bp, name="Iterate", system_prompt="Execute task.", is_start_node=True)
+        tool_def, _ = ToolDefinition.objects.get_or_create(
+            name="run_sub_blueprint",
+            defaults={"tool_type": "builtin", "python_path": "metacognition.meta_tools.run_sub_blueprint"},
+        )
+        step.available_tools.add(tool_def)
+        action_fn = _make_action_node(step, {step.id: step.id})
+
+        state = {
+            "working_memory": [HumanMessage(content="Analyze project.")],
+            "step_count": 0,
+            "retries_remaining": {},
+            "internal_monologue": [],
+            "scratch": {},
+            "state_tree": {
+                "active_task": "t1",
+                "tasks": {"t1": {"goal": "Inspect models", "status": "IN_PROGRESS"}},
+            },
+            "token_budget_remaining": 8000,
+            "run_id": "ws32_fail_marker",
+            "pending_approval": None,
+            "approved_tools": [],
+            "last_log_id": None,
+            "initial_log_id": None,
+            "final_output": None,
+            "evaluator_feedback": None,
+        }
+        mock_exec.return_value = (
+            "Sub-blueprint 'Escalation of Effort' executed successfully. "
+            "Findings: I apologize, but the module could not be found; calculation failed."
+        )
+        with patch("llm_api.ai_service.AIService.supports_native_tools", return_value=False):
+            mock_outline.return_value = ['{"tool_calls": [{"name": "run_sub_blueprint", "args": {"blueprint_name": "Escalation of Effort", "task_prompt": "Inspect"}}]}']
+            out = action_fn(state)
+
+        self.assertEqual(out["state_tree"]["tasks"]["t1"]["status"], "IN_PROGRESS")
+        self.assertNotIn("EXECUTED SUCCESSFULLY", out["internal_monologue"][0]["tool_result"])
+
 
 
 

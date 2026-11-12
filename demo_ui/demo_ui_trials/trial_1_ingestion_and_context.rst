@@ -8,7 +8,7 @@ In this first tutorial, the researcher:
 
 1. **Ingests Academic Literature**: Loads the empirical research corpus on firefighting robotics (thermal sensor penetration, LiDAR attenuation, and mobility constraints) into the pgvector store.
 2. **Formulates the Perception Hypothesis**: Identifies the critical causal trade-off between 3D LiDAR point clouds and long-wave infrared (LWIR) thermography in aerosolized smoke, attaching a specific literature context chip in the Reason interface.
-3. **Engages Verbal / Reason**: Submits the inquiry to the local Gemma4 model, receiving a context-grounded synthesis that maps out the primary experimental factors for the robot trial.
+3. **Engages Verbal / Reason**: Submits the inquiry to the active local model, receiving a context-grounded synthesis that maps out experimental factors for the robot trial.
 
 Execution
 ---------
@@ -41,8 +41,8 @@ The researcher loads the pre-extracted scientific research corpus from the firef
     >>> with timed_step("Literature Ingestion & Vector Indexing", steps_recorded) as step:
     ...     step["researcher_thinking"] = (
     ...         "Before designing our field intervention trial, we need an authoritative knowledge base "
-    ...         "grounded in empirical robotics literature. We index 17 domain papers to provide factual "
-    ...         "anchors for sensor attenuation curves, locomotion power draws, and mission failure modes."
+    ...         "grounded in empirical robotics literature. We load and index the firefighting robotics "
+    ...         "literature fixture to provide factual anchors for sensor capabilities and mobility constraints."
     ...     )
     ...     fixture_path = Path("demo_ui/demo_ui_trials/fixtures/firefighting_chunks.json").resolve()
     ...     if fixture_path.exists():
@@ -78,7 +78,9 @@ The researcher navigates to the Reason Demo UI, reviews the literature library, 
     ...     _ = page.goto(f"{live_server_url}/demo/")
     ...     _ = page.wait_for_selector("#uploaded-docs-list", timeout=6000)
     ...     chunk = (
-    ...         RAGChunk.objects.filter(text_content__icontains="Lidar").filter(text_content__icontains="smoke").first()
+    ...         RAGChunk.objects.filter(text_content__icontains="thermal imaging camera").first()
+    ...         or RAGChunk.objects.filter(text_content__icontains="Lidar, IMU, and encoder").first()
+    ...         or RAGChunk.objects.filter(text_content__icontains="Lidar").filter(text_content__icontains="smoke").exclude(text_content__icontains="have become increasingly common").first()
     ...         or RAGChunk.objects.filter(text_content__icontains="smoke").first()
     ...         or RAGChunk.objects.first()
     ...     )
@@ -113,7 +115,7 @@ The researcher navigates to the Reason Demo UI, reviews the literature library, 
 
 Step 3: Live Inference Dispatch & Response Capture
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The researcher submits the inquiry to Verbal / Reason. The local Gemma4 model analyzes the literature context and synthesizes the perception trade-offs.
+The researcher submits the inquiry to Verbal / Reason. The active local model analyzes the literature context and synthesizes perception trade-offs.
 
     >>> with timed_step("Live Inference & Response Capture", steps_recorded) as step:
     ...     page.click("#send-btn")
@@ -130,12 +132,14 @@ The researcher submits the inquiry to Verbal / Reason. The local Gemma4 model an
     ...     new_log = PromptResponseLog.objects.filter(user=user).order_by("-created_at").first()
     ...     if new_log and new_log.rag_selections:
     ...         step["rag_chunks"] = [{"id": sel.get("id", "?"), "citation": sel.get("citation", ""), "preview": sel.get("preview", "")} for sel in new_log.rag_selections]
+    ...     low_resp = ai_response.lower()
+    ...     discusses_lidar = "lidar" in low_resp
+    ...     discusses_thermal = "thermal" in low_resp or "lwir" in low_resp or "infrared" in low_resp
+    ...     discusses_smoke = "smoke" in low_resp or "aerosol" in low_resp or "scattering" in low_resp
     ...     step["researcher_evaluation"] = (
-    ...         "Verbal / Reason identified three critical causal factors for our experiment: "
-    ...         "1) Sensor payload power draw (LiDAR+Compute draws ~110W vs. 25W baseline), "
-    ...         "2) Terrain locomotion resistance (heavy rubble demands ~460W vs. 280W on concrete), and "
-    ...         "3) Battery capacity (1200Wh pack with 20% reserve = 960Wh usable). "
-    ...         "These factors interact in combinatory ways that require quantitative modeling in Trial 2."
+    ...         f"Observed live synthesis ({len(ai_response)} chars): "
+    ...         f"addresses LiDAR={discusses_lidar}, thermal/LWIR={discusses_thermal}, smoke/obscurants={discusses_smoke}. "
+    ...         "(Note: quantitative power/endurance modeling factors are constructed separately in Trials 2-3 rather than assumed here.)"
     ...     )
 
     >>> assert len(ai_response) > 40, f"Expected non-trivial AI response, got {len(ai_response)} chars!"
@@ -145,6 +149,16 @@ The researcher submits the inquiry to Verbal / Reason. The local Gemma4 model an
 Step 4: Report Generation
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
+    >>> expected_outcome = (
+    ...     "Contrast 3D LiDAR metric SLAM/point clouds (degraded by smoke scattering/backscatter) "
+    ...     "against LWIR/thermal imaging (penetrates smoke/obscurants without direct metric depth) "
+    ...     "based accurately on the attached literature context."
+    ... )
+    >>> checks = [
+    ...     {"label": "covers 3D LiDAR characteristics", "passed": discusses_lidar, "detail": ""},
+    ...     {"label": "covers thermal / LWIR imaging", "passed": discusses_thermal, "detail": ""},
+    ...     {"label": "addresses smoke/aerosol attenuation trade-offs", "passed": discusses_smoke, "detail": ""},
+    ... ]
     >>> total_duration = round(time.perf_counter() - trial_t0, 2)
     >>> report_path = record_ui_doctest_run(
     ...     "trial_1_ingestion_and_context",
@@ -152,6 +166,8 @@ Step 4: Report Generation
     ...     steps_recorded,
     ...     model_name=model_name,
     ...     total_duration_s=total_duration,
+    ...     expected_outcome=expected_outcome,
+    ...     checks=checks,
     ... )
     >>> print(f"- complete attempt: {1 if os.path.exists(report_path) else 0}/1")
     - complete attempt: 1/1

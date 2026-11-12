@@ -9,7 +9,7 @@ In this fourth and culminating tutorial, the researcher resolves the core physic
 1. **Problem Context**: Trial 3 proved that traversing heavy rubble while powering high-draw onboard LiDAR and telemetry exhausts the battery in 101.0 minutes, failing the 120-minute operational mission requirement.
 2. **Interactive Counterfactual Branching**: The researcher forks the conversation via ``Branch from here``, creating an isolated DAG child thread. Unlike passive branching demonstrations, the researcher **actively submits a live counterfactual query** inside the branch: modeling 45W transmitter offloading via deployable ad-hoc nodes.
 3. **Counterfactual Verification**: Reason calculates that offloading communication drops baseline rubble draw from 485W to 440W, raising mission endurance to **130.9 minutes**—decisively breaking the 2-hour barrier.
-4. **Physically Grounded Knowledge Graph Elaboration**: The researcher navigates to Grips Explorer and elaborates the ``Breadcrumb Relay Node`` stub. Verbal / Reason (Gemma4) synthesizes an authoritative technical wiki article incorporating genuine UWB parameters (3.5–6.5 GHz, time-of-flight, 15cm accuracy) and extracts structured relational claims.
+4. **Physically Grounded Knowledge Graph Elaboration**: The researcher navigates to Grips Explorer and elaborates the ``Breadcrumb Relay Node`` stub. Verbal / Reason synthesizes a technical wiki article incorporating UWB parameters and extracts structured relational claims.
 5. **Terminal Intervention Protocol Synthesis**: Reason synthesizes the full 4-trial investigative chain into a formal, peer-review-defensible Empirical Intervention Protocol with statistical power calculations ($N=8$, two-way ANOVA).
 
 Execution
@@ -144,12 +144,19 @@ The researcher clicks ``Branch from here`` to fork an isolated conversation bran
     ...     branched_conv = Conversation.objects.filter(user=user).exclude(id=conv.id).order_by("-start_time").first()
     ...     branch_ok = branched_conv is not None and branched_conv.logs.count() >= 2
     ...     step["description"] = f"Created child branch and executed live counterfactual turn. Branch active: {branch_ok}."
+    ...     cf_ok = "130.9" in cf_response or "131" in cf_response
+    ...     cf_refused = any(
+    ...         phrase in cf_response.lower()
+    ...         for phrase in (
+    ...             "need for more information",
+    ...             "please provide",
+    ...             "provide me with",
+    ...             "let me know the specifics",
+    ...         )
+    ...     )
     ...     step["researcher_evaluation"] = (
-    ...         "The active counterfactual query in the child branch yields an affirmative finding:\n"
-    ...         "- Baseline sensor + breadcrumb relays: Total power drops from 485W to 440W.\n"
-    ...         "  Operational duration: (960Wh / 440W) * 60 = 130.9 minutes.\n"
-    ...         "- Result: Successfully breaks the 120-minute threshold on heavy rubble with a 10.9-minute safety margin!\n"
-    ...         "The parent baseline thread remains pristine, while the child DAG records this crucial feasibility finding."
+    ...         f"Observed counterfactual branch turn: computed ~130.9 min={cf_ok}, refused/asked for info={cf_refused}. "
+    ...         "(Expected reference value: (960Wh / 440W) * 60 = 130.9 minutes >= 120 min threshold.)"
     ...     )
 
     >>> print(f"Counterfactual branch executed successfully: {branch_ok}")
@@ -183,11 +190,12 @@ The researcher navigates to Grips Explorer and triggers autonomous stub elaborat
     ...     step["image"] = img4
     ...     step["model_name"] = model_name
     ...     step["response_text"] = stub_node.narrative_content
-    ...     step["description"] = f"Gemma4 elaborated '{stub_node.title}' ({len(stub_node.narrative_content)} chars) with {len(stub_node.structured_claims)} claims."
+    ...     step["description"] = f"{model_name} elaborated '{stub_node.title}' ({len(stub_node.narrative_content)} chars) with {len(stub_node.structured_claims)} claims."
+    ...     low_stub = (stub_node.narrative_content or "").lower()
+    ...     has_uwb = "uwb" in low_stub or "ultra-wideband" in low_stub
     ...     step["researcher_evaluation"] = (
-    ...         f"The '{stub_node.title}' stub was elaborated into an authoritative wiki article containing genuine "
-    ...         f"technical parameters: UWB time-of-flight (3.5-6.5 GHz), 15cm localization accuracy, and dynamic mesh repeaters. "
-    ...         f"Extracted {len(stub_node.structured_claims)} structured claims integrating the node into the domain knowledge graph."
+    ...         f"Observed stub elaboration: '{stub_node.title}' narrative={len(stub_node.narrative_content or '')} chars, "
+    ...         f"claims={len(stub_node.structured_claims or [])}, cites UWB={has_uwb}."
     ...     )
 
     >>> print(f"Stub node elaborated: {bool(stub_node.narrative_content)}")
@@ -206,16 +214,16 @@ The researcher generates a formal Empirical Intervention Protocol synthesizing t
     ...         "EMPIRICAL INTERVENTION PROTOCOL: SEARCH-AND-RESCUE UGV ENDURANCE OPTIMIZATION\n"
     ...         "-----------------------------------------------------------------------------\n"
     ...         "1. Primary Hypothesis: Deployable ad-hoc UWB breadcrumb relays enable tracked rescue UGVs to exceed "
-    ...         "   120 minutes of continuous operation on heavy rubble while maintaining sub-20cm localization accuracy.\n"
+    ...         "120 minutes of continuous operation on heavy rubble while maintaining sub-20cm localization accuracy.\n"
     ...         "2. Factorial Experimental Design: 2x2 Factorial Study\n"
     ...         "   - Factor A (Terrain Locomotion): Smooth Concrete (280W) vs Heavy Rubble/Debris (460W)\n"
     ...         "   - Factor B (Communications Architecture): Onboard Telemetry (45W) vs Deployable Breadcrumb Mesh (0W chassis draw)\n"
-    ...         "3. Power Budget Allocation (Grounded in Talavera et al. 2023):\n"
-    ...         "   - Total Battery Bank: 1200Wh pack; Usable Energy: 960Wh (80% cutoff)\n"
+    ...         "3. Power Budget Allocation (Scaled heavy-UGV design informed by Talavera et al. 2023):\n"
+    ...         "   - Total Battery Bank: 1200Wh pack; Usable Energy: 960Wh (80% depth-of-discharge)\n"
     ...         "   - Safety Reserve: 240Wh (20% emergency reserve floor)\n"
     ...         "   - Sensor Payload Ceiling: Standard Multi-spectral (75W)\n"
     ...         "4. Stopping Criteria & Safety Envelopes:\n"
-    ...         "   - Battery cutoff: Hard shutdown at 192Wh remaining\n"
+    ...         "   - Battery cutoff: Hard shutdown at 240Wh remaining (matching 20% emergency reserve floor)\n"
     ...         "   - Thermal envelope: Continuous monitoring; motor controller cutoff at 65°C\n"
     ...         "5. Statistical Endpoints & Sample Size:\n"
     ...         "   - Endpoints: Operational endurance (minutes) and cumulative packet loss (%)\n"
@@ -223,10 +231,10 @@ The researcher generates a formal Empirical Intervention Protocol synthesizing t
     ...         "   - Analysis: Two-way Analysis of Variance (ANOVA) with alpha = 0.05 and power (1 - beta) = 0.80."
     ...     )
     ...     step["protocol_synthesis"] = protocol_text
-    ...     step["description"] = "Synthesized complete 4-trial empirical investigation into an exportable Intervention Protocol."
+    ...     step["description"] = "Synthesized complete 4-trial Researcher design template."
     ...     step["researcher_evaluation"] = (
-    ...         "The 4-trial investigation concludes with an actionable, peer-review-defensible study design. "
-    ...         "Every parameter in the protocol is grounded in literature extraction, sandboxed calculation, and DAG counterfactual testing."
+    ...         "Researcher intervention protocol template compiled with consistent 1200Wh / 240Wh cutoff math "
+    ...         "and explicit factorial study endpoints."
     ...     )
 
     >>> browser.close()
@@ -235,6 +243,16 @@ The researcher generates a formal Empirical Intervention Protocol synthesizing t
 Step 6: Report Generation
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
+    >>> expected_outcome = (
+    ...     "In the child counterfactual branch, compute (960Wh / 440W) * 60 = 130.9 minutes and confirm it exceeds "
+    ...     "the 120-minute threshold (unlike 525W LiDAR -> 109.7 min). Also elaborate the Breadcrumb Relay Node stub "
+    ...     "in Grips with concrete UWB relay technical content and structured claims."
+    ... )
+    >>> checks = [
+    ...     {"label": "child branch created and executed turn", "passed": branch_ok, "detail": ""},
+    ...     {"label": "counterfactual endurance ~130.9 min calculated (not refused)", "passed": cf_ok and not cf_refused, "detail": f"cf_ok={cf_ok}, refused={cf_refused}"},
+    ...     {"label": "Grips stub elaborated with UWB context", "passed": bool(stub_node.narrative_content) and has_uwb, "detail": f"len={len(stub_node.narrative_content or '')}"},
+    ... ]
     >>> total_duration = round(time.perf_counter() - trial_t0, 2)
     >>> report_path = record_ui_doctest_run(
     ...     "trial_4_branching_and_grips_expansion",
@@ -243,10 +261,12 @@ Step 6: Report Generation
     ...     model_name=model_name,
     ...     total_duration_s=total_duration,
     ...     scenario_description=(
-    ...         "The researcher explores an architectural counterfactual in a branched DAG thread, proving that deployable "
-    ...         "UWB breadcrumb relays allow the UGV to break the 120-minute barrier on rubble (130.9 min). Grips domain "
-    ...         "ontology is elaborated with genuine physical specifications, culminating in a synthesized intervention protocol."
+    ...         "The researcher explores an architectural counterfactual in a branched DAG thread "
+    ...         "(evaluating whether UWB relays lifting draw down to 440W reaches 130.9 min), elaborates "
+    ...         "the Grips ontology stub, and compiles a consistent study protocol template."
     ...     ),
+    ...     expected_outcome=expected_outcome,
+    ...     checks=checks,
     ... )
     >>> print(f"- complete attempt: {1 if os.path.exists(report_path) else 0}/1")
     - complete attempt: 1/1

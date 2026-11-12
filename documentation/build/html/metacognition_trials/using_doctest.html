@@ -101,25 +101,24 @@ Instead, we can simply wrap the run_blueprint call in our .rst tutorials with Py
 </section>
 <section id="database-fixtures-and-seeders">
 <h1>Database Fixtures and Seeders<a class="headerlink" href="#database-fixtures-and-seeders" title="Link to this heading"></a></h1>
-<p>Because <cite>pytest</cite> strictly isolates its test database, none of your development blueprints exist by default.
-We seed the <cite>ResearchEvaluation</cite> and <cite>StrategicPlan</cite> blueprints dynamically inside the <cite>django_db_setup</cite> fixture in <cite>conftest.py</cite>. We also inject necessary domain concepts (like PyCID for Grips). If you write a new trial that requires a new custom blueprint, define it in <cite>conftest.py</cite>.</p>
+<p>Because <code class="docutils literal notranslate"><span class="pre">pytest</span></code> strictly isolates its test database, none of your development blueprints exist by default.
+We initialize canonical blueprints (<code class="docutils literal notranslate"><span class="pre">ResearchEvaluation</span></code>, <code class="docutils literal notranslate"><span class="pre">Escalation</span> <span class="pre">of</span> <span class="pre">Effort</span></code>, <code class="docutils literal notranslate"><span class="pre">Deep_Reader</span></code>, etc.) via <code class="docutils literal notranslate"><span class="pre">seed_all()</span></code> inside the <code class="docutils literal notranslate"><span class="pre">django_db_setup</span></code> fixture in <code class="docutils literal notranslate"><span class="pre">conftest.py</span></code>.</p>
 </section>
-<section id="report-card-assertions">
-<h1>Report Card Assertions<a class="headerlink" href="#report-card-assertions" title="Link to this heading"></a></h1>
-<p>Given that some models (especially local ones like Gemm4-2B-it) might struggle with advanced cognitive reasoning, our doctests use a “Report Card” style of assertion. Instead of strict boolean matches for “ACCEPT”, we simply assert whether the model made a complete attempt by returning a structured JSON response.</p>
-<dl>
-<dt>Example assertion::</dt><dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">final_str</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"final_response"</span><span class="p">,</span> <span class="s2">"</span><span class="si">{}</span><span class="s2">"</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">try</span><span class="p">:</span>
-<span class="gp">... </span>    <span class="n">resp</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">final_str</span><span class="p">)</span> <span class="k">if</span> <span class="s2">"{"</span> <span class="ow">in</span> <span class="n">final_str</span> <span class="k">else</span> <span class="p">{}</span>
-<span class="gp">... </span><span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">:</span>
-<span class="gp">... </span>    <span class="k">pass</span>
+<section id="report-card-assertions-independent-review">
+<h1>Report Card Assertions &amp; Independent Review<a class="headerlink" href="#report-card-assertions-independent-review" title="Link to this heading"></a></h1>
+<p>Given that small local models might struggle with complex multi-step coding or analytical tasks, our trials remain informative demonstrations rather than brittle capability gates:</p>
+<ul class="simple">
+<li><p>Doctest assertions verify infrastructure soundness (no unhandled exceptions, non-empty trace, valid workspace/DB handling).</p></li>
+<li><p>Each trial supplies an explicit <code class="docutils literal notranslate"><span class="pre">expected_outcome</span></code> specification and deterministic <code class="docutils literal notranslate"><span class="pre">checks</span></code> list to <code class="docutils literal notranslate"><span class="pre">report_doctest_run(...)</span></code>.</p></li>
+<li><p>After each live trial, an independent post-trial review runs in a separate <code class="docutils literal notranslate"><span class="pre">Conversation</span></code>, writing an <strong>Expected vs. Observed Comparison (Independent Review)</strong> section and honest <code class="docutils literal notranslate"><span class="pre">Model</span> <span class="pre">Task</span> <span class="pre">Outcome</span></code> (<code class="docutils literal notranslate"><span class="pre">PASSED</span></code>, <code class="docutils literal notranslate"><span class="pre">PARTIAL</span></code>, or <code class="docutils literal notranslate"><span class="pre">FAILED</span></code>) at the bottom of the generated <code class="docutils literal notranslate"><span class="pre">*_report.rst</span></code>.</p></li>
+</ul>
+<p>Example assertion:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">final_str</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"final_response"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="s2">"error"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">result</span> <span class="ow">and</span> <span class="nb">bool</span><span class="p">(</span><span class="n">final_str</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"- complete attempt: </span><span class="si">{</span><span class="mi">1</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">final_str</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="mi">0</span><span class="si">}</span><span class="s2">/1"</span><span class="p">)</span>
 <span class="go">- complete attempt: 1/1</span>
 </pre></div>
 </div>
-</dd>
-</dl>
 </section>
 
 

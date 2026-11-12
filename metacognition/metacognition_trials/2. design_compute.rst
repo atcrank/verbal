@@ -6,7 +6,7 @@ and multi-step reasoning. It requires the AI to first draft a strategy before wr
 
 Execution
 ---------
-We target the canonical ``ResearchEvaluation`` pipeline (Research, StrategicPlan, ExecutionPlan, and ResultCritique).
+We target the canonical ``ResearchEvaluation`` pipeline (Research, StrategicPlan, Sandboxed Execution, and Evaluator Critique).
 
     >>> from metacognition.tasks import run_blueprint
     >>> from metacognition.models import CognitiveBlueprint
@@ -25,18 +25,29 @@ We target the canonical ``ResearchEvaluation`` pipeline (Research, StrategicPlan
     ...     "Write the simulation script, run it, and tell me the mean and standard deviation."
     ... )
     
-    >>> import contextlib, io, json
-    >>> with contextlib.redirect_stdout(io.StringIO()):
+    >>> import contextlib, io, re
+    >>> with contextlib.redirect_stdout(io.StringIO()) as captured_out:
     ...     result = run_blueprint(bp.id, prompt, user_id=user.id)
-    >>> report_doctest_run("2. design_compute", prompt, result)
-    >>> import json
-    >>> final_str = result.get("final_response", "{}")
-    >>> try:
-    ...     resp = json.loads(final_str) if "{" in final_str else {}
-    ...     has_decision = "decision" in resp
-    ...     has_reasoning = "reasoning" in resp
-    ... except json.JSONDecodeError:
-    ...     has_decision = False
-    ...     has_reasoning = False
+    >>> result["stdout"] = captured_out.getvalue()
+
+    >>> expected_outcome = (
+    ...     "Run a Monte Carlo Python simulation in the sandbox (e.g. >= 10,000 trials) choosing D6 or D20 with "
+    ...     "50% probability each. Analytical expected value is 7.0 and population standard deviation is ~5.51."
+    ... )
+    >>> final_str = result.get("final_response", "")
+    >>> monologue = result.get("internal_monologue", [])
+    >>> ran_sandbox = any("Sandbox Execution Succeeded" in str(m.get("tool_result", "")) or "Sandbox Execution Succeeded" in str(m.get("output", "")) for m in monologue)
+    >>> nums = [float(x) for x in re.findall(r"\b\d+(?:\.\d+)?\b", final_str)]
+    >>> has_mean = any(6.5 <= n <= 7.5 for n in nums)
+    >>> has_std = any(4.8 <= n <= 6.2 for n in nums)
+    >>> checks = [
+    ...     {"label": "sandbox simulation executed (RC=0)", "passed": ran_sandbox, "detail": "python_sandbox output recorded"},
+    ...     {"label": "mean near analytical 7.0", "passed": has_mean, "detail": f"numbers found: {nums[:10]}"},
+    ...     {"label": "std dev near analytical 5.51", "passed": has_std, "detail": f"numbers found: {nums[:10]}"},
+    ... ]
+    >>> report_doctest_run("2. design_compute", prompt, result, expected_outcome=expected_outcome, checks=checks)
+
+    >>> assert "error" not in result, f"Execution failed: {result.get('error')}"
+    >>> assert len(monologue) > 0 and bool(final_str), "Blueprint produced empty output"
     >>> print(f"- complete attempt: {1 if final_str else 0}/1")
     - complete attempt: 1/1

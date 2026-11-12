@@ -205,7 +205,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # LLM models that are solid candidates as per mid 2026 for my development machine with only 6gb VRAM
 # LLM_MODEL_ID = "google/gemma-4-E2B-it"      # Recommended: Gemma 4 E2B, very fast, lightweight
-# LLM_MODEL_ID = "google/gemma-2-2b-it"       # Previous gen, still solid
 # LLM_MODEL_ID = "microsoft/Phi-3-mini-4k-instruct"
 # LLM_MODEL_ID = "mistralai/Mistral-7B-Instruct-v0.3" # Might be tight/slow
 

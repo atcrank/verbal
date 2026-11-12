@@ -187,5 +187,5 @@ We expand the trial pipeline from three isolated demos into an interconnected 4-
 4. **Active Branching Verification**:
    - The branching trial must verify that a subsequent prompt submitted in the child branch executes cleanly, references prior context, and does not alter the parent conversation.
 5. **Execution & Documentation Stability**:
-   - All 4 doctests must pass with live GPU inference (`google/gemma-2-2b-it`) and Docker sandboxing.
+   - All 4 doctests must pass with live GPU inference (`google/gemma-4-E2B-it`) and Docker sandboxing.
    - All Sphinx documentation must compile cleanly with high-resolution milestone screenshots and animated GIFs.

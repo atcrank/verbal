@@ -505,8 +505,8 @@ class BackendLifecycleTests(TestCase):
         from llm_api import vllm_client
         
         model = LocalAIModel.objects.create(
-            name="Gemma 2B",
-            hf_model_id="google/gemma-2-2b-it",
+            name="Gemma 4 E2B",
+            hf_model_id="google/gemma-4-E2B-it",
             quantization_mode=LocalAIModel.QuantizationMode.NF4,
             vllm_gpu_memory_utilization=0.68,
             vllm_max_model_len=2048,
@@ -522,7 +522,7 @@ class BackendLifecycleTests(TestCase):
             env = mock_run.call_args[1].get("env", {})
             self.assertIn("docker", cmd)
             self.assertIn("vllm", cmd)
-            self.assertEqual(env.get("VLLM_MODEL"), "google/gemma-2-2b-it")
+            self.assertEqual(env.get("VLLM_MODEL"), "google/gemma-4-E2B-it")
             self.assertEqual(env.get("VLLM_GPU_MEMORY_UTILIZATION"), "0.68")
             self.assertEqual(env.get("VLLM_MAX_MODEL_LEN"), "2048")
             self.assertEqual(env.get("VLLM_DTYPE"), "float16")
@@ -894,8 +894,9 @@ class ModalityDetectorTests(TestCase):
     def test_introspect_hf_modality(self):
         from llm_api.modality_detector import introspect_hf_modality
         # Text-only model
-        self.assertFalse(introspect_hf_modality("google/gemma-2-2b-it"))
+        self.assertFalse(introspect_hf_modality("Qwen/Qwen3-0.6B"))
         # Multimodal models (introspects config.json without loading weights)
+        self.assertTrue(introspect_hf_modality("google/gemma-4-E2B-it"))
         self.assertTrue(introspect_hf_modality("Qwen/Qwen2-VL-2B-Instruct"))
         self.assertTrue(introspect_hf_modality("google/paligemma-3b-pt-224"))
         # Invalid / empty
@@ -913,19 +914,27 @@ class ModalityDetectorTests(TestCase):
         self.assertFalse(introspect_external_modality(""))
 
     def test_introspect_ollama_modality_heuristics(self):
+        from unittest.mock import MagicMock, patch
         from llm_api.modality_detector import introspect_ollama_modality
         self.assertTrue(introspect_ollama_modality("moondream:1.8b"))
         self.assertTrue(introspect_ollama_modality("qwen2-vl:2b"))
         self.assertTrue(introspect_ollama_modality("llava:7b"))
-        self.assertFalse(introspect_ollama_modality("gemma2:2b"))
+        self.assertTrue(introspect_ollama_modality("google/gemma-4-E2B-it"))
+        self.assertFalse(introspect_ollama_modality("llama3.2:3b"))
         self.assertFalse(introspect_ollama_modality(""))
+
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {"capabilities": ["completion", "vision"]}
+        with patch("requests.post", return_value=mock_resp):
+            self.assertTrue(introspect_ollama_modality("custom-multimodal:latest"))
 
     def test_local_ai_model_auto_detects_modality_on_save(self):
         from llm_api.models import LocalAIModel
         # Text model
         text_model = LocalAIModel.objects.create(
-            name="Gemma 2B",
-            hf_model_id="google/gemma-2-2b-it"
+            name="Qwen 3 0.6B",
+            hf_model_id="Qwen/Qwen3-0.6B"
         )
         self.assertFalse(text_model.is_multimodal)
         self.assertNotIn("[Vision]", str(text_model))
@@ -960,7 +969,7 @@ class ModalityDetectorTests(TestCase):
         from llm_api.models import SystemConfiguration, LocalAIModel
         from llm_api.modality_detector import get_active_modality_status
 
-        model = LocalAIModel.objects.create(name="Gemma 2B", hf_model_id="google/gemma-2-2b-it")
+        model = LocalAIModel.objects.create(name="Qwen 3 0.6B", hf_model_id="Qwen/Qwen3-0.6B")
         config = SystemConfiguration.get_solo()
         config.hosting_backend = "pytorch"
         config.active_local_model = model
@@ -986,10 +995,10 @@ class LlamaCppInferenceTests(TestCase):
         self.user = User.objects.create_user(username="cpu_tester", password="password123")
         with patch("llm_api.modality_detector.introspect_hf_modality", return_value=False):
             self.gguf_model = LocalAIModel.objects.create(
-                name="Gemma 2 9B GGUF",
+                name="Gemma 4 E4B GGUF",
                 hf_model_id="mock/cpu-gguf-model",
                 quantization_mode=LocalAIModel.QuantizationMode.GGUF_Q4_K_M,
-                gguf_file_path="/srv/reason/models/gemma-2-9b-it-Q4_K_M.gguf",
+                gguf_file_path="/srv/reason/models/gemma-4-E4B-it-Q4_K_M.gguf",
                 context_window=8192
             )
 
@@ -1007,7 +1016,7 @@ class LlamaCppInferenceTests(TestCase):
 
     def test_local_ai_model_gguf_quantization_and_path(self):
         self.assertEqual(self.gguf_model.quantization_mode, "gguf_q4_k_m")
-        self.assertEqual(self.gguf_model.gguf_file_path, "/srv/reason/models/gemma-2-9b-it-Q4_K_M.gguf")
+        self.assertEqual(self.gguf_model.gguf_file_path, "/srv/reason/models/gemma-4-E4B-it-Q4_K_M.gguf")
         self.assertIn("GGUF 4-bit", str(self.gguf_model))
 
     def test_llamacpp_client_availability(self):
@@ -1021,7 +1030,7 @@ class LlamaCppInferenceTests(TestCase):
         mock_resp_models = MagicMock()
         mock_resp_models.status_code = 200
         mock_resp_models.json.return_value = {
-            "data": [{"id": "gemma-2-9b-it-Q4_K_M.gguf"}, {"id": "llama-3-8b.gguf"}]
+            "data": [{"id": "gemma-4-E4B-it-Q4_K_M.gguf"}, {"id": "llama-3-8b.gguf"}]
         }
 
         mock_resp_props = MagicMock()
@@ -1034,7 +1043,7 @@ class LlamaCppInferenceTests(TestCase):
 
             mock_get.return_value = mock_resp_models
             models = get_available_llamacpp_models()
-            self.assertEqual(models, ["gemma-2-9b-it-Q4_K_M.gguf", "llama-3-8b.gguf"])
+            self.assertEqual(models, ["gemma-4-E4B-it-Q4_K_M.gguf", "llama-3-8b.gguf"])
 
             mock_get.return_value = mock_resp_props
             props = get_llamacpp_server_props()
@@ -1078,7 +1087,7 @@ class LlamaCppInferenceTests(TestCase):
             called_url = mock_post.call_args[0][0]
             called_payload = mock_post.call_args[1]["json"]
             self.assertTrue(called_url.endswith("/v1/chat/completions"))
-            self.assertEqual(called_payload["model"], "/srv/reason/models/gemma-2-9b-it-Q4_K_M.gguf")
+            self.assertEqual(called_payload["model"], "/srv/reason/models/gemma-4-E4B-it-Q4_K_M.gguf")
 
     def test_hardware_cpu_vector_instructions_and_advisor(self):
         from llm_api.hardware import HostCPUInfo, HardwareProfile, get_backend_recommendations
@@ -1578,7 +1587,7 @@ class OfflineRestartResilienceAndDiagnosticsTests(TestCase):
         from llm_api.models import LocalAIModel
         from llm_api import vllm_client
 
-        model = LocalAIModel.objects.create(name="Gemma VLLM", hf_model_id="google/gemma-2-2b-it")
+        model = LocalAIModel.objects.create(name="Gemma VLLM", hf_model_id="google/gemma-4-E2B-it")
         with patch("subprocess.run") as mock_run:
             mock_run.return_value.returncode = 0
             ok, msg = vllm_client.start_container(model)
@@ -1624,7 +1633,7 @@ class OfflineRestartResilienceAndDiagnosticsTests(TestCase):
         from llm_api.apps import LazyServiceRegistry
         from llm_api.models import SystemConfiguration, LocalAIModel
 
-        model = LocalAIModel.objects.create(name="VLLM Target", hf_model_id="google/gemma-2-2b-it")
+        model = LocalAIModel.objects.create(name="VLLM Target", hf_model_id="google/gemma-4-E2B-it")
         cfg = SystemConfiguration.get_solo()
         cfg.hosting_backend = SystemConfiguration.HostingBackend.VLLM
         cfg.active_vllm_model = model
@@ -1842,8 +1851,8 @@ class WS31TestIsolationAndProxyModelTests(TestCase):
         from llm_api.models import LocalAIModel, SystemConfiguration
 
         model_obj, _ = LocalAIModel.objects.get_or_create(
-            hf_model_id="google/gemma-2-2b-it",
-            defaults={"name": "Gemma 2 2B"},
+            hf_model_id="google/gemma-4-E2B-it",
+            defaults={"name": "Gemma 4 E2B"},
         )
         config = SystemConfiguration.get_solo()
         config.hosting_backend = SystemConfiguration.HostingBackend.OLLAMA
@@ -1864,7 +1873,7 @@ class WS31TestIsolationAndProxyModelTests(TestCase):
 
         self.assertEqual(resp.status_code, 200)
         body = json.loads(resp.content)
-        self.assertEqual(body.get("model"), "Gemma 2 2B")
+        self.assertEqual(body.get("model"), model_obj.name)
         self.assertEqual(body["choices"][0]["message"]["content"], "Hi there")
 
     def test_sanitize_messages_preserves_mid_conversation_system_observations(self):
@@ -1910,7 +1919,7 @@ class WS31TestIsolationAndProxyModelTests(TestCase):
             mock_resp.json.return_value = {
                 "choices": [{"message": {"content": '{"status": "SUFFICIENT"}'}}],
                 "usage": {"completion_tokens": 5},
-                "model": "Gemma 2 2B",
+                "model": "Gemma 4 E2B",
             }
             mock_resp.raise_for_status.return_value = None
             mock_post.return_value = mock_resp
@@ -1925,3 +1934,104 @@ class WS31TestIsolationAndProxyModelTests(TestCase):
 
         sent_payload = mock_post.call_args.kwargs["json"]
         self.assertEqual(sent_payload["response_format"]["json_schema"]["schema"], raw_schema)
+
+    def test_sanitize_messages_preserves_multimodal_list_content(self):
+        from llm_api.ai_service import _sanitize_messages
+
+        msgs = [
+            {"role": "system", "content": "Inspect the plot carefully."},
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "Extract radar curve."},
+                    {"type": "image_url", "image_url": {"url": "data:image/png;base64,AAAA"}},
+                ],
+            },
+        ]
+        sanitized = _sanitize_messages(msgs)
+
+        self.assertEqual(len(sanitized), 1)
+        self.assertEqual(sanitized[0]["role"], "user")
+        self.assertIsInstance(sanitized[0]["content"], list)
+        self.assertEqual(sanitized[0]["content"][0]["text"], "Inspect the plot carefully.")
+        self.assertEqual(sanitized[0]["content"][2]["image_url"]["url"], "data:image/png;base64,AAAA")
+
+    def test_ollama_reasoning_effort_and_reasoning_fallback(self):
+        from unittest.mock import MagicMock, patch
+        from outlines.types import JsonSchema
+        from llm_api.ai_service import AIService
+        from llm_api.models import LocalAIModel, SystemConfiguration
+
+        model_obj, _ = LocalAIModel.objects.get_or_create(
+            hf_model_id="google/gemma-4-E2B-it",
+            defaults={"name": "Gemma 4 E2B"},
+        )
+        cfg = SystemConfiguration.get_solo()
+        cfg.hosting_backend = SystemConfiguration.HostingBackend.OLLAMA
+        cfg.active_ollama_model = model_obj
+        cfg.save()
+
+        svc = AIService()
+        wrapped = JsonSchema({"type": "object", "properties": {"ok": {"type": "boolean"}}, "required": ["ok"]})
+
+        with patch("requests.post") as mock_post:
+            mock_resp = MagicMock()
+            mock_resp.raise_for_status.return_value = None
+            mock_resp.json.return_value = {
+                "choices": [{"message": {"content": '{"ok": true}'}}],
+                "usage": {"completion_tokens": 4},
+                "model": "google/gemma-4-E2B-it",
+            }
+            mock_post.return_value = mock_resp
+            svc._execute_openai_standard_request(
+                [{"role": "user", "content": "Check"}],
+                max_new_tokens=64,
+                temperature=0.0,
+                num_return_sequences=1,
+                response_schema=wrapped,
+            )
+            self.assertEqual(mock_post.call_args.kwargs["json"].get("reasoning_effort"), "none")
+
+        with patch("requests.post") as mock_post:
+            mock_resp = MagicMock()
+            mock_resp.raise_for_status.return_value = None
+            mock_resp.json.return_value = {
+                "choices": [{"message": {"content": "", "reasoning": "Fallback trace."}}],
+                "usage": {"completion_tokens": 600},
+                "model": "google/gemma-4-E2B-it",
+            }
+            mock_post.return_value = mock_resp
+            res = svc._execute_openai_standard_request(
+                [{"role": "user", "content": "Analyze"}],
+                max_new_tokens=800,
+                temperature=0.2,
+                num_return_sequences=1,
+            )
+            self.assertNotIn("reasoning_effort", mock_post.call_args.kwargs["json"])
+            self.assertEqual(res, "Fallback trace.")
+
+    def test_openai_chat_completion_schema_accepts_multimodal_list(self):
+        import json
+        from unittest.mock import patch
+        from django.test import RequestFactory
+        from llm_api.api import OpenAIChatCompletionIn, openai_chat_completions
+
+        payload = OpenAIChatCompletionIn(
+            model="google/gemma-4-E2B-it",
+            messages=[{
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "Describe the chart."},
+                    {"type": "image_url", "image_url": {"url": "data:image/png;base64,AAAA"}},
+                ],
+            }],
+            max_tokens=128,
+        )
+        req = RequestFactory().post("/api/llm/v1/chat/completions", data="{}", content_type="application/json")
+        with patch("llm_api.api.service_registry") as mock_reg:
+            mock_reg._ai_service = None
+            mock_reg.ai_service.generate_response2.return_value = ["Line chart observed."]
+            resp = openai_chat_completions(req, payload)
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(json.loads(resp.content)["choices"][0]["message"]["content"], "Line chart observed.")

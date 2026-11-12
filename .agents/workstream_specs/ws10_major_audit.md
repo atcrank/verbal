@@ -164,7 +164,7 @@ Replacing `langchain-postgres` + `SQLAlchemy` with native `pgvector.django` (alr
    - status [Completed]
 
 10. **Constrain Action Nodes with Structured Schemas & Real DB Object Persistence**
-    - *Rationale:* Small models (e.g. Gemma-2B) fail unconstrained JSON syntax when attempting to propose prompt variants, grips concepts, or blueprints.
+    - *Rationale:* Small models (e.g. Gemma 4 E2B) fail unconstrained JSON syntax when attempting to propose prompt variants, grips concepts, or blueprints.
     - *Implementation:* Refactor `PromptVariant`, `GripsExpansionProposal`, and `CognitiveBlueprintProposal` schemas in [metacognition/actions.py](file:///home/crank/coding/antigrav/verbal/metacognition/actions.py) with automatic database persistence handlers in `compiler.py` (`ReasoningStep` variants with `is_pending_review=True`, `ConceptNode`, `CognitiveBlueprint`) and automatic state tree task resolution.
     - status [Completed]
 

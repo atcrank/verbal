@@ -259,7 +259,7 @@ def evaluate_blueprint_governance(blueprint, user: Optional[User] = None) -> dic
         all_tools.extend(step_tools)
         substantive = [
             t for t in step_tools
-            if t.name not in ("TASK_COMPLETE", "PAUSE_FOR_INPUT", "NO_TOOL")
+            if t.name not in ("PAUSE_FOR_INPUT", "NO_TOOL")
         ]
         step_blocked = []
         step_permitted = []

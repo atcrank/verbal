@@ -38,7 +38,9 @@ def set_ollama_model_state(model_name: str, active: bool):
     try:
         # Pinging the generate endpoint with keep_alive manages the VRAM
         # without needing to send an actual generation prompt.
-        requests.post(f"{OLLAMA_BASE_URL}/api/generate", json=payload, timeout=5.0)
+        # Cold-loading large multimodal models (e.g. Gemma 4 E2B + mmproj) can exceed 5s.
+        req_timeout = 90.0 if active else 10.0
+        requests.post(f"{OLLAMA_BASE_URL}/api/generate", json=payload, timeout=req_timeout)
         action = "Loaded" if active else "Unloaded"
         logger.info(f'✅ {action} {model_name} in Ollama VRAM.')
     except requests.exceptions.RequestException as e:

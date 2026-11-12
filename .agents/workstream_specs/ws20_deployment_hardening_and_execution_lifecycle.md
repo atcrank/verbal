@@ -152,7 +152,7 @@ The goal is to ensure robust, self-healing execution across distributed instance
 ### Phase 4: Inference Performance Analysis (Item #4)
 
 - **Root Cause Analysis**:
-  - Gemma-2-4B running at ~24 tokens/sec under PyTorch BitsAndBytes NF4:
+  - Gemma 4 E4B running at ~24 tokens/sec under PyTorch BitsAndBytes NF4:
     1. **NF4 Dequantization Overhead**: 4-bit weights are dequantized to FP16/BF16 layer-by-layer during PyTorch forward passes without fused memory kernels.
     2. **Worker Rate-Limiting**: `llm_api/ai_service.py:569` injects `time.sleep(0.5)` for worker calls.
   - **Path Forward**: vLLM with PagedAttention or AWQ/GPTQ provides 60–100+ tokens/sec on the same hardware. vLLM container is already defined in `docker-compose.yml` (`services.vllm`). Once GPU setup allows, switching `SystemConfiguration.hosting_backend = 'vllm'` unlocks high-speed throughput.

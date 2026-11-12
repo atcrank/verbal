@@ -272,6 +272,46 @@ def promote_artifact(state: dict, params: dict) -> str:
     except Exception as e:
         return f"Failed to promote artifact: {e}"
 
+def _lexical_rag_chunks(query: str, k: int) -> list:
+    """Keyword-overlap fallback across RAGChunk rows when vector store returns no hits."""
+    import re
+    from background_resources.models import RAGChunk
+    from langchain_core.documents import Document as LCDoc
+
+    stopwords = {
+        "what", "when", "where", "which", "with", "from", "that", "this",
+        "have", "were", "does", "during", "using", "about", "into", "your",
+    }
+    terms = [
+        t for t in re.findall(r"[A-Za-z0-9\-]+", (query or "").lower())
+        if len(t) >= 3 and t not in stopwords
+    ]
+    if not terms:
+        return []
+
+    from django.db.models import Q
+    q_filter = Q()
+    for term in terms[:10]:
+        q_filter |= Q(text_content__icontains=term)
+
+    candidates = list(RAGChunk.objects.filter(q_filter)[: max(k * 5, 25)])
+    scored = []
+    for c in candidates:
+        hay = f"{(c.metadata or {}).get('filename', '')} {c.text_content}".lower()
+        hits = sum(1 for t in terms if t in hay)
+        if hits:
+            scored.append((hits, c))
+    scored.sort(key=lambda item: (-item[0], len(item[1].text_content or "")))
+
+    return [
+        LCDoc(
+            page_content=c.text_content,
+            metadata={**(c.metadata or {}), "chunk_id": c.chunk_id, "chunk_type": c.chunk_type},
+        )
+        for _, c in scored[:k]
+    ]
+
+
 def document_reader(state: dict, params: dict) -> str:
     """
     Unified tool for navigating and fetching documents from the RAG database.
@@ -284,18 +324,23 @@ def document_reader(state: dict, params: dict) -> str:
     target_id = params.get('target_id')
     doc_range = params.get('doc_range')
     query = params.get('query')
+    k = int(params.get('k') or 3)
     
     from llm_api.apps import service_registry
     rag = service_registry.rag_service
-    if not rag:
+    if not rag and action not in ("search_document", "search"):
         return "Error: RAG service not available."
         
     try:
         from background_resources.models import RAGChunk
-        if action == "search_document":
-            if not query: return "Error: query is required for search_document."
-            docs = rag.get_context(query, k=3)
-            if not docs: return f"No results found for '{query}'"
+        if action in ("search_document", "search"):
+            if not query:
+                return "Error: query is required for search_document."
+            docs = rag.get_context(query, k=k) if rag else []
+            if not docs:
+                docs = _lexical_rag_chunks(query, k=k)
+            if not docs:
+                return f"No results found for '{query}'"
 
             chunk_ids = [d.metadata.get('chunk_id') for d in docs if d.metadata and d.metadata.get('chunk_id')]
             chunks_by_id = {c.chunk_id: c for c in RAGChunk.objects.filter(chunk_id__in=chunk_ids)} if chunk_ids else {}
@@ -519,7 +564,7 @@ def inspect_chart_image(state: dict, params: dict) -> str:
     try:
         resp = ai_service.generate_response2(
             messages=multimodal_messages,
-            max_new_tokens=800,
+            max_new_tokens=1800,
             temperature=0.2
         )
         if isinstance(resp, list) and len(resp) > 0:
@@ -807,19 +852,6 @@ def database_backup(state: dict, params: dict) -> str:
     except Exception as e:
         return f"Database backup failed: {e}"
 
-def TASK_COMPLETE(state: dict, params: dict) -> dict:
-    """
-    [DEPRECATED] Signals that the agent has finished all its planned work.
-    Maintained for backward-compatibility with older blueprints and models.
-    Treats invocation as a clean exit signal setting route_to='SUCCESS'.
-    """
-    final_answer = params.get("final_answer") or params.get("answer") or ""
-    msg = f"Task completed successfully: {final_answer}" if final_answer else "Task completed successfully. Shutting down."
-    return {
-        "working_prompt": msg,
-        "route_to": "SUCCESS"
-    }
-
 def discover_django_models(state: dict, params: dict) -> str:
     """
     Inspects the schema of Django models. If model_name is omitted, returns the whole spine of the app.
@@ -1066,7 +1098,7 @@ def update_conversation_state(state: dict, params: dict) -> str:
             if leaf in current:
                 current[leaf]["status"] = status
             else:
-                return f"Task '{task_path}' not found."
+                return f"Error: Task '{task_path}' not found."
                 
         conv.save(update_fields=['state_tree'])
         import json
@@ -1097,11 +1129,12 @@ def run_sub_blueprint(state: dict, params: dict) -> str:
             bp = CognitiveBlueprint.objects.filter(name__icontains=prefix).first()
         if not bp:
             bp = CognitiveBlueprint.objects.filter(name__icontains=blueprint_name).first()
-        if not bp:
-            bp = CognitiveBlueprint.objects.filter(name__in=["Escalation of Effort", "Computational Logic"]).first()
 
         if not bp:
-            return f"Error: Sub-blueprint '{blueprint_name}' not found."
+            available = ", ".join(
+                CognitiveBlueprint.objects.values_list("name", flat=True).order_by("name")[:12]
+            )
+            return f"Error: Sub-blueprint '{blueprint_name}' not found. Available blueprints: {available}"
 
         # Isolate sub-blueprint in its own conversation to prevent checkpoint collisions
         import uuid
@@ -1124,6 +1157,8 @@ def run_sub_blueprint(state: dict, params: dict) -> str:
             max_steps=15
         )
         final_res = result.get('final_response', 'No response')
+        if "error" in result or result.get("route_to") == "FAILURE":
+            return f"Error executing Sub-blueprint '{bp.name}': {result.get('error') or final_res}"
         return f"Sub-blueprint '{bp.name}' executed successfully. Findings: {final_res}"
     except Exception as e:
         return f"Failed to run sub-blueprint: {e}"

@@ -16,8 +16,8 @@ The objective of **Workstream 19** is to make scientific figures, graphs, and ch
 1. **Automated Figure & Crop Extraction**: Parse `<figure>` definitions and page coordinates from Grobid TEI XML, rasterize high-DPI crops via `pypdfium2`, and store visual assets deterministically.
 2. **Text-Proxy Semantic Indexing**: Index figure captions, labels, and in-text discussion paragraphs into the existing vector store as `RAGChunk` entities, making them instantly searchable without heavy visual transformer infrastructure.
 3. **Multi-Scale Model Specialization**: Leverage the model spectrum:
-   - **Gemma 27B**: High-level strategic reasoning, blueprint planning, and state-tree synthesis.
-   - **Gemma 4B / Vision SLMs**: On-demand visual inspection tools (`inspect_chart_image`) extracting structured numeric tables and plot trends.
+   - **Gemma 4 E4B**: High-level strategic reasoning, blueprint planning, and state-tree synthesis.
+   - **Gemma 4 E2B / Vision SLMs**: On-demand visual inspection tools (`inspect_chart_image`) extracting structured numeric tables and plot trends.
 4. **Cognitive Blueprint Integration**: Equip blueprints with visual evidence extraction routines that ground numeric plot points directly into `state_tree["established_facts"]`.
 
 ---
@@ -51,8 +51,8 @@ We represent figures in the database as:
 ### 2.2 Model Spectrum Division of Labor
 | Capability | Model Candidate | Architectural Role |
 |---|---|---|
-| **Macro Planning & Synthesis** | Gemma 27B (Text) | Runs parent blueprints, writes comprehensive evidence syntheses, maintains `state_tree`. |
-| **Visual Chart/Plot Extraction** | Gemma 4B / PaliGemma / Qwen2-VL | Invoked as an isolated tool/sub-agent (`inspect_chart_image`) to parse axes, legends, data curves, and error bars into structured JSON. |
+| **Macro Planning & Synthesis** | Gemma 4 E4B | Runs parent blueprints, writes comprehensive evidence syntheses, maintains `state_tree`. |
+| **Visual Chart/Plot Extraction** | Gemma 4 E2B / E4B / PaliGemma / Qwen2-VL | Invoked as an isolated tool/sub-agent (`inspect_chart_image`) to parse axes, legends, data curves, and error bars into structured JSON. |
 
 ### 2.3 Adherence to Architectural Notes
 - **Note 17 (Anti-Hijacking & Token Efficiency)**: Figure chunks must not dump 2,000 tokens of raw OCR or unparsed coordinate text into the model's context. Chunks provide compact captions with citations. Deep numeric extraction is offloaded to the visual tool.

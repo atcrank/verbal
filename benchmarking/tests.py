@@ -1077,7 +1077,7 @@ class AdaptiveBenchmarkHubAndLeaderboardTests(TestCase):
         self.user = User.objects.create_superuser(username="hub_admin", password="password", email="admin@test.com")
         self.client.force_login(self.user)
 
-        self.model_a = LocalAIModel.objects.create(name="Gemma 2B", hf_model_id="google/gemma-2-2b-it")
+        self.model_a = LocalAIModel.objects.create(name="Gemma 4 E2B", hf_model_id="google/gemma-4-E2B-it")
         self.model_b = LocalAIModel.objects.create(name="Qwen 4B", hf_model_id="Qwen/Qwen-4B")
 
         self.corpus = BenchmarkCorpus.objects.create(name="Hub Test Corpus")
@@ -1502,7 +1502,7 @@ class TestGoldStandardsAndSuiteInspection(TestCase):
         self.run = BenchmarkRun.objects.create(
             experiment=self.exp,
             corpus=self.corpus,
-            configuration_snapshot={"ai_model_id": "google/gemma-2-9b-it", "hosting_backend": "vllm"}
+            configuration_snapshot={"ai_model_id": "google/gemma-4-E4B-it", "hosting_backend": "vllm"}
         )
         self.candidate_result = BenchmarkResult.objects.create(
             run=self.run,

@@ -8,7 +8,7 @@ In this third tutorial, the researcher investigates the 6-factor combinatory eng
 
 1. **Experimental Formulation**: Poses the $3 \times 2$ factorial study (3 sensor payloads $\times$ 2 terrain locomotion profiles) with a 960Wh usable battery reserve and a 120-minute minimum operational mission threshold ($T_{op} \ge 120$).
 2. **Strict Role Separation**: The researcher does **NOT** write Python code. The researcher describes the causal factors and operational goals in domain terms, instructing Reason to use the ``Reasoning with Code Sandbox`` cognitive blueprint.
-3. **Local Model Execution**: Verbal / Reason (Gemma4) formulates the mathematical equations ($T_{op} = \frac{E_{usable}}{P_{total}} \times 60$), composes the Python simulation script, executes it inside the Docker sandbox (``verbal_sandbox``), and parses the stdout.
+3. **Local Model Execution**: Verbal / Reason composes the Python simulation script ($T_{op} = \frac{E_{usable}}{P_{total}} \times 60$), executes it inside the Docker sandbox (``verbal_sandbox``), and synthesizes the resulting endurance table.
 4. **Active Adversarial Verification**: The researcher audits the model's simulation script and recommendation. If an inverted selection logic error occurs (e.g. recommending the minimum duration or a configuration below 120 minutes), the researcher flags the flaw and prompts a corrective turn.
 5. **Decisive Causal Finding**: The corrected tabulation proves that on heavy rubble (460W), zero onboard configurations can achieve 120 minutes, mathematically motivating deployable ad-hoc relays in Trial 4.
 
@@ -53,7 +53,7 @@ The researcher formulates a rigorous combinatory study across 3 sensor payloads 
 
     >>> prompt = (
     ...     "We are designing an empirical intervention trial for an autonomous tracked firefighting robot operating in a collapsed multi-story structure.\n"
-    ...     "Power system parameters (grounded in Talavera et al. 2023):\n"
+    ...     "Scenario power parameters (scaled heavy-UGV design informed by Talavera et al. 2023):\n"
     ...     "- Battery capacity: 1200Wh pack with a 20% emergency safety reserve (80% usable energy = 960Wh usable).\n"
     ...     "Experimental factors:\n"
     ...     "- Sensor payload draw: Baseline (25W), Standard Multi-spectral (75W), Heavy LiDAR+Thermal+Compute (110W).\n"
@@ -92,9 +92,9 @@ The researcher connects to the Reason Demo UI, selects the ``Reasoning with Code
 
 Step 3: Real Blueprint Execution via run_blueprint()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The researcher dispatches the problem. Verbal / Reason (Gemma4) composes the Python simulation script, executes it in the Docker sandbox (``verbal_sandbox``), and synthesizes an informative tabulation.
+The researcher dispatches the problem. Verbal / Reason composes the Python simulation script, executes it in the Docker sandbox (``verbal_sandbox``), and synthesizes a tabulation.
 
-    >>> with timed_step("Blueprint Execution (Gemma4 + Docker Sandbox)", steps_recorded) as step:
+    >>> with timed_step("Blueprint Execution (Local Model + Docker Sandbox)", steps_recorded) as step:
     ...     captured_stdout = io.StringIO()
     ...     with contextlib.redirect_stdout(captured_stdout):
     ...         result = run_blueprint(bp.id, prompt, user_id=user.id)
@@ -152,51 +152,71 @@ Step 4: Active Adversarial Verification & Error Catching
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The researcher inspects the model's generated code and recommendation trace to ensure mathematical and logical integrity.
 
-    >>> with timed_step("Adversarial Verification & Causal Evaluation", steps_recorded) as step:
+    >>> with timed_step("Adversarial Verification & Corrective Follow-Up", steps_recorded) as step:
     ...     cid = result.get("conversation_id")
     ...     if cid:
     ...         _ = page.goto(f"{live_server_url}/demo/?conversation_id={cid}")
     ...         _ = page.wait_for_selector(".chat-message.ai .bubble", timeout=6000)
     ...         ui_response = capture_ai_response(page)
     ...     else:
-    ...         ui_response = "(no conversation created)"
+    ...         ui_response = final_response
     ...     img2 = take_ui_screenshot(page, "trial_3_tool_output")
     ...     step["image"] = img2
     ...     step["response_text"] = ui_response
-    ...     
-    ...     # Adversarial Audit: Check for optimization inversion bugs (e.g. selecting min duration instead of >=120)
-    ...     gen_code_lower = gen_code.lower()
-    ...     ui_lower = ui_response.lower()
-    ...     has_inversion_bug = "idxmin" in gen_code_lower or "101." in ui_lower and "recommended" in ui_lower
-    ...     if has_inversion_bug:
+    ...     step["model_name"] = model_name
+    ...
+    ...     combined_trace = f"{sb_out}\n{final_response}\n{ui_response}".lower()
+    ...     sandbox_ran_ok = "sandbox execution succeeded" in sb_out.lower() and "syntaxerror" not in sb_out.lower()
+    ...     has_syntax_or_help_error = (
+    ...         "syntaxerror" in combined_trace
+    ...         or "share your sandbox code" in combined_trace
+    ...         or "refusing to execute empty" in combined_trace
+    ...     )
+    ...     has_inversion_bug = "idxmin" in gen_code.lower() or ("101." in ui_response.lower() and "recommend" in ui_response.lower())
+    ...     expected_nums = ["188.", "162.", "147.", "118.", "107.", "101."]
+    ...     matched_nums = [tok for tok in expected_nums if tok in combined_trace]
+    ...     has_all_endurance = len(matched_nums) >= 4
+    ...     if sandbox_ran_ok and not has_syntax_or_help_error and not has_inversion_bug and has_all_endurance:
     ...         step["adversarial_audit"] = (
-    ...             "LOGIC AUDIT FLAGGED: The composed simulation script correctly generated the endurance table, "
-    ...             "but applied an inverted selection metric (.idxmin()), recommending the worst-performing 101.0-minute "
-    ...             "configuration for a 120-minute mission requirement."
+    ...             f"LOGIC AUDIT PASSED: Sandbox script executed cleanly (matched values: {matched_nums}) "
+    ...             "and filtered configurations using T_op >= 120 minutes."
     ...         )
-    ...         step["corrective_inquiry"] = (
-    ...             "Filter the endurance table strictly for configurations with T_op >= 120 minutes. "
-    ...             "Identify the highest-capability sensor package that meets this operational constraint."
+    ...         step["researcher_evaluation"] = (
+    ...             f"Observed model output matched expected endurance combinations ({matched_nums}) and executed cleanly."
     ...         )
     ...     else:
-    ...         step["adversarial_audit"] = (
-    ...             "LOGIC AUDIT PASSED: The model correctly applied the operational constraint (T_op >= 120 min), "
-    ...             "filtering out failing rubble configurations and optimizing for maximum sensor capability on concrete."
+    ...         reasons = []
+    ...         if not sandbox_ran_ok:
+    ...             reasons.append("sandbox did not succeed cleanly")
+    ...         if has_syntax_or_help_error:
+    ...             reasons.append("script SyntaxError or error-recovery fallback response detected")
+    ...         if has_inversion_bug:
+    ...             reasons.append("inverted duration objective (idxmin / sub-120 min recommendation)")
+    ...         if not has_all_endurance:
+    ...             reasons.append(f"missing calculated endurance durations (found only {matched_nums})")
+    ...         step["adversarial_audit"] = f"LOGIC AUDIT FAILED: {'; '.join(reasons)}."
+    ...         corr_prompt = (
+    ...             "Audit correction required: compute T_op = (960 / (sensor_w + terrain_w)) * 60 in Python "
+    ...             "for all 6 combinations (25, 75, 110 W sensors x 280, 460 W terrains) with zero syntax errors, "
+    ...             "and list only configurations with T_op >= 120 min."
     ...         )
-    ...     
-    ...     step["researcher_evaluation"] = (
-    ...         "The parametric simulation yields a decisive causal finding:\n"
-    ...         "1) On smooth concrete (280W), all three sensor packages meet the 120-minute threshold:\n"
-    ...         "   - Baseline (305W): 188.8 minutes\n"
-    ...         "   - Standard Multi-spectral (355W): 162.2 minutes (Recommended: highest sensor capability with 42 min margin)\n"
-    ...         "   - Heavy LiDAR+Compute (390W): 147.7 minutes\n"
-    ...         "2) On heavy rubble/debris (460W locomotion), ZERO configurations achieve 120 minutes:\n"
-    ...         "   - Baseline (485W): 118.7 minutes\n"
-    ...         "   - Standard Multi-spectral (535W): 107.6 minutes\n"
-    ...         "   - Heavy LiDAR+Compute (570W): 101.0 minutes\n\n"
-    ...         "Decisive Causal Finding: On heavy rubble, onboard high-draw sensors cannot achieve the 2-hour mission. "
-    ...         "The system must offload transmission power to deployable ad-hoc nodes. This motivates Trial 4."
-    ...     )
+    ...         step["corrective_inquiry"] = corr_prompt
+    ...         if cid:
+    ...             page.fill('textarea[name="user_prompt"]', corr_prompt)
+    ...             page.click("#send-btn")
+    ...             _ = page.wait_for_function(
+    ...                 "() => document.querySelectorAll('#chat-history .chat-message.ai .bubble').length >= 2",
+    ...                 timeout=3600000,
+    ...             )
+    ...             corr_resp = capture_ai_response(page)
+    ...             step["response_text"] = f"[Initial UI Bubble]:\n{ui_response}\n\n[Corrective Turn Response]:\n{corr_resp}"
+    ...             corr_matched = [tok for tok in expected_nums if tok in corr_resp.lower()]
+    ...             step["researcher_evaluation"] = (
+    ...                 f"Initial blueprint failed audit ({'; '.join(reasons)}). Executed live corrective UI turn; "
+    ...                 f"corrective response matched {corr_matched}."
+    ...             )
+    ...         else:
+    ...             step["researcher_evaluation"] = f"Blueprint failed audit ({'; '.join(reasons)})."
 
     >>> browser.close()
     >>> pw.stop()
@@ -204,6 +224,17 @@ The researcher inspects the model's generated code and recommendation trace to e
 Step 5: Report Generation
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
+    >>> expected_outcome = (
+    ...     "Compute T_op = (960 / total_w) * 60 in Python with zero errors: "
+    ...     "Smooth Concrete (280W) -> Baseline 305W = 188.8 min, Multi-spectral 355W = 162.2 min (recommended highest valid), Heavy 390W = 147.7 min; "
+    ...     "Heavy Rubble (460W) -> Baseline 485W = 118.7 min, Multi-spectral 535W = 107.6 min, Heavy 570W = 101.0 min (all < 120 min)."
+    ... )
+    >>> checks = [
+    ...     {"label": "python_sandbox ran cleanly (RC=0)", "passed": sandbox_ran_ok, "detail": ""},
+    ...     {"label": "no SyntaxError or error-help fallback", "passed": not has_syntax_or_help_error, "detail": ""},
+    ...     {"label": "endurance table values computed (>=4/6 cells)", "passed": has_all_endurance, "detail": f"matched={matched_nums}"},
+    ...     {"label": "no inverted idxmin recommendation", "passed": not has_inversion_bug, "detail": ""},
+    ... ]
     >>> total_duration = round(time.perf_counter() - trial_t0, 2)
     >>> report_path = record_ui_doctest_run(
     ...     "trial_3_multistep_blueprint_and_tools",
@@ -214,10 +245,11 @@ Step 5: Report Generation
     ...     blueprint_result=result,
     ...     scenario_description=(
     ...         "The researcher investigates a 6-factor combinatory space in the Docker sandbox using the "
-    ...         "'Reasoning with Code Sandbox' blueprint. Verbal / Reason executes the calculation, and the "
-    ...         "researcher applies adversarial logic verification, uncovering that no onboard configuration "
-    ...         "survives 120 minutes on rubble, proving the necessity of deployable ad-hoc relays."
+    ...         "'Reasoning with Code Sandbox' blueprint, then runs programmatic and UI verification over "
+    ...         "actual sandbox outputs and synthesized numbers."
     ...     ),
+    ...     expected_outcome=expected_outcome,
+    ...     checks=checks,
     ... )
     >>> print(f"- complete attempt: {1 if os.path.exists(report_path) else 0}/1")
     - complete attempt: 1/1

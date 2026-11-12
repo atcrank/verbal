@@ -97,6 +97,24 @@ def _format_state_tree(state_tree: dict) -> str:
     return "\n".join(lines)
 
 
+def _extract_established_fact(text: str) -> Optional[str]:
+    """Extracts a concise cited fact from sub-blueprint output, omitting negative results."""
+    raw = (text or "").strip()
+    if not raw or "no empirical evidence found" in raw.lower():
+        return None
+    finding = ""
+    citation = ""
+    for line in raw.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("- Finding:"):
+            finding = stripped.split(":", 1)[1].strip()
+        elif stripped.startswith("- Citation:") and "[Author, Year]" not in stripped:
+            citation = stripped.split(":", 1)[1].strip()
+    if finding:
+        return f"{finding} {citation}".strip()
+    return raw
+
+
 def _merge_state_trees(parent_tree: dict, child_tree: dict) -> dict:
     """
     Merges updates from child sub-blueprint state_tree into parent state_tree.
@@ -364,17 +382,21 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                     current_parent_tree = parent_conv.state_tree or {}
                     merged_tree = _merge_state_trees(current_parent_tree, sub_conv.state_tree or {})
                     if not sub_failed and final_response:
-                        facts = list(merged_tree.get("established_facts", []))
-                        if final_response not in facts:
-                            facts.append(final_response)
-                        merged_tree["established_facts"] = facts
+                        fact = _extract_established_fact(final_response)
+                        if fact:
+                            facts = list(merged_tree.get("established_facts", []))
+                            if fact not in facts:
+                                facts.append(fact)
+                            merged_tree["established_facts"] = facts
                     parent_conv.state_tree = merged_tree
                     parent_conv.save(update_fields=['state_tree'])
                 elif not sub_failed and final_response:
-                    facts = list(merged_tree.get("established_facts", []))
-                    if final_response not in facts:
-                        facts.append(final_response)
-                    merged_tree["established_facts"] = facts
+                    fact = _extract_established_fact(final_response)
+                    if fact:
+                        facts = list(merged_tree.get("established_facts", []))
+                        if fact not in facts:
+                            facts.append(fact)
+                        merged_tree["established_facts"] = facts
 
                 scratch_merged["state_tree"] = merged_tree
                     
@@ -391,7 +413,7 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                 }
                 
                 return {
-                    "working_memory": summary_remove_msgs + [SystemMessage(content=working_prompt)],
+                    "working_memory": summary_remove_msgs + [HumanMessage(content=working_prompt)],
                     "route_to": "FAILURE" if sub_failed else "SUCCESS",
                     "resume_to": None,
                     "step_count": step_count,
@@ -416,7 +438,7 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                     "user_prompt": []
                 }
                 return {
-                    "working_memory": summary_remove_msgs + [SystemMessage(content=working_prompt)],
+                    "working_memory": summary_remove_msgs + [HumanMessage(content=working_prompt)],
                     "route_to": "FAILURE",
                     "resume_to": None,
                     "step_count": step_count,
@@ -563,7 +585,7 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
             }
 
             return {
-                "working_memory": summary_remove_msgs + [SystemMessage(content=msg_content)],
+                "working_memory": summary_remove_msgs + [HumanMessage(content=msg_content)],
                 "route_to": "FAILURE" if tool_failed else "SUCCESS",
                 "resume_to": None,
                 "step_count": step_count,
@@ -579,7 +601,12 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
         if state.get("rag_context"):
             system_prompt += f"\n\nContext provided:\n{state.get('rag_context')}"
         if state.get("scratch"):
-            system_prompt += f"\n\nScratchpad Variables:\n{json.dumps(state.get('scratch'), indent=2)}"
+            visible_scratch = {
+                k: v for k, v in state.get("scratch", {}).items()
+                if not str(k).startswith("_")
+            }
+            if visible_scratch:
+                system_prompt += f"\n\nScratchpad Variables:\n{json.dumps(visible_scratch, indent=2)}"
         
         # Inject Conversation.state_tree into the prompt when include_state_tree is enabled
         if getattr(step, 'include_state_tree', True) and state.get("conversation_id"):
@@ -610,7 +637,14 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
         elif lockdown_level == "DEVELOPMENT":
             gov_directive += " Active Research Mode: Extended tools permitted for development research."
         system_prompt += gov_directive
-            
+
+        prev_feedback = state.get("evaluator_feedback")
+        if prev_feedback:
+            system_prompt += (
+                f"\n\n[PREVIOUS STEP EVALUATION FEEDBACK]\n{prev_feedback}\n"
+                "Address this feedback directly in your next action."
+            )
+
         sys_msg = SystemMessage(content=system_prompt)
         
         # Ensure we don't duplicate the system prompt if it's already the first message
@@ -687,7 +721,8 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
             native_messages = [{"role": _map_role(m.type), "content": getattr(m, 'content', str(m))} for m in messages]
             
             # 2. Select strategy based on native tool support
-            if ai_service.supports_native_tools(user=state.get("user")):
+            used_native_tools = ai_service.supports_native_tools(user=state.get("user"))
+            if used_native_tools:
                 # Native Tool Calling (OpenAI/Ollama)
                 # Do not inject XML instructions; trust the API to return the tool array
                 [raw_response] = ai_service.generate_response2(
@@ -721,12 +756,15 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                         "additionalProperties": False
                     })
                 
+                require_tool_after_failure = bool(
+                    prev_feedback and not (state.get("scratch") or {}).get(f"_seen_tool_calls_{step_key}")
+                )
                 tool_calls_schema = {
                     "type": "object",
                     "properties": {
                         "tool_calls": {
                             "type": "array",
-                            "minItems": 1,
+                            "minItems": 1 if require_tool_after_failure else 0,
                             "items": {
                                 "anyOf": tool_schemas
                             }
@@ -748,7 +786,18 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                         tool_instruction += f"  Parameters: {{{param_desc}}}\n"
                     tool_instruction += "\n"
                     
-                tool_instruction += "You must respond with a JSON object containing a 'tool_calls' array. Each item must specify 'name' and 'args'. Do not add any text before or after the JSON."
+                if require_tool_after_failure:
+                    tool_instruction += (
+                        "You must respond with a JSON object containing a non-empty 'tool_calls' array. "
+                        "Each item must specify 'name' and 'args'. Previous evaluation failed for missing context, "
+                        "so invoke appropriate tool(s) now rather than returning an empty list."
+                    )
+                else:
+                    tool_instruction += (
+                        "You must respond with a JSON object containing a 'tool_calls' array. "
+                        "Each item must specify 'name' and 'args'. When no further tool calls are needed, "
+                        "respond with {\"tool_calls\": []}. Do not add any text before or after the JSON."
+                    )
                 
                 if native_messages and native_messages[0]["role"] == "system":
                     native_messages[0]["content"] += tool_instruction
@@ -788,21 +837,21 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                 for tc in result:
                     if tc.get("name") in valid_tool_names:
                         validated_result.append(tc)
-                    elif tc.get("name") == "TASK_COMPLETE":
-                        # WS20: Allow deprecated TASK_COMPLETE tool call gracefully
-                        validated_result.append(tc)
                     else:
                         logger.warning(f"LLM tried to call unauthorized/invented tool: {tc.get('name')}")
                         validated_result.append({"error": f"Tool '{tc.get('name')}' is not available."})
                 result = validated_result
                 if len(result) == 1 and "error" in result[0]:
-                    result = result[0] # Convert to error dict if only one failed call
-            elif isinstance(result, str) or (isinstance(result, list) and len(result) == 0):
-                # The model produced raw text or an empty tool_calls array instead of tool calls.
-                # This means it "simulated" tool usage or skipped tools rather than actually calling them.
-                logger.warning(f"Step '{step.name}' has tools but model returned no tool calls. Treating as failure.")
-                raw_preview = result[:500] if isinstance(result, str) else "[]"
-                result = {"error": "ToolCallMissing", "details": f"Model failed to produce tool calls. Raw output: {raw_preview}"}
+                    result = result[0]  # Convert to error dict if only one failed call
+            elif isinstance(result, list) and len(result) == 0:
+                # Empty tool_calls list [] explicitly signals completion of tool gathering
+                result = []
+            elif used_native_tools and isinstance(result, str) and result.strip() and not result.lstrip().startswith("[Error"):
+                # Native tool model returned plain assistant text instead of calling more tools
+                pass
+            elif isinstance(result, str):
+                logger.warning(f"Step '{step.name}' failed to parse structured tool calls. Treating as failure.")
+                result = {"error": "ToolCallMissing", "details": f"Model failed to produce valid tool calls. Raw output: {result[:500]}"}
         elif schema_format:
             result = ai_service.generate_outline(
                 messages=[{"role": _map_role(m.type), "content": m.content} for m in messages],
@@ -854,6 +903,7 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
         # Parse result
         skip_duplicate_turn = False
         seen_calls_key = f"_seen_tool_calls_{step_key}"
+        failed_calls_key = f"_seen_failed_calls_{step_key}"
         nudged_uncalled_key = f"_nudged_uncalled_{step_key}"
         if isinstance(result, dict) and "error" in result:
             logger.warning(f"Error in step {step.name}: {result['error']}")
@@ -861,44 +911,46 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
             monologue_entry["output"] = f"Generation error in step '{step.name}': {result.get('error', 'Unknown')}"
             route_to = "FAILURE" if "ToolCallMissing" in result.get('error', '') else "SELF" 
             # If generation fails parsing, ReAct loops back (SELF).
+        elif isinstance(result, list) and len(result) == 0:
+            route_to = "SUCCESS"
+            skip_duplicate_turn = True
+            monologue_entry["output"] = "No tool calls requested; advancing step."
         else:
             if getattr(result, "__class__", None).__name__ == "list" and len(result) > 0 and isinstance(result[0], dict) and "name" in result[0]:
                 tool_results_str = []
                 approved_tools_list = list(state.get("approved_tools", []))
                 canonical_self_id = root_mapping[step.id]
                 seen_calls = set(scratch_updates.get(seen_calls_key, []))
-                non_complete_calls = [tc for tc in result if tc.get("name") != "TASK_COMPLETE"]
-                has_task_complete = any(tc.get("name") == "TASK_COMPLETE" for tc in result)
+                failed_calls = set(scratch_updates.get(failed_calls_key, []))
                 turn_sigs = [
                     f"{tc['name']}:{json.dumps(tc.get('args') or {}, sort_keys=True)}"
-                    for tc in non_complete_calls
+                    for tc in result
                 ]
                 if (
                     step.on_success_step_id is not None
-                    and non_complete_calls
-                    and not has_task_complete
+                    and result
                     and seen_calls
                     and all(sig in seen_calls for sig in turn_sigs)
                 ):
                     seen_tool_names = {sig.split(":", 1)[0] for sig in seen_calls}
                     uncalled_tools = [
                         t.name for t in tools
-                        if t.name not in ("TASK_COMPLETE", "PAUSE_FOR_INPUT", "NO_TOOL")
+                        if t.name not in ("PAUSE_FOR_INPUT", "NO_TOOL")
                         and t.name not in seen_tool_names
                     ]
                     if uncalled_tools and not scratch_updates.get(nudged_uncalled_key):
                         logger.info(
                             "Step '%s' repeated %s while unused tools %s remain; nudging once.",
                             step.name,
-                            [tc["name"] for tc in non_complete_calls],
+                            [tc["name"] for tc in result],
                             uncalled_tools,
                         )
                         scratch_updates[nudged_uncalled_key] = True
                         route_to = "SELF"
                         msg = (
-                            f"You already ran {', '.join(tc['name'] for tc in non_complete_calls)} with those exact arguments. "
+                            f"You already ran {', '.join(tc['name'] for tc in result)} with those exact arguments. "
                             f"Do NOT repeat it. Either call one of your unused tools ({', '.join(uncalled_tools)}) "
-                            "or call `TASK_COMPLETE` now."
+                            "or output an empty `tool_calls: []` list if no more tool calls are needed."
                         )
                         monologue_entry["output"] += f"\n{msg}"
                         additional_messages.append(HumanMessage(content=msg))
@@ -907,35 +959,55 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                         logger.info(
                             "Step '%s' repeated previously executed tool call(s) %s; advancing without re-running.",
                             step.name,
-                            [tc["name"] for tc in non_complete_calls],
+                            [tc["name"] for tc in result],
                         )
                         skip_duplicate_turn = True
                         route_to = "SUCCESS"
                         msg = (
-                            f"Reused previously gathered results for {', '.join(tc['name'] for tc in non_complete_calls)}; "
+                            f"Reused previously gathered results for {', '.join(tc['name'] for tc in result)}; "
                             "advancing step."
                         )
                         monologue_entry["output"] += f"\n{msg}"
                         tool_results_str.append(msg)
                     result_to_execute = []
+                elif (
+                    result
+                    and failed_calls
+                    and all(sig in failed_calls for sig in turn_sigs)
+                ):
+                    logger.warning(
+                        "Step '%s' repeated identical failing tool call(s) %s; advancing without re-running.",
+                        step.name,
+                        [tc["name"] for tc in result],
+                    )
+                    skip_duplicate_turn = True
+                    route_to = "SUCCESS" if step.on_success_step_id is not None else "FAILURE"
+                    monologue_entry["failed"] = True
+                    msg = (
+                        f"Repeated identical failing tool call(s) for "
+                        f"{', '.join(tc['name'] for tc in result)} without changes; advancing without re-running."
+                    )
+                    monologue_entry["output"] += f"\n{msg}"
+                    tool_results_str.append(msg)
+                    result_to_execute = []
                 else:
                     result_to_execute = result
 
+                auto_completed_task_this_turn = False
+                admin_state_tools = {
+                    "update_conversation_state",
+                    "manage_dynamic_tools",
+                    "promote_artifact",
+                    "deprecate_tool",
+                }
                 for tool_call in result_to_execute:
+                    if isinstance(tool_call, dict) and "error" in tool_call:
+                        err_text = tool_call["error"]
+                        tool_results_str.append(err_text)
+                        additional_messages.append(HumanMessage(content=f"[Tool Error]: {err_text}"))
+                        continue
                     tool_name = tool_call["name"]
                     tool_args = tool_call["args"]
-
-                    if tool_name == "TASK_COMPLETE":
-                        logger.info("Deprecated TASK_COMPLETE invoked; treating as clean completion.")
-                        final_ans = tool_args.get("final_answer") or tool_args.get("answer") or ""
-                        msg = f"Task completed: {final_ans}" if final_ans else "Task completed successfully."
-                        route_to = "SUCCESS"
-                        monologue_entry["output"] += f"\n{msg}"
-                        additional_messages.append(SystemMessage(content=msg))
-                        tool_results_str.append(msg)
-                        if final_ans:
-                            candidate_output = final_ans
-                        continue
 
                     try:
                         tool_def = ToolDefinition.objects.get(name=tool_name)
@@ -974,19 +1046,24 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                             }
 
                         hook_result = execute_tool(tool_def, state, params=tool_args)
-                        if step.on_success_step_id is not None:
-                            seen_calls.add(f"{tool_name}:{json.dumps(tool_args or {}, sort_keys=True)}")
-                            scratch_updates[seen_calls_key] = sorted(seen_calls)
-                            
+                        call_failed = False
+
                         if isinstance(hook_result, dict):
+                            wp = str(hook_result.get("working_prompt", ""))
                             if "route_to" in hook_result:
                                 route_to = hook_result["route_to"]
+                            if (
+                                hook_result.get("route_to") == "FAILURE"
+                                or "Sandbox Execution Failed" in wp
+                                or "Refusing to execute empty" in wp
+                            ):
+                                call_failed = True
                             if "working_prompt" in hook_result:
                                 msg = hook_result["working_prompt"]
-                                additional_messages.append(SystemMessage(content=msg))
+                                additional_messages.append(HumanMessage(content=msg))
                                 tool_results_str.append(msg)
                                 if route_to == "SUCCESS":
-                                    monologue_entry["output"] += f"\\n{msg}"
+                                    monologue_entry["output"] += f"\n{msg}"
                             if "current_chunk_index" in hook_result:
                                 scratch_updates["current_chunk_index"] = hook_result["current_chunk_index"]
                             if "state_tree" in hook_result:
@@ -994,17 +1071,42 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                         else:
                             res_str = str(hook_result)
                             tool_results_str.append(res_str)
+                            res_lower = res_str.strip().lower()
+                            failure_markers = (
+                                "not found",
+                                "could not find",
+                                "could not be found",
+                                "does not exist",
+                                "cannot complete",
+                                "cannot be completed",
+                                "calculation failed",
+                                "execution failed",
+                                "analysis halted",
+                                "aborted:",
+                            )
+                            tool_errored = (
+                                res_lower.startswith("error")
+                                or res_lower.startswith("failed")
+                                or any(marker in res_lower for marker in failure_markers)
+                            )
+                            call_failed = bool(tool_errored)
                             
                             success_prefix = ""
-                            if not res_str.lower().startswith("error"):
+                            if not tool_errored:
                                 success_prefix = f"✅ THE TOOL '{tool_name}' EXECUTED SUCCESSFULLY.\n"
                                 
                             additional_messages.append(
                                 HumanMessage(content=f"[Tool '{tool_name}' Result]:\n{success_prefix}Output:\n{res_str}")
                             )
 
-                            # Auto-ground tool execution into active task resolution in state_tree
-                            if state_tree_updates and "tasks" in state_tree_updates:
+                            # Auto-ground genuine task execution (never admin/mutation tools or error messages)
+                            if (
+                                not tool_errored
+                                and tool_name not in admin_state_tools
+                                and not auto_completed_task_this_turn
+                                and state_tree_updates
+                                and "tasks" in state_tree_updates
+                            ):
                                 tasks_dict = dict(state_tree_updates["tasks"])
                                 active_tid = state_tree_updates.get("active_task")
                                 if active_tid and active_tid in tasks_dict:
@@ -1012,22 +1114,33 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                                         clean_res = res_str[:1000].strip().replace("\n", " ")
                                         tasks_dict[active_tid]["resolution"] = f"{tool_name}: {clean_res}"
                                         tasks_dict[active_tid]["status"] = "COMPLETED"
-                                        # Advance to next pending task
+                                        auto_completed_task_this_turn = True
                                         pending = [tid for tid, tinfo in tasks_dict.items() if isinstance(tinfo, dict) and tinfo.get("status") in ["PENDING", "pending"]]
                                         state_tree_updates["active_task"] = pending[0] if pending else None
                                         if state_tree_updates["active_task"] and isinstance(tasks_dict[state_tree_updates["active_task"]], dict):
                                             tasks_dict[state_tree_updates["active_task"]]["status"] = "IN_PROGRESS"
                                 state_tree_updates["tasks"] = tasks_dict
 
-                                # Also pop completed task from scratchpad queue if present
                                 if scratch_updates and "queue" in scratch_updates and isinstance(scratch_updates["queue"], list):
                                     queue_list = list(scratch_updates["queue"])
                                     if queue_list:
                                         queue_list.pop(0)
                                         scratch_updates["queue"] = queue_list
 
+                        if step.on_success_step_id is not None:
+                            sig_str = f"{tool_name}:{json.dumps(tool_args or {}, sort_keys=True)}"
+                            if call_failed:
+                                failed_calls.add(sig_str)
+                                scratch_updates[failed_calls_key] = sorted(failed_calls)
+                            else:
+                                seen_calls.add(sig_str)
+                                scratch_updates[seen_calls_key] = sorted(seen_calls)
+
                     except Exception as e:
                         logger.error(f"Error in tool {tool_name}: {e}")
+                        if step.on_success_step_id is not None:
+                            failed_calls.add(f"{tool_name}:{json.dumps(tool_args or {}, sort_keys=True)}")
+                            scratch_updates[failed_calls_key] = sorted(failed_calls)
                         tool_results_str.append(f"Error in tool {tool_name}: {e}")
                         additional_messages.append(HumanMessage(content=f"[Tool '{tool_name}' Error]: {e}"))
                         route_to = "FAILURE"
@@ -1035,16 +1148,15 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                 monologue_entry["tool_result"] = "\n".join(tool_results_str)
                 if route_to is None:
                     route_to = "SELF"
-                    if "TASK_COMPLETE" in valid_tool_names:
-                        additional_messages.append(
-                            HumanMessage(
-                                content=(
-                                    "Tool execution above completed. Do NOT repeat identical tool calls. "
-                                    "If the tool output already provides sufficient information or no new queries remain, "
-                                    "call `TASK_COMPLETE` now; otherwise run only genuinely new tool queries."
-                                )
+                    additional_messages.append(
+                        HumanMessage(
+                            content=(
+                                "Tool execution above completed. Do NOT repeat identical tool calls. "
+                                "If the tool output already provides sufficient information or no new queries remain, "
+                                "output an empty `tool_calls: []` list now to advance; otherwise run only genuinely new tool queries."
                             )
                         )
+                    )
             else:
                 route_to = "SUCCESS" 
                 # Text output means we successfully generated an answer, subject to eval
@@ -1072,7 +1184,7 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                     }
                     handled_res = handler(action_state, result)
                     if handled_res.get("working_prompt"):
-                        additional_messages.append(SystemMessage(content=handled_res["working_prompt"]))
+                        additional_messages.append(HumanMessage(content=handled_res["working_prompt"]))
                     if handled_res.get("route_to"):
                         route_to = handled_res["route_to"]
                     if handled_res.get("state_tree"):
@@ -1086,6 +1198,7 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
         # Only retain per-step seen tool calls while looping within the same step via SELF
         if route_to != "SELF":
             scratch_updates.pop(seen_calls_key, None)
+            scratch_updates.pop(failed_calls_key, None)
             scratch_updates.pop(nudged_uncalled_key, None)
 
         # Collapse consecutive HumanMessage tool feedback entries into a single turn for strict chat templates
@@ -1157,6 +1270,7 @@ def _make_action_node(step: ReasoningStep, root_mapping: Dict[int, int]):
             "retries_remaining": retries_remaining,
             "internal_monologue": [monologue_entry],
             "scratch": scratch_updates,
+            "evaluator_feedback": None,
             "token_budget_remaining": final_budget
         }
         if candidate_output is not None:
@@ -1188,9 +1302,7 @@ def _make_eval_node(step: ReasoningStep, root_mapping: Dict[int, int]):
         if step.sub_blueprint_id:
             return _intercept_failure(route_to, resume_to, state, step, root_mapping)
             
-        # 3. WS20: Deprecated TASK_COMPLETE requirement.
-        # When evaluation criteria is specified, evaluate criteria whenever the step executed its
-        # action (route_to in ("SELF", "SUCCESS", None)) rather than requiring an artificial TASK_COMPLETE tool call.
+        # 3. WS32: Evaluate criteria whenever the step executed its action cleanly (including [] tool completion).
         should_evaluate = bool(step.evaluation_criteria) and route_to in ("SELF", "SUCCESS", None)
         
         if should_evaluate:
@@ -1260,9 +1372,11 @@ def _make_eval_node(step: ReasoningStep, root_mapping: Dict[int, int]):
                 route_to = "USER_INPUT_REQUIRED"
                 resume_to = f"step_{root_mapping.get(step.id)}"
         
-        updates = {"route_to": route_to, "resume_to": resume_to}
-        if evaluator_feedback:
-            updates["evaluator_feedback"] = evaluator_feedback
+        updates = {
+            "route_to": route_to,
+            "resume_to": resume_to,
+            "evaluator_feedback": evaluator_feedback if route_to == "FAILURE" else None,
+        }
         if updated_monologue:
             eval_entry = {
                 "step_name": f"{step.name} (Evaluation)",

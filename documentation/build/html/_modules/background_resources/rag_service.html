@@ -1047,7 +1047,7 @@
                 <span class="n">base_overlap</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">intersection</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">query_lemmas</span><span class="p">)</span>
 
                 <span class="c1"># Concept Concentration / Bounded Length Factor:</span>
-                <span class="c1"># To prevent small local models (e.g. Gemma-2-2b-it) from being overwhelmed by massive</span>
+                <span class="c1"># To prevent small local models (e.g. Gemma-4-E2B-it) from being overwhelmed by massive</span>
                 <span class="c1"># text blocks, we apply a gentle density curve. Chunks under 300 lemmas incur no penalty.</span>
                 <span class="c1"># Longer research sections receive a soft bounded scaling (not the severe 100/len penalty</span>
                 <span class="c1"># that previously slashed 500-lemma empirical papers by 80%).</span>

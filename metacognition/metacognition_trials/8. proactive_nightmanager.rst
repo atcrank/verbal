@@ -52,7 +52,15 @@ The NightManager's instructions execute a 4-phase autonomous pipeline:
     ...             user_prompt=prompt,
     ...             user_id=user.id,
     ...         )
-    >>> report_doctest_run("8. proactive_nightmanager", prompt, result)
+    >>> expected_outcome = (
+    ...     "Complete all 4 NightManager phases cleanly: Housekeeping (ingest/lint/backup/janitor), "
+    ...     "Deep System Evaluation (metrics fetched & analyzed), System Modifications, and Self-Improvement proposal."
+    ... )
+    >>> checks = [
+    ...     {"label": "non-empty NightManager execution monologue", "passed": bool(result.get("internal_monologue")), "detail": f"steps={len(result.get('internal_monologue', []))}"},
+    ...     {"label": "no fatal Abort or uncaught error", "passed": "error" not in result and result.get("route_to") != "FAILURE", "detail": str(result.get("route_to", ""))},
+    ... ]
+    >>> report_doctest_run("8. proactive_nightmanager", prompt, result, expected_outcome=expected_outcome, checks=checks)
     >>> 
     >>> # The agent should complete without crashing
     >>> print(f"- error free: {1 if 'error' not in result else 0}/1")

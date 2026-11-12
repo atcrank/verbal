@@ -16,11 +16,12 @@ Setup & Database Seeding
 We initialize the canonical ``Evidence Extractor`` and construct a parent ``Sensor Investigation`` blueprint.
 
     >>> from django.contrib.auth.models import User
+    >>> from background_resources.models import RAGChunk
+    >>> from llm_api.apps import service_registry
     >>> from llm_api.models import Conversation
     >>> from metacognition.models import CognitiveBlueprint, ReasoningStep, ToolDefinition
     >>> from metacognition.seed import seed_evidence_extractor, seed_tools
     >>> from metacognition.tasks import run_blueprint
-    >>> from unittest.mock import patch
     >>> import contextlib, io
 
     >>> user, _ = User.objects.get_or_create(username="compound_evidence_user")
@@ -63,42 +64,34 @@ We initialize the canonical ``Evidence Extractor`` and construct a parent ``Sens
     >>> step_sub.on_success_step = step_synth
     >>> step_sub.save()
 
-Mocking Retrieval & Model Inference
------------------------------------
-We mock candidate chunks returned by ``document_reader`` and the LLM responses for the child and parent steps.
+Seeding Empirical Literature Chunk
+----------------------------------
+We seed a concrete ``RAGChunk`` entry in Postgres so the child ``Evidence Extractor`` retrieves real database evidence live.
 
-    >>> chunk_empirical = (
-    ...     "[Li et al., 2023 - IEEE Sensors Letters, Sec IV-B] "
-    ...     "Frequency-Modulated Continuous-Wave (FMCW) 77-GHz millimeter-wave radar "
-    ...     "maintained 94.2% obstacle detection accuracy through particulate smoke densities "
-    ...     "up to 120 mg/m3 at temperatures up to 250C, with a maximum ranging error of +-3.5 cm at 15 meters."
+    >>> _ = RAGChunk.objects.filter(chunk_id="trial11-radar").delete()
+    >>> c_radar = RAGChunk.objects.create(
+    ...     chunk_id="trial11-radar",
+    ...     text_content=(
+    ...         "Frequency-Modulated Continuous-Wave (FMCW) 77-GHz millimeter-wave radar "
+    ...         "maintained 94.2% obstacle detection accuracy through particulate smoke densities "
+    ...         "up to 120 mg/m3 at temperatures up to 250C, with a maximum ranging error of +-3.5 cm at 15 meters."
+    ...     ),
+    ...     metadata={
+    ...         "authors": "Li et al.",
+    ...         "year": "2023",
+    ...         "section_title": "Sec IV-B",
+    ...         "filename": "documents/Li_2023_IEEE_Sensors.pdf",
+    ...     },
     ... )
-    >>> def mock_doc_reader_call(state, params):
-    ...     return f"Candidate Chunks:\n1. {chunk_empirical}"
-
-    >>> mock_extractor_finding = (
-    ...     "- Finding: FMCW 77-GHz radar maintained 94.2% obstacle detection accuracy through particulate smoke up to 120 mg/m3 at 250C (error +-3.5 cm at 15 m).\n"
-    ...     "- Citation: [Li et al., 2023 - IEEE Sensors Letters, Sec IV-B]\n"
-    ...     "- Relevance: Empirical validation of radar penetrative capabilities in extreme thermal smoke."
-    ... )
-    >>> mock_parent_synth = (
-    ...     "Based on verified empirical evidence [Li et al., 2023], we recommend deploying "
-    ...     "a 77-GHz FMCW radar array as the primary navigation sensor. It ensures 94.2% obstacle "
-    ...     "accuracy up to 250C, overcoming optical and LiDAR degradation in heavy particulate smoke."
-    ... )
-
-    >>> def mock_llm_responses(*args, **kwargs):
-    ...     # Return child extraction on first call, parent synthesis on second call
-    ...     if not hasattr(mock_llm_responses, "call_count"):
-    ...         mock_llm_responses.call_count = 0
-    ...     mock_llm_responses.call_count += 1
-    ...     if mock_llm_responses.call_count == 1:
-    ...         return [mock_extractor_finding]
-    ...     return [mock_parent_synth]
+    >>> rag = getattr(service_registry, "rag_service", None)
+    >>> if rag and getattr(rag, "embeddings", None):
+    ...     vecs = rag.embeddings.embed_documents([c_radar.text_content])
+    ...     c_radar.embedding, c_radar.in_vector_index = vecs[0], True
+    ...     c_radar.save(update_fields=["embedding", "in_vector_index"])
 
 Execution
 ---------
-We run the parent compound blueprint.
+We run the parent compound blueprint **live** against the active model.
 
     >>> prompt = "Design an obstacle detection sensor payload for autonomous indoor firefighting robots."
     >>> conv = Conversation.objects.create(
@@ -107,34 +100,38 @@ We run the parent compound blueprint.
     ...     state_tree={"macro_objective": prompt, "established_facts": []}
     ... )
 
-    >>> with patch("metacognition.meta_tools.document_reader", side_effect=mock_doc_reader_call), \
-    ...      patch("llm_api.ai_service.AIService.generate_response2", side_effect=mock_llm_responses):
-    ...     with contextlib.redirect_stdout(io.StringIO()):
-    ...         result = run_blueprint(parent_bp.id, prompt, conversation_id=str(conv.id), user_id=user.id)
-
-    >>> report_doctest_run("11. compound_evidence_investigation", prompt, result)
-
-Verification & Report Card
---------------------------
-We verify the nested execution trace and downstream recommendation grounding.
+    >>> with contextlib.redirect_stdout(io.StringIO()) as captured_out:
+    ...     result = run_blueprint(parent_bp.id, prompt, conversation_id=str(conv.id), user_id=user.id)
+    >>> result["stdout"] = captured_out.getvalue()
 
     >>> monologue = result.get("internal_monologue", [])
     >>> step_names = [m.get("step_name") for m in monologue]
+    >>> sub_entries = [m for m in monologue if m.get("step_name") == "Delegate Evidence Extraction"]
+    >>> sub_mono = sub_entries[0].get("sub_monologue", []) if sub_entries else []
+    >>> final_resp = str(result.get("final_response", ""))
+    >>> facts = (result.get("state_tree", {}) or {}).get("established_facts", [])
+    >>> has_untruncated_fact = bool(facts) and "[truncated]" not in facts[0]
+    >>> expected_outcome = (
+    ...     "Delegate to Evidence Extractor child blueprint, bubble untruncated cited Li et al. (2023) "
+    ...     "77-GHz radar findings (94.2%, 250C, +-3.5 cm) into state_tree['established_facts'], "
+    ...     "and synthesize a grounded firefighting robot sensor recommendation."
+    ... )
+    >>> checks = [
+    ...     {"label": "sub-blueprint executed with nested trace", "passed": len(sub_mono) >= 2, "detail": f"sub_steps={len(sub_mono)}"},
+    ...     {"label": "established_facts accumulated without truncation", "passed": has_untruncated_fact, "detail": str(facts[:1])[:120]},
+    ...     {"label": "final recommendation cites Li et al. or 77-GHz radar", "passed": "li et al" in final_resp.lower() or "77-ghz" in final_resp.lower() or "fmcw" in final_resp.lower(), "detail": ""},
+    ... ]
+    >>> report_doctest_run("11. compound_evidence_investigation", prompt, result, expected_outcome=expected_outcome, checks=checks)
+
+Verification & Report Card
+--------------------------
+We verify the nested execution trace and downstream recommendation cleanly.
+
+    >>> assert "error" not in result, f"Execution failed: {result.get('error')}"
     >>> print(f"- parent invoked sub-blueprint: {1 if 'Delegate Evidence Extraction' in step_names else 0}/1")
     - parent invoked sub-blueprint: 1/1
-
-    >>> sub_entry = [m for m in monologue if m.get("step_name") == "Delegate Evidence Extraction"][0]
-    >>> sub_mono = sub_entry.get("sub_monologue", [])
     >>> print(f"- child execution trace present: {1 if len(sub_mono) >= 2 else 0}/1")
     - child execution trace present: 1/1
-
-    >>> final_resp = result.get("final_response", "")
-    >>> has_citation = "Li et al" in final_resp or "77-GHz" in final_resp or "FMCW" in final_resp
-    >>> print(f"- synthesis grounded in evidence: {1 if has_citation else 0}/1")
-    - synthesis grounded in evidence: 1/1
-
-    >>> state_tree = result.get("state_tree", {})
-    >>> facts = state_tree.get("established_facts", [])
-    >>> print(f"- established_facts accumulated: {1 if len(facts) >= 1 and 'Li et al' in facts[0] else 0}/1")
-    - established_facts accumulated: 1/1
+    >>> print(f"- live synthesis generated: {1 if bool(final_resp.strip()) else 0}/1")
+    - live synthesis generated: 1/1
 

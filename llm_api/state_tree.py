@@ -163,14 +163,19 @@ def _sanitize_string(val: str, max_len: int = 300) -> str:
     return val
 
 
-def _sanitize_structure(obj: Any, max_str_len: int = 300) -> Any:
-    """Recursively walks a nested data structure and truncates oversized strings."""
+def _sanitize_structure(obj: Any, max_str_len: int = 300, key_name: Optional[str] = None) -> Any:
+    """Recursively walks a nested data structure and truncates oversized strings.
+
+    Preserves multi-sentence factual invariants/established_facts up to 1200 chars so
+    cited empirical findings are not clipped mid-sentence.
+    """
+    effective_limit = 1200 if key_name in ("established_facts", "invariants") else max_str_len
     if isinstance(obj, str):
-        return _sanitize_string(obj, max_str_len)
+        return _sanitize_string(obj, effective_limit)
     if isinstance(obj, dict):
-        return {k: _sanitize_structure(v, max_str_len) for k, v in obj.items()}
+        return {k: _sanitize_structure(v, max_str_len, key_name=k) for k, v in obj.items()}
     if isinstance(obj, list):
-        return [_sanitize_structure(elem, max_str_len) for elem in obj]
+        return [_sanitize_structure(elem, max_str_len, key_name=key_name) for elem in obj]
     return obj
 
 

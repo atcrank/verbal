@@ -35,8 +35,29 @@ We then execute the Blueprint, redirecting its output to "captured_out" and capt
     ...     result = run_blueprint(bp.id, prompt, conversation_id=cid, user_id=user.id)
     
     >>> if result:
+    ...     import os
     ...     result["stdout"] = captured_out.getvalue()
-    ...     report_doctest_run("6. large_output", [prompt], result)
+    ...     conv_ws = Conversation.objects.get(id=cid).get_workspace_dir()
+    ...     csv_path = os.path.join(conv_ws, "employees.csv")
+    ...     csv_exists = os.path.exists(csv_path)
+    ...     csv_text = open(csv_path, encoding="utf-8", errors="replace").read() if csv_exists else ""
+    ...     row_count = max(0, len([ln for ln in csv_text.splitlines() if ln.strip()]) - 1) if csv_exists else 0
+    ...     no_ellipsis = "Ellipsis" not in csv_text and "..." not in csv_text
+    ...     final_str = str(result.get("final_response", ""))
+    ...     no_raw_tool_dump = (
+    ...         "tool_code" not in final_str
+    ...         and '"tool_calls"' not in final_str
+    ...         and not final_str.startswith("ABORTED:")
+    ...     )
+    ...     expected_outcome = (
+    ...         "Generate employees.csv with 1000 valid non-placeholder rows (no Ellipsis), compute mean salary "
+    ...         "per department in a follow-up Python script, and present concise verbal summary statistics (<5000 chars)."
+    ...     )
+    ...     checks = [
+    ...         {"label": "employees.csv created with ~1000 valid rows (no Ellipsis)", "passed": csv_exists and 900 <= row_count <= 1100 and no_ellipsis, "detail": f"exists={csv_exists}, rows={row_count}, no_ellipsis={no_ellipsis}"},
+    ...         {"label": "clean verbal synthesis without raw tool/code dumps", "passed": no_raw_tool_dump, "detail": f"len={len(final_str)}"},
+    ...     ]
+    ...     report_doctest_run("6. large_output", [prompt], result, expected_outcome=expected_outcome, checks=checks)
 
 Evaluate the result for pytest:
     >>> assert "error" not in result, f"Execution failed: {result.get('error')}"

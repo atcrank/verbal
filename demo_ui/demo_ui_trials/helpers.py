@@ -101,16 +101,21 @@ def take_ui_screenshot(page, name: str, wait_selector: str = None) -> str:
 # ---------------------------------------------------------------------------
 
 def capture_ai_response(page, selector: str = ".chat-message.ai .bubble") -> str:
-    """Extracts the substantive text content of the most recent AI response bubble,
-    cleanly stripping out UI action buttons and token stats."""
+    """Extracts the main user-visible AI response text from the most recent AI bubble,
+    stripping out collapsed thinking traces, status widgets, and UI action bars."""
     try:
         clean_text = page.evaluate(f"""() => {{
             const bubbles = document.querySelectorAll('{selector}');
             if (!bubbles || bubbles.length === 0) return '';
             const bubble = bubbles[bubbles.length - 1];
+            const mainContent = bubble.querySelector('.main-response-content');
+            if (mainContent && mainContent.innerText.trim()) {{
+                return mainContent.innerText.trim();
+            }}
             const clone = bubble.cloneNode(true);
-            const actions = clone.querySelector('.message-actions-bar');
-            if (actions) actions.remove();
+            for (const sel of ['.message-actions-bar', '.blueprint-thinking-trace', '#blueprint-thinking-trace', '#blueprint-visualizer', '#blueprint-status']) {{
+                clone.querySelectorAll(sel).forEach(el => el.remove());
+            }}
             return clone.innerText.trim();
         }}""")
         if clean_text:
@@ -252,20 +257,24 @@ def record_ui_doctest_run(
     title: str,
     steps_data: list,
     *,
-    status: str = "PASSED",
+    status: str | None = None,
     model_name: str = "",
     total_duration_s: float | None = None,
     blueprint_result: dict | None = None,
     scenario_description: str = "",
+    expected_outcome: str = "",
+    checks: list | None = None,
 ):
     """
     Generates a structured Sphinx .rst report for the UI doctest run.
 
     Centers on Roles 3 & 4:
     - The Researcher: Formulating causal hypotheses, experimental design, and prompts.
-    - Verbal / Reason: Local Gemma4 model reasoning, composing Python in sandbox,
+    - Verbal / Reason: Local inference model reasoning, composing Python in sandbox,
       and yielding tabulations and recommendations.
     """
+    from metacognition.trial_review import collect_runtime_facts, run_post_trial_comparison
+
     report_path = TRIALS_DIR / f"{trial_name}_report.rst"
     now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -281,6 +290,23 @@ def record_ui_doctest_run(
     )
     scenario_text = scenario_description or default_scenario
 
+    workspace_dir = None
+    cid = (blueprint_result or {}).get("conversation_id") if blueprint_result else None
+    if cid:
+        try:
+            from llm_api.models import Conversation
+            workspace_dir = Conversation.objects.get(id=cid).get_workspace_dir()
+        except Exception:
+            workspace_dir = os.path.join("workspaces", "conversations", str(cid))
+
+    facts = collect_runtime_facts(
+        result=blueprint_result,
+        workspace_dir=workspace_dir,
+        checks=checks,
+        steps_data=steps_data,
+    )
+    computed_status = status or facts["model_outcome"]
+
     with open(report_path, "w", encoding="utf-8") as f:
         # Header
         border = "=" * (len(title) + 18)
@@ -291,7 +317,7 @@ def record_ui_doctest_run(
         f.write(f"**Date**: {now_str}\n\n")
         if model_name:
             f.write(f"**Local Model**: {model_name}\n\n")
-        f.write(f"**Status**: {status}\n\n")
+        f.write(f"**Model Task Outcome**: {computed_status}\n\n")
         f.write(f"**Total Execution Time**: {total_duration_s:.1f}s\n\n")
 
         # Scene setting
@@ -343,7 +369,7 @@ def record_ui_doctest_run(
                 f.write("\n")
 
             # 2. Verbal / Reason: Local Model Execution
-            step_model = step.get("model_name") or model_name or "Gemma4"
+            step_model = step.get("model_name") or model_name or "Local Model"
             bp_name = step.get("blueprint_name", "")
             if bp_name:
                 f.write(f"**Verbal / Reason (Cognitive Blueprint: '{bp_name}')**\n\n")
@@ -469,6 +495,31 @@ def record_ui_doctest_run(
                                 f.write(_rst_code_block(code_file.read()))
                         except Exception as exc:
                             f.write(f"*[Error reading file: {exc}]*\n\n")
+
+        prompts = [
+            step["researcher_inquiry"]
+            for step in steps_data
+            if step.get("researcher_inquiry")
+        ]
+        observed_pieces = []
+        if blueprint_result and blueprint_result.get("final_response"):
+            observed_pieces.append(str(blueprint_result["final_response"]))
+        for step in steps_data:
+            if step.get("response_text"):
+                observed_pieces.append(f"[{step.get('step', 'Step')}]:\n{step['response_text']}")
+        observed_combined = "\n\n".join(observed_pieces)
+
+        if expected_outcome or checks:
+            comparison_text = run_post_trial_comparison(
+                trial_name=title,
+                prompts=prompts,
+                expected_outcome=expected_outcome,
+                observed_response=observed_combined,
+                facts=facts,
+                is_mocked=False,
+            )
+            f.write(_rst_heading("Expected vs. Observed Comparison (Independent Review)", "-"))
+            f.write(f"{wrap_prose_block(comparison_text)}\n\n")
 
         f.write("\n")
 

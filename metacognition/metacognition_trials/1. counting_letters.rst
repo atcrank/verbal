@@ -6,7 +6,7 @@ bypass its standard generation, and write deterministic Python code in the sandb
 
 Execution
 ---------
-We initialize the ``ResearchEvaluation`` pipeline so the agent can verify its count via sandbox code execution and critique.
+We initialize the ``ResearchEvaluation`` double-node pipeline (``Research -> Plan -> Execute (python_sandbox) -> Critique``) so the agent can verify its count via sandbox code execution and evaluator verification.
 
     >>> from metacognition.tasks import run_blueprint
     >>> from metacognition.models import CognitiveBlueprint
@@ -24,18 +24,25 @@ We initialize the ``ResearchEvaluation`` pipeline so the agent can verify its co
     ...     "and return the exact number."
     ... )
     
-    >>> import contextlib, io, json
-    >>> with contextlib.redirect_stdout(io.StringIO()):
+    >>> import contextlib, io
+    >>> with contextlib.redirect_stdout(io.StringIO()) as captured_out:
     ...     result = run_blueprint(bp.id, prompt, user_id=user.id)
-    >>> report_doctest_run("1. counting_letters", prompt, result)
-    >>> import json
-    >>> final_str = result.get("final_response", "{}")
-    >>> try:
-    ...     resp = json.loads(final_str) if "{" in final_str else {}
-    ...     has_decision = "decision" in resp
-    ...     has_reasoning = "reasoning" in resp
-    ... except json.JSONDecodeError:
-    ...     has_decision = False
-    ...     has_reasoning = False
+    >>> result["stdout"] = captured_out.getvalue()
+
+    >>> expected_outcome = (
+    ...     "Execute Python code in python_sandbox computing `'strawberry'.count('r') == 3` "
+    ...     "(stdout shows 3) and return the exact integer count 3."
+    ... )
+    >>> final_str = result.get("final_response", "")
+    >>> monologue = result.get("internal_monologue", [])
+    >>> ran_sandbox = any("Sandbox Execution Succeeded" in str(m.get("tool_result", "")) or "Sandbox Execution Succeeded" in str(m.get("output", "")) for m in monologue)
+    >>> checks = [
+    ...     {"label": "sandbox executed cleanly", "passed": ran_sandbox, "detail": "python_sandbox RC=0 required"},
+    ...     {"label": "exact count 3 in final response (without claiming 4)", "passed": ("3" in final_str and "'strawberry': 4" not in final_str and "is 4" not in final_str), "detail": f"len={len(final_str)}"},
+    ... ]
+    >>> report_doctest_run("1. counting_letters", prompt, result, expected_outcome=expected_outcome, checks=checks)
+
+    >>> assert "error" not in result, f"Execution failed: {result.get('error')}"
+    >>> assert len(monologue) > 0 and bool(final_str), "Blueprint produced empty output"
     >>> print(f"- complete attempt: {1 if final_str else 0}/1")
     - complete attempt: 1/1

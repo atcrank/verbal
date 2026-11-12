@@ -12,7 +12,7 @@ The system uses `CognitiveBlueprint` and `ReasoningStep` to define agentic workf
 2. **Tool Calling & Fallbacks:**
    - Proxied models (OpenAI, Anthropic) use native tool-calling APIs.
    - Local PyTorch/vLLM/Ollama models fall back to XML-injected prompt instructions (handled automatically during compilation) because local models often lack native tool-calling chat templates. The compiler parses `<tool_calls>` XML blocks from the output.
-   - We removed system roles for models that don't support them (e.g., Gemma 2) by sanitizing messages and folding system prompts into user messages before applying the chat template.
+   - We removed system roles for models that don't support them (e.g., Gemma) by sanitizing messages and folding system prompts into user messages before applying the chat template.
 
 3. **Sequential over Parallel:**
    - Due to limited local inference resources, we strictly prefer sequential graph execution over parallel execution.
@@ -23,7 +23,7 @@ The system uses `CognitiveBlueprint` and `ReasoningStep` to define agentic workf
    - To prevent context overflow in long-running jobs (e.g., NightManager), Blueprints are designed to start with a "clean slate", passing only a condensed summary of the previous Blueprint's conclusions into the state.
 
 **Guiding Principles for Blueprint Designers:**
-- **Keep ReasoningSteps Small:** Local models (like Gemma 2B) struggle with massive multi-step reasoning. Break logic into granular `ReasoningStep`s.
+- **Keep ReasoningSteps Small:** Local models (like Gemma 4 E2B) struggle with massive multi-step reasoning. Break logic into granular `ReasoningStep`s.
 - **Strict Self-Evaluation:** Use `evaluation_criteria` with explicit Pydantic schemas. The compiler will validate the LLM's output against the schema and retry on failure.
 - **Sequential Chains:** Do not design DAGs with parallel fan-out. Use linear flows with conditional branching on failure.
 - **Tool Coercion for Text Nodes:** If `available_tools` are assigned to a `ReasoningStep`, the system may coerce the LLM into strict JSON/tool-calling output mode. For nodes intended for free-form analysis or contemplation, explicitly leave `available_tools` empty.

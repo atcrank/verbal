@@ -189,6 +189,24 @@
     <span class="k">return</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_extract_established_fact</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Extracts a concise cited fact from sub-blueprint output, omitting negative results."""</span>
+    <span class="n">raw</span> <span class="o">=</span> <span class="p">(</span><span class="n">text</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">raw</span> <span class="ow">or</span> <span class="s2">"no empirical evidence found"</span> <span class="ow">in</span> <span class="n">raw</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">finding</span> <span class="o">=</span> <span class="s2">""</span>
+    <span class="n">citation</span> <span class="o">=</span> <span class="s2">""</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">raw</span><span class="o">.</span><span class="n">splitlines</span><span class="p">():</span>
+        <span class="n">stripped</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">stripped</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"- Finding:"</span><span class="p">):</span>
+            <span class="n">finding</span> <span class="o">=</span> <span class="n">stripped</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">":"</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">stripped</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"- Citation:"</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">"[Author, Year]"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">stripped</span><span class="p">:</span>
+            <span class="n">citation</span> <span class="o">=</span> <span class="n">stripped</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">":"</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">finding</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">finding</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">citation</span><span class="si">}</span><span class="s2">"</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">raw</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_merge_state_trees</span><span class="p">(</span><span class="n">parent_tree</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">child_tree</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Merges updates from child sub-blueprint state_tree into parent state_tree.</span>
@@ -456,17 +474,21 @@
                     <span class="n">current_parent_tree</span> <span class="o">=</span> <span class="n">parent_conv</span><span class="o">.</span><span class="n">state_tree</span> <span class="ow">or</span> <span class="p">{}</span>
                     <span class="n">merged_tree</span> <span class="o">=</span> <span class="n">_merge_state_trees</span><span class="p">(</span><span class="n">current_parent_tree</span><span class="p">,</span> <span class="n">sub_conv</span><span class="o">.</span><span class="n">state_tree</span> <span class="ow">or</span> <span class="p">{})</span>
                     <span class="k">if</span> <span class="ow">not</span> <span class="n">sub_failed</span> <span class="ow">and</span> <span class="n">final_response</span><span class="p">:</span>
-                        <span class="n">facts</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">merged_tree</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"established_facts"</span><span class="p">,</span> <span class="p">[]))</span>
-                        <span class="k">if</span> <span class="n">final_response</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">facts</span><span class="p">:</span>
-                            <span class="n">facts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">final_response</span><span class="p">)</span>
-                        <span class="n">merged_tree</span><span class="p">[</span><span class="s2">"established_facts"</span><span class="p">]</span> <span class="o">=</span> <span class="n">facts</span>
+                        <span class="n">fact</span> <span class="o">=</span> <span class="n">_extract_established_fact</span><span class="p">(</span><span class="n">final_response</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">fact</span><span class="p">:</span>
+                            <span class="n">facts</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">merged_tree</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"established_facts"</span><span class="p">,</span> <span class="p">[]))</span>
+                            <span class="k">if</span> <span class="n">fact</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">facts</span><span class="p">:</span>
+                                <span class="n">facts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fact</span><span class="p">)</span>
+                            <span class="n">merged_tree</span><span class="p">[</span><span class="s2">"established_facts"</span><span class="p">]</span> <span class="o">=</span> <span class="n">facts</span>
                     <span class="n">parent_conv</span><span class="o">.</span><span class="n">state_tree</span> <span class="o">=</span> <span class="n">merged_tree</span>
                     <span class="n">parent_conv</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">update_fields</span><span class="o">=</span><span class="p">[</span><span class="s1">'state_tree'</span><span class="p">])</span>
                 <span class="k">elif</span> <span class="ow">not</span> <span class="n">sub_failed</span> <span class="ow">and</span> <span class="n">final_response</span><span class="p">:</span>
-                    <span class="n">facts</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">merged_tree</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"established_facts"</span><span class="p">,</span> <span class="p">[]))</span>
-                    <span class="k">if</span> <span class="n">final_response</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">facts</span><span class="p">:</span>
-                        <span class="n">facts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">final_response</span><span class="p">)</span>
-                    <span class="n">merged_tree</span><span class="p">[</span><span class="s2">"established_facts"</span><span class="p">]</span> <span class="o">=</span> <span class="n">facts</span>
+                    <span class="n">fact</span> <span class="o">=</span> <span class="n">_extract_established_fact</span><span class="p">(</span><span class="n">final_response</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">fact</span><span class="p">:</span>
+                        <span class="n">facts</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">merged_tree</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"established_facts"</span><span class="p">,</span> <span class="p">[]))</span>
+                        <span class="k">if</span> <span class="n">fact</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">facts</span><span class="p">:</span>
+                            <span class="n">facts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fact</span><span class="p">)</span>
+                        <span class="n">merged_tree</span><span class="p">[</span><span class="s2">"established_facts"</span><span class="p">]</span> <span class="o">=</span> <span class="n">facts</span>
 
                 <span class="n">scratch_merged</span><span class="p">[</span><span class="s2">"state_tree"</span><span class="p">]</span> <span class="o">=</span> <span class="n">merged_tree</span>
                     
@@ -483,7 +505,7 @@
                 <span class="p">}</span>
                 
                 <span class="k">return</span> <span class="p">{</span>
-                    <span class="s2">"working_memory"</span><span class="p">:</span> <span class="n">summary_remove_msgs</span> <span class="o">+</span> <span class="p">[</span><span class="n">SystemMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="n">working_prompt</span><span class="p">)],</span>
+                    <span class="s2">"working_memory"</span><span class="p">:</span> <span class="n">summary_remove_msgs</span> <span class="o">+</span> <span class="p">[</span><span class="n">HumanMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="n">working_prompt</span><span class="p">)],</span>
                     <span class="s2">"route_to"</span><span class="p">:</span> <span class="s2">"FAILURE"</span> <span class="k">if</span> <span class="n">sub_failed</span> <span class="k">else</span> <span class="s2">"SUCCESS"</span><span class="p">,</span>
                     <span class="s2">"resume_to"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
                     <span class="s2">"step_count"</span><span class="p">:</span> <span class="n">step_count</span><span class="p">,</span>
@@ -508,7 +530,7 @@
                     <span class="s2">"user_prompt"</span><span class="p">:</span> <span class="p">[]</span>
                 <span class="p">}</span>
                 <span class="k">return</span> <span class="p">{</span>
-                    <span class="s2">"working_memory"</span><span class="p">:</span> <span class="n">summary_remove_msgs</span> <span class="o">+</span> <span class="p">[</span><span class="n">SystemMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="n">working_prompt</span><span class="p">)],</span>
+                    <span class="s2">"working_memory"</span><span class="p">:</span> <span class="n">summary_remove_msgs</span> <span class="o">+</span> <span class="p">[</span><span class="n">HumanMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="n">working_prompt</span><span class="p">)],</span>
                     <span class="s2">"route_to"</span><span class="p">:</span> <span class="s2">"FAILURE"</span><span class="p">,</span>
                     <span class="s2">"resume_to"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
                     <span class="s2">"step_count"</span><span class="p">:</span> <span class="n">step_count</span><span class="p">,</span>
@@ -655,7 +677,7 @@
             <span class="p">}</span>
 
             <span class="k">return</span> <span class="p">{</span>
-                <span class="s2">"working_memory"</span><span class="p">:</span> <span class="n">summary_remove_msgs</span> <span class="o">+</span> <span class="p">[</span><span class="n">SystemMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="n">msg_content</span><span class="p">)],</span>
+                <span class="s2">"working_memory"</span><span class="p">:</span> <span class="n">summary_remove_msgs</span> <span class="o">+</span> <span class="p">[</span><span class="n">HumanMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="n">msg_content</span><span class="p">)],</span>
                 <span class="s2">"route_to"</span><span class="p">:</span> <span class="s2">"FAILURE"</span> <span class="k">if</span> <span class="n">tool_failed</span> <span class="k">else</span> <span class="s2">"SUCCESS"</span><span class="p">,</span>
                 <span class="s2">"resume_to"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
                 <span class="s2">"step_count"</span><span class="p">:</span> <span class="n">step_count</span><span class="p">,</span>
@@ -671,7 +693,12 @@
         <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"rag_context"</span><span class="p">):</span>
             <span class="n">system_prompt</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"</span><span class="se">\n\n</span><span class="s2">Context provided:</span><span class="se">\n</span><span class="si">{</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'rag_context'</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
         <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"scratch"</span><span class="p">):</span>
-            <span class="n">system_prompt</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"</span><span class="se">\n\n</span><span class="s2">Scratchpad Variables:</span><span class="se">\n</span><span class="si">{</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'scratch'</span><span class="p">),</span><span class="w"> </span><span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+            <span class="n">visible_scratch</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"scratch"</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">str</span><span class="p">(</span><span class="n">k</span><span class="p">)</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"_"</span><span class="p">)</span>
+            <span class="p">}</span>
+            <span class="k">if</span> <span class="n">visible_scratch</span><span class="p">:</span>
+                <span class="n">system_prompt</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"</span><span class="se">\n\n</span><span class="s2">Scratchpad Variables:</span><span class="se">\n</span><span class="si">{</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">visible_scratch</span><span class="p">,</span><span class="w"> </span><span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
         
         <span class="c1"># Inject Conversation.state_tree into the prompt when include_state_tree is enabled</span>
         <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="s1">'include_state_tree'</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span> <span class="ow">and</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"conversation_id"</span><span class="p">):</span>
@@ -702,7 +729,14 @@
         <span class="k">elif</span> <span class="n">lockdown_level</span> <span class="o">==</span> <span class="s2">"DEVELOPMENT"</span><span class="p">:</span>
             <span class="n">gov_directive</span> <span class="o">+=</span> <span class="s2">" Active Research Mode: Extended tools permitted for development research."</span>
         <span class="n">system_prompt</span> <span class="o">+=</span> <span class="n">gov_directive</span>
-            
+
+        <span class="n">prev_feedback</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"evaluator_feedback"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">prev_feedback</span><span class="p">:</span>
+            <span class="n">system_prompt</span> <span class="o">+=</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="se">\n\n</span><span class="s2">[PREVIOUS STEP EVALUATION FEEDBACK]</span><span class="se">\n</span><span class="si">{</span><span class="n">prev_feedback</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+                <span class="s2">"Address this feedback directly in your next action."</span>
+            <span class="p">)</span>
+
         <span class="n">sys_msg</span> <span class="o">=</span> <span class="n">SystemMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="n">system_prompt</span><span class="p">)</span>
         
         <span class="c1"># Ensure we don't duplicate the system prompt if it's already the first message</span>
@@ -779,7 +813,8 @@
             <span class="n">native_messages</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">"role"</span><span class="p">:</span> <span class="n">_map_role</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">type</span><span class="p">),</span> <span class="s2">"content"</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="s1">'content'</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">m</span><span class="p">))}</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">messages</span><span class="p">]</span>
             
             <span class="c1"># 2. Select strategy based on native tool support</span>
-            <span class="k">if</span> <span class="n">ai_service</span><span class="o">.</span><span class="n">supports_native_tools</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"user"</span><span class="p">)):</span>
+            <span class="n">used_native_tools</span> <span class="o">=</span> <span class="n">ai_service</span><span class="o">.</span><span class="n">supports_native_tools</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"user"</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">used_native_tools</span><span class="p">:</span>
                 <span class="c1"># Native Tool Calling (OpenAI/Ollama)</span>
                 <span class="c1"># Do not inject XML instructions; trust the API to return the tool array</span>
                 <span class="p">[</span><span class="n">raw_response</span><span class="p">]</span> <span class="o">=</span> <span class="n">ai_service</span><span class="o">.</span><span class="n">generate_response2</span><span class="p">(</span>
@@ -813,12 +848,15 @@
                         <span class="s2">"additionalProperties"</span><span class="p">:</span> <span class="kc">False</span>
                     <span class="p">})</span>
                 
+                <span class="n">require_tool_after_failure</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span>
+                    <span class="n">prev_feedback</span> <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"scratch"</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">"_seen_tool_calls_</span><span class="si">{</span><span class="n">step_key</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                <span class="p">)</span>
                 <span class="n">tool_calls_schema</span> <span class="o">=</span> <span class="p">{</span>
                     <span class="s2">"type"</span><span class="p">:</span> <span class="s2">"object"</span><span class="p">,</span>
                     <span class="s2">"properties"</span><span class="p">:</span> <span class="p">{</span>
                         <span class="s2">"tool_calls"</span><span class="p">:</span> <span class="p">{</span>
                             <span class="s2">"type"</span><span class="p">:</span> <span class="s2">"array"</span><span class="p">,</span>
-                            <span class="s2">"minItems"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                            <span class="s2">"minItems"</span><span class="p">:</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">require_tool_after_failure</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
                             <span class="s2">"items"</span><span class="p">:</span> <span class="p">{</span>
                                 <span class="s2">"anyOf"</span><span class="p">:</span> <span class="n">tool_schemas</span>
                             <span class="p">}</span>
@@ -840,7 +878,18 @@
                         <span class="n">tool_instruction</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"  Parameters: </span><span class="se">{{</span><span class="si">{</span><span class="n">param_desc</span><span class="si">}</span><span class="se">}}\n</span><span class="s2">"</span>
                     <span class="n">tool_instruction</span> <span class="o">+=</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span>
                     
-                <span class="n">tool_instruction</span> <span class="o">+=</span> <span class="s2">"You must respond with a JSON object containing a 'tool_calls' array. Each item must specify 'name' and 'args'. Do not add any text before or after the JSON."</span>
+                <span class="k">if</span> <span class="n">require_tool_after_failure</span><span class="p">:</span>
+                    <span class="n">tool_instruction</span> <span class="o">+=</span> <span class="p">(</span>
+                        <span class="s2">"You must respond with a JSON object containing a non-empty 'tool_calls' array. "</span>
+                        <span class="s2">"Each item must specify 'name' and 'args'. Previous evaluation failed for missing context, "</span>
+                        <span class="s2">"so invoke appropriate tool(s) now rather than returning an empty list."</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">tool_instruction</span> <span class="o">+=</span> <span class="p">(</span>
+                        <span class="s2">"You must respond with a JSON object containing a 'tool_calls' array. "</span>
+                        <span class="s2">"Each item must specify 'name' and 'args'. When no further tool calls are needed, "</span>
+                        <span class="s2">"respond with {</span><span class="se">\"</span><span class="s2">tool_calls</span><span class="se">\"</span><span class="s2">: []}. Do not add any text before or after the JSON."</span>
+                    <span class="p">)</span>
                 
                 <span class="k">if</span> <span class="n">native_messages</span> <span class="ow">and</span> <span class="n">native_messages</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"role"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"system"</span><span class="p">:</span>
                     <span class="n">native_messages</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"content"</span><span class="p">]</span> <span class="o">+=</span> <span class="n">tool_instruction</span>
@@ -880,21 +929,21 @@
                 <span class="k">for</span> <span class="n">tc</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
                     <span class="k">if</span> <span class="n">tc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"name"</span><span class="p">)</span> <span class="ow">in</span> <span class="n">valid_tool_names</span><span class="p">:</span>
                         <span class="n">validated_result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tc</span><span class="p">)</span>
-                    <span class="k">elif</span> <span class="n">tc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"name"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"TASK_COMPLETE"</span><span class="p">:</span>
-                        <span class="c1"># WS20: Allow deprecated TASK_COMPLETE tool call gracefully</span>
-                        <span class="n">validated_result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tc</span><span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"LLM tried to call unauthorized/invented tool: </span><span class="si">{</span><span class="n">tc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'name'</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
                         <span class="n">validated_result</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">"error"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"Tool '</span><span class="si">{</span><span class="n">tc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'name'</span><span class="p">)</span><span class="si">}</span><span class="s2">' is not available."</span><span class="p">})</span>
                 <span class="n">result</span> <span class="o">=</span> <span class="n">validated_result</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="s2">"error"</span> <span class="ow">in</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
-                    <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># Convert to error dict if only one failed call</span>
-            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
-                <span class="c1"># The model produced raw text or an empty tool_calls array instead of tool calls.</span>
-                <span class="c1"># This means it "simulated" tool usage or skipped tools rather than actually calling them.</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Step '</span><span class="si">{</span><span class="n">step</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">' has tools but model returned no tool calls. Treating as failure."</span><span class="p">)</span>
-                <span class="n">raw_preview</span> <span class="o">=</span> <span class="n">result</span><span class="p">[:</span><span class="mi">500</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="s2">"[]"</span>
-                <span class="n">result</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"error"</span><span class="p">:</span> <span class="s2">"ToolCallMissing"</span><span class="p">,</span> <span class="s2">"details"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"Model failed to produce tool calls. Raw output: </span><span class="si">{</span><span class="n">raw_preview</span><span class="si">}</span><span class="s2">"</span><span class="p">}</span>
+                    <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># Convert to error dict if only one failed call</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1"># Empty tool_calls list [] explicitly signals completion of tool gathering</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">elif</span> <span class="n">used_native_tools</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">result</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">result</span><span class="o">.</span><span class="n">lstrip</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"[Error"</span><span class="p">):</span>
+                <span class="c1"># Native tool model returned plain assistant text instead of calling more tools</span>
+                <span class="k">pass</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Step '</span><span class="si">{</span><span class="n">step</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">' failed to parse structured tool calls. Treating as failure."</span><span class="p">)</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"error"</span><span class="p">:</span> <span class="s2">"ToolCallMissing"</span><span class="p">,</span> <span class="s2">"details"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"Model failed to produce valid tool calls. Raw output: </span><span class="si">{</span><span class="n">result</span><span class="p">[:</span><span class="mi">500</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">}</span>
         <span class="k">elif</span> <span class="n">schema_format</span><span class="p">:</span>
             <span class="n">result</span> <span class="o">=</span> <span class="n">ai_service</span><span class="o">.</span><span class="n">generate_outline</span><span class="p">(</span>
                 <span class="n">messages</span><span class="o">=</span><span class="p">[{</span><span class="s2">"role"</span><span class="p">:</span> <span class="n">_map_role</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">type</span><span class="p">),</span> <span class="s2">"content"</span><span class="p">:</span> <span class="n">m</span><span class="o">.</span><span class="n">content</span><span class="p">}</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">messages</span><span class="p">],</span>
@@ -946,6 +995,7 @@
         <span class="c1"># Parse result</span>
         <span class="n">skip_duplicate_turn</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">seen_calls_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"_seen_tool_calls_</span><span class="si">{</span><span class="n">step_key</span><span class="si">}</span><span class="s2">"</span>
+        <span class="n">failed_calls_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"_seen_failed_calls_</span><span class="si">{</span><span class="n">step_key</span><span class="si">}</span><span class="s2">"</span>
         <span class="n">nudged_uncalled_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"_nudged_uncalled_</span><span class="si">{</span><span class="n">step_key</span><span class="si">}</span><span class="s2">"</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">"error"</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Error in step </span><span class="si">{</span><span class="n">step</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">'error'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
@@ -953,44 +1003,46 @@
             <span class="n">monologue_entry</span><span class="p">[</span><span class="s2">"output"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Generation error in step '</span><span class="si">{</span><span class="n">step</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">': </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'error'</span><span class="p">,</span><span class="w"> </span><span class="s1">'Unknown'</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
             <span class="n">route_to</span> <span class="o">=</span> <span class="s2">"FAILURE"</span> <span class="k">if</span> <span class="s2">"ToolCallMissing"</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'error'</span><span class="p">,</span> <span class="s1">''</span><span class="p">)</span> <span class="k">else</span> <span class="s2">"SELF"</span> 
             <span class="c1"># If generation fails parsing, ReAct loops back (SELF).</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">route_to</span> <span class="o">=</span> <span class="s2">"SUCCESS"</span>
+            <span class="n">skip_duplicate_turn</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">monologue_entry</span><span class="p">[</span><span class="s2">"output"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"No tool calls requested; advancing step."</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="s2">"__class__"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"list"</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">"name"</span> <span class="ow">in</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
                 <span class="n">tool_results_str</span> <span class="o">=</span> <span class="p">[]</span>
                 <span class="n">approved_tools_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"approved_tools"</span><span class="p">,</span> <span class="p">[]))</span>
                 <span class="n">canonical_self_id</span> <span class="o">=</span> <span class="n">root_mapping</span><span class="p">[</span><span class="n">step</span><span class="o">.</span><span class="n">id</span><span class="p">]</span>
                 <span class="n">seen_calls</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">scratch_updates</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">seen_calls_key</span><span class="p">,</span> <span class="p">[]))</span>
-                <span class="n">non_complete_calls</span> <span class="o">=</span> <span class="p">[</span><span class="n">tc</span> <span class="k">for</span> <span class="n">tc</span> <span class="ow">in</span> <span class="n">result</span> <span class="k">if</span> <span class="n">tc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"name"</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">"TASK_COMPLETE"</span><span class="p">]</span>
-                <span class="n">has_task_complete</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="n">tc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"name"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"TASK_COMPLETE"</span> <span class="k">for</span> <span class="n">tc</span> <span class="ow">in</span> <span class="n">result</span><span class="p">)</span>
+                <span class="n">failed_calls</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">scratch_updates</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">failed_calls_key</span><span class="p">,</span> <span class="p">[]))</span>
                 <span class="n">turn_sigs</span> <span class="o">=</span> <span class="p">[</span>
                     <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">tc</span><span class="p">[</span><span class="s1">'name'</span><span class="p">]</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">tc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'args'</span><span class="p">)</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="p">{},</span><span class="w"> </span><span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
-                    <span class="k">for</span> <span class="n">tc</span> <span class="ow">in</span> <span class="n">non_complete_calls</span>
+                    <span class="k">for</span> <span class="n">tc</span> <span class="ow">in</span> <span class="n">result</span>
                 <span class="p">]</span>
                 <span class="k">if</span> <span class="p">(</span>
                     <span class="n">step</span><span class="o">.</span><span class="n">on_success_step_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-                    <span class="ow">and</span> <span class="n">non_complete_calls</span>
-                    <span class="ow">and</span> <span class="ow">not</span> <span class="n">has_task_complete</span>
+                    <span class="ow">and</span> <span class="n">result</span>
                     <span class="ow">and</span> <span class="n">seen_calls</span>
                     <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span><span class="n">sig</span> <span class="ow">in</span> <span class="n">seen_calls</span> <span class="k">for</span> <span class="n">sig</span> <span class="ow">in</span> <span class="n">turn_sigs</span><span class="p">)</span>
                 <span class="p">):</span>
                     <span class="n">seen_tool_names</span> <span class="o">=</span> <span class="p">{</span><span class="n">sig</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">":"</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">sig</span> <span class="ow">in</span> <span class="n">seen_calls</span><span class="p">}</span>
                     <span class="n">uncalled_tools</span> <span class="o">=</span> <span class="p">[</span>
                         <span class="n">t</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tools</span>
-                        <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"TASK_COMPLETE"</span><span class="p">,</span> <span class="s2">"PAUSE_FOR_INPUT"</span><span class="p">,</span> <span class="s2">"NO_TOOL"</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"PAUSE_FOR_INPUT"</span><span class="p">,</span> <span class="s2">"NO_TOOL"</span><span class="p">)</span>
                         <span class="ow">and</span> <span class="n">t</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen_tool_names</span>
                     <span class="p">]</span>
                     <span class="k">if</span> <span class="n">uncalled_tools</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">scratch_updates</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">nudged_uncalled_key</span><span class="p">):</span>
                         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                             <span class="s2">"Step '</span><span class="si">%s</span><span class="s2">' repeated </span><span class="si">%s</span><span class="s2"> while unused tools </span><span class="si">%s</span><span class="s2"> remain; nudging once."</span><span class="p">,</span>
                             <span class="n">step</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
-                            <span class="p">[</span><span class="n">tc</span><span class="p">[</span><span class="s2">"name"</span><span class="p">]</span> <span class="k">for</span> <span class="n">tc</span> <span class="ow">in</span> <span class="n">non_complete_calls</span><span class="p">],</span>
+                            <span class="p">[</span><span class="n">tc</span><span class="p">[</span><span class="s2">"name"</span><span class="p">]</span> <span class="k">for</span> <span class="n">tc</span> <span class="ow">in</span> <span class="n">result</span><span class="p">],</span>
                             <span class="n">uncalled_tools</span><span class="p">,</span>
                         <span class="p">)</span>
                         <span class="n">scratch_updates</span><span class="p">[</span><span class="n">nudged_uncalled_key</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
                         <span class="n">route_to</span> <span class="o">=</span> <span class="s2">"SELF"</span>
                         <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">"You already ran </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tc</span><span class="p">[</span><span class="s1">'name'</span><span class="p">]</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">tc</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">non_complete_calls</span><span class="p">)</span><span class="si">}</span><span class="s2"> with those exact arguments. "</span>
+                            <span class="sa">f</span><span class="s2">"You already ran </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tc</span><span class="p">[</span><span class="s1">'name'</span><span class="p">]</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">tc</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">result</span><span class="p">)</span><span class="si">}</span><span class="s2"> with those exact arguments. "</span>
                             <span class="sa">f</span><span class="s2">"Do NOT repeat it. Either call one of your unused tools (</span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">uncalled_tools</span><span class="p">)</span><span class="si">}</span><span class="s2">) "</span>
-                            <span class="s2">"or call `TASK_COMPLETE` now."</span>
+                            <span class="s2">"or output an empty `tool_calls: []` list if no more tool calls are needed."</span>
                         <span class="p">)</span>
                         <span class="n">monologue_entry</span><span class="p">[</span><span class="s2">"output"</span><span class="p">]</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">"</span>
                         <span class="n">additional_messages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">HumanMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="n">msg</span><span class="p">))</span>
@@ -999,35 +1051,55 @@
                         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                             <span class="s2">"Step '</span><span class="si">%s</span><span class="s2">' repeated previously executed tool call(s) </span><span class="si">%s</span><span class="s2">; advancing without re-running."</span><span class="p">,</span>
                             <span class="n">step</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
-                            <span class="p">[</span><span class="n">tc</span><span class="p">[</span><span class="s2">"name"</span><span class="p">]</span> <span class="k">for</span> <span class="n">tc</span> <span class="ow">in</span> <span class="n">non_complete_calls</span><span class="p">],</span>
+                            <span class="p">[</span><span class="n">tc</span><span class="p">[</span><span class="s2">"name"</span><span class="p">]</span> <span class="k">for</span> <span class="n">tc</span> <span class="ow">in</span> <span class="n">result</span><span class="p">],</span>
                         <span class="p">)</span>
                         <span class="n">skip_duplicate_turn</span> <span class="o">=</span> <span class="kc">True</span>
                         <span class="n">route_to</span> <span class="o">=</span> <span class="s2">"SUCCESS"</span>
                         <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">"Reused previously gathered results for </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tc</span><span class="p">[</span><span class="s1">'name'</span><span class="p">]</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">tc</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">non_complete_calls</span><span class="p">)</span><span class="si">}</span><span class="s2">; "</span>
+                            <span class="sa">f</span><span class="s2">"Reused previously gathered results for </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tc</span><span class="p">[</span><span class="s1">'name'</span><span class="p">]</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">tc</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">result</span><span class="p">)</span><span class="si">}</span><span class="s2">; "</span>
                             <span class="s2">"advancing step."</span>
                         <span class="p">)</span>
                         <span class="n">monologue_entry</span><span class="p">[</span><span class="s2">"output"</span><span class="p">]</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">"</span>
                         <span class="n">tool_results_str</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
                     <span class="n">result_to_execute</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">elif</span> <span class="p">(</span>
+                    <span class="n">result</span>
+                    <span class="ow">and</span> <span class="n">failed_calls</span>
+                    <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span><span class="n">sig</span> <span class="ow">in</span> <span class="n">failed_calls</span> <span class="k">for</span> <span class="n">sig</span> <span class="ow">in</span> <span class="n">turn_sigs</span><span class="p">)</span>
+                <span class="p">):</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                        <span class="s2">"Step '</span><span class="si">%s</span><span class="s2">' repeated identical failing tool call(s) </span><span class="si">%s</span><span class="s2">; advancing without re-running."</span><span class="p">,</span>
+                        <span class="n">step</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                        <span class="p">[</span><span class="n">tc</span><span class="p">[</span><span class="s2">"name"</span><span class="p">]</span> <span class="k">for</span> <span class="n">tc</span> <span class="ow">in</span> <span class="n">result</span><span class="p">],</span>
+                    <span class="p">)</span>
+                    <span class="n">skip_duplicate_turn</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="n">route_to</span> <span class="o">=</span> <span class="s2">"SUCCESS"</span> <span class="k">if</span> <span class="n">step</span><span class="o">.</span><span class="n">on_success_step_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">"FAILURE"</span>
+                    <span class="n">monologue_entry</span><span class="p">[</span><span class="s2">"failed"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">"Repeated identical failing tool call(s) for "</span>
+                        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tc</span><span class="p">[</span><span class="s1">'name'</span><span class="p">]</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">tc</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">result</span><span class="p">)</span><span class="si">}</span><span class="s2"> without changes; advancing without re-running."</span>
+                    <span class="p">)</span>
+                    <span class="n">monologue_entry</span><span class="p">[</span><span class="s2">"output"</span><span class="p">]</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">"</span>
+                    <span class="n">tool_results_str</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+                    <span class="n">result_to_execute</span> <span class="o">=</span> <span class="p">[]</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">result_to_execute</span> <span class="o">=</span> <span class="n">result</span>
 
+                <span class="n">auto_completed_task_this_turn</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="n">admin_state_tools</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">"update_conversation_state"</span><span class="p">,</span>
+                    <span class="s2">"manage_dynamic_tools"</span><span class="p">,</span>
+                    <span class="s2">"promote_artifact"</span><span class="p">,</span>
+                    <span class="s2">"deprecate_tool"</span><span class="p">,</span>
+                <span class="p">}</span>
                 <span class="k">for</span> <span class="n">tool_call</span> <span class="ow">in</span> <span class="n">result_to_execute</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tool_call</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">"error"</span> <span class="ow">in</span> <span class="n">tool_call</span><span class="p">:</span>
+                        <span class="n">err_text</span> <span class="o">=</span> <span class="n">tool_call</span><span class="p">[</span><span class="s2">"error"</span><span class="p">]</span>
+                        <span class="n">tool_results_str</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">err_text</span><span class="p">)</span>
+                        <span class="n">additional_messages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">HumanMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="sa">f</span><span class="s2">"[Tool Error]: </span><span class="si">{</span><span class="n">err_text</span><span class="si">}</span><span class="s2">"</span><span class="p">))</span>
+                        <span class="k">continue</span>
                     <span class="n">tool_name</span> <span class="o">=</span> <span class="n">tool_call</span><span class="p">[</span><span class="s2">"name"</span><span class="p">]</span>
                     <span class="n">tool_args</span> <span class="o">=</span> <span class="n">tool_call</span><span class="p">[</span><span class="s2">"args"</span><span class="p">]</span>
-
-                    <span class="k">if</span> <span class="n">tool_name</span> <span class="o">==</span> <span class="s2">"TASK_COMPLETE"</span><span class="p">:</span>
-                        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Deprecated TASK_COMPLETE invoked; treating as clean completion."</span><span class="p">)</span>
-                        <span class="n">final_ans</span> <span class="o">=</span> <span class="n">tool_args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"final_answer"</span><span class="p">)</span> <span class="ow">or</span> <span class="n">tool_args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"answer"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span>
-                        <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Task completed: </span><span class="si">{</span><span class="n">final_ans</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">final_ans</span> <span class="k">else</span> <span class="s2">"Task completed successfully."</span>
-                        <span class="n">route_to</span> <span class="o">=</span> <span class="s2">"SUCCESS"</span>
-                        <span class="n">monologue_entry</span><span class="p">[</span><span class="s2">"output"</span><span class="p">]</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">"</span>
-                        <span class="n">additional_messages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">SystemMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="n">msg</span><span class="p">))</span>
-                        <span class="n">tool_results_str</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
-                        <span class="k">if</span> <span class="n">final_ans</span><span class="p">:</span>
-                            <span class="n">candidate_output</span> <span class="o">=</span> <span class="n">final_ans</span>
-                        <span class="k">continue</span>
 
                     <span class="k">try</span><span class="p">:</span>
                         <span class="n">tool_def</span> <span class="o">=</span> <span class="n">ToolDefinition</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">tool_name</span><span class="p">)</span>
@@ -1066,19 +1138,24 @@
                             <span class="p">}</span>
 
                         <span class="n">hook_result</span> <span class="o">=</span> <span class="n">execute_tool</span><span class="p">(</span><span class="n">tool_def</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">tool_args</span><span class="p">)</span>
-                        <span class="k">if</span> <span class="n">step</span><span class="o">.</span><span class="n">on_success_step_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                            <span class="n">seen_calls</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">tool_name</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">tool_args</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="p">{},</span><span class="w"> </span><span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-                            <span class="n">scratch_updates</span><span class="p">[</span><span class="n">seen_calls_key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">seen_calls</span><span class="p">)</span>
-                            
+                        <span class="n">call_failed</span> <span class="o">=</span> <span class="kc">False</span>
+
                         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hook_result</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                            <span class="n">wp</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">hook_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"working_prompt"</span><span class="p">,</span> <span class="s2">""</span><span class="p">))</span>
                             <span class="k">if</span> <span class="s2">"route_to"</span> <span class="ow">in</span> <span class="n">hook_result</span><span class="p">:</span>
                                 <span class="n">route_to</span> <span class="o">=</span> <span class="n">hook_result</span><span class="p">[</span><span class="s2">"route_to"</span><span class="p">]</span>
+                            <span class="k">if</span> <span class="p">(</span>
+                                <span class="n">hook_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"route_to"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"FAILURE"</span>
+                                <span class="ow">or</span> <span class="s2">"Sandbox Execution Failed"</span> <span class="ow">in</span> <span class="n">wp</span>
+                                <span class="ow">or</span> <span class="s2">"Refusing to execute empty"</span> <span class="ow">in</span> <span class="n">wp</span>
+                            <span class="p">):</span>
+                                <span class="n">call_failed</span> <span class="o">=</span> <span class="kc">True</span>
                             <span class="k">if</span> <span class="s2">"working_prompt"</span> <span class="ow">in</span> <span class="n">hook_result</span><span class="p">:</span>
                                 <span class="n">msg</span> <span class="o">=</span> <span class="n">hook_result</span><span class="p">[</span><span class="s2">"working_prompt"</span><span class="p">]</span>
-                                <span class="n">additional_messages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">SystemMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="n">msg</span><span class="p">))</span>
+                                <span class="n">additional_messages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">HumanMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="n">msg</span><span class="p">))</span>
                                 <span class="n">tool_results_str</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
                                 <span class="k">if</span> <span class="n">route_to</span> <span class="o">==</span> <span class="s2">"SUCCESS"</span><span class="p">:</span>
-                                    <span class="n">monologue_entry</span><span class="p">[</span><span class="s2">"output"</span><span class="p">]</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"</span><span class="se">\\</span><span class="s2">n</span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">"</span>
+                                    <span class="n">monologue_entry</span><span class="p">[</span><span class="s2">"output"</span><span class="p">]</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">"</span>
                             <span class="k">if</span> <span class="s2">"current_chunk_index"</span> <span class="ow">in</span> <span class="n">hook_result</span><span class="p">:</span>
                                 <span class="n">scratch_updates</span><span class="p">[</span><span class="s2">"current_chunk_index"</span><span class="p">]</span> <span class="o">=</span> <span class="n">hook_result</span><span class="p">[</span><span class="s2">"current_chunk_index"</span><span class="p">]</span>
                             <span class="k">if</span> <span class="s2">"state_tree"</span> <span class="ow">in</span> <span class="n">hook_result</span><span class="p">:</span>
@@ -1086,17 +1163,42 @@
                         <span class="k">else</span><span class="p">:</span>
                             <span class="n">res_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">hook_result</span><span class="p">)</span>
                             <span class="n">tool_results_str</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">res_str</span><span class="p">)</span>
+                            <span class="n">res_lower</span> <span class="o">=</span> <span class="n">res_str</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                            <span class="n">failure_markers</span> <span class="o">=</span> <span class="p">(</span>
+                                <span class="s2">"not found"</span><span class="p">,</span>
+                                <span class="s2">"could not find"</span><span class="p">,</span>
+                                <span class="s2">"could not be found"</span><span class="p">,</span>
+                                <span class="s2">"does not exist"</span><span class="p">,</span>
+                                <span class="s2">"cannot complete"</span><span class="p">,</span>
+                                <span class="s2">"cannot be completed"</span><span class="p">,</span>
+                                <span class="s2">"calculation failed"</span><span class="p">,</span>
+                                <span class="s2">"execution failed"</span><span class="p">,</span>
+                                <span class="s2">"analysis halted"</span><span class="p">,</span>
+                                <span class="s2">"aborted:"</span><span class="p">,</span>
+                            <span class="p">)</span>
+                            <span class="n">tool_errored</span> <span class="o">=</span> <span class="p">(</span>
+                                <span class="n">res_lower</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"error"</span><span class="p">)</span>
+                                <span class="ow">or</span> <span class="n">res_lower</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"failed"</span><span class="p">)</span>
+                                <span class="ow">or</span> <span class="nb">any</span><span class="p">(</span><span class="n">marker</span> <span class="ow">in</span> <span class="n">res_lower</span> <span class="k">for</span> <span class="n">marker</span> <span class="ow">in</span> <span class="n">failure_markers</span><span class="p">)</span>
+                            <span class="p">)</span>
+                            <span class="n">call_failed</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">tool_errored</span><span class="p">)</span>
                             
                             <span class="n">success_prefix</span> <span class="o">=</span> <span class="s2">""</span>
-                            <span class="k">if</span> <span class="ow">not</span> <span class="n">res_str</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"error"</span><span class="p">):</span>
+                            <span class="k">if</span> <span class="ow">not</span> <span class="n">tool_errored</span><span class="p">:</span>
                                 <span class="n">success_prefix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"✅ THE TOOL '</span><span class="si">{</span><span class="n">tool_name</span><span class="si">}</span><span class="s2">' EXECUTED SUCCESSFULLY.</span><span class="se">\n</span><span class="s2">"</span>
                                 
                             <span class="n">additional_messages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                                 <span class="n">HumanMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="sa">f</span><span class="s2">"[Tool '</span><span class="si">{</span><span class="n">tool_name</span><span class="si">}</span><span class="s2">' Result]:</span><span class="se">\n</span><span class="si">{</span><span class="n">success_prefix</span><span class="si">}</span><span class="s2">Output:</span><span class="se">\n</span><span class="si">{</span><span class="n">res_str</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
                             <span class="p">)</span>
 
-                            <span class="c1"># Auto-ground tool execution into active task resolution in state_tree</span>
-                            <span class="k">if</span> <span class="n">state_tree_updates</span> <span class="ow">and</span> <span class="s2">"tasks"</span> <span class="ow">in</span> <span class="n">state_tree_updates</span><span class="p">:</span>
+                            <span class="c1"># Auto-ground genuine task execution (never admin/mutation tools or error messages)</span>
+                            <span class="k">if</span> <span class="p">(</span>
+                                <span class="ow">not</span> <span class="n">tool_errored</span>
+                                <span class="ow">and</span> <span class="n">tool_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">admin_state_tools</span>
+                                <span class="ow">and</span> <span class="ow">not</span> <span class="n">auto_completed_task_this_turn</span>
+                                <span class="ow">and</span> <span class="n">state_tree_updates</span>
+                                <span class="ow">and</span> <span class="s2">"tasks"</span> <span class="ow">in</span> <span class="n">state_tree_updates</span>
+                            <span class="p">):</span>
                                 <span class="n">tasks_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">state_tree_updates</span><span class="p">[</span><span class="s2">"tasks"</span><span class="p">])</span>
                                 <span class="n">active_tid</span> <span class="o">=</span> <span class="n">state_tree_updates</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"active_task"</span><span class="p">)</span>
                                 <span class="k">if</span> <span class="n">active_tid</span> <span class="ow">and</span> <span class="n">active_tid</span> <span class="ow">in</span> <span class="n">tasks_dict</span><span class="p">:</span>
@@ -1104,22 +1206,33 @@
                                         <span class="n">clean_res</span> <span class="o">=</span> <span class="n">res_str</span><span class="p">[:</span><span class="mi">1000</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">,</span> <span class="s2">" "</span><span class="p">)</span>
                                         <span class="n">tasks_dict</span><span class="p">[</span><span class="n">active_tid</span><span class="p">][</span><span class="s2">"resolution"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">tool_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">clean_res</span><span class="si">}</span><span class="s2">"</span>
                                         <span class="n">tasks_dict</span><span class="p">[</span><span class="n">active_tid</span><span class="p">][</span><span class="s2">"status"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"COMPLETED"</span>
-                                        <span class="c1"># Advance to next pending task</span>
+                                        <span class="n">auto_completed_task_this_turn</span> <span class="o">=</span> <span class="kc">True</span>
                                         <span class="n">pending</span> <span class="o">=</span> <span class="p">[</span><span class="n">tid</span> <span class="k">for</span> <span class="n">tid</span><span class="p">,</span> <span class="n">tinfo</span> <span class="ow">in</span> <span class="n">tasks_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tinfo</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="n">tinfo</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"status"</span><span class="p">)</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"PENDING"</span><span class="p">,</span> <span class="s2">"pending"</span><span class="p">]]</span>
                                         <span class="n">state_tree_updates</span><span class="p">[</span><span class="s2">"active_task"</span><span class="p">]</span> <span class="o">=</span> <span class="n">pending</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">pending</span> <span class="k">else</span> <span class="kc">None</span>
                                         <span class="k">if</span> <span class="n">state_tree_updates</span><span class="p">[</span><span class="s2">"active_task"</span><span class="p">]</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tasks_dict</span><span class="p">[</span><span class="n">state_tree_updates</span><span class="p">[</span><span class="s2">"active_task"</span><span class="p">]],</span> <span class="nb">dict</span><span class="p">):</span>
                                             <span class="n">tasks_dict</span><span class="p">[</span><span class="n">state_tree_updates</span><span class="p">[</span><span class="s2">"active_task"</span><span class="p">]][</span><span class="s2">"status"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"IN_PROGRESS"</span>
                                 <span class="n">state_tree_updates</span><span class="p">[</span><span class="s2">"tasks"</span><span class="p">]</span> <span class="o">=</span> <span class="n">tasks_dict</span>
 
-                                <span class="c1"># Also pop completed task from scratchpad queue if present</span>
                                 <span class="k">if</span> <span class="n">scratch_updates</span> <span class="ow">and</span> <span class="s2">"queue"</span> <span class="ow">in</span> <span class="n">scratch_updates</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scratch_updates</span><span class="p">[</span><span class="s2">"queue"</span><span class="p">],</span> <span class="nb">list</span><span class="p">):</span>
                                     <span class="n">queue_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">scratch_updates</span><span class="p">[</span><span class="s2">"queue"</span><span class="p">])</span>
                                     <span class="k">if</span> <span class="n">queue_list</span><span class="p">:</span>
                                         <span class="n">queue_list</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
                                         <span class="n">scratch_updates</span><span class="p">[</span><span class="s2">"queue"</span><span class="p">]</span> <span class="o">=</span> <span class="n">queue_list</span>
 
+                        <span class="k">if</span> <span class="n">step</span><span class="o">.</span><span class="n">on_success_step_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="n">sig_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">tool_name</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">tool_args</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="p">{},</span><span class="w"> </span><span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+                            <span class="k">if</span> <span class="n">call_failed</span><span class="p">:</span>
+                                <span class="n">failed_calls</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">sig_str</span><span class="p">)</span>
+                                <span class="n">scratch_updates</span><span class="p">[</span><span class="n">failed_calls_key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">failed_calls</span><span class="p">)</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">seen_calls</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">sig_str</span><span class="p">)</span>
+                                <span class="n">scratch_updates</span><span class="p">[</span><span class="n">seen_calls_key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">seen_calls</span><span class="p">)</span>
+
                     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                         <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Error in tool </span><span class="si">{</span><span class="n">tool_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">step</span><span class="o">.</span><span class="n">on_success_step_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="n">failed_calls</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">tool_name</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">tool_args</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="p">{},</span><span class="w"> </span><span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                            <span class="n">scratch_updates</span><span class="p">[</span><span class="n">failed_calls_key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">failed_calls</span><span class="p">)</span>
                         <span class="n">tool_results_str</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Error in tool </span><span class="si">{</span><span class="n">tool_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
                         <span class="n">additional_messages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">HumanMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="sa">f</span><span class="s2">"[Tool '</span><span class="si">{</span><span class="n">tool_name</span><span class="si">}</span><span class="s2">' Error]: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">))</span>
                         <span class="n">route_to</span> <span class="o">=</span> <span class="s2">"FAILURE"</span>
@@ -1127,16 +1240,15 @@
                 <span class="n">monologue_entry</span><span class="p">[</span><span class="s2">"tool_result"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tool_results_str</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">route_to</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">route_to</span> <span class="o">=</span> <span class="s2">"SELF"</span>
-                    <span class="k">if</span> <span class="s2">"TASK_COMPLETE"</span> <span class="ow">in</span> <span class="n">valid_tool_names</span><span class="p">:</span>
-                        <span class="n">additional_messages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                            <span class="n">HumanMessage</span><span class="p">(</span>
-                                <span class="n">content</span><span class="o">=</span><span class="p">(</span>
-                                    <span class="s2">"Tool execution above completed. Do NOT repeat identical tool calls. "</span>
-                                    <span class="s2">"If the tool output already provides sufficient information or no new queries remain, "</span>
-                                    <span class="s2">"call `TASK_COMPLETE` now; otherwise run only genuinely new tool queries."</span>
-                                <span class="p">)</span>
+                    <span class="n">additional_messages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="n">HumanMessage</span><span class="p">(</span>
+                            <span class="n">content</span><span class="o">=</span><span class="p">(</span>
+                                <span class="s2">"Tool execution above completed. Do NOT repeat identical tool calls. "</span>
+                                <span class="s2">"If the tool output already provides sufficient information or no new queries remain, "</span>
+                                <span class="s2">"output an empty `tool_calls: []` list now to advance; otherwise run only genuinely new tool queries."</span>
                             <span class="p">)</span>
                         <span class="p">)</span>
+                    <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">route_to</span> <span class="o">=</span> <span class="s2">"SUCCESS"</span> 
                 <span class="c1"># Text output means we successfully generated an answer, subject to eval</span>
@@ -1164,7 +1276,7 @@
                     <span class="p">}</span>
                     <span class="n">handled_res</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="n">action_state</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>
                     <span class="k">if</span> <span class="n">handled_res</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"working_prompt"</span><span class="p">):</span>
-                        <span class="n">additional_messages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">SystemMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="n">handled_res</span><span class="p">[</span><span class="s2">"working_prompt"</span><span class="p">]))</span>
+                        <span class="n">additional_messages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">HumanMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="n">handled_res</span><span class="p">[</span><span class="s2">"working_prompt"</span><span class="p">]))</span>
                     <span class="k">if</span> <span class="n">handled_res</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"route_to"</span><span class="p">):</span>
                         <span class="n">route_to</span> <span class="o">=</span> <span class="n">handled_res</span><span class="p">[</span><span class="s2">"route_to"</span><span class="p">]</span>
                     <span class="k">if</span> <span class="n">handled_res</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"state_tree"</span><span class="p">):</span>
@@ -1178,6 +1290,7 @@
         <span class="c1"># Only retain per-step seen tool calls while looping within the same step via SELF</span>
         <span class="k">if</span> <span class="n">route_to</span> <span class="o">!=</span> <span class="s2">"SELF"</span><span class="p">:</span>
             <span class="n">scratch_updates</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">seen_calls_key</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">scratch_updates</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">failed_calls_key</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
             <span class="n">scratch_updates</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">nudged_uncalled_key</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
         <span class="c1"># Collapse consecutive HumanMessage tool feedback entries into a single turn for strict chat templates</span>
@@ -1249,6 +1362,7 @@
             <span class="s2">"retries_remaining"</span><span class="p">:</span> <span class="n">retries_remaining</span><span class="p">,</span>
             <span class="s2">"internal_monologue"</span><span class="p">:</span> <span class="p">[</span><span class="n">monologue_entry</span><span class="p">],</span>
             <span class="s2">"scratch"</span><span class="p">:</span> <span class="n">scratch_updates</span><span class="p">,</span>
+            <span class="s2">"evaluator_feedback"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
             <span class="s2">"token_budget_remaining"</span><span class="p">:</span> <span class="n">final_budget</span>
         <span class="p">}</span>
         <span class="k">if</span> <span class="n">candidate_output</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -1280,9 +1394,7 @@
         <span class="k">if</span> <span class="n">step</span><span class="o">.</span><span class="n">sub_blueprint_id</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">_intercept_failure</span><span class="p">(</span><span class="n">route_to</span><span class="p">,</span> <span class="n">resume_to</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">root_mapping</span><span class="p">)</span>
             
-        <span class="c1"># 3. WS20: Deprecated TASK_COMPLETE requirement.</span>
-        <span class="c1"># When evaluation criteria is specified, evaluate criteria whenever the step executed its</span>
-        <span class="c1"># action (route_to in ("SELF", "SUCCESS", None)) rather than requiring an artificial TASK_COMPLETE tool call.</span>
+        <span class="c1"># 3. WS32: Evaluate criteria whenever the step executed its action cleanly (including [] tool completion).</span>
         <span class="n">should_evaluate</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">step</span><span class="o">.</span><span class="n">evaluation_criteria</span><span class="p">)</span> <span class="ow">and</span> <span class="n">route_to</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"SELF"</span><span class="p">,</span> <span class="s2">"SUCCESS"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         
         <span class="k">if</span> <span class="n">should_evaluate</span><span class="p">:</span>
@@ -1352,9 +1464,11 @@
                 <span class="n">route_to</span> <span class="o">=</span> <span class="s2">"USER_INPUT_REQUIRED"</span>
                 <span class="n">resume_to</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"step_</span><span class="si">{</span><span class="n">root_mapping</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">step</span><span class="o">.</span><span class="n">id</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
         
-        <span class="n">updates</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"route_to"</span><span class="p">:</span> <span class="n">route_to</span><span class="p">,</span> <span class="s2">"resume_to"</span><span class="p">:</span> <span class="n">resume_to</span><span class="p">}</span>
-        <span class="k">if</span> <span class="n">evaluator_feedback</span><span class="p">:</span>
-            <span class="n">updates</span><span class="p">[</span><span class="s2">"evaluator_feedback"</span><span class="p">]</span> <span class="o">=</span> <span class="n">evaluator_feedback</span>
+        <span class="n">updates</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">"route_to"</span><span class="p">:</span> <span class="n">route_to</span><span class="p">,</span>
+            <span class="s2">"resume_to"</span><span class="p">:</span> <span class="n">resume_to</span><span class="p">,</span>
+            <span class="s2">"evaluator_feedback"</span><span class="p">:</span> <span class="n">evaluator_feedback</span> <span class="k">if</span> <span class="n">route_to</span> <span class="o">==</span> <span class="s2">"FAILURE"</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="p">}</span>
         <span class="k">if</span> <span class="n">updated_monologue</span><span class="p">:</span>
             <span class="n">eval_entry</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s2">"step_name"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">step</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> (Evaluation)"</span><span class="p">,</span>

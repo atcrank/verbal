@@ -68,6 +68,6 @@ Do not give autonomous agents arbitrary execution environments (like unchecked s
 When an agent tracks its own progress using global state (like a `state_tree`), the updates must be idempotent.
 **Principle**: Returning errors like "Task already exists" when the agent re-queues a task can stall retry loops and derail execution. Updates to active state maps should silently succeed or overwrite if the intent aligns.
 
-### I. Automatic Sequential Transitions vs. `TASK_COMPLETE`
-In strict multi-step sequences (e.g., Fetch -> Contemplate -> Act -> Next Domain), do not provide explicit early-exit tools like `TASK_COMPLETE` to intermediate nodes.
-**Principle**: Intermediate nodes with `TASK_COMPLETE` will confuse the LLM, leading to premature graph termination (if called) or retry stalls (if ignored). Rely on LangGraph's automatic `on_success_step` routing for transition, and reserve termination signals strictly for the final leaf nodes of a blueprint loop.
+### I. Automatic Sequential Transitions vs. Empty `tool_calls: []`
+Never register or inject explicit sentinel exit tools (like the retired `TASK_COMPLETE` tool) onto reasoning steps.
+**Principle**: Exit sentinel tools confuse smaller models into skipping steps or hallucinating premature completion. Rely on LangGraph's `on_success_step` / `eval_node` routing, using an empty `tool_calls: []` array (or plain assistant text) when a tool loop finishes calling tools.

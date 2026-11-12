@@ -9,7 +9,7 @@ Methodology: Executable Doctests as Verifiable Reports
 Rather than presenting static mockups or hand-written marketing summaries, Reason uses **executable Python doctests** driven by `pytest` and Playwright browser automation. 
 
 Every trial runs against:
-- **Live Local GPU Inference**: Token generation executed by `google/gemma-2-2b-it` on local hardware (port 8001).
+- **Live Local GPU Inference**: Token generation executed by `google/gemma-4-E2B-it` on local hardware (port 8001).
 - **Live Browser Automation**: End-to-end browser session driving the HTMX frontend, context chips, and conversation DAG.
 - **Dockerized Execution Sandbox**: Sandboxed code execution (`verbal_sandbox`) for numerical modeling.
 - **Persistent Knowledge Graph**: Grips ontology storage and autonomous conceptual elaboration in PostgreSQL / pgvector.
@@ -32,13 +32,13 @@ The Four Trial Reports
    Audits semantic retrieval against peer-reviewed papers (*Talavera et al. 2023*, *Penders et al. 2011*). Evaluates context chip formulation, token estimation, and trade-offs between 3D LiDAR backscatter and LWIR thermal signatures in aerosolized smoke with strict token-only evaluation.
 
 2. :doc:`Report 2: Careful Literature Extraction & Parametric Factor Construction <demo_ui_trials/trial_2_careful_literature_extraction_report>`
-   Extracts physical hardware specifications directly from literature tables: GM25-370 locomotion motors, 12,800mAh 3.7V motor bank, 10,800mAh 5V compute bank, and Pozyx UWB transceiver. Establishes the empirical $3 \times 2$ factorial space (Payload: 25W, 75W, 110W; Locomotion: 280W, 460W; 960Wh usable battery) with zero fabricated numbers.
+   Tests direct literature extraction from the compact ``Talavera et al. (2023)`` Level 0–1 excerpt (motors, 3.7 V / 12,800 mAh motor bank, 5 V / 10,800 mAh logic bank, controllers/UWB) and separates verified source facts from the Researcher's scaled $3 \times 2$ scenario parameters (25 W / 75 W / 110 W payloads; 280 W / 460 W terrain draw; 1200 Wh / 960 Wh usable battery). Deterministic checks and an independent review verify which components the active model actually extracted vs. omitted.
 
 3. :doc:`Report 3: Multi-Step Reasoning, Sandboxed Simulation & Adversarial Critique <demo_ui_trials/trial_3_multistep_blueprint_and_tools_report>`
-   Demonstrates agentic multi-step reasoning using the Docker Python sandbox. Actively flags the model's `.idxmin()` optimization inversion error in real time, prompts the model for correction, captures the valid recommendation (**Standard Multi-spectral on Concrete: 162 min / 42 min margin**), and uncovers the decisive finding that onboard power fails on rubble (<119 min).
+   Exercises the ``Reasoning with Code Sandbox`` blueprint against the Docker Python sandbox to compute the 6-cell $T_{\mathrm{op}} = (960 / P_{\mathrm{total}}) \times 60$ endurance matrix. Real-time verification checks actual sandbox `RC=0` execution, endurance values, and `.idxmin()` inversions, issues a live corrective follow-up when missing or invalid, and records honest pass/fail outcomes when small models hallucinate code instead of calling `python_sandbox`.
 
 4. :doc:`Report 4: Counterfactual Branching, Empirical Ontology Synthesis & Protocol Generation <demo_ui_trials/trial_4_branching_and_grips_expansion_report>`
-   Forks an isolated DAG conversation branch via `Branch from here` and actively evaluates a live counterfactual query (deployable breadcrumb relays offloading 45W transmitter draw, reaching **130.9 minutes** on rubble). Elaborates the Grips ontology stub `Breadcrumb Relay Node` with genuine UWB physics (3.5–6.5 GHz, 15cm accuracy, 3 structured claims), culminating in a synthesized 2x2 factorial Empirical Intervention Protocol ($N=8$, two-way ANOVA).
+   Forks an isolated DAG conversation branch via `Branch from here` to submit a live counterfactual query (45 W relay offloading -> target 130.9 min on rubble), triggers Grips stub elaboration on ``Breadcrumb Relay Node``, verifies counterfactual math and UWB domain grounding honestly, and compiles the Researcher's 2x2 factorial Empirical Intervention Protocol template ($N=8$, two-way ANOVA, 240 Wh reserve floor cutoff).
 
 .. raw:: html
 
