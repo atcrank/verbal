@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile &bull; {{ user.username }} &bull; Reason</title>
+    <style>
+        :root {
+            --bg-canvas: #0b1120;
+            --bg-surface: #131d33;
+            --bg-card: #1e293b;
+            --bg-card-hover: #24344d;
+            --border-color: #334155;
+            --border-highlight: #475569;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-primary: #6366f1;
+            --accent-primary-hover: #4f46e5;
+            --accent-teal: #14b8a6;
+            --accent-emerald: #10b981;
+            --accent-amber: #f59e0b;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.25);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-canvas);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            line-height: 1.5;
+            padding: 2.5rem 1.5rem;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+            flex: 1;
+        }
+
+        /* Header Navigation */
+        header.profile-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+
+        .header-brand:hover h1 {
+            color: var(--accent-primary);
+        }
+
+        .header-brand h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .header-brand span {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .btn-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.15s ease;
+        }
+
+        .btn-link:hover {
+            color: var(--text-primary);
+        }
+
+        /* Profile Card */
+        .profile-card {
+            background-color: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-md);
+        }
+
+        .profile-summary {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .avatar {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-teal));
+            color: #ffffff;
+            font-size: 2rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-sm);
+            flex-shrink: 0;
+        }
+
+        .user-details h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .user-details p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .badge-row {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .badge-admin {
+            background-color: rgba(99, 102, 241, 0.2);
+            color: #a5b4fc;
+            border: 1px solid rgba(99, 102, 241, 0.4);
+        }
+
+        .badge-staff {
+            background-color: rgba(16, 185, 129, 0.2);
+            color: #6ee7b7;
+            border: 1px solid rgba(16, 185, 129, 0.4);
+        }
+
+        .badge-user {
+            background-color: rgba(148, 163, 184, 0.2);
+            color: #cbd5e1;
+            border: 1px solid rgba(148, 163, 184, 0.3);
+        }
+
+        .badge-lockdown {
+            background-color: rgba(245, 158, 11, 0.2);
+            color: #fde68a;
+            border: 1px solid rgba(245, 158, 11, 0.4);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            padding-top: 1.25rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .info-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .info-value {
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        /* Section Headings */
+        .section-title {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Navigation Grid */
+        .nav-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .nav-card {
+            background-color: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 1.25rem;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.15s ease-in-out;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .nav-card:hover {
+            background-color: var(--bg-card-hover);
+            border-color: var(--accent-primary);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .nav-card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-icon {
+            font-size: 1.35rem;
+        }
+
+        .nav-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .nav-desc {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* Security Controls */
+        .account-actions {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+            padding: 1.25rem;
+            background-color: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-md);
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: background-color 0.15s ease;
+        }
+
+        .btn-primary {
+            background-color: var(--accent-primary);
+            color: #ffffff;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--accent-primary-hover);
+        }
+
+        .btn-secondary {
+            background-color: var(--bg-card);
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--bg-card-hover);
+            border-color: var(--border-highlight);
+        }
+
+        footer {
+            margin-top: 3rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="profile-header">
+            <a href="/" class="header-brand">
+                <h1>Reason</h1>
+                <span>&bull; Account Profile</span>
+            </a>
+            <div class="header-actions">
+                <a href="/" class="btn-link">Platform Home</a>
+                {% if user.is_staff %}
+                    <a href="/admin/" class="btn-link">Django Admin</a>
+                {% endif %}
+                <form method="post" action="{% url 'logout' %}" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.85rem;">Log Out</button>
+                </form>
+            </div>
+        </header>
+
+        <section class="profile-card">
+            <div class="profile-summary">
+                <div class="avatar">{{ user.username|make_list|first|upper }}</div>
+                <div class="user-details">
+                    <h2>{{ user.get_full_name|default:user.username }}</h2>
+                    <p>{{ user.email|default:"No email configured" }}</p>
+                    <div class="badge-row">
+                        {% if user.is_superuser %}
+                            <span class="badge badge-admin">🛡️ Administrator</span>
+                        {% elif user.is_staff %}
+                            <span class="badge badge-staff">⭐ Staff</span>
+                        {% else %}
+                            <span class="badge badge-user">Standard User</span>
+                        {% endif %}
+                        <span class="badge badge-lockdown">Mode: {{ lockdown_level }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Username</span>
+                    <span class="info-value">@{{ user.username }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Member Since</span>
+                    <span class="info-value">{{ user.date_joined|date:"M d, Y" }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Last Login</span>
+                    <span class="info-value">{{ user.last_login|date:"M d, Y H:i"|default:"First Session" }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Assigned Groups</span>
+                    <span class="info-value">
+                        {% if user_groups %}
+                            {{ user_groups|join:", " }}
+                        {% else %}
+                            General Access
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+        </section>
+
+        <h3 class="section-title">🚀 Quick Launch & Tools</h3>
+        <div class="nav-grid">
+            <a href="/demo/" class="nav-card">
+                <div class="nav-card-header">
+                    <span class="nav-icon">🔬</span>
+                    <span class="nav-title">Research Workbench</span>
+                </div>
+                <p class="nav-desc">Launch the interactive Demo UI: conversational study design, blueprint execution, and live agent reasoning.</p>
+            </a>
+
+            {% if user.is_staff %}
+            <a href="/admin/" class="nav-card">
+                <div class="nav-card-header">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-title">Django Administration</span>
+                </div>
+                <p class="nav-desc">Manage relational database records, inspect task workers, configure model backends, and edit blueprints.</p>
+            </a>
+            {% endif %}
+
+            <a href="/wiki/" class="nav-card">
+                <div class="nav-card-header">
+                    <span class="nav-icon">📚</span>
+                    <span class="nav-title">Grips Knowledge Wiki</span>
+                </div>
+                <p class="nav-desc">Explore synthesized research domains, verified literature summaries, and the computable concept graph.</p>
+            </a>
+
+            <a href="/work/" class="nav-card">
+                <div class="nav-card-header">
+                    <span class="nav-icon">📋</span>
+                    <span class="nav-title">Work Organisation</span>
+                </div>
+                <p class="nav-desc">Collaborative spatial whiteboards, structured experiment sessions, and idea clustering workspaces.</p>
+            </a>
+
+            <a href="/benchmarking/" class="nav-card">
+                <div class="nav-card-header">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-title">Benchmarking Studio</span>
+                </div>
+                <p class="nav-desc">Run scenario prompt suites, evaluate reasoning quality, and benchmark LoRA adapters.</p>
+            </a>
+
+            <a href="/docs/" class="nav-card">
+                <div class="nav-card-header">
+                    <span class="nav-icon">📖</span>
+                    <span class="nav-title">Platform Documentation</span>
+                </div>
+                <p class="nav-desc">Read Sphinx technical documentation, architectural specifications, and empirical trial reports.</p>
+            </a>
+        </div>
+
+        <h3 class="section-title">🔒 Account Security</h3>
+        <div class="account-actions">
+            <a href="{% url 'password_change' %}" class="btn btn-secondary">🔑 Change Password</a>
+            <form method="post" action="{% url 'logout' %}" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-secondary">🚪 Sign Out</button>
+            </form>
+        </div>
+
+        <footer>
+            <p>Reason Platform &bull; Epistemological Co-Pilot & Deliberative Study Design Assistant</p>
+        </footer>
+    </div>
+</body>
+</html>

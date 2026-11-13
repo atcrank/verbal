@@ -165,7 +165,9 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", api.urls),
     path("benchmarking/", include("benchmarking.urls")),
+    path("accounts/profile/", views.user_profile, name="user_profile"),
     path("accounts/", include("django.contrib.auth.urls")),
+
     path('demo/', include('demo_ui.urls')),
     path('work/', include('work_organisation.urls')),
     path('wiki/', include('grips.wiki_urls', namespace='wiki')),

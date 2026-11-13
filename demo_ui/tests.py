@@ -389,6 +389,28 @@ class BroadcastEndpointsTestCase(TestCase):
         self.assertIn("/api/docs", content)
         self.assertIn("/admin/", content)
 
+    def test_accounts_profile_redirects_unauthenticated(self):
+        """Verifies that unauthenticated access to /accounts/profile/ redirects to login."""
+        anon_client = Client()
+        res = anon_client.get('/accounts/profile/')
+        self.assertEqual(res.status_code, 302)
+        self.assertIn('/accounts/login/', res.headers.get('Location', ''))
+
+    def test_accounts_profile_authenticated(self):
+        """Verifies that an authenticated user can view the profile page with expected tools and identity."""
+        self.client.login(username='studentuser', password='password123')
+        res = self.client.get('/accounts/profile/')
+        self.assertEqual(res.status_code, 200)
+        self.assertTemplateUsed(res, 'registration/profile.html')
+        content = res.content.decode('utf-8')
+        self.assertIn(self.regular_user.username, content)
+        self.assertIn("/demo/", content)
+        self.assertIn("/wiki/", content)
+        self.assertIn("/work/", content)
+        self.assertIn("/benchmarking/", content)
+        self.assertIn("/docs/", content)
+
+
 
     def test_wiki_index_no_git_badge(self):
         res = self.client.get('/wiki/')

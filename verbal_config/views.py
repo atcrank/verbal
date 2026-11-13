@@ -1,5 +1,7 @@
 from django.shortcuts import render
 from django.urls import reverse
+from django.contrib.auth.decorators import login_required
+from django.conf import settings
 
 
 def landing_page(request):
@@ -68,3 +70,23 @@ def landing_page(request):
 
 
     return render(request, "landing.html", {"endpoints": endpoints})
+
+
+@login_required
+def user_profile(request):
+    """
+    User account profile page at '/accounts/profile/'.
+    Provides account identity, permission badges, active platform lockdown status,
+    and direct navigation links across the Reason workbench and tools.
+    """
+    user = request.user
+    user_groups = list(user.groups.values_list("name", flat=True))
+    lockdown_level = getattr(settings, "VERBAL_LOCKDOWN_LEVEL", "CONTROLLED")
+
+    context = {
+        "user": user,
+        "user_groups": user_groups,
+        "lockdown_level": lockdown_level,
+    }
+    return render(request, "registration/profile.html", context)
+
