@@ -273,3 +273,30 @@ def get_active_modality_status(user: Optional[Any] = None) -> Dict[str, Any]:
             "modality": "text_only",
             "reason": f"Introspection error: {e}"
         }
+
+
+def is_vision_model(model_name_or_path: str, backend: Optional[str] = None) -> bool:
+    """
+    Unified entrypoint to check if a given model supports visual / multimodal inputs.
+    If backend is provided ('ollama', 'hf', 'pytorch', 'vllm', 'external'), it routes
+    directly to the specialized introspection function. Otherwise, tests external
+    patterns, Ollama, and Hugging Face heuristics in order.
+    """
+    if not model_name_or_path:
+        return False
+        
+    b = (backend or "").lower()
+    if b == "ollama":
+        return introspect_ollama_modality(model_name_or_path)
+    if b in ("hf", "pytorch", "vllm"):
+        return introspect_hf_modality(model_name_or_path)
+    if b == "external":
+        return introspect_external_modality(model_name_or_path)
+        
+    # Heuristic cascade when backend is unspecified
+    if introspect_external_modality(model_name_or_path):
+        return True
+    if introspect_ollama_modality(model_name_or_path):
+        return True
+    return introspect_hf_modality(model_name_or_path)
+

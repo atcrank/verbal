@@ -22,7 +22,8 @@
 * [2026-09-29] [Feature/UI] Gold Standards, Scenario Group Suites & 11/10 Candidate Promotion (Status: completed) -> [20260929_gold_standards_suite_inspection_and_promotion.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20260929_gold_standards_suite_inspection_and_promotion.md)
 * [2026-10-06] [Deployment/Resilience] Deployment Hardening & Cognitive Execution Lifecycle (Status: in progress) -> [20261006_deployment_hardening_and_execution_lifecycle.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20261006_deployment_hardening_and_execution_lifecycle.md)
 * [2026-10-26] [Architecture/Discussion] Dynamic Heterogeneous Hardware Allocation & Multi-PC Task Routing (Status: pending) -> [20261026_dynamic_heterogeneous_hardware_allocation.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20261026_dynamic_heterogeneous_hardware_allocation.md)
-* [2026-11-06] [Architecture/Harness] WS27: Metacognition Architecture, Output Contract & Transcript Isolation (Status: in progress) -> [20261106_metacognition_harness_architecture.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20261106_metacognition_harness_architecture.md)
+* [2026-11-06] [Architecture/Harness] WS27: Metacognition Architecture, Output Contract & Transcript Isolation (Status: completed) -> [20261106_metacognition_harness_architecture.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20261106_metacognition_harness_architecture.md)
+* [2026-11-13] [Architecture/Enduring] Enduring Architectural Invariants & Harness Design Philosophy (Status: enduring) -> [20261113_enduring_architectural_invariants.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20261113_enduring_architectural_invariants.md)
 
 
 

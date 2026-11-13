@@ -1,1 +1,0 @@
-.. include:: ../../../metacognition/metacognition_trials/7. iterative_planning_report.rst

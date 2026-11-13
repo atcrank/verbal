@@ -80,9 +80,8 @@ instance/
 
 # Sphinx documentation
 docs/_build/
-documentation/build/.doctrees/
-!documentation/build/html/
-!documentation/build/html/**
+documentation/build/
+
 
 # PyBuilder
 .pybuilder/

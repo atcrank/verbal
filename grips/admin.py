@@ -4,7 +4,7 @@ from django.urls import path
 from django.template.response import TemplateResponse
 from django.contrib import admin, messages
 from django.utils.safestring import mark_safe
-from .models import Domain, ConceptNode, KnowledgeEdge, CeleryStatus
+from .models import Domain, ConceptNode, KnowledgeEdge
 from .tasks import (
     generate_concept_narrative,
     task_lint_concept_node,
@@ -131,21 +131,3 @@ class DomainAdmin(admin.ModelAdmin):
         return obj.documents.count()
     document_count.short_description = "Corpus Size"
 
-
-@admin.register(CeleryStatus)
-class CeleryStatusAdmin(admin.ModelAdmin):
-    """Legacy redirect to the centralized verbal_tasks dashboard."""
-    def has_add_permission(self, request): return False
-    def has_change_permission(self, request, obj=None): return False
-    def has_delete_permission(self, request, obj=None): return False
-
-    def get_urls(self):
-        urls = super().get_urls()
-        my_urls = [
-            path('', self.admin_site.admin_view(self.dashboard_view), name="grips_celerystatus_changelist"),
-        ]
-        return my_urls + urls
-
-    def dashboard_view(self, request):
-        from django.shortcuts import redirect
-        return redirect("admin:verbal_tasks_dashboard")

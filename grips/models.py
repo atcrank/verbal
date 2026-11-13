@@ -149,13 +149,3 @@ class KnowledgeEdge(models.Model):
 
     def __str__(self):
         return f"{self.source.slug} --[{self.relationship_type}]--> {self.target.slug}"
-
-
-
-
-
-class CeleryStatus(models.Model):
-    """Legacy proxy model to hook the task queue dashboard link into the admin."""
-    class Meta:
-        managed = False
-        verbose_name_plural = "Task Queue Dashboard (Legacy Link)"

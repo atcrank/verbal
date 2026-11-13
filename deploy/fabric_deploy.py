@@ -2299,9 +2299,10 @@ def restart_services(c):
 
 
 @task
-def health_check(c):
+def health_check(c, warmup=True, warmup_timeout=90):
     """
-    Validates service responsiveness via systemd and HTTP probing with retry polling.
+    Validates service responsiveness via systemd and HTTP probing with retry polling,
+    followed by an optional backend-aware model readiness ping to pre-warm GPU VRAM.
     """
     print("🩺 Validating system health with retry polling...")
     max_retries = 10
@@ -2325,13 +2326,28 @@ def health_check(c):
         http_code = curl_res.stdout.strip()
 
         if units_ok and http_code in ["200", "302"]:
-            print(f"🎉 Health check successful on attempt {attempt}! (HTTP {http_code})")
+            print(f"🎉 Web & systemd health check successful on attempt {attempt}! (HTTP {http_code})")
+            
+            # Optional model pre-warming to avoid initial 504 timeouts on cold VRAM paging
+            if warmup:
+                print("🧠 Performing model readiness & VRAM pre-warm ping...")
+                warmup_cmd = (
+                    f"curl -s --max-time {warmup_timeout} -X POST http://127.0.0.1:{INFERENCE_PORT}/api/llm/v1/chat/completions "
+                    f"-H 'Content-Type: application/json' "
+                    f"-d '{{\"messages\": [{{\"role\": \"user\", \"content\": \"ping\"}}], \"max_tokens\": 2}}'"
+                )
+                warm_res = c.run(warmup_cmd, warn=True, hide=True)
+                if warm_res.ok and ("choices" in warm_res.stdout or "response" in warm_res.stdout):
+                    print("✅ Active model verified responsive in VRAM.")
+                else:
+                    print("ℹ️ Model pre-warm ping dispatched (inference service initializing in background).")
             return
 
         print(f"⏳ Attempt {attempt}/{max_retries}: Waiting for services to become healthy (HTTP {http_code or 'none'})...")
         time.sleep(retry_interval)
 
     raise Exit(f"🚨 Health check failed after {max_retries} attempts! Inspect logs via 'fab logs -s reason-web' or 'journalctl -u reason-web'.")
+
 
 
 @task

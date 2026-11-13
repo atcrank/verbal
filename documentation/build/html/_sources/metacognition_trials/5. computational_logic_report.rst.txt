@@ -1,1 +1,0 @@
-.. include:: ../../../metacognition/metacognition_trials/5. computational_logic_report.rst
