@@ -1006,6 +1006,50 @@ class GrobidOptionalityAndResilienceTests(TestCase):
         strat.read_document(service_registry.rag_service)
         self.assertEqual(strat.usages.count(), 0)
 
+    def test_task_process_documents_func_creates_reading_strategy_and_chunks(self):
+        """Verifies task_process_documents.func ingests a document into RAG chunks and strategies."""
+        from background_resources.tasks import task_process_documents
+        from background_resources.models import Document, ReadingStrategy, StrategyChunkUsage
+
+        doc = Document.objects.create(
+            title="Operational Robotics Document",
+            file=SimpleUploadedFile(
+                "robotics_ops.txt",
+                b"Robotics operations require clear emergency stop mechanisms. Sensor telemetry must stream continuously."
+            )
+        )
+
+        task_process_documents.func([doc.id])
+
+        # Verify strategy created
+        strat = ReadingStrategy.objects.filter(document=doc).first()
+        self.assertIsNotNone(strat)
+
+        # Verify chunks created and linked to strategy
+        self.assertGreaterEqual(strat.usages.count(), 1)
+        self.assertTrue(any("emergency stop" in (u.chunk.text_content or "").lower() for u in strat.usages.all()))
+
+    def test_task_process_reading_strategies_func(self):
+        """Verifies task_process_reading_strategies.func executes chunks for existing strategy."""
+        from background_resources.tasks import task_process_reading_strategies
+        from background_resources.models import Document, ReadingStrategy, StrategyChunkUsage
+
+        doc = Document.objects.create(
+            title="Telemetry Spec",
+            file=SimpleUploadedFile(
+                "telemetry.txt",
+                b"High-rate telemetry streaming across UDP with sequence validation."
+            )
+        )
+        strat = ReadingStrategy.objects.create(
+            document=doc,
+            strategy_description="Default Chunking"
+        )
+
+        task_process_reading_strategies.func([strat.id])
+
+        self.assertGreaterEqual(strat.usages.count(), 1)
+
 
 class TestConfigurableEmbeddingsResolution(TestCase):
     """Unit tests for WS23 configurable embedding model and local directory resolution."""

@@ -131,6 +131,7 @@ class CardUpdateSchema(Schema):
 
 class ClusterRequestSchema(Schema):
     session_id: int
+    async_mode: Optional[bool] = False
 
 
 class TokenStreamRequestSchema(Schema):
@@ -596,8 +597,21 @@ def delete_card(request, card_id: int):
 def api_cluster_ideas(request, payload: ClusterRequestSchema):
     """
     Synthesizes and groups all session cards into thematic clusters via structured LLM schema.
+    Supports optional async background dispatching via Django Tasks.
     """
     session = get_object_or_404(WorkshopSession.objects.for_user(request.user), id=payload.session_id)
+    if payload.async_mode:
+        from .tasks import task_cluster_whiteboard_cards
+        task = task_cluster_whiteboard_cards.enqueue(
+            session_id=session.id,
+            user_id=request.user.id if request.user.is_authenticated else None
+        )
+        return {
+            "status": "dispatched",
+            "task_id": str(task.id),
+            "message": "Whiteboard clustering task queued."
+        }
+
     res = cluster_whiteboard_cards(session.id, user=request.user)
     return res
 

@@ -11,6 +11,7 @@ from django.urls import reverse
 from background_resources.models import Document, ReadingStrategy, RAGChunk, StrategyChunkUsage
 from django.contrib.contenttypes.models import ContentType
 from llm_api.models import Conversation, PromptResponseLog
+from grips.models import Domain, ConceptNode, KnowledgeEdge
 from verbal_config.broadcast_service import BroadcastService
 
 
@@ -675,4 +676,92 @@ class DeploymentHardeningPhase3Tests(TestCase):
             # Verify loop-back connection exists between step 1 and step 2
             has_loopback = (step2.on_failure_step == step1) or (step2.on_success_step == step1)
             self.assertTrue(has_loopback, f"{name} should have a level-1 loop-back connection between step 2 and step 1")
+
+
+class DemoUIExplorerAndSearchTests(TestCase):
+    """Unit and integration tests for Explorer, Search, and Grips elaboration views."""
+
+    def setUp(self):
+        User = get_user_model()
+        self.user = User.objects.create_user(username='explorer_user', password='password123')
+        self.client = Client()
+        self.domain = Domain.objects.create(name="SearchDomain", description="Test domain for explorer views")
+
+    def test_search_knowledge_base_unauthenticated(self):
+        resp = self.client.get(reverse('demo_ui:search_knowledge_base'))
+        self.assertEqual(resp.status_code, 302)
+
+    def test_search_knowledge_base_empty_query(self):
+        self.client.force_login(self.user)
+        resp = self.client.get(reverse('demo_ui:search_knowledge_base') + '?q=')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("Search results will appear here", resp.content.decode('utf-8'))
+
+    @patch('background_resources.retrieval.unified_retrieve')
+    def test_search_knowledge_base_with_results(self, mock_retrieve):
+        from langchain_core.documents import Document as LCDocument
+        from background_resources.retrieval import RetrievalResult
+
+        mock_retrieve.return_value = [
+            RetrievalResult(
+                source="grips",
+                doc=LCDocument(page_content="Thermal imaging sensors for robotic navigation", metadata={"title": "Thermal Camera"}),
+                original_distance=0.1,
+                boosted_distance=0.1,
+                source_chunk_id=None
+            )
+        ]
+        self.client.force_login(self.user)
+        resp = self.client.get(reverse('demo_ui:search_knowledge_base') + '?q=thermal')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("Thermal Camera", resp.content.decode('utf-8'))
+
+    def test_grips_explorer_tab_hierarchy_view(self):
+        ConceptNode.objects.create(
+            domain=self.domain,
+            title="Root Concept",
+            slug="root-concept",
+            narrative_content="Root narrative"
+        )
+        self.client.force_login(self.user)
+        resp = self.client.get(reverse('demo_ui:grips_explorer_tab'))
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("SearchDomain", resp.content.decode('utf-8'))
+        self.assertIn("Root Concept", resp.content.decode('utf-8'))
+
+    def test_grips_explorer_tab_search_view(self):
+        ConceptNode.objects.create(
+            domain=self.domain,
+            title="Battery Module",
+            slug="battery-module",
+            narrative_content="High-capacity lithium battery"
+        )
+        self.client.force_login(self.user)
+        resp = self.client.get(reverse('demo_ui:grips_explorer_tab') + '?q=Battery')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("Battery Module", resp.content.decode('utf-8'))
+
+    def test_grips_concept_children(self):
+        parent = ConceptNode.objects.create(domain=self.domain, title="Parent Node", slug="parent-node")
+        child = ConceptNode.objects.create(domain=self.domain, title="Child Node", slug="child-node")
+        KnowledgeEdge.objects.create(source=parent, target=child, relationship_type="INCLUDES")
+
+        self.client.force_login(self.user)
+        resp = self.client.get(reverse('demo_ui:grips_concept_children', kwargs={'concept_id': parent.id}))
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("Child Node", resp.content.decode('utf-8'))
+
+    def test_fill_grips_stub_sync(self):
+        stub = ConceptNode.objects.create(
+            domain=self.domain,
+            title="Stub Concept",
+            slug="stub-concept",
+            narrative_content="Brief stub"
+        )
+        self.client.force_login(self.user)
+        with patch('grips.tasks.generate_concept_narrative') as mock_gen:
+            mock_gen.func.return_value = "Elaborated content"
+            resp = self.client.post(reverse('demo_ui:fill_grips_stub', kwargs={'concept_id': stub.id}) + '?sync=true')
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn("Elaborated", resp.content.decode('utf-8'))
 

@@ -1119,6 +1119,29 @@ class AsyncStreamingAndGovernanceTests(TransactionTestCase):
             self.assertEqual(data.get("task_id"), "mock-blueprint-task-999")
             self.assertIn("/api/meta/stream_blueprint/?run_id=", data.get("stream_url"))
 
+    @patch('llm_api.ai_service.AIService.clean_response', side_effect=lambda x: x)
+    @patch('llm_api.ai_service.AIService.generate_response2', return_value=["Completed response"])
+    @patch('llm_api.ai_service.AIService.generate_outline', return_value={"tool_calls": []})
+    def test_task_run_blueprint_async_execution(self, mock_outline, mock_generate, mock_clean):
+        """Verifies task_run_blueprint_async executes through the task wrapper cleanly."""
+        from metacognition.tasks import task_run_blueprint_async
+        from llm_api.models import Conversation
+
+        conv = Conversation.objects.create(user=self.user, title="Initial Title")
+        run_id = "test-task-wrapper-run-1"
+
+        res = task_run_blueprint_async.func(
+            blueprint_id=self.bp.id,
+            user_prompt="Explain quantum annealing",
+            conversation_id=str(conv.id),
+            user_id=self.user.id,
+            run_id=run_id
+        )
+
+        self.assertNotIn("error", res)
+        self.assertEqual(res.get("run_id"), run_id)
+        self.assertIn("internal_monologue", res)
+
 
 class ReasoningStepStateTreeTests(TestCase):
     """
@@ -4548,6 +4571,70 @@ class GripsActionToolsContractTests(TestCase):
         })
         self.assertIn("Successfully created Cross-Domain EDGE", res)
         self.assertTrue(KnowledgeEdge.objects.filter(source=c1, target=c2, justification__contains="[Cross-Domain Link]").exists())
+
+    def test_handle_edge_lint_tool(self):
+        from metacognition.actions import handle_edge_lint_tool
+        from grips.models import ConceptNode, KnowledgeEdge
+
+        c1 = ConceptNode.objects.create(domain=self.domain, title="Sensor A", slug="sensor-a")
+        c2 = ConceptNode.objects.create(domain=self.domain, title="Sensor B", slug="sensor-b")
+        edge = KnowledgeEdge.objects.create(
+            source=c1,
+            target=c2,
+            relationship_type="REQUIRES",
+            justification="Old clumsy justification."
+        )
+
+        # 1. Successful linting
+        res = handle_edge_lint_tool(state={}, params={
+            "edge_id": edge.id,
+            "improved_justification": "Clear, precise operational justification conforming to style guidelines."
+        })
+        self.assertIn(f"Successfully linted edge {edge.id}", res)
+        edge.refresh_from_db()
+        self.assertEqual(edge.justification, "Clear, precise operational justification conforming to style guidelines.")
+
+        # 2. Missing parameters
+        res_missing = handle_edge_lint_tool(state={}, params={"edge_id": edge.id})
+        self.assertIn("Error - Missing edge_id or improved_justification", res_missing)
+
+        # 3. Nonexistent edge
+        res_not_found = handle_edge_lint_tool(state={}, params={
+            "edge_id": 999999,
+            "improved_justification": "Some justification."
+        })
+        self.assertIn("Error - Edge 999999 not found", res_not_found)
+
+    def test_handle_node_lint_tool(self):
+        from metacognition.actions import handle_node_lint_tool
+        from grips.models import ConceptNode
+
+        node = ConceptNode.objects.create(
+            domain=self.domain,
+            title="Thermal Camera",
+            slug="thermal-camera",
+            narrative_content="Old drafts with style errors."
+        )
+
+        # 1. Successful linting
+        res = handle_node_lint_tool(state={}, params={
+            "node_id": node.id,
+            "improved_narrative": "Refined domain narrative adhering strictly to style guide."
+        })
+        self.assertIn(f"Successfully updated narrative for node {node.id}", res)
+        node.refresh_from_db()
+        self.assertEqual(node.narrative_content, "Refined domain narrative adhering strictly to style guide.")
+
+        # 2. Missing parameters
+        res_missing = handle_node_lint_tool(state={}, params={"node_id": node.id})
+        self.assertIn("Error - Missing node_id or improved_narrative", res_missing)
+
+        # 3. Nonexistent node
+        res_not_found = handle_node_lint_tool(state={}, params={
+            "node_id": 999999,
+            "improved_narrative": "New narrative."
+        })
+        self.assertIn("Error - Node 999999 not found", res_not_found)
 
 
 

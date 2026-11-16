@@ -623,7 +623,8 @@ class SecurityASTVisitor(ast.NodeVisitor):
     FORBIDDEN_CALLS = {'eval', 'exec', 'compile', '__import__', 'getattr', 'setattr', 'delattr'}
     FORBIDDEN_MODULES = {
         'os', 'sys', 'subprocess', 'shutil', 'socket', 'requests', 'urllib',
-        'http', 'importlib', 'ctypes', 'posix', 'pty', 'builtins'
+        'http', 'httpx', 'aiohttp', 'urllib3', 'ftplib', 'telnetlib', 'xmlrpc',
+        'importlib', 'ctypes', 'posix', 'pty', 'builtins'
     }
     FORBIDDEN_ATTRS = {'__builtins__', '__subclasses__', '__bases__', '__class__', '__globals__', '__code__'}
 

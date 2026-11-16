@@ -272,6 +272,69 @@ class WhiteboardClusteringTests(TestCase):
         self.assertIn("Improve vector retrieval speed", md)
         self.assertIn("What is the RAM overhead of HNSW?", md)
 
+    @patch('llm_api.ai_service.AIService.generate_outline')
+    def test_cluster_whiteboard_cards_with_hallucinated_card_ids(self, mock_generate):
+        """Verifies clustering gracefully skips nonexistent/hallucinated card IDs without failing."""
+        mock_generate.return_value = IdeaClusteringPlan(
+            reasoning="Grouped into Resilience theme.",
+            clusters=[
+                IdeaClusterItem(
+                    title="Resilience & Isolation",
+                    summary="Handling invalid inputs safely.",
+                    color="#6366F1",
+                    card_ids=[999999, 888888, self.card1.id]
+                )
+            ]
+        )
+
+        res = cluster_whiteboard_cards(self.session.id, user=self.user)
+        self.assertEqual(res["status"], "success")
+        self.assertEqual(res["clusters_created"], 1)
+
+        cluster = WhiteboardCluster.objects.get(session=self.session, title="Resilience & Isolation")
+        self.assertEqual(cluster.cards.count(), 1)
+        self.assertIn(self.card1, cluster.cards.all())
+
+    @patch('llm_api.ai_service.AIService.generate_outline')
+    def test_task_cluster_whiteboard_cards_execution(self, mock_generate):
+        """Verifies task_cluster_whiteboard_cards executes through the @task wrapper cleanly."""
+        from .tasks import task_cluster_whiteboard_cards
+
+        mock_generate.return_value = IdeaClusteringPlan(
+            reasoning="Background task clustering.",
+            clusters=[
+                IdeaClusterItem(
+                    title="Async Clustering",
+                    summary="Dispatched via Django Tasks.",
+                    color="#3B82F6",
+                    card_ids=[self.card1.id, self.card2.id]
+                )
+            ]
+        )
+
+        res = task_cluster_whiteboard_cards.func(self.session.id, user_id=self.user.id)
+        self.assertEqual(res["status"], "success")
+        self.assertEqual(res["clusters_created"], 1)
+
+    def test_api_cluster_ideas_async_mode(self):
+        """Verifies /api/whiteboard/cluster_ideas/ returns dispatched status with async_mode=True."""
+        client = Client()
+        client.force_login(self.user)
+
+        with patch('work_organisation.tasks.task_cluster_whiteboard_cards') as mock_task:
+            from unittest.mock import MagicMock
+            mock_task.enqueue.return_value = MagicMock(id="mock-task-cluster-123")
+
+            res = client.post("/api/whiteboard/cluster_ideas/", data={
+                "session_id": self.session.id,
+                "async_mode": True
+            }, content_type="application/json")
+
+            self.assertEqual(res.status_code, 200)
+            data = res.json()
+            self.assertEqual(data.get("status"), "dispatched")
+            self.assertEqual(data.get("task_id"), "mock-task-cluster-123")
+
 
 class WorkOrganisationManagementAPITests(TestCase):
     """

@@ -154,6 +154,10 @@ class SecurityASTVisitorAndJailingTests(TestCase):
             "import socket",
             "import urllib.request",
             "import importlib; m = importlib.import_module('os')",
+            "import httpx",
+            "import aiohttp",
+            "import urllib3",
+            "import ftplib",
         ]
         for snippet in malicious_snippets:
             import ast
@@ -229,3 +233,35 @@ class SecurityASTVisitorAndJailingTests(TestCase):
             output = django_shell_script({}, params)
             self.assertIn("Error: Security violation", output)
             self.assertFalse(mock_post.called)
+
+    @patch("requests.post")
+    def test_django_shell_script_timeout_and_error_handling(self, mock_post):
+        """Verifies timeout (code 124) and runtime errors are captured and logged."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "stdout": "",
+            "stderr": "Execution timed out after 30 seconds.",
+            "returncode": 124,
+            "status": "timeout"
+        }
+        mock_post.return_value = mock_response
+
+        state = {"conversation_id": "test-conv-timeout"}
+        params = {"script_content": "while True: pass", "timeout": 30}
+
+        output = django_shell_script(state, params)
+        self.assertIn("Execution error (exit code 124)", output)
+        self.assertIn("Execution timed out after 30 seconds", output)
+
+        log = SandboxExecutionLog.objects.filter(conversation_id="test-conv-timeout").first()
+        self.assertIsNotNone(log)
+        self.assertEqual(log.return_code, 124)
+
+    @patch("requests.post", side_effect=requests.exceptions.ConnectionError("Connection refused"))
+    def test_django_shell_script_offline_raises_runtime_error(self, mock_post):
+        """When sandbox container is unreachable, django_shell_script raises RuntimeError with instructions."""
+        params = {"script_content": "x = 10\nprint(x)"}
+        with self.assertRaises(RuntimeError) as ctx:
+            django_shell_script({}, params)
+        self.assertIn("Sandbox service offline or unreachable", str(ctx.exception))
