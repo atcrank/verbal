@@ -356,6 +356,14 @@ class MetacognitionE2EExternalProxyTests(TestCase):
     """
     @classmethod
     def setUpClass(cls):
+        # Check if live inference server at 127.0.0.1:8001 is running; skip if not
+        import socket
+        import unittest
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(0.5)
+            if s.connect_ex(('127.0.0.1', 8001)) != 0:
+                raise unittest.SkipTest("Live inference server is not running on 127.0.0.1:8001")
+
         from django.test.utils import override_settings
         cls.settings_override = override_settings()
         cls.settings_override.enable()
@@ -368,14 +376,6 @@ class MetacognitionE2EExternalProxyTests(TestCase):
         from llm_api.models import ExternalAIModel, UserActiveModel
 
         cls.test_system_user, _ = User.objects.get_or_create(username='test_system_user')
-
-        # Check if live inference server at 127.0.0.1:8001 is running; skip if not
-        import socket
-        import unittest
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.settimeout(0.5)
-            if s.connect_ex(('127.0.0.1', 8001)) != 0:
-                raise unittest.SkipTest("Live inference server is not running on 127.0.0.1:8001")
 
         # Dynamically discover the active model to avoid 404s
         import urllib.request

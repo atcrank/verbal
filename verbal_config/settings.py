@@ -145,6 +145,8 @@ DATABASES = {
         "PASSWORD": os.environ.get("DB_PASSWORD", "verbal_password"),
         "HOST": os.environ.get("DB_HOST", "localhost"),
         "PORT": os.environ.get("DB_PORT", "5433"),
+        "CONN_MAX_AGE": int(os.environ.get("DB_CONN_MAX_AGE", "0")),
+        "CONN_HEALTH_CHECKS": True,
     }
 }
 

@@ -248,8 +248,13 @@ def subscribe_pg_events_sync(channel: str, timeout: float = 30.0) -> Generator[D
                 logger.debug(f"Sync LISTEN active on channel: {channel_name}")
 
                 gen = conn.notifies(timeout=1.0)
-                last_active = time.time()
+                start_time = time.time()
+                last_active = start_time
                 while True:
+                    if timeout and (time.time() - start_time) >= timeout:
+                        logger.debug(f"Sync LISTEN timeout ({timeout}s) reached on channel: {channel_name}")
+                        break
+
                     notify = None
                     try:
                         notify = next(gen)
@@ -284,8 +289,12 @@ def subscribe_pg_events_sync(channel: str, timeout: float = 30.0) -> Generator[D
         _in_memory_subscribers.setdefault(channel_name, []).append(queue)
 
     try:
-        last_heartbeat = time.time()
+        start_time = time.time()
+        last_heartbeat = start_time
         while True:
+            if timeout and (time.time() - start_time) >= timeout:
+                return
+
             while queue:
                 item = queue.pop(0)
                 yield item
@@ -320,9 +329,14 @@ async def subscribe_pg_events_async(channel: str, timeout: float = 30.0) -> Asyn
                 logger.debug(f"Async LISTEN active on channel: {channel_name}")
 
                 gen = aconn.notifies(timeout=1.0)
-                last_active = time.time()
+                start_time = time.time()
+                last_active = start_time
 
                 while True:
+                    if timeout and (time.time() - start_time) >= timeout:
+                        logger.debug(f"Async LISTEN timeout ({timeout}s) reached on channel: {channel_name}")
+                        break
+
                     try:
                         notify = await anext(gen)
                     except StopAsyncIteration:
@@ -357,8 +371,12 @@ async def subscribe_pg_events_async(channel: str, timeout: float = 30.0) -> Asyn
         _in_memory_subscribers.setdefault(channel_name, []).append(queue)
 
     try:
-        last_heartbeat = time.time()
+        start_time = time.time()
+        last_heartbeat = start_time
         while True:
+            if timeout and (time.time() - start_time) >= timeout:
+                return
+
             try:
                 item = await asyncio.wait_for(queue.get(), timeout=1.0)
                 yield item

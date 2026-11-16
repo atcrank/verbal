@@ -721,4 +721,33 @@ class PostgresEventsTests(TestCase):
         # Ensure PostgreSQL transaction was not poisoned by pg_notify
         self.assertGreaterEqual(get_user_model().objects.count(), 0)
 
+    def test_subscribe_pg_events_sync_honors_timeout(self):
+        """Verifies subscribe_pg_events_sync terminates cleanly when timeout elapses."""
+        from verbal_tasks.postgres_events import subscribe_pg_events_sync
+        import time
+
+        start = time.time()
+        # Listen for events on an empty channel with a 0.3s timeout
+        events = list(subscribe_pg_events_sync("test_sync_timeout_channel", timeout=0.3))
+        elapsed = time.time() - start
+
+        self.assertLess(elapsed, 1.5, f"Generator hung for {elapsed:.2f}s instead of respecting timeout=0.3s")
+        # Empty channel should return no data events
+        self.assertEqual(len(events), 0)
+
+    async def test_subscribe_pg_events_async_honors_timeout(self):
+        """Verifies subscribe_pg_events_async terminates cleanly when timeout elapses."""
+        from verbal_tasks.postgres_events import subscribe_pg_events_async
+        import time
+
+        start = time.time()
+        events = []
+        async for ev in subscribe_pg_events_async("test_async_timeout_channel", timeout=0.3):
+            events.append(ev)
+        elapsed = time.time() - start
+
+        self.assertLess(elapsed, 1.5, f"Async generator hung for {elapsed:.2f}s instead of respecting timeout=0.3s")
+        self.assertEqual(len(events), 0)
+
+
 

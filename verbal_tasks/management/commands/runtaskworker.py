@@ -6,7 +6,7 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.module_loading import import_string
-from django.db import transaction, models, close_old_connections, OperationalError, InterfaceError
+from django.db import transaction, models, close_old_connections, connection, OperationalError, InterfaceError
 from django.tasks.base import TaskContext, TaskResult, TaskResultStatus
 from django.tasks.signals import task_started, task_finished
 from verbal_tasks.models import TaskRecord, TaskRecordStatus
@@ -81,7 +81,8 @@ class Command(BaseCommand):
                 record_id = self._claim_next_task(queues, worker_id)
             except (OperationalError, InterfaceError) as db_err:
                 logger.warning(f"Database error in worker [{worker_id}]: {db_err}. Reconnecting...")
-                close_old_connections()
+                if not connection.in_atomic_block:
+                    close_old_connections()
                 time.sleep(max(interval, 2.0))
                 continue
 
@@ -90,7 +91,11 @@ class Command(BaseCommand):
                     self._execute_claimed_task(record_id, worker_id)
                 except (OperationalError, InterfaceError) as db_err:
                     logger.warning(f"Database error executing task {record_id}: {db_err}")
-                    close_old_connections()
+                    if not connection.in_atomic_block:
+                        close_old_connections()
+                finally:
+                    if not connection.in_atomic_block:
+                        close_old_connections()
                 processed_count += 1
                 if max_tasks and processed_count >= max_tasks:
                     self.stdout.write(self.style.SUCCESS(f"Reached max task limit ({max_tasks}). Exiting."))
