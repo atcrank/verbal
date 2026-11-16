@@ -2,6 +2,7 @@ import json
 import logging
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.http import HttpResponse, JsonResponse, Http404
 from django.utils.safestring import mark_safe
 from .models import (
@@ -11,6 +12,7 @@ from .models import (
 logger = logging.getLogger(__name__)
 
 
+@ensure_csrf_cookie
 def session_mindmap(request, session_id: int):
     """
     Renders the interactive Mind-Map interface for a collaborative WorkshopSession.

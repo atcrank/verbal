@@ -134,6 +134,10 @@ class ClusterRequestSchema(Schema):
     async_mode: Optional[bool] = False
 
 
+class DissolveClustersSchema(Schema):
+    session_id: int
+
+
 class TokenStreamRequestSchema(Schema):
     prompt: str
     system_prompt: Optional[str] = "You are a helpful assistant."
@@ -452,7 +456,9 @@ def create_card(request, payload: CardCreateSchema):
         "status": "success",
         "card_id": card.id,
         "author_alias": card.author_alias,
-        "card_type": card.card_type
+        "card_type": card.card_type,
+        "text": card.text,
+        "cluster_id": card.cluster_id
     }
 
 
@@ -501,6 +507,29 @@ def create_cluster(request, payload: ClusterCreateSchema):
         "title": cluster.title,
         "summary": cluster.summary,
         "color": cluster.color
+    }
+
+
+@router.post("/clusters/dissolve_all/")
+def dissolve_all_clusters(request, payload: DissolveClustersSchema):
+    """
+    Unassigns all cards in the session (cluster=None) and deletes all WhiteboardClusters for that session.
+    """
+    session = get_object_or_404(WorkshopSession.objects.for_user(request.user), id=payload.session_id)
+    dissolved_count = session.clusters.count()
+
+    session.cards.update(cluster=None)
+    session.clusters.all().delete()
+
+    publish_whiteboard_event(session.id, "clusters_dissolved", {
+        "session_id": str(session.id),
+        "dissolved_count": dissolved_count
+    })
+
+    return {
+        "status": "success",
+        "session_id": session.id,
+        "dissolved_count": dissolved_count
     }
 
 

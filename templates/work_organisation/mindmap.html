@@ -350,15 +350,15 @@
             flex-grow: 1;
             padding: 8px;
             border-radius: 8px;
-            border: 1px dashed transparent;
+            border: 1px dashed rgba(255, 255, 255, 0.08);
             transition: all 0.2s ease;
             min-height: 70px;
         }
 
         .cluster-cards-grid.drag-over {
-            background: rgba(59, 130, 246, 0.08);
+            background: rgba(59, 130, 246, 0.12);
             border-color: var(--accent-blue);
-            box-shadow: inset 0 0 12px rgba(59, 130, 246, 0.2);
+            box-shadow: inset 0 0 16px rgba(59, 130, 246, 0.25);
         }
 
         /* ROOT NODE */
@@ -806,8 +806,8 @@
     </style>
 </head>
 <body data-session-id="{{ session.id }}"
-      data-on-load="@get('/api/work/stream_session/{{ session.id }}/')"
-      data-init="@get('/api/work/stream_session/{{ session.id }}/')">
+      data-on-load="@get('/api/whiteboard/stream_session/{{ session.id }}/')"
+      data-init="@get('/api/whiteboard/stream_session/{{ session.id }}/')">
 
     <!-- 1. TOP BREADCRUMB HEADER -->
     <header class="mindmap-header">
@@ -840,6 +840,7 @@
             <button class="btn btn-ai" id="btnCluster" data-action="trigger-clustering" title="Synthesize notes into thematic groups">✨ Cluster Ideas</button>
             <button class="btn btn-ai" id="btnExtract" data-action="trigger-factor-extraction" title="Extract causal variables and state options">🔗 Extract Factors</button>
             <button class="btn" id="btnExport" data-action="export-summary" title="Export Markdown summary">📋 Export</button>
+            <button class="btn btn-tool" id="btnDissolveClusters" data-action="dissolve-all-clusters" title="Dissolve all clusters and return notes to Unclustered">↩️ Dissolve Clusters</button>
             <button class="btn btn-success" data-action="open-add-cluster" title="Manually create a cluster branch">➕ New Cluster</button>
             <button class="btn btn-primary" data-action="open-add-card" title="Add a new brainstorming card">➕ Add Note</button>
         </div>
@@ -1006,7 +1007,7 @@
         <div class="modal-card">
             <h3>Add Brainstorming Note</h3>
             <div class="form-group">
-                <label for="cardText">Note Content / Idea</label>
+                <label for="cardText">Note Content / Idea <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: normal;">(Ctrl+Enter to save)</span></label>
                 <textarea id="cardText" class="form-control" rows="3" placeholder="Describe the idea, candidate variable, or hypothesis..."></textarea>
             </div>
             <div class="form-group">
@@ -1030,6 +1031,7 @@
             </div>
             <div class="modal-actions">
                 <button class="btn" data-action="close-add-card">Cancel</button>
+                <button class="btn" id="btnAddAnotherCard" data-action="submit-add-another-card" title="Save this note and immediately start typing the next one">Save &amp; Add Another</button>
                 <button class="btn btn-primary" data-action="submit-new-card">Save Note</button>
             </div>
         </div>
@@ -1650,6 +1652,68 @@
             }
         }
 
+        async function dissolveAllClusters() {
+            const clusterBranches = document.querySelectorAll('.cluster-branch-row:not(#branch-unclustered)');
+            if (clusterBranches.length === 0) {
+                showToast('No active clusters to dissolve.', 'info');
+                return;
+            }
+
+            if (!confirm('Dissolve all clusters? All notes will return to Unclustered.')) return;
+
+            const btn = document.getElementById('btnDissolveClusters');
+            if (btn) btn.disabled = true;
+
+            try {
+                const resp = await fetch('/api/whiteboard/clusters/dissolve_all/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    body: JSON.stringify({ session_id: parseInt(sessionId) })
+                });
+                const data = await resp.json();
+                if (resp.ok && data.status === 'success') {
+                    // Move all cards from any cluster to cluster-cards-0
+                    const unclusteredGrid = document.getElementById('cluster-cards-0');
+                    document.querySelectorAll('.mindmap-card-item').forEach(card => {
+                        card.dataset.clusterId = '0';
+                        card.dataset.clusterTitle = 'Unclustered Notes';
+                        if (unclusteredGrid && card.parentElement !== unclusteredGrid) {
+                            unclusteredGrid.appendChild(card);
+                        }
+                    });
+
+                    // Remove all cluster-branch-rows except branch-unclustered
+                    clusterBranches.forEach(row => row.remove());
+
+                    // Update total clusters count badge
+                    const totalClustersBadge = document.getElementById('totalClustersCount');
+                    if (totalClustersBadge) {
+                        totalClustersBadge.textContent = '0';
+                    }
+
+                    // Reset cluster select dropdown in Add Note modal
+                    const clusterSelect = document.getElementById('cardClusterSelect');
+                    if (clusterSelect) {
+                        clusterSelect.innerHTML = '<option value="">📌 Unclustered</option>';
+                    }
+
+                    updateClusterCounts();
+                    drawConnectors();
+                    showToast(`Dissolved ${data.dissolved_count} clusters. All notes returned to Unclustered.`, 'info');
+                } else {
+                    showToast('Failed to dissolve clusters: ' + (data.message || 'Unknown error'), 'error');
+                }
+            } catch (err) {
+                console.error('Dissolve clusters failed:', err);
+                showToast('Failed to dissolve clusters.', 'error');
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        }
+
         // SVG CONNECTORS
         function drawConnectors() {
             const svg = document.getElementById('mindmapSvg');
@@ -1753,6 +1817,41 @@
             drawConnectors();
         }
 
+        // CARD ELEMENT CREATION HELPER
+        function createCardElement(data) {
+            const cardEl = document.createElement('div');
+            cardEl.className = 'mindmap-card-item';
+            cardEl.id = 'card-' + data.card_id;
+            cardEl.setAttribute('draggable', 'true');
+            cardEl.dataset.action = 'select-card';
+            cardEl.dataset.cardId = data.card_id.toString();
+            cardEl.dataset.cardText = data.text;
+            cardEl.dataset.cardType = data.card_type;
+            cardEl.dataset.clusterId = (data.cluster_id || 0).toString();
+            cardEl.dataset.clusterTitle = data.cluster_title || 'Unclustered Notes';
+            cardEl.dataset.connections = '[]';
+
+            const tag = document.createElement('span');
+            tag.className = 'card-type-tag type-' + data.card_type;
+            tag.textContent = data.card_type;
+            cardEl.appendChild(tag);
+
+            const textDiv = document.createElement('div');
+            textDiv.className = 'card-text';
+            textDiv.textContent = data.text;
+            cardEl.appendChild(textDiv);
+
+            const metaDiv = document.createElement('div');
+            metaDiv.className = 'card-meta';
+            const authorSpan = document.createElement('span');
+            authorSpan.className = 'card-author';
+            authorSpan.textContent = data.author_alias || 'Participant';
+            metaDiv.appendChild(authorSpan);
+            cardEl.appendChild(metaDiv);
+
+            return cardEl;
+        }
+
         // MODAL ADD CARD
         function openAddCardModal() {
             document.getElementById('addCardModal').style.display = 'flex';
@@ -1763,11 +1862,13 @@
             document.getElementById('addCardModal').style.display = 'none';
         }
 
-        async function submitNewCard() {
-            const text = document.getElementById('cardText').value.trim();
+        async function submitNewCard(options = {}) {
+            const keepOpen = options.keepOpen || false;
+            const textInput = document.getElementById('cardText');
+            const text = textInput.value.trim();
             const cardType = document.getElementById('cardType').value;
             const clusterVal = document.getElementById('cardClusterSelect').value;
-            const clusterId = clusterVal ? parseInt(clusterVal) : null;
+            const clusterId = clusterVal ? parseInt(clusterVal) : 0;
             if (!text) return;
 
             try {
@@ -1781,16 +1882,49 @@
                         session_id: parseInt(sessionId),
                         text: text,
                         card_type: cardType,
-                        cluster_id: clusterId,
+                        cluster_id: clusterId > 0 ? clusterId : null,
                         pos_x: 0,
                         pos_y: 0
                     })
                 });
                 if (resp.ok) {
-                    closeAddCardModal();
-                    document.getElementById('cardText').value = '';
+                    const data = await resp.json();
+                    const clusterBox = document.getElementById('cluster-' + clusterId);
+                    const clusterTitle = clusterBox ? clusterBox.dataset.clusterTitle : 'Unclustered Notes';
+
+                    const cardEl = createCardElement({
+                        card_id: data.card_id,
+                        text: text,
+                        card_type: cardType,
+                        cluster_id: clusterId,
+                        cluster_title: clusterTitle,
+                        author_alias: data.author_alias || 'Participant'
+                    });
+
+                    const targetGrid = document.getElementById('cluster-cards-' + clusterId);
+                    if (targetGrid) {
+                        targetGrid.appendChild(cardEl);
+                    }
+
+                    // Update total notes count badge
+                    const totalNotesBadge = document.getElementById('totalNotesCount');
+                    if (totalNotesBadge) {
+                        const curTotal = parseInt(totalNotesBadge.textContent || '0');
+                        totalNotesBadge.textContent = (curTotal + 1).toString();
+                    }
+
+                    updateClusterCounts();
+                    drawConnectors();
                     showToast('Note added successfully!', 'success');
-                    setTimeout(() => window.location.reload(), 400);
+
+                    textInput.value = '';
+                    if (keepOpen) {
+                        textInput.focus();
+                    } else {
+                        closeAddCardModal();
+                    }
+                } else {
+                    showToast('Failed to save note.', 'error');
                 }
             } catch (err) {
                 console.error('Error saving note:', err);
@@ -1943,7 +2077,11 @@
             } else if (action === 'close-add-card') {
                 closeAddCardModal();
             } else if (action === 'submit-new-card') {
-                submitNewCard();
+                submitNewCard({ keepOpen: false });
+            } else if (action === 'submit-add-another-card') {
+                submitNewCard({ keepOpen: true });
+            } else if (action === 'dissolve-all-clusters') {
+                dissolveAllClusters();
             } else if (action === 'trigger-clustering') {
                 triggerClustering();
             } else if (action === 'trigger-factor-extraction') {
@@ -1970,6 +2108,16 @@
                 deselectCard();
             }
         });
+
+        const cardTextArea = document.getElementById('cardText');
+        if (cardTextArea) {
+            cardTextArea.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    submitNewCard({ keepOpen: false });
+                }
+            });
+        }
 
         window.addEventListener('load', () => {
             setTimeout(drawConnectors, 100);

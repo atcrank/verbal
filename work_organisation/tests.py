@@ -425,6 +425,49 @@ class WorkOrganisationManagementAPITests(TestCase):
         self.assertEqual(data["cards"][0]["text"], "7 +/- 2 item limit")
         self.assertEqual(data["cards"][0]["author_alias"], "Participant #10")
 
+    def test_dissolve_all_clusters_api_success(self):
+        project = Project.objects.create(name="Dissolve Project", created_by=self.user, is_public=True)
+        workshop = Workshop.objects.create(project=project, name="Dissolve Workshop", created_by=self.user)
+        session = WorkshopSession.objects.create(workshop=workshop, title="Dissolve Session")
+
+        c1 = WhiteboardCluster.objects.create(session=session, title="Cluster Alpha")
+        c2 = WhiteboardCluster.objects.create(session=session, title="Cluster Beta")
+        card1 = WhiteboardCard.objects.create(session=session, text="Idea 1", cluster=c1)
+        card2 = WhiteboardCard.objects.create(session=session, text="Idea 2", cluster=c2)
+
+        self.assertEqual(session.clusters.count(), 2)
+        self.assertEqual(session.cards.filter(cluster__isnull=False).count(), 2)
+
+        res = self.client.post("/api/whiteboard/clusters/dissolve_all/", data={
+            "session_id": session.id
+        }, content_type="application/json")
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data["status"], "success")
+        self.assertEqual(data["dissolved_count"], 2)
+
+        self.assertEqual(session.clusters.count(), 0)
+        card1.refresh_from_db()
+        card2.refresh_from_db()
+        self.assertIsNone(card1.cluster)
+        self.assertIsNone(card2.cluster)
+
+    def test_dissolve_all_clusters_api_unauthorized(self):
+        other_user = User.objects.create_user(username="stranger", password="password123")
+        private_group = Group.objects.create(name="PrivateLab")
+        other_user.groups.add(private_group)
+
+        project = Project.objects.create(name="Private Proj", created_by=other_user, is_public=False)
+        project.groups.add(private_group)
+        workshop = Workshop.objects.create(project=project, name="Private WS", created_by=other_user)
+        workshop.groups.add(private_group)
+        session = WorkshopSession.objects.create(workshop=workshop, title="Private Session")
+
+        res = self.client.post("/api/whiteboard/clusters/dissolve_all/", data={
+            "session_id": session.id
+        }, content_type="application/json")
+        self.assertEqual(res.status_code, 404)
+
 
 class WorkOrganisationAdminTests(TestCase):
     """
