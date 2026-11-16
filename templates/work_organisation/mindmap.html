@@ -671,12 +671,13 @@
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 0, 0, 0.65);
-            backdrop-filter: blur(4px);
+            background: rgba(10, 15, 29, 0.82);
             display: none;
             align-items: center;
             justify-content: center;
             z-index: 150;
+            isolation: isolate;
+            contain: paint;
         }
 
         .modal-card {
@@ -806,8 +807,7 @@
     </style>
 </head>
 <body data-session-id="{{ session.id }}"
-      data-on-load="@get('/api/whiteboard/stream_session/{{ session.id }}/')"
-      data-init="@get('/api/whiteboard/stream_session/{{ session.id }}/')">
+      data-on-load="@get('/api/whiteboard/stream_session/{{ session.id }}/')">
 
     <!-- 1. TOP BREADCRUMB HEADER -->
     <header class="mindmap-header">
@@ -1008,7 +1008,7 @@
             <h3>Add Brainstorming Note</h3>
             <div class="form-group">
                 <label for="cardText">Note Content / Idea <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: normal;">(Ctrl+Enter to save)</span></label>
-                <textarea id="cardText" class="form-control" rows="3" placeholder="Describe the idea, candidate variable, or hypothesis..."></textarea>
+                <textarea id="cardText" class="form-control" rows="3" placeholder="Describe the idea, candidate variable, or hypothesis..." spellcheck="false" autocomplete="off"></textarea>
             </div>
             <div class="form-group">
                 <label for="cardType">Type</label>
@@ -1044,7 +1044,7 @@
             <input type="hidden" id="editCardId" value="">
             <div class="form-group">
                 <label for="editCardText">Content</label>
-                <textarea id="editCardText" class="form-control" rows="3"></textarea>
+                <textarea id="editCardText" class="form-control" rows="3" spellcheck="false" autocomplete="off"></textarea>
             </div>
             <div class="form-group">
                 <label for="editCardType">Type</label>
@@ -2123,12 +2123,16 @@
             setTimeout(drawConnectors, 100);
             updateBreadcrumbs();
 
-            // Observe canvas DOM mutations so Datastar element patches automatically refresh connector lines
-            const canvasContainer = document.getElementById('canvasZoomContainer') || document.body;
-            const domObserver = new MutationObserver(() => {
-                requestAnimationFrame(drawConnectors);
-            });
-            domObserver.observe(canvasContainer, { childList: true, subtree: true });
+            // Observe whiteboard tree DOM mutations so Datastar element patches automatically refresh connector lines
+            const canvasContainer = document.getElementById('clustersContainer') || document.getElementById('treeWrapper');
+            if (canvasContainer) {
+                let rafId = null;
+                const domObserver = new MutationObserver(() => {
+                    if (rafId) cancelAnimationFrame(rafId);
+                    rafId = requestAnimationFrame(drawConnectors);
+                });
+                domObserver.observe(canvasContainer, { childList: true, subtree: true });
+            }
         });
         window.addEventListener('resize', drawConnectors);
     </script>

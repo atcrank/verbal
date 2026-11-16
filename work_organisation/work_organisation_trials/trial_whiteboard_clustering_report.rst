@@ -2,13 +2,13 @@
 Doctest Report: Work Organisation Whiteboard Ideation, AI Clustering & Re-Organization
 ========================================================================================
 
-**Date**: 2026-11-16 13:14:11
+**Date**: 2026-11-17 09:43:53
 
 **Local Model**: google/gemma-4-E2B-it
 
 **Outcome**: PASSED
 
-**Total Execution Time**: 4.4s
+**Total Execution Time**: 4.7s
 
 Scenario & Motivating Task
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -38,7 +38,7 @@ Step 1: Canvas Initialization (0.2s)
     canvas to rapidly capture competing hypotheses regarding rover perception in aerosolized
     soot.
 
-**Affordance & Action**: Navigated to mindmap canvas at http://localhost:59497/work/session/1/
+**Affordance & Action**: Navigated to mindmap canvas at http://localhost:46647/work/session/1/
 
 Canvas loaded successfully for session: 'Sensor Configuration & Hazard Ideation'.
 
@@ -50,7 +50,7 @@ Canvas loaded successfully for session: 'Sensor Configuration & Hazard Ideation'
    :width: 720
    :alt: Step 1 Screenshot: Canvas Initialization
 
-Step 2: Sequential Idea Entry (1.2s)
+Step 2: Sequential Idea Entry (0.8s)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **Researcher Intent**::
@@ -99,7 +99,7 @@ AI formed 2 thematic clusters: Thermal Infrared Vision System, 3D Metric LiDAR S
    :width: 720
    :alt: Step 3 Screenshot: AI Thematic Clustering & Deduplication
 
-Step 4: Interactive Card Re-organization (0.8s)
+Step 4: Interactive Card Re-organization (0.7s)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **Researcher Intent**::
