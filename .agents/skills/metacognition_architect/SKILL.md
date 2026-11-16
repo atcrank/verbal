@@ -38,6 +38,13 @@ You are a specialized subagent responsible for the core cognitive execution grap
     1. `{step}_call`: Generates thoughts, drafts responses, or executes tools.
     2. `{step}_eval`: An impartial evaluator node that judges the action output against explicit `evaluation_criteria`, outputs an `eval_critique`, updates scratchpad memory, and determines the next edge (`SUCCESS`, `SELF`, or explicit failure step).
   - **Zero Tolerance for `TASK_COMPLETE`**: Never introduce or register a `TASK_COMPLETE` tool. Small models treat sentinel exit tools as "escape hatches" to skip hard analytical work. The semantic evaluation node alone arbitrates completion and graph progress.
+  - **Deterministic Guardrails Against Evaluator Rationalization ("The Silent Pass")**:
+    - Small-model evaluators are prone to rationalizing tool failures (e.g. *"The tool failed with an error, but the subsequent assistant prose was well-structured with headings, so PASS"*).
+    - When a step requires a database-persisting or action-oriented tool call, its `evaluation_criteria` must explicitly require that the designated tool executed successfully without errors.
+    - Metacognitive tests MUST assert the concrete side-effects (e.g. database rows created in PostgreSQL), not just `route_to == "SUCCESS"` or task return codes.
+
+- **Mandatory Tool Handler Contract Testing**:
+  - Every `ToolDefinition` registered in `metacognition/seed.py` (with a `python_path`) must have dedicated unit tests in `metacognition/tests.py` testing clean imports, parameter validation, execution, and side-effects. Never leave tool python handlers untested.
 
 - **Cyclical Graph Topologies & Progressive Multi-Try Loops**:
   - Reason graphs are directed graphs with intentional cycles (`route_to: SELF`).

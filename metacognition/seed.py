@@ -1870,11 +1870,13 @@ def seed_digest_document_chunk(CognitiveBlueprint, ReasoningStep, ResponseSchema
         blueprint=bp,
         name="Validate Concept Quality",
         system_prompt=(
-            "Inspect the extracted concepts and claims. Verify that titles are clean and not prefixed with document IDs, "
-            "codes, or punctuation, and that narrative_content adheres to the required Markdown sections (Definition, Operational Logic, Empirical Context). "
-            "If invalid or superficial, reject."
+            "Inspect the preceding extraction turn. Confirm that `create_concept_nodes_tool` executed successfully without errors, "
+            "and that the extracted concepts and claims have clean titles without malformed prefixes and adhere to the required "
+            "Markdown sections (Definition, Operational Logic, Empirical Context). If the tool execution failed or was omitted, reject immediately."
         ),
-        evaluation_criteria="Pass only if extracted concepts meet structure and heading requirements without malformed titles.",
+        evaluation_criteria=(
+            "Pass only if `create_concept_nodes_tool` executed successfully and the extracted concepts meet structure and heading requirements without malformed titles."
+        ),
         max_retries=2
     )
     step1.on_success_step = step2

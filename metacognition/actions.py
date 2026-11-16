@@ -894,7 +894,7 @@ class ConceptExtraction(BaseModel):
 
 def handle_create_concept_nodes_tool(state: dict, params: dict) -> str:
     from grips.models import ConceptNode, Domain
-    from document_storage.models import Document
+    from background_resources.models import Document
     import re
     
     domain_id = params.get("domain_id")

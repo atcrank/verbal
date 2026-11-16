@@ -520,3 +520,99 @@ class TestWikiServiceAndEndpoints(TestCase):
         )
         self.assertIn('const __Process$ = { env: { NODE_ENV: "production" } };', content)
 
+
+class GripsCorpusDigestionIntegrationTests(TestCase):
+    """
+    Integration tests for task_digest_corpus_level_1 and the map-reduce pipeline.
+    Verifies that chunks are extracted, batched, and enqueued under both standard
+    chunking and Grobid chunking without silently dropping chunks.
+    """
+    def setUp(self):
+        from unittest.mock import patch
+        from grips.models import Domain
+        from background_resources.models import Document
+        from metacognition.models import CognitiveBlueprint
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        self.domain = Domain.objects.create(name="Firefighting Domain", description="Robotics")
+        mock_file = SimpleUploadedFile("guide.txt", b"Robotics firefighting operational guide content.", content_type="text/plain")
+        self.doc = Document.objects.create(
+            title="Firefighting Guide",
+            author="Author",
+            file=mock_file,
+            currently_indexed=True
+        )
+        self.bp, _ = CognitiveBlueprint.objects.get_or_create(
+            name="DigestDocumentChunk",
+            defaults={"description": "Digest blueprint"}
+        )
+
+    def test_task_digest_corpus_standard_chunking(self):
+        from unittest.mock import patch, MagicMock
+        from grips.tasks import task_digest_corpus_level_1
+        from langchain_core.documents import Document as LangchainDocument
+
+        mock_chunks = [
+            LangchainDocument(page_content=f"Section {i} content text", metadata={"chunk_id": f"c_{i}"})
+            for i in range(25)
+        ]
+
+        with patch('grips.tasks.service_registry') as mock_registry, \
+             patch('metacognition.tasks.task_run_blueprint_async') as mock_task:
+            mock_rag = MagicMock()
+            mock_registry.rag_service = mock_rag
+            mock_rag.convert_chunk_store_document.return_value = (mock_chunks, [])
+
+            result = task_digest_corpus_level_1.func(self.domain.id, self.doc.id)
+
+        # 25 chunks with batch_size 15 => 2 batches enqueued
+        self.assertEqual(mock_task.enqueue.call_count, 2)
+        self.assertIn("Queued 2 DigestDocumentChunk blueprint tasks", result)
+
+    def test_task_digest_corpus_grobid_chunking_not_dropped(self):
+        """CRITICAL: Grobid chunking must NOT be skipped due to indentation bugs!"""
+        from unittest.mock import patch, MagicMock
+        from grips.tasks import task_digest_corpus_level_1
+        from langchain_core.documents import Document as LangchainDocument
+        from grobid_client.models import Reference
+
+        # Attach grobid metadata Reference with tei_xml
+        Reference.objects.create(
+            document=self.doc,
+            tei_xml="<TEI><body><p>Some text</p></body></TEI>"
+        )
+        self.doc.refresh_from_db()
+
+        mock_chunks = [
+            LangchainDocument(page_content=f"Grobid paragraph {i}", metadata={"chunk_id": f"g_{i}"})
+            for i in range(10)
+        ]
+
+        with patch('grips.tasks.service_registry') as mock_registry, \
+             patch('metacognition.tasks.task_run_blueprint_async') as mock_task:
+            mock_rag = MagicMock()
+            mock_registry.rag_service = mock_rag
+            mock_rag.convert_chunk_store_document_grobid.return_value = (mock_chunks, [])
+
+            result = task_digest_corpus_level_1.func(self.domain.id, self.doc.id)
+
+        # 10 chunks with batch_size 15 => 1 batch enqueued
+        self.assertEqual(mock_task.enqueue.call_count, 1)
+        self.assertIn("Queued 1 DigestDocumentChunk blueprint tasks", result)
+
+    def test_task_digest_corpus_empty_chunks(self):
+        from unittest.mock import patch, MagicMock
+        from grips.tasks import task_digest_corpus_level_1
+
+        with patch('grips.tasks.service_registry') as mock_registry, \
+             patch('metacognition.tasks.task_run_blueprint_async') as mock_task:
+            mock_rag = MagicMock()
+            mock_registry.rag_service = mock_rag
+            mock_rag.convert_chunk_store_document.return_value = ([], [])
+
+            result = task_digest_corpus_level_1.func(self.domain.id, self.doc.id)
+
+        self.assertEqual(mock_task.enqueue.call_count, 0)
+        self.assertIn("No chunks could be made or found", result)
+
+

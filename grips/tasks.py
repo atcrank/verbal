@@ -186,41 +186,41 @@ def task_digest_corpus_level_1(domain_id: int, document_id: int):
     if not chunks and not existing_ids:
         chunks, existing_ids = rag_service.convert_chunk_store_document(doc)
 
-        if not chunks and existing_ids:
-            chunks = rag_service.store.mget(existing_ids)
-            chunks = [c for c in chunks if c]
+    if not chunks and existing_ids:
+        chunks = rag_service.store.mget(existing_ids)
+        chunks = [c for c in chunks if c]
 
-        if not chunks:
-            return f"No chunks could be made or found for document {doc.title}"
+    if not chunks:
+        return f"No chunks could be made or found for document {doc.title}"
 
-        batch_size = 15
+    batch_size = 15
+    
+    from metacognition.models import CognitiveBlueprint
+    from metacognition.tasks import task_run_blueprint_async
+    
+    try:
+        bp = CognitiveBlueprint.objects.get(name="DigestDocumentChunk")
+    except CognitiveBlueprint.DoesNotExist:
+        return "DigestDocumentChunk blueprint not found. Run seed."
+
+    batch_count = 0
+    for i in range(0, len(chunks), batch_size):
+        batch_chunks = chunks[i:i + batch_size]
+        batch_text = "\n\n".join(
+            [c.page_content if hasattr(c, 'page_content') else c.text_content for c in batch_chunks])
         
-        from metacognition.models import CognitiveBlueprint
-        from metacognition.tasks import task_run_blueprint_async
+        task_prompt = (
+            f"Digest the following text chunk into the domain of '{domain.name}'.\n\n"
+            f"Document Title: {doc.title}\n"
+            f"Domain: {domain.name}\n\n"
+            f"Content Section:\n{batch_text}\n\n"
+            f"Extract the key operational concepts and their operational logic (claims). Use the `create_concept_nodes_tool` with domain_id={domain.id} and document_id={doc.id}."
+        )
         
-        try:
-            bp = CognitiveBlueprint.objects.get(name="DigestDocumentChunk")
-        except CognitiveBlueprint.DoesNotExist:
-            return "DigestDocumentChunk blueprint not found. Run seed."
+        task_run_blueprint_async.enqueue(bp.id, task_prompt, None, None)
+        batch_count += 1
 
-        batch_count = 0
-        for i in range(0, len(chunks), batch_size):
-            batch_chunks = chunks[i:i + batch_size]
-            batch_text = "\n\n".join(
-                [c.page_content if hasattr(c, 'page_content') else c.text_content for c in batch_chunks])
-            
-            task_prompt = (
-                f"Digest the following text chunk into the domain of '{domain.name}'.\n\n"
-                f"Document Title: {doc.title}\n"
-                f"Domain: {domain.name}\n\n"
-                f"Content Section:\n{batch_text}\n\n"
-                f"Extract the key operational concepts and their operational logic (claims). Use the `create_concept_nodes_tool` with domain_id={domain.id} and document_id={doc.id}."
-            )
-            
-            task_run_blueprint_async.enqueue(bp.id, task_prompt, None, None)
-            batch_count += 1
-
-        return f"Queued {batch_count} DigestDocumentChunk blueprint tasks for {doc.title}."
+    return f"Queued {batch_count} DigestDocumentChunk blueprint tasks for {doc.title}."
 
 
 class LintingReportSchema(BaseModel):

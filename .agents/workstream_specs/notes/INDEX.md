@@ -24,6 +24,7 @@
 * [2026-10-26] [Architecture/Discussion] Dynamic Heterogeneous Hardware Allocation & Multi-PC Task Routing (Status: pending) -> [20261026_dynamic_heterogeneous_hardware_allocation.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20261026_dynamic_heterogeneous_hardware_allocation.md)
 * [2026-11-06] [Architecture/Harness] WS27: Metacognition Architecture, Output Contract & Transcript Isolation (Status: completed) -> [20261106_metacognition_harness_architecture.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20261106_metacognition_harness_architecture.md)
 * [2026-11-13] [Architecture/Enduring] Enduring Architectural Invariants & Harness Design Philosophy (Status: enduring) -> [20261113_enduring_architectural_invariants.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20261113_enduring_architectural_invariants.md)
+* [2026-11-16] [Testing/Enduring] Test-Design Policy, Tool Handler Contracts & State-Change Invariant Testing (Status: enduring) -> [20261116_test_policy_and_side_effect_verification.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20261116_test_policy_and_side_effect_verification.md)
 
 
 

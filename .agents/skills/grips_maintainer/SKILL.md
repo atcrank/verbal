@@ -37,6 +37,10 @@ Because LLMs can hallucinate or create illogical structures, `grips` employs bac
 2. **Edge Linting**: Validates that the `justification` truly supports the chosen `relationship_type` between the source and target concepts.
 
 ## Maintainer Guidelines
-- **Do not bypass the Celery Task Queue**: Extraction and linting are extremely slow, high-latency LLM operations. All significant modifications to the graph should be deferred to Celery tasks (`tasks.py`).
+- **Asynchronous Task Queue (Django Tasks)**: Extraction and linting are high-latency LLM operations. All significant modifications to the graph should be deferred to Django Tasks (`tasks.py`).
 - **Handle Duplicate Titles Carefully**: Remember that `ConceptNode.title` is intentionally NOT unique. Duplicates are a deliberate side effect of Level 1 ingestion, pending Level 2 synthesis. Do not attempt to enforce uniqueness on the title at the database level.
-- **Administrative Interfaces**: All Celery workflows should have corresponding triggers inside `grips/admin.py` via standard Django admin actions. Ensure admin actions wrap tasks properly instead of passing task functions directly to `actions = []`.
+- **Administrative Interfaces**: All task workflows should have corresponding triggers inside `grips/admin.py` via standard Django admin actions. Ensure admin actions wrap tasks properly using `.enqueue()` instead of passing task functions directly to `actions = []`.
+- **Testing & Verification Standards**:
+  - **Tool Handler Contracts**: Always test Grips action tools (`handle_create_concept_nodes_tool`, `handle_evaluate_concept_neighbors_tool`, `handle_evaluate_cross_domain_tool`) directly in unit tests to guarantee clean imports and valid database mutations.
+  - **Ingestion Pipeline Integrity**: `task_digest_corpus_level_1` must be tested with both Grobid-parsed documents and raw text documents, verifying that chunks are converted, batched, and queued into `DigestDocumentChunk` without dropping chunks.
+  - **Side-Effect Assertions**: Tests must verify actual table counts (`ConceptNode.objects.filter(domain=domain).count() > 0` and `KnowledgeEdge.objects.filter(relationship_type='INCLUDES').exists()`). Never rely solely on task completion return codes.

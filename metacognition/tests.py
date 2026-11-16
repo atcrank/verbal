@@ -4427,6 +4427,130 @@ class WS32HarnessHardeningTests(TestCase):
         self.assertNotIn("EXECUTED SUCCESSFULLY", out["internal_monologue"][0]["tool_result"])
 
 
+class GripsActionToolsContractTests(TestCase):
+    """
+    Contract and side-effect tests for Grips action tools registered in ToolDefinition.
+    Ensures imports, parameter parsing, entity creation, and edges operate correctly.
+    """
+    def setUp(self):
+        from grips.models import Domain, ConceptNode, KnowledgeEdge
+        from background_resources.models import Document
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        self.domain = Domain.objects.create(name="Firefighting Robotics", description="UGVs and drones")
+        mock_file = SimpleUploadedFile("spec.txt", b"Sensor spec sheet.", content_type="text/plain")
+        self.doc = Document.objects.create(
+            title="UGV Sensor Spec Sheet",
+            author="Robotics Lab",
+            file=mock_file,
+            currently_indexed=True
+        )
+
+    def test_handle_create_concept_nodes_tool_success(self):
+        from metacognition.actions import handle_create_concept_nodes_tool
+        from grips.models import ConceptNode, KnowledgeEdge
+
+        params = {
+            "domain_id": self.domain.id,
+            "document_id": self.doc.id,
+            "concepts": [
+                {
+                    "title": "FLIR Boson Thermal Core",
+                    "focus_hint": "Long-wave infrared thermal camera",
+                    "narrative_content": "## Definition\nA thermal core...\n\n## Operational Logic\n* Detects heat.\n\n## Empirical Context\nUsed in firefighting UGVs.",
+                    "claims": [
+                        {"subject": "FLIR Boson", "predicate": "CAPABLE_OF", "object": "Thermal Imaging"}
+                    ]
+                },
+                {
+                    "title": "Ouster OS1 LiDAR",
+                    "focus_hint": "Digital flash lidar sensor",
+                    "narrative_content": "## Definition\nA lidar sensor...\n\n## Operational Logic\n* Scans point clouds.\n\n## Empirical Context\nUsed for SLAM navigation.",
+                    "claims": [
+                        {"subject": "Ouster OS1", "predicate": "CAPABLE_OF", "object": "3D Mapping"}
+                    ]
+                }
+            ]
+        }
+
+        initial_node_count = ConceptNode.objects.filter(domain=self.domain).count()
+        result = handle_create_concept_nodes_tool(state={}, params=params)
+
+        self.assertIn("Successfully created 2 ConceptNodes", result)
+        # Verify root node + 2 concept nodes created
+        self.assertEqual(ConceptNode.objects.filter(domain=self.domain).count(), initial_node_count + 3)
+
+        root = ConceptNode.objects.filter(domain=self.domain, slug__startswith=f"doc-{self.doc.id}-").first()
+        self.assertIsNotNone(root)
+        self.assertEqual(root.focus_hint, "Document Root Node")
+
+        # Verify child concept nodes
+        node1 = ConceptNode.objects.filter(domain=self.domain, title="FLIR Boson Thermal Core").first()
+        self.assertIsNotNone(node1)
+        self.assertEqual(len(node1.structured_claims), 1)
+
+        node2 = ConceptNode.objects.filter(domain=self.domain, title="Ouster OS1 LiDAR").first()
+        self.assertIsNotNone(node2)
+
+        # Verify INCLUDES edges from root to both nodes
+        edges = KnowledgeEdge.objects.filter(source=root, relationship_type='INCLUDES')
+        self.assertEqual(edges.count(), 2)
+        edge_targets = {e.target for e in edges}
+        self.assertIn(node1, edge_targets)
+        self.assertIn(node2, edge_targets)
+
+    def test_handle_create_concept_nodes_tool_missing_params(self):
+        from metacognition.actions import handle_create_concept_nodes_tool
+
+        res1 = handle_create_concept_nodes_tool(state={}, params={})
+        self.assertIn("Error", res1)
+
+        res2 = handle_create_concept_nodes_tool(state={}, params={"domain_id": 999999, "concepts": [{"title": "X"}]})
+        self.assertIn("Error - Domain 999999 not found", res2)
+
+    def test_handle_evaluate_concept_neighbors_tool(self):
+        from metacognition.actions import handle_evaluate_concept_neighbors_tool
+        from grips.models import ConceptNode, KnowledgeEdge
+
+        c1 = ConceptNode.objects.create(domain=self.domain, title="Sensor A", slug="sensor-a", narrative_content="Text A")
+        c2 = ConceptNode.objects.create(domain=self.domain, title="Sensor B", slug="sensor-b", narrative_content="Text B")
+
+        # Decision EDGE
+        res_edge = handle_evaluate_concept_neighbors_tool(state={}, params={
+            "source_id": c1.id, "target_id": c2.id, "decision": "EDGE", "justification": "Complementary sensors"
+        })
+        self.assertIn("Successfully created EDGE", res_edge)
+        self.assertTrue(KnowledgeEdge.objects.filter(source=c1, target=c2, relationship_type='RELATED_TO', justification="Complementary sensors").exists())
+
+        # Decision MERGE
+        c3 = ConceptNode.objects.create(domain=self.domain, title="Sensor C", slug="sensor-c", narrative_content="Text C")
+        res_merge = handle_evaluate_concept_neighbors_tool(state={}, params={
+            "source_id": c1.id, "target_id": c3.id, "decision": "MERGE", "justification": "Same model"
+        })
+        self.assertIn("Merge suggested", res_merge)
+        self.assertTrue(KnowledgeEdge.objects.filter(source=c1, target=c3, justification__contains="[MERGE SUGGESTED]").exists())
+
+        # Decision DISTINCT
+        res_distinct = handle_evaluate_concept_neighbors_tool(state={}, params={
+            "source_id": c2.id, "target_id": c3.id, "decision": "DISTINCT", "justification": "Unrelated"
+        })
+        self.assertIn("DISTINCT", res_distinct)
+
+    def test_handle_evaluate_cross_domain_tool(self):
+        from metacognition.actions import handle_evaluate_cross_domain_tool
+        from grips.models import Domain, ConceptNode, KnowledgeEdge
+
+        d2 = Domain.objects.create(name="Biology", description="Cell biology")
+        c1 = ConceptNode.objects.create(domain=self.domain, title="Robot Battery", slug="robot-battery", narrative_content="Power")
+        c2 = ConceptNode.objects.create(domain=d2, title="Mitochondria", slug="mitochondria", narrative_content="Powerhouse")
+
+        res = handle_evaluate_cross_domain_tool(state={}, params={
+            "source_id": c1.id, "target_id": c2.id, "is_related": True, "justification": "Energy storage analogy"
+        })
+        self.assertIn("Successfully created Cross-Domain EDGE", res)
+        self.assertTrue(KnowledgeEdge.objects.filter(source=c1, target=c2, justification__contains="[Cross-Domain Link]").exists())
+
+
+
 
 
 
