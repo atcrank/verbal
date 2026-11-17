@@ -735,6 +735,48 @@ class BenchmarkingStudioUITests(TestCase):
         self.assertIsNotNone(run2.average_rag_score)
         self.assertIsNotNone(run2.average_semantic_score)
 
+    def test_task_execute_benchmark_run(self):
+        """Background task task_execute_benchmark_run executes scenarios and updates run metrics."""
+        from benchmarking.tasks import task_execute_benchmark_run
+        run = BenchmarkRun.objects.create(
+            experiment=self.experiment,
+            corpus=self.corpus,
+            configuration_snapshot=self.experiment.configuration
+        )
+        result_msg = task_execute_benchmark_run.func(run.id)
+        self.assertIn("finished", result_msg.lower())
+        self.assertEqual(BenchmarkResult.objects.filter(run=run).count(), 2)
+
+        run.refresh_from_db()
+        self.assertIsNotNone(run.average_rag_score)
+        self.assertIsNotNone(run.average_semantic_score)
+
+    def test_task_execute_investigation_matrix(self):
+        """Background task task_execute_investigation_matrix processes all experiments in an investigation."""
+        from benchmarking.tasks import task_execute_investigation_matrix
+        inv = Investigation.objects.create(name="Async Matrix Test Inv")
+        exp1 = Experiment.objects.create(
+            investigation=inv,
+            corpus=self.corpus,
+            scenario_group=self.group,
+            name="Async Exp 1",
+            configuration={"target_model": "Qwen/7B", "hosting_backend": "vllm", "rag_strategy": "none"}
+        )
+        exp2 = Experiment.objects.create(
+            investigation=inv,
+            corpus=self.corpus,
+            scenario_group=self.group,
+            name="Async Exp 2",
+            configuration={"target_model": "Llama/8B", "hosting_backend": "sglang", "rag_strategy": "default"}
+        )
+        result_msg = task_execute_investigation_matrix.func(inv.id)
+        self.assertIn("executed: 2 runs processed", result_msg)
+
+        run1 = BenchmarkRun.objects.get(experiment=exp1)
+        run2 = BenchmarkRun.objects.get(experiment=exp2)
+        self.assertEqual(BenchmarkResult.objects.filter(run=run1).count(), 2)
+        self.assertEqual(BenchmarkResult.objects.filter(run=run2).count(), 2)
+
     def test_retrieve_benchmark_context_adapter(self):
         """Retrieval adapter handles none, grips_wiki, and unified strategies cleanly."""
         from benchmarking.retrieval_adapter import retrieve_benchmark_context

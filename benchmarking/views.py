@@ -6,7 +6,7 @@ import time
 from typing import Generator
 
 from django.contrib.admin.views.decorators import staff_member_required
-from django.db import transaction
+from django.db import close_old_connections, connection, transaction
 from django.http import HttpResponse, StreamingHttpResponse, JsonResponse, HttpResponseForbidden, HttpResponseNotFound
 from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
@@ -470,6 +470,8 @@ def _execute_single_scenario(run, scenario, ai_service, conversation_ref=None):
             candidate_response = "Error: 'blueprint_id' missing in experiment configuration."
             traj_metrics["error"] = "blueprint_id_missing"
         else:
+            if not connection.in_atomic_block:
+                close_old_connections()
             from metacognition.tasks import run_blueprint
             try:
                 result = run_blueprint(
@@ -497,6 +499,9 @@ def _execute_single_scenario(run, scenario, ai_service, conversation_ref=None):
                 logger.error(f"Error running blueprint {blueprint_id} for scenario {scenario.id}: {e}")
                 candidate_response = f"Blueprint Execution Exception: {e}"
                 traj_metrics["error"] = str(e)
+            finally:
+                if not connection.in_atomic_block:
+                    close_old_connections()
 
     else:
         strat = config.get("rag_strategy", "none")
@@ -516,29 +521,35 @@ def _execute_single_scenario(run, scenario, ai_service, conversation_ref=None):
 
         generation_error = None
         candidate_response = ""
-        if ai_service and hasattr(ai_service, "generate_response2"):
-            try:
-                raw_resps = ai_service.generate_response2(
-                    messages=[{"role": "user", "content": candidate_prompt}],
-                    max_new_tokens=300,
-                    num_return_sequences=1,
-                )
-                if raw_resps:
-                    resp_str = raw_resps[0] if isinstance(raw_resps, list) else raw_resps
-                    candidate_response = ai_service.clean_response(resp_str) if hasattr(ai_service, "clean_response") else resp_str
-            except Exception as err:
-                logger.warning(f"Error querying AI service in run {run.id}: {err}")
-                generation_error = str(err)
-        elif ai_service and hasattr(ai_service, "generate"):
-            try:
-                resp = ai_service.generate([{"role": "user", "content": candidate_prompt}])
-                if resp:
-                    candidate_response = resp
-            except Exception as err:
-                logger.warning(f"Error querying AI service in run {run.id}: {err}")
-                generation_error = str(err)
-        else:
-            generation_error = "No active AI service configured in SystemConfiguration"
+        if not connection.in_atomic_block:
+            close_old_connections()
+        try:
+            if ai_service and hasattr(ai_service, "generate_response2"):
+                try:
+                    raw_resps = ai_service.generate_response2(
+                        messages=[{"role": "user", "content": candidate_prompt}],
+                        max_new_tokens=300,
+                        num_return_sequences=1,
+                    )
+                    if raw_resps:
+                        resp_str = raw_resps[0] if isinstance(raw_resps, list) else raw_resps
+                        candidate_response = ai_service.clean_response(resp_str) if hasattr(ai_service, "clean_response") else resp_str
+                except Exception as err:
+                    logger.warning(f"Error querying AI service in run {run.id}: {err}")
+                    generation_error = str(err)
+            elif ai_service and hasattr(ai_service, "generate"):
+                try:
+                    resp = ai_service.generate([{"role": "user", "content": candidate_prompt}])
+                    if resp:
+                        candidate_response = resp
+                except Exception as err:
+                    logger.warning(f"Error querying AI service in run {run.id}: {err}")
+                    generation_error = str(err)
+            else:
+                generation_error = "No active AI service configured in SystemConfiguration"
+        finally:
+            if not connection.in_atomic_block:
+                close_old_connections()
 
         if not candidate_response:
             candidate_response = f"[Defect: Generation failed - {generation_error or 'Empty response'}]"
@@ -596,92 +607,96 @@ def stream_benchmark_run(request, run_id: int):
     experiment = run.experiment
 
     def event_stream() -> Generator[str, None, None]:
-        scenarios = []
-        if experiment.scenario_group:
-            scenarios = list(experiment.scenario_group.scenarios.all())
-        elif run.corpus and hasattr(run.corpus, "benchmarkscenario_set"):
-            scenarios = list(run.corpus.benchmarkscenario_set.all())
+        try:
+            scenarios = []
+            if experiment.scenario_group:
+                scenarios = list(experiment.scenario_group.scenarios.all())
+            elif run.corpus and hasattr(run.corpus, "benchmarkscenario_set"):
+                scenarios = list(run.corpus.benchmarkscenario_set.all())
 
-        # If already completed or has results, stream the current state and exit
-        existing_results = list(BenchmarkResult.objects.filter(run=run).select_related("scenario"))
-        if existing_results and len(existing_results) >= len(scenarios):
-            context = {
-                "run": run,
-                "status": "COMPLETED",
-                "current_step": len(existing_results),
-                "total_steps": len(existing_results),
-                "percent": 100,
-                "results": existing_results,
-                "avg_rag": run.average_rag_score,
-                "avg_sem": run.average_semantic_score,
-                "avg_faith": run.average_faithfulness,
-                "avg_rel": run.average_relevance,
-            }
-            html = render(request, "benchmarking/partials/run_progress.html", context).content.decode("utf-8")
-            yield DatastarSSE.merge_fragments(html, selector="#run-monitor", merge_mode="morph")
+            # If already completed or has results, stream the current state and exit
+            existing_results = list(BenchmarkResult.objects.filter(run=run).select_related("scenario"))
+            if existing_results and len(existing_results) >= len(scenarios):
+                context = {
+                    "run": run,
+                    "status": "COMPLETED",
+                    "current_step": len(existing_results),
+                    "total_steps": len(existing_results),
+                    "percent": 100,
+                    "results": existing_results,
+                    "avg_rag": run.average_rag_score,
+                    "avg_sem": run.average_semantic_score,
+                    "avg_faith": run.average_faithfulness,
+                    "avg_rel": run.average_relevance,
+                }
+                html = render(request, "benchmarking/partials/run_progress.html", context).content.decode("utf-8")
+                yield DatastarSSE.merge_fragments(html, selector="#run-monitor", merge_mode="morph")
+                return
+
+            total_scenarios = len(scenarios)
+            if total_scenarios == 0:
+                frag = f"""
+                <div id="run-monitor" class="panel-body">
+                    <span class="badge badge-error">Aborted</span>
+                    <p style="margin-top: 0.5rem; color: var(--text-muted); font-size: 0.85rem;">
+                        No scenarios found in experiment scenario group '{experiment.scenario_group}'.
+                    </p>
+                </div>
+                """
+                yield DatastarSSE.merge_fragments(frag, selector="#run-monitor", merge_mode="morph")
+                return
+
+            # Initialize AI service if available
+            ai_service = getattr(service_registry, "ai_service", None)
+            created_results = list(existing_results)
+
+            config = run.configuration_snapshot or experiment.configuration or {}
+            multi_turn_mode = config.get("multi_turn_mode", "isolated").lower()
+            conversation_ref = None
+            if config.get("generation_target") == "blueprint" and multi_turn_mode == "chained":
+                from llm_api.models import Conversation
+                from django.contrib.auth import get_user_model
+                User = get_user_model()
+                bench_user = User.objects.filter(username="NightManager").first() or User.objects.first()
+                if bench_user:
+                    conversation_ref = Conversation.objects.create(
+                        user=bench_user,
+                        title=f"Benchmark Run #{run.id}: {experiment.name[:45]}"
+                    )
+
+            # Execute scenario loop
+            for index, scenario in enumerate(scenarios, start=1):
+                # Check if this scenario was already processed
+                already_done = any(r.scenario_id == scenario.id for r in created_results)
+                if not already_done:
+                    res = _execute_single_scenario(run, scenario, ai_service, conversation_ref=conversation_ref)
+                    created_results.append(res)
+
+                # Compute current averages
+                avg_rag = sum(r.rag_score or 0 for r in created_results) / len(created_results)
+                avg_sem = sum(r.semantic_score or 0 for r in created_results) / len(created_results)
+                avg_faith = sum(r.faithfulness or 0 for r in created_results) / len(created_results)
+                avg_rel = sum(r.relevance or 0 for r in created_results) / len(created_results)
+                percent = int((index / total_scenarios) * 100)
+
+                is_final = index == total_scenarios
+                context = {
+                    "run": run,
+                    "status": "COMPLETED" if is_final else "RUNNING",
+                    "current_step": index,
+                    "total_steps": total_scenarios,
+                    "percent": percent,
+                    "results": list(reversed(created_results)),
+                    "avg_rag": avg_rag,
+                    "avg_sem": avg_sem,
+                    "avg_faith": avg_faith,
+                    "avg_rel": avg_rel,
+                }
+                html = render(request, "benchmarking/partials/run_progress.html", context).content.decode("utf-8")
+                yield DatastarSSE.merge_fragments(html, selector="#run-monitor", merge_mode="morph")
+        except GeneratorExit:
+            logger.info(f"Client disconnected from benchmark stream for Run {run_id}; halting.")
             return
-
-        total_scenarios = len(scenarios)
-        if total_scenarios == 0:
-            frag = f"""
-            <div id="run-monitor" class="panel-body">
-                <span class="badge badge-error">Aborted</span>
-                <p style="margin-top: 0.5rem; color: var(--text-muted); font-size: 0.85rem;">
-                    No scenarios found in experiment scenario group '{experiment.scenario_group}'.
-                </p>
-            </div>
-            """
-            yield DatastarSSE.merge_fragments(frag, selector="#run-monitor", merge_mode="morph")
-            return
-
-        # Initialize AI service if available
-        ai_service = getattr(service_registry, "ai_service", None)
-        created_results = list(existing_results)
-
-        config = run.configuration_snapshot or experiment.configuration or {}
-        multi_turn_mode = config.get("multi_turn_mode", "isolated").lower()
-        conversation_ref = None
-        if config.get("generation_target") == "blueprint" and multi_turn_mode == "chained":
-            from llm_api.models import Conversation
-            from django.contrib.auth import get_user_model
-            User = get_user_model()
-            bench_user = User.objects.filter(username="NightManager").first() or User.objects.first()
-            if bench_user:
-                conversation_ref = Conversation.objects.create(
-                    user=bench_user,
-                    title=f"Benchmark Run #{run.id}: {experiment.name[:45]}"
-                )
-
-        # Execute scenario loop
-        for index, scenario in enumerate(scenarios, start=1):
-            # Check if this scenario was already processed
-            already_done = any(r.scenario_id == scenario.id for r in created_results)
-            if not already_done:
-                res = _execute_single_scenario(run, scenario, ai_service, conversation_ref=conversation_ref)
-                created_results.append(res)
-
-            # Compute current averages
-            avg_rag = sum(r.rag_score or 0 for r in created_results) / len(created_results)
-            avg_sem = sum(r.semantic_score or 0 for r in created_results) / len(created_results)
-            avg_faith = sum(r.faithfulness or 0 for r in created_results) / len(created_results)
-            avg_rel = sum(r.relevance or 0 for r in created_results) / len(created_results)
-            percent = int((index / total_scenarios) * 100)
-
-            is_final = index == total_scenarios
-            context = {
-                "run": run,
-                "status": "COMPLETED" if is_final else "RUNNING",
-                "current_step": index,
-                "total_steps": total_scenarios,
-                "percent": percent,
-                "results": list(reversed(created_results)),
-                "avg_rag": avg_rag,
-                "avg_sem": avg_sem,
-                "avg_faith": avg_faith,
-                "avg_rel": avg_rel,
-            }
-            html = render(request, "benchmarking/partials/run_progress.html", context).content.decode("utf-8")
-            yield DatastarSSE.merge_fragments(html, selector="#run-monitor", merge_mode="morph")
 
     response = StreamingHttpResponse(event_stream(), content_type="text/event-stream")
     response["Cache-Control"] = "no-cache"
@@ -699,172 +714,176 @@ def stream_investigation_matrix(request, investigation_id: int):
     investigation = get_object_or_404(Investigation, pk=investigation_id)
 
     def event_stream() -> Generator[str, None, None]:
-        experiments = list(investigation.experiments.all().order_by("id"))
-        runs = []
-        for exp in experiments:
-            run = BenchmarkRun.objects.filter(experiment=exp).order_by("-timestamp").first()
-            if not run and exp.corpus:
-                run = BenchmarkRun.objects.create(
-                    experiment=exp,
-                    corpus=exp.corpus,
-                    configuration_snapshot=exp.configuration,
-                )
-            if run:
-                runs.append((exp, run))
+        try:
+            experiments = list(investigation.experiments.all().order_by("id"))
+            runs = []
+            for exp in experiments:
+                run = BenchmarkRun.objects.filter(experiment=exp).order_by("-timestamp").first()
+                if not run and exp.corpus:
+                    run = BenchmarkRun.objects.create(
+                        experiment=exp,
+                        corpus=exp.corpus,
+                        configuration_snapshot=exp.configuration,
+                    )
+                if run:
+                    runs.append((exp, run))
 
-        total_experiments = len(runs)
-        if total_experiments == 0:
-            frag = f"""
-            <div id="run-monitor" class="panel-body">
-                <span class="badge badge-error">Aborted</span>
-                <p style="margin-top: 0.5rem; color: var(--text-muted); font-size: 0.85rem;">
-                    No experiments found in Investigation #{investigation.id} '{investigation.name}'.
-                </p>
-            </div>
-            """
-            yield DatastarSSE.merge_fragments(frag, selector="#run-monitor", merge_mode="morph")
-            return
+            total_experiments = len(runs)
+            if total_experiments == 0:
+                frag = f"""
+                <div id="run-monitor" class="panel-body">
+                    <span class="badge badge-error">Aborted</span>
+                    <p style="margin-top: 0.5rem; color: var(--text-muted); font-size: 0.85rem;">
+                        No experiments found in Investigation #{investigation.id} '{investigation.name}'.
+                    </p>
+                </div>
+                """
+                yield DatastarSSE.merge_fragments(frag, selector="#run-monitor", merge_mode="morph")
+                return
 
-        scorecard_rows = []
-        for exp, run in runs:
-            m_name = exp.selected_model.name if exp.selected_model else exp.configuration.get("target_model", "Default")
-            m_short = m_name.split("/")[-1] if "/" in m_name else m_name
-            backend = exp.configuration.get("hosting_backend", "pytorch")
-            target = exp.configuration.get("generation_target", "direct")
-            if target == "blueprint":
-                bp_label = exp.configuration.get('blueprint_name', 'Blueprint')[:14]
-                rag_strat = exp.configuration.get('rag_strategy', 'none')
-                rag = f"BP: {bp_label} [{rag_strat}]"
-            else:
-                rag = exp.configuration.get("rag_strategy", "none").upper()
-            scorecard_rows.append({
-                "run_id": run.id,
-                "model_short": m_short,
-                "backend": backend,
-                "rag": rag,
-                "avg_sem": run.average_semantic_score,
-                "avg_faith": run.average_faithfulness,
-                "avg_rel": run.average_relevance,
-                "avg_rag": run.average_rag_score,
-                "status": "COMPLETED" if run.average_rag_score is not None else "QUEUED",
-                "is_active": False,
-            })
+            scorecard_rows = []
+            for exp, run in runs:
+                m_name = exp.selected_model.name if exp.selected_model else exp.configuration.get("target_model", "Default")
+                m_short = m_name.split("/")[-1] if "/" in m_name else m_name
+                backend = exp.configuration.get("hosting_backend", "pytorch")
+                target = exp.configuration.get("generation_target", "direct")
+                if target == "blueprint":
+                    bp_label = exp.configuration.get('blueprint_name', 'Blueprint')[:14]
+                    rag_strat = exp.configuration.get('rag_strategy', 'none')
+                    rag = f"BP: {bp_label} [{rag_strat}]"
+                else:
+                    rag = exp.configuration.get("rag_strategy", "none").upper()
+                scorecard_rows.append({
+                    "run_id": run.id,
+                    "model_short": m_short,
+                    "backend": backend,
+                    "rag": rag,
+                    "avg_sem": run.average_semantic_score,
+                    "avg_faith": run.average_faithfulness,
+                    "avg_rel": run.average_relevance,
+                    "avg_rag": run.average_rag_score,
+                    "status": "COMPLETED" if run.average_rag_score is not None else "QUEUED",
+                    "is_active": False,
+                })
 
-        event_logs = [
-            {
-                "time": timezone.now().strftime("%H:%M:%S"),
-                "message": f"Initialized investigation matrix: {total_experiments} experiments.",
-            }
-        ]
+            event_logs = [
+                {
+                    "time": timezone.now().strftime("%H:%M:%S"),
+                    "message": f"Initialized investigation matrix: {total_experiments} experiments.",
+                }
+            ]
 
-        ai_service = getattr(service_registry, "ai_service", None)
+            ai_service = getattr(service_registry, "ai_service", None)
 
-        for exp_idx, (exp, run) in enumerate(runs, start=1):
-            scorecard_rows[exp_idx - 1]["is_active"] = True
-            scorecard_rows[exp_idx - 1]["status"] = "RUNNING"
-            event_logs.insert(0, {
-                "time": timezone.now().strftime("%H:%M:%S"),
-                "message": f"Starting Experiment {exp_idx}/{total_experiments}: {exp.name}",
-            })
+            for exp_idx, (exp, run) in enumerate(runs, start=1):
+                scorecard_rows[exp_idx - 1]["is_active"] = True
+                scorecard_rows[exp_idx - 1]["status"] = "RUNNING"
+                event_logs.insert(0, {
+                    "time": timezone.now().strftime("%H:%M:%S"),
+                    "message": f"Starting Experiment {exp_idx}/{total_experiments}: {exp.name}",
+                })
 
-            scenarios = []
-            if exp.scenario_group:
-                scenarios = list(exp.scenario_group.scenarios.all())
-            elif run.corpus and hasattr(run.corpus, "benchmarkscenario_set"):
-                scenarios = list(run.corpus.benchmarkscenario_set.all())
+                scenarios = []
+                if exp.scenario_group:
+                    scenarios = list(exp.scenario_group.scenarios.all())
+                elif run.corpus and hasattr(run.corpus, "benchmarkscenario_set"):
+                    scenarios = list(run.corpus.benchmarkscenario_set.all())
 
-            total_scenarios = len(scenarios)
-            created_results = list(BenchmarkResult.objects.filter(run=run).select_related("scenario"))
+                total_scenarios = len(scenarios)
+                created_results = list(BenchmarkResult.objects.filter(run=run).select_related("scenario"))
 
-            if total_scenarios == 0:
+                if total_scenarios == 0:
+                    scorecard_rows[exp_idx - 1]["status"] = "COMPLETED"
+                    scorecard_rows[exp_idx - 1]["is_active"] = False
+                    event_logs.insert(0, {
+                        "time": timezone.now().strftime("%H:%M:%S"),
+                        "message": f"Experiment {exp_idx}: No scenarios found, skipping.",
+                    })
+                    continue
+
+                config = run.configuration_snapshot or exp.configuration or {}
+                multi_turn_mode = config.get("multi_turn_mode", "isolated").lower()
+                conversation_ref = None
+                if config.get("generation_target") == "blueprint" and multi_turn_mode == "chained":
+                    from llm_api.models import Conversation
+                    from django.contrib.auth import get_user_model
+                    User = get_user_model()
+                    bench_user = User.objects.filter(username="NightManager").first() or User.objects.first()
+                    if bench_user:
+                        conversation_ref = Conversation.objects.create(
+                            user=bench_user,
+                            title=f"Benchmark Run #{run.id}: {exp.name[:45]}"
+                        )
+
+                avg_rag = avg_sem = avg_faith = avg_rel = 0.0
+
+                for s_idx, scenario in enumerate(scenarios, start=1):
+                    already_done = any(r.scenario_id == scenario.id for r in created_results)
+                    if not already_done:
+                        res = _execute_single_scenario(run, scenario, ai_service, conversation_ref=conversation_ref)
+                        created_results.append(res)
+
+                    if created_results:
+                        avg_rag = sum(r.rag_score or 0 for r in created_results) / len(created_results)
+                        avg_sem = sum(r.semantic_score or 0 for r in created_results) / len(created_results)
+                        avg_faith = sum(r.faithfulness or 0 for r in created_results) / len(created_results)
+                        avg_rel = sum(r.relevance or 0 for r in created_results) / len(created_results)
+
+                    scorecard_rows[exp_idx - 1]["avg_rag"] = avg_rag
+                    scorecard_rows[exp_idx - 1]["avg_sem"] = avg_sem
+                    scorecard_rows[exp_idx - 1]["avg_faith"] = avg_faith
+                    scorecard_rows[exp_idx - 1]["avg_rel"] = avg_rel
+
+                    scenario_pct = int((s_idx / total_scenarios) * 100) if total_scenarios else 100
+                    matrix_pct = int((((exp_idx - 1) + (s_idx / total_scenarios)) / total_experiments) * 100)
+
+                    context = {
+                        "investigation": investigation,
+                        "is_complete": False,
+                        "current_exp_idx": exp_idx,
+                        "total_experiments": total_experiments,
+                        "matrix_percent": matrix_pct,
+                        "current_experiment": exp,
+                        "scenario_step": s_idx,
+                        "total_scenarios": total_scenarios,
+                        "scenario_percent": scenario_pct,
+                        "scorecard_rows": scorecard_rows,
+                        "event_logs": event_logs[:6],
+                    }
+                    html = render(request, "benchmarking/partials/matrix_progress.html", context).content.decode("utf-8")
+                    yield DatastarSSE.merge_fragments(html, selector="#run-monitor", merge_mode="morph")
+
+                run.average_rag_score = avg_rag
+                run.average_semantic_score = avg_sem
+                run.average_faithfulness = avg_faith
+                run.average_relevance = avg_rel
+                run.save()
+
                 scorecard_rows[exp_idx - 1]["status"] = "COMPLETED"
                 scorecard_rows[exp_idx - 1]["is_active"] = False
                 event_logs.insert(0, {
                     "time": timezone.now().strftime("%H:%M:%S"),
-                    "message": f"Experiment {exp_idx}: No scenarios found, skipping.",
+                    "message": f"Completed Exp {exp_idx}: Sem={avg_sem:.2f}, RAG={avg_rag:.2f}",
                 })
-                continue
 
-            config = run.configuration_snapshot or exp.configuration or {}
-            multi_turn_mode = config.get("multi_turn_mode", "isolated").lower()
-            conversation_ref = None
-            if config.get("generation_target") == "blueprint" and multi_turn_mode == "chained":
-                from llm_api.models import Conversation
-                from django.contrib.auth import get_user_model
-                User = get_user_model()
-                bench_user = User.objects.filter(username="NightManager").first() or User.objects.first()
-                if bench_user:
-                    conversation_ref = Conversation.objects.create(
-                        user=bench_user,
-                        title=f"Benchmark Run #{run.id}: {exp.name[:45]}"
-                    )
-
-            avg_rag = avg_sem = avg_faith = avg_rel = 0.0
-
-            for s_idx, scenario in enumerate(scenarios, start=1):
-                already_done = any(r.scenario_id == scenario.id for r in created_results)
-                if not already_done:
-                    res = _execute_single_scenario(run, scenario, ai_service, conversation_ref=conversation_ref)
-                    created_results.append(res)
-
-                if created_results:
-                    avg_rag = sum(r.rag_score or 0 for r in created_results) / len(created_results)
-                    avg_sem = sum(r.semantic_score or 0 for r in created_results) / len(created_results)
-                    avg_faith = sum(r.faithfulness or 0 for r in created_results) / len(created_results)
-                    avg_rel = sum(r.relevance or 0 for r in created_results) / len(created_results)
-
-                scorecard_rows[exp_idx - 1]["avg_rag"] = avg_rag
-                scorecard_rows[exp_idx - 1]["avg_sem"] = avg_sem
-                scorecard_rows[exp_idx - 1]["avg_faith"] = avg_faith
-                scorecard_rows[exp_idx - 1]["avg_rel"] = avg_rel
-
-                scenario_pct = int((s_idx / total_scenarios) * 100) if total_scenarios else 100
-                matrix_pct = int((((exp_idx - 1) + (s_idx / total_scenarios)) / total_experiments) * 100)
-
-                context = {
-                    "investigation": investigation,
-                    "is_complete": False,
-                    "current_exp_idx": exp_idx,
-                    "total_experiments": total_experiments,
-                    "matrix_percent": matrix_pct,
-                    "current_experiment": exp,
-                    "scenario_step": s_idx,
-                    "total_scenarios": total_scenarios,
-                    "scenario_percent": scenario_pct,
-                    "scorecard_rows": scorecard_rows,
-                    "event_logs": event_logs[:6],
-                }
-                html = render(request, "benchmarking/partials/matrix_progress.html", context).content.decode("utf-8")
-                yield DatastarSSE.merge_fragments(html, selector="#run-monitor", merge_mode="morph")
-
-            run.average_rag_score = avg_rag
-            run.average_semantic_score = avg_sem
-            run.average_faithfulness = avg_faith
-            run.average_relevance = avg_rel
-            run.save()
-
-            scorecard_rows[exp_idx - 1]["status"] = "COMPLETED"
-            scorecard_rows[exp_idx - 1]["is_active"] = False
-            event_logs.insert(0, {
-                "time": timezone.now().strftime("%H:%M:%S"),
-                "message": f"Completed Exp {exp_idx}: Sem={avg_sem:.2f}, RAG={avg_rag:.2f}",
-            })
-
-        final_context = {
-            "investigation": investigation,
-            "is_complete": True,
-            "current_exp_idx": total_experiments,
-            "total_experiments": total_experiments,
-            "matrix_percent": 100,
-            "current_experiment": None,
-            "scenario_step": 0,
-            "total_scenarios": 0,
-            "scenario_percent": 100,
-            "scorecard_rows": scorecard_rows,
-            "event_logs": event_logs[:6],
-        }
-        final_html = render(request, "benchmarking/partials/matrix_progress.html", final_context).content.decode("utf-8")
-        yield DatastarSSE.merge_fragments(final_html, selector="#run-monitor", merge_mode="morph")
+            final_context = {
+                "investigation": investigation,
+                "is_complete": True,
+                "current_exp_idx": total_experiments,
+                "total_experiments": total_experiments,
+                "matrix_percent": 100,
+                "current_experiment": None,
+                "scenario_step": 0,
+                "total_scenarios": 0,
+                "scenario_percent": 100,
+                "scorecard_rows": scorecard_rows,
+                "event_logs": event_logs[:6],
+            }
+            final_html = render(request, "benchmarking/partials/matrix_progress.html", final_context).content.decode("utf-8")
+            yield DatastarSSE.merge_fragments(final_html, selector="#run-monitor", merge_mode="morph")
+        except GeneratorExit:
+            logger.info(f"Client disconnected from matrix stream for Investigation {investigation_id}; halting.")
+            return
 
     response = StreamingHttpResponse(event_stream(), content_type="text/event-stream")
     response["Cache-Control"] = "no-cache"

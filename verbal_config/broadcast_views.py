@@ -16,37 +16,28 @@ def stream_broadcasts(request):
     """
     Server-Sent Events (SSE) stream endpoint for live announcements.
     Pushes messages with SSE auto-reconnect headers (retry: 3000).
-    Limits synchronous stream duration (max 10s) to prevent WSGI worker pool starvation.
+    Yields initial state and exits cleanly without long blocking sleeps to prevent worker starvation.
     """
-    max_duration = min(max(int(request.GET.get("timeout", 5)), 0), 10)
+    max_duration = min(max(int(request.GET.get("timeout", 0)), 0), 5)
 
     def event_stream():
         # Instruct SSE client to reconnect after 3 seconds upon stream close
         yield "retry: 3000\n\n"
 
-        last_id = None
         # Send initial state immediately
         initial = BroadcastService.get_current_broadcast()
         if initial:
-            last_id = initial.get("id")
             yield f"data: {json.dumps(initial)}\n\n"
         else:
             yield f"data: {json.dumps({'active': False})}\n\n"
 
-        # Short stream loop (client EventSource auto-reconnects cleanly)
+        # Short stream loop if explicit positive timeout provided
         start_time = time.time()
         while time.time() - start_time < max_duration:
             time.sleep(1)
             current = BroadcastService.get_current_broadcast()
-            current_id = current.get("id") if current else None
-
-            if current_id != last_id:
-                last_id = current_id
-                payload = current if current else {"active": False}
-                yield f"data: {json.dumps(payload)}\n\n"
-            else:
-                # Keep-alive comment
-                yield ": keepalive\n\n"
+            payload = current if current else {"active": False}
+            yield f"data: {json.dumps(payload)}\n\n"
 
     response = StreamingHttpResponse(event_stream(), content_type="text/event-stream")
     response["Cache-Control"] = "no-cache"

@@ -147,3 +147,107 @@ def task_calculate_dataset_metrics(dataset_id):
         logger = __import__('logging').getLogger(__name__)
         logger.error(f"Failed to calculate metrics for dataset {dataset_id}:\n{traceback.format_exc()}")
         raise e
+
+
+@task
+def task_execute_benchmark_run(run_id: int):
+    """
+    Background task to execute a benchmark run asynchronously without holding a web worker or SSE connection.
+    Populates BenchmarkResult records and updates average scores on the BenchmarkRun model.
+    """
+    import logging
+    from django.db import connection, close_old_connections
+    from benchmarking.models import BenchmarkRun, BenchmarkResult
+    from benchmarking.views import _execute_single_scenario
+    from llm_api.apps import service_registry
+
+    logger = logging.getLogger(__name__)
+
+    try:
+        run = BenchmarkRun.objects.get(id=run_id)
+    except BenchmarkRun.DoesNotExist:
+        logger.warning(f"task_execute_benchmark_run: Run {run_id} does not exist.")
+        return f"Run {run_id} does not exist."
+
+    experiment = run.experiment
+    scenarios = []
+    if experiment.scenario_group:
+        scenarios = list(experiment.scenario_group.scenarios.all())
+    elif run.corpus and hasattr(run.corpus, "benchmarkscenario_set"):
+        scenarios = list(run.corpus.benchmarkscenario_set.all())
+
+    if not scenarios:
+        logger.info(f"task_execute_benchmark_run: No scenarios for Run {run_id}.")
+        return f"No scenarios for Run {run_id}."
+
+    existing_results = list(BenchmarkResult.objects.filter(run=run).select_related("scenario"))
+    if len(existing_results) >= len(scenarios):
+        return f"Run {run_id} already completed ({len(existing_results)} results)."
+
+    ai_service = getattr(service_registry, "ai_service", None)
+    created_results = list(existing_results)
+
+    config = run.configuration_snapshot or experiment.configuration or {}
+    multi_turn_mode = config.get("multi_turn_mode", "isolated").lower()
+    conversation_ref = None
+    if config.get("generation_target") == "blueprint" and multi_turn_mode == "chained":
+        from llm_api.models import Conversation
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        bench_user = User.objects.filter(username="NightManager").first() or User.objects.first()
+        if bench_user:
+            conversation_ref = Conversation.objects.create(
+                user=bench_user,
+                title=f"Benchmark Run #{run.id}: {experiment.name[:45]}"
+            )
+
+    for scenario in scenarios:
+        already_done = any(r.scenario_id == scenario.id for r in created_results)
+        if not already_done:
+            if not connection.in_atomic_block:
+                close_old_connections()
+            res = _execute_single_scenario(run, scenario, ai_service, conversation_ref=conversation_ref)
+            created_results.append(res)
+            if not connection.in_atomic_block:
+                close_old_connections()
+
+    if created_results:
+        run.average_rag_score = sum(r.rag_score or 0 for r in created_results) / len(created_results)
+        run.average_semantic_score = sum(r.semantic_score or 0 for r in created_results) / len(created_results)
+        run.average_faithfulness = sum(r.faithfulness or 0 for r in created_results) / len(created_results)
+        run.average_relevance = sum(r.relevance or 0 for r in created_results) / len(created_results)
+        run.save()
+
+    return f"Run {run_id} finished: {len(created_results)}/{len(scenarios)} scenarios executed."
+
+
+@task
+def task_execute_investigation_matrix(investigation_id: int):
+    """
+    Background task to execute all runs across experiments in an Investigation matrix.
+    """
+    import logging
+    from benchmarking.models import Investigation, BenchmarkRun
+
+    logger = logging.getLogger(__name__)
+    try:
+        investigation = Investigation.objects.get(id=investigation_id)
+    except Investigation.DoesNotExist:
+        logger.warning(f"task_execute_investigation_matrix: Investigation {investigation_id} does not exist.")
+        return f"Investigation {investigation_id} does not exist."
+
+    experiments = list(investigation.experiments.all().order_by("id"))
+    completed_runs = []
+    for exp in experiments:
+        run = BenchmarkRun.objects.filter(experiment=exp).order_by("-timestamp").first()
+        if not run and exp.corpus:
+            run = BenchmarkRun.objects.create(
+                experiment=exp,
+                corpus=exp.corpus,
+                configuration_snapshot=exp.configuration,
+            )
+        if run:
+            task_execute_benchmark_run.func(run.id)
+            completed_runs.append(run.id)
+
+    return f"Investigation {investigation_id} executed: {len(completed_runs)} runs processed."

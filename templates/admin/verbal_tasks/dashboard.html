@@ -480,6 +480,8 @@
     }
 
     function fetchDashboardStats() {
+        if (document.hidden) return;
+
         const spinner = document.getElementById('refresh-spinner');
         if (spinner) spinner.style.transform = 'rotate(180deg)';
 
@@ -617,6 +619,12 @@
     document.addEventListener('DOMContentLoaded', () => {
         fetchDashboardStats();
         updateRefreshInterval();
+
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                fetchDashboardStats();
+            }
+        });
     });
 </script>
 {% endblock %}

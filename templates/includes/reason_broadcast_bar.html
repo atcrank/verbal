@@ -647,30 +647,26 @@
                 .then(d => { if (d && d.id) dismissedId = d.id; });
         };
 
-        // Initial fetch
-        fetch('/api/broadcasts/current/')
-            .then(r => r.json())
-            .then(data => { if (data.active !== false) applyBroadcast(data); })
-            .catch(() => {});
-
-        // SSE connection
-        if (window.EventSource) {
-            try {
-                const sse = new EventSource('/api/broadcasts/stream/');
-                sse.onmessage = function(e) {
-                    try {
-                        const data = JSON.parse(e.data);
-                        applyBroadcast(data.active !== false ? data : null);
-                    } catch (err) {}
-                };
-            } catch (e) {
-                setInterval(() => {
-                    fetch('/api/broadcasts/current/')
-                        .then(r => r.json())
-                        .then(data => applyBroadcast(data.active !== false ? data : null));
-                }, 10000);
-            }
+        function checkBroadcast() {
+            if (document.hidden) return;
+            fetch('/api/broadcasts/current/')
+                .then(r => r.json())
+                .then(data => { if (data.active !== false) applyBroadcast(data); else applyBroadcast(null); })
+                .catch(() => {});
         }
+
+        // Initial fetch
+        checkBroadcast();
+
+        // Discrete background poll (every 30 seconds), automatically paused when tab is hidden
+        setInterval(checkBroadcast, 30000);
+
+        // Instantly refresh when user returns to this tab
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                checkBroadcast();
+            }
+        });
     })();
 
     window.toggleGovernanceModal = function() {
