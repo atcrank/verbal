@@ -17,7 +17,13 @@ import os
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 from dotenv import load_dotenv
+# Preserve explicitly set process environment variables from being overwritten by dotenv files
+_initial_env = dict(os.environ)
 load_dotenv(BASE_DIR / ".env")
+load_dotenv(BASE_DIR / ".env.secrets", override=True)
+if os.environ.get("VERBAL_ENV") == "prod":
+    load_dotenv(BASE_DIR / ".env.production", override=True)
+os.environ.update(_initial_env)
 
 import warnings
 from django.core.exceptions import ImproperlyConfigured

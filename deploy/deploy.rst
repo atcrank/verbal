@@ -386,6 +386,7 @@ Operators **must supply their own production configuration files** placed in ``/
    .. code-block:: bash
 
       DJANGO_SECRET_KEY=your-high-entropy-random-secret-key-here
+      DB_PASSWORD=your_secure_database_password_here
       HUGGING_FACE_HUB_TOKEN=hf_...
       OPENAI_API_KEY=sk-...
 

@@ -180,6 +180,9 @@ class TestSystemdUnitsGeneration(SimpleTestCase):
         self.assertIn("RemainAfterExit=yes", docker)
         self.assertIn("PartOf=reason.service", docker)
         self.assertNotIn("reason.target", docker)
+        self.assertIn("EnvironmentFile=-/srv/reason/app/.env", docker)
+        self.assertIn("EnvironmentFile=-/srv/reason/app/.env.secrets", docker)
+        self.assertIn("EnvironmentFile=-/srv/reason/app/.env.production", docker)
 
     def test_inference_service_includes_noreload(self):
         """Verifies inference service specifies --noreload to prevent double model instantiation."""
@@ -275,6 +278,31 @@ class TestDjangoSettingsHardening(SimpleTestCase):
             with self.assertRaises(ImproperlyConfigured):
                 if role == "standalone":
                     raise ImproperlyConfigured("Standalone role rejected in prod.")
+
+    def test_dotenv_layering_secrets_override_defaults(self):
+        """Verifies that .env.secrets overrides default values from .env without stomping explicit env."""
+        import tempfile
+        from dotenv import load_dotenv
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            env_file = tmp_path / ".env"
+            secrets_file = tmp_path / ".env.secrets"
+
+            env_file.write_text("DB_PASSWORD=verbal_password\nTEST_VAR=base\n", encoding="utf-8")
+            secrets_file.write_text("DB_PASSWORD=secret_password_123\n", encoding="utf-8")
+
+            # Emulate the settings.py dotenv loading logic
+            test_env = {"PRE_EXISTING": "untouched"}
+            with patch.dict(os.environ, test_env, clear=True):
+                _initial_env = dict(os.environ)
+                load_dotenv(env_file)
+                load_dotenv(secrets_file, override=True)
+                os.environ.update(_initial_env)
+
+                self.assertEqual(os.environ.get("DB_PASSWORD"), "secret_password_123")
+                self.assertEqual(os.environ.get("TEST_VAR"), "base")
+                self.assertEqual(os.environ.get("PRE_EXISTING"), "untouched")
 
 
 class TestGitIgnoreAndSecretTracking(SimpleTestCase):
@@ -928,6 +956,21 @@ class TestStartBackendContainers(SimpleTestCase):
 
         with self.assertRaises(Exit):
             start_backend_containers(c)
+
+    @patch("deploy.fabric_deploy.ensure_sudo")
+    @patch("deploy.fabric_deploy.sudo_bash")
+    @patch("deploy.fabric_deploy.get_remote_env")
+    def test_start_backend_containers_propagates_secret_db_password(self, mock_env, mock_sudo_bash, mock_sudo):
+        from deploy.fabric_deploy import start_backend_containers
+        c = create_mock_context()
+        mock_env.return_value = {"DB_PASSWORD": "custom_secret_password_456"}
+        mock_sudo_bash.return_value = MagicMock(ok=True, failed=False)
+
+        start_backend_containers(c)
+
+        calls = [str(call) for call in mock_sudo_bash.call_args_list]
+        self.assertTrue(any("DB_PASSWORD=custom_secret_password_456" in cmd for cmd in calls))
+        self.assertTrue(any("docker compose up -d db sandbox" in cmd for cmd in calls))
 
 
 class TestSuperuserManagement(SimpleTestCase):

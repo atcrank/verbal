@@ -17,6 +17,15 @@ if [ -n "$WORKER_PIDS" ]; then
 else
     echo "Background services are currently STOPPED. Starting them up..."
 
+    if [ -f .env ]; then
+        . .env
+    fi
+    if [ -f ~/.verbal_secrets ]; then
+        . ~/.verbal_secrets
+    elif [ -f .env.secrets ]; then
+        . .env.secrets
+    fi
+
     echo "1/3: Starting Docker containers..."
     docker compose up -d
 

@@ -7,6 +7,15 @@ else
     . .env.example
 fi
 
+# Load secure secrets (highest priority: ~/.verbal_secrets, then .env.secrets)
+if [ -f ~/.verbal_secrets ]; then
+    echo "Loading secure secrets from ~/.verbal_secrets"
+    . ~/.verbal_secrets
+elif [ -f .env.secrets ]; then
+    echo "Loading secure secrets from .env.secrets"
+    . .env.secrets
+fi
+
 echo "1/3: Starting Docker containers..."
 # Always start essential core infrastructure (PostgreSQL DB + Python Execution Sandbox)
 docker compose up -d db sandbox

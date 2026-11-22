@@ -601,6 +601,9 @@ PartOf=reason.service
 Type=oneshot
 RemainAfterExit=yes
 WorkingDirectory={app_dir}
+EnvironmentFile=-{env_app_file}
+EnvironmentFile=-{env_app_secrets}
+EnvironmentFile=-{env_app_prod}
 ExecStart=/usr/bin/docker compose up -d --no-build --pull never db sandbox
 ExecStart=-/usr/bin/docker compose --profile academic up -d --no-build --pull never grobid
 ExecStop=/usr/bin/docker compose stop
@@ -1680,9 +1683,13 @@ def start_backend_containers(c):
     ensure_sudo(c)
     print("🐳 Starting Docker backend containers (db, sandbox)...")
 
+    remote_env = get_remote_env(c)
+    db_pwd = remote_env.get("DB_PASSWORD", DB_PASSWORD)
+    env_prefix = f"DB_PASSWORD={shlex.quote(db_pwd)} " if db_pwd else ""
+
     # 1. Bring up core containers (ensuring sandbox image is built before startup)
     sudo_bash(c, f"cd {APP_DIR} && docker compose build sandbox", warn=True)
-    res = sudo_bash(c, f"cd {APP_DIR} && docker compose up -d db sandbox", warn=True)
+    res = sudo_bash(c, f"{env_prefix}cd {APP_DIR} && docker compose up -d db sandbox", warn=True)
     if not res.ok:
         # Check if database container is already running before failing
         db_running = sudo_bash(c, f"docker ps -q -f name={DB_CONTAINER} -f status=running", hide=True, warn=True)
@@ -1693,7 +1700,6 @@ def start_backend_containers(c):
             print(f"ℹ️ Database container '{DB_CONTAINER}' is already running.")
 
     # 2. Check and start Grobid if enabled
-    remote_env = get_remote_env(c)
     enable_grobid = (
         os.environ.get("ENABLE_GROBID")
         or remote_env.get("ENABLE_GROBID", "true")
@@ -1701,7 +1707,7 @@ def start_backend_containers(c):
 
     if enable_grobid:
         print("Checking Grobid academic PDF container...")
-        g_res = sudo_bash(c, f"cd {APP_DIR} && docker compose --profile academic up -d grobid", warn=True)
+        g_res = sudo_bash(c, f"{env_prefix}cd {APP_DIR} && docker compose --profile academic up -d grobid", warn=True)
         if g_res.ok:
             print("✅ Grobid service started on port 8070.")
         else:
