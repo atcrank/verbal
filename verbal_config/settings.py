@@ -19,10 +19,26 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 from dotenv import load_dotenv
 # Preserve explicitly set process environment variables from being overwritten by dotenv files
 _initial_env = dict(os.environ)
+
+# Load base environment from persistent shared directory (if on server) then local project
+shared_dir_path = os.environ.get("REASON_SHARED_DIR")
+if shared_dir_path:
+    shared_dir = Path(shared_dir_path)
+else:
+    shared_dir = Path(os.environ.get("REASON_BASE_DIR", "/srv/reason")) / "shared"
+
+if shared_dir.is_dir():
+    load_dotenv(shared_dir / ".env")
+    load_dotenv(shared_dir / ".env.secrets", override=True)
+
 load_dotenv(BASE_DIR / ".env")
 load_dotenv(BASE_DIR / ".env.secrets", override=True)
+
 if os.environ.get("VERBAL_ENV") == "prod":
+    if shared_dir.is_dir():
+        load_dotenv(shared_dir / ".env.production", override=True)
     load_dotenv(BASE_DIR / ".env.production", override=True)
+
 os.environ.update(_initial_env)
 
 import warnings

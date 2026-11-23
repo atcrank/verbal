@@ -304,6 +304,35 @@ class TestDjangoSettingsHardening(SimpleTestCase):
                 self.assertEqual(os.environ.get("TEST_VAR"), "base")
                 self.assertEqual(os.environ.get("PRE_EXISTING"), "untouched")
 
+    def test_dotenv_layering_with_shared_secrets(self):
+        """Verifies that shared secrets directory layers before application secrets and overrides defaults."""
+        import tempfile
+        from dotenv import load_dotenv
+
+        with tempfile.TemporaryDirectory() as tmp_shared, tempfile.TemporaryDirectory() as tmp_app:
+            shared_path = Path(tmp_shared)
+            app_path = Path(tmp_app)
+
+            # Shared env files
+            (shared_path / ".env").write_text("DB_PASSWORD=shared_default\nSHARED_ONLY=yes\n", encoding="utf-8")
+            (shared_path / ".env.secrets").write_text("DB_PASSWORD=shared_secret_pwd\n", encoding="utf-8")
+
+            # App env files (local project overrides)
+            (app_path / ".env").write_text("APP_ONLY=yes\n", encoding="utf-8")
+            (app_path / ".env.secrets").write_text("DB_PASSWORD=app_secret_pwd\n", encoding="utf-8")
+
+            with patch.dict(os.environ, {}, clear=True):
+                _initial_env = dict(os.environ)
+                load_dotenv(shared_path / ".env")
+                load_dotenv(shared_path / ".env.secrets", override=True)
+                load_dotenv(app_path / ".env")
+                load_dotenv(app_path / ".env.secrets", override=True)
+                os.environ.update(_initial_env)
+
+                self.assertEqual(os.environ.get("DB_PASSWORD"), "app_secret_pwd")
+                self.assertEqual(os.environ.get("SHARED_ONLY"), "yes")
+                self.assertEqual(os.environ.get("APP_ONLY"), "yes")
+
 
 class TestGitIgnoreAndSecretTracking(SimpleTestCase):
     """Verifies that private keys are untracked and excluded in .gitignore."""
@@ -923,8 +952,8 @@ class TestStartBackendContainers(SimpleTestCase):
         start_backend_containers(c)
 
         calls = [str(call) for call in mock_sudo_bash.call_args_list]
-        self.assertTrue(any("docker compose up -d db sandbox" in cmd for cmd in calls))
-        self.assertTrue(any("docker compose --profile academic up -d grobid" in cmd for cmd in calls))
+        self.assertTrue(any("docker compose" in cmd and "up -d db sandbox" in cmd for cmd in calls))
+        self.assertTrue(any("docker compose" in cmd and "--profile academic up -d grobid" in cmd for cmd in calls))
         self.assertTrue(any("pg_isready" in cmd for cmd in calls))
 
     @patch("deploy.fabric_deploy.ensure_sudo")
@@ -939,7 +968,7 @@ class TestStartBackendContainers(SimpleTestCase):
         start_backend_containers(c)
 
         calls = [str(call) for call in mock_sudo_bash.call_args_list]
-        self.assertTrue(any("docker compose up -d db sandbox" in cmd for cmd in calls))
+        self.assertTrue(any("docker compose" in cmd and "up -d db sandbox" in cmd for cmd in calls))
         self.assertFalse(any("grobid" in cmd for cmd in calls))
         self.assertTrue(any("pg_isready" in cmd for cmd in calls))
 
@@ -961,7 +990,7 @@ class TestStartBackendContainers(SimpleTestCase):
     @patch("deploy.fabric_deploy.sudo_bash")
     @patch("deploy.fabric_deploy.get_remote_env")
     def test_start_backend_containers_propagates_secret_db_password(self, mock_env, mock_sudo_bash, mock_sudo):
-        from deploy.fabric_deploy import start_backend_containers
+        from deploy.fabric_deploy import start_backend_containers, APP_DIR
         c = create_mock_context()
         mock_env.return_value = {"DB_PASSWORD": "custom_secret_password_456"}
         mock_sudo_bash.return_value = MagicMock(ok=True, failed=False)
@@ -969,8 +998,61 @@ class TestStartBackendContainers(SimpleTestCase):
         start_backend_containers(c)
 
         calls = [str(call) for call in mock_sudo_bash.call_args_list]
-        self.assertTrue(any("DB_PASSWORD=custom_secret_password_456" in cmd for cmd in calls))
-        self.assertTrue(any("docker compose up -d db sandbox" in cmd for cmd in calls))
+        self.assertTrue(any(f"cd {APP_DIR} && " in cmd and "DB_PASSWORD=custom_secret_password_456" in cmd for cmd in calls))
+        # Ensure DB_PASSWORD is not erroneously placed before 'cd'
+        self.assertFalse(any(cmd.strip().startswith("DB_PASSWORD=") for cmd in calls))
+        self.assertTrue(any("docker compose" in cmd and "up -d db sandbox" in cmd for cmd in calls))
+
+
+class TestDjangoEnvironmentPropagation(SimpleTestCase):
+    """Verifies that Django commands executed by Fabric export environment secrets and roles."""
+
+    def test_get_django_env_prefix_sources_files(self):
+        from deploy.fabric_deploy import get_django_env_prefix, SHARED_DIR, APP_DIR
+        prefix = get_django_env_prefix()
+        self.assertIn(f"[ -f {SHARED_DIR}/.env ] && . {SHARED_DIR}/.env", prefix)
+        self.assertIn(f"[ -f {SHARED_DIR}/.env.secrets ] && . {SHARED_DIR}/.env.secrets", prefix)
+        self.assertIn(f"[ -f {APP_DIR}/.env ] && . {APP_DIR}/.env", prefix)
+        self.assertIn(f"[ -f {APP_DIR}/.env.secrets ] && . {APP_DIR}/.env.secrets", prefix)
+        self.assertIn(f"[ -f {APP_DIR}/.env.production ] && . {APP_DIR}/.env.production", prefix)
+        self.assertIn("VERBAL_ROLE=web", prefix)
+
+    @patch("deploy.fabric_deploy.get_remote_env")
+    def test_get_django_env_prefix_injects_credentials(self, mock_remote_env):
+        from deploy.fabric_deploy import get_django_env_prefix
+        c = create_mock_context()
+        mock_remote_env.return_value = {
+            "DB_PASSWORD": "super_secret_db_password",
+            "DB_USER": "custom_db_user",
+            "DB_NAME": "custom_db_name",
+            "DB_PORT": "5432",
+            "DJANGO_SECRET_KEY": "django_secret_val",
+            "VERBAL_ROLE": "web",
+        }
+        prefix = get_django_env_prefix(c, extra_env="DJANGO_STATIC_ROOT=/srv/reason/public/static")
+        self.assertIn("DB_PASSWORD=super_secret_db_password", prefix)
+        self.assertIn("DB_USER=custom_db_user", prefix)
+        self.assertIn("DB_NAME=custom_db_name", prefix)
+        self.assertIn("DB_PORT=5432", prefix)
+        self.assertIn("DJANGO_SECRET_KEY=django_secret_val", prefix)
+        self.assertIn("VERBAL_ROLE=web", prefix)
+        self.assertIn("DJANGO_STATIC_ROOT=/srv/reason/public/static", prefix)
+
+    @patch("deploy.fabric_deploy.run_as_deploy_user")
+    @patch("deploy.fabric_deploy.get_remote_env")
+    def test_run_django_as_deploy_user_executes_manage_py(self, mock_remote_env, mock_run_deploy):
+        from deploy.fabric_deploy import run_django_as_deploy_user, APP_DIR, VENV_DIR
+        c = create_mock_context()
+        mock_remote_env.return_value = {"DB_PASSWORD": "secret_password"}
+        mock_run_deploy.return_value = MagicMock(ok=True)
+
+        run_django_as_deploy_user(c, "migrate --noinput")
+
+        self.assertEqual(mock_run_deploy.call_count, 1)
+        executed_cmd = mock_run_deploy.call_args[0][1]
+        self.assertIn(f"{VENV_DIR}/bin/python {APP_DIR}/manage.py migrate --noinput", executed_cmd)
+        self.assertIn("DB_PASSWORD=secret_password", executed_cmd)
+        self.assertIn("VERBAL_ROLE=web", executed_cmd)
 
 
 class TestSuperuserManagement(SimpleTestCase):

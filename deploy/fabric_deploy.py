@@ -330,6 +330,110 @@ def run_as_deploy_user(c, command, cwd=None, **kwargs):
         return sudo_bash(c, f"su - {DEPLOY_USER} -c '{escaped}'", **kwargs)
 
 
+def get_remote_env(c, env_file=None):
+    """
+    Parses key-value pairs from remote environment files (.env, .env.secrets, etc.).
+    Inspects both SHARED_DIR and APP_DIR to respect files located in either directory.
+    Uses sudo to guarantee readability even if files have locked-down permissions (0600/0640).
+    """
+    targets = [env_file] if env_file else [
+        f"{SHARED_DIR}/.env",
+        f"{SHARED_DIR}/.env.secrets",
+        f"{APP_DIR}/.env",
+        f"{APP_DIR}/.env.secrets",
+        f"{APP_DIR}/.env.production",
+    ]
+    remote_env = {}
+    for target in targets:
+        if c.sudo(f"test -f {target}", warn=True, hide=True).ok:
+            cat_res = c.sudo(f"cat {target}", warn=True, hide=True)
+            if cat_res.ok and cat_res.stdout:
+                for line in cat_res.stdout.splitlines():
+                    line = line.strip()
+                    if line and not line.startswith("#") and "=" in line:
+                        k, v = line.split("=", 1)
+                        remote_env[k.strip()] = v.strip().strip('"').strip("'")
+    return remote_env
+
+
+def get_django_env_prefix(c=None, extra_env=None):
+    """
+    Constructs a shell environment prefix that:
+    1. Sources persistent configuration files from SHARED_DIR and APP_DIR if present:
+       .env, .env.secrets, and .env.production.
+    2. Overrides / injects explicit values discovered via get_remote_env(c) using sudo
+       (such as DB_PASSWORD, DB_USER, DB_NAME, DB_PORT, DB_HOST, DJANGO_SECRET_KEY),
+       ensuring that even if .env.secrets has restrictive file permissions preventing
+       unprivileged direct reading, the deploy user executing manage.py receives the credentials.
+    3. Injects VERBAL_ROLE=web as a default role if no role was specified.
+    4. Injects any caller-supplied extra_env string.
+    """
+    sources = [
+        f"[ -f {SHARED_DIR}/.env ] && . {SHARED_DIR}/.env",
+        f"[ -f {SHARED_DIR}/.env.secrets ] && . {SHARED_DIR}/.env.secrets",
+        f"[ -f {APP_DIR}/.env ] && . {APP_DIR}/.env",
+        f"[ -f {APP_DIR}/.env.secrets ] && . {APP_DIR}/.env.secrets",
+        f"[ -f {APP_DIR}/.env.production ] && . {APP_DIR}/.env.production",
+    ]
+    source_script = "set -a; " + "; ".join(sources) + "; set +a;"
+
+    remote = {}
+    if c is not None:
+        try:
+            remote = get_remote_env(c)
+        except Exception:
+            remote = {}
+
+    explicit_vars = []
+
+    db_pwd = remote.get("DB_PASSWORD") or globals().get("DB_PASSWORD", "")
+    if db_pwd:
+        explicit_vars.append(f"DB_PASSWORD={shlex.quote(db_pwd)}")
+
+    db_user = remote.get("DB_USER") or globals().get("DB_USER", "")
+    if db_user:
+        explicit_vars.append(f"DB_USER={shlex.quote(db_user)}")
+
+    db_name = remote.get("DB_NAME") or globals().get("DB_NAME", "")
+    if db_name:
+        explicit_vars.append(f"DB_NAME={shlex.quote(db_name)}")
+
+    db_port = remote.get("DB_PORT") or globals().get("DB_PORT", "")
+    if db_port:
+        explicit_vars.append(f"DB_PORT={shlex.quote(str(db_port))}")
+
+    db_host = remote.get("DB_HOST") or globals().get("DB_HOST", "localhost")
+    if db_host:
+        explicit_vars.append(f"DB_HOST={shlex.quote(str(db_host))}")
+
+    secret_key = remote.get("DJANGO_SECRET_KEY") or os.environ.get("DJANGO_SECRET_KEY")
+    if secret_key:
+        explicit_vars.append(f"DJANGO_SECRET_KEY={shlex.quote(secret_key)}")
+
+    verbal_role = remote.get("VERBAL_ROLE") or "web"
+    explicit_vars.append(f"VERBAL_ROLE={shlex.quote(verbal_role)}")
+
+    explicit_prefix = (" " + " ".join(explicit_vars) + " ") if explicit_vars else " "
+
+    if extra_env:
+        extra_prefix = extra_env.strip() + " "
+    else:
+        extra_prefix = ""
+
+    return f"{source_script}{explicit_prefix}{extra_prefix}"
+
+
+def run_django_as_deploy_user(c, manage_args, extra_env=None, cwd=None, **kwargs):
+    """
+    Executes a Django manage.py command as DEPLOY_USER with guaranteed environment
+    loading (.env, .env.secrets) and credentials propagation.
+    """
+    target_cwd = cwd or APP_DIR
+    env_prefix = get_django_env_prefix(c, extra_env=extra_env)
+    cmd = f"{env_prefix}{VENV_DIR}/bin/python {APP_DIR}/manage.py {manage_args}"
+    return run_as_deploy_user(c, cmd, cwd=target_cwd, **kwargs)
+
+
 def ensure_deploy_ssh_key(c):
     """
     Ensures DEPLOY_USER (/home/verbal_deploy) has a dedicated SSH keypair.
@@ -1506,26 +1610,25 @@ def backup_database(c):
         return
 
     # Check if database has any existing tables to dump
-    check_tables_cmd = (
-        f"VERBAL_ROLE=web {VENV_DIR}/bin/python {APP_DIR}/manage.py shell -c \""
-        f"import sys; from django.db import connection; "
-        f"tables = connection.introspection.table_names(); "
-        f"sys.exit(0 if 'django_migrations' in tables else 1)\""
+    shell_code = (
+        "import sys; from django.db import connection; "
+        "tables = connection.introspection.table_names(); "
+        "sys.exit(0 if 'django_migrations' in tables else 1)"
     )
-    has_tables = run_as_deploy_user(c, check_tables_cmd, cwd=APP_DIR, warn=True).ok
+    has_tables = run_django_as_deploy_user(c, f'shell -c "{shell_code}"', warn=True).ok
     if not has_tables:
         print(f"ℹ️ Database has no existing migrated tables; skipping pre-deploy backup on initial bootstrap.")
         return
 
     backup_file = f"{BACKUP_DIR}/pre_deploy_{timestamp}.json.gz"
     print(f"📦 Dumping database via Django ORM (dumpdata -> {backup_file})...")
-    dump_cmd = (
-        f"VERBAL_ROLE=web {VENV_DIR}/bin/python {APP_DIR}/manage.py dumpdata "
+    dump_args = (
+        f"dumpdata "
         f"--natural-foreign --natural-primary "
         f"-e contenttypes -e auth.Permission "
         f"--output {backup_file}"
     )
-    res = run_as_deploy_user(c, dump_cmd, cwd=APP_DIR, warn=True)
+    res = run_django_as_deploy_user(c, dump_args, warn=True)
 
     # Strictly verify backup file exists, is non-empty, and gzip archive is valid
     verify_res = sudo_bash(
@@ -1648,31 +1751,6 @@ def update_code(c, git_url=None, branch="main", local_source=None):
     print("✅ Application code updated and permission boundaries enforced.")
 
 
-def get_remote_env(c, env_file=None):
-    """
-    Parses key-value pairs from remote environment files (.env, .env.secrets, etc.).
-    Inspects both SHARED_DIR and APP_DIR to respect files located in either directory.
-    """
-    targets = [env_file] if env_file else [
-        f"{SHARED_DIR}/.env",
-        f"{SHARED_DIR}/.env.secrets",
-        f"{APP_DIR}/.env",
-        f"{APP_DIR}/.env.secrets",
-        f"{APP_DIR}/.env.production",
-    ]
-    remote_env = {}
-    for target in targets:
-        if c.sudo(f"test -f {target}", warn=True, hide=True).ok:
-            cat_res = c.sudo(f"cat {target}", warn=True, hide=True)
-            if cat_res.ok and cat_res.stdout:
-                for line in cat_res.stdout.splitlines():
-                    line = line.strip()
-                    if line and not line.startswith("#") and "=" in line:
-                        k, v = line.split("=", 1)
-                        remote_env[k.strip()] = v.strip().strip('"').strip("'")
-    return remote_env
-
-
 @task
 def start_backend_containers(c):
     """
@@ -1685,11 +1763,29 @@ def start_backend_containers(c):
 
     remote_env = get_remote_env(c)
     db_pwd = remote_env.get("DB_PASSWORD", DB_PASSWORD)
-    env_prefix = f"DB_PASSWORD={shlex.quote(db_pwd)} " if db_pwd else ""
+    db_user = remote_env.get("DB_USER", DB_USER)
+    db_name = remote_env.get("DB_NAME", DB_NAME)
+    db_port = remote_env.get("DB_PORT", DB_PORT)
+
+    env_vars = []
+    if db_pwd:
+        env_vars.append(f"DB_PASSWORD={shlex.quote(db_pwd)}")
+    if db_user:
+        env_vars.append(f"DB_USER={shlex.quote(db_user)}")
+    if db_name:
+        env_vars.append(f"DB_NAME={shlex.quote(db_name)}")
+    if db_port:
+        env_vars.append(f"DB_PORT={shlex.quote(str(db_port))}")
+    env_prefix = (" ".join(env_vars) + " ") if env_vars else ""
+
+    env_files = [f"{APP_DIR}/.env", f"{APP_DIR}/.env.secrets", f"{APP_DIR}/.env.production"]
+    compose_env_flags = " ".join([f"--env-file {f}" for f in env_files if c.sudo(f"test -f {f}", warn=True, hide=True).ok])
+    if compose_env_flags:
+        compose_env_flags += " "
 
     # 1. Bring up core containers (ensuring sandbox image is built before startup)
     sudo_bash(c, f"cd {APP_DIR} && docker compose build sandbox", warn=True)
-    res = sudo_bash(c, f"{env_prefix}cd {APP_DIR} && docker compose up -d db sandbox", warn=True)
+    res = sudo_bash(c, f"cd {APP_DIR} && {env_prefix}docker compose {compose_env_flags}up -d db sandbox", warn=True)
     if not res.ok:
         # Check if database container is already running before failing
         db_running = sudo_bash(c, f"docker ps -q -f name={DB_CONTAINER} -f status=running", hide=True, warn=True)
@@ -1707,7 +1803,7 @@ def start_backend_containers(c):
 
     if enable_grobid:
         print("Checking Grobid academic PDF container...")
-        g_res = sudo_bash(c, f"{env_prefix}cd {APP_DIR} && docker compose --profile academic up -d grobid", warn=True)
+        g_res = sudo_bash(c, f"cd {APP_DIR} && {env_prefix}docker compose {compose_env_flags}--profile academic up -d grobid", warn=True)
         if g_res.ok:
             print("✅ Grobid service started on port 8070.")
         else:
@@ -2142,10 +2238,10 @@ def build_and_migrate(c, find_links=None, index_url=None, trusted_host=None, pyt
 
     # Run deployment verification checks
     print("🔍 Running Django deployment check...")
-    check_res = run_as_deploy_user(
+    check_res = run_django_as_deploy_user(
         c,
-        f"VERBAL_ROLE=web DJANGO_STATIC_ROOT={STATIC_DIR} {VENV_DIR}/bin/python {APP_DIR}/manage.py check --deploy",
-        cwd=APP_DIR,
+        "check --deploy",
+        extra_env=f"DJANGO_STATIC_ROOT={STATIC_DIR}",
         warn=True,
     )
     if check_res.failed:
@@ -2156,17 +2252,17 @@ def build_and_migrate(c, find_links=None, index_url=None, trusted_host=None, pyt
 
     # Run migrations as deployer
     print("🗄️ Applying Django database migrations...")
-    run_as_deploy_user(c, f"{VENV_DIR}/bin/python {APP_DIR}/manage.py migrate --noinput", cwd=APP_DIR)
+    run_django_as_deploy_user(c, "migrate --noinput")
 
     # Verify or guide superuser setup
     check_or_create_superuser(c, remote_env=remote_env)
 
     # Collect static assets directly into STATIC_DIR
     print(f"🎨 Collecting static assets into {STATIC_DIR}...")
-    run_as_deploy_user(
+    run_django_as_deploy_user(
         c,
-        f"DJANGO_STATIC_ROOT={STATIC_DIR} {VENV_DIR}/bin/python {APP_DIR}/manage.py collectstatic --noinput",
-        cwd=APP_DIR,
+        "collectstatic --noinput",
+        extra_env=f"DJANGO_STATIC_ROOT={STATIC_DIR}",
     )
 
     # Lock down static asset permissions for Nginx read-only access
@@ -2191,12 +2287,11 @@ def check_or_create_superuser(c, remote_env=None):
     remote = remote_env if remote_env is not None else get_remote_env(c)
 
     # Check if a superuser already exists
-    check_cmd = (
-        f"VERBAL_ROLE=web {VENV_DIR}/bin/python {APP_DIR}/manage.py shell -c "
-        f"\"from django.contrib.auth import get_user_model; "
-        f"print('EXISTS' if get_user_model().objects.filter(is_superuser=True).exists() else 'MISSING')\""
+    shell_code = (
+        "from django.contrib.auth import get_user_model; "
+        "print('EXISTS' if get_user_model().objects.filter(is_superuser=True).exists() else 'MISSING')"
     )
-    check_res = run_as_deploy_user(c, check_cmd, cwd=APP_DIR, warn=True, hide=True)
+    check_res = run_django_as_deploy_user(c, f'shell -c "{shell_code}"', warn=True, hide=True)
     if check_res.ok and "EXISTS" in (check_res.stdout or ""):
         print("👤 Verified existing Django superuser account.")
         return
@@ -2209,12 +2304,13 @@ def check_or_create_superuser(c, remote_env=None):
     if su_user and su_pass:
         print(f"👤 Creating initial Django superuser '{su_user}' from environment credentials...")
         email_flag = f"--email {shlex.quote(su_email)}" if su_email else ""
-        create_cmd = (
-            f"DJANGO_SUPERUSER_PASSWORD={shlex.quote(su_pass)} "
-            f"{VENV_DIR}/bin/python {APP_DIR}/manage.py createsuperuser "
-            f"--noinput --username {shlex.quote(su_user)} {email_flag}"
+        create_args = f"createsuperuser --noinput --username {shlex.quote(su_user)} {email_flag}"
+        create_res = run_django_as_deploy_user(
+            c,
+            create_args,
+            extra_env=f"DJANGO_SUPERUSER_PASSWORD={shlex.quote(su_pass)}",
+            warn=True,
         )
-        create_res = run_as_deploy_user(c, create_cmd, cwd=APP_DIR, warn=True)
         if create_res.ok:
             print(f"✅ Initial Django superuser '{su_user}' created successfully.")
             return
@@ -2273,12 +2369,13 @@ def createsuperuser(c, username=None, email=None):
     escaped_pw = shlex.quote(target_password)
     escaped_user = shlex.quote(target_user)
 
-    cmd = (
-        f"DJANGO_SUPERUSER_PASSWORD={escaped_pw} "
-        f"{VENV_DIR}/bin/python {APP_DIR}/manage.py createsuperuser "
-        f"--noinput --username {escaped_user} {email_opt}"
+    cmd_args = f"createsuperuser --noinput --username {escaped_user} {email_opt}"
+    res = run_django_as_deploy_user(
+        c,
+        cmd_args,
+        extra_env=f"DJANGO_SUPERUSER_PASSWORD={escaped_pw}",
+        warn=True,
     )
-    res = run_as_deploy_user(c, cmd, cwd=APP_DIR, warn=True)
     if res.ok:
         print(f"✅ Superuser '{target_user}' created successfully.")
     elif "already" in (res.stderr or res.stdout or "").lower():
@@ -2562,6 +2659,7 @@ def setup_all(
     deferred = []
 
     deploy_substeps = {
+        "sync_env",
         "update_code",
         "start_backend_containers",
         "build_and_migrate",
@@ -2576,6 +2674,17 @@ def setup_all(
             preflight_check(c, skip_apt=("apt" in skip_set), continue_on_error=continue_on_error)
         else:
             preflight_check(c)
+
+    def _sync_env_if_needed():
+        repo_root = Path(__file__).resolve().parent.parent
+        has_local_env = (
+            (repo_root / ".env").is_file()
+            or (repo_root / ".env.deploy").is_file()
+            or (repo_root / ".env.secrets").is_file()
+        )
+        if has_local_env:
+            print("📤 Synchronizing environment files from local workspace to server...")
+            sync_env(c)
 
     def _run_deploy():
         if not skip and not start_at and not is_continue_on_error_enabled(continue_on_error):
@@ -2608,6 +2717,7 @@ def setup_all(
     steps = [
         ("preflight_check", _run_preflight, "fab preflight-check"),
         ("provision_system", lambda: provision_system(c), "fab provision-system"),
+        ("sync_env", _sync_env_if_needed, "fab sync-env"),
         (
             "setup_nginx_and_ssl",
             lambda: setup_nginx_and_ssl(c, domain=domain, remove_default_site=remove_default_site),
