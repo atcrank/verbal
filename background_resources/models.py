@@ -484,6 +484,17 @@ class GrobidReadingStrategy(models.Model):
             self.read_document(rag_service_inject=rag_service, force=force)
         return
 
+    def save(self, *args, **kwargs):
+        is_new = self._state.adding
+        super().save(*args, **kwargs)
+        if is_new and self.usages.count() == 0:
+            try:
+                from llm_api.apps import service_registry
+                if hasattr(service_registry, 'rag_service') and service_registry.rag_service:
+                    self.apply_strategy(rag_service=service_registry.rag_service)
+            except Exception as e:
+                logger.warning(f"Could not automatically apply GrobidReadingStrategy on save: {e}")
+
     def extract_content(self, chunk, rag_service):
         return []
 

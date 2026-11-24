@@ -757,15 +757,25 @@ def manage_hosting_backend(sender, instance, **kwargs):
             logger.info(f"Unloading Ollama model: {old_ollama.hf_model_id}")
             ollama_client.set_ollama_model_state(old_ollama.hf_model_id, active=False)
 
-    # 2. Release PyTorch VRAM if switching away from in-process PyTorch to container backends
-    if old_backend == 'pytorch' and new_backend in ['vllm', 'ollama']:
-        logger.info("Switching from PyTorch to containerized backend. Prompting inference server to release VRAM...")
+    # 2. Release PyTorch VRAM if switching away from in-process PyTorch
+    if old_backend == 'pytorch' and new_backend != 'pytorch':
+        logger.info(f"Switching from PyTorch to '{new_backend}'. Prompting inference server to release VRAM...")
         try:
             import requests
             inf_url = getattr(settings, 'INFERENCE_URL', 'http://127.0.0.1:8001/api/llm')
             requests.post(f"{inf_url.rstrip('/')}/internal/unload-vram/", timeout=5)
         except Exception as e:
             logger.debug(f"Could not signal inference server to unload VRAM: {e}")
+
+    # If switching to PyTorch or changing active PyTorch model, prompt reload
+    if new_backend == 'pytorch' and (old_backend != 'pytorch' or getattr(instance, '_old_local_model', None) != instance.active_local_model):
+        logger.info("Switching to or updating PyTorch model. Prompting inference server to reload model...")
+        try:
+            import requests
+            inf_url = getattr(settings, 'INFERENCE_URL', 'http://127.0.0.1:8001/api/llm')
+            requests.post(f"{inf_url.rstrip('/')}/internal/reload-model/", timeout=10)
+        except Exception as e:
+            logger.debug(f"Could not signal inference server to reload PyTorch model: {e}")
 
     # 3. Manage Docker Containers if backend changed
     sync_warning = None

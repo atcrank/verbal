@@ -361,6 +361,20 @@ def internal_unload_vram(request):
         logger.error(f"Error unloading VRAM: {e}")
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
+@router.post("/internal/reload-model/", auth=None)
+@csrf_exempt
+def internal_reload_model(request):
+    """Unloads any active model and reloads according to current SystemConfiguration in a background thread."""
+    try:
+        service_registry.ai_service.unload_models()
+        import threading
+        t = threading.Thread(target=service_registry.ai_service.load_models, daemon=True)
+        t.start()
+        return JsonResponse({"status": "ok", "message": "Model reload initiated"})
+    except Exception as e:
+        logger.error(f"Error reloading model: {e}")
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
 @router.get("/hardware/", auth=None)
 @csrf_exempt
 def get_hardware_diagnostics(request):

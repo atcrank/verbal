@@ -5,7 +5,7 @@ import re
 
 logger = logging.getLogger(__name__)
 from llm_api.apps import service_registry
-from background_resources.models import Document, RAGChunk
+from background_resources.models import Document, RAGChunk, DocumentType
 from .models import Reference, Citation
 from background_resources.models import Document
 from pydantic import BaseModel, Field
@@ -268,6 +268,116 @@ def _extract_fallback_with_llm(front_text: str, missing_fields: list, ai_service
         }
     return {}
 
+def update_document_from_grobid_metadata(doc: Document, meta: dict, ref: Reference = None) -> list:
+    """
+    Synchronizes academic provenance parsed by Grobid directly onto the parent Document.
+    Returns the list of updated field names.
+    """
+    import os
+    import datetime
+    updated_fields = []
+
+    # 1. Title: Update if doc title is missing, generic, or ends with .pdf / matches filename
+    extracted_title = (meta.get("title") or (ref.title if ref else "") or "").strip()
+    if extracted_title:
+        curr_title = (doc.title or "").strip()
+        is_filename = False
+        if doc.file and hasattr(doc.file, "name"):
+            base_file = os.path.basename(doc.file.name)
+            if curr_title == base_file or curr_title == os.path.splitext(base_file)[0]:
+                is_filename = True
+        if (
+            not curr_title
+            or curr_title.lower().endswith(".pdf")
+            or curr_title.lower().startswith("untitled")
+            or is_filename
+        ):
+            doc.title = extracted_title[:255]
+            updated_fields.append("title")
+
+    # 2. Authors
+    extracted_authors = (meta.get("authors") or (ref.authors if ref else "") or "").strip()
+    if extracted_authors:
+        if not doc.author or doc.author.strip() in ("", "Unknown"):
+            doc.author = extracted_authors[:255]
+            updated_fields.append("author")
+
+    # 3. DOI & Source URL
+    extracted_doi = (meta.get("doi") or (ref.doi if ref else "") or "").strip()
+    if extracted_doi:
+        if not doc.doi:
+            doc.doi = extracted_doi[:100]
+            updated_fields.append("doi")
+        if not doc.source_url:
+            clean_doi = extracted_doi if extracted_doi.startswith("http") else f"https://doi.org/{extracted_doi}"
+            doc.source_url = clean_doi[:200]
+            updated_fields.append("source_url")
+
+    # 4. Publication Year
+    extracted_year = (meta.get("year") or (ref.year if ref else "") or "").strip()
+    if extracted_year:
+        if not doc.publication_year:
+            doc.publication_year = extracted_year[:50]
+            updated_fields.append("publication_year")
+
+    # 5. Publication Date
+    if not doc.publication_date and extracted_year:
+        try:
+            if len(extracted_year) == 4 and extracted_year.isdigit():
+                doc.publication_date = datetime.date(int(extracted_year), 1, 1)
+                updated_fields.append("publication_date")
+            elif len(extracted_year) >= 10:
+                doc.publication_date = datetime.date.fromisoformat(extracted_year[:10])
+                updated_fields.append("publication_date")
+        except Exception:
+            pass
+
+    # 6. Organization / Publisher / Journal
+    extracted_org = (
+        meta.get("publisher")
+        or meta.get("journal")
+        or (ref.publisher if ref else "")
+        or (ref.journal if ref else "")
+        or ""
+    ).strip()
+    if extracted_org and not doc.organization:
+        doc.organization = extracted_org[:255]
+        updated_fields.append("organization")
+
+    # 7. Document Type
+    if doc.document_type == DocumentType.GENERAL or not doc.document_type:
+        doc.document_type = DocumentType.ACADEMIC_PAPER
+        updated_fields.append("document_type")
+
+    # 8. Citation Text
+    if not doc.citation_text:
+        parts = []
+        author_part = doc.author or extracted_authors
+        if author_part:
+            parts.append(author_part)
+        year_part = doc.publication_year or extracted_year
+        if year_part:
+            parts.append(f"({year_part})")
+        title_part = doc.title or extracted_title
+        if title_part:
+            parts.append(f"{title_part}.")
+        venue_part = doc.organization or extracted_org
+        if venue_part:
+            parts.append(f"{venue_part}.")
+        doi_part = doc.doi or extracted_doi
+        if doi_part:
+            parts.append(f"DOI: {doi_part}")
+        if parts:
+            doc.citation_text = " ".join(parts).strip()
+            updated_fields.append("citation_text")
+
+    if updated_fields:
+        doc.save(update_fields=list(set(updated_fields)))
+        logger.info(f"Updated document '{doc.title}' metadata from Grobid: {updated_fields}")
+
+    return updated_fields
+
+
 @task
 def task_extract_grobid_metadata(document_id: int):
     """
@@ -339,39 +449,7 @@ def task_extract_grobid_metadata(document_id: int):
     )
 
     # Propagate parsed academic provenance directly onto the parent Document
-    updated_doc_fields = []
-    extracted_authors = meta.get("authors")
-    if extracted_authors and not doc.author:
-        doc.author = extracted_authors[:255]
-        updated_doc_fields.append('author')
-
-    extracted_doi = meta.get("doi")
-    if extracted_doi and not doc.source_url:
-        doc.source_url = f"https://doi.org/{extracted_doi}"
-        updated_doc_fields.append('source_url')
-
-    # Construct authoritative citation text if missing
-    year_val = meta.get("year") or ""
-    journal_val = meta.get("journal") or ""
-    title_val = meta.get("title") or doc.title
-    citation_parts = []
-    if extracted_authors:
-        citation_parts.append(extracted_authors.strip())
-    if year_val:
-        citation_parts.append(f"({year_val.strip()})")
-    citation_parts.append(f"{title_val.strip()}.")
-    if journal_val:
-        citation_parts.append(f"{journal_val.strip()}.")
-    if extracted_doi:
-        citation_parts.append(f"DOI: {extracted_doi.strip()}")
-    generated_citation = " ".join(citation_parts).strip()
-
-    if generated_citation and not doc.citation_text:
-        doc.citation_text = generated_citation
-        updated_doc_fields.append('citation_text')
-
-    if updated_doc_fields:
-        doc.save(update_fields=updated_doc_fields)
+    update_document_from_grobid_metadata(doc, meta, source_ref)
     
     # 2. Extract Bibliography (Citations)
     list_bibl = soup.find("listBibl")

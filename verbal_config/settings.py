@@ -359,7 +359,17 @@ LOGGING = {
             "level": "INFO",
             "propagate": False,
         },
+        "django.server": {
+            "handlers": _active_handlers,
+            "level": "INFO",
+            "propagate": False,
+        },
         "llm_api": {
+            "handlers": _active_handlers,
+            "level": "INFO",
+            "propagate": False,
+        },
+        "grobid_client": {
             "handlers": _active_handlers,
             "level": "INFO",
             "propagate": False,

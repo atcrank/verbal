@@ -170,7 +170,7 @@ class GrobidReadingStrategyAdmin(admin.ModelAdmin):
 class GrobidReadingStrategyInline(admin.TabularInline):
     model = GrobidReadingStrategy
     parent_model = Document
-    fields = ('document', 'strategy_description')
+    fields = ('strategy_description',)
     extra = 0
 
 

@@ -224,6 +224,21 @@ class TestSystemdUnitsGeneration(SimpleTestCase):
                 self.assertIn("EnvironmentFile=-/srv/reason/app/.env.production", unit)
                 self.assertNotIn("EnvironmentFile=-/srv/reason/shared/.env", unit)
 
+    def test_services_redirect_stdout_and_stderr_to_log_files(self):
+        """Verifies web, worker, scheduler, and inference services pipe output to their reason logs via tee -a."""
+        targets = [
+            ("reason-web.service", "reason-web.log"),
+            ("reason-worker.service", "reason-worker.log"),
+            ("reason-scheduler.service", "reason-scheduler.log"),
+            ("reason-inference.service", "reason-inference.log"),
+        ]
+        for service_name, log_file in targets:
+            unit = self.units[service_name]
+            with self.subTest(service=service_name):
+                self.assertIn(f'tee -a "/srv/reason/logs/{log_file}"', unit)
+                self.assertIn("/bin/bash -c 'exec ", unit)
+
+
 
 
 class TestDjangoSettingsHardening(SimpleTestCase):

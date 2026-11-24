@@ -172,6 +172,17 @@ class AIService:
         fallbacks or when a GGUF CPU Mini-Model is handling utility tokenization.
         """
         client_roles = ("web", "worker", "scheduler")
+
+        # When running in inference or standalone mode with PyTorch backend,
+        # we ALWAYS require the tokenizer matching the active PyTorch model.
+        if (
+            self.role not in client_roles
+            and config
+            and config.hosting_backend == "pytorch"
+            and config.active_local_model
+        ):
+            return config.active_local_model.hf_model_id, False
+
         if self.model_id and self.role not in client_roles:
             return self.model_id, True
 
@@ -353,25 +364,31 @@ class AIService:
                 self.outline_pipeline = None
                 raise
 
-        self.model.config.pad_token_id = getattr(self.tokenizer, 'pad_token_id', self.tokenizer.eos_token_id)
-        logger.info(" ".join([str(x) for x in ['✅ LLM model loaded successfully.', type(self.model)]]))
+        if self.tokenizer is not None:
+            pad_id = getattr(self.tokenizer, 'pad_token_id', None) or getattr(self.tokenizer, 'eos_token_id', None)
+            if pad_id is not None:
+                self.model.config.pad_token_id = pad_id
+            logger.info(" ".join([str(x) for x in ['✅ LLM model loaded successfully.', type(self.model)]]))
 
-        self.outline_pipeline = outline_models.Transformers(self.model, self.tokenizer)
-        logger.info(" ".join([str(x) for x in ['✅ Outline llm wrapper loaded', type(self.outline_pipeline)]]))
+            self.outline_pipeline = outline_models.Transformers(self.model, self.tokenizer)
+            logger.info(" ".join([str(x) for x in ['✅ Outline llm wrapper loaded', type(self.outline_pipeline)]]))
 
-        terminators = [self.tokenizer.eos_token_id]
-        candidate_terminators = ["<|eot_id|>", "<|im_end|>", "<turn|>", "<end_of_turn>", "</s>", "<|endoftext|>"]
-        for token_str in candidate_terminators:
-            tok_id = self.tokenizer.convert_tokens_to_ids(token_str)
-            if (
-                tok_id is not None
-                and tok_id != getattr(self.tokenizer, 'unk_token_id', None)
-                and tok_id != getattr(self.tokenizer, 'pad_token_id', None)
-            ):
-                terminators.append(tok_id)
-                
-        self.terminators = list(set(t for t in terminators if t is not None))
-        logger.info(f"Registered {len(self.terminators)} turn terminator token(s): {self.terminators}")
+            terminators = [self.tokenizer.eos_token_id] if getattr(self.tokenizer, 'eos_token_id', None) is not None else []
+            candidate_terminators = ["<|eot_id|>", "<|im_end|>", "<turn|>", "<end_of_turn>", "</s>", "<|endoftext|>"]
+            for token_str in candidate_terminators:
+                tok_id = self.tokenizer.convert_tokens_to_ids(token_str)
+                if (
+                    tok_id is not None
+                    and tok_id != getattr(self.tokenizer, 'unk_token_id', None)
+                    and tok_id != getattr(self.tokenizer, 'pad_token_id', None)
+                ):
+                    terminators.append(tok_id)
+                    
+            self.terminators = list(set(t for t in terminators if t is not None))
+            logger.info(f"Registered {len(self.terminators)} turn terminator token(s): {self.terminators}")
+        else:
+            logger.warning(f"No tokenizer loaded for model '{self.model_id}'; Outline wrapper and terminator registration deferred.")
+            self.terminators = []
 
         logger.info('✅ AI models loaded successfully.')
 

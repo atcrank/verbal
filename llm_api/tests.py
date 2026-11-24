@@ -554,6 +554,15 @@ class ApiHardwareEndpointTests(TestCase):
             self.assertEqual(resp.json()["status"], "ok")
             self.assertTrue(mock_service.unload_models.called)
 
+    def test_reload_model_endpoint(self):
+        from unittest.mock import patch
+        with patch("llm_api.api.service_registry") as mock_registry:
+            mock_service = mock_registry.ai_service
+            resp = self.client.post("/api/llm/internal/reload-model/")
+            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp.json()["status"], "ok")
+            self.assertTrue(mock_service.unload_models.called)
+
 
 class SystemConfigurationAdminTests(TestCase):
     """Tests for the Django Admin interface of SystemConfiguration and LoRAAdapter."""
@@ -2035,3 +2044,62 @@ class WS31TestIsolationAndProxyModelTests(TestCase):
 
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(json.loads(resp.content)["choices"][0]["message"]["content"], "Line chart observed.")
+
+
+class WS42BackendCoordinationAndTokenizerTests(TestCase):
+    """WS42 unit tests for backend switching VRAM release and inference tokenizer resolution."""
+
+    def test_manage_hosting_backend_unloads_vram_when_switching_to_llamacpp(self):
+        import sys
+        from unittest.mock import patch
+        from llm_api.models import SystemConfiguration, manage_hosting_backend
+
+        config = SystemConfiguration.get_solo()
+        config._old_hosting_backend = "pytorch"
+        config.hosting_backend = "llamacpp"
+
+        with patch.object(sys, "argv", ["manage.py", "runserver"]), \
+             patch("requests.post") as mock_post:
+            manage_hosting_backend(SystemConfiguration, config)
+            mock_post.assert_called_with("http://127.0.0.1:8001/api/llm/internal/unload-vram/", timeout=5)
+
+    def test_manage_hosting_backend_reloads_model_when_switching_to_pytorch(self):
+        import sys
+        from unittest.mock import patch
+        from llm_api.models import SystemConfiguration, manage_hosting_backend
+
+        config = SystemConfiguration.get_solo()
+        config._old_hosting_backend = "llamacpp"
+        config.hosting_backend = "pytorch"
+
+        with patch.object(sys, "argv", ["manage.py", "runserver"]), \
+             patch("requests.post") as mock_post:
+            manage_hosting_backend(SystemConfiguration, config)
+            mock_post.assert_called_with("http://127.0.0.1:8001/api/llm/internal/reload-model/", timeout=10)
+
+    def test_resolve_tokenizer_source_returns_pytorch_model_in_inference_mode_even_with_mini_model(self):
+        from llm_api.ai_service import AIService
+        from llm_api.models import SystemConfiguration, LocalAIModel, MiniModel
+
+        service = AIService()
+        service.role = "inference"
+        local_model = LocalAIModel.objects.create(
+            name="Gemma 4 12B",
+            hf_model_id="google/gemma-4-12b-it",
+            context_window=8192
+        )
+        mini_model = MiniModel.objects.create(
+            name="Tiny Mini",
+            gguf_filename="tiny.gguf"
+        )
+        config = SystemConfiguration.get_solo()
+        config.hosting_backend = "pytorch"
+        config.active_local_model = local_model
+        config.active_mini_model = mini_model
+        config.use_mini_model_for_utilities = True
+        config.save()
+
+        tok_id, allow_remote = service._resolve_tokenizer_source(config)
+        self.assertEqual(tok_id, "google/gemma-4-12b-it")
+        self.assertFalse(allow_remote)
+
