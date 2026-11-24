@@ -535,10 +535,21 @@ class RAGService:
                 return [], existing_ids
 
         if not hasattr(document, 'grobid_metadata') or not document.grobid_metadata or not document.grobid_metadata.tei_xml:
-            raise ValueError(f"Document '{document.title}' does not have cached Grobid TEI XML. Run Grobid extraction first.")
+            # Check if Grobid container is available and document is a PDF
+            from grobid_client.api import is_grobid_available
+            if is_grobid_available() and document.file and hasattr(document.file, 'name') and document.file.name.lower().endswith('.pdf'):
+                from grobid_client.tasks import task_extract_grobid_metadata
+                logger.info(f"Grobid TEI XML missing for '{document.title}'. Triggering on-demand extraction...")
+                task_extract_grobid_metadata.func(document.id)
+                document.refresh_from_db()
+
+            if not hasattr(document, 'grobid_metadata') or not document.grobid_metadata or not document.grobid_metadata.tei_xml:
+                raise ValueError(f"Document '{document.title}' does not have cached Grobid TEI XML. Run Grobid extraction first.")
+
+        ref = document.grobid_metadata
+        tei_xml = ref.tei_xml
 
         # Quality check: Reject files that Grobid failed to structure (e.g., PowerPoint PDFs)
-        ref = document.grobid_metadata
         meaningful_fields = [
             getattr(ref, 'authors', ''), getattr(ref, 'abstract', ''),
             getattr(ref, 'journal', ''), getattr(ref, 'publisher', ''),
@@ -547,12 +558,15 @@ class RAGService:
             getattr(ref, 'pages', ''), getattr(ref, 'doi', '')
         ]
         
-        # If ALL of these fields are empty/falsy, the Grobid extraction is deemed too low-quality
-        if not any(str(field).strip() for field in meaningful_fields if field is not None):
-            logger.info(f"Skipping Grobid chunking for '{document.title}': No meaningful metadata extracted. Falling back to default splitters.")
+        has_meta = any(str(field).strip() for field in meaningful_fields if field is not None)
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(tei_xml, "xml")
+        has_body_content = bool(soup.find("body") and (soup.find("body").find("div") or soup.find("body").find("p")))
+
+        if not has_meta and not has_body_content:
+            logger.info(f"Skipping Grobid chunking for '{document.title}': No meaningful metadata or body sections extracted. Falling back to default splitters.")
             return [], []
 
-        tei_xml = document.grobid_metadata.tei_xml
         from grobid_client.tasks import grobid_tei_to_semantic_chunks
         pdf_path = document.file.path if (document.file and hasattr(document.file, 'path') and os.path.exists(document.file.path)) else None
         final_chunks = grobid_tei_to_semantic_chunks(tei_xml, document_title=document.title, pdf_path=pdf_path, document_id=document.id)
@@ -622,6 +636,16 @@ class RAGService:
             return
 
         for document in queryset:
+            # On-demand Grobid extraction if PDF, Grobid is online, and TEI XML is missing
+            if not hasattr(document, 'grobid_metadata') or not document.grobid_metadata or not document.grobid_metadata.tei_xml:
+                if document.file and hasattr(document.file, 'name') and document.file.name.lower().endswith('.pdf'):
+                    from grobid_client.api import is_grobid_available
+                    if is_grobid_available():
+                        from grobid_client.tasks import task_extract_grobid_metadata
+                        logger.info(f"Ingestion: Triggering on-demand Grobid extraction for '{document.title}'...")
+                        task_extract_grobid_metadata.func(document.id)
+                        document.refresh_from_db()
+
             # Safely ensure a default chunking strategy exists without crashing on legacy duplicates
             if not DjangoReadingStrategy.objects.filter(document=document, strategy_description="Default Chunking").exists():
                 DjangoReadingStrategy.objects.create(document=document, strategy_description="Default Chunking")
@@ -636,7 +660,10 @@ class RAGService:
                     getattr(ref, 'volume', ''), getattr(ref, 'issue', ''),
                     getattr(ref, 'pages', ''), getattr(ref, 'doi', '')
                 ]
-                if any(str(field).strip() for field in meaningful_fields if field is not None):
+                from bs4 import BeautifulSoup
+                soup = BeautifulSoup(document.grobid_metadata.tei_xml, "xml")
+                has_body_content = bool(soup.find("body") and (soup.find("body").find("div") or soup.find("body").find("p")))
+                if any(str(field).strip() for field in meaningful_fields if field is not None) or has_body_content:
                     # Safely ensure Grobid strategy exists without crashing
                     if not GrobidReadingStrategy.objects.filter(document=document, strategy_description="Grobid Semantic Chunking").exists():
                         GrobidReadingStrategy.objects.create(

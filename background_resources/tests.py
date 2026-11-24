@@ -1162,5 +1162,81 @@ class TestConfigurableEmbeddingsResolution(TestCase):
         self.assertNotIn("local_files_only", second_kwargs)
 
 
+class GrobidReadingStrategyUnitTests(TestCase):
+    """Unit tests for Grobid reading strategies, inline configuration, and on-demand execution."""
+
+    def test_grobid_reading_strategy_inline_fields(self):
+        from background_resources.admin import GrobidReadingStrategyInline
+        self.assertEqual(GrobidReadingStrategyInline.fields, ('strategy_description',))
+        self.assertEqual(GrobidReadingStrategyInline.extra, 0)
+
+    @patch("llm_api.apps.service_registry")
+    def test_grobid_reading_strategy_save_triggers_apply_strategy(self, mock_registry):
+        mock_rag = MagicMock()
+        mock_registry.rag_service = mock_rag
+
+        doc = Document.objects.create(
+            title="Sample PDF",
+            file=SimpleUploadedFile("sample.pdf", b"%PDF-1.4 dummy")
+        )
+        with patch.object(GrobidReadingStrategy, "apply_strategy") as mock_apply:
+            strat = GrobidReadingStrategy.objects.create(document=doc)
+            mock_apply.assert_called_once()
+
+    @patch("grobid_client.api.is_grobid_available", return_value=True)
+    @patch("grobid_client.tasks.task_extract_grobid_metadata")
+    def test_convert_chunk_store_document_grobid_triggers_on_demand_extraction(
+        self, mock_task, mock_avail
+    ):
+        from background_resources.rag_service import RAGService
+        from grobid_client.models import Reference
+        service = RAGService()
+
+        doc = Document.objects.create(
+            title="On Demand Doc",
+            file=SimpleUploadedFile("ondemand.pdf", b"%PDF-1.4 dummy")
+        )
+        def fake_extract(doc_id):
+            Reference.objects.create(
+                document=doc,
+                title="On Demand Extracted",
+                tei_xml="<TEI><body><div><head>Methodology</head><p>Paragraph 1 with sufficient length for chunking test in this unit test.</p></div></body></TEI>"
+            )
+        mock_task.func.side_effect = fake_extract
+
+        chunks, chunk_ids = service.convert_chunk_store_document_grobid(doc, force=True)
+        mock_task.func.assert_called_once_with(doc.id)
+        self.assertGreaterEqual(len(chunk_ids), 1)
+
+    def test_convert_chunk_store_document_grobid_accepts_tei_body_with_sparse_header(self):
+        from background_resources.rag_service import RAGService
+        from grobid_client.models import Reference
+        service = RAGService()
+
+        doc = Document.objects.create(
+            title="Sparse Header Doc",
+            file=SimpleUploadedFile("sparse.pdf", b"%PDF-1.4 dummy")
+        )
+        sample_tei = """<TEI xmlns="http://www.tei-c.org/ns/1.0">
+            <teiHeader></teiHeader>
+            <text>
+                <body>
+                    <div>
+                        <head>Experimental Setup</head>
+                        <p>This is a sufficiently long paragraph describing the test environment and robotic deployment constraints in detail.</p>
+                    </div>
+                </body>
+            </text>
+        </TEI>"""
+        Reference.objects.create(
+            document=doc,
+            title="Sparse Header Doc",
+            tei_xml=sample_tei
+        )
+        chunks, chunk_ids = service.convert_chunk_store_document_grobid(doc, force=True)
+        self.assertGreaterEqual(len(chunk_ids), 1)
+
+
+
 
 

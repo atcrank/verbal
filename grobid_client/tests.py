@@ -341,3 +341,56 @@ class GrobidCircuitBreakerTests(TestCase):
         self.assertIn("refused (daemon offline)", str(ctx.exception))
 
 
+class GrobidDocumentProvenanceTests(TestCase):
+    """Unit tests verifying synchronization of Grobid extracted provenance to Document model."""
+
+    def test_update_document_from_grobid_metadata_updates_all_fields(self):
+        from .tasks import update_document_from_grobid_metadata
+        doc = Document.objects.create(
+            title="paper.pdf",
+            file=SimpleUploadedFile("paper.pdf", b"%PDF-1.4 dummy")
+        )
+        meta = {
+            "title": "Autonomous Indoor Navigation in Fire Environments",
+            "authors": "Jane Doe, John Smith",
+            "doi": "10.1109/TRO.2023.1234567",
+            "year": "2023",
+            "journal": "IEEE Transactions on Robotics",
+            "publisher": "IEEE"
+        }
+        updated = update_document_from_grobid_metadata(doc, meta)
+        doc.refresh_from_db()
+
+        self.assertEqual(doc.title, "Autonomous Indoor Navigation in Fire Environments")
+        self.assertEqual(doc.author, "Jane Doe, John Smith")
+        self.assertEqual(doc.doi, "10.1109/TRO.2023.1234567")
+        self.assertEqual(doc.source_url, "https://doi.org/10.1109/TRO.2023.1234567")
+        self.assertEqual(doc.publication_year, "2023")
+        self.assertEqual(doc.publication_date.year, 2023)
+        self.assertEqual(doc.organization, "IEEE")
+        from background_resources.models import DocumentType
+        self.assertEqual(doc.document_type, DocumentType.ACADEMIC_PAPER)
+        self.assertIn("Jane Doe, John Smith", doc.citation_text)
+        self.assertIn("(2023)", doc.citation_text)
+        self.assertIn("Autonomous Indoor Navigation", doc.citation_text)
+        self.assertIn("title", updated)
+        self.assertIn("author", updated)
+        self.assertIn("doi", updated)
+
+    def test_update_document_from_grobid_metadata_preserves_custom_title(self):
+        from .tasks import update_document_from_grobid_metadata
+        doc = Document.objects.create(
+            title="Custom Curated Title",
+            file=SimpleUploadedFile("custom_doc.pdf", b"%PDF-1.4 dummy")
+        )
+        meta = {"title": "Extracted Grobid Title", "authors": "Author A"}
+        updated = update_document_from_grobid_metadata(doc, meta)
+        doc.refresh_from_db()
+
+        self.assertEqual(doc.title, "Custom Curated Title")
+        self.assertEqual(doc.author, "Author A")
+        self.assertNotIn("title", updated)
+        self.assertIn("author", updated)
+
+
+

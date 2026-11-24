@@ -28,6 +28,7 @@
 * [2026-11-17] [Architecture/Resilience] WS39: Connection Resilience, Polling Decoupling, and Resource Guardrails (Status: completed) -> [../ws39_connection_resilience_and_decoupling.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/ws39_connection_resilience_and_decoupling.md)
 * [2026-11-23] [Deployment/Security] WS40: Database Password and Secrets Unification Across Containers, Instances, and Deploy Scripts (Status: completed) -> [../ws40_env_secrets_unification.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/ws40_env_secrets_unification.md)
 * [2026-11-23] [Deployment/Resilience] WS41: Fabric Deployment Django Environment Export & Secrets Propagation (Status: completed) -> [../ws41_fabric_django_env_export.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/ws41_fabric_django_env_export.md)
+* [2026-11-24] [Bug/Architecture] WS42: Grobid Reading Strategies, Document Provenance Synchronization, and Inference Service Logging & Resilience (Status: in progress) -> [../ws42_grobid_reading_and_inference_logging.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/ws42_grobid_reading_and_inference_logging.md)
 
 
 
