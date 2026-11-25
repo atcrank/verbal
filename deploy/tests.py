@@ -2063,6 +2063,14 @@ class TestWS43SystemdAndSettingsGuardrails(SimpleTestCase):
         self.assertIn("media/documents", backup_sh)
         self.assertIn("grobid_client.citationgraphexplorer", fabric_src)
 
+    def test_deploy_build_prunes_incompatible_torchao_package(self):
+        from deploy.fabric_deploy import build_torchao_prune_cmd
+        uv_cmd = build_torchao_prune_cmd(use_uv=True, venv_dir="/srv/reason/venv")
+        pip_cmd = build_torchao_prune_cmd(use_uv=False, venv_dir="/srv/reason/venv")
+        self.assertIn("uv pip uninstall --python /srv/reason/venv/bin/python torchao", uv_cmd)
+        self.assertIn("/srv/reason/venv/bin/pip uninstall -y torchao", pip_cmd)
+
+
 
 
 

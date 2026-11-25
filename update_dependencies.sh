@@ -405,6 +405,12 @@ if [ "$DO_SYNC" = "true" ]; then
 
         echo "   Command: $PYTHON_BIN -m pip install ${PIP_INSTALL_ARGS[*]} -r requirements.txt"
         if "$PYTHON_BIN" -m pip install "${PIP_INSTALL_ARGS[@]}" -r requirements.txt; then
+            #Unlike `uv pip sync`, standard `pip install -r` does not remove extraneous packages;
+            # strip `torchao` if present so it cannot interfere with BitsAndBytes NF4 or worker imports.
+            if [ "${VERBAL_ALLOW_TORCHAO:-}" != "1" ] && "$PYTHON_BIN" -c "import importlib.metadata; importlib.metadata.version('torchao')" >/dev/null 2>&1; then
+                echo "🧹 Removing incompatible 'torchao' package from virtual environment..."
+                "$PYTHON_BIN" -m pip uninstall -y torchao || true
+            fi
             echo "----------------------------------------"
             echo "✅ Success! Dependencies installed cleanly via pip."
         else

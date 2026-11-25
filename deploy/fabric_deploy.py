@@ -1927,6 +1927,27 @@ def build_uv_install_cmd(
     return f"{env_prefix} uv pip install {flags_str} -r {app_dir}/requirements.txt"
 
 
+def build_torchao_prune_cmd(
+    use_uv=True,
+    venv_dir=VENV_DIR,
+    python_install_dir=PYTHON_INSTALL_DIR,
+    uv_cache_dir=UV_CACHE_DIR,
+):
+    """
+    Constructs an idempotent post-install command to remove `torchao` if it was left
+    behind in the deployment virtualenv (since `uv pip install -r` / `pip install -r`
+    do not prune extraneous packages, and `torchao` conflicts with PyTorch 2.6–2.8 +
+    BitsAndBytes NF4 quantization and `sentence_transformers` worker imports).
+    """
+    check_installed = f"{venv_dir}/bin/python -c 'import importlib.metadata; importlib.metadata.version(\"torchao\")' >/dev/null 2>&1"
+    if use_uv:
+        env_prefix = f"UV_PYTHON_INSTALL_DIR={python_install_dir} UV_CACHE_DIR={uv_cache_dir}"
+        uninstall_part = f"{env_prefix} uv pip uninstall --python {venv_dir}/bin/python torchao"
+    else:
+        uninstall_part = f"{venv_dir}/bin/pip uninstall -y torchao"
+    return f"if {check_installed}; then {uninstall_part}; fi"
+
+
 
 # ==============================================================================
 # PHASE 4B: BARE-METAL LLAMA.CPP COMPILATION & INSTALLATION
@@ -2222,7 +2243,8 @@ def build_and_migrate(c, find_links=None, index_url=None, trusted_host=None, pyt
     remote_env = get_remote_env(c, env_file=env_file)
 
     # Build package installation command purely in Python for complete transparency
-    if USE_UV and ensure_uv(c, remote_env=remote_env):
+    using_uv_installer = bool(USE_UV and ensure_uv(c, remote_env=remote_env))
+    if using_uv_installer:
         install_cmd = build_uv_install_cmd(
             find_links=find_links,
             index_url=index_url,
@@ -2240,9 +2262,17 @@ def build_and_migrate(c, find_links=None, index_url=None, trusted_host=None, pyt
             remote_env=remote_env,
         )
         installer_label = "pip install"
+    # Strip lingering `torchao` from the venv in the same shell step unless opted in via VERBAL_ALLOW_TORCHAO=1
+    allow_torchao = (remote_env.get("VERBAL_ALLOW_TORCHAO") or os.environ.get("VERBAL_ALLOW_TORCHAO") or "").strip().lower()
+    if allow_torchao not in ("1", "true", "yes"):
+        prune_cmd = build_torchao_prune_cmd(use_uv=using_uv_installer)
+        full_install_cmd = f"{install_cmd} && ({prune_cmd} || true)"
+    else:
+        full_install_cmd = install_cmd
+
     print(f"\n📦 [{installer_label}] Executing command as {DEPLOY_USER}:")
-    print(f"   {install_cmd}\n")
-    run_as_deploy_user(c, install_cmd, cwd=APP_DIR)
+    print(f"   {full_install_cmd}\n")
+    run_as_deploy_user(c, full_install_cmd, cwd=APP_DIR)
 
     # Run deployment verification checks
     print("🔍 Running Django deployment check...")

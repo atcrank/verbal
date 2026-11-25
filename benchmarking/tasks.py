@@ -112,16 +112,29 @@ def task_calculate_dataset_metrics(dataset_id):
         # Semantic Diversity
         if len(questions) > 1:
             try:
+                from django.conf import settings
+                from llm_api.torch_compat import apply_torch_compatibility_shims
+                apply_torch_compatibility_shims()
+
                 from sentence_transformers import SentenceTransformer
                 from sklearn.metrics.pairwise import cosine_distances
                 from background_resources.rag_service import get_embedding_model_name
 
+                # Keep worker/web/scheduler embeddings on CPU (Invariant 4: zero VRAM outside inference)
+                active_role = getattr(settings, "VERBAL_ROLE", None) or os.environ.get("VERBAL_ROLE", "standalone")
+                st_device = os.environ.get("REASON_EMBEDDING_DEVICE") or (
+                    "cpu" if active_role in ("web", "worker", "scheduler") else None
+                )
+                st_kwargs = {"device": st_device} if st_device else {}
+
                 # Use configured embedding model (cache-first to avoid uncommanded HF network checks)
                 emb_name = get_embedding_model_name()
                 try:
-                    model = SentenceTransformer(emb_name, local_files_only=True)
+                    model = SentenceTransformer(emb_name, local_files_only=True, **st_kwargs)
+                except ImportError:
+                    raise
                 except Exception:
-                    model = SentenceTransformer(emb_name)
+                    model = SentenceTransformer(emb_name, **st_kwargs)
                 # For very large datasets, cap the sample size to prevent OOM or extremely long execution
                 sample_questions = questions[:1000]
 

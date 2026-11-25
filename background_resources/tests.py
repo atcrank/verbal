@@ -1563,6 +1563,56 @@ class WS43DocumentAdminAndGrobidExecutionTests(TestCase):
             spy_open.assert_not_called()
 
 
+class WS44WorkerEmbeddingGuardrailTests(TestCase):
+    """
+    Verifies worker/scheduler embeddings stay on CPU (zero VRAM) and transitive ImportErrors
+    inside sentence_transformers are surfaced transparently instead of masked as missing package
+    or retried as remote Hugging Face Hub downloads.
+    """
+
+    @patch("background_resources.rag_service.HuggingFaceEmbeddings")
+    def test_load_huggingface_embeddings_surfaces_transitive_import_error_without_remote_retry(
+        self, mock_hf_embed
+    ):
+        from background_resources.rag_service import load_huggingface_embeddings
+
+        root_cause = ImportError("cannot import name 'AffineQuantizedTensor' from 'torchao.dtypes'")
+        wrapped = ImportError(
+            "Could not import sentence_transformers python package. "
+            "Please install it with `pip install sentence-transformers`."
+        )
+        wrapped.__cause__ = root_cause
+        mock_hf_embed.side_effect = wrapped
+
+        with self.assertLogs("background_resources.rag_service", level="ERROR") as cm:
+            with self.assertRaises(ImportError):
+                load_huggingface_embeddings("sentence-transformers/all-MiniLM-L6-v2", device="cpu")
+
+        # Must NOT retry remote fetch on an ImportError!
+        self.assertEqual(mock_hf_embed.call_count, 1)
+        joined_logs = "\n".join(cm.output)
+        self.assertIn("AffineQuantizedTensor", joined_logs)
+
+    @patch("background_resources.rag_service.load_huggingface_embeddings")
+    def test_rag_service_forces_cpu_device_for_web_worker_and_scheduler_roles(self, mock_load_emb):
+        from background_resources.rag_service import RAGService
+
+        mock_load_emb.return_value = MagicMock()
+        with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("REASON_EMBEDDING_DEVICE", None)
+            for client_role in ("web", "worker", "scheduler"):
+                with override_settings(VERBAL_ROLE=client_role), \
+                     patch.dict(os.environ, {"VERBAL_ROLE": client_role}, clear=False):
+                    mock_load_emb.reset_mock()
+                    RAGService(model_name="sentence-transformers/all-MiniLM-L6-v2")
+                    self.assertEqual(
+                        mock_load_emb.call_args.kwargs.get("device"),
+                        "cpu",
+                        f"Expected device='cpu' for VERBAL_ROLE={client_role}",
+                    )
+
+
+
 
 
 
