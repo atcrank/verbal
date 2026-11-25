@@ -31,6 +31,7 @@
 * [2026-11-24] [Bug/Architecture] WS42: Grobid Reading Strategies, Document Provenance Synchronization, and Inference Service Logging & Resilience (Status: completed) -> [../ws42_grobid_reading_and_inference_logging.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/ws42_grobid_reading_and_inference_logging.md)
 * [2026-11-25] [Architecture/Discussion] Datastar SSE Streaming Under Granian (ASGI vs WSGI Generator Execution) (Status: pending) -> [20261125_datastar_sse_asgi_vs_wsgi_decision.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/notes/20261125_datastar_sse_asgi_vs_wsgi_decision.md)
 * [2026-11-25] [Bug/Testing/Resilience] WS43: Inference Resilience, Grobid Admin Remediation, and High-Validity Testing Regime (Status: completed) -> [../ws43_inference_resilience_grobid_and_test_validity.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/ws43_inference_resilience_grobid_and_test_validity.md)
+* [2026-11-25] [Bug/Environment/Resilience] WS44: torchao Runtime/Deploy Quarantine & Worker sentence-transformers Import Diagnostics (Status: completed) -> [../ws44_package_and_import_guardrails.md](file:///home/crank/coding/antigrav/verbal/.agents/workstream_specs/ws44_package_and_import_guardrails.md)
 
 
 

@@ -104,6 +104,51 @@ def get_embedding_model_name() -> str:
     return model_name or "sentence-transformers/all-MiniLM-L6-v2"
 
 
+def _describe_import_failure(pkg_name: str, exc: BaseException) -> str:
+    """
+    Formats a clear diagnostic for `sentence_transformers` import failures.
+
+    Note: `langchain_huggingface.HuggingFaceEmbeddings` wraps `import sentence_transformers`
+    inside `except ImportError` and replaces the message with:
+      "Could not import sentence_transformers python package..."
+    even when `sentence_transformers` IS installed and a transitive sub-dependency
+    (e.g., `torchao`, `torchvision`, `scipy`, or ABI-mismatched C++ extensions) threw the
+    actual `ImportError`. Unwrapping `__cause__` / `__context__` and checking disk presence
+    exposes the real culprit immediately in worker logs.
+    """
+    import importlib.metadata
+    import sys
+
+    cause = exc.__cause__ or exc.__context__
+    try:
+        dist_ver = importlib.metadata.version(pkg_name)
+        installed_note = f"{pkg_name}=={dist_ver} IS installed in {sys.executable}"
+    except importlib.metadata.PackageNotFoundError:
+        installed_note = f"{pkg_name} is NOT installed in interpreter {sys.executable}"
+
+    if cause is not None:
+        return (
+            f"{installed_note}, but a transitive dependency failed during import -> "
+            f"{type(cause).__name__}: {cause} (outer message: {exc})"
+        )
+    return f"{installed_note} -> {type(exc).__name__}: {exc}"
+
+
+def verify_sentence_transformers_import() -> None:
+    """
+    Pre-imports `sentence_transformers` directly outside `langchain_huggingface` so any
+    transitive C++/ABI `ImportError` logs its genuine module traceback instead of being
+    disguised as a missing `sentence-transformers` installation.
+    """
+    apply_torch_compatibility_shims()
+    try:
+        import sentence_transformers  # noqa: F401
+    except ImportError as imp_err:
+        detail = _describe_import_failure("sentence-transformers", imp_err)
+        logger.error(f"❌ Embedding runtime import failure: {detail}", exc_info=True)
+        raise
+
+
 def load_huggingface_embeddings(model_name: str, device: str | None = None) -> HuggingFaceEmbeddings:
     """
     Loads HuggingFaceEmbeddings with strict local-cache-first resolution.
@@ -111,6 +156,8 @@ def load_huggingface_embeddings(model_name: str, device: str | None = None) -> H
     to eliminate uncommanded network polling on service restarts. Falls back to remote
     download only when the snapshot is absent from disk and ``model_name`` is not a local path.
     """
+    verify_sentence_transformers_import()
+
     base_kwargs = {"device": device} if device else {}
     is_local_dir = os.path.isdir(model_name)
     if is_local_dir:
@@ -123,6 +170,11 @@ def load_huggingface_embeddings(model_name: str, device: str | None = None) -> H
             model_name=model_name,
             model_kwargs={**base_kwargs, "local_files_only": True},
         )
+    except ImportError as imp_err:
+        # Never mistake a Python/ABI ImportError for a Hugging Face Hub model cache miss!
+        detail = _describe_import_failure("sentence-transformers", imp_err)
+        logger.error(f"❌ Embedding package import error for '{model_name}': {detail}", exc_info=True)
+        raise
     except Exception as local_err:
         if is_local_dir:
             raise
@@ -141,7 +193,12 @@ class RAGService:
     def __init__(self, collection_name="verbal_background_resources", model_name=None):
         self.collection_name = collection_name
         self.model_name = model_name or get_embedding_model_name()
-        embed_device = "cpu" if os.environ.get("VERBAL_ROLE") == "web" else None
+        # Core Architectural Invariant 4: client roles ('web', 'worker', 'scheduler') must
+        # allocate strictly zero GPU VRAM so the dedicated 'inference' daemon has full
+        # uninterrupted VRAM headroom (e.g., Gemma 4 12B NF4 on 16 GB GPUs).
+        active_role = getattr(settings, "VERBAL_ROLE", None) or os.environ.get("VERBAL_ROLE", "standalone")
+        explicit_device = (os.environ.get("REASON_EMBEDDING_DEVICE") or "").strip() or None
+        embed_device = explicit_device or ("cpu" if active_role in ("web", "worker", "scheduler") else None)
         self.embeddings = load_huggingface_embeddings(self.model_name, device=embed_device)
         self.reading_ids = set()  # reading_ids
         self.store = DjangoChunkStore()

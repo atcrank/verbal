@@ -2343,3 +2343,46 @@ class unittest_patch_attr:
             setattr(self.target, self.attr, self.prev)
 
 
+class WS44TorchaoQuarantineTests(TestCase):
+    """Verifies unconditional PEP 451 quarantine of torchao to protect BitsAndBytes NF4 loading."""
+
+    def test_torch_compat_blocks_torchao_even_when_top_level_import_succeeds(self):
+        import importlib.util
+        import sys
+        import types
+        from unittest.mock import patch
+        import transformers.utils.import_utils as iu
+        from llm_api.torch_compat import apply_torch_compatibility_shims
+
+        # Simulate a lazy torchao package present in sys.modules whose top-level import
+        # succeeded, as happens before transformers imports torchao.quantization.
+        fake_torchao = types.ModuleType("torchao")
+        fake_sub = types.ModuleType("torchao.quantization")
+        prev_main = sys.modules.get("torchao", unittest_patch_attr._MISSING)
+        prev_sub = sys.modules.get("torchao.quantization", unittest_patch_attr._MISSING)
+        prev_fn = iu.is_torchao_available
+
+        try:
+            sys.modules["torchao"] = fake_torchao
+            sys.modules["torchao.quantization"] = fake_sub
+            with patch.dict(os.environ, {"VERBAL_ALLOW_TORCHAO": ""}, clear=False):
+                apply_torch_compatibility_shims()
+                self.assertIsNone(sys.modules.get("torchao"))
+                self.assertNotIn("torchao.quantization", sys.modules)
+                self.assertIsNone(importlib.util.find_spec("torchao"))
+                self.assertFalse(iu.is_torchao_available())
+                with self.assertRaises(ModuleNotFoundError):
+                    __import__("torchao")
+        finally:
+            iu.is_torchao_available = prev_fn
+            if prev_main is unittest_patch_attr._MISSING:
+                sys.modules.pop("torchao", None)
+            else:
+                sys.modules["torchao"] = prev_main
+            if prev_sub is unittest_patch_attr._MISSING:
+                sys.modules.pop("torchao.quantization", None)
+            else:
+                sys.modules["torchao.quantization"] = prev_sub
+
+
+

@@ -41,6 +41,11 @@ if os.environ.get("VERBAL_ENV") == "prod":
 
 os.environ.update(_initial_env)
 
+# Apply PyTorch polyfills and quarantine `torchao` immediately after dotenv loading
+# (before any Django app imports `transformers`, `sentence_transformers`, or `bitsandbytes`).
+from llm_api.torch_compat import apply_torch_compatibility_shims
+apply_torch_compatibility_shims()
+
 import warnings
 from django.core.exceptions import ImproperlyConfigured
 warnings.filterwarnings("ignore", message=r".*allowed_objects.*")
