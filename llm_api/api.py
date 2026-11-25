@@ -338,23 +338,32 @@ def internal_ping(request):
         from .models import SystemConfiguration
         config = SystemConfiguration.get_solo()
         if config and config.hosting_backend == SystemConfiguration.HostingBackend.PYTORCH and config.active_local_model:
-            load_state = getattr(ai, "load_state", "idle") if ai is not None else "idle"
+            raw_state = getattr(ai, "load_state", "idle") if ai is not None else "idle"
+            load_state = raw_state if isinstance(raw_state, str) else "idle"
             model_loaded = (ai is not None and getattr(ai, "model", None) is not None)
-            load_error = getattr(ai, "load_error", None) if ai is not None else None
+            raw_err = getattr(ai, "load_error", None) if ai is not None else None
+            load_error = raw_err if isinstance(raw_err, str) and raw_err else None
+            raw_ai_role = getattr(ai, "role", None) if ai is not None else None
+            effective_role = raw_ai_role if isinstance(raw_ai_role, str) and raw_ai_role else role
 
             if load_state == "loading":
                 return JsonResponse({
                     "status": "loading",
-                    "role": role,
+                    "role": effective_role,
                     "loading": True,
                     "model_loaded": False,
                     "model_name": config.active_local_model.name,
                 }, status=200)
 
             if not model_loaded:
+                if not load_error and effective_role in ("web", "worker", "scheduler"):
+                    load_error = (
+                        f"Inference endpoint is running in proxy role VERBAL_ROLE='{effective_role}' "
+                        "(expected 'inference'); check systemd unit and .env."
+                    )
                 return JsonResponse({
                     "status": "error",
-                    "role": role,
+                    "role": effective_role,
                     "loading": False,
                     "model_loaded": False,
                     "model_name": config.active_local_model.name,
@@ -402,6 +411,7 @@ def internal_reload_model(request):
     """Unloads any active model and reloads according to current SystemConfiguration in a background thread."""
     try:
         import threading
+        from django.conf import settings
         from .apps import LazyServiceRegistry
         if isinstance(service_registry, LazyServiceRegistry):
             ai = service_registry.peek_ai_service()
@@ -411,6 +421,22 @@ def internal_reload_model(request):
                 service_registry._ai_service = ai
         else:
             ai = service_registry.ai_service
+
+        raw_ai_role = getattr(ai, "role", None)
+        effective_role = (
+            raw_ai_role
+            if isinstance(raw_ai_role, str) and raw_ai_role
+            else getattr(settings, "VERBAL_ROLE", "unknown")
+        )
+        if effective_role in ("web", "worker", "scheduler"):
+            err_msg = (
+                f"Inference endpoint misconfigured with VERBAL_ROLE='{effective_role}' "
+                "(expected 'inference'); heavy PyTorch VRAM loading is disabled in proxy roles."
+            )
+            ai.load_state = "error"
+            ai.load_error = err_msg
+            logger.error("❌ %s", err_msg)
+            return JsonResponse({"status": "error", "role": effective_role, "message": err_msg}, status=503)
 
         # Mark 'loading' synchronously BEFORE returning so immediate follow-up pings
         # from SystemConfigurationAdmin.save_model() see 'loading' rather than a 503 race.

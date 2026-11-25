@@ -176,7 +176,14 @@ def load_huggingface_embeddings(model_name: str, device: str | None = None) -> H
         logger.error(f"❌ Embedding package import error for '{model_name}': {detail}", exc_info=True)
         raise
     except Exception as local_err:
-        if is_local_dir:
+        allow_remote = bool(getattr(settings, "ALLOW_UNCOMMANDED_HF_DOWNLOADS", False))
+        if is_local_dir or not allow_remote:
+            if not is_local_dir:
+                logger.error(
+                    f"❌ Embedding model '{model_name}' not found in local Hugging Face cache ({local_err}). "
+                    "Pre-populate HF_HOME (via Model Admin or 'fab provision-models') or set "
+                    "VERBAL_ALLOW_UNCOMMANDED_HF_DOWNLOADS=true."
+                )
             raise
         logger.info(f"Embedding model '{model_name}' not cached locally ({local_err}); attempting remote fetch...")
         return HuggingFaceEmbeddings(model_name=model_name, model_kwargs=base_kwargs)

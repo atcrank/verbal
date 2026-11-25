@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
+import sys
+from urllib.parse import urlparse
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -55,9 +57,57 @@ VERBAL_ENV = os.environ.get("VERBAL_ENV", "dev")
 # ------------------------------------------------------------------------
 # MICROSERVICE / ROLE CONFIGURATION
 # ------------------------------------------------------------------------
+# If acting as a web/worker client, where is the inference server?
+INFERENCE_URL = os.environ.get("INFERENCE_URL", "http://127.0.0.1:8001/api/llm")
+
+
+def resolve_runtime_role(raw_role: str, argv: list[str], inference_url: str) -> str:
+    """
+    Guards daemon role integrity against `.env` / systemd `EnvironmentFile=` leaks.
+
+    In `systemd.exec(5)`, settings in `EnvironmentFile=` override `Environment=`. If a
+    shared `.env` file sets `VERBAL_ROLE=web`, background daemons (`runserver` bound to
+    `INFERENCE_URL`'s port, `runtaskworker`, or `runtaskscheduler`) would otherwise
+    boot in `web` proxy mode and silently skip PyTorch VRAM model loading.
+    """
+    if len(argv) < 2:
+        return raw_role
+
+    subcmd = Path(argv[1]).name
+    if subcmd == "runserver" and raw_role in ("web", "worker", "scheduler"):
+        parsed_port = urlparse(inference_url).port
+        if parsed_port:
+            port_str = str(parsed_port)
+            port_suffix = f":{port_str}"
+            non_flag_args = [a for a in argv[2:] if not a.startswith("-")]
+            if any(a == port_str or a.endswith(port_suffix) for a in non_flag_args):
+                sys.stderr.write(
+                    f"[WARNING] VERBAL_ROLE='{raw_role}' conflicts with inference server bind port "
+                    f":{port_str} (likely leaked from .env); enforcing VERBAL_ROLE='inference'.\n"
+                )
+                return "inference"
+
+    if subcmd == "runtaskworker" and raw_role in ("web", "scheduler", "inference"):
+        sys.stderr.write(
+            f"[WARNING] VERBAL_ROLE='{raw_role}' conflicts with 'runtaskworker'; enforcing VERBAL_ROLE='worker'.\n"
+        )
+        return "worker"
+
+    if subcmd == "runtaskscheduler" and raw_role in ("web", "worker", "inference"):
+        sys.stderr.write(
+            f"[WARNING] VERBAL_ROLE='{raw_role}' conflicts with 'runtaskscheduler'; enforcing VERBAL_ROLE='scheduler'.\n"
+        )
+        return "scheduler"
+
+    return raw_role
+
+
 # Roles: 'standalone' (loads model, dev/testing only), 'inference' (loads model),
 # 'web' (HTTP client), 'worker' (HTTP client), 'scheduler'
-VERBAL_ROLE = os.environ.get("VERBAL_ROLE", "standalone")
+_raw_verbal_role = os.environ.get("VERBAL_ROLE", "standalone")
+VERBAL_ROLE = resolve_runtime_role(_raw_verbal_role, sys.argv, INFERENCE_URL)
+if VERBAL_ROLE != _raw_verbal_role:
+    os.environ["VERBAL_ROLE"] = VERBAL_ROLE
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "django-insecure-di_unz7h49exp@-(oyl0i2v8i-7%-zr@8c@ejl%!%f6b=-vh8-")
@@ -325,6 +375,9 @@ REASON_LOG_DIR = os.environ.get("REASON_LOG_DIR", "/srv/reason/logs")
 ENABLE_HOSTING_BACKEND_SYNC = os.environ.get("ENABLE_HOSTING_BACKEND_SYNC", "true").lower() in ("true", "1", "yes")
 ENABLE_LIVE_BACKEND_PING = os.environ.get("ENABLE_LIVE_BACKEND_PING", "true").lower() in ("true", "1", "yes")
 ENABLE_GRIPS_AUTO_SYNC = os.environ.get("ENABLE_GRIPS_AUTO_SYNC", "true").lower() in ("true", "1", "yes")
+# Strict local-cache-only policy: never initiate uncommanded Hugging Face / Artifactory
+# downloads during normal request serving or daemon startup unless explicitly enabled.
+ALLOW_UNCOMMANDED_HF_DOWNLOADS = os.environ.get("VERBAL_ALLOW_UNCOMMANDED_HF_DOWNLOADS", "false").lower() in ("true", "1", "yes")
 
 _active_handlers = ["console"]
 _handlers_config = {

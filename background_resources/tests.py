@@ -1145,9 +1145,10 @@ class TestConfigurableEmbeddingsResolution(TestCase):
         model_kwargs = mock_hf_embed.call_args[1]["model_kwargs"]
         self.assertTrue(model_kwargs.get("local_files_only"))
 
+    @override_settings(ALLOW_UNCOMMANDED_HF_DOWNLOADS=True)
     @patch("background_resources.rag_service.HuggingFaceEmbeddings")
     def test_rag_service_hub_id_falls_back_when_local_cache_absent(self, mock_hf_embed):
-        """If a Hub repo ID is not cached locally, load falls back cleanly without local_files_only."""
+        """When ALLOW_UNCOMMANDED_HF_DOWNLOADS=True and local cache is absent, load falls back cleanly."""
         from background_resources.rag_service import RAGService
 
         mock_instance = MagicMock()
@@ -1160,6 +1161,18 @@ class TestConfigurableEmbeddingsResolution(TestCase):
         second_kwargs = mock_hf_embed.call_args_list[1][1]["model_kwargs"]
         self.assertTrue(first_kwargs.get("local_files_only"))
         self.assertNotIn("local_files_only", second_kwargs)
+
+    @override_settings(ALLOW_UNCOMMANDED_HF_DOWNLOADS=False)
+    @patch("background_resources.rag_service.HuggingFaceEmbeddings")
+    def test_rag_service_hub_id_blocks_uncommanded_remote_download_by_default(self, mock_hf_embed):
+        """By default (ALLOW_UNCOMMANDED_HF_DOWNLOADS=False), missing local cache never triggers remote HTTP calls."""
+        from background_resources.rag_service import load_huggingface_embeddings
+
+        mock_hf_embed.side_effect = OSError("LocalEntryNotFoundError")
+        with self.assertRaises(OSError):
+            load_huggingface_embeddings("sentence-transformers/all-MiniLM-L6-v2", device="cpu")
+        self.assertEqual(mock_hf_embed.call_count, 1)
+        self.assertTrue(mock_hf_embed.call_args[1]["model_kwargs"].get("local_files_only"))
 
 
 class GrobidReadingStrategyUnitTests(TestCase):
