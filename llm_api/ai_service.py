@@ -148,7 +148,8 @@ class AIService:
     class DefaultOutlineResponse(BaseModel):
         response_content: str
 
-    role = getattr(settings, "VERBAL_ROLE", "standalone")
+    _IMPORT_TIME_ROLE = getattr(settings, "VERBAL_ROLE", "standalone")
+    role = _IMPORT_TIME_ROLE
     inference_url = getattr(settings, "INFERENCE_URL", "http://127.0.0.1:8001/api/llm")
     model_id = None
     model = None
@@ -166,6 +167,12 @@ class AIService:
     _lock = threading.RLock()  # "Reentrant thread lock"
 
     def __init__(self):
+        cls_role = self.__class__.role
+        if cls_role == self.__class__._IMPORT_TIME_ROLE:
+            self.role = getattr(settings, "VERBAL_ROLE", cls_role)
+        else:
+            self.role = cls_role
+        self.inference_url = getattr(settings, "INFERENCE_URL", self.__class__.inference_url)
         self._lock = threading.RLock()
         self._generator_cache = {}
         self.load_state = "idle"
@@ -208,10 +215,12 @@ class AIService:
         """
         Determines ``(tokenizer_id, allow_remote)`` for CPU/inference tokenization.
 
-        Never initiates remote Hugging Face downloads for unconfigured default
-        fallbacks or when a GGUF CPU Mini-Model is handling utility tokenization.
+        Enforces strict local-cache-only resolution (`allow_remote=False`) unless
+        `settings.ALLOW_UNCOMMANDED_HF_DOWNLOADS` is explicitly enabled, ensuring
+        web/worker/inference processes never make uncommanded Hugging Face HTTP calls.
         """
         client_roles = ("web", "worker", "scheduler")
+        allow_remote_default = bool(getattr(settings, "ALLOW_UNCOMMANDED_HF_DOWNLOADS", False))
 
         # When running in inference or standalone mode with PyTorch backend,
         # we ALWAYS require the tokenizer matching the active PyTorch model.
@@ -224,10 +233,10 @@ class AIService:
             return config.active_local_model.hf_model_id, False
 
         if self.model_id and self.role not in client_roles:
-            return self.model_id, True
+            return self.model_id, allow_remote_default
 
         if config and getattr(config, "system_tokenizer", None):
-            return config.system_tokenizer.hf_model_id, True
+            return config.system_tokenizer.hf_model_id, allow_remote_default
 
         if (
             config
@@ -400,14 +409,22 @@ class AIService:
             )
             logger.info(f"✅ Loaded '{self.model_id}' from local cache.")
         except Exception as local_err:
-            if cache_status.cached_on_disk:
-                # Model weights ARE cached locally, so local_err is a genuine load error
-                # (e.g. CUDA OOM, quantization/dtype mismatch, missing library)—never mask
-                # it with a doomed remote Hub download attempt in offline/restricted hosts!
+            allow_uncommanded_remote = bool(getattr(settings, "ALLOW_UNCOMMANDED_HF_DOWNLOADS", False))
+            if cache_status.cached_on_disk or not allow_uncommanded_remote:
+                # Either model weights ARE cached locally (so local_err is a genuine OOM/ABI/dtype failure)
+                # OR uncommanded runtime Hub downloads are disabled by policy (default).
                 self.load_state = "error"
                 self.loading_model_id = None
-                self.load_error = f"{type(local_err).__name__}: {str(local_err)}"
-                logger.exception(f"❌ Failed to load cached PyTorch model '{self.model_id}': {self.load_error}")
+                if cache_status.cached_on_disk:
+                    self.load_error = f"{type(local_err).__name__}: {str(local_err)}"
+                    logger.exception(f"❌ Failed to load cached PyTorch model '{self.model_id}': {self.load_error}")
+                else:
+                    self.load_error = (
+                        f"{type(local_err).__name__}: {str(local_err)} "
+                        f"(model '{self.model_id}' is not present in local HF_HOME cache; "
+                        "download it explicitly via Model Admin before activating)"
+                    )
+                    logger.error(f"❌ Refusing uncommanded remote download for '{self.model_id}': {self.load_error}")
                 self.model = None
                 self.outline_pipeline = None
                 raise

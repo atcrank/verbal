@@ -671,6 +671,12 @@ def generate_systemd_units(
 EnvironmentFile=-{env_app_secrets}
 EnvironmentFile=-{env_app_prod}
 Environment=PYTHONUNBUFFERED=1
+Environment=HF_HUB_DISABLE_TELEMETRY=1
+Environment=HF_HUB_DISABLE_IMPLICIT_TOKEN=1
+Environment=DO_NOT_TRACK=1
+Environment=UNSLOTH_DISABLE_STATISTICS=1
+Environment=ANONYMIZED_TELEMETRY=False
+Environment=SCARF_NO_ANALYTICS=true
 Environment=REASON_LOG_DIR={log_dir}
 Environment=REASON_MODELS_DIR={models_dir}
 Environment=REASON_EMBEDDING_MODEL={embedding_model}"""
@@ -737,7 +743,7 @@ Environment=REASON_CONSOLE_TEE_ACTIVE=1
 Environment=DJANGO_STATIC_ROOT={static_dir}
 Environment=PYTHONPATH={app_dir}
 Environment=HF_HOME={hf_cache_dir}
-ExecStart=/bin/bash -c 'exec {venv_dir}/bin/granian --interface asgi --host 127.0.0.1 --port {granian_port} verbal_config.asgi:application 2>&1 | tee -a "{log_dir}/reason-web.log"'
+ExecStart=/bin/bash -c 'exec /usr/bin/env VERBAL_ENV=prod VERBAL_ROLE=web REASON_CONSOLE_TEE_ACTIVE=1 {venv_dir}/bin/granian --interface asgi --host 127.0.0.1 --port {granian_port} verbal_config.asgi:application 2>&1 | tee -a "{log_dir}/reason-web.log"'
 Restart=on-failure
 RestartSec=5s
 StandardOutput=journal
@@ -769,7 +775,7 @@ Environment=VERBAL_ROLE=worker
 Environment=REASON_CONSOLE_TEE_ACTIVE=1
 Environment=PYTHONPATH={app_dir}
 Environment=HF_HOME={hf_cache_dir}
-ExecStart=/bin/bash -c 'exec {venv_dir}/bin/python manage.py runtaskworker 2>&1 | tee -a "{log_dir}/reason-worker.log"'
+ExecStart=/bin/bash -c 'exec /usr/bin/env VERBAL_ENV=prod VERBAL_ROLE=worker REASON_CONSOLE_TEE_ACTIVE=1 {venv_dir}/bin/python manage.py runtaskworker 2>&1 | tee -a "{log_dir}/reason-worker.log"'
 Restart=on-failure
 RestartSec=5s
 StandardOutput=journal
@@ -801,7 +807,7 @@ Environment=VERBAL_ROLE=scheduler
 Environment=REASON_CONSOLE_TEE_ACTIVE=1
 Environment=PYTHONPATH={app_dir}
 Environment=HF_HOME={hf_cache_dir}
-ExecStart=/bin/bash -c 'exec {venv_dir}/bin/python manage.py runtaskscheduler 2>&1 | tee -a "{log_dir}/reason-scheduler.log"'
+ExecStart=/bin/bash -c 'exec /usr/bin/env VERBAL_ENV=prod VERBAL_ROLE=scheduler REASON_CONSOLE_TEE_ACTIVE=1 {venv_dir}/bin/python manage.py runtaskscheduler 2>&1 | tee -a "{log_dir}/reason-scheduler.log"'
 Restart=on-failure
 RestartSec=10s
 StandardOutput=journal
@@ -833,7 +839,7 @@ Environment=VERBAL_ROLE=inference
 Environment=REASON_CONSOLE_TEE_ACTIVE=1
 Environment=PYTHONPATH={app_dir}
 Environment=HF_HOME={hf_cache_dir}
-ExecStart=/bin/bash -c 'exec {venv_dir}/bin/python manage.py runserver --noreload 127.0.0.1:{inference_port} 2>&1 | tee -a "{log_dir}/reason-inference.log"'
+ExecStart=/bin/bash -c 'exec /usr/bin/env VERBAL_ENV=prod VERBAL_ROLE=inference REASON_CONSOLE_TEE_ACTIVE=1 {venv_dir}/bin/python manage.py runserver --noreload 127.0.0.1:{inference_port} 2>&1 | tee -a "{log_dir}/reason-inference.log"'
 Restart=on-failure
 RestartSec=5s
 StandardOutput=journal
@@ -2648,6 +2654,7 @@ def deploy(
             ),
             "fab build-and-migrate",
         ),
+        ("setup_systemd", lambda: setup_systemd(c), "fab setup-systemd"),
         ("restart_services", lambda: restart_services(c), "fab restart-services"),
         ("health_check", lambda: health_check(c), "fab health-check"),
     ]

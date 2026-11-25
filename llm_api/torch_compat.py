@@ -57,13 +57,58 @@ def quarantine_torchao() -> None:
         tu_pkg.is_torchao_available = lambda *args, **kwargs: False
 
 
+def enforce_library_network_guardrails() -> None:
+    """
+    Disables uncommanded third-party library telemetry, implicit token refresh calls,
+    and Hugging Face Hub agent-harness registry probes (`/api/agent-harnesses`).
+
+    Why this is required:
+    - `huggingface_hub` (>= 1.x) invokes `detect_agent()` -> `_fetch_registry()` ->
+      `GET {HF_ENDPOINT}/api/agent-harnesses` inside `build_hf_headers()` whenever
+      `HF_HUB_DISABLE_TELEMETRY` is falsy. Against internal Artifactory mirrors, that
+      endpoint returns HTTP 404, is never written to the disk cache, and repeats on
+      every worker process that constructs Hub headers.
+    - `huggingface_hub` also evaluates `constants.HF_HUB_DISABLE_TELEMETRY` and
+      `constants.HF_HUB_DISABLE_IMPLICIT_TOKEN` at import time, so we set both the
+      process environment variables AND the live module attributes / `_registry` sentinel.
+    """
+    telemetry_defaults = {
+        "HF_HUB_DISABLE_TELEMETRY": "1",
+        "DISABLE_TELEMETRY": "1",
+        "DO_NOT_TRACK": "1",
+        "HF_HUB_DISABLE_IMPLICIT_TOKEN": "1",
+        "TRANSFORMERS_NO_ADVISORY_WARNINGS": "1",
+        "UNSLOTH_DISABLE_STATISTICS": "1",
+        "ANONYMIZED_TELEMETRY": "False",
+        "SCARF_NO_ANALYTICS": "true",
+        "LANGCHAIN_TRACING_V2": "false",
+    }
+    for env_key, env_val in telemetry_defaults.items():
+        os.environ.setdefault(env_key, env_val)
+
+    try:
+        import huggingface_hub.constants as hf_constants
+        hf_constants.HF_HUB_DISABLE_TELEMETRY = True
+        hf_constants.HF_HUB_DISABLE_IMPLICIT_TOKEN = True
+    except ImportError:
+        pass
+
+    try:
+        import huggingface_hub.utils._detect_agent as detect_agent_mod
+        detect_agent_mod._registry = {"standardEnvVars": [], "harnesses": {}}
+    except ImportError:
+        pass
+
+
 def apply_torch_compatibility_shims() -> None:
     """
-    Applies `torchao` import quarantine and runtime PyTorch symbol polyfills.
+    Applies `torchao` import quarantine, third-party telemetry/network guardrails,
+    and runtime PyTorch symbol polyfills.
     Idempotent and safe to invoke at early Django settings startup as well as service modules.
     """
-    # Always quarantine torchao first, before importing torch or transformers
+    # Always quarantine torchao and third-party phone-home probes first
     quarantine_torchao()
+    enforce_library_network_guardrails()
 
     try:
         import torch

@@ -1145,10 +1145,11 @@ class TestDeployOrdering(SimpleTestCase):
     @patch("deploy.fabric_deploy.update_code")
     @patch("deploy.fabric_deploy.start_backend_containers")
     @patch("deploy.fabric_deploy.build_and_migrate")
+    @patch("deploy.fabric_deploy.setup_systemd")
     @patch("deploy.fabric_deploy.restart_services")
     @patch("deploy.fabric_deploy.health_check")
     def test_deploy_invokes_start_backend_containers_before_build_and_migrate(
-        self, mock_health, mock_restart, mock_build, mock_start_containers, mock_update, mock_preflight, mock_sudo
+        self, mock_health, mock_restart, mock_systemd, mock_build, mock_start_containers, mock_update, mock_preflight, mock_sudo
     ):
         from deploy.fabric_deploy import deploy
         c = create_mock_context()
@@ -1157,6 +1158,7 @@ class TestDeployOrdering(SimpleTestCase):
         manager.attach_mock(mock_update, "update_code")
         manager.attach_mock(mock_start_containers, "start_backend_containers")
         manager.attach_mock(mock_build, "build_and_migrate")
+        manager.attach_mock(mock_systemd, "setup_systemd")
         manager.attach_mock(mock_restart, "restart_services")
         manager.attach_mock(mock_health, "health_check")
 
@@ -1167,6 +1169,7 @@ class TestDeployOrdering(SimpleTestCase):
             "update_code",
             "start_backend_containers",
             "build_and_migrate",
+            "setup_systemd",
             "restart_services",
             "health_check",
         ]
@@ -2069,6 +2072,70 @@ class TestWS43SystemdAndSettingsGuardrails(SimpleTestCase):
         pip_cmd = build_torchao_prune_cmd(use_uv=False, venv_dir="/srv/reason/venv")
         self.assertIn("uv pip uninstall --python /srv/reason/venv/bin/python torchao", uv_cmd)
         self.assertIn("/srv/reason/venv/bin/pip uninstall -y torchao", pip_cmd)
+
+
+class TestWS45SystemdRoleAndTelemetryHardening(SimpleTestCase):
+    """
+    WS45 tests verifying systemd units cannot have VERBAL_ROLE overwritten by
+    EnvironmentFile= (.env / .env.production), runtime command-role guard protects
+    inference/worker/scheduler processes, and telemetry-disable env vars are set.
+    """
+
+    def test_systemd_execstart_pins_verbal_role_via_env_after_environment_file(self):
+        """
+        In systemd.exec(5), EnvironmentFile= overrides Environment= regardless of line order.
+        ExecStart must pin VERBAL_ROLE via /usr/bin/env so .env's VERBAL_ROLE=web never wins.
+        """
+        units = generate_systemd_units()
+        expected_roles = {
+            "reason-web.service": "web",
+            "reason-worker.service": "worker",
+            "reason-scheduler.service": "scheduler",
+            "reason-inference.service": "inference",
+        }
+        for unit_name, expected_role in expected_roles.items():
+            unit = units[unit_name]
+            with self.subTest(unit=unit_name):
+                self.assertIn("/bin/bash -c 'exec /usr/bin/env ", unit)
+                self.assertIn(f"VERBAL_ROLE={expected_role}", unit.split("ExecStart=", 1)[1].splitlines()[0])
+                self.assertIn("HF_HUB_DISABLE_TELEMETRY=1", unit)
+                self.assertIn("DO_NOT_TRACK=1", unit)
+
+    def test_resolve_runtime_role_corrects_dotenv_web_leak_on_inference_worker_and_scheduler(self):
+        """
+        Verifies resolve_runtime_role overrides stale VERBAL_ROLE='web' when a process
+        is explicitly launched on the inference port, runtaskworker, or runtaskscheduler,
+        while preserving 'web' for Granian, tests, and general management commands.
+        """
+        from verbal_config.settings import resolve_runtime_role
+
+        inf_url = "http://127.0.0.1:8001/api/llm"
+        self.assertEqual(
+            resolve_runtime_role("web", ["manage.py", "runserver", "--noreload", "127.0.0.1:8001"], inf_url),
+            "inference",
+        )
+        self.assertEqual(
+            resolve_runtime_role("web", ["manage.py", "runtaskworker"], inf_url),
+            "worker",
+        )
+        self.assertEqual(
+            resolve_runtime_role("web", ["manage.py", "runtaskscheduler"], inf_url),
+            "scheduler",
+        )
+        # Normal web/test/dev invocations remain untouched
+        self.assertEqual(
+            resolve_runtime_role("web", ["granian", "verbal_config.asgi:application"], inf_url),
+            "web",
+        )
+        self.assertEqual(
+            resolve_runtime_role("web", ["manage.py", "test", "llm_api"], inf_url),
+            "web",
+        )
+        self.assertEqual(
+            resolve_runtime_role("web", ["manage.py", "runserver", "127.0.0.1:8000"], inf_url),
+            "web",
+        )
+
 
 
 

@@ -2385,4 +2385,132 @@ class WS44TorchaoQuarantineTests(TestCase):
                 sys.modules["torchao.quantization"] = prev_sub
 
 
+class WS45TelemetryRoleAndLifespanTests(TestCase):
+    """
+    WS45 tests for:
+    1. Blocking huggingface_hub /api/agent-harnesses and library telemetry probes.
+    2. Preventing uncommanded runtime HF remote downloads when ALLOW_UNCOMMANDED_HF_DOWNLOADS=False.
+    3. Dynamic AIService role resolution and explicit role-mismatch reporting on /internal/ping/ & /internal/reload-model/.
+    4. Clean ASGI lifespan.startup / lifespan.shutdown handling in verbal_config.asgi.application.
+    """
+
+    def test_enforce_library_network_guardrails_blocks_hf_agent_harness_probe(self):
+        from unittest.mock import patch
+        import huggingface_hub.constants as hf_constants
+        import huggingface_hub.utils._detect_agent as detect_agent_mod
+        from huggingface_hub.utils import build_hf_headers
+        from llm_api.torch_compat import enforce_library_network_guardrails
+
+        with patch.object(detect_agent_mod, "_fetch_registry", side_effect=AssertionError("Outbound /api/agent-harnesses call forbidden!")) as mock_fetch:
+            detect_agent_mod._registry = None
+            enforce_library_network_guardrails()
+
+            self.assertTrue(hf_constants.HF_HUB_DISABLE_TELEMETRY)
+            self.assertTrue(hf_constants.HF_HUB_DISABLE_IMPLICIT_TOKEN)
+            self.assertIsNotNone(detect_agent_mod._registry)
+            self.assertEqual(os.environ.get("HF_HUB_DISABLE_TELEMETRY"), "1")
+            self.assertEqual(os.environ.get("DO_NOT_TRACK"), "1")
+
+            headers = build_hf_headers(library_name="transformers", library_version="4.50.0", token=False)
+            self.assertIn("user-agent", headers)
+            self.assertIsNone(detect_agent_mod.detect_agent())
+            mock_fetch.assert_not_called()
+
+    @override_settings(ALLOW_UNCOMMANDED_HF_DOWNLOADS=False)
+    def test_system_tokenizer_and_pytorch_load_disallow_uncommanded_remote_fetch_by_default(self):
+        from unittest.mock import patch
+        from llm_api.ai_service import AIService
+        from llm_api.models import LocalAIModel, SystemConfiguration
+
+        tok_model = LocalAIModel.objects.create(name="Sys Tok", hf_model_id="org/uncached-sys-tok")
+        llm_model = LocalAIModel.objects.create(name="Uncached LLM", hf_model_id="org/uncached-llm")
+        cfg = SystemConfiguration.get_solo()
+        cfg.hosting_backend = "pytorch"
+        cfg.system_tokenizer = tok_model
+        cfg.active_local_model = llm_model
+        cfg.active_mini_model = None
+        cfg.save()
+
+        web_service = AIService()
+        web_service.role = "web"
+        tok_id, allow_remote = web_service._resolve_tokenizer_source(cfg)
+        self.assertEqual(tok_id, "org/uncached-sys-tok")
+        self.assertFalse(allow_remote)
+
+        inf_service = AIService()
+        inf_service.role = "inference"
+        with patch("transformers.AutoTokenizer.from_pretrained", side_effect=OSError("Not in local cache")) as mock_tok, \
+             patch("transformers.AutoModelForCausalLM.from_pretrained", side_effect=OSError("Not in local cache")) as mock_llm:
+            with self.assertRaises(OSError):
+                inf_service.load_models()
+            # Strictly 1 local_files_only=True attempt each; zero remote fallback calls!
+            self.assertEqual(mock_tok.call_count, 1)
+            self.assertTrue(mock_tok.call_args.kwargs.get("local_files_only"))
+            self.assertEqual(mock_llm.call_count, 1)
+            self.assertTrue(mock_llm.call_args.kwargs.get("local_files_only"))
+            self.assertEqual(inf_service.load_state, "error")
+
+    def test_ai_service_honors_override_settings_role_and_internal_endpoints_flag_client_role_mismatch(self):
+        from django.test import RequestFactory
+        from llm_api.ai_service import AIService
+        from llm_api.api import internal_ping, internal_reload_model
+        from llm_api.models import LocalAIModel, SystemConfiguration
+
+        local_mod = LocalAIModel.objects.create(name="Gemma 4 12B", hf_model_id="google/gemma-4-12b-it")
+        cfg = SystemConfiguration.get_solo()
+        cfg.hosting_backend = "pytorch"
+        cfg.active_local_model = local_mod
+        cfg.save()
+
+        # Verify @override_settings(VERBAL_ROLE="inference") propagates when class role isn't forced to web
+        with unittest_patch_attr(AIService, "role", AIService._IMPORT_TIME_ROLE), \
+             override_settings(VERBAL_ROLE="inference"):
+            inf_ai = AIService()
+            self.assertEqual(inf_ai.role, "inference")
+
+        # Verify misconfigured client role ('web') hitting internal_reload_model / internal_ping
+        # immediately reports explicit VERBAL_ROLE misconfiguration instead of silent idle 503.
+        misconfigured_ai = AIService()
+        misconfigured_ai.role = "web"
+        rf = RequestFactory()
+        with override_settings(VERBAL_ROLE="web"), \
+             unittest_patch_attr(service_registry, "_ai_service", misconfigured_ai), \
+             unittest_patch_attr(service_registry, "_initializing_ai_service", None):
+            reload_resp = internal_reload_model(rf.post("/api/llm/internal/reload-model/"))
+            self.assertEqual(reload_resp.status_code, 503)
+            self.assertEqual(misconfigured_ai.load_state, "error")
+            self.assertIn("VERBAL_ROLE", misconfigured_ai.load_error)
+
+            ping_resp = internal_ping(rf.get("/api/llm/internal/ping/"))
+            self.assertEqual(ping_resp.status_code, 503)
+            ping_data = json.loads(ping_resp.content)
+            self.assertIn("VERBAL_ROLE", ping_data.get("error", ""))
+
+    def test_asgi_application_supports_lifespan_startup_and_shutdown(self):
+        import asyncio
+        from verbal_config.asgi import application
+
+        events_in = [
+            {"type": "lifespan.startup"},
+            {"type": "lifespan.shutdown"},
+        ]
+        events_out = []
+
+        async def receive():
+            return events_in.pop(0)
+
+        async def send(message):
+            events_out.append(message)
+
+        asyncio.run(application({"type": "lifespan", "asgi": {"version": "3.0"}}, receive, send))
+        self.assertEqual(
+            events_out,
+            [
+                {"type": "lifespan.startup.complete"},
+                {"type": "lifespan.shutdown.complete"},
+            ],
+        )
+
+
+
 
