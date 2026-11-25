@@ -90,12 +90,16 @@ class BackendAvailabilitySummary:
     pytorch_cuda_available: bool
     pytorch_online: bool
     pytorch_error: str | None
+    pytorch_loading: bool = False
 
     def is_backend_available(self, backend: str) -> tuple[bool, str]:
         """Returns (is_ready, concise_reason) for a SystemConfiguration HostingBackend value."""
         if backend == "pytorch":
             if self.pytorch_error:
                 return False, self.pytorch_error
+            if self.pytorch_loading:
+                hw = "CUDA" if self.pytorch_cuda_available else "CPU"
+                return True, f"Loading PyTorch model into VRAM ({hw})"
             if self.pytorch_online:
                 hw = "CUDA" if self.pytorch_cuda_available else "CPU"
                 return True, f"Inference service online ({hw})"
@@ -363,11 +367,13 @@ def get_backend_availability_summary(sys_config: Any = None) -> BackendAvailabil
 
     pytorch_online = False
     pytorch_err = None
+    pytorch_loading = False
     if sys_config and getattr(sys_config, "hosting_backend", None) == "pytorch":
         pytorch_online = is_primary_backend_available_cached(sys_config, ttl_seconds=1.0, timeout=0.4)
         cached_err = _PRIMARY_HEALTH_CACHE.get("pytorch_error")
         if cached_err:
             pytorch_err = cached_err[1]
+        pytorch_loading = bool(_PRIMARY_HEALTH_CACHE.get("pytorch_loading"))
 
     return BackendAvailabilitySummary(
         docker_daemon=daemon,
@@ -380,4 +386,5 @@ def get_backend_availability_summary(sys_config: Any = None) -> BackendAvailabil
         pytorch_cuda_available=cuda_ok,
         pytorch_online=pytorch_online,
         pytorch_error=pytorch_err,
+        pytorch_loading=pytorch_loading,
     )

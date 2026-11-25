@@ -659,13 +659,21 @@ class SystemConfiguration(models.Model):
 
     @classmethod
     def get_solo(cls):
+        from django.db import OperationalError, ProgrammingError
         try:
             obj, _ = cls.objects.get_or_create(pk=1)
             return obj
+        except (ProgrammingError, OperationalError) as e:
+            err_msg = str(e).lower()
+            if "does not exist" in err_msg or "no such table" in err_msg:
+                # Fails gracefully only during initial unmigrated DB bootstrap
+                logger.info(f"Warning: SystemConfiguration.get_solo() failed: {e}")
+                return None
+            logger.error(f"SystemConfiguration.get_solo() database failure: {e}", exc_info=True)
+            raise
         except Exception as e:
-            # Fails gracefully during initial DB migrations
-            logger.info(f'Warning: SystemConfiguration.get_solo() failed: {e}')
-            return None
+            logger.error(f"SystemConfiguration.get_solo() unexpected failure: {e}", exc_info=True)
+            raise
         
     def __str__(self):
         return "Global System Configuration"
@@ -738,8 +746,7 @@ def track_backend_model_changes(sender, instance, **kwargs):
 @receiver(post_save, sender=SystemConfiguration)
 def manage_hosting_backend(sender, instance, **kwargs):
     """Unload old models, clear VRAM, and manage Docker containers for the backend."""
-    import sys
-    if kwargs.get("raw") or 'test' in sys.argv or 'pytest' in sys.modules:
+    if kwargs.get("raw") or not getattr(settings, "ENABLE_HOSTING_BACKEND_SYNC", True):
         return
 
     old_backend = getattr(instance, '_old_hosting_backend', None)

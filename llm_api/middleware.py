@@ -30,6 +30,7 @@ class BackgroundModelLoaderMiddleware:
         return self.get_response(request)
 
     def _load_services(self):
+        from django.db import connections
         try:
             # Accessing the properties triggers the thread-safe initialization.
             # Accessing rag_service will also trigger ai_service because of dependencies.
@@ -37,4 +38,11 @@ class BackgroundModelLoaderMiddleware:
             _ = service_registry.nlp_service
             logger.info('BackgroundModelLoaderMiddleware: Models loaded successfully in background.')
         except Exception as e:
-            logger.info(f'BackgroundModelLoaderMiddleware: Error loading models: {e}')
+            logger.error(f'BackgroundModelLoaderMiddleware: Error loading models: {e}', exc_info=True)
+        finally:
+            try:
+                for conn in connections.all():
+                    if not conn.in_atomic_block:
+                        conn.close()
+            except Exception:
+                pass

@@ -733,6 +733,7 @@ WorkingDirectory={app_dir}
 {env_directives}
 Environment=VERBAL_ENV=prod
 Environment=VERBAL_ROLE=web
+Environment=REASON_CONSOLE_TEE_ACTIVE=1
 Environment=DJANGO_STATIC_ROOT={static_dir}
 Environment=PYTHONPATH={app_dir}
 Environment=HF_HOME={hf_cache_dir}
@@ -765,6 +766,7 @@ WorkingDirectory={app_dir}
 {env_directives}
 Environment=VERBAL_ENV=prod
 Environment=VERBAL_ROLE=worker
+Environment=REASON_CONSOLE_TEE_ACTIVE=1
 Environment=PYTHONPATH={app_dir}
 Environment=HF_HOME={hf_cache_dir}
 ExecStart=/bin/bash -c 'exec {venv_dir}/bin/python manage.py runtaskworker 2>&1 | tee -a "{log_dir}/reason-worker.log"'
@@ -772,6 +774,7 @@ Restart=on-failure
 RestartSec=5s
 StandardOutput=journal
 StandardError=journal
+LimitNOFILE=65535
 {sandboxing}
 
 [Install]
@@ -795,6 +798,7 @@ WorkingDirectory={app_dir}
 {env_directives}
 Environment=VERBAL_ENV=prod
 Environment=VERBAL_ROLE=scheduler
+Environment=REASON_CONSOLE_TEE_ACTIVE=1
 Environment=PYTHONPATH={app_dir}
 Environment=HF_HOME={hf_cache_dir}
 ExecStart=/bin/bash -c 'exec {venv_dir}/bin/python manage.py runtaskscheduler 2>&1 | tee -a "{log_dir}/reason-scheduler.log"'
@@ -802,6 +806,7 @@ Restart=on-failure
 RestartSec=10s
 StandardOutput=journal
 StandardError=journal
+LimitNOFILE=65535
 {sandboxing}
 
 [Install]
@@ -825,6 +830,7 @@ WorkingDirectory={app_dir}
 {env_directives}
 Environment=VERBAL_ENV=prod
 Environment=VERBAL_ROLE=inference
+Environment=REASON_CONSOLE_TEE_ACTIVE=1
 Environment=PYTHONPATH={app_dir}
 Environment=HF_HOME={hf_cache_dir}
 ExecStart=/bin/bash -c 'exec {venv_dir}/bin/python manage.py runserver --noreload 127.0.0.1:{inference_port} 2>&1 | tee -a "{log_dir}/reason-inference.log"'
@@ -832,6 +838,7 @@ Restart=on-failure
 RestartSec=5s
 StandardOutput=journal
 StandardError=journal
+LimitNOFILE=65535
 {sandboxing}
 
 [Install]
@@ -860,6 +867,7 @@ Restart=on-failure
 RestartSec=5s
 StandardOutput=journal
 StandardError=journal
+LimitNOFILE=65535
 {sandboxing}
 
 [Install]
@@ -1625,7 +1633,7 @@ def backup_database(c):
     dump_args = (
         f"dumpdata "
         f"--natural-foreign --natural-primary "
-        f"-e contenttypes -e auth.Permission "
+        f"-e contenttypes -e auth.Permission -e grobid_client.citationgraphexplorer "
         f"--output {backup_file}"
     )
     res = run_django_as_deploy_user(c, dump_args, warn=True)

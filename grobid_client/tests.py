@@ -393,4 +393,63 @@ class GrobidDocumentProvenanceTests(TestCase):
         self.assertIn("author", updated)
 
 
+class WS43GrobidDeterministicIndependenceTests(TestCase):
+    """
+    Verifies Grobid TEI metadata & citation extraction succeeds without making
+    unnecessary LLM calls when core bibliographic fields are already extracted.
+    """
+
+    @patch("grobid_client.tasks.process_pdf_with_grobid")
+    @patch("grobid_client.tasks.service_registry")
+    def test_extract_grobid_metadata_skips_llm_when_core_fields_present(self, mock_registry, mock_grobid):
+        sample_tei = """<?xml version="1.0" encoding="UTF-8"?>
+        <TEI xmlns="http://www.tei-c.org/ns/1.0">
+            <teiHeader>
+                <fileDesc>
+                    <titleStmt><title>Autonomous Robots in Smoke</title></titleStmt>
+                    <sourceDesc>
+                        <biblStruct>
+                            <analytic>
+                                <title>Autonomous Robots in Smoke</title>
+                                <author><persName><forename>Elena</forename><surname>Talavera</surname></persName></author>
+                            </analytic>
+                            <monogr>
+                                <title>Journal of Field Robotics</title>
+                                <imprint><date when="2023-05-01" /></imprint>
+                            </monogr>
+                            <idno type="DOI">10.1002/rob.22178</idno>
+                        </biblStruct>
+                    </sourceDesc>
+                </fileDesc>
+                <profileDesc><abstract><p>Detailed abstract text.</p></abstract></profileDesc>
+            </teiHeader>
+            <text>
+                <body><div><head>Intro</head><p>See <ref type="bibr" target="#b0">[1]</ref>.</p></div></body>
+                <back>
+                    <listBibl>
+                        <biblStruct xml:id="b0">
+                            <analytic><title>Prior Firefighting Study</title></analytic>
+                            <monogr><imprint><date when="2020" /></imprint></monogr>
+                        </biblStruct>
+                    </listBibl>
+                </back>
+            </text>
+        </TEI>"""
+        mock_grobid.return_value = sample_tei
+        mock_ai = MagicMock()
+        mock_registry.ai_service = mock_ai
+
+        doc = Document.objects.create(
+            title="talavera.pdf",
+            file=SimpleUploadedFile("talavera.pdf", b"%PDF-1.4 dummy"),
+        )
+        # Note: 'publisher' is empty in the TEI XML above (as in most journal articles).
+        # Core fields (title, authors, year) ARE present, so zero LLM calls should fire.
+        res = task_extract_grobid_metadata.func(doc.id)
+        self.assertIn("Grobid extraction complete", res)
+        mock_ai.generate_outline.assert_not_called()
+        self.assertEqual(Citation.objects.filter(source_reference__document=doc).count(), 1)
+
+
+
 

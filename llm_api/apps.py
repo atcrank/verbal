@@ -16,9 +16,17 @@ class LazyServiceRegistry:
         # may access ai_service, requiring the lock to be acquired twice by the same thread.
         self._lock = threading.RLock()
         self._ai_service = None
+        self._initializing_ai_service = None
         self._nlp_service = None
         self._rag_service = None
         self._grips_service = None
+
+    def peek_ai_service(self):
+        """
+        Lock-free inspection of the active or currently-initializing AIService instance.
+        Safe to call from health-check endpoints (/internal/ping/) without stalling on _lock.
+        """
+        return self._ai_service or self._initializing_ai_service
 
     def _should_skip_loading(self):
         if len(sys.argv) > 1:
@@ -29,9 +37,8 @@ class LazyServiceRegistry:
 
     def _sync_hosting_backend_state(self):
         """Reads the system config and ensures the Docker containers and VRAM state match."""
-        import sys
         from django.conf import settings
-        if 'test' in sys.argv or 'pytest' in sys.modules:
+        if not getattr(settings, "ENABLE_HOSTING_BACKEND_SYNC", True):
             return
 
         role = getattr(settings, "VERBAL_ROLE", "standalone")
@@ -69,16 +76,27 @@ class LazyServiceRegistry:
     def ai_service(self):
         if self._should_skip_loading():
             return None
-        
+
         if self._ai_service is None:
             with self._lock:
                 if self._ai_service is None:
-                    self._sync_hosting_backend_state()
-                    logger.info('Initializing AI Service...')
                     from .ai_service import AIService
                     ai_serv = AIService()
-                    ai_serv.load_models()
-                    self._ai_service = ai_serv
+                    ai_serv.load_state = "loading"
+                    self._initializing_ai_service = ai_serv
+                    try:
+                        self._sync_hosting_backend_state()
+                        logger.info('Initializing AI Service...')
+                        ai_serv.load_models()
+                        self._ai_service = ai_serv
+                    except Exception as exc:
+                        ai_serv.load_state = "error"
+                        if not ai_serv.load_error:
+                            ai_serv.load_error = f"{type(exc).__name__}: {exc}"
+                        logger.exception(f"❌ Failed to initialize AI Service: {ai_serv.load_error}")
+                        self._ai_service = ai_serv
+                    finally:
+                        self._initializing_ai_service = None
         return self._ai_service
 
     @property
@@ -172,8 +190,8 @@ class LlmApiConfig(AppConfig):
         if any(cmd in sys.argv for cmd in management_commands_skip):
             return
 
-        # Prevent running twice in dev mode with the auto-reloader
-        if os.environ.get('RUN_MAIN', None) != 'true' and settings.DEBUG:
+        # Prevent running twice in dev mode with the auto-reloader (unless --noreload is passed)
+        if os.environ.get('RUN_MAIN', None) != 'true' and settings.DEBUG and '--noreload' not in sys.argv:
             return
             
         role = getattr(settings, 'VERBAL_ROLE', 'standalone')
@@ -181,12 +199,20 @@ class LlmApiConfig(AppConfig):
             logger.info(f"🚀 Eagerly loading AI models in background thread (Role: {role})...")
             
             def load_models():
+                from django.db import connections
                 try:
                     # Accessing the property triggers the lazy initialization
                     _ = service_registry.ai_service
                     logger.info("✅ Background AI model loading complete.")
                 except Exception as e:
                     logger.exception(f"❌ Failed to eagerly load AI models: {e}")
+                finally:
+                    try:
+                        for conn in connections.all():
+                            if not conn.in_atomic_block:
+                                conn.close()
+                    except Exception:
+                        pass
             
             t = threading.Thread(target=load_models, daemon=True)
             t.start()

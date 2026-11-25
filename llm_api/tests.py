@@ -1650,8 +1650,7 @@ class OfflineRestartResilienceAndDiagnosticsTests(TestCase):
 
         registry = LazyServiceRegistry()
         for client_role in ("web", "worker", "scheduler"):
-            with override_settings(VERBAL_ROLE=client_role), \
-                 patch("sys.argv", ["manage.py", "runserver"]), \
+            with override_settings(VERBAL_ROLE=client_role, ENABLE_HOSTING_BACKEND_SYNC=True), \
                  patch("llm_api.vllm_client.start_container") as mock_vllm_start, \
                  patch("llm_api.ollama_client.stop_container") as mock_ollama_stop:
                 registry._sync_hosting_backend_state()
@@ -2049,8 +2048,8 @@ class WS31TestIsolationAndProxyModelTests(TestCase):
 class WS42BackendCoordinationAndTokenizerTests(TestCase):
     """WS42 unit tests for backend switching VRAM release and inference tokenizer resolution."""
 
+    @override_settings(ENABLE_HOSTING_BACKEND_SYNC=True)
     def test_manage_hosting_backend_unloads_vram_when_switching_to_llamacpp(self):
-        import sys
         from unittest.mock import patch
         from llm_api.models import SystemConfiguration, manage_hosting_backend
 
@@ -2058,13 +2057,14 @@ class WS42BackendCoordinationAndTokenizerTests(TestCase):
         config._old_hosting_backend = "pytorch"
         config.hosting_backend = "llamacpp"
 
-        with patch.object(sys, "argv", ["manage.py", "runserver"]), \
-             patch("requests.post") as mock_post:
+        with patch("requests.post") as mock_post, \
+             patch("llm_api.ollama_client.stop_container"), \
+             patch("llm_api.vllm_client.stop_container"):
             manage_hosting_backend(SystemConfiguration, config)
             mock_post.assert_called_with("http://127.0.0.1:8001/api/llm/internal/unload-vram/", timeout=5)
 
+    @override_settings(ENABLE_HOSTING_BACKEND_SYNC=True)
     def test_manage_hosting_backend_reloads_model_when_switching_to_pytorch(self):
-        import sys
         from unittest.mock import patch
         from llm_api.models import SystemConfiguration, manage_hosting_backend
 
@@ -2072,8 +2072,9 @@ class WS42BackendCoordinationAndTokenizerTests(TestCase):
         config._old_hosting_backend = "llamacpp"
         config.hosting_backend = "pytorch"
 
-        with patch.object(sys, "argv", ["manage.py", "runserver"]), \
-             patch("requests.post") as mock_post:
+        with patch("requests.post") as mock_post, \
+             patch("llm_api.ollama_client.stop_container"), \
+             patch("llm_api.vllm_client.stop_container"):
             manage_hosting_backend(SystemConfiguration, config)
             mock_post.assert_called_with("http://127.0.0.1:8001/api/llm/internal/reload-model/", timeout=10)
 
@@ -2102,4 +2103,243 @@ class WS42BackendCoordinationAndTokenizerTests(TestCase):
         tok_id, allow_remote = service._resolve_tokenizer_source(config)
         self.assertEqual(tok_id, "google/gemma-4-12b-it")
         self.assertFalse(allow_remote)
+
+
+class WS43InferenceStateMachineAndResilienceTests(TestCase):
+    """
+    WS43 tests for lock-free /internal/ping/ under concurrent model loading,
+    honest 'loading' vs 'error' Admin status reporting, SystemConfiguration.get_solo()
+    DB/FD error propagation, and settings-driven signal testing (no sys.argv hacks).
+    """
+
+    def test_internal_ping_non_blocking_during_concurrent_model_load(self):
+        import threading
+        import time
+        from django.test import RequestFactory
+        from llm_api.ai_service import AIService
+        from llm_api.api import internal_ping
+        from llm_api.models import LocalAIModel, SystemConfiguration
+
+        local_model = LocalAIModel.objects.create(
+            name="Gemma 4 12B",
+            hf_model_id="google/gemma-4-12b-it",
+            context_window=8192,
+        )
+        cfg = SystemConfiguration.get_solo()
+        cfg.hosting_backend = "pytorch"
+        cfg.active_local_model = local_model
+        cfg.save()
+
+        fake_ai = AIService()
+        fake_ai.load_state = "loading"
+        fake_ai.loading_model_id = local_model.hf_model_id
+
+        # Hold BOTH service_registry._lock and fake_ai._lock in another thread to prove
+        # internal_ping is genuinely lock-free and never stalls waiting on model load.
+        locks_acquired = threading.Event()
+        release_locks = threading.Event()
+
+        def lock_holder():
+            with service_registry._lock, fake_ai._lock:
+                locks_acquired.set()
+                release_locks.wait(timeout=5.0)
+
+        holder = threading.Thread(target=lock_holder, daemon=True)
+        holder.start()
+        self.assertTrue(locks_acquired.wait(timeout=2.0))
+
+        try:
+            with unittest_patch_attr(service_registry, "_initializing_ai_service", fake_ai), \
+                 unittest_patch_attr(service_registry, "_ai_service", None):
+                rf = RequestFactory()
+                results = []
+
+                def fire_ping():
+                    from django.db import connections
+                    try:
+                        t0 = time.monotonic()
+                        resp = internal_ping(rf.get("/api/llm/internal/ping/"))
+                        elapsed = time.monotonic() - t0
+                        results.append((resp.status_code, json.loads(resp.content), elapsed))
+                    finally:
+                        connections.close_all()
+
+                threads = [threading.Thread(target=fire_ping) for _ in range(12)]
+                for t in threads:
+                    t.start()
+                for t in threads:
+                    t.join(timeout=2.0)
+                    self.assertFalse(t.is_alive(), "internal_ping blocked on model load lock!")
+
+                self.assertEqual(len(results), 12)
+                for status_code, body, elapsed in results:
+                    self.assertEqual(status_code, 200)
+                    self.assertEqual(body.get("status"), "loading")
+                    self.assertTrue(body.get("loading"))
+                    self.assertFalse(body.get("model_loaded"))
+                    self.assertLess(elapsed, 0.5)
+        finally:
+            release_locks.set()
+            holder.join(timeout=2.0)
+
+    @override_settings(ENABLE_LIVE_BACKEND_PING=True)
+    def test_admin_and_diagnostics_distinguish_loading_from_host_unavailable(self):
+        from unittest.mock import MagicMock, patch
+        from django.contrib import admin
+        from django.contrib.messages.storage.fallback import FallbackStorage
+        from django.test import RequestFactory
+        from llm_api.admin import SystemConfigurationAdmin
+        from llm_api.models import LocalAIModel, SystemConfiguration
+        from metacognition.context_processors import clear_primary_backend_health_cache
+
+        local_model = LocalAIModel.objects.create(
+            name="Gemma 4 12B",
+            hf_model_id="google/gemma-4-12b-it",
+            context_window=8192,
+        )
+        cfg = SystemConfiguration.get_solo()
+        cfg.hosting_backend = "pytorch"
+        cfg.active_local_model = local_model
+        cfg.save()
+
+        clear_primary_backend_health_cache()
+        loading_resp = MagicMock(status_code=200)
+        loading_resp.json.return_value = {
+            "status": "loading",
+            "loading": True,
+            "model_loaded": False,
+            "model_name": "Gemma 4 12B",
+        }
+
+        sys_admin = SystemConfigurationAdmin(SystemConfiguration, admin.site)
+        req = RequestFactory().post("/admin/llm_api/systemconfiguration/1/change/")
+        req.user = User.objects.create_superuser("sys_adm", "s@e.com", "pw")
+        req.session = "session"
+        messages_store = FallbackStorage(req)
+        req._messages = messages_store
+
+        with patch("metacognition.context_processors.requests.get", return_value=loading_resp), \
+             patch("llm_api.diagnostics.check_docker_daemon") as mock_docker, \
+             patch("llm_api.diagnostics.check_hf_model_cached") as mock_hf:
+            from llm_api.diagnostics import DockerDaemonStatus, HuggingFaceCacheStatus
+            mock_docker.return_value = DockerDaemonStatus(available=True, detail="ok")
+            mock_hf.return_value = HuggingFaceCacheStatus(
+                model_id=local_model.hf_model_id, cached_on_disk=True, cache_path="/tmp", detail="Cached"
+            )
+            form_mock = MagicMock()
+            sys_admin.save_model(req, cfg, form_mock, change=True)
+            banner_html = str(sys_admin.backend_status_display(cfg))
+
+        emitted_msgs = [m.message for m in messages_store]
+        self.assertFalse(
+            any("unavailable on this host" in m for m in emitted_msgs),
+            f"Unexpected false unavailable warning while loading: {emitted_msgs}",
+        )
+        self.assertNotIn("Active Host Unavailable", banner_html)
+        self.assertIn("Loading", banner_html)
+
+        # Now verify a genuine 503 load_error DOES surface 'Active Host Unavailable'
+        clear_primary_backend_health_cache()
+        if hasattr(cfg, "_cached_availability_summary"):
+            delattr(cfg, "_cached_availability_summary")
+        err_resp = MagicMock(status_code=503)
+        err_resp.json.return_value = {
+            "status": "error",
+            "model_loaded": False,
+            "error": "OutOfMemoryError: CUDA out of memory",
+        }
+        with patch("metacognition.context_processors.requests.get", return_value=err_resp), \
+             patch("llm_api.diagnostics.check_docker_daemon") as mock_docker, \
+             patch("llm_api.diagnostics.check_hf_model_cached") as mock_hf:
+            from llm_api.diagnostics import DockerDaemonStatus, HuggingFaceCacheStatus
+            mock_docker.return_value = DockerDaemonStatus(available=True, detail="ok")
+            mock_hf.return_value = HuggingFaceCacheStatus(
+                model_id=local_model.hf_model_id, cached_on_disk=True, cache_path="/tmp", detail="Cached"
+            )
+            err_banner = str(sys_admin.backend_status_display(cfg))
+
+        self.assertIn("Active Host Unavailable", err_banner)
+        self.assertIn("CUDA out of memory", err_banner)
+
+    def test_get_solo_raises_and_logs_error_on_connection_or_fd_exhaustion(self):
+        from unittest.mock import patch
+        from django.db import OperationalError
+        from llm_api.ai_service import AIService
+        from llm_api.models import SystemConfiguration
+
+        with patch.object(
+            SystemConfiguration.objects,
+            "get_or_create",
+            side_effect=OperationalError("FATAL: sorry, too many clients already"),
+        ):
+            with self.assertLogs("llm_api.models", level="ERROR") as cm:
+                with self.assertRaises(OperationalError):
+                    SystemConfiguration.get_solo()
+            self.assertTrue(any("too many clients already" in line for line in cm.output))
+
+        with patch.object(
+            SystemConfiguration.objects,
+            "get_or_create",
+            side_effect=OSError(24, "Too many open files"),
+        ):
+            with self.assertLogs("llm_api.models", level="ERROR") as cm2:
+                ai = AIService()
+                ai.role = "inference"
+                ai.run_model_load_safely()
+            self.assertEqual(ai.load_state, "error")
+            self.assertIn("Too many open files", ai.load_error or "")
+            self.assertTrue(any("Too many open files" in line for line in cm2.output))
+
+    def test_get_solo_still_returns_none_gracefully_when_table_missing_during_migrate(self):
+        from unittest.mock import patch
+        from django.db import ProgrammingError
+        from llm_api.models import SystemConfiguration
+
+        with patch.object(
+            SystemConfiguration.objects,
+            "get_or_create",
+            side_effect=ProgrammingError('relation "llm_api_systemconfiguration" does not exist'),
+        ):
+            self.assertIsNone(SystemConfiguration.get_solo())
+
+    def test_manage_hosting_backend_signal_runs_via_setting_without_sys_argv_patch(self):
+        from unittest.mock import patch
+        from llm_api.models import LocalAIModel, SystemConfiguration
+
+        m1 = LocalAIModel.objects.create(name="Model A", hf_model_id="org/model-a", context_window=4096)
+        cfg = SystemConfiguration.get_solo()
+        cfg.hosting_backend = "llamacpp"
+        cfg.active_local_model = m1
+        cfg.save()
+
+        with override_settings(ENABLE_HOSTING_BACKEND_SYNC=True), \
+             patch("requests.post") as mock_post, \
+             patch("llm_api.ollama_client.stop_container"), \
+             patch("llm_api.vllm_client.stop_container"):
+            cfg.hosting_backend = "pytorch"
+            cfg.save()
+            mock_post.assert_called_with("http://127.0.0.1:8001/api/llm/internal/reload-model/", timeout=10)
+
+
+class unittest_patch_attr:
+    """Small context manager setting an attribute even if not yet present on the target."""
+    _MISSING = object()
+
+    def __init__(self, target, attr, value):
+        self.target = target
+        self.attr = attr
+        self.value = value
+        self.prev = self._MISSING
+
+    def __enter__(self):
+        self.prev = getattr(self.target, self.attr, self._MISSING)
+        setattr(self.target, self.attr, self.value)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.prev is self._MISSING:
+            delattr(self.target, self.attr)
+        else:
+            setattr(self.target, self.attr, self.prev)
+
 

@@ -15,6 +15,35 @@ from llm_api.models import Conversation
 from django.core.signals import request_finished
 from django.db import close_old_connections
 
+@pytest.fixture(scope="session", autouse=True)
+def isolate_pytest_media_and_runtime_flags():
+    """
+    Isolates MEDIA_ROOT for pytest/doctest runs so fixture uploads do not leak
+    into media/documents/, and sets explicit runtime sync flags instead of sys.argv checks.
+    """
+    import shutil
+    import tempfile
+    from pathlib import Path
+    from django.test.utils import override_settings
+
+    temp_media = tempfile.mkdtemp(prefix="verbal_pytest_media_")
+    temp_backups = tempfile.mkdtemp(prefix="verbal_pytest_backups_")
+    ovr = override_settings(
+        MEDIA_ROOT=Path(temp_media),
+        BACKUP_DIR=Path(temp_backups),
+        ENABLE_HOSTING_BACKEND_SYNC=False,
+        ENABLE_LIVE_BACKEND_PING=False,
+        ENABLE_GRIPS_AUTO_SYNC=False,
+    )
+    ovr.enable()
+    try:
+        yield
+    finally:
+        ovr.disable()
+        shutil.rmtree(temp_media, ignore_errors=True)
+        shutil.rmtree(temp_backups, ignore_errors=True)
+
+
 @pytest.fixture(autouse=True)
 def enable_db_access_for_doctests(transactional_db):
     """

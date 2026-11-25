@@ -2030,6 +2030,42 @@ class TestUbuntu26AndUvStandardization(SimpleTestCase):
         )
 
 
+class TestWS43SystemdAndSettingsGuardrails(SimpleTestCase):
+    """WS43 checks for LimitNOFILE across all units, DB application_name, and VERBAL_ROLE consistency."""
+
+    def test_all_runtime_systemd_units_enforce_limit_nofile(self):
+        units = generate_systemd_units()
+        for unit_name in (
+            "reason-web.service",
+            "reason-worker.service",
+            "reason-scheduler.service",
+            "reason-inference.service",
+            "reason-llamacpp.service",
+        ):
+            with self.subTest(unit=unit_name):
+                self.assertIn("LimitNOFILE=65535", units[unit_name])
+
+    def test_database_options_include_application_name_and_connect_timeout(self):
+        db_opts = settings.DATABASES["default"].get("OPTIONS", {})
+        self.assertIn("application_name", db_opts)
+        self.assertTrue(str(db_opts["application_name"]).startswith("reason-"))
+        self.assertIn("connect_timeout", db_opts)
+
+    def test_settings_verbal_role_not_overwritten_to_web_when_unset(self):
+        settings_src = (Path(settings.BASE_DIR) / "verbal_config" / "settings.py").read_text(encoding="utf-8")
+        self.assertNotIn('VERBAL_ROLE = os.environ.get("VERBAL_ROLE", "web")', settings_src)
+
+    def test_backup_scripts_and_fabric_exclude_unmanaged_models_and_purge_celerystatus(self):
+        backup_sh = (Path(settings.BASE_DIR) / "backup_data.sh").read_text(encoding="utf-8")
+        fabric_src = (Path(settings.BASE_DIR) / "deploy" / "fabric_deploy.py").read_text(encoding="utf-8")
+        self.assertNotIn("celerystatus", backup_sh.lower())
+        self.assertIn("grobid_client.citationgraphexplorer", backup_sh)
+        self.assertIn("media/documents", backup_sh)
+        self.assertIn("grobid_client.citationgraphexplorer", fabric_src)
+
+
+
+
 
 
 

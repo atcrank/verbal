@@ -318,22 +318,44 @@ OUTPUT_TYPES = {
 @csrf_exempt
 def internal_ping(request):
     from django.conf import settings
-    role = getattr(settings, "VERBAL_ROLE", "unknown")
+    from .apps import LazyServiceRegistry
 
-    # If PyTorch hosting backend is configured with an active local model,
-    # report whether the model is loaded in VRAM or encountered a load error.
+    role = getattr(settings, "VERBAL_ROLE", "unknown")
+    is_real_registry = isinstance(service_registry, LazyServiceRegistry)
+    ai = service_registry.peek_ai_service() if is_real_registry else getattr(service_registry, "ai_service", None)
+
+    # Fast-path while loading: zero locks AND zero PostgreSQL queries/connections!
+    if ai is not None and getattr(ai, "load_state", None) == "loading":
+        return JsonResponse({
+            "status": "loading",
+            "role": role,
+            "loading": True,
+            "model_loaded": False,
+            "model_name": getattr(ai, "loading_model_id", None) or getattr(ai, "model_id", None) or "Loading model...",
+        }, status=200)
+
     try:
         from .models import SystemConfiguration
         config = SystemConfiguration.get_solo()
         if config and config.hosting_backend == SystemConfiguration.HostingBackend.PYTORCH and config.active_local_model:
-            ai = service_registry.ai_service
+            load_state = getattr(ai, "load_state", "idle") if ai is not None else "idle"
             model_loaded = (ai is not None and getattr(ai, "model", None) is not None)
-            load_error = getattr(ai, "load_error", None) if ai else None
+            load_error = getattr(ai, "load_error", None) if ai is not None else None
+
+            if load_state == "loading":
+                return JsonResponse({
+                    "status": "loading",
+                    "role": role,
+                    "loading": True,
+                    "model_loaded": False,
+                    "model_name": config.active_local_model.name,
+                }, status=200)
 
             if not model_loaded:
                 return JsonResponse({
                     "status": "error",
                     "role": role,
+                    "loading": False,
                     "model_loaded": False,
                     "model_name": config.active_local_model.name,
                     "error": load_error or "Model not loaded in PyTorch VRAM"
@@ -342,11 +364,18 @@ def internal_ping(request):
             return JsonResponse({
                 "status": "ok",
                 "role": role,
+                "loading": False,
                 "model_loaded": True,
                 "model_name": config.active_local_model.name
             }, status=200)
     except Exception as e:
-        logger.warning(f"Error checking backend status in internal_ping: {e}")
+        logger.error(f"Error checking backend status in internal_ping: {e}", exc_info=True)
+        return JsonResponse({
+            "status": "error",
+            "role": role,
+            "model_loaded": False,
+            "error": f"{type(e).__name__}: {e}",
+        }, status=503)
 
     return JsonResponse({"status": "ok", "role": role})
 
@@ -355,7 +384,13 @@ def internal_ping(request):
 def internal_unload_vram(request):
     """Frees in-process PyTorch VRAM and clears CUDA memory cache."""
     try:
-        service_registry.ai_service.unload_models()
+        from .apps import LazyServiceRegistry
+        if isinstance(service_registry, LazyServiceRegistry):
+            ai = service_registry.peek_ai_service() or service_registry.ai_service
+        else:
+            ai = service_registry.ai_service
+        if ai is not None:
+            ai.unload_models()
         return JsonResponse({"status": "ok", "message": "VRAM cleared"})
     except Exception as e:
         logger.error(f"Error unloading VRAM: {e}")
@@ -366,13 +401,34 @@ def internal_unload_vram(request):
 def internal_reload_model(request):
     """Unloads any active model and reloads according to current SystemConfiguration in a background thread."""
     try:
-        service_registry.ai_service.unload_models()
         import threading
-        t = threading.Thread(target=service_registry.ai_service.load_models, daemon=True)
+        from .apps import LazyServiceRegistry
+        if isinstance(service_registry, LazyServiceRegistry):
+            ai = service_registry.peek_ai_service()
+            if ai is None:
+                from .ai_service import AIService
+                ai = AIService()
+                service_registry._ai_service = ai
+        else:
+            ai = service_registry.ai_service
+
+        # Mark 'loading' synchronously BEFORE returning so immediate follow-up pings
+        # from SystemConfigurationAdmin.save_model() see 'loading' rather than a 503 race.
+        ai.load_state = "loading"
+        ai.load_error = None
+
+        def _reload_worker():
+            ai.unload_models()
+            if hasattr(ai, "run_model_load_safely"):
+                ai.run_model_load_safely()
+            else:
+                ai.load_models()
+
+        t = threading.Thread(target=_reload_worker, daemon=True)
         t.start()
         return JsonResponse({"status": "ok", "message": "Model reload initiated"})
     except Exception as e:
-        logger.error(f"Error reloading model: {e}")
+        logger.exception(f"Error reloading model: {e}")
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
 @router.get("/hardware/", auth=None)

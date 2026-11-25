@@ -664,12 +664,14 @@ class RAGService:
                 soup = BeautifulSoup(document.grobid_metadata.tei_xml, "xml")
                 has_body_content = bool(soup.find("body") and (soup.find("body").find("div") or soup.find("body").find("p")))
                 if any(str(field).strip() for field in meaningful_fields if field is not None) or has_body_content:
-                    # Safely ensure Grobid strategy exists without crashing
+                    # Safely ensure Grobid strategy exists without crashing or double-enqueueing
                     if not GrobidReadingStrategy.objects.filter(document=document, strategy_description="Grobid Semantic Chunking").exists():
-                        GrobidReadingStrategy.objects.create(
+                        g_strat = GrobidReadingStrategy(
                             document=document,
                             strategy_description="Grobid Semantic Chunking"
                         )
+                        g_strat._skip_auto_enqueue = True
+                        g_strat.save()
 
             # Ingest all types of strategies
             self.ingest_queryset_reading_strategies(document.readingstrategy_set.all())
@@ -679,14 +681,16 @@ class RAGService:
             self.ingest_queryset_reading_strategies(document.grobidreadingstrategy_set.all())
 
 
-    def ingest_queryset_reading_strategies(self, queryset=None, force: bool = False):
+    def ingest_queryset_reading_strategies(self, queryset=None, force: bool = False, strict: bool = False):
         """This is to be the top function for ingestion and assumes a queryset of our Django ReadingStrategy models."""
 
         if queryset is None:
             return
 
         for readingstrategy in queryset:
-            if hasattr(readingstrategy, 'apply_strategy'):
+            if isinstance(readingstrategy, GrobidReadingStrategy):
+                readingstrategy.apply_strategy(self, force=force, strict=strict)
+            elif hasattr(readingstrategy, 'apply_strategy'):
                 readingstrategy.apply_strategy(self, force=force)
             else:
                 self.complete_reading(readingstrategy)

@@ -838,19 +838,36 @@ def database_backup(state: dict, params: dict) -> str:
     from django.conf import settings
     import os
     from datetime import datetime
-    
-    backup_dir = os.path.join(settings.BASE_DIR, "backups")
+
+    backup_dir = str(getattr(settings, "BACKUP_DIR", None) or os.path.join(settings.BASE_DIR, "backups"))
     os.makedirs(backup_dir, exist_ok=True)
-    
+
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     backup_path = os.path.join(backup_dir, f"db_backup_{timestamp}.json")
-    
+    tmp_path = f"{backup_path}.tmp"
+
     try:
-        # We exclude contenttypes and auth.Permission to avoid restore conflicts
-        with open(backup_path, "w") as f:
-            call_command("dumpdata", exclude=["contenttypes", "auth.permission"], stdout=f)
+        # Exclude contenttypes, auth.permission, and unmanaged admin-only CitationGraphExplorer
+        with open(tmp_path, "w", encoding="utf-8") as f:
+            call_command(
+                "dumpdata",
+                natural_foreign=True,
+                natural_primary=True,
+                exclude=[
+                    "contenttypes",
+                    "auth.permission",
+                    "grobid_client.citationgraphexplorer",
+                ],
+                stdout=f,
+            )
+        os.replace(tmp_path, backup_path)
         return f"Database backup successfully saved to {backup_path}"
     except Exception as e:
+        if os.path.exists(tmp_path):
+            try:
+                os.remove(tmp_path)
+            except OSError:
+                pass
         return f"Database backup failed: {e}"
 
 def discover_django_models(state: dict, params: dict) -> str:

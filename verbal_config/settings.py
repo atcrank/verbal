@@ -169,6 +169,10 @@ DATABASES = {
         "PORT": os.environ.get("DB_PORT", "5433"),
         "CONN_MAX_AGE": int(os.environ.get("DB_CONN_MAX_AGE", "0")),
         "CONN_HEALTH_CHECKS": True,
+        "OPTIONS": {
+            "application_name": f"reason-{VERBAL_ROLE}",
+            "connect_timeout": int(os.environ.get("DB_CONNECT_TIMEOUT", "5")),
+        },
     }
 }
 
@@ -311,7 +315,11 @@ else:
     ALLOW_AGENT_SELF_MODIFICATION = VERBAL_LOCKDOWN_LEVEL in ("DEVELOPMENT",)
 
 REASON_LOG_DIR = os.environ.get("REASON_LOG_DIR", "/srv/reason/logs")
-VERBAL_ROLE = os.environ.get("VERBAL_ROLE", "web")
+
+# Explicit runtime orchestration & health-probe flags (replaces un-testable 'test' in sys.argv checks)
+ENABLE_HOSTING_BACKEND_SYNC = os.environ.get("ENABLE_HOSTING_BACKEND_SYNC", "true").lower() in ("true", "1", "yes")
+ENABLE_LIVE_BACKEND_PING = os.environ.get("ENABLE_LIVE_BACKEND_PING", "true").lower() in ("true", "1", "yes")
+ENABLE_GRIPS_AUTO_SYNC = os.environ.get("ENABLE_GRIPS_AUTO_SYNC", "true").lower() in ("true", "1", "yes")
 
 _active_handlers = ["console"]
 _handlers_config = {
@@ -321,8 +329,10 @@ _handlers_config = {
     },
 }
 
-# Attach RotatingFileHandler if log directory exists and is writable
-if os.path.isdir(REASON_LOG_DIR) and os.access(REASON_LOG_DIR, os.W_OK):
+# Attach RotatingFileHandler only when systemd/bash is NOT already tee-piping stdout/stderr
+# to reason-{VERBAL_ROLE}.log (avoids duplicate lines and inode rotation conflicts).
+_console_tee_active = os.environ.get("REASON_CONSOLE_TEE_ACTIVE", "").lower() in ("1", "true", "yes")
+if not _console_tee_active and os.path.isdir(REASON_LOG_DIR) and os.access(REASON_LOG_DIR, os.W_OK):
     _log_filename = f"reason-{VERBAL_ROLE}.log"
     _log_filepath = os.path.join(REASON_LOG_DIR, _log_filename)
     _handlers_config["file"] = {

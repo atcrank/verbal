@@ -522,6 +522,12 @@ class SystemConfigurationAdmin(admin.ModelAdmin):
                     obj.active_local_model.name,
                     obj.active_local_model.hf_model_id,
                 )
+            elif getattr(summary, "pytorch_loading", False):
+                primary_badge = format_html(
+                    '<span style="color: #38bdf8; font-weight: bold;">⏳ Loading into VRAM:</span> {} (<code style="color: #a5f3fc;">{}</code>)',
+                    obj.active_local_model.name,
+                    obj.active_local_model.hf_model_id,
+                )
             else:
                 err = _PRIMARY_HEALTH_CACHE.get("pytorch_error")
                 err_text = err[1] if err else "Inference service unreachable or unstarted"
