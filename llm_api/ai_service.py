@@ -152,6 +152,9 @@ class AIService:
     inference_url = getattr(settings, "INFERENCE_URL", "http://127.0.0.1:8001/api/llm")
     model_id = None
     model = None
+    load_state = "idle"
+    loading_model_id = None
+    load_started_at = None
     load_error = None
     classifier = None
     outline_pipeline = None
@@ -161,6 +164,43 @@ class AIService:
     default_outline_response = DefaultOutlineResponse
     _generator_cache = {}
     _lock = threading.RLock()  # "Reentrant thread lock"
+
+    def __init__(self):
+        self._lock = threading.RLock()
+        self._generator_cache = {}
+        self.load_state = "idle"
+        self.loading_model_id = None
+        self.load_started_at = None
+        self.load_error = None
+
+    def run_model_load_safely(self):
+        """
+        Thread-safe model loader wrapper used by startup and reload background threads.
+        Tracks explicit load_state ('loading' -> 'loaded'|'idle'|'error'), logs exceptions,
+        and closes thread-local database connections on exit.
+        """
+        from django.db import connections
+        self.load_state = "loading"
+        self.load_started_at = time.monotonic()
+        self.load_error = None
+        with self._lock:
+            try:
+                self.load_models()
+            except Exception as exc:
+                self.load_state = "error"
+                if not self.load_error:
+                    self.load_error = f"{type(exc).__name__}: {exc}"
+                self.model = None
+                self.outline_pipeline = None
+                logger.exception(f"❌ Background AI model load failed: {self.load_error}")
+            finally:
+                self.loading_model_id = None
+                try:
+                    for conn in connections.all():
+                        if not conn.in_atomic_block:
+                            conn.close()
+                except Exception:
+                    pass
 
 
 
@@ -205,7 +245,11 @@ class AIService:
         return "google/gemma-4-E2B-it", False
 
     def load_models(self):
-        from .diagnostics import load_hf_with_cache_first
+        from .diagnostics import check_hf_model_cached, load_hf_with_cache_first
+
+        self.load_state = "loading"
+        self.load_started_at = time.monotonic()
+        self.load_error = None
 
         token = os.getenv("HF_TOKEN")
         self.model_id = None
@@ -226,9 +270,13 @@ class AIService:
                     logger.info('📂 System Config: llama.cpp is enabled. Bypassing PyTorch load.')
                 elif config.hosting_backend == 'pytorch' and config.active_local_model:
                     self.model_id = config.active_local_model.hf_model_id
+                    self.loading_model_id = self.model_id
                     logger.info(f'📂 System Config requests PyTorch load for: {self.model_id}')
         except Exception as e:
-            logger.info(f'Warning: Could not fetch SystemConfiguration from DB: {e}')
+            self.load_state = "error"
+            self.load_error = f"{type(e).__name__}: {e}"
+            logger.error(f"❌ Failed to read SystemConfiguration during model load: {self.load_error}", exc_info=True)
+            raise
 
         tokenizer_id, allow_remote_tok = self._resolve_tokenizer_source(config)
         if tokenizer_id is None:
@@ -257,7 +305,9 @@ class AIService:
 
         if self.role in ("web", "worker", "scheduler"):
             logger.info(f'💻 Running in proxy mode (Role: {self.role}). Tokenizer step complete, bypassing heavy LLM load.')
-            
+            self.load_state = "idle"
+            self.loading_model_id = None
+
             # Verify HTTP connection
             try:
                 ping_url = f"{self.inference_url.rstrip('/')}/internal/ping/"
@@ -270,20 +320,18 @@ class AIService:
 
         if not self.model_id:
             logger.info('🛑 No Local AI Model selected in System Configuration. Bypassing PyTorch to save VRAM.')
+            self.load_state = "idle"
+            self.loading_model_id = None
             return
 
         logger.info(f'Loading AI model {self.model_id} into memory...')
+        self.loading_model_id = self.model_id
 
         quant_mode = "nf4"
         compute_dtype_pref = "auto"
-        try:
-            from .models import SystemConfiguration
-            config = SystemConfiguration.get_solo()
-            if config and config.active_local_model:
-                quant_mode = getattr(config.active_local_model, 'quantization_mode', 'nf4')
-                compute_dtype_pref = getattr(config.active_local_model, 'compute_dtype', 'auto')
-        except Exception:
-            pass
+        if config and config.active_local_model:
+            quant_mode = getattr(config.active_local_model, 'quantization_mode', 'nf4')
+            compute_dtype_pref = getattr(config.active_local_model, 'compute_dtype', 'auto')
 
         # Determine compute dtype
         compute_dtype = torch.float16
@@ -339,6 +387,7 @@ class AIService:
             load_kwargs["torch_dtype"] = torch_dtype
 
         self.load_error = None
+        cache_status = check_hf_model_cached(self.model_id)
         try:
             # First attempt loading with local_files_only=True to prevent uncommanded Artifactory / Hugging Face queries
             # (which causes 404 errors on adapter_config.json on mirrors).
@@ -351,6 +400,17 @@ class AIService:
             )
             logger.info(f"✅ Loaded '{self.model_id}' from local cache.")
         except Exception as local_err:
+            if cache_status.cached_on_disk:
+                # Model weights ARE cached locally, so local_err is a genuine load error
+                # (e.g. CUDA OOM, quantization/dtype mismatch, missing library)—never mask
+                # it with a doomed remote Hub download attempt in offline/restricted hosts!
+                self.load_state = "error"
+                self.loading_model_id = None
+                self.load_error = f"{type(local_err).__name__}: {str(local_err)}"
+                logger.exception(f"❌ Failed to load cached PyTorch model '{self.model_id}': {self.load_error}")
+                self.model = None
+                self.outline_pipeline = None
+                raise
             logger.info(f"Local cache load for '{self.model_id}' failed ({local_err}); attempting remote/mirror fetch...")
             try:
                 self.model = AutoModelForCausalLM.from_pretrained(
@@ -358,6 +418,8 @@ class AIService:
                     **load_kwargs
                 )
             except Exception as remote_err:
+                self.load_state = "error"
+                self.loading_model_id = None
                 self.load_error = f"{type(remote_err).__name__}: {str(remote_err)}"
                 logger.exception(f"❌ Failed to load PyTorch model '{self.model_id}': {self.load_error}")
                 self.model = None
@@ -390,12 +452,16 @@ class AIService:
             logger.warning(f"No tokenizer loaded for model '{self.model_id}'; Outline wrapper and terminator registration deferred.")
             self.terminators = []
 
+        self.load_state = "loaded"
+        self.loading_model_id = None
         logger.info('✅ AI models loaded successfully.')
 
     def unload_models(self):
         """Frees VRAM for model switching."""
         logger.info('🗑️ Unloading AI models...')
         self.load_error = None
+        self.load_state = "idle"
+        self.loading_model_id = None
         if hasattr(self, 'model') and self.model is not None:
             del self.model
         if hasattr(self, 'outline_pipeline') and self.outline_pipeline is not None:

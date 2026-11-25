@@ -1170,18 +1170,33 @@ class GrobidReadingStrategyUnitTests(TestCase):
         self.assertEqual(GrobidReadingStrategyInline.fields, ('strategy_description',))
         self.assertEqual(GrobidReadingStrategyInline.extra, 0)
 
-    @patch("llm_api.apps.service_registry")
-    def test_grobid_reading_strategy_save_triggers_apply_strategy(self, mock_registry):
-        mock_rag = MagicMock()
-        mock_registry.rag_service = mock_rag
-
+    @override_settings(
+        TASKS={
+            "default": {
+                "BACKEND": "verbal_tasks.task_backend.DatabaseTaskBackend",
+                "QUEUES": ["default"],
+            }
+        }
+    )
+    def test_grobid_reading_strategy_save_enqueues_task_on_commit(self):
+        from verbal_tasks.models import TaskRecord
         doc = Document.objects.create(
             title="Sample PDF",
             file=SimpleUploadedFile("sample.pdf", b"%PDF-1.4 dummy")
         )
-        with patch.object(GrobidReadingStrategy, "apply_strategy") as mock_apply:
+        before_count = TaskRecord.objects.filter(
+            task_path__icontains="task_process_grobid_reading_strategies"
+        ).count()
+        with self.captureOnCommitCallbacks(execute=True) as callbacks:
             strat = GrobidReadingStrategy.objects.create(document=doc)
-            mock_apply.assert_called_once()
+
+        self.assertGreaterEqual(len(callbacks), 1)
+        after_qs = TaskRecord.objects.filter(
+            task_path__icontains="task_process_grobid_reading_strategies"
+        )
+        self.assertEqual(after_qs.count(), before_count + 1)
+        latest_rec = after_qs.latest("enqueued_at")
+        self.assertEqual(latest_rec.args_json, [[str(strat.id)]])
 
     @patch("grobid_client.api.is_grobid_available", return_value=True)
     @patch("grobid_client.tasks.task_extract_grobid_metadata")
@@ -1235,6 +1250,318 @@ class GrobidReadingStrategyUnitTests(TestCase):
         )
         chunks, chunk_ids = service.convert_chunk_store_document_grobid(doc, force=True)
         self.assertGreaterEqual(len(chunk_ids), 1)
+
+
+class WS43DocumentAdminAndGrobidExecutionTests(TestCase):
+    """
+    High-validity end-to-end tests exercising real Django Admin HTTP POST formset
+    submissions, worker task execution, honest failure reporting, and file-handle hygiene.
+    """
+
+    def setUp(self):
+        from django.contrib.auth.models import User
+        self.admin_user = User.objects.create_superuser(
+            username="ws43_admin",
+            email="ws43@example.com",
+            password="testpassword123",
+        )
+        self.client.force_login(self.admin_user)
+
+    def _build_document_admin_post_data(self, doc, extra_inlines=None):
+        """Constructs authentic management-form POST data for all 5 DocumentAdmin inlines."""
+        from django.contrib import admin
+        from django.test import RequestFactory
+        from background_resources.admin import DocumentAdmin
+
+        req = RequestFactory().get("/")
+        req.user = self.admin_user
+        doc_admin = DocumentAdmin(Document, admin.site)
+        data = {
+            "title": doc.title,
+            "document_type": doc.document_type,
+            "author": doc.author or "",
+            "organization": doc.organization or "",
+            "publication_year": doc.publication_year or "",
+            "publication_date": "",
+            "doi": doc.doi or "",
+            "citation_text": doc.citation_text or "",
+            "source_url": doc.source_url or "",
+            "chunk_size": str(doc.chunk_size),
+            "chunk_overlap": str(doc.chunk_overlap),
+            "_save": "Save",
+        }
+
+        for inline in doc_admin.get_inline_instances(req, doc):
+            formset_cls = inline.get_formset(req, doc)
+            prefix = formset_cls.get_default_prefix()
+            qs = inline.get_queryset(req).filter(document=doc)
+            existing = list(qs)
+            added_rows = (extra_inlines or {}).get(prefix, [])
+            data[f"{prefix}-TOTAL_FORMS"] = str(len(existing) + len(added_rows))
+            data[f"{prefix}-INITIAL_FORMS"] = str(len(existing))
+            data[f"{prefix}-MIN_NUM_FORMS"] = "0"
+            data[f"{prefix}-MAX_NUM_FORMS"] = "1000"
+
+            for idx, obj in enumerate(existing):
+                data[f"{prefix}-{idx}-id"] = str(obj.pk)
+                data[f"{prefix}-{idx}-document"] = str(doc.pk)
+                for field_name in inline.fields:
+                    if field_name == "document":
+                        continue
+                    val = getattr(obj, field_name, "")
+                    data[f"{prefix}-{idx}-{field_name}"] = "" if val is None else str(val)
+
+            for offset, row_dict in enumerate(added_rows):
+                form_idx = len(existing) + offset
+                data[f"{prefix}-{form_idx}-id"] = ""
+                data[f"{prefix}-{form_idx}-document"] = str(doc.pk)
+                for k, v in row_dict.items():
+                    data[f"{prefix}-{form_idx}-{k}"] = v
+
+        return data
+
+    @override_settings(
+        TASKS={
+            "default": {
+                "BACKEND": "verbal_tasks.task_backend.DatabaseTaskBackend",
+                "QUEUES": ["default"],
+            }
+        }
+    )
+    def test_document_admin_post_without_adding_grobid_inline_creates_zero_rows(self):
+        from django.urls import reverse
+        from verbal_tasks.models import TaskRecord
+        doc = Document.objects.create(
+            title="Untouched Inline PDF",
+            file=SimpleUploadedFile("untouched.pdf", b"%PDF-1.4 dummy"),
+        )
+        before_tasks = TaskRecord.objects.filter(
+            task_path__icontains="task_process_grobid_reading_strategies"
+        ).count()
+        post_data = self._build_document_admin_post_data(doc)
+        url = reverse("admin:background_resources_document_change", args=[doc.id])
+        with self.captureOnCommitCallbacks(execute=True):
+            resp = self.client.post(url, post_data)
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(GrobidReadingStrategy.objects.filter(document=doc).count(), 0)
+        after_tasks = TaskRecord.objects.filter(
+            task_path__icontains="task_process_grobid_reading_strategies"
+        ).count()
+        self.assertEqual(after_tasks, before_tasks)
+
+    @override_settings(
+        TASKS={
+            "default": {
+                "BACKEND": "verbal_tasks.task_backend.DatabaseTaskBackend",
+                "QUEUES": ["default"],
+            }
+        }
+    )
+    def test_document_admin_post_adds_default_grobid_inline_row(self):
+        """
+        Regression test for GrobidReadingStrategyInline: clicking 'Add another' and saving
+        without modifying the default 'Grobid Semantic Chunking' value MUST persist the row.
+        """
+        from django.urls import reverse
+        from verbal_tasks.models import TaskRecord
+        doc = Document.objects.create(
+            title="Default Inline PDF",
+            file=SimpleUploadedFile("default_inline.pdf", b"%PDF-1.4 dummy"),
+        )
+        before_tasks = TaskRecord.objects.filter(
+            task_path__icontains="task_process_grobid_reading_strategies"
+        ).count()
+        post_data = self._build_document_admin_post_data(
+            doc,
+            extra_inlines={
+                "grobidreadingstrategy_set": [
+                    {"strategy_description": "Grobid Semantic Chunking"}
+                ]
+            },
+        )
+        url = reverse("admin:background_resources_document_change", args=[doc.id])
+        with self.captureOnCommitCallbacks(execute=True):
+            resp = self.client.post(url, post_data)
+
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(GrobidReadingStrategy.objects.filter(document=doc).count(), 1)
+        strat = GrobidReadingStrategy.objects.get(document=doc)
+        self.assertEqual(strat.strategy_description, "Grobid Semantic Chunking")
+        after_qs = TaskRecord.objects.filter(
+            task_path__icontains="task_process_grobid_reading_strategies"
+        )
+        self.assertEqual(after_qs.count(), before_tasks + 1)
+        self.assertEqual(after_qs.latest("enqueued_at").args_json, [[str(strat.id)]])
+
+    @override_settings(
+        TASKS={
+            "default": {
+                "BACKEND": "verbal_tasks.task_backend.DatabaseTaskBackend",
+                "QUEUES": ["default"],
+            }
+        }
+    )
+    def test_document_admin_all_five_strategy_inlines_submit_cleanly(self):
+        """All 5 DocumentAdmin inlines must exclude redundant 'document' field and save via POST."""
+        from django.urls import reverse
+        from background_resources.admin import (
+            ReadingStrategyInline,
+            GrobidReadingStrategyInline,
+            RegexStrategyInline,
+            PromptStrategyInline,
+            AbbreviationStrategyInline,
+        )
+
+        for inline_cls in (
+            ReadingStrategyInline,
+            GrobidReadingStrategyInline,
+            RegexStrategyInline,
+            PromptStrategyInline,
+            AbbreviationStrategyInline,
+        ):
+            self.assertNotIn("document", inline_cls.fields)
+        self.assertEqual(PromptStrategyInline.Meta.model, PromptStrategy)
+
+        doc = Document.objects.create(
+            title="Multi Inline PDF",
+            file=SimpleUploadedFile("multi_inline.pdf", b"%PDF-1.4 dummy"),
+        )
+        post_data = self._build_document_admin_post_data(
+            doc,
+            extra_inlines={
+                "readingstrategy_set": [
+                    {
+                        "strategy_description": "Small Blocks",
+                        "chunk_size_override": "400",
+                        "chunk_overlap_override": "40",
+                    }
+                ],
+                "grobidreadingstrategy_set": [
+                    {"strategy_description": "Grobid Semantic Chunking"}
+                ],
+                "regexstrategy_set": [
+                    {
+                        "regex": r"(.+?):\s*(.+)",
+                        "strategy_description": "Colon Glossary",
+                        "strategy_details": "Key: Value",
+                    }
+                ],
+                "promptstrategy_set": [
+                    {
+                        "strategy_description": "Summary Prompt",
+                        "prompt": "Summarize key experimental findings.",
+                    }
+                ],
+                "abbreviationsreadingstrategy_set": [
+                    {"strategy_description": "Acronym Extractor"}
+                ],
+            },
+        )
+        url = reverse("admin:background_resources_document_change", args=[doc.id])
+        resp = self.client.post(url, post_data)
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(
+            ReadingStrategy.objects.filter(document=doc, strategy_description="Small Blocks").exists()
+        )
+        self.assertEqual(GrobidReadingStrategy.objects.filter(document=doc).count(), 1)
+        self.assertEqual(RegexStrategy.objects.filter(document=doc).count(), 1)
+        self.assertEqual(PromptStrategy.objects.filter(document=doc).count(), 1)
+        self.assertEqual(AbbreviationsReadingStrategy.objects.filter(document=doc).count(), 1)
+
+    @override_settings(
+        TASKS={
+            "default": {
+                "BACKEND": "verbal_tasks.task_backend.DatabaseTaskBackend",
+                "QUEUES": ["default"],
+            }
+        }
+    )
+    def test_grobid_reading_action_executes_via_worker_and_creates_chunks(self):
+        from django.core.management import call_command
+        from django.contrib.messages.storage.fallback import FallbackStorage
+        from django.test import RequestFactory
+        from background_resources.admin import process_grobid_reading, GrobidReadingStrategyAdmin
+        from django.contrib import admin
+        from grobid_client.models import Reference
+        from verbal_tasks.models import TaskRecord, TaskRecordStatus
+
+        doc = Document.objects.create(
+            title="Worker Grobid Doc",
+            file=SimpleUploadedFile("worker_grobid.pdf", b"%PDF-1.4 dummy"),
+        )
+        Reference.objects.create(
+            document=doc,
+            title="Worker Grobid Paper",
+            authors="E. Talavera",
+            year="2023",
+            tei_xml=(
+                "<TEI><text><body><div><head>Introduction</head>"
+                "<p>Autonomous robotic platforms improve firefighter safety in low-visibility indoor smoke conditions.</p>"
+                "</div></body></text></TEI>"
+            ),
+        )
+        strat = GrobidReadingStrategy(document=doc)
+        strat._skip_auto_enqueue = True
+        strat.save()
+
+        req = RequestFactory().post("/")
+        req.session = "session"
+        req._messages = FallbackStorage(req)
+        strat_admin = GrobidReadingStrategyAdmin(GrobidReadingStrategy, admin.site)
+        process_grobid_reading(strat_admin, req, GrobidReadingStrategy.objects.filter(id=strat.id))
+
+        call_command("runtaskworker", "--burst")
+
+        rec = TaskRecord.objects.filter(task_path__icontains="task_process_grobid_reading_strategies").latest("enqueued_at")
+        self.assertEqual(rec.status, TaskRecordStatus.SUCCESSFUL)
+        self.assertGreater(strat.usages.count(), 0)
+        self.assertGreater(RAGChunk.objects.filter(usages__object_id=strat.id).count(), 0)
+
+    @override_settings(
+        TASKS={
+            "default": {
+                "BACKEND": "verbal_tasks.task_backend.DatabaseTaskBackend",
+                "QUEUES": ["default"],
+            }
+        }
+    )
+    @patch("grobid_client.api.is_grobid_available", return_value=False)
+    def test_grobid_reading_task_fails_honestly_when_grobid_offline_and_no_tei(self, mock_avail):
+        """
+        When Grobid is offline and no cached TEI XML exists, executing the Grobid strategy
+        task MUST record TaskRecordStatus.FAILED (never silent SUCCESSFUL with 0 chunks).
+        """
+        from django.core.management import call_command
+        from background_resources.tasks import task_process_grobid_reading_strategies
+        from verbal_tasks.models import TaskRecord, TaskRecordStatus
+
+        doc = Document.objects.create(
+            title="Missing TEI Offline Doc",
+            file=SimpleUploadedFile("offline_missing.pdf", b"%PDF-1.4 dummy"),
+        )
+        strat = GrobidReadingStrategy(document=doc)
+        strat._skip_auto_enqueue = True
+        strat.save()
+
+        task_process_grobid_reading_strategies.enqueue([str(strat.id)])
+        call_command("runtaskworker", "--burst")
+
+        rec = TaskRecord.objects.filter(task_path__icontains="task_process_grobid_reading_strategies").latest("enqueued_at")
+        self.assertEqual(rec.status, TaskRecordStatus.FAILED)
+        self.assertIn("Grobid", rec.error_traceback)
+
+    def test_document_save_closes_file_descriptor_and_skips_rehash_on_metadata_update(self):
+        doc = Document.objects.create(
+            title="FD Check Doc",
+            file=SimpleUploadedFile("fd_check.pdf", b"%PDF-1.4 some content to hash"),
+        )
+        self.assertTrue(doc.file.closed)
+
+        with patch.object(doc.file, "open", wraps=doc.file.open) as spy_open:
+            doc.title = "Updated Curated Title"
+            doc.save(update_fields=["title"])
+            spy_open.assert_not_called()
+
 
 
 

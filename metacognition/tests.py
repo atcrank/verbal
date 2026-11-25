@@ -641,25 +641,20 @@ CognitiveBlueprint.objects.all().delete()
             self.assertTrue(CognitiveBlueprint.objects.filter(name="NM Managed Blueprint").exists())
 
 
-    @patch('django.core.management.call_command')
-    def test_database_backup(self, mock_call_command):
+    def test_database_backup(self):
+        """Executes real unmocked dumpdata via database_backup into isolated BACKUP_DIR."""
         from metacognition.meta_tools import database_backup
         import os
         from django.conf import settings
-        
-        # mock call_command to just create the file
-        def side_effect(cmd, *args, **kwargs):
-            if "stdout" in kwargs:
-                kwargs["stdout"].write("[]")
-        mock_call_command.side_effect = side_effect
 
         result = database_backup({}, {})
         self.assertIn("Database backup successfully saved", result)
-        
-        # Check file exists
-        backup_dir = os.path.join(settings.BASE_DIR, "backups")
-        files = os.listdir(backup_dir)
-        self.assertTrue(any(f.startswith("db_backup_") and f.endswith(".json") for f in files))
+
+        backup_dir = str(getattr(settings, "BACKUP_DIR", None) or os.path.join(settings.BASE_DIR, "backups"))
+        files = [f for f in os.listdir(backup_dir) if f.startswith("db_backup_") and f.endswith(".json")]
+        self.assertGreaterEqual(len(files), 1)
+        latest = os.path.join(backup_dir, sorted(files)[-1])
+        self.assertGreater(os.path.getsize(latest), 2)
 
     def test_clone_and_modify_blueprint(self):
         """Verifies deep copying and edge rewiring of blueprints and steps."""

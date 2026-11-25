@@ -138,33 +138,48 @@ class Document(models.Model):
         return self.currently_indexed
 
     def save(self, *args, **kwargs):
-        """Calculates the SHA256 hash of the uploaded file."""
+        """Calculates the SHA256 hash of the uploaded file while closing file handles cleanly."""
         if not bool(self.file):
+            super().save(*args, **kwargs)
+            return
+
+        update_fields = kwargs.get("update_fields")
+        if update_fields is not None and "file" not in update_fields and self.indexed_hash:
             super().save(*args, **kwargs)
             return
 
         updated_file = False
         hasher = hashlib.sha256()
-        f = self.file.open('rb')
-        f.seek(0)
-        for chunk in iter(lambda: f.read(4096), b""):
-            hasher.update(chunk)
-        if self.indexed_hash != hasher.hexdigest():
-            # File content has changed. Recalculating hash
-            self.indexed_hash = hasher.hexdigest()
-            updated_file = True
+        try:
+            f = self.file.open("rb")
+            f.seek(0)
+            for chunk in iter(lambda: f.read(65536), b""):
+                hasher.update(chunk)
+            f.seek(0)
+            if self.indexed_hash != hasher.hexdigest():
+                # File content has changed. Recalculating hash
+                self.indexed_hash = hasher.hexdigest()
+                updated_file = True
 
-        self.metadata["indexed_hash"] = self.indexed_hash
-        self.metadata["filename"] = self.file.name
-        
-        if updated_file:
-            self.currently_indexed = False
-        elif 'currently_indexed' in (kwargs.get('update_fields') or []) and self.currently_indexed:
-            pass
-        elif self.metadata.get("chunking_scheme", "") != self.chunking_scheme():
-            self.currently_indexed = False
+            if self.metadata is None:
+                self.metadata = {}
+            self.metadata["indexed_hash"] = self.indexed_hash
+            self.metadata["filename"] = self.file.name
 
-        super().save(*args, **kwargs)
+            if updated_file:
+                self.currently_indexed = False
+            elif "currently_indexed" in (update_fields or []) and self.currently_indexed:
+                pass
+            elif self.metadata.get("chunking_scheme", "") != self.chunking_scheme():
+                self.currently_indexed = False
+
+            super().save(*args, **kwargs)
+        finally:
+            try:
+                if self.file and not self.file.closed:
+                    self.file.close()
+            except Exception:
+                pass
 
 
 @receiver(pre_delete, sender=Document)
@@ -443,12 +458,20 @@ class GrobidReadingStrategy(models.Model):
     def __str__(self):
         return f"{self.document.title} - {self.strategy_description}"
 
-    def read_document(self, rag_service_inject, force=False):
+    def read_document(self, rag_service_inject, force=False, strict=False):
         try:
             chunks, chunk_ids = rag_service_inject.convert_chunk_store_document_grobid(self.document, force=force)
         except ValueError as e:
+            if strict:
+                raise
             logger.warning(f"GrobidReadingStrategy skipped for '{self.document.title}': {e}")
             return
+
+        if strict and not chunk_ids:
+            raise ValueError(
+                f"Grobid Semantic Strategy produced 0 chunks for '{self.document.title}'. "
+                "Ensure the PDF contains structured text and valid Grobid TEI XML."
+            )
         
         if not chunks and chunk_ids:
             chunks = rag_service_inject.store.mget(chunk_ids)
@@ -479,21 +502,27 @@ class GrobidReadingStrategy(models.Model):
     def get_chunk_ids(self):
         return self.usages.values_list('chunk__chunk_id', flat=True)
 
-    def apply_strategy(self, rag_service, force=False, source_chunks=None):
+    def apply_strategy(self, rag_service, force=False, source_chunks=None, strict=False):
         if force or self.usages.count() == 0:
-            self.read_document(rag_service_inject=rag_service, force=force)
+            self.read_document(rag_service_inject=rag_service, force=force, strict=strict)
         return
 
     def save(self, *args, **kwargs):
+        from django.db import transaction
         is_new = self._state.adding
+        skip_enqueue = getattr(self, "_skip_auto_enqueue", False)
         super().save(*args, **kwargs)
-        if is_new and self.usages.count() == 0:
-            try:
-                from llm_api.apps import service_registry
-                if hasattr(service_registry, 'rag_service') and service_registry.rag_service:
-                    self.apply_strategy(rag_service=service_registry.rag_service)
-            except Exception as e:
-                logger.warning(f"Could not automatically apply GrobidReadingStrategy on save: {e}")
+        if is_new and not skip_enqueue:
+            strat_id = str(self.id)
+
+            def _enqueue_grobid_strategy():
+                try:
+                    from background_resources.tasks import task_process_grobid_reading_strategies
+                    task_process_grobid_reading_strategies.enqueue([strat_id])
+                except Exception as e:
+                    logger.error(f"Could not enqueue GrobidReadingStrategy[{strat_id}] on commit: {e}", exc_info=True)
+
+            transaction.on_commit(_enqueue_grobid_strategy)
 
     def extract_content(self, chunk, rag_service):
         return []

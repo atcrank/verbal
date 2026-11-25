@@ -402,35 +402,41 @@ def task_extract_grobid_metadata(document_id: int):
         return f"Grobid processing error: {e}"
     
     soup = BeautifulSoup(tei_xml, "xml")
-    ai_service = service_registry.ai_service
-    
+
     # Step 1: Deterministic extraction from Grobid TEI XML
     meta = _extract_grobid_deterministic(soup)
 
-    # Step 2: Heuristic extraction & LLM Evaluation
-    missing_fields = [k for k, v in meta.items() if not v]
-    if missing_fields:
-        candidates = _extract_grobid_heuristics(soup)
-        if any(candidates.values()):
-            eval_results = _evaluate_candidates_with_llm(candidates, ai_service)
-            for k, v in eval_results.items():
-                if v and not meta.get(k):
-                    meta[k] = v
-                    
-    # Step 3: LLM Full Document Fallback
-    missing_fields = [k for k, v in meta.items() if not v]
-    if missing_fields:
-        tei_header = soup.find("teiHeader")
-        front_text = tei_header.get_text(separator="\n", strip=True) if tei_header else ""
-        if len(front_text) < 200:
-            front_text = soup.get_text(separator="\n", strip=True)[:4000]
-        else:
-            front_text = front_text[:4000]
-            
-        fallback_results = _extract_fallback_with_llm(front_text, missing_fields, ai_service)
-        for k, v in fallback_results.items():
-            if v and not meta.get(k):
-                meta[k] = v
+    # Step 2 & 3: Only invoke LLM heuristic/OCR fallbacks when core bibliographic identity
+    # fields (title, authors, year) are missing after deterministic Grobid TEI parsing.
+    # Never fail or stall citation extraction if the LLM inference host is offline or busy.
+    core_identity_fields = ("title", "authors", "year")
+    missing_core = [k for k in core_identity_fields if not (meta.get(k) or "").strip()]
+    if missing_core:
+        try:
+            ai_service = service_registry.ai_service
+            if ai_service is not None:
+                candidates = _extract_grobid_heuristics(soup)
+                if any(candidates.values()):
+                    eval_results = _evaluate_candidates_with_llm(candidates, ai_service)
+                    for k, v in eval_results.items():
+                        if v and not meta.get(k):
+                            meta[k] = v
+
+                missing_core = [k for k in core_identity_fields if not (meta.get(k) or "").strip()]
+                if missing_core:
+                    tei_header = soup.find("teiHeader")
+                    front_text = tei_header.get_text(separator="\n", strip=True) if tei_header else ""
+                    if len(front_text) < 200:
+                        front_text = soup.get_text(separator="\n", strip=True)[:4000]
+                    else:
+                        front_text = front_text[:4000]
+
+                    fallback_results = _extract_fallback_with_llm(front_text, missing_core, ai_service)
+                    for k, v in fallback_results.items():
+                        if v and not meta.get(k):
+                            meta[k] = v
+        except Exception as llm_exc:
+            logger.warning(f"Optional LLM metadata fallback skipped for '{doc.title}': {llm_exc}")
     
     # Create or update the Reference for the source document
     source_ref, _ = Reference.objects.update_or_create(

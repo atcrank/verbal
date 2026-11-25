@@ -115,8 +115,8 @@ def index_concept_vector(sender, instance, created, **kwargs):
         return
     if getattr(instance, '_skip_signal', False):
         return
-    import sys
-    if 'test' in sys.argv:
+    from django.conf import settings
+    if not getattr(settings, "ENABLE_GRIPS_AUTO_SYNC", True):
         return
     from grips.tasks import task_index_concept_node
     # Delay to background worker so we don't block the web request

@@ -13,7 +13,27 @@ if [ ! -f "$ZIP_FILE" ]; then
     exit 1
 fi
 
+if [ -f .env ]; then
+    . .env
+fi
+if [ -f ~/.verbal_secrets ]; then
+    . ~/.verbal_secrets
+elif [ -f .env.secrets ]; then
+    . .env.secrets
+fi
+[ -z "$HF_ENDPOINT" ] && unset HF_ENDPOINT
+[ -z "$PIP_INDEX_URL" ] && unset PIP_INDEX_URL
+
+if [ -n "$VIRTUAL_ENV" ] && [ -x "$VIRTUAL_ENV/bin/python" ]; then
+    PYTHON_BIN="$VIRTUAL_ENV/bin/python"
+elif [ -x "../../py312/bin/python" ]; then
+    PYTHON_BIN="../../py312/bin/python"
+else
+    PYTHON_BIN="python"
+fi
+
 STAGING_DIR="/tmp/verbal_restore_$(date +%s)"
+trap 'rm -rf "$STAGING_DIR"' EXIT
 mkdir -p "$STAGING_DIR"
 
 echo "🚀 Starting Verbal data restore from ${ZIP_FILE}..."
@@ -41,10 +61,10 @@ if [ -n "$DB_DUMP_FILE" ]; then
 
     echo "🧹 Clearing auto-generated ContentTypes to prevent ID conflicts..."
     # Delete contenttypes (which cascade deletes permissions) so loaddata can restore original IDs safely
-    python manage.py shell -c "from django.contrib.contenttypes.models import ContentType; ContentType.objects.all().delete()"
+    "$PYTHON_BIN" manage.py shell -c "from django.contrib.contenttypes.models import ContentType; ContentType.objects.all().delete()"
 
     echo "🗄️ Loading database dump: $(basename "$DB_DUMP_FILE")..."
-    python manage.py loaddata "$DB_DUMP_FILE"
+    "$PYTHON_BIN" manage.py loaddata "$DB_DUMP_FILE"
 else
     echo "⚠️ No database JSON dump found in the backup."
 fi
@@ -55,17 +75,14 @@ restore_dir() {
     if [ -d "${BACKUP_DIR}/${src_dir}" ]; then
         echo "📂 Restoring ${src_dir}..."
         mkdir -p "${src_dir}"
-        # Using -a (archive) to preserve file permissions and timestamps
-        cp -a "${BACKUP_DIR}/${src_dir}/"* "${src_dir}/" 2>/dev/null || true
+        cp -a "${BACKUP_DIR}/${src_dir}/." "${src_dir}/" 2>/dev/null || true
     fi
 }
 
 restore_dir "media/documents"
 restore_dir "media/corpora"
-restore_dir "background_resources/vector_store"
-restore_dir "background_resources/chunk_store"
-restore_dir "background_resources/chunks"
-restore_dir "grips/vector_store"
+restore_dir "documents"
+restore_dir "lora_adapters"
 
 echo "🧹 Cleaning up temporary files..."
 rm -rf "$STAGING_DIR"

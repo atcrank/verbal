@@ -37,10 +37,28 @@ def process_reading(modeladmin, request, queryset):
 
 @admin.action(description="Execute this Grobid Semantic Strategy")
 def process_grobid_reading(modeladmin, request, queryset):
+    from grobid_client.api import is_grobid_available
     strategy_ids = [str(sid) for sid in queryset.values_list('id', flat=True)]
+    missing_tei = [
+        s.document.title
+        for s in queryset.select_related("document")
+        if not (hasattr(s.document, "grobid_metadata") and s.document.grobid_metadata and s.document.grobid_metadata.tei_xml)
+    ]
     task_process_grobid_reading_strategies.enqueue(strategy_ids)
     if modeladmin:
-        modeladmin.message_user(request, f"Queued {len(strategy_ids)} Grobid reading strateg(ies) for execution.", level=messages.SUCCESS)
+        if missing_tei and not is_grobid_available():
+            modeladmin.message_user(
+                request,
+                f"Queued {len(strategy_ids)} Grobid reading strateg(ies), but Grobid daemon is offline and "
+                f"{len(missing_tei)} document(s) lack cached TEI XML ({', '.join(missing_tei[:3])}).",
+                level=messages.WARNING,
+            )
+        else:
+            modeladmin.message_user(
+                request,
+                f"Queued {len(strategy_ids)} Grobid reading strateg(ies) for execution.",
+                level=messages.SUCCESS,
+            )
 
 
 @admin.action(description="Generate Synthetic Benchmarks")
@@ -52,9 +70,19 @@ def generate_benchmarks(modeladmin, request, queryset):
 
 @admin.action(description="Extract Grobid Metadata & Citations")
 def extract_grobid_metadata(modeladmin, request, queryset):
+    from grobid_client.api import is_grobid_available
+    grobid_online = is_grobid_available()
     for doc in queryset:
         task_extract_grobid_metadata.enqueue(doc.id)
-    modeladmin.message_user(request, f"Queued Grobid extraction for {queryset.count()} document(s).", level=messages.SUCCESS)
+    if not grobid_online:
+        modeladmin.message_user(
+            request,
+            f"Queued Grobid extraction for {queryset.count()} document(s), but the Grobid container appears unreachable. "
+            "Ensure the 'grobid' Docker service is running.",
+            level=messages.WARNING,
+        )
+    else:
+        modeladmin.message_user(request, f"Queued Grobid extraction for {queryset.count()} document(s).", level=messages.SUCCESS)
 
 class RAGChunkAdmin(admin.ModelAdmin):
 
@@ -152,11 +180,32 @@ class ReadingStrategyAdmin(admin.ModelAdmin):
 class ReadingStrategyInline(admin.TabularInline):
     model = ReadingStrategy
     parent_model = Document
-    fields = ('document', 'strategy_description', 'chunk_size_override', 'chunk_overlap_override')
+    fields = ('strategy_description', 'chunk_size_override', 'chunk_overlap_override')
     extra = 0
 
     class Meta:
         model = ReadingStrategy
+
+
+class GrobidReadingStrategyInlineForm(forms.ModelForm):
+    """
+    Ensures newly added inline rows retaining the default 'Grobid Semantic Chunking'
+    description are recognized as changed by Django's BaseInlineFormSet and saved.
+    """
+
+    class Meta:
+        model = GrobidReadingStrategy
+        fields = ('strategy_description',)
+
+    def has_changed(self):
+        if self.is_bound and self.instance._state.adding:
+            delete_key = self.add_prefix('DELETE')
+            if not self.data.get(delete_key):
+                desc_val = self.data.get(self.add_prefix('strategy_description'), '')
+                if str(desc_val).strip():
+                    return True
+        return super().has_changed()
+
 
 class GrobidReadingStrategyAdmin(admin.ModelAdmin):
     fields = ('document', 'strategy_description')
@@ -170,6 +219,7 @@ class GrobidReadingStrategyAdmin(admin.ModelAdmin):
 class GrobidReadingStrategyInline(admin.TabularInline):
     model = GrobidReadingStrategy
     parent_model = Document
+    form = GrobidReadingStrategyInlineForm
     fields = ('strategy_description',)
     extra = 0
 
@@ -190,7 +240,7 @@ class RegexStrategyInline(admin.TabularInline):
     model = RegexStrategy
     parent_model = Document
     extra = 0
-    fields = ('document', 'regex', 'strategy_description', 'strategy_details')
+    fields = ('regex', 'strategy_description', 'strategy_details')
 
     class Meta:
         model = RegexStrategy
@@ -233,10 +283,10 @@ class PromptStrategyInline(admin.TabularInline):
     model = PromptStrategy
     parent_model = Document
     extra = 0
-    fields = ('document', 'strategy_description', 'prompt')
+    fields = ('strategy_description', 'prompt')
 
     class Meta:
-        model = AbbreviationsReadingStrategy
+        model = PromptStrategy
 
 
 class DocumentForm(forms.ModelForm):
